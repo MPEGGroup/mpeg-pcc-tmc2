@@ -30,6 +30,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 #include "PccAppDecoder.h"
 
 using namespace std;
@@ -39,9 +40,10 @@ using pcc::chrono::StopwatchUserTime;
 int main( int argc, char* argv[] ) {
   std::cout << "PccAppDecoder v" << TMC2_VERSION_MAJOR << "." << TMC2_VERSION_MINOR << std::endl << std::endl;
 
-  PCCDecoderParameters decoderParams;
-  PCCMetricsParameters metricsParams;
-  if ( !parseParameters( argc, argv, decoderParams, metricsParams ) ) { return -1; }
+  PCCDecoderParameters     decoderParams;
+  PCCMetricsParameters     metricsParams;
+  PCCConformanceParameters conformanceParams;
+  if ( !parseParameters( argc, argv, decoderParams, metricsParams, conformanceParams ) ) { return -1; }
   if ( decoderParams.nbThread_ > 0 ) { tbb::task_scheduler_init init( static_cast<int>( decoderParams.nbThread_ ) ); }
 
   // Timers to count elapsed wall/user time
@@ -49,7 +51,7 @@ int main( int argc, char* argv[] ) {
   pcc::chrono::StopwatchUserTime                    clockUser;
 
   clockWall.start();
-  int ret = decompressVideo( decoderParams, metricsParams, clockUser );
+  int ret = decompressVideo( decoderParams, metricsParams, conformanceParams, clockUser );
   clockWall.stop();
 
   using namespace std::chrono;
@@ -82,10 +84,11 @@ static std::istream& operator>>( std::istream& in, PCCColorTransform& val ) {
 //---------------------------------------------------------------------------
 // :: Command line / config parsing
 
-bool parseParameters( int                   argc,
-                      char*                 argv[],
-                      PCCDecoderParameters& decoderParams,
-                      PCCMetricsParameters& metricsParams ) {
+bool parseParameters( int                       argc,
+                      char*                     argv[],
+                      PCCDecoderParameters&     decoderParams,
+                      PCCMetricsParameters&     metricsParams,
+                      PCCConformanceParameters& conformanceParams ) {
   namespace po = df::program_options_lite;
 
   bool   print_help = false;
@@ -144,6 +147,18 @@ bool parseParameters( int                   argc,
       decoderParams.videoDecoderAttributePath_,
       decoderParams.videoDecoderAttributePath_, 
       "Attribute video decoder executable")
+    ( "byteStreamVideoCoderOccupancy",
+      decoderParams.byteStreamVideoCoderOccupancy_,
+      decoderParams.byteStreamVideoCoderOccupancy_,
+      "Occupancy video decoder inputs byteStream")
+    ( "byteStreamVideoCoderGeometry",
+      decoderParams.byteStreamVideoCoderGeometry_,
+      decoderParams.byteStreamVideoCoderGeometry_,
+      "Geometry video decoder inputs byteStream")
+    ( "byteStreamVideoCoderAttribute",
+      decoderParams.byteStreamVideoCoderAttribute_,
+      decoderParams.byteStreamVideoCoderAttribute_,
+      "Attribute video decoder inputs byteStream")
     ( "nbThread",
       decoderParams.nbThread_,
       decoderParams.nbThread_,
@@ -217,6 +232,23 @@ bool parseParameters( int                   argc,
     ( "flagColorPreSmoothing", ignore, ignore, "Ignore parameter")
     ( "surfaceSeparation", ignore, ignore, "Ignore parameter");
 
+  opts.addOptions()
+     ( "checkConformance", 
+       conformanceParams.checkConformance_, 
+       conformanceParams.checkConformance_, 
+       "Check conformance")
+     ( "path", 
+       conformanceParams.path_, 
+       conformanceParams.path_, 
+       "Root directory of conformance files + prefix: C:\\Test\\pcc_conformance\\Bin\\S26C03R03_")
+     ( "level", 
+       conformanceParams.levelIdc_, 
+       conformanceParams.levelIdc_, 
+       "Level indice")
+     ( "fps", 
+       conformanceParams.fps_, 
+       conformanceParams.fps_, 
+       "frame per second" );
   // clang-format on
   po::setDefaults( opts );
   po::ErrorReporter        err;
@@ -241,15 +273,20 @@ bool parseParameters( int                   argc,
     return false;
   }
   metricsParams.startFrameNumber_ = decoderParams.startFrameNumber_;
-
+  conformanceParams.print();
+  if ( !conformanceParams.check() ) {
+    printf( "Error Input parameters are not correct \n" );
+    return false;
+  }
   // report the current configuration (only in the absence of errors so
   // that errors/warnings are more obvious and in the same place).
   return !err.is_errored;
 }
 
-int decompressVideo( const PCCDecoderParameters& decoderParams,
-                     const PCCMetricsParameters& metricsParams,
-                     StopwatchUserTime&          clock ) {
+int decompressVideo( const PCCDecoderParameters&     decoderParams,
+                     const PCCMetricsParameters&     metricsParams,
+                     const PCCConformanceParameters& conformanceParams,
+                     StopwatchUserTime&              clock ) {
   PCCBitstream     bitstream;
   PCCBitstreamStat bitstreamStat;
   PCCLogger        logger;
@@ -262,9 +299,10 @@ int decompressVideo( const PCCDecoderParameters& decoderParams,
   if ( !bitstream.initialize( decoderParams.compressedStreamPath_ ) ) { return -1; }
   // if ( !bitstream.readHeader() ) { return -1; }
   bitstreamStat.setHeader( bitstream.size() );
-  size_t      frameNumber = decoderParams.startFrameNumber_;
-  PCCMetrics  metrics;
-  PCCChecksum checksum;
+  size_t         frameNumber = decoderParams.startFrameNumber_;
+  PCCMetrics     metrics;
+  PCCChecksum    checksum;
+  PCCConformance conformance;
   metrics.setParameters( metricsParams );
   checksum.setParameters( metricsParams );
   std::vector<std::vector<uint8_t>> checksumsRec;
@@ -317,6 +355,7 @@ int decompressVideo( const PCCDecoderParameters& decoderParams,
         sources.clear();
         normals.clear();
       }
+      if ( conformanceParams.checkConformance_ ) { conformance.check( conformanceParams ); }
       if ( !decoderParams.reconstructedDataPath_.empty() ) {
         reconstructs.write( decoderParams.reconstructedDataPath_, frameNumber );
       } else {

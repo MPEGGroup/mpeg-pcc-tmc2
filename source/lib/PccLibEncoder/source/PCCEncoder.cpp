@@ -126,7 +126,8 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   }
   if ( params_.tileSegmentationType_ > 0 ) { replaceFrameContext( context ); }
 
-  PCCVideoEncoder   videoEncoder;
+  PCCVideoEncoder videoEncoder;
+  videoEncoder.setLogger( *logger_ );
   size_t            atlasIndex = context.getAtlasIndex();
   const size_t      pointCount = sources[0].getPointCount();
   auto&             sps        = context.getVps();
@@ -149,17 +150,22 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   generateOccupancyMap( context, true );
 
   // ENCODE OCCUPANCY MAP
+  TRACE_PICTURE( "Occupancy\n" );
+  TRACE_PICTURE( "MapIdx = 0,  AuxiliaryVideoFlag =  0\n" );
   auto& videoBitstream = context.createVideoBitstream( VIDEO_OCCUPANCY );
   generateOccupancyMapVideo( sources, context );
   auto& videoOccupancyMap = context.getVideoOccupancyMap();
   videoEncoder.compress( videoOccupancyMap, path.str(), params_.occupancyMapQP_, videoBitstream,
                          params_.occupancyMapVideoEncoderConfig_, params_.videoEncoderOccupancyPath_,
-                         params_.videoEncoderOccupancyCodecId_, context,
+                         params_.videoEncoderOccupancyCodecId_, params_.byteStreamVideoCoderOccupancy_, context,
                          ( params_.EOMFixBitCount_ <= 8 ) ? 1 : 2,  // nByte
                          false,                                     // use444CodecIo
                          false,                                     // use3dmv
-                         8,                                         // internalBitDepth
-                         false,                                     // useConversion
+#ifdef USE_HM_PCC_RDO
+                         false,  // usePccRDO
+#endif
+                         8,      // internalBitDepth
+                         false,  // useConversion
                          params_.keepIntermediateFiles_ );
   if ( params_.offsetLossyOM_ > 0 ) {
     changedPixCnt     = 0;
@@ -178,7 +184,13 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     markRawPatchLocationOccupancyMapVideo( context );
   }
 
-  generateBlockToPatchFromOccupancyMapVideo( context, params_.occupancyResolution_, params_.occupancyPrecision_ );
+  if ( params_.tileSegmentationType_ > 0 ) {
+    generateAtlasBlockToPatchFromOccupancyMapVideo( context, params_.occupancyResolution_,
+                                                    params_.occupancyPrecision_ );
+  } else {
+    generateBlockToPatchFromOccupancyMapVideo( context, params_.occupancyResolution_, params_.occupancyPrecision_ );
+  }
+
 #if 1
   printf( "Processing Geometry\n" );
   fflush( stdout );
@@ -189,7 +201,13 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   fflush( stdout );
 
   // ENCODE GEOMETRY IMAGE
+  TRACE_PICTURE( "Geometry\n" );
+  TRACE_PICTURE( "MapIdx = 0, AuxiliaryVideoFlag = 0\n" );
+#ifdef USE_HM_PCC_RDO
+  if ( params_.use3dmc_ || params_.usePccRDO_ ) { create3DMotionEstimationFiles( context, path.str() ); }
+#else
   if ( params_.use3dmc_ ) { create3DMotionEstimationFiles( context, path.str() ); }
+#endif
   auto&  gi                      = context.getVps().getGeometryInformation( atlasIndex );
   size_t geometryVideoBitDepth   = gi.getGeometry2dBitdepthMinus1() + 1;
   size_t geometryMPVideoBitDepth = gi.getGeometry2dBitdepthMinus1() + 1;
@@ -213,13 +231,17 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
                          geometryConfigFile,                                                        // config file
                          params_.videoEncoderGeometryPath_,                                         // encoder path
                          params_.videoEncoderGeometryCodecId_,                                      // Codec id
-                         context,                                                                   // context
-                         nbyteGeo,                                                                  // nbyte
-                         params_.losslessGeo_ && params_.losslessGeo444_,                           // use444CodecIo
-                         params_.use3dmc_,                                                          // use3dmv
-                         internalBitDepth,                                                          // internalBitDepth
-                         false,                                                                     // useConversion
-                         params_.keepIntermediateFiles_ );                                          // keep intermediate
+                         params_.byteStreamVideoCoderGeometry_,
+                         context,                                          // context
+                         nbyteGeo,                                         // nbyte
+                         params_.losslessGeo_ && params_.losslessGeo444_,  // use444CodecIo
+                         params_.use3dmc_,                                 // use3dmv
+#ifdef USE_HM_PCC_RDO
+                         params_.usePccRDO_,  // usePccRDO
+#endif
+                         internalBitDepth,                  // internalBitDepth
+                         false,                             // useConversion
+                         params_.keepIntermediateFiles_ );  // keep intermediate
   size_t sizeGeometryVideo = videoBitstreamD0.size();
   std::cout << "sizeGeometryVideo: " << sizeGeometryVideo << std::endl;
   if ( params_.multipleStreams_ ) {
@@ -241,22 +263,27 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     }
 
     // Compress geometryD1
+    TRACE_PICTURE( "MapIdx = 1, AuxiliaryVideoFlag = 0\n" );
     auto& videoGeometryD1  = context.getVideoGeometryMultiple()[1];
     auto& videoBitstreamD1 = context.createVideoBitstream( VIDEO_GEOMETRY_D1 );
-    videoEncoder.compress( videoGeometryD1,                                  // video
-                           path.str(),                                       // path
-                           params_.geometryQP_,                              // QP
-                           videoBitstreamD1,                                 // bitstream
-                           params_.geometryD1Config_,                        // config file
-                           params_.videoEncoderGeometryPath_,                // encoder path
-                           params_.videoEncoderGeometryCodecId_,             // Codec id
+    videoEncoder.compress( videoGeometryD1,                       // video
+                           path.str(),                            // path
+                           params_.geometryQP_,                   // QP
+                           videoBitstreamD1,                      // bitstream
+                           params_.geometryD1Config_,             // config file
+                           params_.videoEncoderGeometryPath_,     // encoder path
+                           params_.videoEncoderGeometryCodecId_,  // Codec id
+                           params_.byteStreamVideoCoderGeometry_,
                            context,                                          // context
                            nbyteGeo,                                         // nbyte
                            params_.losslessGeo_ && params_.losslessGeo444_,  // use444CodecIo
                            params_.use3dmc_,                                 // use3dmv
-                           internalBitDepth,                                 // internalBitDepth
-                           false,                                            // useConversion
-                           params_.keepIntermediateFiles_ );                 // keep intermediate
+#ifdef USE_HM_PCC_RDO
+                           params_.usePccRDO_,  // usePccRDO
+#endif
+                           internalBitDepth,                  // internalBitDepth
+                           false,                             // useConversion
+                           params_.keepIntermediateFiles_ );  // keep intermediate
 
     size_t sizeGeometryVideoD1 = videoBitstreamD1.size();
     std::cout << "sizeGeometryVideoD1: " << sizeGeometryVideoD1 << std::endl;
@@ -267,6 +294,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   }
 
   if ( asps.getRawPatchEnabledFlag() && asps.getAuxiliaryVideoEnabledFlag() ) {
+    TRACE_PICTURE( "MapIdx = 0, AuxiliaryVideoFlag = 1\n" );
     std::cout << "*******Video: Aux (Geometry) ********" << std::endl;
     placeAuxiliaryPointsTiles( context );
     auto& videoBitstreamMP = context.createVideoBitstream( VIDEO_GEOMETRY_RAW );
@@ -275,10 +303,13 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     videoEncoder.compress( videoRawPointsGeometry, path.str(),
                            params_.lossyRawPointsPatch_ ? params_.lossyRawPointPatchGeoQP_ : params_.geometryQP_,
                            videoBitstreamMP, params_.geometryAuxVideoConfig_, params_.videoEncoderGeometryPath_,
-                           params_.videoEncoderGeometryCodecId_, context,
-                           nbyteGeoMP,        // nbyte
-                           false,             // use444CodecIo
-                           false,             // use3dmv
+                           params_.videoEncoderGeometryCodecId_, params_.byteStreamVideoCoderGeometry_, context,
+                           nbyteGeoMP,  // nbyte
+                           false,       // use444CodecIo
+                           false,       // use3dmv
+#ifdef USE_HM_PCC_RDO
+                           false,  // usePccRDO
+#endif
                            internalBitDepth,  // internalBitDepth
                            false,             // useConversion
                            params_.keepIntermediateFiles_ );
@@ -316,6 +347,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   context.allocOneLayerData();
   std::vector<std::vector<uint32_t>> partitions;
   partitions.resize( context.size() );
+
   for ( size_t frameIdx = 0; frameIdx < context.size(); frameIdx++ ) {
     auto& frame = context[frameIdx];
     for ( size_t tileIdx = 0; tileIdx < frame.getNumTilesInAtlasFrame(); tileIdx++ ) {
@@ -422,18 +454,31 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
       // }
     }
     // ENCODE ATTRIBUTE IMAGE
+    TRACE_PICTURE( "Attribute\n" );
     std::cout << "texture video " << std::endl;
     auto& videoBitstream = params_.multipleStreams_ ? context.createVideoBitstream( VIDEO_TEXTURE_T0 )
                                                     : context.createVideoBitstream( VIDEO_TEXTURE );
     const size_t nbyteAtt = 1;
+    int          attrPartitionIndex =
+        sps.getAttributeInformation( atlasIndex )
+            .getAttributeDimensionPartitionsMinus1( 0 );  // ajt::encoder is limited to attribute Index = 0, only.
+    int attrTypeId = sps.getAttributeInformation( atlasIndex ).getAttributeTypeId( 0 );
+    TRACE_PICTURE(
+        "AttrIdx = 0, AttrPartIdx = %d, AttrTypeID = %d, MapIdx = 0, AuxiliaryVideoFlag = "
+        "0\n",
+        attrPartitionIndex, attrTypeId );
     videoEncoder.compress(
         context.getVideoTextureMultiple()[0], path.str(), params_.textureQP_, videoBitstream,
         params_.multipleStreams_
             ? ( params_.mapCountMinus1_ == 0 ? getEncoderConfig1L( params_.textureConfig_ ) : params_.textureT0Config_ )
             : ( params_.mapCountMinus1_ == 0 ? getEncoderConfig1L( params_.textureConfig_ ) : params_.textureConfig_ ),
-        params_.videoEncoderAttributePath_, params_.videoEncoderAttributeCodecId_, context, nbyteAtt,  // nbyte
-        params_.losslessGeo_,                                                                          // use444CodecIo
-        params_.use3dmc_,                                                                              // use3dmv
+        params_.videoEncoderAttributePath_, params_.videoEncoderAttributeCodecId_,
+        params_.byteStreamVideoCoderAttribute_, context, nbyteAtt,  // nbyte
+        params_.losslessGeo_,                                       // use444CodecIo
+        params_.use3dmc_,                                           // use3dmv
+#ifdef USE_HM_PCC_RDO
+        params_.usePccRDO_,  // usePccRDO
+#endif
         params_.losslessGeo_ ? 8 : 10,               // internalBitDepth
         !params_.losslessGeo_,                       // useConversion
         params_.keepIntermediateFiles_,              // keepIntermediateFiles
@@ -464,13 +509,18 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
       }  //! absoluteT1
 
       // compress textureT1
+      TRACE_PICTURE( "MapIdx = 1, AuxiliaryVideoFlag = 0\n" );
       auto& videoBitstreamT1 = context.createVideoBitstream( VIDEO_TEXTURE_T1 );
       videoEncoder.compress(
           context.getVideoTextureMultiple()[1], path.str(), params_.textureQP_ + params_.qpAdjT1_, videoBitstreamT1,
           params_.mapCountMinus1_ == 0 ? getEncoderConfig1L( params_.textureConfig_ ) : params_.textureT1Config_,
-          params_.videoEncoderAttributePath_, params_.videoEncoderAttributeCodecId_, context, nbyteAtt,  // nbyte
-          params_.losslessGeo_,                        // use444CodecIo
-          params_.use3dmc_,                            // use3dmv
+          params_.videoEncoderAttributePath_, params_.videoEncoderAttributeCodecId_,
+          params_.byteStreamVideoCoderAttribute_, context, nbyteAtt,  // nbyte
+          params_.losslessGeo_,                                       // use444CodecIo
+          params_.use3dmc_,                                           // use3dmv
+#ifdef USE_HM_PCC_RDO
+          params_.usePccRDO_,  // usePccRDO
+#endif
           params_.losslessGeo_ ? 8 : 10,               // internalBitDepth
           !params_.losslessGeo_,                       // useConversion
           params_.keepIntermediateFiles_,              // keepIntermediateFiles
@@ -486,6 +536,8 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     }
 
     if ( asps.getRawPatchEnabledFlag() && asps.getAuxiliaryVideoEnabledFlag() ) {
+      TRACE_PICTURE( "AttrIdx = 0, AttrPartIdx = %d, AttrTypeID = %d ", attrPartitionIndex, attrTypeId );
+      TRACE_PICTURE( "MapIdx = 0, AuxiliaryVideoFlag = 1\n" );
       std::cout << "*******Video: Aux (Texture) ********" << std::endl;
       auto& videoBitstreamMP = context.createVideoBitstream( VIDEO_TEXTURE_RAW );
       generateRawPointsTextureVideo( context );
@@ -493,10 +545,13 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
       const size_t nByteAttMP            = 1;
       videoEncoder.compress( videoRawPointsTexture, path.str(), params_.textureQP_, videoBitstreamMP,
                              params_.textureAuxVideoConfig_, params_.videoEncoderAttributePath_,
-                             params_.videoEncoderAttributeCodecId_, context,
-                             nByteAttMP,                                  // nbyte
-                             params_.losslessGeo_,                        // use444CodecIo
-                             false,                                       // use3dmv
+                             params_.videoEncoderAttributeCodecId_, params_.byteStreamVideoCoderAttribute_, context,
+                             nByteAttMP,            // nbyte
+                             params_.losslessGeo_,  // use444CodecIo
+                             false,                 // use3dmv
+#ifdef USE_HM_PCC_RDO
+                             false,  // usePccRDO
+#endif
                              10,                                          // internalBitDepth
                              !params_.losslessGeo_,                       // useConversion
                              params_.keepIntermediateFiles_,              // keepIntermediateFiles
@@ -541,6 +596,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     }
   }
   for ( size_t frameIdx = 0; frameIdx < context.size(); frameIdx++ ) {
+    size_t numProjPoints = 0, numRawPoints = 0, numEomPoints = 0;
     reconstructs[frameIdx].addColors();
     reconstructs[frameIdx].addColors16bit();
 
@@ -553,7 +609,17 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
                                                     accTilePointCount, gpcParams );
         accTilePointCount        = updatedPointCount;
       }
+      numProjPoints += tile.getTotalNumberOfRegularPoints();
+      numEomPoints += tile.getTotalNumberOfEOMPoints();
+      numRawPoints += tile.getTotalNumberOfRawPoints();
     }  // tile
+    TRACE_PCFRAME( "Atlas Frame Index = %d \n", frameIdx );
+    TRACE_PCFRAME( "PointCloudFrameOrderCntVal = %d, NumProjPoints = %zu, NumRawPoints = %zu, NumEomPoints = %zu,\n",
+                   frameIdx, numProjPoints, numRawPoints, numEomPoints );
+    auto checksum = reconstructs[frameIdx].computeChecksum();
+    TRACE_PCFRAME( " MD5 checksum = " );
+    for ( auto& c : checksum ) { TRACE_PCFRAME( "%02x", c ); }
+    TRACE_PCFRAME( "\n" );
   }
 
   std::cout << "Post Processing Point Clouds" << std::endl;
@@ -619,7 +685,13 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     }
   }  // frame
 
-  if ( !params_.keepIntermediateFiles_ && params_.use3dmc_ ) { remove3DMotionEstimationFiles( path.str() ); }
+#ifdef USE_HM_PCC_RDO
+  if ( !params_.keepIntermediateFiles_ && ( params_.use3dmc_ || params_.usePccRDO_ ) ) {
+#else
+  if ( !params_.keepIntermediateFiles_ && params_.use3dmc_ ) {
+#endif
+    remove3DMotionEstimationFiles( path.str() );
+  }
 
   createPatchFrameDataStructure( context );
   params_.pointLocalReconstruction_   = ( pointLocalReconstructionOriginal != 0u );
@@ -4750,27 +4822,19 @@ void PCCEncoder::generateRawPointsTextureImage( PCCContext& context, PCCFrameCon
     size_t imageWidthInBlock = width / params_.occupancyResolution_;
     int    rawPatchOffset    = 0;
     for ( int i = 0; i < numberOfRawPointsPatches; i++ ) {
-      int    pointIndex           = 0;
-      auto&  rawPointsPatch       = tile.getRawPointsPatch( i );
-      size_t numRawColorPoints    = rawPointsPatch.getNumberOfRawPoints();
-      auto   rawPointsPatchBlocks = static_cast<size_t>(
-          ceil( double( numRawColorPoints ) / ( params_.occupancyResolution_ * params_.occupancyResolution_ ) ) );
-      size_t rawPointsPatchColorSizeV0 =
-          static_cast<size_t>( ceil( double( rawPointsPatchBlocks ) / imageWidthInBlock ) );
-      size_t rawPointsPatchColorSizeU0 =
-          static_cast<size_t>( ceil( double( rawPointsPatchBlocks ) / rawPointsPatchColorSizeV0 ) );
-      printf(
-          "\tgenerateRawPointsTextureImage:: (u0,v0) %zu,%zu, (sizeU,sizeU:geo) %zux%zu, (sizeU,sizeU:text) %zux%zu\n",
-          rawPointsPatch.u0_, rawPointsPatch.v0_, rawPointsPatch.sizeU_, rawPointsPatch.sizeV_,
-          rawPointsPatchColorSizeU0 * params_.occupancyResolution_,
-          rawPointsPatchColorSizeV0 * params_.occupancyResolution_ );
+      int    pointIndex        = 0;
+      auto&  rawPointsPatch    = tile.getRawPointsPatch( i );
+      size_t numRawColorPoints = rawPointsPatch.getNumberOfRawPoints();
+
+      printf( "\tgenerateRawPointsTextureImage:: (u0,v0) %zu,%zu, (sizeU,sizeU) %zux%zu\n", rawPointsPatch.u0_,
+              rawPointsPatch.v0_, rawPointsPatch.sizeU_, rawPointsPatch.sizeV_ );
 
       const size_t             v0          = rawPointsPatch.v0_ * rawPointsPatch.occupancyResolution_;
       const size_t             u0          = rawPointsPatch.u0_ * rawPointsPatch.occupancyResolution_;
       std::vector<PCCColor3B>& rawTextures = tile.getRawPointsTextures();
 
-      for ( size_t v = 0; v < rawPointsPatchColorSizeV0 * params_.occupancyResolution_; ++v ) {
-        for ( size_t u = 0; u < rawPointsPatchColorSizeU0 * params_.occupancyResolution_; ++u ) {
+      for ( size_t v = 0; v < rawPointsPatch.sizeV_; ++v ) {
+        for ( size_t u = 0; u < rawPointsPatch.sizeU_; ++u ) {
           //          const size_t p = v * rawPointsPatch.sizeU_ + u;
           const size_t x = ( u0 + u );
           const size_t y = ( v0 + v ) + context.getAuxTileLeftTopY( tile.getTileIndex() );
@@ -4779,6 +4843,8 @@ void PCCEncoder::generateRawPointsTextureImage( PCCContext& context, PCCFrameCon
             image.setValue( 1, x, y, uint16_t( rawTextures[rawPatchOffset + pointIndex].g() ) );
             image.setValue( 2, x, y, uint16_t( rawTextures[rawPatchOffset + pointIndex].b() ) );
             pointIndex++;
+          } else {
+            break;
           }
         }
       }
@@ -4817,15 +4883,6 @@ void PCCEncoder::generateRawPointsTextureImage( PCCContext& context, PCCFrameCon
         avgG = avgG + double( eomTextures[k + eomPatchOffset].g() ) / eomPointsPatch.eomCount_;
         avgB = avgB + double( eomTextures[k + eomPatchOffset].b() ) / eomPointsPatch.eomCount_;
       }
-      //      if ( !losslessAtt ) {
-      //        for ( size_t k = numOfRawGeos; k < width * heightMP; ++k ) {
-      //          xx = k % width;
-      //          yy = k / width + context.getAuxTileHeight(tile.getTileIndex());
-      //          image.setValue( 0, xx, yy, static_cast<uint8_t>( avgR ) );
-      //          image.setValue( 1, xx, yy, static_cast<uint8_t>( avgG ) );
-      //          image.setValue( 2, xx, yy, static_cast<uint8_t>( avgB ) );
-      //        }
-      //      }
       eomPatchOffset += eomPointsPatch.eomCount_;
     }  // eomPatches
   }
@@ -4861,6 +4918,7 @@ bool PCCEncoder::generateSegments( const PCCGroupOfFrames& sources, PCCContext& 
   params.additionalProjectionPlaneMode_       = params_.additionalProjectionPlaneMode_;
   params.partialAdditionalProjectionPlane_    = params_.partialAdditionalProjectionPlane_;
   params.maxAllowedDepth_                     = ( size_t( 1 ) << params_.geometryNominal2dBitdepth_ ) - 1;
+  params.geometryBitDepth2D_                  = params_.geometryNominal2dBitdepth_;
   params.geometryBitDepth3D_ = params_.geometry3dCoordinatesBitdepth_ + ( params_.additionalProjectionPlaneMode_ > 0 );
   params.EOMFixBitCount_     = params_.EOMFixBitCount_;
   params.EOMSingleLayerMode_ = params_.enhancedOccupancyMapCode_ && ( params_.mapCountMinus1_ == 0 );
@@ -5787,6 +5845,11 @@ bool PCCEncoder::resizeGeometryVideo( PCCContext& context, PCCCodecId codecId ) 
                                                            ( maxHeight / params_.occupancyResolution_ ) );
     frame.setAtlasFrameWidth( maxWidth );
     frame.setAtlasFrameHeight( maxHeight );
+
+    if ( frame.getNumTilesInAtlasFrame() == 1 ) {
+      frame.setPartitionWidth( maxWidth, 0 );
+      frame.setPartitionHeight( maxHeight, 0 );
+    }
   }
   return true;
 }
@@ -5804,8 +5867,8 @@ bool PCCEncoder::resizeTileGeometryVideo( PCCContext& context,
     maxWidth   = ( std::max )( maxWidth, tile.getWidth() );
     maxHeight  = ( std::max )( maxHeight, tile.getHeight() );
     if ( params_.tileSegmentationType_ != 0 ) {
-      double partitionWidth  = (double)context[frameIdx].getPartitionWidth()[0];
-      double partitionHeight = (double)context[frameIdx].getPartitionHeight()[0];
+      double partitionWidth  = (double)context[frameIdx].getPartitionWidth( 0 );
+      double partitionHeight = (double)context[frameIdx].getPartitionHeight( 0 );
       maxWidth               = std::ceil( (double)maxWidth / partitionWidth ) * partitionWidth;
       maxHeight              = std::ceil( (double)maxHeight / partitionHeight ) * partitionHeight;
     }
@@ -5824,6 +5887,10 @@ bool PCCEncoder::resizeTileGeometryVideo( PCCContext& context,
     tile.getHeight() = maxHeight;
     tile.getOccupancyMap().resize(
         ( maxWidth / params_.occupancyResolution_ ) * ( maxHeight / params_.occupancyResolution_ ), 0 );
+    if ( params_.tileSegmentationType_ == 0 ) {
+      context[frameIdx].setPartitionWidth( maxWidth, 0 );
+      context[frameIdx].setPartitionHeight( maxHeight, 0 );
+    }
   }  // frame
   return true;
 }
@@ -8436,7 +8503,8 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
         }
       }
       if ( bPersistance == false ) {
-        context.addAtlasFrameParameterSet( context.getAtlasFrameParameterSet( 0 ) )
+        context
+            .addAtlasFrameParameterSet( context.getAtlasFrameParameterSet( 0 ) )  // ajt::why update afti of afps 0?
             .setAtlasFrameTileInformation( aftiUpdated );
         atlasFrameParameterSetId = context.getAtlasFrameParameterSetList().size() - 1;
       }
@@ -8444,7 +8512,8 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
     for ( size_t ti = 0; ti < context[i].getNumTilesInAtlasFrame(); ti++ ) {
       auto& atl = context.addAtlasTileLayer( i, ti );
       auto& ath = atl.getHeader();
-      ath.setAtlasFrameParameterSetId( atlasFrameParameterSetId );
+      ath.setAtlasFrameParameterSetId(
+          atlasFrameParameterSetId );  // ajt::we also need to add adaptation parameter set ID?
 #if 1
       printf( "createPatchFrameDataStructure tile %zu\n", ti );
 #endif
@@ -8458,23 +8527,23 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
       ath.setPosDeltaMaxDQuantizer( uint8_t( std::log2( params_.minLevel_ ) ) );
       ath.setPatchSizeXinfoQuantizer( params_.log2QuantizerSizeX_ );
       ath.setPatchSizeYinfoQuantizer( params_.log2QuantizerSizeY_ );
-      if ( afps.getRaw3dPosBitCountExplicitModeFlag() ) {
-        ath.setRaw3dPosAxisBitCountMinus1( 0 );  //
+      if ( afps.getRaw3dOffsetBitCountExplicitModeFlag() ) {
+        ath.setRaw3dOffsetAxisBitCountMinus1( 0 );  // Note. need to be an encoder parameter
       } else {
-        ath.setRaw3dPosAxisBitCountMinus1( params_.geometry3dCoordinatesBitdepth_ +
-                                           ( params_.additionalProjectionPlaneMode_ > 0 ) -
-                                           params_.geometryNominal2dBitdepth_ - 1 );
+        ath.setRaw3dOffsetAxisBitCountMinus1( params_.geometry3dCoordinatesBitdepth_ +
+                                              ( params_.additionalProjectionPlaneMode_ > 0 ) -
+                                              params_.geometryNominal2dBitdepth_ - 1 );
       }
       ath.setNumRefIdxActiveOverrideFlag( false );
       ath.setRefAtlasFrameListSpsFlag( true );
       ath.setRefAtlasFrameListIdx( 0 );
       PCCFrameContext& tile = context[i].getTile( ti );
       createPatchFrameDataStructure( context, tile, atl, i, ti );
-      tile.setAtlIndex( context.getAtlasTileLayerList().size() - 1 );
-    }  // tileIdx
-  }    // frameCount
+      tile.setAtlIndex( context.getAtlasTileLayerList().size() -
+                        1 );  // ajt::what is the difference between tileIndex and atlIndex?
+    }                         // tileIdx
+  }                           // frameCount
 
-  // sei hash
   if ( params_.decodedAtlasInformationHash_ > 0 ) {
     context.allocateSeiHash( frameCount );
     assert( context.getSeiHash().size() == frameCount );
@@ -8555,21 +8624,21 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&         context,
                                                 size_t              frameIndex,
                                                 size_t              tileIndex ) {
   TRACE_PATCH( "createPatchFrameDataStructure Tile %zu \n", tile.getFrameIndex() );
-  auto&        patches            = tile.getPatches();
-  auto&        pcmPatches         = tile.getRawPointsPatches();
-  auto&        sps                = context.getVps();
-  auto&        ath                = atglu.getHeader();
-  auto&        atgdu              = atglu.getDataUnit();
-  auto&        afps               = context.getAtlasFrameParameterSet( ath.getAtlasFrameParameterSetId() );
-  size_t       aspsId             = afps.getAtlasSequenceParameterSetId();
-  auto&        asps               = context.getAtlasSequenceParameterSet( aspsId );
-  const size_t minLevel           = pow( 2., ath.getPosMinDQuantizer() );
-  size_t       atlasIndex         = context.getAtlasIndex();
-  auto&        gi                 = sps.getGeometryInformation( atlasIndex );
-  auto         geometryBitDepth2D = gi.getGeometry2dBitdepthMinus1() + 1;
-  int64_t      prevSizeU0         = 0;
-  int64_t      prevSizeV0         = 0;
-  int64_t      predIndex          = 0;
+  auto&         patches            = tile.getPatches();
+  auto&         pcmPatches         = tile.getRawPointsPatches();
+  auto&         sps                = context.getVps();
+  auto&         ath                = atglu.getHeader();
+  auto&         atgdu              = atglu.getDataUnit();
+  auto&         afps               = context.getAtlasFrameParameterSet( ath.getAtlasFrameParameterSetId() );
+  size_t        aspsId             = afps.getAtlasSequenceParameterSetId();
+  auto&         asps               = context.getAtlasSequenceParameterSet( aspsId );
+  const int64_t minLevel           = pow( 2., ath.getPosMinDQuantizer() );
+  size_t        atlasIndex         = context.getAtlasIndex();
+  auto          geometryBitDepth2D = asps.getGeometry2dBitdepthMinus1() + 1;
+  auto          geometryBitDepth3D = asps.getGeometry3dBitdepthMinus1() + 1;
+  int64_t       prevSizeU0         = 0;
+  int64_t       prevSizeV0         = 0;
+  int64_t       predIndex          = 0;
 
   atglu.setAtlasFrmOrderCntVal( tile.getAtlasFrmOrderCntVal() );
   ath.setId( tileIndex );
@@ -8633,23 +8702,21 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&         context,
       ipdu.set3dOffsetU( patch.getU1() - refPatch.getU1() );
       ipdu.set3dOffsetV( patch.getV1() - refPatch.getV1() );
 
-      const size_t max3DCoordinate = size_t( 1 ) << ( gi.getGeometry3dCoordinatesBitdepthMinus1() + 1 );
+      const size_t max3DCoordinate = geometryBitDepth3D;
       if ( patch.getProjectionMode() == 0 ) {
         ipdu.set3dOffsetD( ( patch.getD1() / minLevel ) - ( refPatch.getD1() / minLevel ) );
       } else {
-        if ( static_cast<int>( asps.getExtendedProjectionEnabledFlag() ) == 0 ) {
-          ipdu.set3dOffsetD( ( max3DCoordinate - patch.getD1() ) / minLevel -
-                             ( max3DCoordinate - refPatch.getD1() ) / minLevel );
-        } else {
-          ipdu.set3dOffsetD( ( ( max3DCoordinate << 1 ) - patch.getD1() ) / minLevel -
-                             ( ( max3DCoordinate << 1 ) - refPatch.getD1() ) / minLevel );
-        }
+        ipdu.set3dOffsetD( ( max3DCoordinate - patch.getD1() ) / minLevel -
+                           ( max3DCoordinate - refPatch.getD1() ) / minLevel );
       }
+      int64_t diffDD  = (int64_t)patch.getSizeDPixel() - (int64_t)refPatch.getSizeD();
+      int64_t quantDD = diffDD == 0 ? 0 : ( diffDD + 1 ) / (int64_t)minLevel;
+      ipdu.set3dRangeD( quantDD );
+      int64_t delta_DD = quantDD == 0 ? 0 : ( quantDD * minLevel - 1 );  //(int64_t)refPatch.getSizeD() + delta_DD;
+      patches[patchIndex].getSizeD() =
+          (size_t)std::min( (int64_t)std::max( ( int64_t )( refPatch.getSizeD() + delta_DD ), (int64_t)0 ),
+                            ( int64_t )( 1 << geometryBitDepth2D ) - 1 );
 
-      size_t        quantDD  = patch.getSizeD() == 0 ? 0 : ( ( patch.getSizeD() - 1 ) / minLevel + 1 );
-      size_t        prevQDD  = refPatch.getSizeD() == 0 ? 0 : ( ( refPatch.getSizeD() - 1 ) / minLevel + 1 );
-      const int64_t delta_dd = ( static_cast<int64_t>( quantDD ) ) - ( static_cast<int64_t>( prevQDD ) );
-      ipdu.set3dRangeD( delta_dd );
       TRACE_PATCH(
           "\tIPDU: refAtlasFrame= %d refPatchIdx = %d pos2DXY = %ld %ld pos3DXYZW = %ld %ld %ld %ld size2D = %ld %ld "
           "\n",
@@ -8715,13 +8782,14 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&         context,
         pdu.set2dSizeYMinus1( patch.getSizeV0() - 1 );
       }
       pdu.setOrientationIndex( patch.getPatchOrientation() );
-      const size_t max3DCoordinate = size_t( 1 ) << ( gi.getGeometry3dCoordinatesBitdepthMinus1() + 1 );
+      const size_t max3DCoordinate = size_t( 1 ) << ( geometryBitDepth3D );
       if ( patch.getProjectionMode() == 0 ) {
         pdu.set3dOffsetD( patch.getD1() / minLevel );
       } else {
         pdu.set3dOffsetD( ( max3DCoordinate - patch.getD1() ) / minLevel );
       }
-      size_t quantDD = patch.getSizeD() == 0 ? 0 : ( ( patch.getSizeD() - 1 ) / minLevel + 1 );
+      // Note: quantDD cannot cover up to the maximum depth by this equation. (e.g.getSizeD=255)
+      size_t quantDD = patch.getSizeD() == 0 ? 0 : ( ( patch.getSizeD() + 1 ) / minLevel );
       pdu.set3dRangeD( quantDD );
 
       TRACE_PATCH(
@@ -8752,12 +8820,12 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&         context,
       rpdu.set2dPosY( rawPointsPatch.v0_ );
       rpdu.set2dSizeXMinus1( rawPointsPatch.sizeU0_ - 1 );
       rpdu.set2dSizeYMinus1( rawPointsPatch.sizeV0_ - 1 );
-      if ( afps.getRaw3dPosBitCountExplicitModeFlag() ) {
+      if ( afps.getRaw3dOffsetBitCountExplicitModeFlag() ) {
         rpdu.set3dOffsetU( rawPointsPatch.u1_ );
         rpdu.set3dOffsetV( rawPointsPatch.v1_ );
         rpdu.set3dOffsetD( rawPointsPatch.d1_ );
       } else {
-        const size_t pcmU1V1D1Level = size_t( 1 ) << ( gi.getGeometry2dBitdepthMinus1() + 1 );
+        const size_t pcmU1V1D1Level = size_t( 1 ) << ( asps.getGeometry2dBitdepthMinus1() + 1 );
         rpdu.set3dOffsetU( rawPointsPatch.u1_ / pcmU1V1D1Level );
         rpdu.set3dOffsetV( rawPointsPatch.v1_ / pcmU1V1D1Level );
         rpdu.set3dOffsetD( rawPointsPatch.d1_ / pcmU1V1D1Level );
@@ -8839,7 +8907,12 @@ void PCCEncoder::createHashInformation( PCCContext& context, int frameIndex, siz
       printf( "\t**sei** (MD5): " );
       for ( auto& e : encMD5 ) printf( "%02x", e );
       printf( "\n" );
-      for ( int j = 0; j < 16; j++ ) sei.setHighLevelMd5( j, encMD5[j] );
+      TRACE_HLS( " HLSMD5 = " );
+      for ( int j = 0; j < 16; j++ ) {
+        sei.setHighLevelMd5( j, encMD5[j] );
+        TRACE_HLS( "%02x", encMD5[j] );
+      }
+      TRACE_HLS( "\n" );
     } else if ( sei.getHashType() == 1 ) {
       uint16_t crc = context.computeCRC( highLevelAtlasData.data(), highLevelAtlasData.size() );
       printf( "\t**sei** (CRC): %04x\n", crc );
@@ -8874,6 +8947,26 @@ void PCCEncoder::createHashInformation( PCCContext& context, int frameIndex, siz
       atlasPatchApplicationByteString( atlasData, atlasPatchIdx, atlasPatchParams );
     }
 
+    size_t atlIdx     = context[frameIndex].getTile( 0 ).getAtlIndex();
+    auto&  tileHeader = context.getAtlasTileLayerList()[atlIdx].getHeader();
+    size_t afpsIndex  = tileHeader.getAtlasFrameParameterSetId();
+    size_t aspsIndex  = context.getAtlasFrameParameterSet( afpsIndex ).getAtlasFrameParameterSetId();
+    auto&  afps       = context.getAtlasFrameParameterSet( afpsIndex );
+    auto&  asps       = context.getAtlasSequenceParameterSet( aspsIndex );
+    auto&  vps        = context.getVps();
+    auto&  afc        = context.getFrames()[frameIndex];
+    auto&  tfc        = afc.getTitleFrameContext();
+    TRACE_ATLAS( "Atlas Frame Index = %d\n", frameIndex );
+    TRACE_ATLAS(
+        "AtlasFrameOrderCntVal = %d,  AtlasFrameWidthMax =  %d, AtlasFrameHeightMax = %d, AtlasID = %d, ASPSFrameSize "
+        "= %d, VPSMapCount = %d, AttributeCount = %d, AttributeDimension = %d, NumTilesAtlasFrame = %d, "
+        "AtlasTotalNumProjPatches = %d, AtlasTotalNumRawPatches = %d, AtlasTotalNumEomPatches = %d, ",
+        tfc.getAtlasFrmOrderCntVal(), asps.getFrameWidth(), asps.getFrameHeight(), vps.getAtlasId( 0 ),
+        asps.getFrameWidth() * asps.getFrameHeight(), vps.getMapCountMinus1( 0 ) + 1,
+        vps.getAttributeInformation( 0 ).getAttributeCount(),
+        vps.getAttributeInformation( 0 ).getAttributeDimensionMinus1( 0 ) + 1, afc.getNumTilesInAtlasFrame(),
+        tfc.getPatches().size(), tfc.getNumberOfRawPointsPatches(), tfc.getEomPatches().size() );
+
     printf( "**sei** AtlasPatchHash: frame(%d) (#patches %zu)\n", frameIndex, patchCount );
     if ( sei.getHashType() == 0 ) {
       std::vector<uint8_t> md5Digest( 16 );
@@ -8881,7 +8974,12 @@ void PCCEncoder::createHashInformation( PCCContext& context, int frameIndex, siz
       printf( "\t**sei** (MD5): " );
       for ( auto& e : md5Digest ) printf( "%02x", e );
       printf( "\n" );
-      for ( int j = 0; j < 16; j++ ) sei.setAtlasMd5( j, md5Digest[j] );
+      TRACE_ATLAS( " Atlas MD5 = " );
+      for ( int j = 0; j < 16; j++ ) {
+        sei.setAtlasMd5( j, md5Digest[j] );
+        TRACE_ATLAS( "%02x", md5Digest[j] );
+      }
+      TRACE_ATLAS( "," );
     } else if ( sei.getHashType() == 1 ) {
       uint16_t crc = context.computeCRC( atlasData.data(), atlasData.size() );
       printf( "\t**sei** (CRC): % 04x ", crc );
@@ -8904,7 +9002,11 @@ void PCCEncoder::createHashInformation( PCCContext& context, int frameIndex, siz
       printf( "\t**sei** (MD5): " );
       for ( auto& e : md5Digest ) printf( "%02x", e );
       printf( "\n" );
-      for ( int j = 0; j < 16; j++ ) sei.setAtlasB2pMd5( j, md5Digest[j] );
+      TRACE_ATLAS( " Atlas B2P MD5 = " );
+      for ( int j = 0; j < 16; j++ ) {
+        sei.setAtlasB2pMd5( j, md5Digest[j] );
+        TRACE_ATLAS( "%02x", md5Digest[j] );
+      }
     } else if ( sei.getHashType() == 1 ) {
       uint16_t crc = context.computeCRC( atlasB2PData.data(), atlasB2PData.size() );
       printf( "\t**sei** (CRC): % 04x ", crc );
@@ -8915,6 +9017,7 @@ void PCCEncoder::createHashInformation( PCCContext& context, int frameIndex, siz
       sei.setAtlasB2pCheckSum( checkSum );
     }
     atlasB2PData.clear();
+    TRACE_ATLAS( "\n" );
   }
 
   // for tiles
@@ -8922,13 +9025,25 @@ void PCCEncoder::createHashInformation( PCCContext& context, int frameIndex, siz
        !seiHashCancelFlag ) {
     sei.allocateAtlasTilesHash( context[frameIndex].getNumTilesInAtlasFrame() );
     sei.setNumTilesMinus1( context[frameIndex].getNumTilesInAtlasFrame() - 1 );
+    TRACE_TILE( "Atlas Frame Index = %d \n", frameIndex );
     for ( size_t tileIdx = 0; tileIdx < context[frameIndex].getNumTilesInAtlasFrame(); tileIdx++ ) {
-      auto&  tile         = context[frameIndex].getTile( tileIdx );
-      size_t atlIdx       = tile.getAtlIndex();
-      auto&  tileHeader   = context.getAtlasTileLayerList()[atlIdx].getHeader();
-      auto&  tileDataUnit = context.getAtlasTileLayerList()[atlIdx].getDataUnit();
-      size_t patchCount   = tileDataUnit.getPatchCount() - 1;  // not the last I_END or P_END
-      size_t tileId       = tileHeader.getId();
+      auto&  tile          = context[frameIndex].getTile( tileIdx );
+      size_t atlIdx        = tile.getAtlIndex();
+      auto&  tileHeader    = context.getAtlasTileLayerList()[atlIdx].getHeader();
+      auto&  tileDataUnit  = context.getAtlasTileLayerList()[atlIdx].getDataUnit();
+      size_t patchCount    = tileDataUnit.getPatchCount() - 1;  // not the last I_END or P_END
+      size_t tileId        = tileHeader.getId();
+      auto&  afps          = context.getAtlasFrameParameterSet( tileHeader.getAtlasFrameParameterSetId() );
+      auto&  afti          = afps.getAtlasFrameTileInformation();
+      size_t topLeftColumn = afti.getTopLeftPartitionIdx( tileIdx ) % ( afti.getNumPartitionColumnsMinus1() + 1 );
+      size_t topLeftRow    = afti.getTopLeftPartitionIdx( tileIdx ) / ( afti.getNumPartitionColumnsMinus1() + 1 );
+      size_t tileOffsetX   = context[frameIndex].getPartitionPosX( topLeftColumn );
+      size_t tileOffsetY   = context[frameIndex].getPartitionPosY( topLeftRow );
+      TRACE_TILE(
+          "TileID = %d, AtlasFrameOrderCntVal = %d, TileType = %d, TileOffsetX = %d, TileOffsetY = %d, TileWidth = %d, "
+          "TileHeight = %d, ",
+          tileId, tile.getAtlasFrmOrderCntVal(), tileHeader.getType(), tileOffsetX, tileOffsetY, tile.getWidth(),
+          tile.getHeight() );
       sei.setTileId( tileIdx, tileId );
       if ( tileIdx == 0 ) {
         auto& tileInfo = context.getAtlasFrameParameterSet( tileHeader.getAtlasFrameParameterSetId() )
@@ -8958,7 +9073,12 @@ void PCCEncoder::createHashInformation( PCCContext& context, int frameIndex, siz
           printf( "\t**sei** (MD5): " );
           for ( auto& e : md5Digest ) printf( "%02x", e );
           printf( "\n" );
-          for ( int j = 0; j < 16; j++ ) sei.setAtlasTilesMd5( tileId, j, md5Digest[j] );
+          TRACE_TILE( " Tile MD5 = " );
+          for ( int j = 0; j < 16; j++ ) {
+            sei.setAtlasTilesMd5( tileId, j, md5Digest[j] );
+            TRACE_TILE( "%02x", md5Digest[j] );
+          }
+          TRACE_TILE( "," );
         } else if ( sei.getHashType() == 1 ) {
           uint16_t crc = context.computeCRC( atlasTileData.data(), atlasTileData.size() );
           printf( "\t**sei** (crc): % 02x ", crc );
@@ -8980,7 +9100,11 @@ void PCCEncoder::createHashInformation( PCCContext& context, int frameIndex, siz
           printf( "\t**sei** (MD5): " );
           for ( auto& e : md5Digest ) printf( "%02x", e );
           printf( "\n" );
-          for ( int j = 0; j < 16; j++ ) sei.setAtlasTilesB2pMd5( tileId, j, md5Digest[j] );
+          TRACE_TILE( " Tile B2P MD5 = " );
+          for ( int j = 0; j < 16; j++ ) {
+            sei.setAtlasTilesB2pMd5( tileId, j, md5Digest[j] );
+            TRACE_TILE( "%02x", md5Digest[j] );
+          }
         } else if ( sei.getHashType() == 1 ) {
           uint16_t crc = context.computeCRC( tileB2PData.data(), tileB2PData.size() );
           printf( "\t**sei** (CRC): % 04x ", crc );
@@ -8992,6 +9116,7 @@ void PCCEncoder::createHashInformation( PCCContext& context, int frameIndex, siz
         }
         tileB2PData.clear();
       }
+      TRACE_TILE( "\n" );
     }
   }
   context.addSeiHashToSeiSuffix( hashIndex );

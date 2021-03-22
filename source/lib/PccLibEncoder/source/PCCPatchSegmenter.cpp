@@ -453,6 +453,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
   const bool       absoluteD1                        = params.absoluteD1_;
   bool             useSurfaceSeparation              = params.surfaceSeparation_;
   const size_t     additionalProjectionAxis          = params.additionalProjectionPlaneMode_;
+  const size_t     geometryBitDepth2D                = params.geometryBitDepth2D_;
   const size_t     geometryBitDepth3D                = params.geometryBitDepth3D_;
   bool             patchExpansionEnabled             = params.patchExpansion_;
   const bool       highGradientSeparation            = params.highGradientSeparation_;
@@ -1087,10 +1088,16 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
       d1CountPerPatch  = pointCount[1];
       eomCountPerPatch = pointCount[2];
 
-      size_t quantDD   = patch.getSizeD() == 0 ? 0 : ( ( patch.getSizeD() - 1 ) / minLevel + 1 );
-      patch.getSizeD() = quantDD * minLevel;
-      // Note: must be further study:
-      // use the min between 1 << geometry3dCoordinatesBitdepth_ - 1 and 1 << geometryNominal3dBitdepth_ - 1 ?
+      // note: patch.getSizeD() cannot generate maximum depth(e.g. getSizeD=255, quantDD=3, quantDD needs to be limitted
+      // to satisfy the bitcount) max : (1<<std::min(geometryBitDepth3D, geometryBitDepth2D))
+      patch.getSizeDPixel() = patch.getSizeD();
+      patch.getSizeD() =
+          std::min( ( size_t )( 1 << std::min( geometryBitDepth3D, geometryBitDepth2D ) ) - 1, patch.getSizeD() );
+      size_t bitdepthD  = std::min( geometryBitDepth3D, geometryBitDepth2D ) - std::log2( minLevel );
+      size_t maxDDplus1 = 1 << bitdepthD;  // e.g. 4
+      size_t quantDD    = patch.getSizeD() == 0 ? 0 : ( ( patch.getSizeD() - 1 ) / minLevel + 1 );
+      quantDD           = std::min( quantDD, maxDDplus1 - 1 );            // 1,2,3,3
+      patch.getSizeD()  = quantDD == 0 ? 0 : ( quantDD * minLevel - 1 );  // 63, 127, 191, 191
 
       if ( createSubPointCloud ) {
         PCCPointSet3 testSrc;

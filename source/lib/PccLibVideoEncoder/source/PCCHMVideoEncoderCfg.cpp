@@ -60,6 +60,74 @@ using namespace pcc_hm;
 
 namespace po = pcc_hm::df::program_options_lite;
 
+enum UIProfileName  // this is used for determining profile strings, where
+                    // multiple profiles map to a single profile idc with
+                    // various constraint flag combinations
+{ UI_NONE                 = 0,
+  UI_MAIN                 = 1,
+  UI_MAIN10               = 2,
+  UI_MAIN10_STILL_PICTURE = 10002,
+  UI_MAINSTILLPICTURE     = 3,
+  UI_MAINREXT             = 4,
+  UI_HIGHTHROUGHPUTREXT   = 5,
+  UI_MAINSCC              = 9,
+  UI_HIGHTHROUGHPUTSCC    = 11,
+  // The following are RExt profiles, which would map to the MAINREXT profile
+  // idc.
+  // The enumeration indicates the bit-depth constraint in the bottom 2 digits
+  //                           the chroma format in the next digit
+  //                           the intra constraint in the next digit (1 for no
+  // intra constraint, 2 for intra constraint)
+  //                           If it is a RExt still picture, there is a '1' for
+  // the top digit.
+  UI_MONOCHROME_8              = 1008,
+  UI_MONOCHROME_12             = 1012,
+  UI_MONOCHROME_16             = 1016,
+  UI_MAIN_12                   = 1112,
+  UI_MAIN_422_10               = 1210,
+  UI_MAIN_422_12               = 1212,
+  UI_MAIN_444                  = 1308,
+  UI_MAIN_444_10               = 1310,
+  UI_MAIN_444_12               = 1312,
+  UI_MAIN_444_16               = 1316,  // non-standard profile definition, used for development purposes
+  UI_MAIN_INTRA                = 2108,
+  UI_MAIN_10_INTRA             = 2110,
+  UI_MAIN_12_INTRA             = 2112,
+  UI_MAIN_422_10_INTRA         = 2210,
+  UI_MAIN_422_12_INTRA         = 2212,
+  UI_MAIN_444_INTRA            = 2308,
+  UI_MAIN_444_10_INTRA         = 2310,
+  UI_MAIN_444_12_INTRA         = 2312,
+  UI_MAIN_444_16_INTRA         = 2316,
+  UI_MAIN_444_STILL_PICTURE    = 11308,
+  UI_MAIN_444_16_STILL_PICTURE = 12316,
+  // The following are high throughput profiles, which would map to the
+  // HIGHTHROUGHPUTREXT profile idc.
+  // The enumeration indicates the bit-depth constraint in the bottom 2 digits
+  //                           the chroma format in the next digit
+  //                           the intra constraint in the next digit
+  //                           There is a '2' for the top digit to indicate it
+  // is high throughput profile
+  UI_HIGHTHROUGHPUT_444          = 21308,
+  UI_HIGHTHROUGHPUT_444_10       = 21310,
+  UI_HIGHTHROUGHPUT_444_14       = 21314,
+  UI_HIGHTHROUGHPUT_444_16_INTRA = 22316,
+  // The following are SCC profiles, which would map to the MAINSCC profile idc.
+  // The enumeration indicates the bit-depth constraint in the bottom 2 digits
+  //                           the chroma format in the next digit
+  //                           the intra constraint in the next digit
+  //                           If it is a SCC profile there is a '2' for the
+  // next digit.
+  //                           If it is a highthroughput , there is a '2' for
+  // the top digit else '1' for the top digit
+  UI_SCC_MAIN                  = 121108,
+  UI_SCC_MAIN_10               = 121110,
+  UI_SCC_MAIN_444              = 121308,
+  UI_SCC_MAIN_444_10           = 121310,
+  UI_SCC_HIGHTHROUGHPUT_444    = 221308,
+  UI_SCC_HIGHTHROUGHPUT_444_10 = 221310,
+  UI_SCC_HIGHTHROUGHPUT_444_14 = 221314 };
+
 //! \ingroup TAppEncoder
 //! \{
 
@@ -334,40 +402,56 @@ static istream& readStrToEnum( P map[], UInt mapLen, istream& in, T& val ) {
   return in;
 }
 
-// inline to prevent compiler warnings for "unused static function"
-
-namespace pcc_hm {
-static inline istream& operator>>( istream& in, UIProfileName& profile ) {
-  return readStrToEnum( strToUIProfileName, sizeof( strToUIProfileName ) / sizeof( *strToUIProfileName ), in, profile );
-}
-static inline istream& operator>>( istream& in, CostMode& mode ) {
-  return readStrToEnum( strToCostMode, sizeof( strToCostMode ) / sizeof( *strToCostMode ), in, mode );
-}
-
-static inline istream& operator>>( istream& in, ScalingListMode& mode ) {
-  return readStrToEnum( strToScalingListMode, sizeof( strToScalingListMode ) / sizeof( *strToScalingListMode ), in,
-                        mode );
-}
-namespace Level {
-static inline istream& operator>>( istream& in, Tier& tier ) {
-  return readStrToEnum( strToTier, sizeof( strToTier ) / sizeof( *strToTier ), in, tier );
-}
-
-static inline istream& operator>>( istream& in, Name& level ) {
-  return readStrToEnum( strToLevel, sizeof( strToLevel ) / sizeof( *strToLevel ), in, level );
-}
-}  // namespace Level
-}  // namespace pcc_hm
-
-namespace pcc_hm {
 template <class T>
-static inline istream& operator>>( std::istream& in, SMultiValueInput<T>& values ) {
-  return values.readValues( in );
-}
-}  // namespace pcc_hm
+struct SMultiValueInputHM {
+  const T           minValIncl;
+  const T           maxValIncl;
+  const std::size_t minNumValuesIncl;
+  const std::size_t maxNumValuesIncl;  // Use 0 for unlimited
+  std::vector<T>    values;
+  SMultiValueInputHM() : minValIncl( 0 ), maxValIncl( 0 ), minNumValuesIncl( 0 ), maxNumValuesIncl( 0 ), values() {}
+  SMultiValueInputHM( std::vector<T>& defaults ) :
+      minValIncl( 0 ),
+      maxValIncl( 0 ),
+      minNumValuesIncl( 0 ),
+      maxNumValuesIncl( 0 ),
+      values( defaults ) {}
+  SMultiValueInputHM( const T&    minValue,
+                      const T&    maxValue,
+                      std::size_t minNumberValues = 0,
+                      std::size_t maxNumberValues = 0 ) :
+      minValIncl( minValue ),
+      maxValIncl( maxValue ),
+      minNumValuesIncl( minNumberValues ),
+      maxNumValuesIncl( maxNumberValues ),
+      values() {}
+  SMultiValueInputHM( const T&    minValue,
+                      const T&    maxValue,
+                      std::size_t minNumberValues,
+                      std::size_t maxNumberValues,
+                      const T*    defValues,
+                      const UInt  numDefValues ) :
+      minValIncl( minValue ),
+      maxValIncl( maxValue ),
+      minNumValuesIncl( minNumberValues ),
+      maxNumValuesIncl( maxNumberValues ),
+      values( defValues, defValues + numDefValues ) {}
+  SMultiValueInputHM<T>& operator=( const std::vector<T>& userValues ) {
+    values = userValues;
+    return *this;
+  }
+  SMultiValueInputHM<T>& operator=( const SMultiValueInputHM<T>& userValues ) {
+    values = userValues.values;
+    return *this;
+  }
+
+  T readValue( const TChar*& pStr, Bool& bSuccess );
+
+  istream& readValues( std::istream& in );
+};
 
 template <>
-UInt SMultiValueInput<UInt>::readValue( const TChar*& pStr, Bool& bSuccess ) {
+UInt SMultiValueInputHM<UInt>::readValue( const TChar*& pStr, Bool& bSuccess ) {
   TChar* eptr;
   UInt   val = strtoul( pStr, &eptr, 0 );
   pStr       = eptr;
@@ -376,7 +460,7 @@ UInt SMultiValueInput<UInt>::readValue( const TChar*& pStr, Bool& bSuccess ) {
 }
 
 template <>
-Int SMultiValueInput<Int>::readValue( const TChar*& pStr, Bool& bSuccess ) {
+Int SMultiValueInputHM<Int>::readValue( const TChar*& pStr, Bool& bSuccess ) {
   TChar* eptr;
   Int    val = strtol( pStr, &eptr, 0 );
   pStr       = eptr;
@@ -385,7 +469,7 @@ Int SMultiValueInput<Int>::readValue( const TChar*& pStr, Bool& bSuccess ) {
 }
 
 template <>
-Double SMultiValueInput<Double>::readValue( const TChar*& pStr, Bool& bSuccess ) {
+Double SMultiValueInputHM<Double>::readValue( const TChar*& pStr, Bool& bSuccess ) {
   TChar* eptr;
   Double val = strtod( pStr, &eptr );
   pStr       = eptr;
@@ -394,7 +478,7 @@ Double SMultiValueInput<Double>::readValue( const TChar*& pStr, Bool& bSuccess )
 }
 
 template <>
-Bool SMultiValueInput<Bool>::readValue( const TChar*& pStr, Bool& bSuccess ) {
+Bool SMultiValueInputHM<Bool>::readValue( const TChar*& pStr, Bool& bSuccess ) {
   TChar* eptr;
   Int    val = strtol( pStr, &eptr, 0 );
   pStr       = eptr;
@@ -404,7 +488,7 @@ Bool SMultiValueInput<Bool>::readValue( const TChar*& pStr, Bool& bSuccess ) {
 }
 
 template <class T>
-istream& SMultiValueInput<T>::readValues( std::istream& in ) {
+istream& SMultiValueInputHM<T>::readValues( std::istream& in ) {
   values.clear();
   string str;
   while ( !in.eof() ) {
@@ -443,8 +527,20 @@ istream& SMultiValueInput<T>::readValues( std::istream& in ) {
   return in;
 }
 
+// namespace pcc_hm {
+
+// inline to prevent compiler warnings for "unused static function"
+
+static inline istream& operator>>( istream& in, UIProfileName& profile ) {
+  return readStrToEnum( strToUIProfileName, sizeof( strToUIProfileName ) / sizeof( *strToUIProfileName ), in, profile );
+}
+
+template <class T>
+static inline istream& operator>>( std::istream& in, SMultiValueInputHM<T>& values ) {
+  return values.readValues( in );
+}
+
 #if JVET_E0059_FLOATING_POINT_QP_FIX
-namespace pcc_hm {
 template <class T>
 static inline istream& operator>>( std::istream& in, PCCHMLibVideoEncoderCfg::OptionalValue<T>& value ) {
   in >> std::ws;
@@ -456,8 +552,28 @@ static inline istream& operator>>( std::istream& in, PCCHMLibVideoEncoderCfg::Op
   }
   return in;
 }
-}  // namespace pcc_hm
 #endif
+//}  // namespace pcc_hm
+
+namespace pcc_hm {
+
+static inline istream& operator>>( istream& in, CostMode& mode ) {
+  return readStrToEnum( strToCostMode, sizeof( strToCostMode ) / sizeof( *strToCostMode ), in, mode );
+}
+static inline istream& operator>>( istream& in, ScalingListMode& mode ) {
+  return readStrToEnum( strToScalingListMode, sizeof( strToScalingListMode ) / sizeof( *strToScalingListMode ), in,
+                        mode );
+}
+namespace Level {
+static inline istream& operator>>( istream& in, Tier& tier ) {
+  return readStrToEnum( strToTier, sizeof( strToTier ) / sizeof( *strToTier ), in, tier );
+}
+
+static inline istream& operator>>( istream& in, Name& level ) {
+  return readStrToEnum( strToLevel, sizeof( strToLevel ) / sizeof( *strToLevel ), in, level );
+}
+}  // namespace Level
+}  // namespace pcc_hm
 
 static Void automaticallySelectRExtProfile( const Bool         bUsingGeneralRExtTools,
                                             const Bool         bUsingChromaQPAdjustment,
@@ -539,98 +655,98 @@ Bool PCCHMLibVideoEncoderCfg::parseCfg( Int argc, TChar* argv[] ) {
   // Multi-value input fields:                                // minval, maxval
   // (incl), min_entries, max_entries (incl) [, default values, number of
   // default values]
-  SMultiValueInput<UInt> cfg_ColumnWidth( 0, std::numeric_limits<UInt>::max(), 0, std::numeric_limits<UInt>::max() );
-  SMultiValueInput<UInt> cfg_RowHeight( 0, std::numeric_limits<UInt>::max(), 0, std::numeric_limits<UInt>::max() );
-  SMultiValueInput<Int>  cfg_startOfCodedInterval( std::numeric_limits<Int>::min(), std::numeric_limits<Int>::max(), 0,
-                                                  1 << 16 );
-  SMultiValueInput<Int>  cfg_codedPivotValue( std::numeric_limits<Int>::min(), std::numeric_limits<Int>::max(), 0,
-                                             1 << 16 );
-  SMultiValueInput<Int>  cfg_targetPivotValue( std::numeric_limits<Int>::min(), std::numeric_limits<Int>::max(), 0,
-                                              1 << 16 );
+  SMultiValueInputHM<UInt> cfg_ColumnWidth( 0, std::numeric_limits<UInt>::max(), 0, std::numeric_limits<UInt>::max() );
+  SMultiValueInputHM<UInt> cfg_RowHeight( 0, std::numeric_limits<UInt>::max(), 0, std::numeric_limits<UInt>::max() );
+  SMultiValueInputHM<Int> cfg_startOfCodedInterval( std::numeric_limits<Int>::min(), std::numeric_limits<Int>::max(), 0,
+                                                    1 << 16 );
+  SMultiValueInputHM<Int> cfg_codedPivotValue( std::numeric_limits<Int>::min(), std::numeric_limits<Int>::max(), 0,
+                                               1 << 16 );
+  SMultiValueInputHM<Int> cfg_targetPivotValue( std::numeric_limits<Int>::min(), std::numeric_limits<Int>::max(), 0,
+                                                1 << 16 );
 
-  SMultiValueInput<Double> cfg_adIntraLambdaModifier(
+  SMultiValueInputHM<Double> cfg_adIntraLambdaModifier(
       0, std::numeric_limits<Double>::max(), 0,
       MAX_TLAYER );  ///< Lambda modifier for Intra pictures, one for each
                      /// temporal layer. If size>temporalLayer, then use
                      ///[temporalLayer], else if size>0, use [size()-1], else use
                      /// m_adLambdaModifier.
 
-  const Int             defaultLumaLevelTodQp_QpChangePoints[]   = {-3, -2, -1, 0, 1, 2, 3, 4, 5, 6};
-  const Int             defaultLumaLevelTodQp_LumaChangePoints[] = {0, 301, 367, 434, 501, 567, 634, 701, 767, 834};
-  SMultiValueInput<Int> cfg_lumaLeveltoDQPMappingQP( -MAX_QP, MAX_QP, 0, LUMA_LEVEL_TO_DQP_LUT_MAXSIZE,
-                                                     defaultLumaLevelTodQp_QpChangePoints,
-                                                     sizeof( defaultLumaLevelTodQp_QpChangePoints ) / sizeof( Int ) );
-  SMultiValueInput<Int> cfg_lumaLeveltoDQPMappingLuma(
+  const Int               defaultLumaLevelTodQp_QpChangePoints[]   = {-3, -2, -1, 0, 1, 2, 3, 4, 5, 6};
+  const Int               defaultLumaLevelTodQp_LumaChangePoints[] = {0, 301, 367, 434, 501, 567, 634, 701, 767, 834};
+  SMultiValueInputHM<Int> cfg_lumaLeveltoDQPMappingQP( -MAX_QP, MAX_QP, 0, LUMA_LEVEL_TO_DQP_LUT_MAXSIZE,
+                                                       defaultLumaLevelTodQp_QpChangePoints,
+                                                       sizeof( defaultLumaLevelTodQp_QpChangePoints ) / sizeof( Int ) );
+  SMultiValueInputHM<Int> cfg_lumaLeveltoDQPMappingLuma(
       0, std::numeric_limits<Int>::max(), 0, LUMA_LEVEL_TO_DQP_LUT_MAXSIZE, defaultLumaLevelTodQp_LumaChangePoints,
       sizeof( defaultLumaLevelTodQp_LumaChangePoints ) / sizeof( Int ) );
   UInt lumaLevelToDeltaQPMode;
 
-  const UInt             defaultInputKneeCodes[3]       = {600, 800, 900};
-  const UInt             defaultOutputKneeCodes[3]      = {100, 250, 450};
-  Int                    cfg_kneeSEINumKneePointsMinus1 = 0;
-  SMultiValueInput<UInt> cfg_kneeSEIInputKneePointValue( 1, 999, 0, 999, defaultInputKneeCodes,
-                                                         sizeof( defaultInputKneeCodes ) / sizeof( UInt ) );
-  SMultiValueInput<UInt> cfg_kneeSEIOutputKneePointValue( 0, 1000, 0, 999, defaultOutputKneeCodes,
-                                                          sizeof( defaultOutputKneeCodes ) / sizeof( UInt ) );
-  const Int              defaultPrimaryCodes[6]   = {0, 50000, 0, 0, 50000, 0};
-  const Int              defaultWhitePointCode[2] = {16667, 16667};
-  SMultiValueInput<Int>  cfg_DisplayPrimariesCode( 0, 50000, 6, 6, defaultPrimaryCodes,
-                                                  sizeof( defaultPrimaryCodes ) / sizeof( Int ) );
-  SMultiValueInput<Int>  cfg_DisplayWhitePointCode( 0, 50000, 2, 2, defaultWhitePointCode,
-                                                   sizeof( defaultWhitePointCode ) / sizeof( Int ) );
+  const UInt               defaultInputKneeCodes[3]       = {600, 800, 900};
+  const UInt               defaultOutputKneeCodes[3]      = {100, 250, 450};
+  Int                      cfg_kneeSEINumKneePointsMinus1 = 0;
+  SMultiValueInputHM<UInt> cfg_kneeSEIInputKneePointValue( 1, 999, 0, 999, defaultInputKneeCodes,
+                                                           sizeof( defaultInputKneeCodes ) / sizeof( UInt ) );
+  SMultiValueInputHM<UInt> cfg_kneeSEIOutputKneePointValue( 0, 1000, 0, 999, defaultOutputKneeCodes,
+                                                            sizeof( defaultOutputKneeCodes ) / sizeof( UInt ) );
+  const Int                defaultPrimaryCodes[6]   = {0, 50000, 0, 0, 50000, 0};
+  const Int                defaultWhitePointCode[2] = {16667, 16667};
+  SMultiValueInputHM<Int>  cfg_DisplayPrimariesCode( 0, 50000, 6, 6, defaultPrimaryCodes,
+                                                    sizeof( defaultPrimaryCodes ) / sizeof( Int ) );
+  SMultiValueInputHM<Int>  cfg_DisplayWhitePointCode( 0, 50000, 2, 2, defaultWhitePointCode,
+                                                     sizeof( defaultWhitePointCode ) / sizeof( Int ) );
 
-  SMultiValueInput<Bool> cfg_timeCodeSeiTimeStampFlag( 0, 1, 0, MAX_TIMECODE_SEI_SETS );
-  SMultiValueInput<Bool> cfg_timeCodeSeiNumUnitFieldBasedFlag( 0, 1, 0, MAX_TIMECODE_SEI_SETS );
-  SMultiValueInput<Int>  cfg_timeCodeSeiCountingType( 0, 6, 0, MAX_TIMECODE_SEI_SETS );
-  SMultiValueInput<Bool> cfg_timeCodeSeiFullTimeStampFlag( 0, 1, 0, MAX_TIMECODE_SEI_SETS );
-  SMultiValueInput<Bool> cfg_timeCodeSeiDiscontinuityFlag( 0, 1, 0, MAX_TIMECODE_SEI_SETS );
-  SMultiValueInput<Bool> cfg_timeCodeSeiCntDroppedFlag( 0, 1, 0, MAX_TIMECODE_SEI_SETS );
-  SMultiValueInput<Int>  cfg_timeCodeSeiNumberOfFrames( 0, 511, 0, MAX_TIMECODE_SEI_SETS );
-  SMultiValueInput<Int>  cfg_timeCodeSeiSecondsValue( 0, 59, 0, MAX_TIMECODE_SEI_SETS );
-  SMultiValueInput<Int>  cfg_timeCodeSeiMinutesValue( 0, 59, 0, MAX_TIMECODE_SEI_SETS );
-  SMultiValueInput<Int>  cfg_timeCodeSeiHoursValue( 0, 23, 0, MAX_TIMECODE_SEI_SETS );
-  SMultiValueInput<Bool> cfg_timeCodeSeiSecondsFlag( 0, 1, 0, MAX_TIMECODE_SEI_SETS );
-  SMultiValueInput<Bool> cfg_timeCodeSeiMinutesFlag( 0, 1, 0, MAX_TIMECODE_SEI_SETS );
-  SMultiValueInput<Bool> cfg_timeCodeSeiHoursFlag( 0, 1, 0, MAX_TIMECODE_SEI_SETS );
-  SMultiValueInput<Int>  cfg_timeCodeSeiTimeOffsetLength( 0, 31, 0, MAX_TIMECODE_SEI_SETS );
-  SMultiValueInput<Int>  cfg_timeCodeSeiTimeOffsetValue( std::numeric_limits<Int>::min(),
-                                                        std::numeric_limits<Int>::max(), 0, MAX_TIMECODE_SEI_SETS );
+  SMultiValueInputHM<Bool> cfg_timeCodeSeiTimeStampFlag( 0, 1, 0, MAX_TIMECODE_SEI_SETS );
+  SMultiValueInputHM<Bool> cfg_timeCodeSeiNumUnitFieldBasedFlag( 0, 1, 0, MAX_TIMECODE_SEI_SETS );
+  SMultiValueInputHM<Int>  cfg_timeCodeSeiCountingType( 0, 6, 0, MAX_TIMECODE_SEI_SETS );
+  SMultiValueInputHM<Bool> cfg_timeCodeSeiFullTimeStampFlag( 0, 1, 0, MAX_TIMECODE_SEI_SETS );
+  SMultiValueInputHM<Bool> cfg_timeCodeSeiDiscontinuityFlag( 0, 1, 0, MAX_TIMECODE_SEI_SETS );
+  SMultiValueInputHM<Bool> cfg_timeCodeSeiCntDroppedFlag( 0, 1, 0, MAX_TIMECODE_SEI_SETS );
+  SMultiValueInputHM<Int>  cfg_timeCodeSeiNumberOfFrames( 0, 511, 0, MAX_TIMECODE_SEI_SETS );
+  SMultiValueInputHM<Int>  cfg_timeCodeSeiSecondsValue( 0, 59, 0, MAX_TIMECODE_SEI_SETS );
+  SMultiValueInputHM<Int>  cfg_timeCodeSeiMinutesValue( 0, 59, 0, MAX_TIMECODE_SEI_SETS );
+  SMultiValueInputHM<Int>  cfg_timeCodeSeiHoursValue( 0, 23, 0, MAX_TIMECODE_SEI_SETS );
+  SMultiValueInputHM<Bool> cfg_timeCodeSeiSecondsFlag( 0, 1, 0, MAX_TIMECODE_SEI_SETS );
+  SMultiValueInputHM<Bool> cfg_timeCodeSeiMinutesFlag( 0, 1, 0, MAX_TIMECODE_SEI_SETS );
+  SMultiValueInputHM<Bool> cfg_timeCodeSeiHoursFlag( 0, 1, 0, MAX_TIMECODE_SEI_SETS );
+  SMultiValueInputHM<Int>  cfg_timeCodeSeiTimeOffsetLength( 0, 31, 0, MAX_TIMECODE_SEI_SETS );
+  SMultiValueInputHM<Int>  cfg_timeCodeSeiTimeOffsetValue( std::numeric_limits<Int>::min(),
+                                                          std::numeric_limits<Int>::max(), 0, MAX_TIMECODE_SEI_SETS );
 #if ERP_SR_OV_SEI_MESSAGE
-  SMultiValueInput<Int>  cfg_omniViewportSEIAzimuthCentre( -11796480, 11796479, 0, 15 );
-  SMultiValueInput<Int>  cfg_omniViewportSEIElevationCentre( -5898240, 5898240, 0, 15 );
-  SMultiValueInput<Int>  cfg_omniViewportSEITiltCentre( -11796480, 11796479, 0, 15 );
-  SMultiValueInput<UInt> cfg_omniViewportSEIHorRange( 1, 23592960, 0, 15 );
-  SMultiValueInput<UInt> cfg_omniViewportSEIVerRange( 1, 11796480, 0, 15 );
+  SMultiValueInputHM<Int>  cfg_omniViewportSEIAzimuthCentre( -11796480, 11796479, 0, 15 );
+  SMultiValueInputHM<Int>  cfg_omniViewportSEIElevationCentre( -5898240, 5898240, 0, 15 );
+  SMultiValueInputHM<Int>  cfg_omniViewportSEITiltCentre( -11796480, 11796479, 0, 15 );
+  SMultiValueInputHM<UInt> cfg_omniViewportSEIHorRange( 1, 23592960, 0, 15 );
+  SMultiValueInputHM<UInt> cfg_omniViewportSEIVerRange( 1, 11796480, 0, 15 );
 #endif
 #if RWP_SEI_MESSAGE
-  SMultiValueInput<UInt> cfg_rwpSEIRwpTransformType( 0, 7, 0, std::numeric_limits<UChar>::max() );
-  SMultiValueInput<Bool> cfg_rwpSEIRwpGuardBandFlag( 0, 1, 0, std::numeric_limits<UChar>::max() );
-  SMultiValueInput<UInt> cfg_rwpSEIProjRegionWidth( 0, std::numeric_limits<UInt>::max(), 0,
-                                                    std::numeric_limits<UChar>::max() );
-  SMultiValueInput<UInt> cfg_rwpSEIProjRegionHeight( 0, std::numeric_limits<UInt>::max(), 0,
-                                                     std::numeric_limits<UChar>::max() );
-  SMultiValueInput<UInt> cfg_rwpSEIRwpSEIProjRegionTop( 0, std::numeric_limits<UInt>::max(), 0,
-                                                        std::numeric_limits<UChar>::max() );
-  SMultiValueInput<UInt> cfg_rwpSEIProjRegionLeft( 0, std::numeric_limits<UInt>::max(), 0,
-                                                   std::numeric_limits<UChar>::max() );
-  SMultiValueInput<UInt> cfg_rwpSEIPackedRegionWidth( 0, std::numeric_limits<UShort>::max(), 0,
+  SMultiValueInputHM<UInt> cfg_rwpSEIRwpTransformType( 0, 7, 0, std::numeric_limits<UChar>::max() );
+  SMultiValueInputHM<Bool> cfg_rwpSEIRwpGuardBandFlag( 0, 1, 0, std::numeric_limits<UChar>::max() );
+  SMultiValueInputHM<UInt> cfg_rwpSEIProjRegionWidth( 0, std::numeric_limits<UInt>::max(), 0,
                                                       std::numeric_limits<UChar>::max() );
-  SMultiValueInput<UInt> cfg_rwpSEIPackedRegionHeight( 0, std::numeric_limits<UShort>::max(), 0,
+  SMultiValueInputHM<UInt> cfg_rwpSEIProjRegionHeight( 0, std::numeric_limits<UInt>::max(), 0,
                                                        std::numeric_limits<UChar>::max() );
-  SMultiValueInput<UInt> cfg_rwpSEIPackedRegionTop( 0, std::numeric_limits<UShort>::max(), 0,
-                                                    std::numeric_limits<UChar>::max() );
-  SMultiValueInput<UInt> cfg_rwpSEIPackedRegionLeft( 0, std::numeric_limits<UShort>::max(), 0,
+  SMultiValueInputHM<UInt> cfg_rwpSEIRwpSEIProjRegionTop( 0, std::numeric_limits<UInt>::max(), 0,
+                                                          std::numeric_limits<UChar>::max() );
+  SMultiValueInputHM<UInt> cfg_rwpSEIProjRegionLeft( 0, std::numeric_limits<UInt>::max(), 0,
                                                      std::numeric_limits<UChar>::max() );
-  SMultiValueInput<UInt> cfg_rwpSEIRwpLeftGuardBandWidth( 0, std::numeric_limits<UChar>::max(), 0,
-                                                          std::numeric_limits<UChar>::max() );
-  SMultiValueInput<UInt> cfg_rwpSEIRwpRightGuardBandWidth( 0, std::numeric_limits<UChar>::max(), 0,
-                                                           std::numeric_limits<UChar>::max() );
-  SMultiValueInput<UInt> cfg_rwpSEIRwpTopGuardBandHeight( 0, std::numeric_limits<UChar>::max(), 0,
-                                                          std::numeric_limits<UChar>::max() );
-  SMultiValueInput<UInt> cfg_rwpSEIRwpBottomGuardBandHeight( 0, std::numeric_limits<UChar>::max(), 0,
+  SMultiValueInputHM<UInt> cfg_rwpSEIPackedRegionWidth( 0, std::numeric_limits<UShort>::max(), 0,
+                                                        std::numeric_limits<UChar>::max() );
+  SMultiValueInputHM<UInt> cfg_rwpSEIPackedRegionHeight( 0, std::numeric_limits<UShort>::max(), 0,
+                                                         std::numeric_limits<UChar>::max() );
+  SMultiValueInputHM<UInt> cfg_rwpSEIPackedRegionTop( 0, std::numeric_limits<UShort>::max(), 0,
+                                                      std::numeric_limits<UChar>::max() );
+  SMultiValueInputHM<UInt> cfg_rwpSEIPackedRegionLeft( 0, std::numeric_limits<UShort>::max(), 0,
+                                                       std::numeric_limits<UChar>::max() );
+  SMultiValueInputHM<UInt> cfg_rwpSEIRwpLeftGuardBandWidth( 0, std::numeric_limits<UChar>::max(), 0,
+                                                            std::numeric_limits<UChar>::max() );
+  SMultiValueInputHM<UInt> cfg_rwpSEIRwpRightGuardBandWidth( 0, std::numeric_limits<UChar>::max(), 0,
                                                              std::numeric_limits<UChar>::max() );
-  SMultiValueInput<Bool> cfg_rwpSEIRwpGuardBandNotUsedForPredFlag( 0, 1, 0, std::numeric_limits<UChar>::max() );
-  SMultiValueInput<UInt> cfg_rwpSEIRwpGuardBandType( 0, 7, 0, 4 * std::numeric_limits<UChar>::max() );
+  SMultiValueInputHM<UInt> cfg_rwpSEIRwpTopGuardBandHeight( 0, std::numeric_limits<UChar>::max(), 0,
+                                                            std::numeric_limits<UChar>::max() );
+  SMultiValueInputHM<UInt> cfg_rwpSEIRwpBottomGuardBandHeight( 0, std::numeric_limits<UChar>::max(), 0,
+                                                               std::numeric_limits<UChar>::max() );
+  SMultiValueInputHM<Bool> cfg_rwpSEIRwpGuardBandNotUsedForPredFlag( 0, 1, 0, std::numeric_limits<UChar>::max() );
+  SMultiValueInputHM<UInt> cfg_rwpSEIRwpGuardBandType( 0, 7, 0, 4 * std::numeric_limits<UChar>::max() );
 #endif
   Int         warnUnknowParameter = 0;
   po::Options opts;
@@ -651,6 +767,13 @@ Bool PCCHMLibVideoEncoderCfg::parseCfg( Int argc, TChar* argv[] ) {
 	  ("OccupancyMapFile",                            m_occupancyMapFileName,                      string(""), "Input occupancy map file name")
 	  ("PatchInfoFile",                               m_patchInfoFileName,                         string(""), "Input patch info file name")
 #endif
+#if PCC_RDO_EXT
+  ("UsePccRDO",                                       m_usePCCRDO,                                      false, "Use modified RDO for PCC content")
+#endif
+#if PCC_RDO_EXT && !PCC_ME_EXT
+  ("OccupancyMapFile",                                m_occupancyMapFileName,                      string(""), "Input occupancy map file name")
+#endif
+
   ("SourceWidth,-wdt",                                m_iSourceWidth,                                       0, "Source picture width")
   ("SourceHeight,-hgt",                               m_iSourceHeight,                                      0, "Source picture height")
   ("InputBitDepth",                                   m_inputBitDepth[CHANNEL_TYPE_LUMA],                   8, "Bit-depth of input file")

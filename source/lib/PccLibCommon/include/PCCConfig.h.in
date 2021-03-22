@@ -9,8 +9,12 @@
 #cmakedefine USE_JMAPP_VIDEO_CODEC
 #cmakedefine USE_HMAPP_VIDEO_CODEC
 #cmakedefine USE_HMLIB_VIDEO_CODEC
+#cmakedefine USE_JMLIB_VIDEO_CODEC
+#cmakedefine USE_VTMLIB_VIDEO_CODEC
 #cmakedefine USE_FFMPEG_VIDEO_CODEC
 
 #cmakedefine USE_HDRTOOLS
+
+#cmakedefine USE_HM_PCC_RDO
 
 

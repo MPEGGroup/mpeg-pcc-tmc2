@@ -233,10 +233,26 @@ class PCCAtlasFrameContext {
   size_t getNumPartitionRows() { return numPartitionRows_; }
   bool   getSignalledTileId() { return signalledTileId_; }
 
-  std::vector<size_t>& getPartitionWidth() { return partitionWidth_; }
-  std::vector<size_t>& getPartitionHeight() { return partitionHeight_; }
-  std::vector<size_t>& getPartitionPosX() { return partitionPosX_; }
-  std::vector<size_t>& getPartitionPosY() { return partitionPosY_; }
+  size_t getPartitionWidth( size_t index ) const {
+    assert( index < partitionWidth_.size() );
+    return partitionWidth_[index];
+  }
+  size_t getPartitionHeight( size_t index ) const {
+    assert( index < partitionHeight_.size() );
+    return partitionHeight_[index];
+  }
+  size_t getPartitionPosX( size_t index ) const {
+    assert( index < partitionPosX_.size() );
+    return partitionPosX_[index];
+  }
+  size_t getPartitionPosY( size_t index ) const {
+    assert( index < partitionPosY_.size() );
+    return partitionPosY_[index];
+  }
+  size_t getNumPartitionWidth() const { return partitionWidth_.size(); }
+  size_t getNumPartitionHeight() const { return partitionHeight_.size(); }
+  size_t getNumPartitionPosX() const { return partitionPosX_.size(); }
+  size_t geNumtPartitionPosY() const { return partitionPosY_.size(); }
 
   std::vector<size_t>&          getTileId() { return tileId_; }
   std::vector<PCCFrameContext>& getTiles() { return tileContexts_; }
@@ -268,6 +284,22 @@ class PCCAtlasFrameContext {
   void setPartitionHeight( std::vector<size_t>& value ) { partitionHeight_ = value; }
   void setPartitionPosX( std::vector<size_t>& value ) { partitionPosX_ = value; }
   void setPartitionPosY( std::vector<size_t>& value ) { partitionPosY_ = value; }
+  void setPartitionWidth( size_t value, size_t index ) {
+    assert( index < partitionWidth_.size() );
+    partitionWidth_[index] = value;
+  }
+  void setPartitionHeight( size_t value, size_t index ) {
+    assert( index < partitionHeight_.size() );
+    partitionHeight_[index] = value;
+  }
+  void setPartitionPosX( size_t value, size_t index ) {
+    assert( index < partitionPosX_.size() );
+    partitionPosX_[index] = value;
+  }
+  void setPartitionPosY( size_t value, size_t index ) {
+    assert( index < partitionPosY_.size() );
+    partitionPosY_[index] = value;
+  }
 
   void setTileId( std::vector<size_t>& value ) { tileId_ = value; }
   void setTiles( std::vector<PCCFrameContext>& value ) { tileContexts_ = value; }

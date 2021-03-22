@@ -54,6 +54,12 @@ struct PCCVideoEncoderParameters {
   std::string blockToPatchFile_;
   std::string occupancyMapFile_;
   std::string patchInfoFile_;
+  bool        transquantBypassEnable_;
+  bool        cuTransquantBypassFlagForce_;
+  bool        inputColourSpaceConvert_;
+#ifdef USE_HM_PCC_RDO
+  bool usePccRDO_;
+#endif
 };
 
 template <class T>
@@ -71,7 +77,10 @@ class PCCVirtualVideoEncoder {
                        PCCVideoBitstream&         bitstream,
                        PCCVideo<T, 3>&            videoRec ) = 0;
 
- private:
+  //   void setLogger( PCCLogger& logger ) { logger_ = &logger; }
+
+  //  protected:
+  //   PCCLogger* logger_ = nullptr;
 };
 
 };  // namespace pcc

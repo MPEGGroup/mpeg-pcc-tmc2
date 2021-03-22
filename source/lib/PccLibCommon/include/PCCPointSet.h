@@ -125,6 +125,9 @@ class PCCPointSet3 {
       colors_[k][2] = uint8_t( colors16bit_[k][2] );
     }
   }
+  void fillColor( PCCColor3B color = {0, 0, 0} ) {
+    for ( size_t k = 0; k < getPointCount(); k++ ) { colors_[k] = color; }
+  }
 
   /// convert yuv444 (16bit) to normalized yuv444 (format double)
   void convertYUV16ToRGB8() {
@@ -264,6 +267,22 @@ class PCCPointSet3 {
   void setNormal( size_t idx, PCCNormal3D value ) {
     if ( idx > normals_.size() ) exit( -1 );
     normals_[idx] = value;
+  }
+
+  void trace() {
+    size_t pointCount = getPointCount();
+    printf( "Point cloud of %zu points : \n", pointCount );
+    for ( size_t i = 0; i < 16; i++ ) {
+      printf( "%9zu: ( %4u, %4u, %4u ) [ %4u, %4u, %4u ] [ %4u, %4u, %4u ] \n", i, positions_[i][0], positions_[i][1],
+              positions_[i][2], colors_[i][0], colors_[i][1], colors_[i][2], colors16bit_[i][0], colors16bit_[i][1],
+              colors16bit_[i][2] );
+    }
+    for ( size_t i = 50000; i < pointCount; i += 50000 ) {
+      printf( "%9zu: ( %4u, %4u, %4u ) [ %4u, %4u, %4u ] [ %4u, %4u, %4u ] \n", i, positions_[i][0], positions_[i][1],
+              positions_[i][2], colors_[i][0], colors_[i][1], colors_[i][2], colors16bit_[i][0], colors16bit_[i][1],
+              colors16bit_[i][2] );
+    }
+    fflush( stdout );
   }
 
   bool transferColors( PCCPointSet3& target,

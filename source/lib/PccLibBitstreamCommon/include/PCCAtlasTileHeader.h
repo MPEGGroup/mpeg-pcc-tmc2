@@ -56,7 +56,7 @@ class AtlasTileHeader {
       posDeltaMaxDQuantizer_( 0 ),
       patchSizeXinfoQuantizer_( 0 ),
       patchSizeYinfoQuantizer_( 0 ),
-      raw3dPosAxisBitCountMinus1_( 0 ),
+      raw3dOffsetAxisBitCountMinus1_( 0 ),
       numRefIdxActiveOverrideFlag_( 0 ),
       numRefIdxActiveMinus1_( 0 ) {
     additionalAfocLsbPresentFlag_.resize( 1, 0 );
@@ -84,7 +84,7 @@ class AtlasTileHeader {
   uint8_t               getPosDeltaMaxDQuantizer() { return posDeltaMaxDQuantizer_; }
   uint8_t               getPatchSizeXinfoQuantizer() { return patchSizeXinfoQuantizer_; }
   uint8_t               getPatchSizeYinfoQuantizer() { return patchSizeYinfoQuantizer_; }
-  uint8_t               getRaw3dPosAxisBitCountMinus1() { return raw3dPosAxisBitCountMinus1_; }
+  uint8_t               getRaw3dOffsetAxisBitCountMinus1() { return raw3dOffsetAxisBitCountMinus1_; }
   bool                  getNumRefIdxActiveOverrideFlag() { return numRefIdxActiveOverrideFlag_; }
   uint8_t               getNumRefIdxActiveMinus1() { return numRefIdxActiveMinus1_; }
   std::vector<bool>&    getAdditionalAfocLsbPresentFlag() { return additionalAfocLsbPresentFlag_; }
@@ -105,7 +105,7 @@ class AtlasTileHeader {
   void setPosDeltaMaxDQuantizer( uint8_t value ) { posDeltaMaxDQuantizer_ = value; }
   void setPatchSizeXinfoQuantizer( uint8_t value ) { patchSizeXinfoQuantizer_ = value; }
   void setPatchSizeYinfoQuantizer( uint8_t value ) { patchSizeYinfoQuantizer_ = value; }
-  void setRaw3dPosAxisBitCountMinus1( uint8_t value ) { raw3dPosAxisBitCountMinus1_ = value; }
+  void setRaw3dOffsetAxisBitCountMinus1( uint8_t value ) { raw3dOffsetAxisBitCountMinus1_ = value; }
   void setNumRefIdxActiveOverrideFlag( bool value ) { numRefIdxActiveOverrideFlag_ = value; }
   void setNumRefIdxActiveMinus1( uint8_t value ) { numRefIdxActiveMinus1_ = value; }
   void setAdditionalAfocLsbPresentFlag( std::vector<bool>& value ) { additionalAfocLsbPresentFlag_ = value; }
@@ -130,7 +130,7 @@ class AtlasTileHeader {
   uint8_t              posDeltaMaxDQuantizer_;
   uint8_t              patchSizeXinfoQuantizer_;
   uint8_t              patchSizeYinfoQuantizer_;
-  uint8_t              raw3dPosAxisBitCountMinus1_;
+  uint8_t              raw3dOffsetAxisBitCountMinus1_;
   bool                 numRefIdxActiveOverrideFlag_;
   uint8_t              numRefIdxActiveMinus1_;
   RefListStruct        refListStruct_;

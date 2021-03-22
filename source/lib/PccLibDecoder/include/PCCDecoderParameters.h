@@ -51,6 +51,9 @@ class PCCDecoderParameters {
   std::string       videoDecoderOccupancyPath_;
   std::string       videoDecoderGeometryPath_;
   std::string       videoDecoderAttributePath_;
+  bool              byteStreamVideoCoderOccupancy_;
+  bool              byteStreamVideoCoderGeometry_;
+  bool              byteStreamVideoCoderAttribute_;
   PCCColorTransform colorTransform_;
   std::string       colorSpaceConversionPath_;
   std::string       inverseColorSpaceConversionConfig_;

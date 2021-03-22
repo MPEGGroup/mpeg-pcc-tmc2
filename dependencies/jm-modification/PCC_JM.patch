@@ -1,0 +1,142 @@
+From ce2714e74eb3d5e6e8e71cb4ebf0ea1c4b637e5e Mon Sep 17 00:00:00 2001
+From: Jie-Ru Lin <jerryjr@itri.com>
+Date: Fri, 25 Dec 2020 18:23:47 +0800
+Subject: [PATCH] V-PCC JM patch
+
+---
+ source/app/ldecod/decoder_test.c |  6 +++---
+ source/app/lencod/lencod.c       | 20 ++++++++++----------
+ source/lib/lcommon/ifunctions.h  |  2 +-
+ 3 files changed, 14 insertions(+), 14 deletions(-)
+
+diff --git a/source/app/ldecod/decoder_test.c b/source/app/ldecod/decoder_test.c
+index e02ffb4..ec6f9e8 100644
+--- a/source/app/ldecod/decoder_test.c
++++ b/source/app/ldecod/decoder_test.c
+@@ -31,7 +31,7 @@
+ #define DECOUTPUT_VIEW1_FILENAME  "H264_Decoder_Output_View1.yuv"
+ 
+ 
+-static void Configure(InputParameters *p_Inp, int ac, char *av[])
++void Configure(InputParameters *p_Inp, int ac, char *av[])
+ {
+   //char *config_filename=NULL;
+   //char errortext[ET_SIZE];
+@@ -73,7 +73,7 @@ static void Configure(InputParameters *p_Inp, int ac, char *av[])
+ if bOutputAllFrames is 1, then output all valid frames to file onetime; 
+ else output the first valid frame and move the buffer to the end of list;
+ *********************************************************/
+-static int WriteOneFrame(DecodedPicList *pDecPic, int hFileOutput0, int hFileOutput1, int bOutputAllFrames)
++int WriteOneFrame(DecodedPicList *pDecPic, int hFileOutput0, int hFileOutput1, int bOutputAllFrames)
+ {
+   int iOutputFrame=0;
+   DecodedPicList *pPic = pDecPic;
+@@ -212,7 +212,7 @@ static int WriteOneFrame(DecodedPicList *pDecPic, int hFileOutput0, int hFileOut
+  *    main function for JM decoder
+  ***********************************************************************
+  */
+-int main(int argc, char **argv)
++int jmdecmain(int argc, char **argv)
+ {
+   int iRet;
+   DecodedPicList *pDecPicList;
+diff --git a/source/app/lencod/lencod.c b/source/app/lencod/lencod.c
+index 00da901..23c06e1 100644
+--- a/source/app/lencod/lencod.c
++++ b/source/app/lencod/lencod.c
+@@ -118,13 +118,13 @@ EncoderParams   *p_Enc = NULL;
+ static void set_level_indices   (VideoParameters *p_Vid);
+ static void chroma_mc_setup     (VideoParameters *p_Vid);
+ static void init_img            (VideoParameters *p_Vid);
+-static void init_encoder        (VideoParameters *p_Vid, InputParameters *p_Inp);
++void init_encoder        (VideoParameters *p_Vid, InputParameters *p_Inp);
+ static int  init_global_buffers (VideoParameters *p_Vid, InputParameters *p_Inp);
+ static void free_global_buffers (VideoParameters *p_Vid, InputParameters *p_Inp);
+ static void free_img            (VideoParameters *p_Vid, InputParameters *p_Inp);
+-static void free_params         (InputParameters *p_Inp);
++void free_params         (InputParameters *p_Inp);
+ 
+-static void encode_sequence     (VideoParameters *p_Vid, InputParameters *p_Inp);
++void encode_sequence     (VideoParameters *p_Vid, InputParameters *p_Inp);
+ 
+ 
+ static void generate_encode_parameters(VideoParameters *p_Vid);
+@@ -217,7 +217,7 @@ static void alloc_params( InputParameters **p_Inp )
+  *    Encoder Parameters
+  ***********************************************************************
+  */
+-static void alloc_encoder( EncoderParams **p_Enc)
++void alloc_encoder( EncoderParams **p_Enc)
+ {
+   if ((*p_Enc = (EncoderParams *) calloc(1, sizeof(EncoderParams)))==NULL) 
+     no_mem_exit("alloc_encoder: p_Enc");
+@@ -234,7 +234,7 @@ static void alloc_encoder( EncoderParams **p_Enc)
+  *    Free the Encoder Structure
+  ***********************************************************************
+  */
+-static void free_encoder (EncoderParams *p_Enc)
++void free_encoder (EncoderParams *p_Enc)
+ {
+   free_pointer( p_Enc );
+ }
+@@ -251,7 +251,7 @@ static void free_encoder (EncoderParams *p_Enc)
+  *    exit code
+  ***********************************************************************
+  */
+-int main(int argc, char **argv)
++int jmencmain(int argc, char **argv)
+ {
+   init_time();
+ #if MEMORY_DEBUG
+@@ -392,7 +392,7 @@ static void set_storage_format(VideoParameters *p_Vid, FrameFormat *p_src, Frame
+  *    Initialize encoder
+  ***********************************************************************
+  */
+-static void init_encoder(VideoParameters *p_Vid, InputParameters *p_Inp)
++void init_encoder(VideoParameters *p_Vid, InputParameters *p_Inp)
+ {
+   int i;
+   p_Vid->p_Inp = p_Inp;
+@@ -817,7 +817,7 @@ void setup_coding_layer(VideoParameters *p_Vid)
+ *    Prepare parameters for the current frame
+ ************************************************************************
+ */
+-static void prepare_frame_params(VideoParameters *p_Vid, InputParameters *p_Inp, int curr_frame_to_code)
++void prepare_frame_params(VideoParameters *p_Vid, InputParameters *p_Inp, int curr_frame_to_code)
+ {
+   SeqStructure *p_seq_struct = p_Vid->p_pred;
+   FrameUnitStruct *p_cur_frm = p_Vid->p_curr_frm_struct;
+@@ -882,7 +882,7 @@ static void prepare_frame_params(VideoParameters *p_Vid, InputParameters *p_Inp,
+  *    Encode a sequence
+  ***********************************************************************
+  */
+-static void encode_sequence(VideoParameters *p_Vid, InputParameters *p_Inp)
++void encode_sequence(VideoParameters *p_Vid, InputParameters *p_Inp)
+ {
+   int curr_frame_to_code;
+   int frames_to_code;
+@@ -1495,7 +1495,7 @@ static void free_img (VideoParameters *p_Vid, InputParameters *p_Inp)
+  *    Input Parameters InputParameters *p_Inp
+  ***********************************************************************
+  */
+-static void free_params (InputParameters *p_Inp)
++void free_params (InputParameters *p_Inp)
+ {
+   if ( p_Inp != NULL )
+   {
+diff --git a/source/lib/lcommon/ifunctions.h b/source/lib/lcommon/ifunctions.h
+index 9891002..dd50905 100644
+--- a/source/lib/lcommon/ifunctions.h
++++ b/source/lib/lcommon/ifunctions.h
+@@ -245,7 +245,7 @@ static inline int power2(int x)
+ }
+ 
+ 
+-static const int64 po2[64] = {0x1,0x2,0x4,0x8,0x10,0x20,0x40,0x80,0x100,0x200,0x400,0x800,0x1000,0x2000,0x4000,0x8000,
++static const uint64 po2[64] = {0x1,0x2,0x4,0x8,0x10,0x20,0x40,0x80,0x100,0x200,0x400,0x800,0x1000,0x2000,0x4000,0x8000,
+                               0x10000,0x20000,0x40000,0x80000,0x100000,0x200000,0x400000,0x800000,0x1000000,0x2000000,0x4000000,0x8000000,
+                               0x10000000,0x20000000,0x40000000,0x80000000,0x100000000,0x200000000,0x400000000,0x800000000,
+                               0x1000000000,0x2000000000,0x4000000000,0x8000000000,0x10000000000,0x20000000000,0x40000000000,0x80000000000,
+-- 
+2.29.2.windows.2
+

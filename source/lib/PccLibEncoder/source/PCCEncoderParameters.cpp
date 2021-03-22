@@ -112,6 +112,9 @@ PCCEncoderParameters::PCCEncoderParameters() {
   videoEncoderOccupancyCodecId_            = PCCVirtualVideoEncoder<uint8_t>::getDefaultCodecId();
   videoEncoderGeometryCodecId_             = PCCVirtualVideoEncoder<uint8_t>::getDefaultCodecId();
   videoEncoderAttributeCodecId_            = PCCVirtualVideoEncoder<uint8_t>::getDefaultCodecId();
+  byteStreamVideoCoderOccupancy_           = true;
+  byteStreamVideoCoderGeometry_            = true;
+  byteStreamVideoCoderAttribute_           = true;
   geometryQP_                              = 28;
   textureQP_                               = 43;
   geometryConfig_                          = {};
@@ -182,10 +185,13 @@ PCCEncoderParameters::PCCEncoderParameters() {
   // GPA
   globalPatchAllocation_ = 0;
   // GTP
-  globalPackingStrategyGOF_         = 0;
-  globalPackingStrategyReset_       = false;
-  globalPackingStrategyThreshold_   = 0;
-  use3dmc_                          = true;
+  globalPackingStrategyGOF_       = 0;
+  globalPackingStrategyReset_     = false;
+  globalPackingStrategyThreshold_ = 0;
+  use3dmc_                        = true;
+#ifdef USE_HM_PCC_RDO
+  usePccRDO_ = false;
+#endif
   enhancedPP_                       = true;
   minWeightEPP_                     = 0.6;
   additionalProjectionPlaneMode_    = 0;
@@ -613,6 +619,9 @@ bool PCCEncoderParameters::check() {
     absoluteT1_ = 1;
   }
   if ( losslessGeo_ ) {
+#ifdef USE_HM_PCC_RDO
+    usePccRDO_ = false;
+#endif
     pbfEnableFlag_          = false;
     occupancyMapRefinement_ = false;
     flagColorSmoothing_     = false;
@@ -924,7 +933,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   afps.setNumRefIdxDefaultActiveMinus1( static_cast<uint8_t>(
       constrainedPack_ ? ( ( std::max )( 0, static_cast<int>( maxNumRefAtlasFrame_ ) - 1 ) ) : 0 ) );
   afps.setAdditionalLtAfocLsbLen( 4 );
-  afps.setRaw3dPosBitCountExplicitModeFlag( false );
+  afps.setRaw3dOffsetBitCountExplicitModeFlag( false );
   afps.setExtensionFlag( true );
   afps.setExtension8Bits( 0 );
   constructAspsRefListStruct( context, 0, 0 );
@@ -986,7 +995,8 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
     frame.setMaxDepth( ( 1 << geometryNominal2dBitdepth_ ) - 1 );
     frame.setLog2PatchQuantizerSizeX( context.getLog2PatchQuantizerSizeX() );
     frame.setLog2PatchQuantizerSizeY( context.getLog2PatchQuantizerSizeY() );
-    frame.setAtlasFrmOrderCntLsb( context.calculateAFOCLsb( i ) );
+    frame.setAtlasFrmOrderCntLsb( context.calculateAFOCLsb(
+        i ) );  // ajt:: lsb and afoc values of tileFrame is set during the initilaization process
     frame.setAtlasFrmOrderCntVal( i );
     if ( i == 0 ) {
       frame.setNumRefIdxActive( 0 );

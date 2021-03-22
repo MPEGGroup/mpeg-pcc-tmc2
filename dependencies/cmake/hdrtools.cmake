@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.17 FATAL_ERROR)
 
   
 SET( HDRTOOLS_DIR             ${CMAKE_SOURCE_DIR}/dependencies/HDRTools )

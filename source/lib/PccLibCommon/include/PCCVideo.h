@@ -51,6 +51,15 @@ class PCCVideo {
     for ( auto& frame : frames_ ) { frame.clear(); }
     frames_.clear();
   }
+  std::string getName( std::string path ) {
+    PCCCOLORFORMAT format = getColorFormat();
+    return addVideoFormat( path,                                                                  // path
+                           getWidth(),                                                            // width
+                           getHeight(),                                                           // height
+                           format == PCCCOLORFORMAT::YUV444 || format == PCCCOLORFORMAT::YUV420,  // isYUV
+                           format == PCCCOLORFORMAT::YUV420,                                      // is 420
+                           sizeof( T ) == 1 ? "8" : "10" );
+  }
   std::vector<PCCImage<T, N> >& getFrames() { return frames_; }
   void                          swap( PCCVideo<T, N>& video ) { frames_.swap( video.frames_ ); }
 
@@ -105,6 +114,34 @@ class PCCVideo {
     infile.close();
     return false;
   }
+
+  bool write_JM( const std::string fileName, const size_t nbyte ) {
+    printf( "Write video: %s \n", fileName.c_str() );
+    fflush( stdout );
+    std::ofstream outfile( fileName, std::ios::binary );
+    if ( write( outfile, nbyte ) ) {
+      outfile.close();
+      return true;
+    }
+    return false;
+  }
+  bool read_JM( const std::string    fileName,
+                const size_t         sizeU0,
+                const size_t         sizeV0,
+                const PCCCOLORFORMAT format,
+                const size_t         frameCount,
+                const size_t         nbyte ) {
+    printf( "Read video: %s \n", fileName.c_str() );
+    fflush( stdout );
+    std::ifstream infile( fileName, std::ios::binary );
+    if ( read( infile, sizeU0, sizeV0, format, frameCount, nbyte ) ) {
+      infile.close();
+      return true;
+    }
+    infile.close();
+    return false;
+  }
+
   void convertBitdepth( uint8_t bitdepthInput, uint8_t bitdepthOutput, bool msbAlignFlag ) {
     for ( auto& frame : frames_ ) { frame.convertBitdepth( bitdepthInput, bitdepthOutput, msbAlignFlag ); }
   }
@@ -141,6 +178,26 @@ class PCCVideo {
     }
     return true;
   }
+
+  bool write_JM( std::ofstream& outfile, const size_t nbyte ) {
+    for ( auto& frame : frames_ ) {
+      if ( !frame.write( outfile, nbyte ) ) { return false; }
+    }
+    return true;
+  }
+  bool read_JM( std::ifstream&       infile,
+                const size_t         sizeU0,
+                const size_t         sizeV0,
+                const PCCCOLORFORMAT format,
+                const size_t         frameCount,
+                const size_t         nbyte ) {
+    frames_.resize( frameCount );
+    for ( auto& frame : frames_ ) {
+      if ( !frame.read( infile, sizeU0, sizeV0, format, nbyte ) ) { return false; }
+    }
+    return true;
+  }
+
   std::vector<PCCImage<T, N> > frames_;
 };
 
