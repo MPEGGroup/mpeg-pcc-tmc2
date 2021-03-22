@@ -1,17 +1,23 @@
-cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.17 FATAL_ERROR)
 
 PROJECT (TMC2 CXX C )
-SET( TMC2_VERSION_MAJOR 12 )
+SET( TMC2_VERSION_MAJOR 13 )
 SET( TMC2_VERSION_MINOR 0  )
 
 # Video encoder and decoder library and application:
-OPTION( USE_JMAPP_VIDEO_CODEC     "Use JM application to encode and decode video"           FALSE )
-OPTION( USE_HMAPP_VIDEO_CODEC     "Use HM application to encode and decode video"           FALSE )
-OPTION( USE_HMLIB_VIDEO_CODEC     "Clone, build and use HM video encoder and decoder"       TRUE )
-OPTION( USE_FFMPEG_VIDEO_CODEC    "Clone, build and use FFMPEG video encoder and decoder"   FALSE )
+OPTION( USE_JMAPP_VIDEO_CODEC     "Use JM application to encode and decode video"           TRUE  )  #JMAPP = 0
+OPTION( USE_HMAPP_VIDEO_CODEC     "Use HM application to encode and decode video"           TRUE  )  #HMAPP = 1
+OPTION( USE_JMLIB_VIDEO_CODEC     "Clone, build and use JM video encoder and decoder"       TRUE  )  #JMLIB = 2
+OPTION( USE_HMLIB_VIDEO_CODEC     "Clone, build and use HM video encoder and decoder"       TRUE  )  #HMLIB = 3
+OPTION( USE_VTMLIB_VIDEO_CODEC    "Clone, build and use VTM video encoder and decoder"      TRUE )   #VTMLIB = 4
+OPTION( USE_FFMPEG_VIDEO_CODEC    "Clone, build and use FFMPEG video encoder and decoder"   FALSE )  #FFMPEG = 5
+                                                                                                     #UNKNOWN_CODEC = 6
 
 # Color conversion library:
 OPTION( USE_HDRTOOLS              "Clone, build and use HDRTools for color conversions"     FALSE )
+
+# Use HM optimized RDO
+OPTION( USE_HM_PCC_RDO            "Use HM optimized RDO (run \"./clear.sh all\" for each modification)" FALSE )
 
 # PAPI profiling tools
 OPTION( ENABLE_PAPI_PROFILING     "Enable PAPI profiling"                                   FALSE )
@@ -24,8 +30,6 @@ set( CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/dependencies/cm
 
 INCLUDE( CheckCXXCompilerFlag )
 CHECK_CXX_COMPILER_FLAG( "-std=c++14" COMPILER_SUPPORTS_CXX14 )
-#CHECK_CXX_COMPILER_FLAG( "-std=c++11" COMPILER_SUPPORTS_CXX11 )
-#CHECK_CXX_COMPILER_FLAG( "-std=c++0x" COMPILER_SUPPORTS_CXX0X )
 if (COMPILER_SUPPORTS_CXX14)
   SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14" )
 ELSEIF (COMPILER_SUPPORTS_CXX11)
@@ -45,6 +49,7 @@ SET( CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib )
 SET( CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib )
 SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin )
 IF (MSVC)
+  MESSAGE(STATUS "MSVC OPTIONS")
   ADD_DEFINITIONS("/wd4244 /wd4267 /wd4996")
   SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /NODEFAULTLIB:tbb_debug.lib")
   SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /NODEFAULTLIB:tbb.lib")
@@ -54,8 +59,17 @@ ENDIF()
 IF( USE_HMLIB_VIDEO_CODEC )
   INCLUDE( ${CMAKE_SOURCE_DIR}/dependencies/cmake/hm.cmake )
 ENDIF()
+IF( USE_JMLIB_VIDEO_CODEC )
+  INCLUDE( ${CMAKE_SOURCE_DIR}/dependencies/cmake/jm_lib.cmake )
+ENDIF()
+IF( USE_JMAPP_VIDEO_CODEC )
+  INCLUDE( ${CMAKE_SOURCE_DIR}/dependencies/cmake/jm_app.cmake )
+ENDIF()
 IF( USE_FFMPEG_VIDEO_CODEC )
   INCLUDE( ${CMAKE_SOURCE_DIR}/dependencies/cmake/ffmpeg.cmake )
+ENDIF()
+IF( USE_VTMLIB_VIDEO_CODEC )
+  INCLUDE( ${CMAKE_SOURCE_DIR}/dependencies/cmake/vtm.cmake )
 ENDIF()
 IF( USE_HDRTOOLS )  
   INCLUDE( ${CMAKE_SOURCE_DIR}/dependencies/cmake/hdrtools.cmake )
@@ -75,11 +89,13 @@ ADD_SUBDIRECTORY(source/lib/PccLibCommon)
 ADD_SUBDIRECTORY(source/lib/PccLibDecoder)
 ADD_SUBDIRECTORY(source/lib/PccLibEncoder)
 ADD_SUBDIRECTORY(source/lib/PccLibMetrics)
+ADD_SUBDIRECTORY(source/lib/PccLibConformance)
 
 ADD_SUBDIRECTORY(source/app/PccAppParser)
 ADD_SUBDIRECTORY(source/app/PccAppEncoder)
 ADD_SUBDIRECTORY(source/app/PccAppDecoder)
 ADD_SUBDIRECTORY(source/app/PccAppMetrics)
+ADD_SUBDIRECTORY(source/app/PccAppConformance)
 ADD_SUBDIRECTORY(source/app/PccAppVideoEncoder)
 ADD_SUBDIRECTORY(source/app/PccAppVideoDecoder)
 ADD_SUBDIRECTORY(source/app/PccAppColorConverter)

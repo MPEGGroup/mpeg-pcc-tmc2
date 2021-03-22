@@ -49,21 +49,21 @@ class AtlasFrameParameterSetRbsp {
       numRefIdxDefaultActiveMinus1_( 0 ),
       additionalLtAfocLsbLen_( 0 ),
       lodModeEnableFlag_( false ),
-      raw3dPosBitCountExplicitModeFlag_( 0 ),
+      raw3doffsetBitCountExplicitModeFlag_( 0 ),
       extensionFlag_( 0 ),
       extension8Bits_( 0 ) {}
 
   ~AtlasFrameParameterSetRbsp() {}
   AtlasFrameParameterSetRbsp& operator=( const AtlasFrameParameterSetRbsp& ) = default;
   void                        copyFrom( AtlasFrameParameterSetRbsp& refAfps ) {
-    atlasSequenceParameterSetId_      = refAfps.getAtlasSequenceParameterSetId();
-    numRefIdxDefaultActiveMinus1_     = refAfps.getNumRefIdxDefaultActiveMinus1();
-    additionalLtAfocLsbLen_           = refAfps.getAdditionalLtAfocLsbLen();
-    lodModeEnableFlag_                = refAfps.getLodModeEnableFlag();
-    raw3dPosBitCountExplicitModeFlag_ = refAfps.getRaw3dPosBitCountExplicitModeFlag();
-    extensionFlag_                    = refAfps.getExtensionFlag();
-    extension8Bits_                   = refAfps.getExtension8Bits();
-    atlasFrameTileInformation_        = refAfps.getAtlasFrameTileInformation();
+    atlasSequenceParameterSetId_         = refAfps.getAtlasSequenceParameterSetId();
+    numRefIdxDefaultActiveMinus1_        = refAfps.getNumRefIdxDefaultActiveMinus1();
+    additionalLtAfocLsbLen_              = refAfps.getAdditionalLtAfocLsbLen();
+    lodModeEnableFlag_                   = refAfps.getLodModeEnableFlag();
+    raw3doffsetBitCountExplicitModeFlag_ = refAfps.getRaw3dOffsetBitCountExplicitModeFlag();
+    extensionFlag_                       = refAfps.getExtensionFlag();
+    extension8Bits_                      = refAfps.getExtension8Bits();
+    atlasFrameTileInformation_           = refAfps.getAtlasFrameTileInformation();
   }
 
   uint8_t                    getAtlasFrameParameterSetId() { return atlasFrameParameterSetId_; }
@@ -71,7 +71,7 @@ class AtlasFrameParameterSetRbsp {
   bool                       getOutputFlagPresentFlag() { return outputFlagPresentFlag_; }
   uint8_t                    getNumRefIdxDefaultActiveMinus1() { return numRefIdxDefaultActiveMinus1_; }
   uint8_t                    getAdditionalLtAfocLsbLen() { return additionalLtAfocLsbLen_; }
-  bool                       getRaw3dPosBitCountExplicitModeFlag() { return raw3dPosBitCountExplicitModeFlag_; }
+  bool                       getRaw3dOffsetBitCountExplicitModeFlag() { return raw3doffsetBitCountExplicitModeFlag_; }
   bool                       getExtensionFlag() { return extensionFlag_; }
   uint8_t                    getExtension8Bits() { return extension8Bits_; }
   AtlasFrameTileInformation& getAtlasFrameTileInformation() { return atlasFrameTileInformation_; }
@@ -83,7 +83,7 @@ class AtlasFrameParameterSetRbsp {
   void setOutputFlagPresentFlag( bool value ) { outputFlagPresentFlag_ = value; }
   void setNumRefIdxDefaultActiveMinus1( uint8_t value ) { numRefIdxDefaultActiveMinus1_ = value; }
   void setAdditionalLtAfocLsbLen( uint8_t value ) { additionalLtAfocLsbLen_ = value; }
-  void setRaw3dPosBitCountExplicitModeFlag( bool value ) { raw3dPosBitCountExplicitModeFlag_ = value; }
+  void setRaw3dOffsetBitCountExplicitModeFlag( bool value ) { raw3doffsetBitCountExplicitModeFlag_ = value; }
   void setExtensionFlag( bool value ) { extensionFlag_ = value; }
   void setExtension8Bits( uint8_t value ) { extension8Bits_ = value; }
   void setLodModeEnableFlag( bool value ) { lodModeEnableFlag_ = value; }
@@ -97,7 +97,7 @@ class AtlasFrameParameterSetRbsp {
   uint8_t                   numRefIdxDefaultActiveMinus1_;
   uint8_t                   additionalLtAfocLsbLen_;
   bool                      lodModeEnableFlag_;
-  bool                      raw3dPosBitCountExplicitModeFlag_;
+  bool                      raw3doffsetBitCountExplicitModeFlag_;
   bool                      extensionFlag_;
   uint8_t                   extension8Bits_;
   AfpsVpccExtension         afpsVpccExtension_;

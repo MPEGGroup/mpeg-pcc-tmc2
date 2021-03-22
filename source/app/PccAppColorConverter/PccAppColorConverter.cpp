@@ -91,6 +91,7 @@ bool parseParameters( int          argc,
        colorFormat.empty() || width == 0 || height == 0 || frameCount == 0 || inputNumBytes == 0 ||
        outputNumBytes == 0 || ( colorFormat != "RGB444" && colorFormat != "YUV444" && colorFormat != "YUV420" ) ) {
     printf( "Error parameters not correct \n" );
+    po::doHelp( std::cout, opts, 78 );
     return false;
   }
 

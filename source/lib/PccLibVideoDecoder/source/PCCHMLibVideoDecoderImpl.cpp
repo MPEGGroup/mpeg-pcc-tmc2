@@ -31,6 +31,7 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 #include "PCCCommon.h"
+#include "PCCLogger.h"
 
 #ifdef USE_HMLIB_VIDEO_CODEC
 

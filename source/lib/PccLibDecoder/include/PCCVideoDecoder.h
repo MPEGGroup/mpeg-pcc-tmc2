@@ -63,6 +63,7 @@ class PCCVideoDecoder {
                    PCCVideoBitstream& bitstream,
                    const std::string& decoderPath,
                    PCCCodecId         codecId,
+                   bool               byteStreamVideoCoder,
                    PCCContext&        contexts,
                    size_t             bitDepth,
                    const bool         keepIntermediateFiles             = false,
@@ -76,13 +77,30 @@ class PCCVideoDecoder {
     const std::string binFileName = fileName + ".bin";
     size_t            width = 0, height = 0;
     size_t            nbyte = bitDepth == 8 ? 1 : 2;
+
+#ifdef USE_VTMLIB_VIDEO_CODEC
+    if ( byteStreamVideoCoder ) { bitstream.sampleStreamToByteStream( codecId == VTMLIB ); }
+#else
+    if ( byteStreamVideoCoder ) { bitstream.sampleStreamToByteStream(); }
+#endif
     if ( keepIntermediateFiles ) { bitstream.write( binFileName ); }
 
     // Decode video
     auto decoder = PCCVirtualVideoDecoder<T>::create( codecId );
-    printf( " decompress size T = %zu \n", sizeof( T ) );
+    printf( " decompress codecId = %d size(T) = %zu bitDepth = %d \n", (int)codecId, sizeof( T ),
+            bitDepth == 8 ? 8 : 10 );
     fflush( stdout );
     decoder->decode( bitstream, bitDepth == 8 ? 8 : 10, use444CodecIo, video, decoderPath, fileName, frameCount );
+
+    size_t frameIndex = 0;
+    for ( auto& image : video ) {
+      TRACE_PICTURE( "PicOrderCntVal = %d, ", frameIndex++ );
+      TRACE_PICTURE( " MD5checksumChan0 = %s, ", image.computeMD5( 0 ).c_str() );
+      TRACE_PICTURE( " MD5checksumChan1 = %s, ", image.computeMD5( 1 ).c_str() );
+      TRACE_PICTURE( " MD5checksumChan2 = %s \n", image.computeMD5( 2 ).c_str() );
+    }
+    TRACE_PICTURE( "Width =  %d, Height = %d \n", video.getWidth(), video.getHeight() );
+
     width  = video.getWidth();
     height = video.getHeight();
     const std::string yuvRecFileName =
@@ -346,6 +364,11 @@ class PCCVideoDecoder {
     }
     return true;
   }
+
+  void setLogger( PCCLogger& logger ) { logger_ = &logger; }
+
+ private:
+  PCCLogger* logger_ = nullptr;
 };
 
 };  // namespace pcc

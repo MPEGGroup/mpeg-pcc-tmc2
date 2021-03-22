@@ -96,18 +96,19 @@ int32_t PCCBitstreamReader::decode( SampleStreamV3CUnit& ssvu, PCCHighLevelSynta
 
 void PCCBitstreamReader::videoSubStream( PCCHighLevelSyntax& syntax,
                                          PCCBitstream&       bitstream,
-                                         V3CUnitType&        V3CUnitType ) {
+                                         V3CUnitType&        V3CUnitType,
+                                         size_t              V3CPayloadSize ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
   size_t atlasIndex = 0;
   if ( V3CUnitType == V3C_OVD ) {
     TRACE_BITSTREAM( "OccupancyMap \n" );
-    bitstream.read( syntax.createVideoBitstream( VIDEO_OCCUPANCY ) );
+    bitstream.readVideoStream( syntax.createVideoBitstream( VIDEO_OCCUPANCY ), V3CPayloadSize );
     syntax.getBitstreamStat().setVideoBinSize( VIDEO_OCCUPANCY, syntax.getVideoBitstream( VIDEO_OCCUPANCY ).size() );
   } else if ( V3CUnitType == V3C_GVD ) {
     auto& vuh = syntax.getV3CUnitHeader( static_cast<size_t>( V3C_GVD ) - 1 );
     if ( vuh.getAuxiliaryVideoFlag() ) {
       TRACE_BITSTREAM( "Geometry raw\n" );
-      bitstream.read( syntax.createVideoBitstream( VIDEO_GEOMETRY_RAW ) );
+      bitstream.readVideoStream( syntax.createVideoBitstream( VIDEO_GEOMETRY_RAW ), V3CPayloadSize );
       syntax.getBitstreamStat().setVideoBinSize( VIDEO_GEOMETRY_RAW,
                                                  syntax.getVideoBitstream( VIDEO_GEOMETRY_RAW ).size() );
     } else {
@@ -115,11 +116,11 @@ void PCCBitstreamReader::videoSubStream( PCCHighLevelSyntax& syntax,
       if ( vps.getMapCountMinus1( atlasIndex ) > 0 && vps.getMultipleMapStreamsPresentFlag( atlasIndex ) ) {
         auto geometryIndex = static_cast<PCCVideoType>( VIDEO_GEOMETRY_D0 + vuh.getMapIndex() );
         TRACE_BITSTREAM( "Geometry MAP: %d\n", vuh.getMapIndex() );
-        bitstream.read( syntax.createVideoBitstream( geometryIndex ) );
+        bitstream.readVideoStream( syntax.createVideoBitstream( geometryIndex ), V3CPayloadSize );
         syntax.getBitstreamStat().setVideoBinSize( geometryIndex, syntax.getVideoBitstream( geometryIndex ).size() );
       } else {
         TRACE_BITSTREAM( "Geometry \n" );
-        bitstream.read( syntax.createVideoBitstream( VIDEO_GEOMETRY ) );
+        bitstream.readVideoStream( syntax.createVideoBitstream( VIDEO_GEOMETRY ), V3CPayloadSize );
         syntax.getBitstreamStat().setVideoBinSize( VIDEO_GEOMETRY, syntax.getVideoBitstream( VIDEO_GEOMETRY ).size() );
       }
     }
@@ -130,19 +131,19 @@ void PCCBitstreamReader::videoSubStream( PCCHighLevelSyntax& syntax,
       if ( vuh.getAuxiliaryVideoFlag() ) {
         auto textureIndex = static_cast<PCCVideoType>( VIDEO_TEXTURE_RAW + vuh.getAttributeDimensionIndex() );
         TRACE_BITSTREAM( "Texture raw, PARTITION: %d\n", vuh.getAttributeDimensionIndex() );
-        bitstream.read( syntax.createVideoBitstream( textureIndex ) );
+        bitstream.readVideoStream( syntax.createVideoBitstream( textureIndex ), V3CPayloadSize );
         syntax.getBitstreamStat().setVideoBinSize( textureIndex, syntax.getVideoBitstream( textureIndex ).size() );
       } else {
         if ( vps.getMapCountMinus1( atlasIndex ) > 0 && vps.getMultipleMapStreamsPresentFlag( atlasIndex ) ) {
           auto textureIndex = static_cast<PCCVideoType>(
               VIDEO_TEXTURE_T0 + vuh.getMapIndex() * MAX_NUM_ATTR_PARTITIONS + vuh.getAttributeDimensionIndex() );
           TRACE_BITSTREAM( "Texture MAP: %d, PARTITION: %d\n", vuh.getMapIndex(), vuh.getAttributeDimensionIndex() );
-          bitstream.read( syntax.createVideoBitstream( textureIndex ) );
+          bitstream.readVideoStream( syntax.createVideoBitstream( textureIndex ), V3CPayloadSize );
           syntax.getBitstreamStat().setVideoBinSize( textureIndex, syntax.getVideoBitstream( textureIndex ).size() );
         } else {
           auto textureIndex = static_cast<PCCVideoType>( VIDEO_TEXTURE + vuh.getAttributeDimensionIndex() );
           TRACE_BITSTREAM( "Texture PARTITION: %d\n", vuh.getAttributeDimensionIndex() );
-          bitstream.read( syntax.createVideoBitstream( textureIndex ) );
+          bitstream.readVideoStream( syntax.createVideoBitstream( textureIndex ), V3CPayloadSize );
           syntax.getBitstreamStat().setVideoBinSize( textureIndex, syntax.getVideoBitstream( textureIndex ).size() );
         }
       }
@@ -163,7 +164,7 @@ void PCCBitstreamReader::v3cUnit( PCCHighLevelSyntax& syntax, V3CUnit& currV3CUn
   auto position = static_cast<int32_t>( bitstream.size() );
   v3cUnitHeader( syntax, bitstream, v3cUnitType );
   assert( v3cUnitType == currV3CUnit.getType() );
-  v3cUnitPayload( syntax, bitstream, v3cUnitType );
+  v3cUnitPayload( syntax, bitstream, v3cUnitType, currV3CUnit.getSize() );
   syntax.getBitstreamStat().setV3CUnitSize( v3cUnitType, static_cast<int32_t>( bitstream.size() ) - position );
   TRACE_BITSTREAM( "v3cUnit: V3CUnitType = %d(%s) \n", v3cUnitType, toString( v3cUnitType ).c_str() );
   TRACE_BITSTREAM( "v3cUnit: size [%d ~ %d] \n", position, bitstream.size() );
@@ -205,7 +206,8 @@ void PCCBitstreamReader::v3cUnitHeader( PCCHighLevelSyntax& syntax,
 // 8.3.2.3 V3C unit payload syntax
 void PCCBitstreamReader::v3cUnitPayload( PCCHighLevelSyntax& syntax,
                                          PCCBitstream&       bitstream,
-                                         V3CUnitType&        v3cUnitType ) {
+                                         V3CUnitType&        v3cUnitType,
+                                         size_t              v3cUnitSize ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
   TRACE_BITSTREAM( "v3cUnitType = %d \n", (int32_t)v3cUnitType );
   if ( v3cUnitType == V3C_VPS ) {
@@ -214,7 +216,7 @@ void PCCBitstreamReader::v3cUnitPayload( PCCHighLevelSyntax& syntax,
   } else if ( v3cUnitType == V3C_AD ) {
     atlasSubStream( syntax, bitstream );
   } else if ( v3cUnitType == V3C_OVD || v3cUnitType == V3C_GVD || v3cUnitType == V3C_AVD ) {
-    videoSubStream( syntax, bitstream, v3cUnitType );
+    videoSubStream( syntax, bitstream, v3cUnitType, v3cUnitSize - 4 );
   }
 }
 
@@ -599,12 +601,12 @@ void PCCBitstreamReader::atlasFrameParameterSetRbsp( AtlasFrameParameterSetRbsp&
   afps.setAtlasSequenceParameterSetId( bitstream.readUvlc() );  // ue(v)
   auto& asps = syntax.getAtlasSequenceParameterSet( afps.getAtlasSequenceParameterSetId() );
   atlasFrameTileInformation( afps.getAtlasFrameTileInformation(), asps, bitstream );
-  afps.setOutputFlagPresentFlag( bitstream.read( 1 ) );             // u(1)
-  afps.setNumRefIdxDefaultActiveMinus1( bitstream.readUvlc() );     // ue(v)
-  afps.setAdditionalLtAfocLsbLen( bitstream.readUvlc() );           // ue(v)
-  afps.setLodModeEnableFlag( bitstream.read( 1 ) );                 // u(1)
-  afps.setRaw3dPosBitCountExplicitModeFlag( bitstream.read( 1 ) );  // u(1)
-  afps.setExtensionFlag( bitstream.read( 1 ) );                     // u(1)
+  afps.setOutputFlagPresentFlag( bitstream.read( 1 ) );                // u(1)
+  afps.setNumRefIdxDefaultActiveMinus1( bitstream.readUvlc() );        // ue(v)
+  afps.setAdditionalLtAfocLsbLen( bitstream.readUvlc() );              // ue(v)
+  afps.setLodModeEnableFlag( bitstream.read( 1 ) );                    // u(1)
+  afps.setRaw3dOffsetBitCountExplicitModeFlag( bitstream.read( 1 ) );  // u(1)
+  afps.setExtensionFlag( bitstream.read( 1 ) );                        // u(1)
   if ( afps.getExtensionFlag() ) {
     afps.setExtension8Bits( bitstream.read( 8 ) );  // u(8)
   }
@@ -846,17 +848,16 @@ void PCCBitstreamReader::atlasTileHeader( AtlasTileHeader&    ath,
       ath.setPatchSizeYinfoQuantizer( bitstream.read( 3 ) );  // u(3)
     }
 
-    auto& gi = syntax.getVps().getGeometryInformation( 0 );
-    TRACE_BITSTREAM( "Raw3dPosBitCountExplicitModeFlag    = %d \n", afps.getRaw3dPosBitCountExplicitModeFlag() );
-    if ( afps.getRaw3dPosBitCountExplicitModeFlag() ) {
-      size_t bitCount = ceilLog2( gi.getGeometry3dCoordinatesBitdepthMinus1() + 1 );
-      TRACE_BITSTREAM( "Geometry3dCoordinatesBitdepthMinus1 = %zu \n", gi.getGeometry3dCoordinatesBitdepthMinus1() );
-      ath.setRaw3dPosAxisBitCountMinus1( bitstream.read( bitCount ) );  // u(v)
+    TRACE_BITSTREAM( "Raw3dOffsetBitCountExplicitModeFlag    = %d \n", afps.getRaw3dOffsetBitCountExplicitModeFlag() );
+    if ( afps.getRaw3dOffsetBitCountExplicitModeFlag() ) {
+      size_t bitCount = floorLog2( asps.getGeometry3dBitdepthMinus1() + 1 );
+      TRACE_BITSTREAM( "bitCount(floorLog2( asps.getGeometry3dBitdepthMinus1() + 1 ) = %zu \n", bitCount );
+      ath.setRaw3dOffsetAxisBitCountMinus1( bitstream.read( bitCount ) );  // u(v)
     } else {
-      TRACE_BITSTREAM( "Geometry3dCoordinatesBitdepthMinus1 = %zu \n", gi.getGeometry3dCoordinatesBitdepthMinus1() );
-      TRACE_BITSTREAM( "Geometry2dBitdepthMinus1     = %zu \n", gi.getGeometry2dBitdepthMinus1() );
-      ath.setRaw3dPosAxisBitCountMinus1( gi.getGeometry3dCoordinatesBitdepthMinus1() -
-                                         gi.getGeometry2dBitdepthMinus1() - 1 );
+      TRACE_BITSTREAM( "Geometry3dBitdepthMinus1 = %zu \n", asps.getGeometry3dBitdepthMinus1() );
+      TRACE_BITSTREAM( "Geometry2dBitdepthMinus1 = %zu \n", asps.getGeometry2dBitdepthMinus1() );
+      ath.setRaw3dOffsetAxisBitCountMinus1(
+          std::max( 0, asps.getGeometry3dBitdepthMinus1() - asps.getGeometry2dBitdepthMinus1() ) - 1 );
     }
     if ( ath.getType() == P_TILE && refList.getNumRefEntries() > 1 ) {
       ath.setNumRefIdxActiveOverrideFlag( bitstream.read( 1 ) != 0U );  // u(1)
@@ -864,7 +865,7 @@ void PCCBitstreamReader::atlasTileHeader( AtlasTileHeader&    ath,
         ath.setNumRefIdxActiveMinus1( bitstream.readUvlc() );  // ue(v)
       }
     }
-    TRACE_BITSTREAM( "==> Raw3dPosAxisBitCountMinus1  = %zu \n", ath.getRaw3dPosAxisBitCountMinus1() );
+    TRACE_BITSTREAM( "==> Raw3dOffsetAxisBitCountMinus1  = %zu \n", ath.getRaw3dOffsetAxisBitCountMinus1() );
     TRACE_BITSTREAM( "==> NumRefIdxActiveOverrideFlag = %zu \n", ath.getNumRefIdxActiveOverrideFlag() );
     TRACE_BITSTREAM( "==> NumRefIdxActiveMinus1       = %zu \n", ath.getNumRefIdxActiveMinus1() );
   }
@@ -1062,15 +1063,13 @@ void PCCBitstreamReader::patchDataUnit( PatchDataUnit&      pdu,
     plrData( plrd, syntax, asps, bitstream );
   }
   TRACE_BITSTREAM(
-      "Frame %zu, Patch(%zu) => 2Dpos = %4zu %4zu 2Dsize = %4ld %4ld 3Dpos = "
-      "%ld %ld %ld DeltaMaxZ = %ld Projection = "
-      "%zu "
-      "Orientation = %zu lod=(%zu) %zu %zu\n",
+      "Frame %zu, Patch(%zu) => 2Dpos = %4zu %4zu 2Dsize = %4ld %4ld 3Dpos = %ld %ld %ld "
+      "3dRangeD = %ld Projection = %zu Orientation = %zu lod=(%d) %u %u\n",
       pdu.getFrameIndex(), pdu.getPatchIndex(), pdu.get2dPosX(), pdu.get2dPosY(), pdu.get2dSizeXMinus1() + 1,
       pdu.get2dSizeYMinus1() + 1, pdu.get3dOffsetU(), pdu.get3dOffsetV(), pdu.get3dOffsetD(), pdu.get3dRangeD(),
       pdu.getProjectionId(), pdu.getOrientationIndex(), pdu.getLodEnableFlag(),
-      pdu.getLodEnableFlag() ? pdu.getLodScaleXMinus1() : (size_t)0,
-      pdu.getLodEnableFlag() ? pdu.getLodScaleYIdc() : (size_t)0 );
+      pdu.getLodEnableFlag() ? pdu.getLodScaleXMinus1() : (uint8_t)0,
+      pdu.getLodEnableFlag() ? pdu.getLodScaleYIdc() : (uint8_t)0 );
 }
 
 // 8.3.7.4  Skip patch data unit syntax
@@ -1218,9 +1217,9 @@ void PCCBitstreamReader::rawPatchDataUnit( RawPatchDataUnit&   rpdu,
                                            PCCHighLevelSyntax& syntax,
                                            PCCBitstream&       bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
-  int32_t bitCount = ath.getRaw3dPosAxisBitCountMinus1() + 1;
-  TRACE_BITSTREAM( " AtghRaw3dPosAxisBitCountMinus1 = %zu => bitcount = %d \n", ath.getRaw3dPosAxisBitCountMinus1(),
-                   bitCount );
+  int32_t bitCount = ath.getRaw3dOffsetAxisBitCountMinus1() + 1;
+  TRACE_BITSTREAM( " AtghRaw3dOffsetAxisBitCountMinus1 = %zu => bitcount = %d \n",
+                   ath.getRaw3dOffsetAxisBitCountMinus1(), bitCount );
   auto& afti   = syntax.getAtlasFrameParameterSet( ath.getAtlasFrameParameterSetId() ).getAtlasFrameTileInformation();
   auto  ath_id = ath.getId();
   auto  tileIdToIndex = afti.getTileId( ath_id );

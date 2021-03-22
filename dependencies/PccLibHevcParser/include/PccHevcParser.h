@@ -35,8 +35,8 @@ class PccHevcFrame {
   PccHevcFrame(){  nalu_.clear(); }
   ~PccHevcFrame(){ nalu_.clear(); }
   void add( PccHevcNalu& nalu ) {  nalu_.push_back( nalu ); }
-  const std::vector<PccHevcNalu>& getNalu() const { return nalu_; }
-  const PccHevcNalu&              getNalu( size_t frameIndex ) const { return nalu_[frameIndex]; }
+  std::vector<PccHevcNalu>& getNalu() { return nalu_; }
+  PccHevcNalu&              getNalu( size_t frameIndex ) { return nalu_[frameIndex]; }
   const size_t                    getFrameCount() { return nalu_.size(); }
 private:
   std::vector<PccHevcNalu> nalu_;
@@ -49,6 +49,11 @@ class PccHevcParser {
   void getVideoSize( const std::vector<uint8_t>& buffer, size_t& width, size_t& height );
   void display();
 
+  std::vector<PccHevcNalu>&  getVps ()  { return vps_; }
+  std::vector<PccHevcNalu>&  getSps ()  { return sps_; }
+  std::vector<PccHevcNalu>&  getPps ()  { return pps_; }
+  std::vector<PccHevcFrame>& getFrames ()  { return frames_; }
+
  private:
   void setBuffer( const std::vector<uint8_t>& buffer, size_t& width, size_t& height );
   void createNalu( const std::vector<uint8_t>& buffer, const size_t pos, const size_t size );
@@ -57,9 +62,6 @@ class PccHevcParser {
                    const size_t pos,
                    const size_t size );
 
-  const std::vector<PccHevcNalu>& getVps () const { return vps_; }
-  const std::vector<PccHevcNalu>& getSps () const { return sps_; }
-  const std::vector<PccHevcNalu>& getPps () const { return pps_; }
   std::vector<PccHevcNalu>  vps_;
   std::vector<PccHevcNalu>  sps_;
   std::vector<PccHevcNalu>  pps_;

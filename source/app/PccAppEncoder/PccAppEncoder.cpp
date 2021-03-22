@@ -477,6 +477,19 @@ bool parseParameters( int                   argc,
       encoderParams.videoEncoderAttributeCodecId_,
       encoderParams.videoEncoderAttributeCodecId_, 
       "Attribute video encoder codec id" )
+  ( "byteStreamVideoEncoderOccupancy",
+    encoderParams.byteStreamVideoCoderOccupancy_,
+    encoderParams.byteStreamVideoCoderOccupancy_,
+    "Attribute video encoder outputs byteStream" )
+  ( "byteStreamVideoEncoderGeometry",
+    encoderParams.byteStreamVideoCoderGeometry_,
+    encoderParams.byteStreamVideoCoderGeometry_,
+    "Attribute video encoder outputs byteStream" )
+  ( "byteStreamVideoEncoderAttribute",
+    encoderParams.byteStreamVideoCoderAttribute_,
+    encoderParams.byteStreamVideoCoderAttribute_,
+    "Attribute video encoder outputs byteStream" )
+
     ( "geometryQP",
       encoderParams.geometryQP_,
       encoderParams.geometryQP_,
@@ -716,6 +729,12 @@ bool parseParameters( int                   argc,
       encoderParams.use3dmc_,
       encoderParams.use3dmc_,
       "Use auxilliary information for 3d motion compensation.(0: conventional video coding, 1: 3D motion compensated)" )
+#ifdef USE_HM_PCC_RDO
+    ( "usePccRDO",
+      encoderParams.usePccRDO_,
+      encoderParams.usePccRDO_,
+      "Use HEVC PCC RDO optimization" )
+#endif
     ( "geometry3dCoordinatesBitdepth",
       encoderParams.geometry3dCoordinatesBitdepth_,
       encoderParams.geometry3dCoordinatesBitdepth_,

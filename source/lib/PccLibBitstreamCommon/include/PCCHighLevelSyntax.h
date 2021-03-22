@@ -177,8 +177,10 @@ class PCCAtlasHighLevelSyntax {
     atlasTileLayer_.push_back( atgl );
     return atlasTileLayer_.back();
   }
-  AtlasTileLayerRbsp& addAtlasTileLayer( size_t frameIdx, size_t tileIdx ) {
-    AtlasTileLayerRbsp atgl; 
+  AtlasTileLayerRbsp& addAtlasTileLayer(
+      size_t frameIdx,
+      size_t tileIdx ) {  // ajt::how is tileIdx is used, should it also do setTileOrder(tileIdx)?
+    AtlasTileLayerRbsp atgl;
     atgl.setAtlasFrmOrderCntVal( frameIdx );
     atlasTileLayer_.push_back( atgl );
     return atlasTileLayer_.back();
@@ -453,7 +455,12 @@ class PCCHighLevelSyntax {
   void addSeiHashToSeiSuffix( size_t i ) {
     return atlasHLS_[atlasIndex_].addSeiToSeiSuffix( DECODED_ATLAS_INFORMATION_HASH, true, seiHash_[i] );
   }
+
   void allocateSeiHash( size_t hashCount ) { seiHash_.resize( hashCount ); }
+  void allocateSeiHash() {
+    size_t size = seiHash_.size();
+    seiHash_.resize( size + 1 );
+  }
 
   uint8_t getOccupancyPrecision() { return occupancyPrecision_; }
   uint8_t getLog2PatchQuantizerSizeX() { return log2PatchQuantizerSizeX_; }

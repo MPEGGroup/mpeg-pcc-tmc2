@@ -61,13 +61,19 @@ class PCCEncoderParameters {
   PCCCodecId        videoEncoderOccupancyCodecId_;
   PCCCodecId        videoEncoderGeometryCodecId_;
   PCCCodecId        videoEncoderAttributeCodecId_;
+  bool              byteStreamVideoCoderOccupancy_;
+  bool              byteStreamVideoCoderGeometry_;
+  bool              byteStreamVideoCoderAttribute_;
   bool              use3dmc_;
-  std::string       colorSpaceConversionConfig_;
-  std::string       inverseColorSpaceConversionConfig_;
-  size_t            nbThread_;
-  size_t            frameCount_;
-  size_t            groupOfFramesSize_;
-  std::string       uncompressedDataPath_;
+#ifdef USE_HM_PCC_RDO
+  bool usePccRDO_;
+#endif
+  std::string colorSpaceConversionConfig_;
+  std::string inverseColorSpaceConversionConfig_;
+  size_t      nbThread_;
+  size_t      frameCount_;
+  size_t      groupOfFramesSize_;
+  std::string uncompressedDataPath_;
 
   // packing
   size_t minimumImageWidth_;

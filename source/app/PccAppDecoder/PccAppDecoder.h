@@ -49,16 +49,20 @@
 #include "PCCBitstreamReader.h"
 #include "PCCDecoderParameters.h"
 #include "PCCMetricsParameters.h"
+#include "PCCConformanceParameters.h"
+#include "PCCConformance.h"
 #include <program_options_lite.h>
 #include <tbb/tbb.h>
 
-bool parseParameters( int                        argc,
-                      char*                      argv[],
-                      pcc::PCCDecoderParameters& decoderParams,
-                      pcc::PCCMetricsParameters& metricsParams );
+bool parseParameters( int                            argc,
+                      char*                          argv[],
+                      pcc::PCCDecoderParameters&     decoderParams,
+                      pcc::PCCMetricsParameters&     metricsParams,
+                      pcc::PCCConformanceParameters& conformanceParams );
 void usage();
-int  decompressVideo( const pcc::PCCDecoderParameters& decoderParams,
-                      const pcc::PCCMetricsParameters& metricsParams,
+int  decompressVideo( const pcc::PCCDecoderParameters&     decoderParams,
+                      const pcc::PCCMetricsParameters&     metricsParams,
+                      const pcc::PCCConformanceParameters& conformanceParams,
                       pcc::chrono::StopwatchUserTime& );
 
 #endif /* PCC_APP_ENCODER_H */

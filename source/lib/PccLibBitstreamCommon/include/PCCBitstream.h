@@ -182,11 +182,10 @@ class PCCBitstream {
     position_.bytes_ += size;
     return *this;
   }
-  void writeBuffer( const uint8_t* data, const size_t size );
   void copyFrom( PCCBitstream& dataBitstream, const uint64_t startByte, const uint64_t bitstreamSize );
   void copyTo( PCCBitstream& dataBitstream, uint64_t startByte, uint64_t outputSize );
-  void write( PCCVideoBitstream& videoBitstream );
-  void read( PCCVideoBitstream& videoBitstream );
+  void writeVideoStream( PCCVideoBitstream& videoBitstream );
+  void readVideoStream( PCCVideoBitstream& videoBitstream, size_t videoStreamSize );
   bool byteAligned() { return ( position_.bits_ == 0 ); }
   bool moreData() { return position_.bytes_ < data_.size(); }
 
