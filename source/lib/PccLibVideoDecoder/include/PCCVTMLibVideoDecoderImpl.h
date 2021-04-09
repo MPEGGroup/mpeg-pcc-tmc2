@@ -50,22 +50,22 @@ namespace pcc {
 
 template <class T>
 class PCCVTMLibVideoDecoderImpl : public PCCVTMLibVideoDecoderCfg {
-public:
+ public:
   PCCVTMLibVideoDecoderImpl();
 
   ~PCCVTMLibVideoDecoderImpl();
   uint32_t decode( PCCVideoBitstream& bitstream, size_t outputBitDepth, bool RGB2GBR, PCCVideo<T, 3>& video );
 
  private:
-  void                                  xCreateDecLib     ();
-  void                                  xDestroyDecLib    ();
-  void                                  setVideoSize( const SPS* sps );
-  void                                  xWriteOutput( PicList* pcListPic, uint32_t tId, PCCVideo<T, 3>& video );
-  void                                  xFlushOutput( PicList*      pcListPic,  PCCVideo<T, 3>& video, const int layerId = NOT_VALID );
-  void                                  xWritePicture( const Picture* pic, PCCVideo<T, 3>& video );
-  DecLib                                m_cDecLib;
-  int                                   m_iPOCLastDisplay = -MAX_INT;
-  int                                   m_iSkipFrame{};
+  void   xCreateDecLib();
+  void   xDestroyDecLib();
+  void   setVideoSize( const SPS* sps );
+  void   xWriteOutput( PicList* pcListPic, uint32_t tId, PCCVideo<T, 3>& video );
+  void   xFlushOutput( PicList* pcListPic, PCCVideo<T, 3>& video, const int layerId = NOT_VALID );
+  void   xWritePicture( const Picture* pic, PCCVideo<T, 3>& video );
+  DecLib m_cDecLib;
+  int    m_iPOCLastDisplay = -MAX_INT;
+  int    m_iSkipFrame{};
   std::array<int, MAX_NUM_CHANNEL_TYPE> m_outputBitDepth{};
   int                                   m_internalBitDepths;
   int                                   m_outputWidth;
@@ -73,18 +73,17 @@ public:
   bool                                  m_bRGB2GBR;
   bool                                  m_newCLVS[MAX_NUM_LAYER_IDS];
   std::ofstream                         m_seiMessageFileStream;
-  
-  SEIAnnotatedRegions::AnnotatedRegionHeader                 m_arHeader; ///< AR header
-  std::map<uint32_t, SEIAnnotatedRegions::AnnotatedRegionObject> m_arObjects; ///< AR object pool
-  std::map<uint32_t, std::string>                                m_arLabels; ///< AR label pool
-  
-  bool  xIsNaluWithinTargetDecLayerIdSet( const InputNALUnit* nalu ) const;
-  bool  xIsNaluWithinTargetOutputLayerIdSet( const InputNALUnit* nalu ) const;
-  bool  isNewPicture(std::istream *bitstreamFile, class InputByteStream *bytestream);
-  bool  isNewAccessUnit( bool newPicture, std::istream *bitstreamFile, class InputByteStream *bytestream );
-  
-  void xOutputAnnotatedRegions(PicList* pcListPic);
 
+  SEIAnnotatedRegions::AnnotatedRegionHeader                     m_arHeader;   ///< AR header
+  std::map<uint32_t, SEIAnnotatedRegions::AnnotatedRegionObject> m_arObjects;  ///< AR object pool
+  std::map<uint32_t, std::string>                                m_arLabels;   ///< AR label pool
+
+  bool xIsNaluWithinTargetDecLayerIdSet( const InputNALUnit* nalu ) const;
+  bool xIsNaluWithinTargetOutputLayerIdSet( const InputNALUnit* nalu ) const;
+  bool isNewPicture( std::istream* bitstreamFile, class InputByteStream* bytestream );
+  bool isNewAccessUnit( bool newPicture, std::istream* bitstreamFile, class InputByteStream* bytestream );
+
+  void xOutputAnnotatedRegions( PicList* pcListPic );
 };
 
 };  // namespace pcc

@@ -41,10 +41,10 @@ extern "C" {
 #include "global.h"
 #include "h264decoder.h"
 
-void Configure(InputParameters *p_Inp, int ac, char *av[]);
-int OpenDecoder(InputParameters *p_Inp);
-int DecodeOneFrame(DecodedPicList **ppDecPicList);
-int WriteOneFrame(DecodedPicList *pDecPic, int hFileOutput0, int hFileOutput1, int bOutputAllFrames);
+void Configure( InputParameters* p_Inp, int ac, char* av[] );
+int  OpenDecoder( InputParameters* p_Inp );
+int  DecodeOneFrame( DecodedPicList** ppDecPicList );
+int  WriteOneFrame( DecodedPicList* pDecPic, int hFileOutput0, int hFileOutput1, int bOutputAllFrames );
 }
 
 using namespace pcc;
@@ -63,14 +63,14 @@ void PCCJMLibVideoDecoderImpl<T>::decode( PCCVideoBitstream& bitstream,
                                           const std::string& decoderPath,
                                           const std::string& fileName,
                                           const size_t       frameCount ) {
-  std::string         s( reinterpret_cast<char*>( bitstream.buffer() ), bitstream.size() );
-  std::istringstream  iss( s );
-  std::istream&       bitstreamFile = iss;
+  std::string        s( reinterpret_cast<char*>( bitstream.buffer() ), bitstream.size() );
+  std::istringstream iss( s );
+  std::istream&      bitstreamFile = iss;
 
   std::string binName = fileName + ".bin";
   std::string decName = fileName + ".yuv";
-  //std::cout << "[ JM Dec bin ]: " << binName << std::endl;
-  bitstream.write_JM(binName);
+  // std::cout << "[ JM Dec bin ]: " << binName << std::endl;
+  bitstream.write_JM( binName );
 
   std::string        arguments = "JMDEC -i " + binName + " -o " + decName;
   std::istringstream aiss( arguments );
@@ -82,77 +82,65 @@ void PCCJMLibVideoDecoderImpl<T>::decode( PCCVideoBitstream& bitstream,
     arg[token.size()] = '\0';
     args.push_back( arg );
   }
-  int argc = args.size();
+  int    argc = args.size();
   char** argv = &args[0];
   std::cout << "[JM Dec args " << argc << "]: " << arguments << std::endl;
 
   // === from decoder_test.c
-  //jmdecmain(argc, argv);
-  int iRet;
-  DecodedPicList *pDecPicList;
-  int hFileDecOutput0=-1, hFileDecOutput1=-1;
-  int iFramesOutput=0, iFramesDecoded=0;
+  // jmdecmain(argc, argv);
+  int             iRet;
+  DecodedPicList* pDecPicList;
+  int             hFileDecOutput0 = -1, hFileDecOutput1 = -1;
+  int             iFramesOutput = 0, iFramesDecoded = 0;
   InputParameters InputParams;
-
 
   init_time();
 
-  //get input parameters;
-  Configure(&InputParams, argc, argv);
+  // get input parameters;
+  Configure( &InputParams, argc, argv );
 
-  //open decoder;
-  iRet = OpenDecoder(&InputParams);
-  if(iRet != DEC_OPEN_NOERR)
-  {
-    fprintf(stderr, "Open encoder failed: 0x%x!\n", iRet);
-    return; //failed;
+  // open decoder;
+  iRet = OpenDecoder( &InputParams );
+  if ( iRet != DEC_OPEN_NOERR ) {
+    fprintf( stderr, "Open encoder failed: 0x%x!\n", iRet );
+    return;  // failed;
   }
 
-  //decoding;
-  do
-  {
-    iRet = DecodeOneFrame(&pDecPicList);
-    if(iRet==DEC_EOS || iRet==DEC_SUCCEED)
-    {
-      //process the decoded picture, output or display;
-      iFramesOutput += WriteOneFrame(pDecPicList, hFileDecOutput0, hFileDecOutput1, 0);
+  // decoding;
+  do {
+    iRet = DecodeOneFrame( &pDecPicList );
+    if ( iRet == DEC_EOS || iRet == DEC_SUCCEED ) {
+      // process the decoded picture, output or display;
+      iFramesOutput += WriteOneFrame( pDecPicList, hFileDecOutput0, hFileDecOutput1, 0 );
       iFramesDecoded++;
+    } else {
+      // error handling;
+      fprintf( stderr, "Error in decoding process: 0x%x\n", iRet );
     }
-    else
-    {
-      //error handling;
-      fprintf(stderr, "Error in decoding process: 0x%x\n", iRet);
-    }
-  }while((iRet == DEC_SUCCEED) && ((p_Dec->p_Inp->iDecFrmNum==0) || (iFramesDecoded<p_Dec->p_Inp->iDecFrmNum)));
+  } while ( ( iRet == DEC_SUCCEED ) &&
+            ( ( p_Dec->p_Inp->iDecFrmNum == 0 ) || ( iFramesDecoded < p_Dec->p_Inp->iDecFrmNum ) ) );
 
-  iRet = FinitDecoder(&pDecPicList);
-  iFramesOutput += WriteOneFrame(pDecPicList, hFileDecOutput0, hFileDecOutput1 , 1);
+  iRet = FinitDecoder( &pDecPicList );
+  iFramesOutput += WriteOneFrame( pDecPicList, hFileDecOutput0, hFileDecOutput1, 1 );
   iRet = CloseDecoder();
 
-  //quit;
-  if(hFileDecOutput0>=0)
-  {
-    close(hFileDecOutput0);
-  }
-  if(hFileDecOutput1>=0)
-  {
-    close(hFileDecOutput1);
-  }
+  // quit;
+  if ( hFileDecOutput0 >= 0 ) { close( hFileDecOutput0 ); }
+  if ( hFileDecOutput1 >= 0 ) { close( hFileDecOutput1 ); }
   // end decoding
 
-  int decWidth = pDecPicList->iWidth;
-  int decHeight = pDecPicList->iHeight;
-  int YUVFormat = pDecPicList->iYUVFormat;
-  PCCCOLORFORMAT format = RGB2GBR? PCCCOLORFORMAT::YUV444: PCCCOLORFORMAT::YUV420;
-  const size_t nbyte = outputBitDepth==8? 1: 2;
+  int            decWidth  = pDecPicList->iWidth;
+  int            decHeight = pDecPicList->iHeight;
+  int            YUVFormat = pDecPicList->iYUVFormat;
+  PCCCOLORFORMAT format    = RGB2GBR ? PCCCOLORFORMAT::YUV444 : PCCCOLORFORMAT::YUV420;
+  const size_t   nbyte     = outputBitDepth == 8 ? 1 : 2;
 
   video.clear();
-  video.read_JM(decName, decWidth, decHeight, format, iFramesDecoded, nbyte);
+  video.read_JM( decName, decWidth, decHeight, format, iFramesDecoded, nbyte );
 
-  printf("[ JM Dec ] %d frames are decoded: %dx%d.\n", iFramesDecoded, decWidth, decHeight);
+  printf( "[ JM Dec ] %d frames are decoded: %dx%d.\n", iFramesDecoded, decWidth, decHeight );
   return;
 }
-
 
 template class pcc::PCCJMLibVideoDecoderImpl<uint8_t>;
 template class pcc::PCCJMLibVideoDecoderImpl<uint16_t>;

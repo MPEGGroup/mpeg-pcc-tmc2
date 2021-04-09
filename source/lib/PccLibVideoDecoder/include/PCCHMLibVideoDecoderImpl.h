@@ -56,13 +56,13 @@ class PCCHMLibVideoDecoderImpl {
   ~PCCHMLibVideoDecoderImpl();
   void decode( PCCVideoBitstream& bitstream, size_t outputBitDepth, bool RGB2GBR, PCCVideo<T, 3>& video );
 
-// #if PCC_CF_EXT
+  // #if PCC_CF_EXT
   // void setLogger( PCCLogger& logger ) { logger_ = &logger; }
-// #endif
+  // #endif
  protected:
-// #if PCC_CF_EXT
+  // #if PCC_CF_EXT
   // PCCLogger* logger_ = nullptr;
-// #endif
+  // #endif
 
  private:
   void               setVideoSize( const pcc_hm::TComSPS* sps );

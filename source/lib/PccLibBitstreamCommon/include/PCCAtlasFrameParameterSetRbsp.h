@@ -56,14 +56,14 @@ class AtlasFrameParameterSetRbsp {
   ~AtlasFrameParameterSetRbsp() {}
   AtlasFrameParameterSetRbsp& operator=( const AtlasFrameParameterSetRbsp& ) = default;
   void                        copyFrom( AtlasFrameParameterSetRbsp& refAfps ) {
-    atlasSequenceParameterSetId_      = refAfps.getAtlasSequenceParameterSetId();
-    numRefIdxDefaultActiveMinus1_     = refAfps.getNumRefIdxDefaultActiveMinus1();
-    additionalLtAfocLsbLen_           = refAfps.getAdditionalLtAfocLsbLen();
-    lodModeEnableFlag_                = refAfps.getLodModeEnableFlag();
+    atlasSequenceParameterSetId_         = refAfps.getAtlasSequenceParameterSetId();
+    numRefIdxDefaultActiveMinus1_        = refAfps.getNumRefIdxDefaultActiveMinus1();
+    additionalLtAfocLsbLen_              = refAfps.getAdditionalLtAfocLsbLen();
+    lodModeEnableFlag_                   = refAfps.getLodModeEnableFlag();
     raw3doffsetBitCountExplicitModeFlag_ = refAfps.getRaw3dOffsetBitCountExplicitModeFlag();
-    extensionFlag_                    = refAfps.getExtensionFlag();
-    extension8Bits_                   = refAfps.getExtension8Bits();
-    atlasFrameTileInformation_        = refAfps.getAtlasFrameTileInformation();
+    extensionFlag_                       = refAfps.getExtensionFlag();
+    extension8Bits_                      = refAfps.getExtension8Bits();
+    atlasFrameTileInformation_           = refAfps.getAtlasFrameTileInformation();
   }
 
   uint8_t                    getAtlasFrameParameterSetId() { return atlasFrameParameterSetId_; }

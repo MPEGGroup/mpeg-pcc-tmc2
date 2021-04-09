@@ -879,6 +879,41 @@ bool parseParameters( int                   argc,
       metricsParams.neighborsProc_,
       metricsParams.neighborsProc_,
       "0(undefined), 1(average), 2(weighted average), 3(min), 4(max) neighbors with same geometric distance" );
+
+    //8.3.4.2	Profile, tier and level syntax
+     opts.addOptions()
+    ( "ptlTierFlag", 
+      encoderParams.ptlTierFlag_,
+      encoderParams.ptlTierFlag_, 
+      "ptl Tier Flag" )
+    ( "ptlProfileCodecGroupIdc", 
+      encoderParams.ptlProfileCodecGroupIdc_,
+      encoderParams.ptlProfileCodecGroupIdc_, 
+      "ptl Profile Codec Group Idc" )
+    ( "ptlProfileToolsetIdc", 
+      encoderParams.ptlProfileToolsetIdc_,
+      encoderParams.ptlProfileToolsetIdc_, 
+      "ptl Profile Toolset Idc" )
+    ( "ptlLevelIdc", 
+      encoderParams.ptlLevelIdc_,
+      encoderParams.ptlLevelIdc_, 
+      "ptl Level Idc" );
+
+    //8.3.4.6	Profile toolset constraints information syntax
+      opts.addOptions()
+    ( "ptcOneV3CFrameOnlyFlag", 
+      encoderParams.ptcOneV3CFrameOnlyFlag_,
+      encoderParams.ptcOneV3CFrameOnlyFlag_, 
+      "ptc One V3C Frame Only Flag" )
+    ( "ptcNoEightOrientationsConstraintFlag", 
+      encoderParams.ptcNoEightOrientationsConstraintFlag_,
+      encoderParams.ptcNoEightOrientationsConstraintFlag_, 
+      "ptc No Eight Orientations Constraint Flag" )
+    ( "ptcNo45DegreeProjectionPatchConstraintFlag", 
+      encoderParams.ptcNo45DegreeProjectionPatchConstraintFlag_,
+      encoderParams.ptcNo45DegreeProjectionPatchConstraintFlag_, 
+      "ptc No 45 Degree Projection Patch Constraint Flag" );
+   
   // clang-format on
   po::setDefaults( opts );
   po::ErrorReporter        err;

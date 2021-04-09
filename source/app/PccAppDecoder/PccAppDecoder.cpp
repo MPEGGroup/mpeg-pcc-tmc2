@@ -233,7 +233,6 @@ bool parseParameters( int                       argc,
     ( "surfaceSeparation", ignore, ignore, "Ignore parameter");
 
   opts.addOptions()
-     ("help", print_help, false, "This help text")
      ( "checkConformance", 
        conformanceParams.checkConformance_, 
        conformanceParams.checkConformance_, 
@@ -286,7 +285,7 @@ bool parseParameters( int                       argc,
 
 int decompressVideo( const PCCDecoderParameters&     decoderParams,
                      const PCCMetricsParameters&     metricsParams,
-                     const PCCConformanceParameters& conformanceParams,
+                     PCCConformanceParameters& conformanceParams,
                      StopwatchUserTime&              clock ) {
   PCCBitstream     bitstream;
   PCCBitstreamStat bitstreamStat;
@@ -356,7 +355,14 @@ int decompressVideo( const PCCDecoderParameters&     decoderParams,
         sources.clear();
         normals.clear();
       }
-      if ( conformanceParams.checkConformance_ ) { conformance.check( conformanceParams ); }
+
+#ifdef CONFORMANCE_TRACE  
+      if ( conformanceParams.checkConformance_ ) { 
+          conformanceParams.levelIdc_ = context.getVps().getProfileTierLevel().getLevelIdc();
+          conformance.check( conformanceParams ); 
+      }
+#endif
+
       if ( !decoderParams.reconstructedDataPath_.empty() ) {
         reconstructs.write( decoderParams.reconstructedDataPath_, frameNumber );
       } else {

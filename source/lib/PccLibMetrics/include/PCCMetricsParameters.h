@@ -43,7 +43,7 @@ class PCCMetricsParameters {
   PCCMetricsParameters();
   ~PCCMetricsParameters();
   void print();
-  bool check( bool checkFiles = false );
+  bool check( bool compareLogFiles = false );
   void completePath();
 
   bool computeMetrics_;

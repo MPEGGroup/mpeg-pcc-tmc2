@@ -138,11 +138,13 @@ class PCCVideoBitstream {
     data_.swap( data );
   }
 
-  void sampleStreamToByteStream( size_t precision                = 4,
+  void sampleStreamToByteStream( bool   isVvc                    = false,
+                                 size_t precision                = 4,
                                  bool   emulationPreventionBytes = false,
                                  bool   changeStartCodeSize      = true ) {
     size_t               sizeStartCode = 4, startIndex = 0, endIndex = 0;
     std::vector<uint8_t> data;
+    bool                 newFrame = true;
     do {
       int32_t naluSize = 0;
       for ( size_t i = 0; i < precision; i++ ) { naluSize = ( naluSize << 8 ) + data_[startIndex + i]; }
@@ -162,15 +164,32 @@ class PCCVideoBitstream {
         for ( size_t i = startIndex + precision; i < endIndex; i++ ) { data.push_back( data_[i] ); }
       }
       startIndex = endIndex;
-      // the first NALU of a frame, NAL_UNIT_VPS, NAL_UNIT_SPS, NAL_UNIT_PPS : size=4
-      int  naluType   = ( ( data_[startIndex + precision] ) & 126 ) >> 1;
-      bool isNewFrame = false;  // isNewFrameNalu(POC calculation);
-      if ( isNewFrame == true || ( changeStartCodeSize && ( naluType == 32 || naluType == 33 || naluType == 34 ) ) ) {
-        sizeStartCode = 4;
-      } else {
-        sizeStartCode = 3;
+      if ( ( startIndex + precision ) < data_.size() ) {
+        // HEVC
+        //   Bool forbidden_zero_bit = bs.read(1);           // forbidden_zero_bit
+        //   nalu.m_nalUnitType = (NalUnitType) bs.read(6);  // nal_unit_type
+        //   nalu.m_nuhLayerId = bs.read(6);                 // nuh_layer_id
+        //   nalu.m_temporalId = bs.read(3) - 1;             // nuh_temporal_id_plus1
+        // VVC
+        //   nalu.m_forbiddenZeroBit   = bs.read(1);                 // forbidden zero bit
+        //   nalu.m_nuhReservedZeroBit = bs.read(1);                 // nuh_reserved_zero_bit
+        //   nalu.m_nuhLayerId         = bs.read(6);                 // nuh_layer_id
+        //   nalu.m_nalUnitType        = (NalUnitType) bs.read(5);   // nal_unit_type
+        //   nalu.m_temporalId         = bs.read(3) - 1;             // nuh_temporal_id_plus1
+        int naluType = isVvc ? ( ( ( data_[startIndex + precision + 1] ) & 248 ) >> 3 )
+                             : ( ( ( data_[startIndex + precision] ) & 126 ) >> 1 );
+        bool useLongStartCode = false;
+        if ( isVvc ) {
+          useLongStartCode = newFrame || ( naluType >= 12 && naluType < 20 );
+          newFrame         = false;
+          if ( naluType < 12 ) { newFrame = true; }
+        } else {
+          useLongStartCode = newFrame || ( naluType >= 32 && naluType < 41 );
+          newFrame         = false;
+          if ( naluType < 12 ) { newFrame = true; }
+        }
+        sizeStartCode = useLongStartCode ? 4 : 3;
       }
-
     } while ( endIndex < data_.size() );
     data_.swap( data );
   }
@@ -179,9 +198,8 @@ class PCCVideoBitstream {
   size_t getEndOfNaluPosition( size_t startIndex ) {
     const size_t size = data_.size();
     if ( size < startIndex + 4 ) { return size; }
-    for ( size_t i = startIndex; i < size - 4 ; i++ ) {
-      if ( ( data_[i + 0] == 0x00 ) && 
-           ( data_[i + 1] == 0x00 ) &&
+    for ( size_t i = startIndex; i < size - 4; i++ ) {
+      if ( ( data_[i + 0] == 0x00 ) && ( data_[i + 1] == 0x00 ) &&
            ( ( data_[i + 2] == 0x01 ) || ( ( data_[i + 2] == 0x00 ) && ( data_[i + 3] == 0x01 ) ) ) ) {
         return i;
       }

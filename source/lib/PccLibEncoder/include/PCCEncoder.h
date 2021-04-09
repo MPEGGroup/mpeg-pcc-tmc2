@@ -127,7 +127,9 @@ class PCCEncoder : public PCCCodec {
                                       AtlasTileLayerRbsp& atglu,
                                       size_t              frameIndex,
                                       size_t              tileIndex = 0 );
-  void createHashInformation( PCCContext& context, int frameIndex, size_t hashType );
+
+  void createHlsAtlasTileLogFiles( PCCContext& context, int frameIndex, int afpsId);
+  void createHashSEI( PCCContext& context, int frameIndex, size_t hashType );
 
  private:
   template <typename T>

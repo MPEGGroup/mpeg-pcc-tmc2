@@ -369,8 +369,7 @@ void PCCInternalColorConverter<T>::convert( std::string        configuration,
     convertRGB44ToYUV444( videoSrc, videoDst, bitdepth == 8 ? 1 : 2, filter );
   } else if ( config == "YUV444ToRGB444" ) {
     convertYUV444ToRGB444( videoSrc, videoDst, bitdepth == 8 ? 1 : 2, filter );
-  }
-  else {
+  } else {
     printf( "PCCInternalColorConverter convert format not supported: %s \n", config.c_str() );
     exit( -1 );
   }

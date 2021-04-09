@@ -77,15 +77,18 @@ class PCCVideoDecoder {
     const std::string binFileName = fileName + ".bin";
     size_t            width = 0, height = 0;
     size_t            nbyte = bitDepth == 8 ? 1 : 2;
-    
-    if(byteStreamVideoCoder)
-      bitstream.sampleStreamToByteStream();
-      
+
+#ifdef USE_VTMLIB_VIDEO_CODEC
+    if ( byteStreamVideoCoder ) { bitstream.sampleStreamToByteStream( codecId == VTMLIB ); }
+#else
+    if ( byteStreamVideoCoder ) { bitstream.sampleStreamToByteStream(); }
+#endif
     if ( keepIntermediateFiles ) { bitstream.write( binFileName ); }
 
     // Decode video
-    auto decoder = PCCVirtualVideoDecoder<T>::create( codecId );    
-    printf( " decompress codecId = %d size(T) = %zu bitDepth = %d \n", (int)codecId, sizeof( T ), bitDepth == 8 ? 8 : 10 );
+    auto decoder = PCCVirtualVideoDecoder<T>::create( codecId );
+    printf( " decompress codecId = %d size(T) = %zu bitDepth = %d \n", (int)codecId, sizeof( T ),
+            bitDepth == 8 ? 8 : 10 );
     fflush( stdout );
     decoder->decode( bitstream, bitDepth == 8 ? 8 : 10, use444CodecIo, video, decoderPath, fileName, frameCount );
 

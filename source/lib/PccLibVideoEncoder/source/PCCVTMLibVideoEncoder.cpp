@@ -61,7 +61,7 @@ void PCCVTMLibVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
   cmd << " --InputBitDepth=" << params.inputBitDepth_;
   cmd << " --InputChromaFormat=" << ( params.use444CodecIo_ ? "444" : "420" );
   cmd << " --OutputBitDepth=" << params.outputBitDepth_;
-  cmd << " --OutputBitDepthC=" << params.outputBitDepth_ ;
+  cmd << " --OutputBitDepthC=" << params.outputBitDepth_;
   cmd << " --FrameRate=30";
   cmd << " --FrameSkip=0";
   cmd << " --SourceWidth=" << width;
@@ -79,25 +79,25 @@ void PCCVTMLibVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
   //  }
   if ( params.use444CodecIo_ ) { cmd << " --InputColourSpaceConvert=RGBtoGBR"; }
   std::cout << cmd.str() << std::endl;
-  
+
   std::string arguments = cmd.str();
-  
+
   fprintf( stdout, "\n" );
   fprintf( stdout, "VVCSoftware: VTM Encoder Version %s ", VTM_VERSION );
   fprintf( stdout, NVM_ONOS );
   fprintf( stdout, NVM_COMPILEDBY );
   fprintf( stdout, NVM_BITS );
   fprintf( stdout, "\n" );
-  
+
   std::ostringstream oss( ostringstream::binary | ostringstream::out );
   std::ostream&      bitstreamFile = oss;
   EncLibCommon       encLibCommon;
-  
+
   initROM();
   TComHash::initBlockSizeToIndex();
-  
+
   PCCVTMLibVideoEncoderImpl<T> encoder( bitstreamFile, &encLibCommon );
-  
+
   std::istringstream iss( arguments );
   std::string        token;
   std::vector<char*> args;
@@ -108,13 +108,13 @@ void PCCVTMLibVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
     args.push_back( arg );
   }
   encoder.create();
-    // parse configuration
+  // parse configuration
   try {
     if ( !encoder.parseCfg( args.size(), &args[0] ) ) {
       encoder.destroy();
-  #if ENVIRONMENT_VARIABLE_DEBUG_AND_TEST
+#if ENVIRONMENT_VARIABLE_DEBUG_AND_TEST
       EnvVar::printEnvVar();
-  #endif
+#endif
       return;
     }
   } catch ( df::program_options_lite::ParseFailure& e ) {
@@ -122,98 +122,81 @@ void PCCVTMLibVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
     return;
   }
   for ( size_t i = 0; i < args.size(); i++ ) { delete[] args[i]; }
-  
+
   encoder.createLib( 0 );
-  
-  auto startTime  = std::chrono::steady_clock::now();
-  std::time_t startTime2 = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-  fprintf(stdout, " started @ %s", std::ctime(&startTime2) );
+
+  auto        startTime  = std::chrono::steady_clock::now();
+  std::time_t startTime2 = std::chrono::system_clock::to_time_t( std::chrono::system_clock::now() );
+  fprintf( stdout, " started @ %s", std::ctime( &startTime2 ) );
   clock_t startClock = clock();
-  
+
   bool eos = false;
-  
-  while( !eos )
-  {
+
+  while ( !eos ) {
     // read GOP
     bool keepLoop = true;
-    while( keepLoop )
-    {
+    while ( keepLoop ) {
 #ifndef _DEBUG
-      try
-      {
+      try {
 #endif
         keepLoop = encoder.encodePrep( eos, videoSrc, arguments, videoRec );
 #ifndef _DEBUG
-      }
-      catch( Exception &e )
-      {
+      } catch ( Exception& e ) {
         std::cerr << e.what() << std::endl;
         return;
-      }
-      catch( const std::bad_alloc &e )
-      {
+      } catch ( const std::bad_alloc& e ) {
         std::cout << "Memory allocation failed: " << e.what() << std::endl;
         return;
       }
 #endif
     }
-    
+
     // encode GOP
     keepLoop = true;
-    while( keepLoop )
-    {
+    while ( keepLoop ) {
 #ifndef _DEBUG
-      try
-      {
+      try {
 #endif
         keepLoop = encoder.encode( videoSrc, arguments, bitstream, videoRec );
 #ifndef _DEBUG
-      }
-      catch( Exception &e )
-      {
+      } catch ( Exception& e ) {
         std::cerr << e.what() << std::endl;
         return;
-      }
-      catch( const std::bad_alloc &e )
-      {
+      } catch ( const std::bad_alloc& e ) {
         std::cout << "Memory allocation failed: " << e.what() << std::endl;
         return;
       }
 #endif
     }
   }
-  
+
   auto buffer = oss.str();
   bitstream.resize( buffer.size() );
   std::copy( buffer.data(), buffer.data() + buffer.size(), bitstream.vector().begin() );
-  
-  clock_t endClock = clock();
-  auto endTime = std::chrono::steady_clock::now();
-  std::time_t endTime2 = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-  auto encTime = std::chrono::duration_cast<std::chrono::milliseconds>( endTime - startTime).count();
-  
-  printf( "\n finished @ %s", std::ctime(&endTime2) );
-  printf(" Total Time: %12.3f sec. [user] %12.3f sec. [elapsed]\n",
-         (endClock - startClock) * 1.0 / CLOCKS_PER_SEC,
-         encTime / 1000.0);
-  
+
+  clock_t     endClock = clock();
+  auto        endTime  = std::chrono::steady_clock::now();
+  std::time_t endTime2 = std::chrono::system_clock::to_time_t( std::chrono::system_clock::now() );
+  auto        encTime  = std::chrono::duration_cast<std::chrono::milliseconds>( endTime - startTime ).count();
+
+  printf( "\n finished @ %s", std::ctime( &endTime2 ) );
+  printf( " Total Time: %12.3f sec. [user] %12.3f sec. [elapsed]\n", ( endClock - startClock ) * 1.0 / CLOCKS_PER_SEC,
+          encTime / 1000.0 );
+
   encoder.destroyLib();
   encoder.destroy();
   destroyROM();
-  
-  printf( "\n finished @ %s", std::ctime(&endTime2) );
 
-  #if JVET_O0756_CALCULATE_HDRMETRICS
-    printf(" Encoding Time (Total Time): %12.3f ( %12.3f ) sec. [user] %12.3f ( %12.3f ) sec. [elapsed]\n",
-           ((endClock - startClock) * 1.0 / CLOCKS_PER_SEC) - (metricTimeuser/1000.0),
-           (endClock - startClock) * 1.0 / CLOCKS_PER_SEC,
-           encTime / 1000.0,
-           totalTime / 1000.0);
-  #else
-    printf(" Total Time: %12.3f sec. [user] %12.3f sec. [elapsed]\n",
-           (endClock - startClock) * 1.0 / CLOCKS_PER_SEC,
-           encTime / 1000.0);
-  #endif
+  printf( "\n finished @ %s", std::ctime( &endTime2 ) );
+
+#if JVET_O0756_CALCULATE_HDRMETRICS
+  printf( " Encoding Time (Total Time): %12.3f ( %12.3f ) sec. [user] %12.3f ( %12.3f ) sec. [elapsed]\n",
+          ( ( endClock - startClock ) * 1.0 / CLOCKS_PER_SEC ) - ( metricTimeuser / 1000.0 ),
+          ( endClock - startClock ) * 1.0 / CLOCKS_PER_SEC, encTime / 1000.0, totalTime / 1000.0 );
+#else
+  printf( " Total Time: %12.3f sec. [user] %12.3f sec. [elapsed]\n", ( endClock - startClock ) * 1.0 / CLOCKS_PER_SEC,
+          encTime / 1000.0 );
+#endif
 }
 
 template class pcc::PCCVTMLibVideoEncoder<uint8_t>;

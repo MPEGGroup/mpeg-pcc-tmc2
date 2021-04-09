@@ -41,7 +41,7 @@
 #include <list>
 #include <map>
 #include <vector>
-#include<utility>
+#include <utility>
 
 namespace pcc {
 
@@ -55,17 +55,19 @@ class PCCConformance {
   void check( const PCCConformanceParameters& params );
 
  private:
-  bool checkFiles( std::string&, std::string&, const std::vector<std::string>&, KeyValMaps&, KeyValMaps& );
-  void checkConformance( uint8_t, double, KeyValMaps&, bool );
+  bool compareLogFiles( std::string&, std::string&, const std::vector<std::string>&, KeyValMaps&, KeyValMaps& );
+  void checkLevelLimits( uint8_t, double, KeyValMaps&, bool );
   template <typename T>
   inline bool checkLimit( const std::string& keyVal, T&, T& );
   template <typename T>
   inline void convertString( const std::string& keyValue, T& val );
 
-  size_t conformanceCount_;
-  bool   allTestsMatch_;
+  size_t levelLimitsCount_;
+  size_t logFilesCount_;
+  bool   logFileTestsMatch_;
+  bool   levelLimitTestsMatch_;
 };
 
 }  // namespace pcc
 
-#endif //~PCCConformanceParser_h
+#endif  //~PCCConformanceParser_h

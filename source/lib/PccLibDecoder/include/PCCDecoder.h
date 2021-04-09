@@ -74,7 +74,8 @@ class PCCDecoder : public PCCCodec {
   bool                 compareHashSEIMD5( std::vector<uint8_t>& encMD5, std::vector<uint8_t>& decMD5 );
   bool                 compareHashSEICrc( uint16_t encCrc, uint16_t decCrc );
   bool                 compareHashSEICheckSum( uint32_t encCheckSum, uint32_t decCheckSum );
-  void                 createHashInformation( PCCContext& context, int frameIndex );
+  void                 createHashSEI( PCCContext& context, int frameIndex );
+  void                 createHlsAtlasTileLogFiles( PCCContext& context, int frameIndex );
   PCCDecoderParameters params_;
 };
 };  // namespace pcc

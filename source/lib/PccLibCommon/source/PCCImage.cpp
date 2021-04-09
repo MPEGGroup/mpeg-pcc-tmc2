@@ -37,16 +37,16 @@
 using namespace pcc;
 
 template <typename T, size_t N>
-std::string PCCImage<T,N>::computeMD5( size_t channel ) {
+std::string PCCImage<T, N>::computeMD5( size_t channel ) {
   MD5                  md5Hash;
   std::vector<uint8_t> vector;
   vector.resize( 16 );
-  md5Hash.update( (uint8_t*)( channels_[channel].data() ), channels_[channel].size() * sizeof(T) );
+  md5Hash.update( (uint8_t*)( channels_[channel].data() ), channels_[channel].size() * sizeof( T ) );
   md5Hash.finalize( vector.data() );
   char result[33];
-  for(size_t i = 0; i< 16; i++) { sprintf( result + 2 * i, "%02x", vector[i] ); }    
+  for ( size_t i = 0; i < 16; i++ ) { sprintf( result + 2 * i, "%02x", vector[i] ); }
   return std::string( result );
 }
 
-template class pcc::PCCImage<uint8_t,3>;
-template class pcc::PCCImage<uint16_t,3>;
+template class pcc::PCCImage<uint8_t, 3>;
+template class pcc::PCCImage<uint16_t, 3>;

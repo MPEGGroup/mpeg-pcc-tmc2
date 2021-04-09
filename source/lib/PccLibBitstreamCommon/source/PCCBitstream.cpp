@@ -99,14 +99,14 @@ void PCCBitstream::writeVideoStream( PCCVideoBitstream& videoBitstream ) {
 #ifdef BITSTREAM_TRACE
   trace( "Code: PCCVideoBitstream \n" );
 #endif
-  uint8_t* data=videoBitstream.buffer();
-  size_t size =videoBitstream.size();
+  uint8_t* data = videoBitstream.buffer();
+  size_t   size = videoBitstream.size();
   realloc( size );
-  #ifdef BITSTREAM_TRACE
-    trace( "Code: size = %zu \n", size );
-  #endif
-    memcpy( data_.data() + position_.bytes_, data, size );
-    position_.bytes_ += size;
+#ifdef BITSTREAM_TRACE
+  trace( "Code: size = %zu \n", size );
+#endif
+  memcpy( data_.data() + position_.bytes_, data, size );
+  position_.bytes_ += size;
   videoBitstream.trace();
 }
 void PCCBitstream::copyFrom( PCCBitstream& dataBitstream, const uint64_t startByte, const uint64_t bitstreamSize ) {

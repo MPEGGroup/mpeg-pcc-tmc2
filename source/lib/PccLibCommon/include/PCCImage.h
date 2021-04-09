@@ -190,8 +190,8 @@ class PCCImage {
     // printf(
     //     "copy image PCC: Shift=%d Round=%d (%4zux%4zu S=%4zu C:%4zux%4zu => "
     //     "%4zux%4zu) stride = %4zu %4zu bgr=%d sizeof(Pel) = %zu sizeof(T) = %zu \n",
-    //     shiftbits, rounding, widthY, heightY, strideY, widthC, heightC, width_, height_, 
-    //     strideY, strideC, 
+    //     shiftbits, rounding, widthY, heightY, strideY, widthC, heightC, width_, height_,
+    //     strideY, strideC,
     //     rgb2bgr, sizeof(Pel), sizeof(T) );
     for ( size_t c = 0; c < 3; c++ ) {
       auto* src = ptr[rgb2bgr][c];
@@ -323,13 +323,13 @@ class PCCImage {
 
   void setValue( const size_t channelIndex, const size_t u, const size_t v, const T value ) {
     assert( channelIndex < N && u < width_ && v < height_ );
-    if (format_ == YUV420 && channelIndex != 0)
-      channels_[channelIndex][( v * width_>>1 ) + u] = value;
+    if ( format_ == YUV420 && channelIndex != 0 )
+      channels_[channelIndex][( v * width_ >> 1 ) + u] = value;
     else
-    channels_[channelIndex][v * width_ + u] = value;
+      channels_[channelIndex][v * width_ + u] = value;
   }
-  void setValueYuvChroma( const size_t channelIndex, const size_t u, const size_t v, const T value ) {    
-    channels_[channelIndex][v * (width_>>1) + u] = value;
+  void setValueYuvChroma( const size_t channelIndex, const size_t u, const size_t v, const T value ) {
+    channels_[channelIndex][v * ( width_ >> 1 ) + u] = value;
   }
 
   T getValue( const size_t channelIndex, const size_t u, const size_t v ) const {
@@ -341,7 +341,7 @@ class PCCImage {
     if ( format_ == YUV420 && channelIndex != 0 )
       return channels_[channelIndex][( v * width_ >> 1 ) + u];
     else
-    return channels_[channelIndex][v * width_ + u];
+      return channels_[channelIndex][v * width_ + u];
   }
 
   bool copyBlock( size_t top, size_t left, size_t width, size_t height, PCCImage& block ) {
@@ -367,12 +367,12 @@ class PCCImage {
     return true;
   }
   void copyFrom( PCCImage& image ) {
-    size_t width = ( std::min )( width_, image.width_ );
-    size_t height = ( std::min )( height_, image.height_ );
-    size_t subsample = format_ == YUV420 ? 2 : 1;
-    const size_t strideSrc[3] = {image.width_, image.width_ / subsample, image.width_ / subsample};
-    const size_t strideDst[3] = {width_, width_ / subsample, width_ / subsample};
-    const size_t widthComp[3] = {width, width / subsample, width / subsample};
+    size_t       width         = ( std::min )( width_, image.width_ );
+    size_t       height        = ( std::min )( height_, image.height_ );
+    size_t       subsample     = format_ == YUV420 ? 2 : 1;
+    const size_t strideSrc[3]  = {image.width_, image.width_ / subsample, image.width_ / subsample};
+    const size_t strideDst[3]  = {width_, width_ / subsample, width_ / subsample};
+    const size_t widthComp[3]  = {width, width / subsample, width / subsample};
     const size_t heightComp[3] = {height, height / subsample, height / subsample};
     for ( size_t c = 0; c < N; c++ ) {
       T* src = image.channels_[c].data();
@@ -383,15 +383,15 @@ class PCCImage {
     }
   }
   void copyRawData( PCCImage& image ) {
-    size_t width = ( std::min )( width_, image.width_ );
-    size_t height = ( std::min )( height_, image.height_ );
-    size_t subsample = format_ == YUV420 ? 2 : 1;
-    const size_t widthComp[3] = {width, width / subsample, width / subsample};
+    size_t       width         = ( std::min )( width_, image.width_ );
+    size_t       height        = ( std::min )( height_, image.height_ );
+    size_t       subsample     = format_ == YUV420 ? 2 : 1;
+    const size_t widthComp[3]  = {width, width / subsample, width / subsample};
     const size_t heightComp[3] = {height, height / subsample, height / subsample};
     for ( size_t c = 0; c < N; c++ ) {
       size_t size = widthComp[c] * heightComp[c];
-      T* src = image.channels_[c].data();
-      T* dst = channels_[c].data();
+      T*     src  = image.channels_[c].data();
+      T*     dst  = channels_[c].data();
       for ( size_t v = 0; v < size; ++v ) { *( dst++ ) = *( src++ ); }
     }
   }
@@ -488,6 +488,7 @@ class PCCImage {
   }
 
   std::string computeMD5( size_t channel );
+
  private:
   T      clamp( T v, T a, T b ) const { return ( ( v < a ) ? a : ( ( v > b ) ? b : v ) ); }
   int    clamp( int v, int a, int b ) const { return ( ( v < a ) ? a : ( ( v > b ) ? b : v ) ); }

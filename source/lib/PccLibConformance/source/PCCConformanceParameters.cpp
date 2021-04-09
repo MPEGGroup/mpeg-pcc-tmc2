@@ -38,8 +38,8 @@ using namespace pcc;
 PCCConformanceParameters::PCCConformanceParameters() {
   checkConformance_ = false;
   path_             = {};
-  levelIdc_         = 0;
-  fps_              = 0;
+  levelIdc_         = 30;
+  fps_              = 30;
 }
 
 PCCConformanceParameters::~PCCConformanceParameters() = default;

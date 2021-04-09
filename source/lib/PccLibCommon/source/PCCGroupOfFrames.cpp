@@ -68,10 +68,10 @@ bool PCCGroupOfFrames::load( const std::string&      uncompressedDataPath,
   return ( startFrameNumber != endFrameNumber );
 }
 
-bool PCCGroupOfFrames::write( const std::string& reconstructedDataPath, 
-                              size_t& frameNumber,  
-                              const size_t nbThread,  
-                              const bool isAscii ) {
+bool PCCGroupOfFrames::write( const std::string& reconstructedDataPath,
+                              size_t&            frameNumber,
+                              const size_t       nbThread,
+                              const bool         isAscii ) {
   char            fileName[4096];
   bool            ret = true;
   tbb::task_arena limited( static_cast<int>( nbThread ) );

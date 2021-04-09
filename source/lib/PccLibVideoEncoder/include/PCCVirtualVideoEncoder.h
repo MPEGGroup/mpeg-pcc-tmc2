@@ -58,7 +58,7 @@ struct PCCVideoEncoderParameters {
   bool        cuTransquantBypassFlagForce_;
   bool        inputColourSpaceConvert_;
 #ifdef USE_HM_PCC_RDO
-  bool        usePccRDO_;
+  bool usePccRDO_;
 #endif
 };
 
@@ -77,10 +77,10 @@ class PCCVirtualVideoEncoder {
                        PCCVideoBitstream&         bitstream,
                        PCCVideo<T, 3>&            videoRec ) = 0;
 
-//   void setLogger( PCCLogger& logger ) { logger_ = &logger; }
+  //   void setLogger( PCCLogger& logger ) { logger_ = &logger; }
 
-//  protected:
-//   PCCLogger* logger_ = nullptr;
+  //  protected:
+  //   PCCLogger* logger_ = nullptr;
 };
 
 };  // namespace pcc

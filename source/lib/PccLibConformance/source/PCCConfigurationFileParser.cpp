@@ -38,9 +38,9 @@ using namespace pcc;
 ostream& PCCErrorMessage::error( const std::string& errMessage, const std::string& where ) {
   is_errored_ = true;
   if ( !where.empty() ) {
-    cerr << " Error: " << errMessage << "\n" << where << endl;
+    cerr << "\n\nError: " << errMessage << "\n" << where << endl;
   } else {
-    cerr << " Error: " << errMessage << endl;
+    cerr << "\n\nError: " << errMessage << endl;
   }
   return cerr;
 }
@@ -56,17 +56,17 @@ std::ostream& PCCErrorMessage::warn( const std::string& warningMessage, const st
 
 void PCCConfigurationFileParser::scanLine( std::string& line, KeyValMaps& key_val_maps ) {
   std::map<std::string, std::string> key_val_map;
-  std::string                        spKey[3] = { "Occupancy", "Geometry", "Attribute" };
-  if ( line.find( "#" ) != std::string::npos ) { return; } // skip comment line 
+  std::string                        spKey[3] = {"Occupancy", "Geometry", "Attribute"};
+  if ( line.find( "#" ) != std::string::npos ) { return; }  // skip comment line
   size_t start = line.find_first_not_of( " \t\n\r" );
-  if ( start == string::npos ) { return; } // blank line 
+  if ( start == string::npos ) { return; }  // blank line
   line.erase( std::remove( line.begin(), line.end(), ' ' ), line.end() );
   size_t curPos = 0;
   line += " ";
   while ( line.size() > 1 ) {
     std::string keyName = "Not Set", keyValue = "";
     curPos = line.find_first_of( "=" );
-    if ( curPos != std::string::npos ){
+    if ( curPos != std::string::npos ) {
       keyName = line.substr( 0, curPos );
     } else {
       size_t found;
@@ -106,22 +106,23 @@ void PCCConfigurationFileParser::scanStream( std::istream& in, KeyValMaps& key_v
   } while ( !!in );
 }
 
-void PCCConfigurationFileParser::parseFile( std::string& fileName, KeyValMaps& key_val_maps ) {
+bool PCCConfigurationFileParser::parseFile( std::string& fileName, KeyValMaps& key_val_maps ) {
   name_    = fileName;
   linenum_ = 0;
   std::map<std::string, std::string> key_val_map;
   std::ifstream                      cfrStream( name_.c_str(), std::ifstream::in );
   if ( !cfrStream ) {
     error( name_ ) << "Failed to Open : " << name_ << endl;
-    exit( -1 );
+    return false;
   }
   scanStream( cfrStream, key_val_maps );
+  return true;
 }
 
 bool PCCConfigurationFileParser::validKey( std::string& name ) {
   bool found = false;
   for ( auto key : keyList_ ) {
-    if ( !name.compare( key ) ) found = true;
+    if ( !name.compare( key ) ) { found = true; }
   }
   return found;
 }

@@ -62,7 +62,7 @@ bool parseParameters( int                            argc,
 void usage();
 int  decompressVideo( const pcc::PCCDecoderParameters&     decoderParams,
                       const pcc::PCCMetricsParameters&     metricsParams,
-                      const pcc::PCCConformanceParameters& conformanceParams,
+                      pcc::PCCConformanceParameters& conformanceParams,
                       pcc::chrono::StopwatchUserTime& );
 
 #endif /* PCC_APP_ENCODER_H */

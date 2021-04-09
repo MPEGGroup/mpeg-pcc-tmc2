@@ -41,30 +41,39 @@ extern "C" {
 #include "mbuffer.h"
 #include "global.h"
 
-void alloc_encoder       (EncoderParams **p_Enc);
-void init_encoder        (VideoParameters *p_Vid, InputParameters *p_Inp);
-void encode_sequence     (VideoParameters *p_Vid, InputParameters *p_Inp);
-void populate_frm_struct( VideoParameters *p_Vid, InputParameters *p_Inp, SeqStructure *p_seq_struct, int num_to_populate, int init_frames_to_code );
-void prepare_frame_params(VideoParameters *p_Vid, InputParameters *p_Inp, int curr_frame_to_code);
-int encode_one_frame (VideoParameters *p_Vid, InputParameters *p_Inp);
-void report_frame_statistic(VideoParameters *p_Vid, InputParameters *p_Inp);
-void img2buf (imgpel** imgX, unsigned char* buf, int size_x, int size_y, int symbol_size_in_bytes, int crop_left, int crop_right, int crop_top, int crop_bottom);
+void alloc_encoder( EncoderParams** p_Enc );
+void init_encoder( VideoParameters* p_Vid, InputParameters* p_Inp );
+void encode_sequence( VideoParameters* p_Vid, InputParameters* p_Inp );
+void populate_frm_struct( VideoParameters* p_Vid,
+                          InputParameters* p_Inp,
+                          SeqStructure*    p_seq_struct,
+                          int              num_to_populate,
+                          int              init_frames_to_code );
+void prepare_frame_params( VideoParameters* p_Vid, InputParameters* p_Inp, int curr_frame_to_code );
+int  encode_one_frame( VideoParameters* p_Vid, InputParameters* p_Inp );
+void report_frame_statistic( VideoParameters* p_Vid, InputParameters* p_Inp );
+void img2buf( imgpel**       imgX,
+              unsigned char* buf,
+              int            size_x,
+              int            size_y,
+              int            symbol_size_in_bytes,
+              int            crop_left,
+              int            crop_right,
+              int            crop_top,
+              int            crop_bottom );
 
-//void free_encoder_memory(VideoParameters *p_Vid, InputParameters *p_Inp);
-void free_params         (InputParameters *p_Inp);
-void free_encoder        (EncoderParams *p_Enc);
-void Configure           (VideoParameters *p_Vid, InputParameters *p_Inp, int ac, char *av[]);
+// void free_encoder_memory(VideoParameters *p_Vid, InputParameters *p_Inp);
+void free_params( InputParameters* p_Inp );
+void free_encoder( EncoderParams* p_Enc );
+void Configure( VideoParameters* p_Vid, InputParameters* p_Inp, int ac, char* av[] );
 }
-
 
 using namespace pcc;
 
 /// encoder application class
 
 template <typename T>
-PCCJMLibVideoEncoderImpl<T>::PCCJMLibVideoEncoderImpl() {
-
-}
+PCCJMLibVideoEncoderImpl<T>::PCCJMLibVideoEncoderImpl() {}
 
 template <typename T>
 PCCJMLibVideoEncoderImpl<T>::~PCCJMLibVideoEncoderImpl() {}
@@ -86,8 +95,8 @@ void PCCJMLibVideoEncoderImpl<T>::encode( PCCVideo<T, 3>&    videoSrc,
     arg[token.size()] = '\0';
     args.push_back( arg );
   }
- 
-  int argc = args.size();
+
+  int    argc = args.size();
   char** argv = &args[0];
 
   std::cout << "[JM Enc args " << argc << "]: " << arguments << std::endl;
@@ -102,32 +111,32 @@ void PCCJMLibVideoEncoderImpl<T>::encode( PCCVideo<T, 3>&    videoSrc,
   std::cout << "[ JM Enc ]: frames " << frameCount << std::endl;
 
   // copy from lencod.c main()
-  alloc_encoder(&p_Enc);
-  Configure (p_Enc->p_Vid, p_Enc->p_Inp, argc, argv);
+  alloc_encoder( &p_Enc );
+  Configure( p_Enc->p_Vid, p_Enc->p_Inp, argc, argv );
 
   for ( size_t i = 0; i < args.size(); i++ ) { delete[] args[i]; }
 
   std::string srcName = p_Enc->p_Inp->input_file1.fname;
   std::string binName = p_Enc->p_Inp->outfile;
   std::string recName = p_Enc->p_Inp->ReconFile;
-  
+
   videoSrc.write_JM( srcName, nbyte );
 
   // init encoder
-  init_encoder(p_Enc->p_Vid, p_Enc->p_Inp);
-  
+  init_encoder( p_Enc->p_Vid, p_Enc->p_Inp );
+
   // encode sequence
-  encode_sequence(p_Enc->p_Vid, p_Enc->p_Inp);
+  encode_sequence( p_Enc->p_Vid, p_Enc->p_Inp );
 
   // terminate sequence
-  free_encoder_memory(p_Enc->p_Vid, p_Enc->p_Inp);
-  free_params (p_Enc->p_Inp);
-  free_encoder(p_Enc);
+  free_encoder_memory( p_Enc->p_Vid, p_Enc->p_Inp );
+  free_params( p_Enc->p_Inp );
+  free_encoder( p_Enc );
 
   // === need to fill buffer
   videoRec.clear();
-  videoRec.read_JM(recName, srcWidth, srcHeight, format, frameCount, nbyte);
-  bitstream.read_JM(binName);
+  videoRec.read_JM( recName, srcWidth, srcHeight, format, frameCount, nbyte );
+  bitstream.read_JM( binName );
   return;
 }
 

@@ -185,12 +185,12 @@ PCCEncoderParameters::PCCEncoderParameters() {
   // GPA
   globalPatchAllocation_ = 0;
   // GTP
-  globalPackingStrategyGOF_         = 0;
-  globalPackingStrategyReset_       = false;
-  globalPackingStrategyThreshold_   = 0;
-  use3dmc_                          = true;
+  globalPackingStrategyGOF_       = 0;
+  globalPackingStrategyReset_     = false;
+  globalPackingStrategyThreshold_ = 0;
+  use3dmc_                        = true;
 #ifdef USE_HM_PCC_RDO
-  usePccRDO_                        = false;
+  usePccRDO_ = false;
 #endif
   enhancedPP_                       = true;
   minWeightEPP_                     = 0.6;
@@ -231,6 +231,18 @@ PCCEncoderParameters::PCCEncoderParameters() {
   uniformPartitionSpacing_      = true;
   tilePartitionWidth_           = 0;
   tilePartitionHeight_          = 0;
+
+  // ptl
+  ptlTierFlag_                  = 0;  // Low Tier
+  ptlProfileCodecGroupIdc_      = 1; //HEVC Main10
+  ptlProfileToolsetIdc_         = 0; //V-PCC Basic
+  ptlProfileReconstructionIdc_  = 0; //Rec0
+  ptlLevelIdc_                  = 30; //Corresponds to level 1.0 in Table A.5
+
+  // ptc
+  ptcOneV3CFrameOnlyFlag_       = 0; //V-PCC Basic
+  ptcNoEightOrientationsConstraintFlag_     = 0; //Default value, does not impose a constraint
+  ptcNo45DegreeProjectionPatchConstraintFlag_   = 0; //Default value, does not impose a constraint
 }
 
 PCCEncoderParameters::~PCCEncoderParameters() = default;
@@ -620,7 +632,7 @@ bool PCCEncoderParameters::check() {
   }
   if ( losslessGeo_ ) {
 #ifdef USE_HM_PCC_RDO
-    usePccRDO_              = false;
+    usePccRDO_ = false;
 #endif
     pbfEnableFlag_          = false;
     occupancyMapRefinement_ = false;
@@ -893,6 +905,17 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
     }
   }
 
+  //V3C profile/tier/level related parameters
+  vps.getProfileTierLevel().setTierFlag( ptlTierFlag_ );
+  vps.getProfileTierLevel().setProfileCodecGroupIdc( ptlProfileCodecGroupIdc_ );
+  vps.getProfileTierLevel().setProfileToolsetIdc( ptlProfileToolsetIdc_ );
+  vps.getProfileTierLevel().setLevelIdc( ptlLevelIdc_ );
+
+  //V3C Profile toolset constraints information syntax
+  vps.getProfileTierLevel().getProfileToolsetConstraintsInformation().setOneFrameOnlyFlag(ptcOneV3CFrameOnlyFlag_);
+  vps.getProfileTierLevel().getProfileToolsetConstraintsInformation().setNoEightOrientationsConstraintFlag(ptcNoEightOrientationsConstraintFlag_);
+  vps.getProfileTierLevel().getProfileToolsetConstraintsInformation().setNo45DegreeProjectionPatchConstraintFlag(ptcNo45DegreeProjectionPatchConstraintFlag_);
+
   // Atlas sequence parameter set
   auto& asps = context.addAtlasSequenceParameterSet( 0 );
   asps.setLog2PatchPackingBlockSize( std::log2( occupancyResolution_ ) );
@@ -995,7 +1018,8 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
     frame.setMaxDepth( ( 1 << geometryNominal2dBitdepth_ ) - 1 );
     frame.setLog2PatchQuantizerSizeX( context.getLog2PatchQuantizerSizeX() );
     frame.setLog2PatchQuantizerSizeY( context.getLog2PatchQuantizerSizeY() );
-    frame.setAtlasFrmOrderCntLsb( context.calculateAFOCLsb( i ) );  //ajt:: lsb and afoc values of tileFrame is set during the initilaization process
+    frame.setAtlasFrmOrderCntLsb( context.calculateAFOCLsb(
+        i ) );  // ajt:: lsb and afoc values of tileFrame is set during the initilaization process
     frame.setAtlasFrmOrderCntVal( i );
     if ( i == 0 ) {
       frame.setNumRefIdxActive( 0 );
