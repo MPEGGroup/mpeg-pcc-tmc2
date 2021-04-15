@@ -2632,7 +2632,7 @@ void PCCCodec::getHashPatchParams( PCCContext&                            contex
       pps.patch3dRangeD = 0;
     }
     pps.patchOrientationIndex = patch.getPatchOrientation();
-    pps.patchProjectionID     = patch.getProjectionMode();
+    pps.patchProjectionID     = patch.getViewId();
     pps.patchInAuxVideo       = 0;  // ajt::check
     pps.patchLoDScaleX        = patch.getLodScaleX();
     pps.patchLoDScaleY        = patch.getLodScaleY();

@@ -8525,11 +8525,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
 #endif
       auto& afps = context.getAtlasFrameParameterSet( atlasFrameParameterSetId );
       // tile header
-      if ( params_.additionalProjectionPlaneMode_ > 0 ) {
-        ath.setPosMinDQuantizer( uint8_t( std::log2( params_.minLevel_ ) ) - 1 );
-      } else {
-        ath.setPosMinDQuantizer( uint8_t( std::log2( params_.minLevel_ ) ) );
-      }
+      ath.setPosMinDQuantizer( uint8_t( std::log2( params_.minLevel_ ) ) );
       ath.setPosDeltaMaxDQuantizer( uint8_t( std::log2( params_.minLevel_ ) ) );
       ath.setPatchSizeXinfoQuantizer( params_.log2QuantizerSizeX_ );
       ath.setPatchSizeYinfoQuantizer( params_.log2QuantizerSizeY_ );
