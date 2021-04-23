@@ -181,12 +181,22 @@ class PCCAtlasHighLevelSyntax {
       size_t frameIdx,
       size_t tileIdx ) {  // ajt::how is tileIdx is used, should it also do setTileOrder(tileIdx)?
     AtlasTileLayerRbsp atgl;
+    atgl.setEncFrameIndex( frameIdx );
+    atgl.setEncTileIndex( tileIdx );
     atgl.setAtlasFrmOrderCntVal( frameIdx );
     atlasTileLayer_.push_back( atgl );
     return atlasTileLayer_.back();
   }
   std::vector<AtlasTileLayerRbsp>& getAtlasTileLayerList() { return atlasTileLayer_; }
   AtlasTileLayerRbsp&              getAtlasTileLayer( size_t atglOrder ) { return atlasTileLayer_[atglOrder]; }
+  AtlasTileLayerRbsp&              getAtlasTileLayer( size_t frameIndex, size_t tileIndex ) {
+    for(size_t atglOrder=0; atglOrder<atlasTileLayer_.size(); atglOrder++){
+      if( atlasTileLayer_[atglOrder].getEncFrameIndex() == frameIndex &&  atlasTileLayer_[atglOrder].getEncFrameIndex() == tileIndex)
+        return atlasTileLayer_[atglOrder];
+    }
+    assert(0);
+    return atlasTileLayer_[0];
+  }
 
   // SEI related functions
   SEI& addSei( NalUnitType nalUnitType, SeiPayloadType payloadType ) {
@@ -423,6 +433,9 @@ class PCCHighLevelSyntax {
   std::vector<AtlasTileLayerRbsp>& getAtlasTileLayerList() { return atlasHLS_[atlasIndex_].getAtlasTileLayerList(); }
   AtlasTileLayerRbsp&              getAtlasTileLayer( size_t atglOrder ) {
     return atlasHLS_[atlasIndex_].getAtlasTileLayer( atglOrder );
+  }
+  AtlasTileLayerRbsp&              getAtlasTileLayer( size_t frameIdx, size_t tileIdx ) {
+    return atlasHLS_[atlasIndex_].getAtlasTileLayer( frameIdx, tileIdx );
   }
 
   // SEI related functions

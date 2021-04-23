@@ -686,10 +686,11 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   }  // frame
 
 #ifdef USE_HM_PCC_RDO
-  if ( !params_.keepIntermediateFiles_ && ( params_.use3dmc_ || params_.usePccRDO_ ) ) {
+  if ( !params_.keepIntermediateFiles_ && ( params_.use3dmc_ || params_.usePccRDO_ ) )
 #else
-  if ( !params_.keepIntermediateFiles_ && params_.use3dmc_ ) {
+  if ( !params_.keepIntermediateFiles_ && params_.use3dmc_ )
 #endif
+  {
     remove3DMotionEstimationFiles( path.str() );
   }
 
@@ -8544,6 +8545,16 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
     }                         // tileIdx
   }                           // frameCount
 
+  //updateNaluInfo;
+  for ( size_t fi = 0; fi < frameCount; fi++ ) {
+    for ( size_t ti = 0; ti < context[fi].getNumTilesInAtlasFrame(); ti++ ) {
+      auto& ath = context.getAtlasTileLayer(fi, ti).getHeader();
+      auto& tile = context[fi].getTile( ti );
+      if ( ( fi != 0 ) && ( params_.constrainedPack_ ) ) ath.setTileNaluTypeInfo(1); //NAL_TRAIL_R
+      if ( !tile.getReferredTile() ) ath.setTileNaluTypeInfo(2); //NAL_TRAIL_N
+    } // tileIdx
+  }
+
   if ( params_.decodedAtlasInformationHash_ > 0 ) {
     context.allocateSeiHash( frameCount );
     assert( context.getSeiHash().size() == frameCount );
@@ -8681,6 +8692,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&         context,
       // INTER patches
       size_t      refPOC   = (size_t)tile.getRefAfoc( patch.getRefAtlasFrameIndex() );
       const auto& refPatch = context.getFrame( refPOC ).getTile( tileIndex ).getPatches()[patch.getBestMatchIdx()];
+      context.getFrame( refPOC ).getTile( tileIndex ).setReferredTile( true );
       auto&       pid      = atgdu.addPatchInformationData( static_cast<uint8_t>( P_INTER ) );
       TRACE_PATCH( "patch %zu / %zu: Inter \n", patchIndex, totalPatchCount );
       auto& ipdu = pid.getInterPatchDataUnit();

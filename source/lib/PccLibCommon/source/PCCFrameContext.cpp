@@ -58,6 +58,7 @@ PCCFrameContext::PCCFrameContext() :
   leftTopYInFrame_         = 0;
   refAFOCList_.resize( 0 );
   tileIndex_ = 0;
+  referredTile_ = false;
 }
 
 PCCFrameContext::~PCCFrameContext() {

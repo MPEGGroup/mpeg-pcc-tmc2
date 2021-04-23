@@ -379,6 +379,7 @@ static inline std::string toString( NalUnitType type ) {
     case NAL_RASL_R: return std::string( "NAL_RASL_R" ); break;
     case NAL_SKIP_N: return std::string( "NAL_SKIP_N" ); break;
     case NAL_SKIP_R: return std::string( "NAL_SKIP_R" ); break;
+    case NAL_IDR_N_LP: return std::string( "NAL_IDR_N_LP" ); break;
     case NAL_PREFIX_ESEI: return std::string( "NAL_PREFIX_ESEI" ); break;
     case NAL_PREFIX_NSEI: return std::string( "NAL_PREFIX_NSEI" ); break;
     case NAL_SUFFIX_ESEI: return std::string( "NAL_SUFFIX_ESEI" ); break;
