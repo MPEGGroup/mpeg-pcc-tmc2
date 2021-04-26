@@ -893,7 +893,11 @@ bool parseParameters( int                   argc,
     ( "ptlProfileToolsetIdc", 
       encoderParams.ptlProfileToolsetIdc_,
       encoderParams.ptlProfileToolsetIdc_, 
-      "ptl Profile Toolset Idc" )
+    "ptl Profile Toolset Idc" )
+    ( "ptlProfileReconstructionIdc", 
+      encoderParams.ptlProfileReconstructionIdc_,
+      encoderParams.ptlProfileReconstructionIdc_, 
+      "ptl Profile Reconstruction Idc" )
     ( "ptlLevelIdc", 
       encoderParams.ptlLevelIdc_,
       encoderParams.ptlLevelIdc_, 
