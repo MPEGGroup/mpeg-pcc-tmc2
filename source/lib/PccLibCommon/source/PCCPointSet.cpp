@@ -593,11 +593,11 @@ bool PCCPointSet3::read( const std::string& fileName, const bool readNormals ) {
   const size_t attributeCount   = attributesInfo.size();
   for ( size_t a = 0; a < attributeCount; ++a ) {
     const auto& attributeInfo = attributesInfo[a];
-    if ( attributeInfo.name == "x" && ( attributeInfo.byteCount == 8 || attributeInfo.byteCount == 4 ) ) {
+    if ( attributeInfo.name == "x" && ( attributeInfo.byteCount == 8 || attributeInfo.byteCount == 4 || attributeInfo.byteCount == 2 ) ) {
       indexX = a;
-    } else if ( attributeInfo.name == "y" && ( attributeInfo.byteCount == 8 || attributeInfo.byteCount == 4 ) ) {
+    } else if ( attributeInfo.name == "y" && ( attributeInfo.byteCount == 8 || attributeInfo.byteCount == 4 || attributeInfo.byteCount == 2 ) ) {
       indexY = a;
-    } else if ( attributeInfo.name == "z" && ( attributeInfo.byteCount == 8 || attributeInfo.byteCount == 4 ) ) {
+    } else if ( attributeInfo.name == "z" && ( attributeInfo.byteCount == 8 || attributeInfo.byteCount == 4 || attributeInfo.byteCount == 2 ) ) {
       indexZ = a;
     } else if ( attributeInfo.name == "red" && attributeInfo.byteCount == 1 ) {
       indexR = a;
@@ -659,7 +659,11 @@ bool PCCPointSet3::read( const std::string& fileName, const bool readNormals ) {
       for ( size_t a = 0; a < attributeCount && !ifs.eof(); ++a ) {
         const auto& attributeInfo = attributesInfo[a];
         if ( a == indexX ) {
-          if ( attributeInfo.byteCount == 4 ) {
+          if ( attributeInfo.byteCount == 2 ) {
+            uint16_t x;
+            ifs.read( reinterpret_cast<char*>( &x ), sizeof( uint16_t ) );
+            position[0] = x;
+          } else if ( attributeInfo.byteCount == 4 ) {
             float x;
             ifs.read( reinterpret_cast<char*>( &x ), sizeof( float ) );
             position[0] = x;
@@ -669,7 +673,11 @@ bool PCCPointSet3::read( const std::string& fileName, const bool readNormals ) {
             position[0] = x;
           }
         } else if ( a == indexY ) {
-          if ( attributeInfo.byteCount == 4 ) {
+          if ( attributeInfo.byteCount == 2 ) {
+            uint16_t y;
+            ifs.read( reinterpret_cast<char*>( &y ), sizeof( uint16_t ) );
+            position[1] = y;
+          } else  if ( attributeInfo.byteCount == 4 ) {
             float y;
             ifs.read( reinterpret_cast<char*>( &y ), sizeof( float ) );
             position[1] = y;
@@ -679,7 +687,11 @@ bool PCCPointSet3::read( const std::string& fileName, const bool readNormals ) {
             position[1] = y;
           }
         } else if ( a == indexZ ) {
-          if ( attributeInfo.byteCount == 4 ) {
+          if ( attributeInfo.byteCount == 2 ) {
+            uint16_t z;
+            ifs.read( reinterpret_cast<char*>( &z ), sizeof( uint16_t ) );
+            position[2] = z;
+          } else if ( attributeInfo.byteCount == 4 ) {
             float z;
             ifs.read( reinterpret_cast<char*>( &z ), sizeof( float ) );
             position[2] = z;

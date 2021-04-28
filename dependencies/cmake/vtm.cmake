@@ -38,8 +38,8 @@ function(add_vtm_library module)
 endfunction()
 
 add_vtm_library(libmd5)
-target_compile_features(libmd5 PUBLIC cxx_std_11)
-target_include_directories(libmd5 PUBLIC "$<BUILD_INTERFACE:${VTM_LIB_SOURCE_DIR}>")
+target_compile_features(libmd5_vtm PUBLIC cxx_std_11)
+target_include_directories(libmd5_vtm PUBLIC "$<BUILD_INTERFACE:${VTM_LIB_SOURCE_DIR}>")
 
 file(GLOB cppSourceFiles "${VTM_LIB_SOURCE_DIR}/CommonLib/*.cpp")
 file(GLOB cSourceFiles "${VTM_LIB_SOURCE_DIR}/CommonLib/*.c")

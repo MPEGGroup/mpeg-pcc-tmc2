@@ -3684,18 +3684,21 @@ PCCVector3D PCCEncoder::calculateWeightNormal( size_t geometryBitDepth3D, const 
       int              x;
       int              y;
       // YZ: 0,3
-      x                        = int( point[1] );
-      y                        = int( point[2] );
+      x = ( std::max )( 0, ( std::min )( int( maxValue - 1 ), int( point[1] ) ) );
+      y = ( std::max )( 0, ( std::min )( int( maxValue - 1 ), int( point[2] ) ) );
+
       pjFace[y * maxValue + x] = true;
 
       // ZX: 0,3
-      x                                  = int( point[2] );
-      y                                  = int( point[0] );
+      x = ( std::max )( 0, ( std::min )( int( maxValue - 1 ), int( point[2] ) ) );
+      y = ( std::max )( 0, ( std::min )( int( maxValue - 1 ), int( point[0] ) ) );
+
       pjFace[y * maxValue + x + size_1f] = true;
 
       // XY: 0,3
-      x                                      = int( point[0] );
-      y                                      = int( point[1] );
+      x = ( std::max )( 0, ( std::min )( int( maxValue - 1 ), int( point[0] ) ) );
+      y = ( std::max )( 0, ( std::min )( int( maxValue - 1 ), int( point[1] ) ) );
+
       pjFace[y * maxValue + x + size_1f * 2] = true;
     }
 
@@ -7108,9 +7111,9 @@ bool PCCEncoder::generateTextureVideo( const PCCGroupOfFrames&     sources,
                                        PCCContext&                 context,
                                        const PCCEncoderParameters& params ) {
   auto& video   = context.getVideoTextureMultiple()[0];
-  auto& videoT1 = context.getVideoTextureMultiple()[1];
   if ( params_.multipleStreams_ ) {
     video.resize( context.size() );
+    auto& videoT1 = context.getVideoTextureMultiple()[1];
     videoT1.resize( context.size() );
   } else {
     video.resize( context.size() * ( params.mapCountMinus1_ + 1 ) );
@@ -7137,20 +7140,26 @@ bool PCCEncoder::generateTextureVideo( const PCCGroupOfFrames&     sources,
       auto& image = video.getFrame( i );
       image.resize( imageWidth, imageHeight, PCCCOLORFORMAT::RGB444 );
       image.set( 0 );
+      auto& videoT1 = context.getVideoTextureMultiple()[1];
       auto& image1 = videoT1.getFrame( i );
       image1.resize( imageWidth, imageHeight, PCCCOLORFORMAT::RGB444 );
       image1.set( 0 );
+		  size_t accTilePointCount = 0;
+		  for ( size_t tileIdx = 0; tileIdx < context[i].getNumTilesInAtlasFrame(); tileIdx++ ) {
+		    accTilePointCount =
+		        generateTextureVideo( reconstructs[i], context, i, tileIdx, video, videoT1, mapCount, accTilePointCount );
+		  }
     } else {
       for ( size_t f = 0; f < mapCount; ++f ) {
         auto& image = video.getFrame( f + mapCount * i );
         image.resize( imageWidth, imageHeight, PCCCOLORFORMAT::RGB444 );
         image.set( 0 );
       }
-    }
-    size_t accTilePointCount = 0;
-    for ( size_t tileIdx = 0; tileIdx < context[i].getNumTilesInAtlasFrame(); tileIdx++ ) {
-      accTilePointCount =
-          generateTextureVideo( reconstructs[i], context, i, tileIdx, video, videoT1, mapCount, accTilePointCount );
+		  size_t accTilePointCount = 0;
+		  for ( size_t tileIdx = 0; tileIdx < context[i].getNumTilesInAtlasFrame(); tileIdx++ ) {
+		    accTilePointCount =
+		        generateTextureVideo( reconstructs[i], context, i, tileIdx, video, video, mapCount, accTilePointCount );
+		  }
     }
   }
   return ret;
@@ -8552,7 +8561,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
     TRACE_PATCH( "Create HLS + ATlas + Tile Log File %zu \n", i );
     createHlsAtlasTileLogFiles( context, i, atlasFrameParameterSetId );
     #endif
-  } // frameCount
+  }                           // frameCount
 
   if ( params_.decodedAtlasInformationHash_ > 0 ) {
     TRACE_SEI( "Create  Hash SEI Information \n");

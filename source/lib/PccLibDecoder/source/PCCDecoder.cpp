@@ -1169,7 +1169,12 @@ void PCCDecoder::createHashSEI( PCCContext& context, int frameIndex ) {
       bool                 equal = false;
       std::vector<uint8_t> encMD5( 16 ), decMD5( 16 );
       encMD5 = context.computeMD5( highLevelAtlasData.data(), highLevelAtlasData.size() );
-      for ( int j = 0; j < 16; j++ ) decMD5[j] = sei.getHighLevelMd5( j );
+      TRACE_HLS( " HLSMD5 = " );
+      for ( int j = 0; j < 16; j++ ) {
+        decMD5[j] = sei.getHighLevelMd5( j );
+        TRACE_HLS( "%02x", encMD5[j] );
+      }
+      TRACE_HLS( "\n" );
       TRACE_SEI( "\t**sei** (MD5): " );
       equal = compareHashSEIMD5( encMD5, decMD5 );
       TRACE_SEI( " (%s) \n", equal ? "OK" : "DIFF" );
@@ -1209,13 +1214,47 @@ void PCCDecoder::createHashSEI( PCCContext& context, int frameIndex ) {
       atlasPatchCommonByteString( atlasData, patchIdx, atlasPatchParams );
       atlasPatchApplicationByteString( atlasData, patchIdx, atlasPatchParams );
     }
-    TRACE_SEI( "**sei** AtlasPatchHash: frame(%d) (#patches %zu)", frameIndex, patchCount );
+    printf( "**sei** AtlasPatchHash: frame(%d) (#patches %zu)\n", frameIndex, patchCount );
+
+    size_t atlIdx               = context[frameIndex].getTile( 0 ).getAtlIndex();
+    auto&  atlu                 = context.getAtlasTileLayer( atlIdx );
+    auto&  ath                  = atlu.getHeader();
+    auto&  afps                 = context.getAtlasFrameParameterSet( ath.getAtlasFrameParameterSetId() );
+    auto&  asps                 = context.getAtlasSequenceParameterSet( afps.getAtlasSequenceParameterSetId() );
+    auto&  vps                  = context.getVps();
+    size_t numTilesInPatchFrame = context[frameIndex].getNumTilesInAtlasFrame();
+    size_t numProjPatches = 0, numRawPatches = 0, numEomPatches = 0;
+    size_t numProjPoints = 0, numRawPoints = 0, numEomPoints = 0;
+    int    atlasFrameOrderCnt = atlu.getAtlasFrmOrderCntVal();
+    for ( size_t tileIdx = 0; tileIdx < numTilesInPatchFrame; tileIdx++ ) {
+      auto& tile = context[frameIndex].getTile( tileIdx );
+      numProjPatches += tile.getPatches().size();
+      numEomPatches += tile.getEomPatches().size();
+      numRawPatches += tile.getRawPointsPatches().size();
+      numProjPoints += tile.getTotalNumberOfRegularPoints();
+      numEomPoints += tile.getTotalNumberOfEOMPoints();
+      numRawPoints += tile.getTotalNumberOfRawPoints();
+    }
+    TRACE_ATLAS( "Atlas Frame Index = %d \n", frameIndex );
+    TRACE_ATLAS(
+        "AtlasFrameOrderCntVal = %d,  AtlasFrameWidthMax =  %d, AtlasFrameHeightMax = %d, AtlasID = %d, "
+        "ASPSFrameSize = %d, VPSMapCount = %d, AttributeCount = %d, AttributeDimension = %d, NumTilesAtlasFrame = %d, "
+        "AtlasTotalNumProjPatches = %d, AtlasTotalNumRawPatches = %d, AtlasTotalNumEomPatches = %d, ",
+        atlasFrameOrderCnt, asps.getFrameWidth(), asps.getFrameHeight(), vps.getAtlasId( 0 ),
+        asps.getFrameWidth() * asps.getFrameHeight(), vps.getMapCountMinus1( 0 ) + 1,
+        vps.getAttributeInformation( 0 ).getAttributeCount(),
+        vps.getAttributeInformation( 0 ).getAttributeDimensionMinus1( 0 ) + 1,
+        afps.getAtlasFrameTileInformation().getNumTilesInAtlasFrameMinus1() + 1, numProjPatches, numRawPatches,
+        numEomPatches );
+
     if ( sei.getHashType() == 0 ) {
       bool                 equal = false;
       std::vector<uint8_t> encMD5( 16 ), decMD5( 16 );
       encMD5 = context.computeMD5( atlasData.data(), atlasData.size() );
+      TRACE_ATLAS( " Atlas MD5 = " );
       for ( int j = 0; j < 16; j++ ) {
         decMD5[j] = sei.getAtlasMd5( j );
+        TRACE_ATLAS( "%02x", encMD5[j] );
       }
       TRACE_SEI( "\n\t**sei** (MD5): " );
       equal = compareHashSEIMD5( encMD5, decMD5 );
@@ -1244,8 +1283,10 @@ void PCCDecoder::createHashSEI( PCCContext& context, int frameIndex ) {
       bool                 equal = true;
       std::vector<uint8_t> encMD5( 16 ), decMD5( 16 );
       encMD5 = context.computeMD5( atlasB2PData.data(), atlasB2PData.size() );
+      TRACE_ATLAS( " Atlas B2P MD5 = " );
       for ( int j = 0; j < 16; j++ ) {
         decMD5[j] = sei.getAtlasB2pMd5( j );
+        TRACE_ATLAS( "%02x", encMD5[j] );
       }
       TRACE_SEI( "\n\t**sei** (B2P MD5): " );
       equal = compareHashSEIMD5( encMD5, decMD5 );
@@ -1274,9 +1315,21 @@ void PCCDecoder::createHashSEI( PCCContext& context, int frameIndex ) {
     TRACE_SEI( "**sei** AtlasTilesHash: frame(%d) (#Tiles %zu)", frameIndex, numTilesInPatchFrame );
     for ( size_t tileIdx = 0; tileIdx < numTilesInPatchFrame; tileIdx++ ) {
       auto&       tile          = context[frameIndex].getTile( tileIdx );
-      auto&       atlu          = context.getAtlasTileLayer( tile.getAtlIndex() ); //ajt::check?
+      auto&       atlu          = context.getAtlasTileLayer( tile.getAtlIndex() );
       auto&       ath           = atlu.getHeader();
       size_t      tileId        = ath.getId();
+      PCCTileType tileType      = ath.getType();
+      auto&       afps          = context.getAtlasFrameParameterSet( ath.getAtlasFrameParameterSetId() );
+      auto&       afti          = afps.getAtlasFrameTileInformation();
+      size_t      topLeftColumn = afti.getTopLeftPartitionIdx( tileIdx ) % ( afti.getNumPartitionColumnsMinus1() + 1 );
+      size_t      topLeftRow    = afti.getTopLeftPartitionIdx( tileIdx ) / ( afti.getNumPartitionColumnsMinus1() + 1 );
+      size_t      tileOffsetX   = context[frameIndex].getPartitionPosX( topLeftColumn );
+      size_t      tileOffsetY   = context[frameIndex].getPartitionPosY( topLeftRow );
+      TRACE_TILE(
+          "TileID = %d, AtlasFrameOrderCntVal = %d, TileType = %d, TileOffsetX = %d, TileOffsetY = %d, TileWidth = %d, "
+          "TileHeight = %d,",
+          tileId, ath.getAtlasFrmOrderCntLsb(), tileType, tileOffsetX, tileOffsetY, tile.getWidth(), tile.getHeight() );
+
       if ( sei.getDecodedAtlasTilesHashPresentFlag() ) {
         std::vector<uint8_t> atlasTileData;
         for ( size_t patchIdx = 0; patchIdx < atlu.getDataUnit().getPatchCount(); patchIdx++ ) {
@@ -1288,8 +1341,10 @@ void PCCDecoder::createHashSEI( PCCContext& context, int frameIndex ) {
           bool                 equal = true;
           std::vector<uint8_t> encMD5( 16 ), decMD5( 16 );
           encMD5 = context.computeMD5( atlasTileData.data(), atlasTileData.size() );
+          TRACE_TILE( " Tile MD5 = " );
           for ( int j = 0; j < 16; j++ ) {
             decMD5[j] = sei.getAtlasTilesMd5( tileId, j );
+            TRACE_TILE( "%02x", encMD5[j] );
           }
           TRACE_SEI( "\n\t**sei** (MD5): " );
           equal = compareHashSEIMD5( encMD5, decMD5 );
@@ -1317,8 +1372,10 @@ void PCCDecoder::createHashSEI( PCCContext& context, int frameIndex ) {
           bool                 equal = false;
           std::vector<uint8_t> encMD5( 16 ), decMD5( 16 );
           encMD5 = context.computeMD5( tileB2PData.data(), tileB2PData.size() );
+          TRACE_TILE( " Tile B2P MD5 = " );
           for ( int j = 0; j < 16; j++ ) {
             decMD5[j] = sei.getAtlasTilesB2pMd5( tileId, j );
+            TRACE_TILE( "%02x", encMD5[j] );
           }
           TRACE_SEI( "\n\t**sei** (B2P MD5): " );
           equal = compareHashSEIMD5( encMD5, decMD5 );

@@ -36,12 +36,12 @@ line parameter value will be used.
 Common test condition configurations
 ---------------
 
-The configuration files stored in the ./cfg/ sub-folder could be used to 
-to perform the V3C common test conditions (CTC) experiments. An example 
-of the usage of this file could be found in ./test/runme_linux.sh.
+Configuration files are provided in the cfg directory to aid configuring the encoder.  The general pattern of usage is illustrated below, where
+multiple configuration files control different aspects of the test conditions.
 
-The reference software configuration not defined the CTC, please validated
-your experimentes based on the wxxxxxx- V3C common test conditions document.
+NB: parameters set in one configuration file override the same parameter in earlier files.  ie. order matters.
+
+Further help text describing option usage is available using "./bin/PccAppEncoder --help" or "./bin/PccAppDecoder --help".
 
 Examples
 ---------------
