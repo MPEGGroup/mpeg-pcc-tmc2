@@ -66,6 +66,7 @@ uint32_t PCCVTMLibVideoDecoderImpl<T>::decode( PCCVideoBitstream& bitstream,
   video.clear();
 
   // create & initialize internal classes
+  m_targetSubPicIdx = 0;
   xCreateDecLib();
 
   m_iPOCLastDisplay += m_iSkipFrame;  // set the last displayed POC correctly for skip forward.

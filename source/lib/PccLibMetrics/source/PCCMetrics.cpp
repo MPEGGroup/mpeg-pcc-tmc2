@@ -335,8 +335,10 @@ void PCCMetrics::compute( const PCCGroupOfFrames& sources,
                           const PCCGroupOfFrames& reconstructs,
                           const PCCGroupOfFrames& normals ) {
   PCCPointSet3 normalEmpty;
-  if ( ( sources.getFrameCount() != reconstructs.getFrameCount() ) ||
-       ( normals.getFrameCount() != 0 && sources.getFrameCount() != normals.getFrameCount() ) ) {
+  if( normals.getFrameCount() != 0 && sources.getFrameCount() != normals.getFrameCount() ){
+    params_.computeC2p_ = false;
+  }
+  if ( ( sources.getFrameCount() != reconstructs.getFrameCount() ) ) {
     printf(
         "Error: group of frames must have same numbers of frames. ( src = %zu "
         "rec = %zu norm = %zu ) \n",

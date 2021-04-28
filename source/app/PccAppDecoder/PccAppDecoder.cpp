@@ -366,8 +366,7 @@ int decompressVideo( const PCCDecoderParameters&     decoderParams,
   }
   bitstreamStat.trace();
   if ( metricsParams.computeMetrics_ ) { metrics.display(); }
-  if ( metricsParams.computeChecksum_ ) {
-    if ( !checksum.compareRecDec() ) { return -1; }
-  }
-  return 0;
+  bool validChecksum = true; 
+  if ( metricsParams.computeChecksum_ ) { validChecksum &= checksum.compareRecDec(); }
+  return !validChecksum;
 }
