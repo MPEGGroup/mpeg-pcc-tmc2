@@ -173,7 +173,8 @@ enum PCCCodecGroup {
   CODEC_GROUP_AVC_PROGRESSIVE_HIGH = 0,
   CODEC_GROUP_HEVC_MAIN10          = 1,
   CODEC_GROUP_HEVC444              = 2,
-  CODEC_GROUP_MP4RA                = 3
+  CODEC_GROUP_VVC_MAIN10           = 3,
+  CODEC_GROUP_MP4RA                = 127 // => CCM SEI + oi/gi/ai codec id
 };
 
 enum PCCTileType {

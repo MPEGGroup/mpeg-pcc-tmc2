@@ -232,17 +232,17 @@ PCCEncoderParameters::PCCEncoderParameters() {
   tilePartitionWidth_           = 0;
   tilePartitionHeight_          = 0;
 
-  // ptl
-  ptlTierFlag_                  = 0;  // Low Tier
-  ptlProfileCodecGroupIdc_      = 1; //HEVC Main10
-  ptlProfileToolsetIdc_         = 0; //V-PCC Basic
-  ptlProfileReconstructionIdc_  = 0; //Rec0
-  ptlLevelIdc_                  = 30; //Corresponds to level 1.0 in Table A.5
+  // Profile tier level
+  tierFlag_                 = 0;   // Low Tier
+  profileCodecGroupIdc_     = 1;   // HEVC Main10
+  profileToolsetIdc_        = 0;   // V-PCC Basic
+  profileReconstructionIdc_ = 0;   // Rec0
+  levelIdc_                 = 30;  // Corresponds to level 1.0 in Table A.5
 
-  // ptc
-  ptcOneV3CFrameOnlyFlag_       = 0; //V-PCC Basic
-  ptcNoEightOrientationsConstraintFlag_     = 0; //Default value, does not impose a constraint
-  ptcNo45DegreeProjectionPatchConstraintFlag_   = 0; //Default value, does not impose a constraint
+  // Profile toolset constraints information
+  oneV3CFrameOnlyFlag_                     = 0;  // V-PCC Basic
+  noEightOrientationsConstraintFlag_       = 0;  // Default value, does not impose a constraint
+  no45DegreeProjectionPatchConstraintFlag_ = 0;  // Default value, does not impose a constraint
 }
 
 PCCEncoderParameters::~PCCEncoderParameters() = default;
@@ -529,6 +529,19 @@ void PCCEncoderParameters::print() {
   std::cout << "\t   pbfPassesCount                         " << pbfPassesCount_ << std::endl;
   std::cout << "\t   pbfFilterSize                          " << pbfFilterSize_ << std::endl;
   std::cout << "\t   pbfLog2Threshold                       " << pbfLog2Threshold_ << std::endl;
+
+  std::cout << "\t Profile tier level" << std::endl;
+  std::cout << "\t   tierFlag                               " << tierFlag_ << std::endl;
+  std::cout << "\t   profileCodecGroupIdc                   " << profileCodecGroupIdc_ << std::endl;
+  std::cout << "\t   profileToolsetIdc                      " << profileToolsetIdc_ << std::endl;
+  std::cout << "\t   profileReconstructionIdc               " << profileReconstructionIdc_ << std::endl;
+  std::cout << "\t   levelIdc                               " << levelIdc_ << std::endl;
+ 
+  std::cout << "\t Profile toolset constraints information" << std::endl;
+  std::cout << "\t   oneV3CFrameOnlyFlag                    " << oneV3CFrameOnlyFlag_ << std::endl;
+  std::cout << "\t   noEightOrientationsConstraintFlag      " << noEightOrientationsConstraintFlag_ << std::endl;
+  std::cout << "\t   no45DegreeProjectionPatchConstraintFlag" << no45DegreeProjectionPatchConstraintFlag_ << std::endl;
+ 
   std::cout << std::endl;
 }
 
@@ -905,16 +918,18 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
     }
   }
 
-  //V3C profile/tier/level related parameters
-  vps.getProfileTierLevel().setTierFlag( ptlTierFlag_ );
-  vps.getProfileTierLevel().setProfileCodecGroupIdc( ptlProfileCodecGroupIdc_ );
-  vps.getProfileTierLevel().setProfileToolsetIdc( ptlProfileToolsetIdc_ );
-  vps.getProfileTierLevel().setLevelIdc( ptlLevelIdc_ );
+  // V3C profile/tier/level related parameters
+  auto& ptl = vps.getProfileTierLevel();
+  ptl.setTierFlag( tierFlag_ );
+  ptl.setProfileCodecGroupIdc( profileCodecGroupIdc_ );
+  ptl.setProfileToolsetIdc( profileToolsetIdc_ );
+  ptl.setLevelIdc( levelIdc_ );
 
-  //V3C Profile toolset constraints information syntax
-  vps.getProfileTierLevel().getProfileToolsetConstraintsInformation().setOneFrameOnlyFlag(ptcOneV3CFrameOnlyFlag_);
-  vps.getProfileTierLevel().getProfileToolsetConstraintsInformation().setNoEightOrientationsConstraintFlag(ptcNoEightOrientationsConstraintFlag_);
-  vps.getProfileTierLevel().getProfileToolsetConstraintsInformation().setNo45DegreeProjectionPatchConstraintFlag(ptcNo45DegreeProjectionPatchConstraintFlag_);
+  // V3C Profile toolset constraints information syntax
+  auto& ptci = ptl.getProfileToolsetConstraintsInformation();
+  ptci.setOneFrameOnlyFlag( oneV3CFrameOnlyFlag_ );
+  ptci.setNoEightOrientationsConstraintFlag( noEightOrientationsConstraintFlag_ );
+  ptci.setNo45DegreeProjectionPatchConstraintFlag( no45DegreeProjectionPatchConstraintFlag_ );
 
   // Atlas sequence parameter set
   auto& asps = context.addAtlasSequenceParameterSet( 0 );

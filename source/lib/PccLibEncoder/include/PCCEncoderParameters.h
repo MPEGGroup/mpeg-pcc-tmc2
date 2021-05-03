@@ -290,17 +290,17 @@ class PCCEncoderParameters {
   size_t tilePartitionWidth_;
   size_t tilePartitionHeight_;
 
-  // ptl
-  bool ptlTierFlag_;
-  uint8_t ptlProfileCodecGroupIdc_;
-  uint8_t ptlProfileToolsetIdc_;
-  uint8_t ptlProfileReconstructionIdc_;
-  uint8_t ptlLevelIdc_;
+  // Profile tier level
+  bool    tierFlag_;
+  uint8_t profileCodecGroupIdc_;
+  uint8_t profileToolsetIdc_;
+  uint8_t profileReconstructionIdc_;
+  uint8_t levelIdc_;
 
-  //ptc
-  bool ptcOneV3CFrameOnlyFlag_;
-  bool ptcNoEightOrientationsConstraintFlag_;
-  bool ptcNo45DegreeProjectionPatchConstraintFlag_;
+  // Profile toolset constraints information
+  bool    oneV3CFrameOnlyFlag_;
+  bool    noEightOrientationsConstraintFlag_;
+  bool    no45DegreeProjectionPatchConstraintFlag_;
 };
 
 };  // namespace pcc
