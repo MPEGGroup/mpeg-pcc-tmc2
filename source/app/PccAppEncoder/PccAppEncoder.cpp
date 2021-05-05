@@ -901,7 +901,19 @@ bool parseParameters( int                   argc,
     ( "levelIdc", 
       encoderParams.levelIdc_,
       encoderParams.levelIdc_, 
-      "Level Idc" );
+      "Level Idc" )    
+    ( "avcCodecIdIndex",
+      encoderParams.avcCodecIdIndex_,
+      encoderParams.avcCodecIdIndex_, 
+      "index for avc codec " )
+    ( "hevcCodecIdIndex",
+      encoderParams.hevcCodecIdIndex_,
+      encoderParams.hevcCodecIdIndex_, 
+      "index for hevc codec " )
+    ( "vvcCodecIdIndex",
+      encoderParams.vvcCodecIdIndex_,
+      encoderParams.vvcCodecIdIndex_, 
+      "index for vvc codec " );
 
     //8.3.4.6	Profile toolset constraints information syntax
     opts.addOptions()

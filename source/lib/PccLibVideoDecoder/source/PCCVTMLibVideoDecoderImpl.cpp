@@ -574,7 +574,6 @@ void PCCVTMLibVideoDecoderImpl<T>::xFlushOutput( PicList* pcListPic, PCCVideo<T,
         if ( !pcPicBottom->referenced && pcPicBottom->reconstructed ) { pcPicBottom->reconstructed = false; }
         pcPicTop->neededForOutput    = false;
         pcPicBottom->neededForOutput = false;
-
         if ( pcPicTop ) {
           pcPicTop->destroy();
           delete pcPicTop;
@@ -623,7 +622,6 @@ void PCCVTMLibVideoDecoderImpl<T>::xFlushOutput( PicList* pcListPic, PCCVideo<T,
       iterPic++;
     }
   }
-
   if ( layerId != NOT_VALID ) {
     pcListPic->remove_if( []( Picture* p ) { return p == nullptr; } );
   } else {

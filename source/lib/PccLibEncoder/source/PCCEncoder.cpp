@@ -8498,8 +8498,6 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
       }
     }
   }
-
-
   for ( size_t i = 0; i < frameCount; i++ ) {
     size_t atlasFrameParameterSetId = 0;
     // partition information
@@ -8627,6 +8625,48 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
           }
         }
       }
+    }
+  }
+  auto& vps = context.getVps();
+  auto& plt = vps.getProfileTierLevel();
+  if ( plt.getProfileCodecGroupIdc() == CODEC_GROUP_MP4RA ) {
+    size_t     atlasIndex       = context.getAtlasIndex();
+    auto&      ai               = vps.getAttributeInformation( atlasIndex );
+    auto&      oi               = vps.getOccupancyInformation( atlasIndex );
+    auto&      gi               = vps.getGeometryInformation( atlasIndex );
+    bool useAvc = false, useHevc = false, useVvc = false;
+    if ( oi.getOccupancyCodecId() == params_.avcCodecIdIndex_ ||
+         gi.getGeometryCodecId() == params_.avcCodecIdIndex_ ||
+         ai.getAttributeCodecId( 0 ) == params_.avcCodecIdIndex_ ) {
+      useAvc = true;
+    }
+    if ( oi.getOccupancyCodecId() == params_.hevcCodecIdIndex_ ||
+         gi.getGeometryCodecId() == params_.hevcCodecIdIndex_ ||
+         ai.getAttributeCodecId( 0 ) == params_.hevcCodecIdIndex_ ) {
+      useHevc = true;
+    }
+    if ( oi.getOccupancyCodecId() == params_.vvcCodecIdIndex_ ||
+         gi.getGeometryCodecId() == params_.vvcCodecIdIndex_ ||
+         ai.getAttributeCodecId( 0 ) == params_.vvcCodecIdIndex_ ) {
+      useVvc = true;
+    }
+
+    auto& sei = static_cast<SEIComponentCodecMapping&>( context.addSeiPrefix( COMPONENT_CODEC_MAPPING, true ) );
+    sei.setComponentCodecCancelFlag( false );
+    sei.setCodecMappingsCountMinus1( useAvc + useHevc + useVvc - 1 );
+    sei.allocate();
+    uint8_t index = 0;
+    if ( useAvc ) {
+      sei.setCodecId( index++, params_.avcCodecIdIndex_ );
+      sei.setCodec4cc( params_.avcCodecIdIndex_, "avc1" );
+    }
+    if ( useHevc ) {
+      sei.setCodecId( index++, params_.hevcCodecIdIndex_ );
+      sei.setCodec4cc( params_.hevcCodecIdIndex_, "hev1" );
+    }
+    if ( useVvc ) {
+      sei.setCodecId( index++, params_.vvcCodecIdIndex_ );
+      sei.setCodec4cc( params_.vvcCodecIdIndex_, "vvc1" );
     }
   }
 #if 1

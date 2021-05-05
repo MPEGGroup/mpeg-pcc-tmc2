@@ -238,6 +238,9 @@ PCCEncoderParameters::PCCEncoderParameters() {
   profileToolsetIdc_        = 0;   // V-PCC Basic
   profileReconstructionIdc_ = 0;   // Rec0
   levelIdc_                 = 30;  // Corresponds to level 1.0 in Table A.5
+  avcCodecIdIndex_          = 0;
+  hevcCodecIdIndex_         = 1;
+  vvcCodecIdIndex_          = 2;
 
   // Profile toolset constraints information
   oneV3CFrameOnlyFlag_                     = 0;  // V-PCC Basic
@@ -536,7 +539,10 @@ void PCCEncoderParameters::print() {
   std::cout << "\t   profileToolsetIdc                      " << profileToolsetIdc_ << std::endl;
   std::cout << "\t   profileReconstructionIdc               " << profileReconstructionIdc_ << std::endl;
   std::cout << "\t   levelIdc                               " << levelIdc_ << std::endl;
- 
+  std::cout << "\t   avcCodecIdIndex_                       " << avcCodecIdIndex_ << std::endl;
+  std::cout << "\t   hevcCodecIdIndex_                      " << hevcCodecIdIndex_ << std::endl;
+  std::cout << "\t   vvcCodecIdIndex_                       " << vvcCodecIdIndex_ << std::endl;
+
   std::cout << "\t Profile toolset constraints information" << std::endl;
   std::cout << "\t   oneV3CFrameOnlyFlag                    " << oneV3CFrameOnlyFlag_ << std::endl;
   std::cout << "\t   noEightOrientationsConstraintFlag      " << noEightOrientationsConstraintFlag_ << std::endl;
@@ -835,6 +841,74 @@ bool PCCEncoderParameters::check() {
     ret = false;
     std::cerr << "EOMFixBitCount shall be greater than 0. \n";
   }
+
+  // Profile reconctruction idc
+  // Rec0
+  if ( profileReconstructionIdc_ == 0 ) { 
+    if( singleMapPixelInterleaving_ ) {
+	    singleMapPixelInterleaving_ = false;
+  	  std::cerr << "singleMapPixelInterleaving is ignored because profileReconctructionIdc set to 0. \n";
+		}
+    if( pointLocalReconstruction_ ) {
+	    pointLocalReconstruction_ = false;
+  	  std::cerr << "pointLocalReconstruction is ignored because profileReconctructionIdc set to 0. \n";
+		}
+    if( enhancedOccupancyMapCode_ ) {
+	    enhancedOccupancyMapCode_ = 0;
+  	  std::cerr << "enhancedOccupancyMapCode is ignored because profileReconctructionIdc set to 0. \n";
+		}
+    if( removeDuplicatePoints_ ) {
+	    removeDuplicatePoints_ = 0;
+  	  std::cerr << "removeDuplicatePoints is ignored because profileReconctructionIdc set to 0. \n";
+		}
+    if( lossyRawPointsPatch_ ) {
+	    lossyRawPointsPatch_ = 0;
+  	  std::cerr << "lossyRawPointsPatch is ignored because profileReconctructionIdc set to 0. \n";
+		}
+    if( losslessGeo_ ) { // Note: this parameter must be removed.
+	    losslessGeo_ = 0;
+  	  std::cerr << "losslessGeo is ignored because profileReconctructionIdc set to 0. \n";
+		}
+    if( flagGeometrySmoothing_ ) {
+	    flagGeometrySmoothing_ = false;
+  	  std::cerr << "flagGeometrySmoothing is ignored because profileReconctructionIdc set to 0. \n";
+		}
+    // Note: Attribute transfer cannot be disabled. one encoder input parameter must be added.
+    if( flagColorPreSmoothing_ ) {
+	    flagColorPreSmoothing_ = false;
+  	  std::cerr << "flagColorPreSmoothing is ignored because profileReconctructionIdc set to 0. \n";
+		}
+    if( flagColorSmoothing_ ) {
+	    flagColorSmoothing_ = false;
+  	  std::cerr << "flagColorSmoothing is ignored because profileReconctructionIdc set to 0. \n";
+		}
+    if( pbfEnableFlag_ ) {
+	    pbfEnableFlag_ = false;
+  	  std::cerr << "pbfEnableFlag is ignored because profileReconctructionIdc set to 0. \n";
+		}
+  }
+
+  // Rec1
+  if ( profileReconstructionIdc_ == 1 ) { 
+    if( pbfEnableFlag_ ) {
+	    pbfEnableFlag_ = false;
+  	  std::cerr << "pbfEnableFlag is ignored because profileReconctructionIdc set to 0. \n";
+		}
+  }
+
+  // Rec2
+  if ( profileReconstructionIdc_ == 0 ) {   
+    if( flagGeometrySmoothing_ ) {
+	    flagGeometrySmoothing_ = false;
+  	  std::cerr << "flagGeometrySmoothing is ignored because profileReconctructionIdc set to 0. \n";
+		}
+    // Note: Attribute transfer cannot be disabled. one encoder input parameter must be added.
+  }
+
+  if ( profileCodecGroupIdc_ == CODEC_GROUP_HEVC_MAIN10 && losslessGeo444_ ) {
+    losslessGeo444_ = false;
+    std::cerr << "losslessGeo444 is ignored because profileCodecGroupIdc set to CODEC_GROUP_HEVC444. \n";
+  }
   return ret;
 }
 
@@ -856,6 +930,34 @@ void PCCEncoderParameters::constructAspsRefListStruct( PCCContext& context, size
     }
     asps.addRefListStruct( refList );
   }
+}
+
+uint8_t PCCEncoderParameters::getCodecIdIndex( PCCCodecId codecId ) {
+  switch ( codecId ) {
+#ifdef USE_JMAPP_VIDEO_CODEC
+    case JMAPP:
+#endif
+#ifdef USE_JMLIB_VIDEO_CODEC
+    case JMLIB: return avcCodecIdIndex_; break;
+#endif
+#ifdef USE_FFMPEG_VIDEO_CODEC
+    case FFMPEG:
+#endif
+#ifdef USE_HMLIB_VIDEO_CODEC
+    case HMLIB:
+#endif
+#ifdef USE_HMAPP_VIDEO_CODEC
+    case HMAPP: return hevcCodecIdIndex_; break;
+#endif
+#ifdef USE_VTMLIB_VIDEO_CODEC
+    case VTMLIB: return vvcCodecIdIndex_; break;
+#endif
+    default:
+      printf( "Error: codec id %d not supported \n", (int)codecId );
+      return 0;
+      break;
+  }
+  return 0;
 }
 
 void PCCEncoderParameters::initializeContext( PCCContext& context ) {
@@ -981,14 +1083,14 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   oi.setLossyOccupancyCompressionThreshold( thresholdLossyOM_ );
   oi.setOccupancy2DBitdepthMinus1( 7 );
   oi.setOccupancyMSBAlignFlag( false );
-  oi.setOccupancyCodecId( videoEncoderOccupancyCodecId_ );
+  oi.setOccupancyCodecId( getCodecIdIndex( (PCCCodecId)videoEncoderOccupancyCodecId_ ) );
 
   // geometry information
   auto& gi = vps.getGeometryInformation( atlasIndex );
   gi.setGeometry3dCoordinatesBitdepthMinus1( bitdepth3D - 1 );
   gi.setGeometry2dBitdepthMinus1( uint8_t( geometryNominal2dBitdepth_ - 1 ) );
   gi.setGeometryMSBAlignFlag( false );
-  gi.setGeometryCodecId( videoEncoderGeometryCodecId_ );
+  gi.setGeometryCodecId( getCodecIdIndex( (PCCCodecId)videoEncoderGeometryCodecId_ ) );
 
   // Attribute information
   auto& ai = vps.getAttributeInformation( atlasIndex );
@@ -1009,16 +1111,11 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
     }
   }
   for ( uint32_t i = 0; i < ai.getAttributeCount(); i++ ) {
-    ai.setAttributeCodecId( i, videoEncoderAttributeCodecId_ );
+    ai.setAttributeCodecId( i, getCodecIdIndex( (PCCCodecId)videoEncoderAttributeCodecId_ ) );
   }
 
   // atlas video frame allocation
   context.getAtlas( atlasIndex ).allocateVideoFrames( context, 0 );
-
-  // Profile tier level
-  auto& plt = vps.getProfileTierLevel();
-  plt.setProfileCodecGroupIdc( CODEC_GROUP_HEVC_MAIN10 );
-  if ( losslessGeo_ ) { plt.setProfileCodecGroupIdc( CODEC_GROUP_HEVC444 ); }
 
   // Tiles
   auto& frames = context.getFrames();

@@ -324,12 +324,6 @@ class PCCCodec {
   void tileBlockToPatchByteString( std::vector<uint8_t>&                          stringByte,
                                    size_t                                         tileID,
                                    std::vector<std::vector<std::vector<int64_t>>> tileB2p );
-  /*void getHashPatchParams( PCCContext&                            context,
-                           size_t                                 frameIndex,
-                           size_t                                 tileIndex,
-                           size_t                                 atlIndex,
-                           std::vector<std::vector<PatchParams>>& tilePatchParams,
-                           std::vector<PatchParams>&              atlasPatchParams );*/
   void getHashPatchParams( PCCContext&                            context,
                            size_t                                 frameIndex,
                            size_t                                 tileIndex,

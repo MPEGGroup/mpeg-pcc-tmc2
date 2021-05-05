@@ -201,7 +201,7 @@ class PCCBitstream {
   }
 
   inline void writeString( std::string str ) {
-    while ( !byteAligned() ) { write( 0 ); }
+    while ( !byteAligned() ) { write( 0, 1 ); }
     for ( auto& element : str ) { write( element, 8 ); }
   }
 

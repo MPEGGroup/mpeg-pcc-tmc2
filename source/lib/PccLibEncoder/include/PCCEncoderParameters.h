@@ -48,6 +48,8 @@ class PCCEncoderParameters {
   void              completePath();
   static void       constructAspsRefListStruct( PCCContext& context, size_t aspsIdx, size_t afpsIdx );
   void              initializeContext( PCCContext& context );
+  uint8_t           getCodecIdIndex( PCCCodecId codecId );
+
   size_t            startFrameNumber_;
   std::string       configurationFolder_;
   std::string       uncompressedDataFolder_;
@@ -296,6 +298,9 @@ class PCCEncoderParameters {
   uint8_t profileToolsetIdc_;
   uint8_t profileReconstructionIdc_;
   uint8_t levelIdc_;
+  uint8_t avcCodecIdIndex_;
+  uint8_t hevcCodecIdIndex_;
+  uint8_t vvcCodecIdIndex_;
 
   // Profile toolset constraints information
   bool    oneV3CFrameOnlyFlag_;
