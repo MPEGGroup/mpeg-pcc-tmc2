@@ -166,8 +166,9 @@ class PCCEncoderParameters {
 
   // lossless
   bool noAttributes_;
-  bool losslessGeo_;
+  bool rawPointsPatch_;
   bool losslessGeo444_;
+
 
   // raw points video
   bool        useRawPointsSeparateVideo_;

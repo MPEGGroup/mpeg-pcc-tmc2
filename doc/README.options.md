@@ -135,7 +135,8 @@ textureT0Config                   &  HM configuration file for texture D0       
                                   &  compression                                        \\ \hline
 textureT1Config                   &  HM configuration file for texture D1               \\ 
                                   &  compression                                        \\ \hline
-losslessGeo                       &  Enable lossless encoding of geometry               \\ \hline        
+rawPointsPatch                    &  Enable raw points patch                            \\ \hline     
+textureDilationOffLossless        &  Disable group Dilation                             \\ \hline     
 noAttributes                      &  Disable encoding of attributes                     \\ \hline
 losslessGeo444                    &  Use 4444 format for lossless geometry              \\ \hline
 useRawPointsSeparateVideo         &  Compress raw points with video codec               \\ \hline

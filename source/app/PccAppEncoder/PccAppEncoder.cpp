@@ -522,11 +522,10 @@ bool parseParameters( int                   argc,
       encoderParams.textureT1Config_,
       encoderParams.textureT1Config_,
       "HM configuration file for texture D1 compression" )
-    // lossless parameters
-    ( "losslessGeo",
-      encoderParams.losslessGeo_,
-      encoderParams.losslessGeo_,
-      "Enable lossless encoding of geometry\n" )
+    ( "rawPointsPatch",
+      encoderParams.rawPointsPatch_,
+      encoderParams.rawPointsPatch_,
+      "Enable raw points patch\n" )    
     ( "noAttributes",
       encoderParams.noAttributes_,
       encoderParams.noAttributes_, 
@@ -602,7 +601,7 @@ bool parseParameters( int                   argc,
     ( "textureDilationOffLossless",
       encoderParams.textureDilationOffLossless_,
       encoderParams.textureDilationOffLossless_, 
-      "Group Dilation" )
+      "Disable group dilation" )
 
     // Lossy occupancy map coding
     ( "offsetLossyOM",
@@ -950,7 +949,7 @@ bool parseParameters( int                   argc,
               << encoderParams.levelOfDetailX_ << "., levelOfDetailY=" << encoderParams.levelOfDetailY_ << std::endl;
   }
 
-  if ( encoderParams.losslessGeo_ && ( encoderParams.levelOfDetailX_ > 1 || encoderParams.levelOfDetailY_ > 1 ) ) {
+  if ( encoderParams.rawPointsPatch_ && ( encoderParams.levelOfDetailX_ > 1 || encoderParams.levelOfDetailY_ > 1 ) ) {
     encoderParams.levelOfDetailX_ = 1;
     encoderParams.levelOfDetailY_ = 1;
     std::cerr << "scaling is not allowed in lossless case\n";
@@ -1061,7 +1060,7 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
       if ( bRunMetric ) { metrics.compute( sources, reconstructs, normals ); }
     }
     if ( metricsParams.computeChecksum_ ) {
-      if ( encoderParams.losslessGeo_ ) {
+      if ( encoderParams.rawPointsPatch_ ) {
         checksum.computeSource( sources );
         checksum.computeReordered( reconstructs );
       }
@@ -1094,7 +1093,7 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
   if ( metricsParams.computeMetrics_ ) { metrics.display(); }
   bool checksumEqual = true;
   if ( metricsParams.computeChecksum_ ) {
-    if ( encoderParams.losslessGeo_ ) { checksumEqual = checksum.compareSrcRec(); }
+    if ( encoderParams.rawPointsPatch_ ) { checksumEqual = checksum.compareSrcRec(); }
     checksum.write( encoderParams.compressedStreamPath_ );
   }
   return checksumEqual ? 0 : -1;

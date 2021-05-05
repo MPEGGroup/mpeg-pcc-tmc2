@@ -123,7 +123,7 @@ PCCEncoderParameters::PCCEncoderParameters() {
   textureConfig_                           = {};
   textureT0Config_                         = {};
   textureT1Config_                         = {};
-  losslessGeo_                             = false;
+  rawPointsPatch_                          = false;
   noAttributes_                            = false;
   losslessGeo444_                          = false;
   useRawPointsSeparateVideo_               = false;
@@ -286,7 +286,7 @@ void PCCEncoderParameters::completePath() {
 
 void PCCEncoderParameters::print() {
   std::cout << "+ Parameters" << std::endl;
-  std::cout << "\t losslessGeo                              " << losslessGeo_ << std::endl;
+  std::cout << "\t rawPointsPatch                           " << rawPointsPatch_ << std::endl;
   std::cout << "\t noAttributes                             " << noAttributes_ << std::endl;
   std::cout << "\t raw Geometry Colour Plane                " << ( losslessGeo444_ ? "444" : "420" ) << std::endl;
   std::cout << "\t enhancedOccupancyMapCode                 " << enhancedOccupancyMapCode_ << std::endl;
@@ -375,7 +375,7 @@ void PCCEncoderParameters::print() {
     std::cout << "\t   textureConfig                        " << textureConfig_ << std::endl;
   }
   if ( useRawPointsSeparateVideo_ ) {
-    if ( losslessGeo_ ) {
+    if ( rawPointsPatch_ ) {
       std::cout << "\t geometryAuxVideoConfig                     " << geometryAuxVideoConfig_ << std::endl;
       std::cout << "\t textureAuxVideoConfig                      " << textureAuxVideoConfig_ << std::endl;
     }
@@ -649,41 +649,10 @@ bool PCCEncoderParameters::check() {
     std::cerr << "absoluteT1 should be true when absoluteD1 is true\n";
     absoluteT1_ = 1;
   }
-  if ( losslessGeo_ ) {
+  if ( rawPointsPatch_ ) {
 #ifdef USE_HM_PCC_RDO
     usePccRDO_ = false;
 #endif
-    pbfEnableFlag_          = false;
-    occupancyMapRefinement_ = false;
-    flagColorSmoothing_     = false;
-    flagGeometrySmoothing_  = false;
-    gridSmoothing_          = false;
-    if ( lossyRawPointsPatch_ == true ) {
-      std::cerr << "WARNING: lossyRawPointsPatch_ is only for lossy "
-                   "coding mode for now. Force lossyRawPointsPatch_=FALSE.\n";
-      lossyRawPointsPatch_ = false;
-    }
-    if ( pointLocalReconstruction_ ) {
-      pointLocalReconstruction_ = false;
-      std::cerr << "WARNING: pointLocalReconstruction_ is only for lossy "
-                   "coding mode for now. Force pointLocalReconstruction_=FALSE.\n";
-    }
-    if ( singleMapPixelInterleaving_ ) {
-      singleMapPixelInterleaving_ = false;
-      std::cerr << "WARNING: singleLayerPixelInterleaving is only for lossy "
-                   "coding mode for now. Force singleMapPixelInterleaving_=FALSE.\n";
-    }
-    if ( lossyRawPointsPatch_ ) {
-      lossyRawPointsPatch_ = false;
-      std::cerr << "WARNING: lossyRawPointsPatch_ is only for lossy coding "
-                   "mode for now. Force lossyRawPointsPatch_=FALSE.\n";
-    }
-  } else {
-    if ( enhancedOccupancyMapCode_ ) {
-      enhancedOccupancyMapCode_ = false;
-      std::cerr << "WARNING: enhancedOccupancyMapCode_ is only for lossless "
-                   "coding mode for now. Force enhancedOccupancyMapCode_=FALSE.\n";
-    }
   }
 
   if ( enhancedOccupancyMapCode_ && surfaceThickness_ == 1 ) {
@@ -712,10 +681,9 @@ bool PCCEncoderParameters::check() {
     prefilterLossyOM_ = false;
   }
 
-  if ( useRawPointsSeparateVideo_ && !lossyRawPointsPatch_ && !losslessGeo_ ) {
+  if ( useRawPointsSeparateVideo_ && !lossyRawPointsPatch_ && !rawPointsPatch_ ) {
     useRawPointsSeparateVideo_ = false;
-    std::cerr << "WARNING: useRawPointsSeparateVideo_ is for lossy coding mode "
-                 "if lossyRawPointsPatch_. Force "
+    std::cerr << "WARNING: useRawPointsSeparateVideo_ is for raw point coding. These modes are not enabled, force "
                  "useRawPointsSeparateVideo_=false.\n";
   }
   if ( useRawPointsSeparateVideo_ ) {
@@ -865,9 +833,9 @@ bool PCCEncoderParameters::check() {
 	    lossyRawPointsPatch_ = 0;
   	  std::cerr << "lossyRawPointsPatch is ignored because profileReconctructionIdc set to 0. \n";
 		}
-    if( losslessGeo_ ) { // Note: this parameter must be removed.
-	    losslessGeo_ = 0;
-  	  std::cerr << "losslessGeo is ignored because profileReconctructionIdc set to 0. \n";
+    if( rawPointsPatch_ ) { 
+	    rawPointsPatch_ = 0;
+  	  std::cerr << "rawPointsPatch is ignored because profileReconctructionIdc set to 0. \n";
 		}
     if( flagGeometrySmoothing_ ) {
 	    flagGeometrySmoothing_ = false;
@@ -1056,7 +1024,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   asps.setVpccExtensionFlag( true );
   asps.setExtension7Bits( 0 );
   asps.setAuxiliaryVideoEnabledFlag( useRawPointsSeparateVideo_ );
-  asps.setRawPatchEnabledFlag( losslessGeo_ || lossyRawPointsPatch_ );
+  asps.setRawPatchEnabledFlag( rawPointsPatch_ || lossyRawPointsPatch_ );
   if ( asps.getVpccExtensionFlag() ) {
     auto& ext = asps.getAspsVpccExtension();
     ext.setRemoveDuplicatePointEnableFlag( removeDuplicatePoints_ );
@@ -1123,7 +1091,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
     auto& atlas = frames[i];
     auto& frame = atlas.getTitleFrameContext();
     frame.setFrameIndex( i );
-    frame.setRawPatchEnabledFlag( losslessGeo_ || lossyRawPointsPatch_ );
+    frame.setRawPatchEnabledFlag( rawPointsPatch_ || lossyRawPointsPatch_ );
     frame.setUseRawPointsSeparateVideo( useRawPointsSeparateVideo_ );
     frame.setGeometry3dCoordinatesBitdepth( bitdepth3D );
     frame.setGeometry2dBitdepth( geometryNominal2dBitdepth_ );
@@ -1155,7 +1123,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
                                        uniformPartitionSpacing_, tilePartitionWidth_, tilePartitionHeight_ );
       for ( size_t ti = 0; ti < numMaxTilePerFrame_; ti++ ) {
         auto& tile = atlas[ti];
-        tile.setRawPatchEnabledFlag( losslessGeo_ || lossyRawPointsPatch_ );
+        tile.setRawPatchEnabledFlag( rawPointsPatch_ || lossyRawPointsPatch_ );
         tile.setUseRawPointsSeparateVideo( useRawPointsSeparateVideo_ );
         tile.setGeometry3dCoordinatesBitdepth( bitdepth3D );
         tile.setGeometry2dBitdepth( geometryNominal2dBitdepth_ );

@@ -382,9 +382,23 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
         // These are different attribute transfer functions
         if ( params_.postprocessSmoothingFilter_ == 1 || params_.postprocessSmoothingFilter_ == 5 ) {
           TRACE_PATCH( " transferColors16bitBP \n" );
-          tempFrameBuffer.transferColors16bitBP( reconstruct, params_.postprocessSmoothingFilter_, int32_t( 0 ),
-                                                 isAttributes444, 8, 1, true, true, true, false, 4, 4, 1000, 1000,
-                                                 1000 * 256, 1000 * 256 );  // jkie: let's make it general
+          tempFrameBuffer.transferColors16bitBP( reconstruct,                          // target
+                                                 params_.postprocessSmoothingFilter_,  // filterType
+                                                 int32_t( 0 ),                         // searchRange
+                                                 isAttributes444,                      // losslessTexture
+                                                 8,                                    // numNeighborsColorTransferFwd
+                                                 1,                                    // numNeighborsColorTransferBwd
+                                                 true,                                 // useDistWeightedAverageFwd
+                                                 true,                                 // useDistWeightedAverageBwd
+                                                 true,        // skipAvgIfIdenticalSourcePointPresentFwd
+                                                 false,       // skipAvgIfIdenticalSourcePointPresentBwd
+                                                 4,           // distOffsetFwd
+                                                 4,           // distOffsetBwd
+                                                 1000,        // maxGeometryDist2Fwd
+                                                 1000,        // maxGeometryDist2Bwd
+                                                 1000 * 256,  // maxColorDist2Fwd
+                                                 1000 * 256   // maxColorDist2Bwd
+          );                                                  // jkie: let's make it general
         } else if ( params_.postprocessSmoothingFilter_ == 2 ) {
           TRACE_PATCH( " transferColorWeight \n" );
           tempFrameBuffer.transferColorWeight( reconstruct, 0.1 );
@@ -393,12 +407,27 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
           tempFrameBuffer.transferColorsFilter3( reconstruct, int32_t( 0 ), isAttributes444 );
         } else if ( params_.postprocessSmoothingFilter_ == 7 || params_.postprocessSmoothingFilter_ == 9 ) {
           TRACE_PATCH( " transferColorsFilter3 \n" );
-          tempFrameBuffer.transferColorsBackward16bitBP( reconstruct, params_.postprocessSmoothingFilter_, int32_t( 0 ),
-                                                         isAttributes444, 8, 1, true, true, true, false, 4, 4, 1000,
-                                                         1000, 1000 * 256, 1000 * 256 );
+          tempFrameBuffer.transferColorsBackward16bitBP( reconstruct,                          //  target
+                                                         params_.postprocessSmoothingFilter_,  //  filterType
+                                                         int32_t( 0 ),                         //  searchRange
+                                                         isAttributes444,                      //  losslessTexture
+                                                         8,                                     //  numNeighborsColorTransferFwd
+                                                         1,                                     //  numNeighborsColorTransferBwd
+                                                         true,                                  //  useDistWeightedAverageFwd
+                                                         true,                                  //  useDistWeightedAverageBwd
+                                                         true,                                  //  skipAvgIfIdenticalSourcePointPresentFwd
+                                                         false,                                 //  skipAvgIfIdenticalSourcePointPresentBwd
+                                                         4,                                     //  distOffsetFwd
+                                                         4,                                     //  distOffsetBwd
+                                                         1000,                                  //  maxGeometryDist2Fwd
+                                                         1000,                                  //  maxGeometryDist2Bwd
+                                                         1000 * 256,                            //  maxColorDist2Fwd
+                                                         1000 * 256                             //  maxColorDist2Bwd
+          );
         }
       }
     }
+
     if ( ppSEIParams.flagColorSmoothing_ ) {
       TRACE_PATCH( " colorSmoothing \n" );
       colorSmoothing( reconstruct, params_.colorTransform_, ppSEIParams );
