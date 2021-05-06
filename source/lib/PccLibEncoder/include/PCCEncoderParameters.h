@@ -167,7 +167,8 @@ class PCCEncoderParameters {
   // lossless
   bool noAttributes_;
   bool rawPointsPatch_;
-  bool losslessGeo444_;
+  bool geometryVideo444_;
+  bool attributeVideo444_;
 
 
   // raw points video
@@ -198,7 +199,6 @@ class PCCEncoderParameters {
 
   // dilation
   bool groupDilation_;
-  bool textureDilationOffLossless_;
 
   // EOM
   bool enhancedOccupancyMapCode_;
@@ -294,14 +294,14 @@ class PCCEncoderParameters {
   size_t tilePartitionHeight_;
 
   // Profile tier level
-  bool    tierFlag_;
-  uint8_t profileCodecGroupIdc_;
-  uint8_t profileToolsetIdc_;
-  uint8_t profileReconstructionIdc_;
-  uint8_t levelIdc_;
-  uint8_t avcCodecIdIndex_;
-  uint8_t hevcCodecIdIndex_;
-  uint8_t vvcCodecIdIndex_;
+  bool   tierFlag_;
+  size_t profileCodecGroupIdc_;
+  size_t profileToolsetIdc_;
+  size_t profileReconstructionIdc_;
+  size_t levelIdc_;
+  size_t avcCodecIdIndex_;
+  size_t hevcCodecIdIndex_;
+  size_t vvcCodecIdIndex_;
 
   // Profile toolset constraints information
   bool    oneV3CFrameOnlyFlag_;

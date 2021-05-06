@@ -530,10 +530,14 @@ bool parseParameters( int                   argc,
       encoderParams.noAttributes_,
       encoderParams.noAttributes_, 
       "Disable encoding of attributes" )
-    ( "losslessGeo444",
-      encoderParams.losslessGeo444_,
-      encoderParams.losslessGeo444_,
-      "Use 4444 format for lossless geometry" )
+    ( "geometryVideo444",
+      encoderParams.geometryVideo444_,
+      encoderParams.geometryVideo444_,
+      "Use 444 format for geometry video" )
+    ( "attributeVideo444",
+      encoderParams.attributeVideo444_,
+      encoderParams.attributeVideo444_,
+      "Use 444 format for attribute video" )
     ( "useRawPointsSeparateVideo",
       encoderParams.useRawPointsSeparateVideo_,
       encoderParams.useRawPointsSeparateVideo_,
@@ -598,10 +602,6 @@ bool parseParameters( int                   argc,
       encoderParams.groupDilation_,
       encoderParams.groupDilation_, 
       "Group Dilation" )
-    ( "textureDilationOffLossless",
-      encoderParams.textureDilationOffLossless_,
-      encoderParams.textureDilationOffLossless_, 
-      "Disable group dilation" )
 
     // Lossy occupancy map coding
     ( "offsetLossyOM",
@@ -637,7 +637,7 @@ bool parseParameters( int                   argc,
       encoderParams.mapCountMinus1_,
       encoderParams.mapCountMinus1_, 
       "Numbers of layers (rename to maps?)" )
-    ( "singleLayerPixelInterleaving",
+    ( "singleMapPixelInterleaving",
       encoderParams.singleMapPixelInterleaving_,
       encoderParams.singleMapPixelInterleaving_,
       "Use single layer pixel interleaving" )

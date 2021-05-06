@@ -136,9 +136,9 @@ textureT0Config                   &  HM configuration file for texture D0       
 textureT1Config                   &  HM configuration file for texture D1               \\ 
                                   &  compression                                        \\ \hline
 rawPointsPatch                    &  Enable raw points patch                            \\ \hline     
-textureDilationOffLossless        &  Disable group Dilation                             \\ \hline     
 noAttributes                      &  Disable encoding of attributes                     \\ \hline
-losslessGeo444                    &  Use 4444 format for lossless geometry              \\ \hline
+geometryVideo444                  &  Use 444 format for geometry video                  \\ \hline
+attributeVideo444                 &  Use 444 format for attribute videos                \\ \hline
 useRawPointsSeparateVideo         &  Compress raw points with video codec               \\ \hline
 textureRawSeparateVideoWidth      &  Width of the MP's texture in separate video        \\ \hline
 geometryMPConfig                  &  HM configuration file for raw points geometry      \\ 
@@ -157,7 +157,6 @@ levelOfDetailX                    &  levelOfDetail : X axis in 2D space (should 
 levelOfDetailY                    &  levelOfDetail : Y axis in 2D space (should be      \\ 
                                   &  greater than 1)                                    \\ \hline
 groupDilation                     &  Group Dilation                                     \\ \hline
-textureDilationOffLossless        &  Group Dilation                                     \\ \hline
 offsetLossyOM                     &  Value to be assigned to non-zero occupancy         \\
                                   &  map positions                                      \\ \hline
 thresholdLossyOM                  &  Threshold for converting non-binary occupancy      \\ 
@@ -171,7 +170,7 @@ maxNumRefAtlasFrame               &  maximum Number of Reference Atlas Frame per
                                   &  list, default: 1                                   \\ \hline
 pointLocalReconstruction          &  Use point local reconstruction                     \\ \hline
 mapCountMinus1                    &  Numbers of layers (rename to maps?)                \\ \hline
-singleLayerPixelInterleaving      &  Use single layer pixel interleaving                \\ \hline
+singleMapPixelInterleaving        &  Use single layer pixel interleaving                \\ \hline
 removeDuplicatePoints             &  Remove duplicate points(                           \\ \hline
 surfaceSeparation                 &  surface separation                                 \\ \hline
 highGradientSeparation            &  Separate high gradient points from a patch         \\ \hline

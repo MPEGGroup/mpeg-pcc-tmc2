@@ -103,7 +103,7 @@ int main( int argc, char* argv[] ) {
   bitstream.read( binFile );
   PCCVideo<uint16_t, 3> video;
   auto                  decoder = PCCVirtualVideoDecoder<uint16_t>::create( codecId );
-  decoder->decode( bitstream, nbyte == 1 ? 8 : 10, false, video, path, removeFileExtension( binFile ), frame );
+  decoder->decode( bitstream, video, frame, nbyte == 1 ? 8 : 10, path, removeFileExtension( binFile ) );
   video[0].trace();
   video.write( removeFileExtension( binFile ) + "_dec.yuv", nbyte );
   return 1;

@@ -49,7 +49,7 @@ void PCCConformanceParameters::print() {
   std::cout << "\t   checkConformance                     " << checkConformance_ << std::endl;
   std::cout << "\t   path                                 " << path_ << std::endl;
   std::cout << "\t   levelIdc                             " << levelIdc_ << std::endl;
-  std::cout << "\t   fps_                                 " << fps_ << std::endl;
+  std::cout << "\t   fps                                  " << fps_ << std::endl;
   std::cout << std::endl;
 }
 

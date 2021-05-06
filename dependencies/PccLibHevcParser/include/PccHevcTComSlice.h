@@ -857,6 +857,12 @@ class TComSPS
     - m_conformanceWindow.getWindowTopOffset()
     - m_conformanceWindow.getWindowBottomOffset(); 
   }
+  UInt getBitDepth(){
+    return m_bitDepths.recon[0];
+  }
+  UInt getIs444(){
+    return m_chromaFormatIdc == ChromaFormat::CHROMA_444;
+  }
 private:
   Int              m_SPSId;
   Int              m_VPSId;

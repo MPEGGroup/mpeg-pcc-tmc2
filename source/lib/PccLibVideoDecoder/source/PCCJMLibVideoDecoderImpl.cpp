@@ -37,7 +37,6 @@
 #include "PCCJMLibVideoDecoderImpl.h"
 
 extern "C" {
-//#include "win32.h"
 #include "global.h"
 #include "h264decoder.h"
 
@@ -57,12 +56,11 @@ PCCJMLibVideoDecoderImpl<T>::~PCCJMLibVideoDecoderImpl() {}
 
 template <typename T>
 void PCCJMLibVideoDecoderImpl<T>::decode( PCCVideoBitstream& bitstream,
-                                          size_t             outputBitDepth,
-                                          bool               RGB2GBR,
                                           PCCVideo<T, 3>&    video,
+                                          const size_t       frameCount,
+                                          size_t             outputBitDepth,
                                           const std::string& decoderPath,
-                                          const std::string& fileName,
-                                          const size_t       frameCount ) {
+                                          const std::string& fileName ) {
   std::string        s( reinterpret_cast<char*>( bitstream.buffer() ), bitstream.size() );
   std::istringstream iss( s );
   std::istream&      bitstreamFile = iss;
@@ -86,7 +84,7 @@ void PCCJMLibVideoDecoderImpl<T>::decode( PCCVideoBitstream& bitstream,
   char** argv = &args[0];
   std::cout << "[JM Dec args " << argc << "]: " << arguments << std::endl;
 
-  // === from decoder_test.c
+  // === from decoder_test.ce
   // jmdecmain(argc, argv);
   int             iRet;
   DecodedPicList* pDecPicList;
@@ -130,14 +128,14 @@ void PCCJMLibVideoDecoderImpl<T>::decode( PCCVideoBitstream& bitstream,
   // end decoding
 
   int            decWidth  = pDecPicList->iWidth;
-  int            decHeight = pDecPicList->iHeight;
-  int            YUVFormat = pDecPicList->iYUVFormat;
-  PCCCOLORFORMAT format    = RGB2GBR ? PCCCOLORFORMAT::YUV444 : PCCCOLORFORMAT::YUV420;
-  const size_t   nbyte     = outputBitDepth == 8 ? 1 : 2;
-
+  int            decHeight = pDecPicList->iHeight;  
+  PCCCOLORFORMAT format    = pDecPicList->iYUVFormat == 3 ? PCCCOLORFORMAT::RGB444 : PCCCOLORFORMAT::YUV420;
+  const size_t   nbyte     = pDecPicList->iBitDepth  == 8 ? 1 : 2;
   video.clear();
   video.read_JM( decName, decWidth, decHeight, format, iFramesDecoded, nbyte );
 
+  removeFile( binName ); 
+  removeFile( decName ); 
   printf( "[ JM Dec ] %d frames are decoded: %dx%d.\n", iFramesDecoded, decWidth, decHeight );
   return;
 }

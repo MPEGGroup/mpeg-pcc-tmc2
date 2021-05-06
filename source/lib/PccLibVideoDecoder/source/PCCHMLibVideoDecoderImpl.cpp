@@ -59,14 +59,12 @@ PCCHMLibVideoDecoderImpl<T>::~PCCHMLibVideoDecoderImpl() {
 template <typename T>
 void PCCHMLibVideoDecoderImpl<T>::decode( PCCVideoBitstream& bitstream,
                                           size_t             outputBitDepth,
-                                          bool               RGB2GBR,
                                           PCCVideo<T, 3>&    video ) {
   std::string                         s( reinterpret_cast<char*>( bitstream.buffer() ), bitstream.size() );
   std::istringstream                  iss( s );
   std::istream&                       bitstreamFile = iss;
   Int                                 poc;
-  pcc_hm::TComList<pcc_hm::TComPic*>* pcListPic = NULL;
-  m_bRGB2GBR                                    = RGB2GBR;
+  pcc_hm::TComList<pcc_hm::TComPic*>* pcListPic = NULL;  
   pcc_hm::InputByteStream bytestream( bitstreamFile );
   if ( outputBitDepth ) {
     m_outputBitDepth[CHANNEL_TYPE_LUMA]   = outputBitDepth;
@@ -181,6 +179,7 @@ void PCCHMLibVideoDecoderImpl<T>::setVideoSize( const pcc_hm::TComSPS* sps ) {
   m_outputWidth       = width - window.getWindowLeftOffset() - window.getWindowRightOffset();
   m_outputHeight      = height - window.getWindowTopOffset() - window.getWindowBottomOffset();
   m_internalBitDepths = sps->getBitDepths().recon[CHANNEL_TYPE_LUMA];
+  m_bRGB2GBR          = sps->getChromaFormatIdc() == CHROMA_444;
 }
 
 template <typename T>

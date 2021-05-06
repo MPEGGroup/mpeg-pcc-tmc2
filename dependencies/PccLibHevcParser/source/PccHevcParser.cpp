@@ -100,8 +100,12 @@ PccHevcParser::~PccHevcParser() {
   pps_.clear();
 }
 
-void PccHevcParser::getVideoSize( const std::vector<uint8_t>& buffer, size_t& width, size_t& height ) {
-  setBuffer( buffer, width, height );
+void PccHevcParser::getVideoSize( const std::vector<uint8_t>& buffer,
+                                  size_t&                     width,
+                                  size_t&                     height,
+                                  size_t&                     bitDepth,
+                                  bool&                       is444 ) {
+  setBuffer( buffer, width, height, bitDepth, is444 );
 }
 void PccHevcParser::display() {
   int    poc = 0;
@@ -151,7 +155,11 @@ void PccHevcParser::createNalu( const size_t frameIndex,
   }
 }
 
-void PccHevcParser::setBuffer( const std::vector<uint8_t>& buffer, size_t& width, size_t& height ) {
+void PccHevcParser::setBuffer( const std::vector<uint8_t>& buffer,
+                               size_t&                     width,
+                               size_t&                     height,
+                               size_t&                    bitDepth,
+                               bool&                       is444 ) {
   const int      size                   = (int)buffer.size();
   const uint8_t* data                   = buffer.data();
   TDecCavlc* decCavlc    = new TDecCavlc();
@@ -177,49 +185,50 @@ void PccHevcParser::setBuffer( const std::vector<uint8_t>& buffer, size_t& width
 
       switch ( iNalType ) {
         case NAL_UNIT_VPS:                                break;
-        case NAL_UNIT_SPS: 
-          decCavlc->parseSPS( decCavlc->getSPS() ); 
+        case NAL_UNIT_SPS:
+          decCavlc->parseSPS( decCavlc->getSPS() );
           width    = decCavlc->getSPS()->getOutputWidth();
           height   = decCavlc->getSPS()->getOutputHeight();
-          // bitdepth = decCavlc->getSPS(iLayer)->getBitDepthY();
-         break;
-         /*
-        case NAL_UNIT_PPS: decCavlc->parsePPS( decCavlc->getPPS());  break;
-        case NAL_UNIT_CODED_SLICE_TRAIL_N:
-        case NAL_UNIT_CODED_SLICE_TRAIL_R:
-        case NAL_UNIT_CODED_SLICE_TSA_N:
-        case NAL_UNIT_CODED_SLICE_TSA_R:
-        case NAL_UNIT_CODED_SLICE_STSA_N:
-        case NAL_UNIT_CODED_SLICE_STSA_R:
-        case NAL_UNIT_CODED_SLICE_RADL_N:
-        case NAL_UNIT_CODED_SLICE_RADL_R:
-        case NAL_UNIT_CODED_SLICE_RASL_N:
-        case NAL_UNIT_CODED_SLICE_RASL_R:
-        case NAL_UNIT_CODED_SLICE_BLA_W_LP:
-        case NAL_UNIT_CODED_SLICE_BLA_W_RADL:
-        case NAL_UNIT_CODED_SLICE_BLA_N_LP:
-        case NAL_UNIT_CODED_SLICE_IDR_W_RADL:
-        case NAL_UNIT_CODED_SLICE_IDR_N_LP:
-        case NAL_UNIT_CODED_SLICE_CRA:
-          iPoc = decCavlc->parseSliceHeader( iLayer, (NalUnitType)iNalType, iTemporalIndex );
-          if( iNalType == NAL_UNIT_CODED_SLICE_IDR_W_RADL ||
-              iNalType == NAL_UNIT_CODED_SLICE_IDR_N_LP   ||
-              iNalType == NAL_UNIT_CODED_SLICE_BLA_N_LP   ||
-              iNalType == NAL_UNIT_CODED_SLICE_BLA_W_RADL ||
-              iNalType == NAL_UNIT_CODED_SLICE_BLA_W_LP   ) {
-            sequencePoc += maxPocFound + 1;
-            maxPocFound = -1;
-          } else {
-            if( iPoc >= maxPocFound ) {
-              maxPocFound = iPoc;
-            }
-          }
-          if( previousNaluLayerIndex != iLayer && iLayer == 0 ) {
-            frameIndex++;
-          }
-          previousNaluLayerIndex = iLayer;
-          currentPoc = sequencePoc + iPoc;
-          */
+          bitDepth = decCavlc->getSPS()->getBitDepth();
+          is444    = decCavlc->getSPS()->getIs444();
+          break;
+          /*
+         case NAL_UNIT_PPS: decCavlc->parsePPS( decCavlc->getPPS());  break;
+         case NAL_UNIT_CODED_SLICE_TRAIL_N:
+         case NAL_UNIT_CODED_SLICE_TRAIL_R:
+         case NAL_UNIT_CODED_SLICE_TSA_N:
+         case NAL_UNIT_CODED_SLICE_TSA_R:
+         case NAL_UNIT_CODED_SLICE_STSA_N:
+         case NAL_UNIT_CODED_SLICE_STSA_R:
+         case NAL_UNIT_CODED_SLICE_RADL_N:
+         case NAL_UNIT_CODED_SLICE_RADL_R:
+         case NAL_UNIT_CODED_SLICE_RASL_N:
+         case NAL_UNIT_CODED_SLICE_RASL_R:
+         case NAL_UNIT_CODED_SLICE_BLA_W_LP:
+         case NAL_UNIT_CODED_SLICE_BLA_W_RADL:
+         case NAL_UNIT_CODED_SLICE_BLA_N_LP:
+         case NAL_UNIT_CODED_SLICE_IDR_W_RADL:
+         case NAL_UNIT_CODED_SLICE_IDR_N_LP:
+         case NAL_UNIT_CODED_SLICE_CRA:
+           iPoc = decCavlc->parseSliceHeader( iLayer, (NalUnitType)iNalType, iTemporalIndex );
+           if( iNalType == NAL_UNIT_CODED_SLICE_IDR_W_RADL ||
+               iNalType == NAL_UNIT_CODED_SLICE_IDR_N_LP   ||
+               iNalType == NAL_UNIT_CODED_SLICE_BLA_N_LP   ||
+               iNalType == NAL_UNIT_CODED_SLICE_BLA_W_RADL ||
+               iNalType == NAL_UNIT_CODED_SLICE_BLA_W_LP   ) {
+             sequencePoc += maxPocFound + 1;
+             maxPocFound = -1;
+           } else {
+             if( iPoc >= maxPocFound ) {
+               maxPocFound = iPoc;
+             }
+           }
+           if( previousNaluLayerIndex != iLayer && iLayer == 0 ) {
+             frameIndex++;
+           }
+           previousNaluLayerIndex = iLayer;
+           currentPoc = sequencePoc + iPoc;
+           */
       }
       createNalu( currentPoc, buffer, index, i - index );
       nalNumber++;

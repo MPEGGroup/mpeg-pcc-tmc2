@@ -76,6 +76,8 @@ class PCCDecoder : public PCCCodec {
   bool                 compareHashSEICheckSum( uint32_t encCheckSum, uint32_t decCheckSum );
   void                 createHashSEI( PCCContext& context, int frameIndex );
   void                 createHlsAtlasTileLogFiles( PCCContext& context, int frameIndex );
+  
+  PCCCodecId           getCodedCodecId( PCCContext& context, uint8_t codecCodecId );
   PCCDecoderParameters params_;
 };
 };  // namespace pcc

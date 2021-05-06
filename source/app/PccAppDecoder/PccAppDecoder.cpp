@@ -175,7 +175,7 @@ bool parseParameters( int                       argc,
     // visual quality
     ( "patchColorSubsampling",
       decoderParams.patchColorSubsampling_, 
-      false,
+      decoderParams.patchColorSubsampling_, 
     "Enable per-patch color up-sampling");
 
     opts.addOptions()

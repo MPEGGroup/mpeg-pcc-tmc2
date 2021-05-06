@@ -346,7 +346,7 @@ void PCCBitstreamReader::profileTierLevel( ProfileTierLevel& ptl, PCCBitstream& 
   ptl.setTierFlag( bitstream.read( 1 ) != 0U );            // u(1)
   ptl.setProfileCodecGroupIdc( bitstream.read( 7 ) );      // u(7)
   ptl.setProfileToolsetIdc( bitstream.read( 8 ) );         // u(8)
-  ptl.setProfileReconctructionIdc( bitstream.read( 8 ) );  // u(8)
+  ptl.setProfileReconstructionIdc( bitstream.read( 8 ) );  // u(8)
   bitstream.read( 16 );                                    // u(16)
   bitstream.read( 16 );                                    // u(16)
   ptl.setLevelIdc( bitstream.read( 8 ) );                  // u(8)

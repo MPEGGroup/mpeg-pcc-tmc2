@@ -39,7 +39,7 @@ PCCDecoderParameters::PCCDecoderParameters() {
   compressedStreamPath_              = {};
   reconstructedDataPath_             = {};
   startFrameNumber_                  = 0;
-  colorTransform_                    = COLOR_TRANSFORM_RGB_TO_YCBCR;
+  colorTransform_                    = COLOR_TRANSFORM_NONE;
   colorSpaceConversionPath_          = {};
   inverseColorSpaceConversionConfig_ = {};
   videoDecoderOccupancyPath_         = {};
@@ -51,6 +51,7 @@ PCCDecoderParameters::PCCDecoderParameters() {
   nbThread_                          = 1;
   keepIntermediateFiles_             = false;
   postprocessSmoothingFilter_        = 1;
+  patchColorSubsampling_             = false;
 }
 
 PCCDecoderParameters::~PCCDecoderParameters() = default;
