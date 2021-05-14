@@ -82,7 +82,10 @@ void PCCHMLibVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
     cmd << " --PatchInfoFile=" << params.patchInfoFile_;
   }
 #ifdef USE_HM_PCC_RDO
-  if ( params.usePccRDO_ ) { cmd << " --UsePccRDO=1"; }
+  if ( params.usePccRDO_ ) {
+    cmd << " --UsePccRDO=1";
+    cmd << " --OccupancyMapFile=" << params.occupancyMapFile_;
+  }
 #endif
 
   if ( params.inputColourSpaceConvert_ ) { cmd << " --InputColourSpaceConvert=RGBtoGBR"; }
