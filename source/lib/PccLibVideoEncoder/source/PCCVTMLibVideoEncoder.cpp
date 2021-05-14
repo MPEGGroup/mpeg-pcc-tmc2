@@ -72,11 +72,11 @@ void PCCVTMLibVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
   cmd << " --ReconFile=" << params.recYuvFileName_;
   cmd << " --QP=" << params.qp_;
   if ( params.internalBitDepth_ != 0 ) { cmd << " --InternalBitDepth=" << params.internalBitDepth_; }
-  //  if ( params.usePccMotionEstimation_ ) {
-  //    cmd << " --UsePccMotionEstimation=1"
-  //        << " --BlockToPatchFile=" << params.blockToPatchFile_ << " --OccupancyMapFile=" << params.occupancyMapFile_
-  //        << " --PatchInfoFile=" << params.patchInfoFile_;
-  //  }
+  if ( params.usePccMotionEstimation_ ) {
+    cmd << " --UsePccMotionEstimation=1"
+        << " --BlockToPatchFile=" << params.blockToPatchFile_ << " --OccupancyMapFile=" << params.occupancyMapFile_
+        << " --PatchInfoFile=" << params.patchInfoFile_;
+  }
   if ( params.use444CodecIo_ ) { cmd << " --InputColourSpaceConvert=RGBtoGBR"; }
   std::cout << cmd.str() << std::endl;
 

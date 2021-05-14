@@ -184,6 +184,27 @@ void PCCVTMLibVideoEncoderImpl<T>::createLib( const int layerIdx ) {
   for ( int i = 0; i < ( m_iGOPSize + 1 + ( m_isField ? 1 : 0 ) ); i++ ) { m_recBufList.push_back( new PelUnitBuf ); }
   xInitLib( m_isField );
 
+#if PCC_ME_EXT
+  if ( m_usePCCExt ) {
+    // Note JR: must be given from the function parameters
+    printf( "\nReading the aux info files\n" );
+    FILE* patchFile = NULL;
+    patchFile       = fopen( m_patchInfoFileName.c_str(), "rb" );
+    for ( int i = 0; i < PCC_ME_EXT_MAX_NUM_FRAMES; i++ ) {
+      size_t readSize = fread( &g_vtmnumPatches[i], sizeof( long long ), 1, patchFile );
+      if ( readSize != 1 && readSize != 0 ) { printf( "error: Wrong Patch data group file" ); }
+      for ( int patchIdx = 0; patchIdx < g_vtmnumPatches[i]; patchIdx++ ) {
+        readSize = fread( &g_vtmprojectionIndex[i][patchIdx], sizeof( long long ), 1, patchFile );
+        if ( readSize != 1 ) { printf( "error: Wrong Auxiliary data format" ); }
+        readSize = fread( g_vtmpatch2DInfo[i][patchIdx], sizeof( long long ), 4, patchFile );
+        if ( readSize != 4 ) { printf( "error: Wrong Auxiliary data format" ); }
+        readSize = fread( g_vtmpatch3DInfo[i][patchIdx], sizeof( long long ), 3, patchFile );
+        if ( readSize != 3 ) { printf( "error: Wrong Auxiliary data format" ); }
+      }
+    }
+    fclose( patchFile );
+  }
+#endif
   printChromaFormat();
 
 #if EXTENSION_360_VIDEO
@@ -315,6 +336,13 @@ void PCCVTMLibVideoEncoderImpl<T>::xInitLibCfg() {
   for ( int i = 1; i < vps.getNumPtls(); i++ ) { ptls[i].setLevelIdc( m_levelPtl[i] ); }
   vps.setProfileTierLevel( ptls );
   vps.setVPSExtensionFlag( false );
+#if PCC_ME_EXT
+  m_cEncLib.setUsePCCExt( m_usePCCExt );
+  if ( m_usePCCExt ) {
+    m_cEncLib.setBlockToPatchFileName( m_blockToPatchFileName );
+    m_cEncLib.setOccupancyMapFileName( m_occupancyMapFileName );
+  }
+#endif
   m_cEncLib.setProfile( m_profile );
   m_cEncLib.setLevel( m_levelTier, m_level );
   m_cEncLib.setFrameOnlyConstraintFlag( m_frameOnlyConstraintFlag );
