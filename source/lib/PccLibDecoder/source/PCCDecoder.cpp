@@ -74,19 +74,16 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
   // bool              isAuxiliaryGeometry444   = false;
   // bool              isAttributes444          = plt.getProfileCodecGroupIdc() == CODEC_GROUP_HEVC444;
   // bool              isAuxiliaryAttributes444 = plt.getProfileCodecGroupIdc() == CODEC_GROUP_HEVC444;
-  PCCCodecId        occupancyCodecId         = getCodedCodecId( context, oi.getOccupancyCodecId() );
-  PCCCodecId        geometryCodecId          = getCodedCodecId( context, gi.getGeometryCodecId() );
-  PCCCodecId        attributeCodecId;
-  for ( uint32_t i = 0; i < ai.getAttributeCount(); i++ ) {
-    attributeCodecId = getCodedCodecId( context, ai.getAttributeCodecId( i ) );
-  }
+  PCCCodecId occupancyCodecId   = getCodedCodecId( context, oi.getOccupancyCodecId() );
+  PCCCodecId geometryCodecId    = getCodedCodecId( context, gi.getGeometryCodecId() );
+  PCCCodecId auxGeometryCodecId = getCodedCodecId( context, gi.getAuxiliaryGeometryCodecId() );
   path << removeFileExtension( params_.compressedStreamPath_ ) << "_dec_GOF" << sps.getV3CParameterSetId() << "_";
 
-  printf( "CodecCodecId: ProfileCodecGroupIdc = %u occupancyCodecId = %u geometry = %u attribute = %u \n",
+  printf( "CodecCodecId: ProfileCodecGroupIdc = %u occupancyCodecId = %u geometry = %u auxGeo = %u \n",
           plt.getProfileCodecGroupIdc(), oi.getOccupancyCodecId(), gi.getGeometryCodecId(),
-          ai.getAttributeCodecId( 0 ) );
+          gi.getAuxiliaryGeometryCodecId() );
   printf( "=> Video decoder : occupancy = %d geometry = %d attribute = %d \n", (int)occupancyCodecId,
-          (int)geometryCodecId, (int)attributeCodecId );
+          (int)geometryCodecId, (int)auxGeometryCodecId );
   printf( " Decode O size = %zu \n", context.getVideoBitstream( VIDEO_OCCUPANCY ).size() );
   fflush( stdout );
   TRACE_PICTURE( "Occupancy\n" );
@@ -177,9 +174,13 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
     TRACE_PICTURE( "Attribute\n" );
     for ( int attrIndex = 0; attrIndex < ai.getAttributeCount(); attrIndex++ ) {
       TRACE_PICTURE( "AttrIdx = %d, ", attrIndex );
-      int attributeBitDepth  = ai.getAttribute2dBitdepthMinus1( attrIndex ) + 1;
-      int attributeTypeId    = ai.getAttributeTypeId( attrIndex );
-      int attributeDimension = ai.getAttributeDimensionPartitionsMinus1( attrIndex ) + 1;
+      int        attributeBitDepth   = ai.getAttribute2dBitdepthMinus1( attrIndex ) + 1;
+      int        attributeTypeId     = ai.getAttributeTypeId( attrIndex );
+      int        attributeDimension  = ai.getAttributeDimensionPartitionsMinus1( attrIndex ) + 1;
+      PCCCodecId attributeCodecId    = getCodedCodecId( context, ai.getAttributeCodecId( attrIndex ) );
+      PCCCodecId auxAttributeCodecId = getCodedCodecId( context, ai.getAuxiliaryAttributeCodecId( attrIndex ) );
+      printf( "CodecId attributeCodecId = %d auxAttributeCodecId = %d \n", (int)attributeCodecId,
+              (int)auxAttributeCodecId );
       for ( int attrPartitionIndex = 0; attrPartitionIndex < attributeDimension; attrPartitionIndex++ ) {
         TRACE_PICTURE( "AttrPartIdx = %d, AttrTypeID = %d, ", attrPartitionIndex, attributeTypeId );
         if ( sps.getMultipleMapStreamsPresentFlag( atlasIndex ) ) {
@@ -245,7 +246,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
                                    path.str(),                                  // path
                                    videoBitstreamMP,                            // bitstream
                                    params_.byteStreamVideoCoderAttribute_,      // byte stream video coder
-                                   attributeCodecId,                            // codecId
+                                   auxAttributeCodecId,                         // codecId
                                    params_.videoDecoderAttributePath_,          // decoder path
                                    frameCount,                                  // frameCount
                                    attributeBitDepth,                           // output bit depth
