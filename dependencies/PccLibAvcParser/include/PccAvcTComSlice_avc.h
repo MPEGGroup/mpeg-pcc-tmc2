@@ -870,7 +870,12 @@ class TComSPS_avc
     //- m_conformanceWindow.getWindowBottomOffset(); 
     //printf( "getOutputHeight = %d\n", int( ( pic_height_in_map_units_minus1 + 1 ) * 16 ) );
     return int( ( pic_height_in_map_units_minus1 + 1 ) * 16 );
-
+  }
+  UInt getBitDepth(){
+    return bit_depth_luma_minus8 + 8;
+  }
+  UInt getIs444(){
+    return chroma_format_idc == ChromaFormat::CHROMA_444;
   }
 private:
   UInt         profile_idc;            // u(8)

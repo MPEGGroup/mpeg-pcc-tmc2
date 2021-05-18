@@ -46,12 +46,11 @@ PCCVTMLibVideoDecoder<T>::~PCCVTMLibVideoDecoder() {}
 
 template <typename T>
 void PCCVTMLibVideoDecoder<T>::decode( PCCVideoBitstream& bitstream,
-                                       size_t             outputBitDepth,
-                                       bool               RGB2GBR,
-                                       PCCVideo<T, 3>&    video,
-                                       const std::string& decoderPath,
-                                       const std::string& parameters,
-                                       const size_t       frameCount ) {
+                                      PCCVideo<T, 3>&    video,
+                                      const size_t       frameCount,
+                                      size_t             outputBitDepth,
+                                      const std::string& decoderPath,
+                                      const std::string& fileName ) {
   // print information
   fprintf( stdout, "\n" );
   fprintf( stdout, "VVCSoftware: VTM Decoder Version %s ", VTM_VERSION );
@@ -73,7 +72,7 @@ void PCCVTMLibVideoDecoder<T>::decode( PCCVideoBitstream& bitstream,
 #ifndef _DEBUG
   try {
 #endif  // !_DEBUG
-    if ( 0 != decoder.decode( bitstream, outputBitDepth, RGB2GBR, video ) ) {
+    if ( 0 != decoder.decode( bitstream, outputBitDepth, video ) ) {
       printf( "\n\n***ERROR*** A decoding mismatch occured: signalled md5sum does not match\n" );
     }
 #ifndef _DEBUG

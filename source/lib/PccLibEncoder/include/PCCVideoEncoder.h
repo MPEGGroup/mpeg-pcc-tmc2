@@ -418,7 +418,7 @@ class PCCVideoEncoder {
       video.setDeprecatedColorFormat( 2 );
     }
 
-    if ( byteStreamVideoCoder ) bitstream.byteStreamToSampleStream();
+    if ( byteStreamVideoCoder ) { bitstream.byteStreamToSampleStream(); } 
     return true;
   }
 

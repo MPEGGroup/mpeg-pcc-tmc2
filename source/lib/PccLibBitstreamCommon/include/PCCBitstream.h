@@ -201,8 +201,9 @@ class PCCBitstream {
   }
 
   inline void writeString( std::string str ) {
-    while ( !byteAligned() ) { write( 0 ); }
+    while ( !byteAligned() ) { write( 0, 1 ); }
     for ( auto& element : str ) { write( element, 8 ); }
+    write( 0, 8 ); 
   }
 
   inline uint32_t peekByteAt( uint64_t peekPos ) { return data_[peekPos]; }

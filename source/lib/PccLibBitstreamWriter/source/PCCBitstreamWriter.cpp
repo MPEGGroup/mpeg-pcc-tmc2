@@ -529,7 +529,7 @@ void PCCBitstreamWriter::profileTierLevel( ProfileTierLevel& ptl, PCCBitstream& 
   bitstream.write( ptl.getTierFlag(), 1 );                  // u(1)
   bitstream.write( ptl.getProfileCodecGroupIdc(), 7 );      // u(7)
   bitstream.write( ptl.getProfileToolsetIdc(), 8 );         // u(8)
-  bitstream.write( ptl.getProfileReconctructionIdc(), 8 );  // u(8)
+  bitstream.write( ptl.getProfileReconstructionIdc(), 8 );  // u(8)
   bitstream.write( 0, 16 );                                 // u(16)
   bitstream.write( 0, 16 );                                 // u(16)
   bitstream.write( ptl.getLevelIdc(), 8 );                  // u(8)
@@ -979,7 +979,7 @@ void PCCBitstreamWriter::atlasTileHeader( AtlasTileHeader&    ath,
       bitstream.write( ath.getPatchSizeYinfoQuantizer(), 3 );  // u(3)
     }
 
-    TRACE_BITSTREAM( "Raw3dPosBitCountExplicitModeFlag    = %d \n", afps.getRaw3dOffsetBitCountExplicitModeFlag() );
+    TRACE_BITSTREAM( "Raw3dOffsetBitCountExplicitModeFlag    = %d \n", afps.getRaw3dOffsetBitCountExplicitModeFlag() );
     if ( afps.getRaw3dOffsetBitCountExplicitModeFlag() ) {
       size_t bitCount = floorLog2( asps.getGeometry3dBitdepthMinus1() + 1 );
       TRACE_BITSTREAM( "bitCount(floorLog2( asps.getGeometry3dBitdepthMinus1() + 1 ) = %zu \n", bitCount );

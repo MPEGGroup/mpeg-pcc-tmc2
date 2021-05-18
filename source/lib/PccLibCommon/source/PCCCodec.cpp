@@ -1800,7 +1800,7 @@ size_t PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruc
     TRACE_CODEC( "reconstruct.getPointCount()  = %zu \n", reconstruct.getPointCount() );
     TRACE_CODEC( "pointToPixel size            = %zu \n", pointToPixel.size() );
     TRACE_CODEC( "pointLocalReconstruction     = %d \n", params.pointLocalReconstruction_ );
-    TRACE_CODEC( "singleLayerPixelInterleaving = %d \n", params.singleMapPixelInterleaving_ );
+    TRACE_CODEC( "singleMapPixelInterleaving   = %d \n", params.singleMapPixelInterleaving_ );
     TRACE_CODEC( "enhancedOccupancyMapCode       = %d \n", params.enhancedOccupancyMapCode_ );
     TRACE_CODEC( "multipleStreams              = %d \n", multipleStreams );
     PCCPointSet3        target;

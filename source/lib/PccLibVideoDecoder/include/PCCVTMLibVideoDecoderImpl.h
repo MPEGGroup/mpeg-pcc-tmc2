@@ -54,7 +54,7 @@ class PCCVTMLibVideoDecoderImpl : public PCCVTMLibVideoDecoderCfg {
   PCCVTMLibVideoDecoderImpl();
 
   ~PCCVTMLibVideoDecoderImpl();
-  uint32_t decode( PCCVideoBitstream& bitstream, size_t outputBitDepth, bool RGB2GBR, PCCVideo<T, 3>& video );
+  uint32_t decode( PCCVideoBitstream& bitstream, size_t outputBitDepth, PCCVideo<T, 3>& video );
 
  private:
   void   xCreateDecLib();

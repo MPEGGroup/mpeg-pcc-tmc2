@@ -58,16 +58,15 @@ class PCCVideoDecoder {
 
   template <typename T>
   bool decompress( PCCVideo<T, 3>&    video,
-                   const std::string& path,
-                   const size_t       frameCount,
-                   PCCVideoBitstream& bitstream,
-                   const std::string& decoderPath,
-                   PCCCodecId         codecId,
-                   bool               byteStreamVideoCoder,
                    PCCContext&        contexts,
-                   size_t             bitDepth,
+                   const std::string& path,
+                   PCCVideoBitstream& bitstream,
+                   bool               byteStreamVideoCoder,
+                   PCCCodecId         codecId,
+                   const std::string& decoderPath,
+                   const size_t       frameCount,
+                   size_t             outputBitDepth,
                    const bool         keepIntermediateFiles             = false,
-                   const bool         use444CodecIo                     = false,
                    const bool         patchColorSubsampling             = false,
                    const std::string& inverseColorSpaceConversionConfig = "",
                    const std::string& colorSpaceConversionPath          = "",
@@ -76,7 +75,6 @@ class PCCVideoDecoder {
     const std::string fileName    = path + type;
     const std::string binFileName = fileName + ".bin";
     size_t            width = 0, height = 0;
-    size_t            nbyte = bitDepth == 8 ? 1 : 2;
 
 #ifdef USE_VTMLIB_VIDEO_CODEC
     if ( byteStreamVideoCoder ) { bitstream.sampleStreamToByteStream( codecId == VTMLIB ); }
@@ -87,11 +85,11 @@ class PCCVideoDecoder {
 
     // Decode video
     auto decoder = PCCVirtualVideoDecoder<T>::create( codecId );
-    printf( " decompress codecId = %d size(T) = %zu bitDepth = %d \n", (int)codecId, sizeof( T ),
-            bitDepth == 8 ? 8 : 10 );
+    printf( " decompress codecId = %d size(T) = %zu outputBitDepth = %d \n", (int)codecId, sizeof( T ), outputBitDepth );
     fflush( stdout );
-    decoder->decode( bitstream, bitDepth == 8 ? 8 : 10, use444CodecIo, video, decoderPath, fileName, frameCount );
+    decoder->decode( bitstream, video, frameCount, outputBitDepth == 8 ? 8 : 10, decoderPath, fileName );
 
+    bool is444 = video.getColorFormat() == PCCCOLORFORMAT::RGB444 || video.getColorFormat() == PCCCOLORFORMAT::YUV444;
     size_t frameIndex = 0;
     for ( auto& image : video ) {
       TRACE_PICTURE( "PicOrderCntVal = %d, ", frameIndex++ );
@@ -99,21 +97,23 @@ class PCCVideoDecoder {
       TRACE_PICTURE( " MD5checksumChan1 = %s, ", image.computeMD5( 1 ).c_str() );
       TRACE_PICTURE( " MD5checksumChan2 = %s \n", image.computeMD5( 2 ).c_str() );
     }
-    TRACE_PICTURE( "Width =  %d, Height = %d \n", video.getWidth(), video.getHeight() );
+    TRACE_PICTURE( "Width =  %d, Height = %d \n", video.getWidth(), video.getHeight()  );
 
     width  = video.getWidth();
     height = video.getHeight();
+    printf("Decoded frame = %zu x %zu %zu bits is444 = %d \n", width, height, outputBitDepth, is444 ); 
+    fflush(stdout);
     const std::string yuvRecFileName =
-        addVideoFormat( fileName + "_rec", width, height, !use444CodecIo, !use444CodecIo, bitDepth == 10 ? "10" : "8" );
+        addVideoFormat( fileName + "_rec", width, height, !is444, !is444, outputBitDepth == 10 ? "10" : "8" );
     const std::string yuv444RecFileName = addVideoFormat( fileName + "_rec", width, height, true, false, "16" );
-    if ( keepIntermediateFiles ) { video.write( yuvRecFileName, nbyte ); }
+    if ( keepIntermediateFiles ) { video.write( yuvRecFileName, outputBitDepth == 8 ? 1 : 2 ); }
 
     // Convert dec video
     std::shared_ptr<PCCVirtualColorConverter<T>> converter;
     std::string                                  configInverseColorSpace;
     if ( colorSpaceConversionPath.empty() ) {
       converter               = std::make_shared<PCCInternalColorConverter<T>>();
-      configInverseColorSpace = stringFormat( "YUV420ToYUV444_%zu_%zu", bitDepth, upsamplingFilter );
+      configInverseColorSpace = stringFormat( "YUV420ToYUV444_%zu_%zu", outputBitDepth, upsamplingFilter );
     } else {
 #ifdef USE_HDRTOOLS
       converter = std::make_shared<PCCHDRToolsLibColorConverter<T>>();
@@ -122,8 +122,8 @@ class PCCVideoDecoder {
 #endif
       configInverseColorSpace = inverseColorSpaceConversionConfig;
     }
-    if ( inverseColorSpaceConversionConfig.empty() || use444CodecIo ) {
-      if ( use444CodecIo ) {
+    if ( inverseColorSpaceConversionConfig.empty() || is444 ) {
+      if ( is444 ) {
         video.setDeprecatedColorFormat( 0 );
       } else {
         video.setDeprecatedColorFormat( 1 );

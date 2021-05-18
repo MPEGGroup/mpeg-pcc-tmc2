@@ -38,8 +38,8 @@
 using namespace pcc;
 
 const std::vector<PointLocalReconstructionMode> g_pointLocalReconstructionMode = {
-    {false, false, 0, 1}, {true, false, 0, 1}, {true, true, 0, 1}, {true, false, 0, 2}, {true, true, 0, 2},
-    {false, false, 1, 1}, {true, false, 1, 1}, {true, true, 1, 1}, {true, false, 1, 2}, {true, true, 1, 2},
+    { false, false, 0, 1 }, { true, false, 0, 1 }, { true, true, 0, 1 }, { true, false, 0, 2 }, { true, true, 0, 2 },
+    { false, false, 1, 1 }, { true, false, 1, 1 }, { true, true, 1, 1 }, { true, false, 1, 2 }, { true, true, 1, 2 },
 };
 
 PCCEncoderParameters::PCCEncoderParameters() {
@@ -51,7 +51,7 @@ PCCEncoderParameters::PCCEncoderParameters() {
   startFrameNumber_                        = 0;
   frameCount_                              = 300;
   groupOfFramesSize_                       = 32;
-  colorTransform_                          = COLOR_TRANSFORM_RGB_TO_YCBCR;
+  colorTransform_                          = COLOR_TRANSFORM_NONE;
   colorSpaceConversionPath_                = {};
   colorSpaceConversionConfig_              = {};
   inverseColorSpaceConversionConfig_       = {};
@@ -123,40 +123,39 @@ PCCEncoderParameters::PCCEncoderParameters() {
   textureConfig_                           = {};
   textureT0Config_                         = {};
   textureT1Config_                         = {};
-  losslessGeo_                             = false;
+  rawPointsPatch_                          = false;
   noAttributes_                            = false;
-  losslessGeo444_                          = false;
+  geometryVideo444_                        = false;
+  attributeVideo444_                       = false;
   useRawPointsSeparateVideo_               = false;
   geometryAuxVideoConfig_                  = {};
   textureAuxVideoConfig_                   = {};
   nbThread_                                = 1;
   keepIntermediateFiles_                   = false;
-
-  absoluteD1_                             = true;
-  absoluteT1_                             = true;
-  multipleStreams_                        = false;
-  qpAdjT1_                                = 0;
-  qpAdjD1_                                = 0;
-  constrainedPack_                        = true;
-  thresholdColorSmoothing_                = 10.0;
-  thresholdColorDifference_               = 10.0;
-  thresholdColorVariation_                = 6.0;
-  flagColorSmoothing_                     = false;
-  cgridSize_                              = 4;
-  thresholdColorPreSmoothing_             = 10.0;
-  thresholdColorPreSmoothingLocalEntropy_ = 4.5;
-  radius2ColorPreSmoothing_               = 4.0 * 16;
-  neighborCountColorPreSmoothing_         = 4 * 16;
-  flagColorPreSmoothing_                  = true;
-  groupDilation_                          = true;
-  textureDilationOffLossless_             = true;
-  enhancedOccupancyMapCode_               = false;
-  EOMFixBitCount_                         = 2;
-  offsetLossyOM_                          = 0;
-  thresholdLossyOM_                       = 0;
-  prefilterLossyOM_                       = false;
-  patchColorSubsampling_                  = false;
-  mapCountMinus1_                         = 1;
+  absoluteD1_                              = true;
+  absoluteT1_                              = true;
+  multipleStreams_                         = false;
+  qpAdjT1_                                 = 0;
+  qpAdjD1_                                 = 0;
+  constrainedPack_                         = true;
+  thresholdColorSmoothing_                 = 10.0;
+  thresholdColorDifference_                = 10.0;
+  thresholdColorVariation_                 = 6.0;
+  flagColorSmoothing_                      = false;
+  cgridSize_                               = 4;
+  thresholdColorPreSmoothing_              = 10.0;
+  thresholdColorPreSmoothingLocalEntropy_  = 4.5;
+  radius2ColorPreSmoothing_                = 4.0 * 16;
+  neighborCountColorPreSmoothing_          = 4 * 16;
+  flagColorPreSmoothing_                   = true;
+  groupDilation_                           = true;
+  enhancedOccupancyMapCode_                = false;
+  EOMFixBitCount_                          = 2;
+  offsetLossyOM_                           = 0;
+  thresholdLossyOM_                        = 0;
+  prefilterLossyOM_                        = false;
+  patchColorSubsampling_                   = false;
+  mapCountMinus1_                          = 1;
 
   // reconstruction
   removeDuplicatePoints_      = true;
@@ -233,11 +232,14 @@ PCCEncoderParameters::PCCEncoderParameters() {
   tilePartitionHeight_          = 0;
 
   // Profile tier level
-  tierFlag_                 = 0;   // Low Tier
-  profileCodecGroupIdc_     = 1;   // HEVC Main10
-  profileToolsetIdc_        = 0;   // V-PCC Basic
-  profileReconstructionIdc_ = 0;   // Rec0
-  levelIdc_                 = 30;  // Corresponds to level 1.0 in Table A.5
+  tierFlag_                 = 0;                        // Low Tier
+  profileCodecGroupIdc_     = CODEC_GROUP_HEVC_MAIN10;  // HEVC Main10
+  profileToolsetIdc_        = 0;                        // V-PCC Basic V-PCC Extend
+  profileReconstructionIdc_ = 0;                        // Rec0, Rec1 or Rec2
+  levelIdc_                 = 30;                       // Corresponds to level 1.0 in Table A.5
+  avcCodecIdIndex_          = 0;                        // Index use if CMC SEI
+  hevcCodecIdIndex_         = 1;                        // Index use if CMC SEI
+  vvcCodecIdIndex_          = 2;                        // Index use if CMC SEI
 
   // Profile toolset constraints information
   oneV3CFrameOnlyFlag_                     = 0;  // V-PCC Basic
@@ -283,202 +285,204 @@ void PCCEncoderParameters::completePath() {
 
 void PCCEncoderParameters::print() {
   std::cout << "+ Parameters" << std::endl;
-  std::cout << "\t losslessGeo                              " << losslessGeo_ << std::endl;
-  std::cout << "\t noAttributes                             " << noAttributes_ << std::endl;
-  std::cout << "\t raw Geometry Colour Plane                " << ( losslessGeo444_ ? "444" : "420" ) << std::endl;
-  std::cout << "\t enhancedOccupancyMapCode                 " << enhancedOccupancyMapCode_ << std::endl;
-  std::cout << "\t useRawPointsSeparateVideo                " << useRawPointsSeparateVideo_ << std::endl;
-  std::cout << "\t textureRawSeparateVideoWidth             " << textureRawSeparateVideoWidth_ << std::endl;
-  std::cout << "\t uncompressedDataPath                     " << uncompressedDataPath_ << std::endl;
-  std::cout << "\t compressedStreamPath                     " << compressedStreamPath_ << std::endl;
-  std::cout << "\t reconstructedDataPath                    " << reconstructedDataPath_ << std::endl;
-  std::cout << "\t frameCount                               " << frameCount_ << std::endl;
-  std::cout << "\t mapCountMinus1                           " << mapCountMinus1_ << std::endl;
-  std::cout << "\t startFrameNumber                         " << startFrameNumber_ << std::endl;
-  std::cout << "\t groupOfFramesSize                        " << groupOfFramesSize_ << std::endl;
-  std::cout << "\t colorTransform                           " << colorTransform_ << std::endl;
-  std::cout << "\t nbThread                                 " << nbThread_ << std::endl;
-  std::cout << "\t keepIntermediateFiles                    " << keepIntermediateFiles_ << std::endl;
-  std::cout << "\t absoluteD1                               " << absoluteD1_ << std::endl;
-  std::cout << "\t multipleStreams                          " << multipleStreams_ << std::endl;
-  std::cout << "\t qpD1                                     " << qpAdjD1_ << std::endl;
-  std::cout << "\t absoluteT1                               " << absoluteT1_ << std::endl;
-  std::cout << "\t qpT1                                     " << qpAdjT1_ << std::endl;
-  std::cout << "\t constrainedPack                          " << constrainedPack_ << std::endl;
-  std::cout << "\t  maxNumRefPatchList                      " << maxNumRefAtlasList_ << std::endl;
-  std::cout << "\t maxNumRefIndex                           " << maxNumRefAtlasFrame_ << std::endl;
+  std::cout << "\t rawPointsPatch                             " << rawPointsPatch_ << std::endl;
+  std::cout << "\t noAttributes                               " << noAttributes_ << std::endl;
+  std::cout << "\t raw geometry Colour Plane                  " << ( geometryVideo444_ ? "444" : "420" ) << std::endl;
+  std::cout << "\t attribute Colour Plane                     " << ( attributeVideo444_ ? "444" : "420" ) << std::endl;
+  std::cout << "\t enhancedOccupancyMapCode                   " << enhancedOccupancyMapCode_ << std::endl;
+  std::cout << "\t useRawPointsSeparateVideo                  " << useRawPointsSeparateVideo_ << std::endl;
+  std::cout << "\t textureRawSeparateVideoWidth               " << textureRawSeparateVideoWidth_ << std::endl;
+  std::cout << "\t uncompressedDataPath                       " << uncompressedDataPath_ << std::endl;
+  std::cout << "\t compressedStreamPath                       " << compressedStreamPath_ << std::endl;
+  std::cout << "\t reconstructedDataPath                      " << reconstructedDataPath_ << std::endl;
+  std::cout << "\t frameCount                                 " << frameCount_ << std::endl;
+  std::cout << "\t mapCountMinus1                             " << mapCountMinus1_ << std::endl;
+  std::cout << "\t startFrameNumber                           " << startFrameNumber_ << std::endl;
+  std::cout << "\t groupOfFramesSize                          " << groupOfFramesSize_ << std::endl;
+  std::cout << "\t colorTransform                             " << colorTransform_ << std::endl;
+  std::cout << "\t nbThread                                   " << nbThread_ << std::endl;
+  std::cout << "\t keepIntermediateFiles                      " << keepIntermediateFiles_ << std::endl;
+  std::cout << "\t absoluteD1                                 " << absoluteD1_ << std::endl;
+  std::cout << "\t multipleStreams                            " << multipleStreams_ << std::endl;
+  std::cout << "\t qpD1                                       " << qpAdjD1_ << std::endl;
+  std::cout << "\t absoluteT1                                 " << absoluteT1_ << std::endl;
+  std::cout << "\t qpT1                                       " << qpAdjT1_ << std::endl;
+  std::cout << "\t constrainedPack                            " << constrainedPack_ << std::endl;
+  std::cout << "\t maxNumRefPatchList                         " << maxNumRefAtlasList_ << std::endl;
+  std::cout << "\t maxNumRefIndex                             " << maxNumRefAtlasFrame_ << std::endl;
   std::cout << "\t Segmentation" << std::endl;
-  std::cout << "\t   nnNormalEstimation                     " << nnNormalEstimation_ << std::endl;
-  std::cout << "\t   normalOrientation                      " << normalOrientation_ << std::endl;
-  std::cout << "\t   gridBasedRefineSegmentation            " << gridBasedRefineSegmentation_ << std::endl;
-  std::cout << "\t   maxNNCountRefineSegmentation           " << maxNNCountRefineSegmentation_ << std::endl;
-  std::cout << "\t   iterationCountRefineSegmentation       " << iterationCountRefineSegmentation_ << std::endl;
-  std::cout << "\t   voxelDimensionRefineSegmentation       " << voxelDimensionRefineSegmentation_ << std::endl;
-  std::cout << "\t   searchRadiusRefineSegmentation         " << searchRadiusRefineSegmentation_ << std::endl;
-  std::cout << "\t   occupancyResolution                    " << occupancyResolution_ << std::endl;
-  std::cout << "\t   enablePatchSplitting                   " << enablePatchSplitting_ << std::endl;
-  std::cout << "\t   maxPatchSize                           " << maxPatchSize_ << std::endl;
-  std::cout << "\t   quantization step for patch size       "
+  std::cout << "\t   nnNormalEstimation                       " << nnNormalEstimation_ << std::endl;
+  std::cout << "\t   normalOrientation                        " << normalOrientation_ << std::endl;
+  std::cout << "\t   gridBasedRefineSegmentation              " << gridBasedRefineSegmentation_ << std::endl;
+  std::cout << "\t   maxNNCountRefineSegmentation             " << maxNNCountRefineSegmentation_ << std::endl;
+  std::cout << "\t   iterationCountRefineSegmentation         " << iterationCountRefineSegmentation_ << std::endl;
+  std::cout << "\t   voxelDimensionRefineSegmentation         " << voxelDimensionRefineSegmentation_ << std::endl;
+  std::cout << "\t   searchRadiusRefineSegmentation           " << searchRadiusRefineSegmentation_ << std::endl;
+  std::cout << "\t   occupancyResolution                      " << occupancyResolution_ << std::endl;
+  std::cout << "\t   enablePatchSplitting                     " << enablePatchSplitting_ << std::endl;
+  std::cout << "\t   maxPatchSize                             " << maxPatchSize_ << std::endl;
+  std::cout << "\t   quantization step for patch size         "
             << "1<<" << log2QuantizerSizeX_ << ", 1<<" << log2QuantizerSizeY_ << std::endl;
-  std::cout << "\t   minPointCountPerCCPatchSegmentation    " << minPointCountPerCCPatchSegmentation_ << std::endl;
-  std::cout << "\t   maxNNCountPatchSegmentation            " << maxNNCountPatchSegmentation_ << std::endl;
-  std::cout << "\t   surfaceThickness                       " << surfaceThickness_ << std::endl;
-  std::cout << "\t   maxAllowedDist2RawPointsDetection      " << maxAllowedDist2RawPointsDetection_ << std::endl;
-  std::cout << "\t   maxAllowedDist2RawPointsSelection      " << maxAllowedDist2RawPointsSelection_ << std::endl;
-  std::cout << "\t   lambdaRefineSegmentation               " << lambdaRefineSegmentation_ << std::endl;
-  std::cout << "\t   depthQuantizationStep                  " << minLevel_ << std::endl;
-  std::cout << "\t   highGradientSeparation                 " << highGradientSeparation_ << std::endl;
+  std::cout << "\t   minPointCountPerCCPatchSegmentation      " << minPointCountPerCCPatchSegmentation_ << std::endl;
+  std::cout << "\t   maxNNCountPatchSegmentation              " << maxNNCountPatchSegmentation_ << std::endl;
+  std::cout << "\t   surfaceThickness                         " << surfaceThickness_ << std::endl;
+  std::cout << "\t   maxAllowedDist2RawPointsDetection        " << maxAllowedDist2RawPointsDetection_ << std::endl;
+  std::cout << "\t   maxAllowedDist2RawPointsSelection        " << maxAllowedDist2RawPointsSelection_ << std::endl;
+  std::cout << "\t   lambdaRefineSegmentation                 " << lambdaRefineSegmentation_ << std::endl;
+  std::cout << "\t   depthQuantizationStep                    " << minLevel_ << std::endl;
+  std::cout << "\t   highGradientSeparation                   " << highGradientSeparation_ << std::endl;
   if ( highGradientSeparation_ ) {
-    std::cout << "\t     minGradient                        " << minGradient_ << std::endl;
-    std::cout << "\t     minNumHighGradientPoints           " << minNumHighGradientPoints_ << std::endl;
+    std::cout << "\t     minGradient                          " << minGradient_ << std::endl;
+    std::cout << "\t     minNumHighGradientPoints             " << minNumHighGradientPoints_ << std::endl;
   }
   std::cout << "\t Packing" << std::endl;
-  std::cout << "\t   minimumImageWidth                      " << minimumImageWidth_ << std::endl;
-  std::cout << "\t   minimumImageHeight                     " << minimumImageHeight_ << std::endl;
-  std::cout << "\t   log2MaxAtlasFrameOrderCntLsb           " << log2MaxAtlasFrameOrderCntLsb_ << std::endl;
-  std::cout << "\t   packingStrategy                        " << packingStrategy_ << std::endl;
-  std::cout << "\t   useEightOrientations                   " << useEightOrientations_ << std::endl;
-  std::cout << "\t   safeGuardDistance                      " << safeGuardDistance_ << std::endl;
-  std::cout << "\t   globalPatchAllocation                  " << globalPatchAllocation_ << std::endl;
+  std::cout << "\t   minimumImageWidth                        " << minimumImageWidth_ << std::endl;
+  std::cout << "\t   minimumImageHeight                       " << minimumImageHeight_ << std::endl;
+  std::cout << "\t   log2MaxAtlasFrameOrderCntLsb             " << log2MaxAtlasFrameOrderCntLsb_ << std::endl;
+  std::cout << "\t   packingStrategy                          " << packingStrategy_ << std::endl;
+  std::cout << "\t   useEightOrientations                     " << useEightOrientations_ << std::endl;
+  std::cout << "\t   safeGuardDistance                        " << safeGuardDistance_ << std::endl;
+  std::cout << "\t   globalPatchAllocation                    " << globalPatchAllocation_ << std::endl;
   if ( globalPatchAllocation_ == 2 ) {
-    std::cout << "\t   globalPackingStrategyGOF             " << geometryD0Config_ << std::endl;
-    std::cout << "\t   globalPackingStrategyReset           " << geometryD1Config_ << std::endl;
-    std::cout << "\t   globalPackingStrategyThreshold       " << geometryD1Config_ << std::endl;
+    std::cout << "\t   globalPackingStrategyGOF               " << geometryD0Config_ << std::endl;
+    std::cout << "\t   globalPackingStrategyReset             " << geometryD1Config_ << std::endl;
+    std::cout << "\t   globalPackingStrategyThreshold         " << geometryD1Config_ << std::endl;
   }
-  std::cout << "\t   patchPrecedenceOrder                   " << patchPrecedenceOrderFlag_ << std::endl;
-  std::cout << "\t   lowDelayEncoding                       " << lowDelayEncoding_ << std::endl;
-  std::cout << "\t   textureBGFill                          " << textureBGFill_ << std::endl;
-  std::cout << "\t   geometryPadding                        " << geometryPadding_ << std::endl;
+  std::cout << "\t   patchPrecedenceOrder                     " << patchPrecedenceOrderFlag_ << std::endl;
+  std::cout << "\t   lowDelayEncoding                         " << lowDelayEncoding_ << std::endl;
+  std::cout << "\t   textureBGFill                            " << textureBGFill_ << std::endl;
+  std::cout << "\t   geometryPadding                          " << geometryPadding_ << std::endl;
   std::cout << "\t Video encoding" << std::endl;
-  std::cout << "\t   geometryQP                             " << geometryQP_ << std::endl;
-  std::cout << "\t   textureQP                              " << textureQP_ << std::endl;
-  std::cout << "\t   colorSpaceConversionPath               " << colorSpaceConversionPath_ << std::endl;
-  std::cout << "\t   videoEncoderOccupancyPath              " << videoEncoderOccupancyPath_ << std::endl;
-  std::cout << "\t   videoEncoderGeometryPath               " << videoEncoderGeometryPath_ << std::endl;
-  std::cout << "\t   videoEncoderAttributePath              " << videoEncoderAttributePath_ << std::endl;
-  std::cout << "\t   videoEncoderOccupancyCodecId           " << videoEncoderOccupancyCodecId_ << std::endl;
-  std::cout << "\t   videoEncoderGeometryCodecId            " << videoEncoderGeometryCodecId_ << std::endl;
-  std::cout << "\t   videoEncoderAttributeCodecId           " << videoEncoderAttributeCodecId_ << std::endl;
+  std::cout << "\t   geometryQP                               " << geometryQP_ << std::endl;
+  std::cout << "\t   textureQP                                " << textureQP_ << std::endl;
+  std::cout << "\t   colorSpaceConversionPath                 " << colorSpaceConversionPath_ << std::endl;
+  std::cout << "\t   videoEncoderOccupancyPath                " << videoEncoderOccupancyPath_ << std::endl;
+  std::cout << "\t   videoEncoderGeometryPath                 " << videoEncoderGeometryPath_ << std::endl;
+  std::cout << "\t   videoEncoderAttributePath                " << videoEncoderAttributePath_ << std::endl;
+  std::cout << "\t   videoEncoderOccupancyCodecId             " << videoEncoderOccupancyCodecId_ << std::endl;
+  std::cout << "\t   videoEncoderGeometryCodecId              " << videoEncoderGeometryCodecId_ << std::endl;
+  std::cout << "\t   videoEncoderAttributeCodecId             " << videoEncoderAttributeCodecId_ << std::endl;
   if ( multipleStreams_ ) {
-    std::cout << "\t   geometryD0Config                     " << geometryD0Config_ << std::endl;
-    std::cout << "\t   geometryD1Config                     " << geometryD1Config_ << std::endl;
+    std::cout << "\t   geometryD0Config                         " << geometryD0Config_ << std::endl;
+    std::cout << "\t   geometryD1Config                         " << geometryD1Config_ << std::endl;
   } else {
-    std::cout << "\t   geometryConfig                       " << geometryConfig_ << std::endl;
+    std::cout << "\t   geometryConfig                           " << geometryConfig_ << std::endl;
   }
   if ( multipleStreams_ ) {
-    std::cout << "\t   textureT0Config                      " << textureT0Config_ << std::endl;
-    std::cout << "\t   textureT1Config                      " << textureT1Config_ << std::endl;
+    std::cout << "\t   textureT0Config                          " << textureT0Config_ << std::endl;
+    std::cout << "\t   textureT1Config                          " << textureT1Config_ << std::endl;
   } else {
-    std::cout << "\t   textureConfig                        " << textureConfig_ << std::endl;
+    std::cout << "\t   textureConfig                            " << textureConfig_ << std::endl;
   }
   if ( useRawPointsSeparateVideo_ ) {
-    if ( losslessGeo_ ) {
-      std::cout << "\t geometryAuxVideoConfig                     " << geometryAuxVideoConfig_ << std::endl;
-      std::cout << "\t textureAuxVideoConfig                      " << textureAuxVideoConfig_ << std::endl;
+    if ( rawPointsPatch_ ) {
+      std::cout << "\t geometryAuxVideoConfig                       " << geometryAuxVideoConfig_ << std::endl;
+      std::cout << "\t textureAuxVideoConfig                        " << textureAuxVideoConfig_ << std::endl;
     }
   }
-  std::cout << "\t   colorSpaceConversionConfig             " << colorSpaceConversionConfig_ << std::endl;
-  std::cout << "\t   inverseColorSpaceConversionConfig      " << inverseColorSpaceConversionConfig_ << std::endl;
-  std::cout << "\t   apply3dMotionCompensation              " << use3dmc_ << std::endl;
+  std::cout << "\t   colorSpaceConversionConfig               " << colorSpaceConversionConfig_ << std::endl;
+  std::cout << "\t   inverseColorSpaceConversionConfig        " << inverseColorSpaceConversionConfig_ << std::endl;
+  std::cout << "\t   apply3dMotionCompensation                " << use3dmc_ << std::endl;
   std::cout << "\t Dilation" << std::endl;
-  std::cout << "\t   GroupDilation                          " << groupDilation_ << std::endl;
-  std::cout << "\t   textureDilationOffLossless             " << textureDilationOffLossless_ << std::endl;
+  std::cout << "\t   GroupDilation                            " << groupDilation_ << std::endl;
   std::cout << "\t Occupancy map encoding " << std::endl;
-  std::cout << "\t   maxCandidateCount                      " << maxCandidateCount_ << std::endl;
-  std::cout << "\t   occupancyPrecision                     " << occupancyPrecision_ << std::endl;
-  std::cout << "\t   occupancyMapVideoEncoderConfig         " << occupancyMapVideoEncoderConfig_ << std::endl;
-  std::cout << "\t   occupancyMapQP                         " << occupancyMapQP_ << std::endl;
-  std::cout << "\t   EOMFixBitCount                         " << EOMFixBitCount_ << std::endl;
-  std::cout << "\t   occupancyMapRefinement                 " << occupancyMapRefinement_ << std::endl;
+  std::cout << "\t   maxCandidateCount                        " << maxCandidateCount_ << std::endl;
+  std::cout << "\t   occupancyPrecision                       " << occupancyPrecision_ << std::endl;
+  std::cout << "\t   occupancyMapVideoEncoderConfig           " << occupancyMapVideoEncoderConfig_ << std::endl;
+  std::cout << "\t   occupancyMapQP                           " << occupancyMapQP_ << std::endl;
+  std::cout << "\t   EOMFixBitCount                           " << EOMFixBitCount_ << std::endl;
+  std::cout << "\t   occupancyMapRefinement                   " << occupancyMapRefinement_ << std::endl;
   std::cout << "\t Lossy occupancy Map coding" << std::endl;
-  std::cout << "\t   Lossy occupancy map offset             " << offsetLossyOM_ << std::endl;
-  std::cout << "\t   Lossy occupancy map threshold          " << thresholdLossyOM_ << std::endl;
-  std::cout << "\t   Lossy occupancy map prefilter          " << prefilterLossyOM_ << std::endl;
-  std::cout << "\t   postprocessSmoothingFilter             " << postprocessSmoothingFilter_ << std::endl;
-  std::cout << "\t Decoded Atlas Information Hash           " << ( decodedAtlasInformationHash_ > 0 ? 1 : 0 )
+  std::cout << "\t   Lossy occupancy map offset               " << offsetLossyOM_ << std::endl;
+  std::cout << "\t   Lossy occupancy map threshold            " << thresholdLossyOM_ << std::endl;
+  std::cout << "\t   Lossy occupancy map prefilter            " << prefilterLossyOM_ << std::endl;
+  std::cout << "\t   postprocessSmoothingFilter               " << postprocessSmoothingFilter_ << std::endl;
+  std::cout << "\t Decoded Atlas Information Hash             " << ( decodedAtlasInformationHash_ > 0 ? 1 : 0 )
             << std::endl;
   if ( decodedAtlasInformationHash_ > 0 )
-    std::cout << "\t   DecodedAtlasInformationHash Type           " << decodedAtlasInformationHash_ << std::endl;
-  std::cout << "\t Geometry smoothing                       " << std::endl;
-  std::cout << "\t   flagGeometrySmoothing                  " << flagGeometrySmoothing_ << std::endl;
+    std::cout << "\t   DecodedAtlasInformationHash Type             " << decodedAtlasInformationHash_ << std::endl;
+  std::cout << "\t Geometry smoothing                         " << std::endl;
+  std::cout << "\t   flagGeometrySmoothing                    " << flagGeometrySmoothing_ << std::endl;
   if ( flagGeometrySmoothing_ ) {
-    std::cout << "\t   gridSmoothing                        " << gridSmoothing_ << std::endl;
+    std::cout << "\t   gridSmoothing                            " << gridSmoothing_ << std::endl;
     if ( gridSmoothing_ ) {
-      std::cout << "\t   gridSize                           " << gridSize_ << std::endl;
-      std::cout << "\t   thresholdSmoothing                 " << thresholdSmoothing_ << std::endl;
+      std::cout << "\t   gridSize                                 " << gridSize_ << std::endl;
+      std::cout << "\t   thresholdSmoothing                       " << thresholdSmoothing_ << std::endl;
     } else {
-      std::cout << "\t   neighborCountSmoothing             " << neighborCountSmoothing_ << std::endl;
-      std::cout << "\t   radius2Smoothing                   " << radius2Smoothing_ << std::endl;
-      std::cout << "\t   radius2BoundaryDetection           " << radius2BoundaryDetection_ << std::endl;
-      std::cout << "\t   thresholdSmoothing                 " << thresholdSmoothing_ << std::endl;
+      std::cout << "\t   neighborCountSmoothing                   " << neighborCountSmoothing_ << std::endl;
+      std::cout << "\t   radius2Smoothing                         " << radius2Smoothing_ << std::endl;
+      std::cout << "\t   radius2BoundaryDetection                 " << radius2BoundaryDetection_ << std::endl;
+      std::cout << "\t   thresholdSmoothing                       " << thresholdSmoothing_ << std::endl;
     }
   }
-  std::cout << "\t   patchExpansion                         " << patchExpansion_ << std::endl;
+  std::cout << "\t   patchExpansion                           " << patchExpansion_ << std::endl;
   std::cout << "\t Color smoothing" << std::endl;
-  std::cout << "\t   flagColorSmoothing                     " << flagColorSmoothing_ << std::endl;
+  std::cout << "\t   flagColorSmoothing                       " << flagColorSmoothing_ << std::endl;
   if ( flagColorSmoothing_ ) {
-    std::cout << "\t   thresholdColorSmoothing                " << thresholdColorSmoothing_ << std::endl;
-    std::cout << "\t   thresholdColorDifference               " << thresholdColorDifference_ << std::endl;
-    std::cout << "\t   thresholdColorVariation                " << thresholdColorVariation_ << std::endl;
-    std::cout << "\t   cgridSize                              " << cgridSize_ << std::endl;
+    std::cout << "\t   thresholdColorSmoothing                  " << thresholdColorSmoothing_ << std::endl;
+    std::cout << "\t   thresholdColorDifference                 " << thresholdColorDifference_ << std::endl;
+    std::cout << "\t   thresholdColorVariation                  " << thresholdColorVariation_ << std::endl;
+    std::cout << "\t   cgridSize                                " << cgridSize_ << std::endl;
   }
-  std::cout << "\t Color pre-smoothing                      " << std::endl;
-  std::cout << "\t   thresholdColorPreSmoothing             " << thresholdColorSmoothing_ << std::endl;
-  std::cout << "\t   thresholdColorPreSmoothingLocalEntropy " << thresholdColorPreSmoothingLocalEntropy_ << std::endl;
-  std::cout << "\t   radius2ColorPreSmoothing               " << radius2ColorPreSmoothing_ << std::endl;
-  std::cout << "\t   neighborCountColorPreSmoothing         " << neighborCountColorPreSmoothing_ << std::endl;
-  std::cout << "\t   flagColorPreSmoothing                  " << flagColorPreSmoothing_ << std::endl;
+  std::cout << "\t Color pre-smoothing                        " << std::endl;
+  std::cout << "\t   thresholdColorPreSmoothing               " << thresholdColorSmoothing_ << std::endl;
+  std::cout << "\t   thresholdColorPreSmoothingLocalEntropy   " << thresholdColorPreSmoothingLocalEntropy_ << std::endl;
+  std::cout << "\t   radius2ColorPreSmoothing                 " << radius2ColorPreSmoothing_ << std::endl;
+  std::cout << "\t   neighborCountColorPreSmoothing           " << neighborCountColorPreSmoothing_ << std::endl;
+  std::cout << "\t   flagColorPreSmoothing                    " << flagColorPreSmoothing_ << std::endl;
   std::cout << "\t Coloring" << std::endl;
-  std::cout << "\t   bestColorSearchRange                   " << bestColorSearchRange_ << std::endl;
-  std::cout << "\t   numNeighborsColorTransferFwd           " << numNeighborsColorTransferFwd_ << std::endl;
-  std::cout << "\t   numNeighborsColorTransferBwd           " << numNeighborsColorTransferBwd_ << std::endl;
-  std::cout << "\t   useDistWeightedAverageFwd              " << useDistWeightedAverageFwd_ << std::endl;
-  std::cout << "\t   useDistWeightedAverageBwd              " << useDistWeightedAverageBwd_ << std::endl;
-  std::cout << "\t   skipAvgIfIdenticalSourcePointPresentFwd " << skipAvgIfIdenticalSourcePointPresentFwd_ << std::endl;
-  std::cout << "\t   skipAvgIfIdenticalSourcePointPresentBwd " << skipAvgIfIdenticalSourcePointPresentBwd_ << std::endl;
-  std::cout << "\t   distOffsetFwd                          " << distOffsetFwd_ << std::endl;
-  std::cout << "\t   distOffsetBwd                          " << distOffsetBwd_ << std::endl;
-  std::cout << "\t   geometryDist2ThresholdFwd              " << maxGeometryDist2Fwd_ << std::endl;
-  std::cout << "\t   geometryDist2ThresholdBwd              " << maxGeometryDist2Bwd_ << std::endl;
-  std::cout << "\t   maxColorDist2Fwd                       " << maxColorDist2Fwd_ << std::endl;
-  std::cout << "\t   maxColorDist2Bwd                       " << maxColorDist2Bwd_ << std::endl;
-  std::cout << "\t   patchColorSubsampling                  " << patchColorSubsampling_ << std::endl;
-  std::cout << "\t   excludeColorOutlier                    " << excludeColorOutlier_ << std::endl;
+  std::cout << "\t   bestColorSearchRange                     " << bestColorSearchRange_ << std::endl;
+  std::cout << "\t   numNeighborsColorTransferFwd             " << numNeighborsColorTransferFwd_ << std::endl;
+  std::cout << "\t   numNeighborsColorTransferBwd             " << numNeighborsColorTransferBwd_ << std::endl;
+  std::cout << "\t   useDistWeightedAverageFwd                " << useDistWeightedAverageFwd_ << std::endl;
+  std::cout << "\t   useDistWeightedAverageBwd                " << useDistWeightedAverageBwd_ << std::endl;
+  std::cout << "\t   skipAvgIfIdenticalSourcePointPresentFwd  " << skipAvgIfIdenticalSourcePointPresentFwd_
+            << std::endl;
+  std::cout << "\t   skipAvgIfIdenticalSourcePointPresentBwd  " << skipAvgIfIdenticalSourcePointPresentBwd_
+            << std::endl;
+  std::cout << "\t   distOffsetFwd                            " << distOffsetFwd_ << std::endl;
+  std::cout << "\t   distOffsetBwd                            " << distOffsetBwd_ << std::endl;
+  std::cout << "\t   geometryDist2ThresholdFwd                " << maxGeometryDist2Fwd_ << std::endl;
+  std::cout << "\t   geometryDist2ThresholdBwd                " << maxGeometryDist2Bwd_ << std::endl;
+  std::cout << "\t   maxColorDist2Fwd                         " << maxColorDist2Fwd_ << std::endl;
+  std::cout << "\t   maxColorDist2Bwd                         " << maxColorDist2Bwd_ << std::endl;
+  std::cout << "\t   patchColorSubsampling                    " << patchColorSubsampling_ << std::endl;
+  std::cout << "\t   excludeColorOutlier                      " << excludeColorOutlier_ << std::endl;
   if ( excludeColorOutlier_ ) {
-    std::cout << "\t     thresholdColorOutlierDist          " << thresholdColorOutlierDist_ << std::endl;
+    std::cout << "\t     thresholdColorOutlierDist            " << thresholdColorOutlierDist_ << std::endl;
   }
   std::cout << "\t Reconstruction " << std::endl;
-  std::cout << "\t   removeDuplicatePoints                  " << removeDuplicatePoints_ << std::endl;
-  std::cout << "\t   pointLocalReconstruction               " << pointLocalReconstruction_ << std::endl;
-  std::cout << "\t     plrlNumberOfModes                    " << plrlNumberOfModes_ << std::endl;
-  std::cout << "\t     patchSize                            " << patchSize_ << std::endl;
-  std::cout << "\t   singleLayerPixelInterleaving           " << singleMapPixelInterleaving_ << std::endl;
-  std::cout << "\t surface Separation                       " << surfaceSeparation_ << std::endl;
-  std::cout << "\t Lossy raw points patch                   " << std::endl;
-  std::cout << "\t   lossyRawPointsPatch                    " << lossyRawPointsPatch_ << std::endl;
-  std::cout << "\t   minNormSumOfInvDist4MPSelection        " << minNormSumOfInvDist4MPSelection_ << std::endl;
-  std::cout << "\t   lossyRawPointPatchGeoQP                " << lossyRawPointPatchGeoQP_ << std::endl;
-  std::cout << "\t raw points sorting                       " << std::endl;
-  std::cout << "\t   mortonOrderSortRawPoints               " << mortonOrderSortRawPoints_ << std::endl;
-  std::cout << "\t Enhanced projection plane                " << enhancedPP_ << std::endl;
-  std::cout << "\t AdditionalProjectionPlane                " << std::endl;
-  std::cout << "\t   additionalProjectionPlaneMode          " << additionalProjectionPlaneMode_ << std::endl;
-  std::cout << "\t   partialAdditionalProjectionPlane       " << partialAdditionalProjectionPlane_ << std::endl;
-  std::cout << "\t Geometry 2D and 3D bitdepths             " << std::endl;
-  std::cout << "\t   geometry3dCoordinatesBitdepth          " << geometry3dCoordinatesBitdepth_ << std::endl;
-  std::cout << "\t   geometryNominal2dBitdepth              " << geometryNominal2dBitdepth_ << std::endl;
-  std::cout << "\t Image partitions and tiles               " << std::endl;
-  std::cout << "\t tileSegmentationType                     " << tileSegmentationType_ << std::endl;
+  std::cout << "\t   removeDuplicatePoints                    " << removeDuplicatePoints_ << std::endl;
+  std::cout << "\t   pointLocalReconstruction                 " << pointLocalReconstruction_ << std::endl;
+  std::cout << "\t     plrlNumberOfModes                      " << plrlNumberOfModes_ << std::endl;
+  std::cout << "\t     patchSize                              " << patchSize_ << std::endl;
+  std::cout << "\t   singleMapPixelInterleaving               " << singleMapPixelInterleaving_ << std::endl;
+  std::cout << "\t surface Separation                         " << surfaceSeparation_ << std::endl;
+  std::cout << "\t Lossy raw points patch                     " << std::endl;
+  std::cout << "\t   lossyRawPointsPatch                      " << lossyRawPointsPatch_ << std::endl;
+  std::cout << "\t   minNormSumOfInvDist4MPSelection          " << minNormSumOfInvDist4MPSelection_ << std::endl;
+  std::cout << "\t   lossyRawPointPatchGeoQP                  " << lossyRawPointPatchGeoQP_ << std::endl;
+  std::cout << "\t raw points sorting                         " << std::endl;
+  std::cout << "\t   mortonOrderSortRawPoints                 " << mortonOrderSortRawPoints_ << std::endl;
+  std::cout << "\t Enhanced projection plane                  " << enhancedPP_ << std::endl;
+  std::cout << "\t AdditionalProjectionPlane                  " << std::endl;
+  std::cout << "\t   additionalProjectionPlaneMode            " << additionalProjectionPlaneMode_ << std::endl;
+  std::cout << "\t   partialAdditionalProjectionPlane         " << partialAdditionalProjectionPlane_ << std::endl;
+  std::cout << "\t Geometry 2D and 3D bitdepths               " << std::endl;
+  std::cout << "\t   geometry3dCoordinatesBitdepth            " << geometry3dCoordinatesBitdepth_ << std::endl;
+  std::cout << "\t   geometryNominal2dBitdepth                " << geometryNominal2dBitdepth_ << std::endl;
+  std::cout << "\t Image partitions and tiles                 " << std::endl;
+  std::cout << "\t tileSegmentationType                       " << tileSegmentationType_ << std::endl;
   if ( tileSegmentationType_ > 1 ) {
-    std::cout << "\t   numMaxTilePerFrame                     " << numMaxTilePerFrame_ << std::endl;
+    std::cout << "\t   numMaxTilePerFrame                       " << numMaxTilePerFrame_ << std::endl;
     if ( numMaxTilePerFrame_ > 1 ) {
-      std::cout << "\t   uniformPartitionSpacing              " << uniformPartitionSpacing_ << std::endl;
-      std::cout << "\t   tilePartitionWidth                   " << tilePartitionWidth_ << std::endl;
-      std::cout << "\t   tilePartitionHeight                  " << tilePartitionHeight_ << std::endl;
+      std::cout << "\t   uniformPartitionSpacing                " << uniformPartitionSpacing_ << std::endl;
+      std::cout << "\t   tilePartitionWidth                     " << tilePartitionWidth_ << std::endl;
+      std::cout << "\t   tilePartitionHeight                    " << tilePartitionHeight_ << std::endl;
     }
   }
-  std::cout << "\t Point cloud partitions and tiles         " << std::endl;
-  std::cout << "\t   enablePointCloudPartitioning           " << enablePointCloudPartitioning_ << std::endl;
+  std::cout << "\t Point cloud partitions and tiles           " << std::endl;
+  std::cout << "\t   enablePointCloudPartitioning             " << enablePointCloudPartitioning_ << std::endl;
   if ( enablePointCloudPartitioning_ ) {
     auto printVector = []( std::vector<int>& vec ) {
       for ( int i = 0; i < vec.size(); ++i ) {
@@ -487,25 +491,26 @@ void PCCEncoderParameters::print() {
       }
       std::cout << std::endl;
     };
-    std::cout << "\t   roiBoundingBoxMinX                     ";
+    std::cout << "\t   roiBoundingBoxMinX                       ";
     printVector( roiBoundingBoxMinX_ );
-    std::cout << "\t   roiBoundingBoxMaxX                     ";
+    std::cout << "\t   roiBoundingBoxMaxX                       ";
     printVector( roiBoundingBoxMaxX_ );
-    std::cout << "\t   roiBoundingBoxMinY                     ";
+    std::cout << "\t   roiBoundingBoxMinY                       ";
     printVector( roiBoundingBoxMinY_ );
-    std::cout << "\t   roiBoundingBoxMaxY                     ";
+    std::cout << "\t   roiBoundingBoxMaxY                       ";
     printVector( roiBoundingBoxMaxY_ );
-    std::cout << "\t   roiBoundingBoxMinZ                     ";
+    std::cout << "\t   roiBoundingBoxMinZ                       ";
     printVector( roiBoundingBoxMinZ_ );
-    std::cout << "\t   roiBoundingBoxMaxZ                     ";
+    std::cout << "\t   roiBoundingBoxMaxZ                       ";
     printVector( roiBoundingBoxMaxZ_ );
-    std::cout << "\t   numTilesHor                            " << numTilesHor_ << std::endl;
-    std::cout << "\t   tileHeightToWidthRatio                 " << tileHeightToWidthRatio_ << std::endl;
-    std::cout << "\t   numCutsAlong1stLongestAxis             " << numCutsAlong1stLongestAxis_ << std::endl;
-    std::cout << "\t   numCutsAlong2ndLongestAxis             " << numCutsAlong2ndLongestAxis_ << std::endl;
-    std::cout << "\t   numCutsAlong3rdLongestAxis             " << numCutsAlong3rdLongestAxis_ << std::endl;
-    std::vector<size_t> vecSizes = {roiBoundingBoxMinX_.size(), roiBoundingBoxMaxX_.size(), roiBoundingBoxMinY_.size(),
-                                    roiBoundingBoxMaxY_.size(), roiBoundingBoxMinZ_.size(), roiBoundingBoxMaxZ_.size()};
+    std::cout << "\t   numTilesHor                              " << numTilesHor_ << std::endl;
+    std::cout << "\t   tileHeightToWidthRatio                   " << tileHeightToWidthRatio_ << std::endl;
+    std::cout << "\t   numCutsAlong1stLongestAxis               " << numCutsAlong1stLongestAxis_ << std::endl;
+    std::cout << "\t   numCutsAlong2ndLongestAxis               " << numCutsAlong2ndLongestAxis_ << std::endl;
+    std::cout << "\t   numCutsAlong3rdLongestAxis               " << numCutsAlong3rdLongestAxis_ << std::endl;
+    std::vector<size_t> vecSizes = { roiBoundingBoxMinX_.size(), roiBoundingBoxMaxX_.size(),
+                                     roiBoundingBoxMinY_.size(), roiBoundingBoxMaxY_.size(),
+                                     roiBoundingBoxMinZ_.size(), roiBoundingBoxMaxZ_.size() };
     for ( int i = 0; i < vecSizes.size(); ++i ) {
       if ( vecSizes[i] != vecSizes[0] ) {
         std::cerr << "All the 6 arrays roiBoundingBox[Min-Max][X-Y-Z] must "
@@ -525,23 +530,26 @@ void PCCEncoderParameters::print() {
     }
   }
   std::cout << "\t Patch block filtering" << std::endl;
-  std::cout << "\t   pbfEnableFlag                          " << pbfEnableFlag_ << std::endl;
-  std::cout << "\t   pbfPassesCount                         " << pbfPassesCount_ << std::endl;
-  std::cout << "\t   pbfFilterSize                          " << pbfFilterSize_ << std::endl;
-  std::cout << "\t   pbfLog2Threshold                       " << pbfLog2Threshold_ << std::endl;
+  std::cout << "\t   pbfEnableFlag                            " << pbfEnableFlag_ << std::endl;
+  std::cout << "\t   pbfPassesCount                           " << pbfPassesCount_ << std::endl;
+  std::cout << "\t   pbfFilterSize                            " << pbfFilterSize_ << std::endl;
+  std::cout << "\t   pbfLog2Threshold                         " << pbfLog2Threshold_ << std::endl;
 
   std::cout << "\t Profile tier level" << std::endl;
-  std::cout << "\t   tierFlag                               " << tierFlag_ << std::endl;
-  std::cout << "\t   profileCodecGroupIdc                   " << profileCodecGroupIdc_ << std::endl;
-  std::cout << "\t   profileToolsetIdc                      " << profileToolsetIdc_ << std::endl;
-  std::cout << "\t   profileReconstructionIdc               " << profileReconstructionIdc_ << std::endl;
-  std::cout << "\t   levelIdc                               " << levelIdc_ << std::endl;
- 
+  std::cout << "\t   tierFlag                                 " << tierFlag_ << std::endl;
+  std::cout << "\t   profileCodecGroupIdc                     " << profileCodecGroupIdc_ << std::endl;
+  std::cout << "\t   profileToolsetIdc                        " << profileToolsetIdc_ << std::endl;
+  std::cout << "\t   profileReconstructionIdc                 " << profileReconstructionIdc_ << std::endl;
+  std::cout << "\t   levelIdc                                 " << levelIdc_ << std::endl;
+  std::cout << "\t   avcCodecIdIndex_                         " << avcCodecIdIndex_ << std::endl;
+  std::cout << "\t   hevcCodecIdIndex_                        " << hevcCodecIdIndex_ << std::endl;
+  std::cout << "\t   vvcCodecIdIndex_                         " << vvcCodecIdIndex_ << std::endl;
+
   std::cout << "\t Profile toolset constraints information" << std::endl;
-  std::cout << "\t   oneV3CFrameOnlyFlag                    " << oneV3CFrameOnlyFlag_ << std::endl;
-  std::cout << "\t   noEightOrientationsConstraintFlag      " << noEightOrientationsConstraintFlag_ << std::endl;
-  std::cout << "\t   no45DegreeProjectionPatchConstraintFlag" << no45DegreeProjectionPatchConstraintFlag_ << std::endl;
- 
+  std::cout << "\t   oneV3CFrameOnlyFlag                      " << oneV3CFrameOnlyFlag_ << std::endl;
+  std::cout << "\t   noEightOrientationsConstraintFlag        " << noEightOrientationsConstraintFlag_ << std::endl;
+  std::cout << "\t   no45DegreeProjectionPatchConstraintFlag  " << no45DegreeProjectionPatchConstraintFlag_
+            << std::endl;
   std::cout << std::endl;
 }
 
@@ -643,41 +651,10 @@ bool PCCEncoderParameters::check() {
     std::cerr << "absoluteT1 should be true when absoluteD1 is true\n";
     absoluteT1_ = 1;
   }
-  if ( losslessGeo_ ) {
+  if ( rawPointsPatch_ ) {
 #ifdef USE_HM_PCC_RDO
     usePccRDO_ = false;
 #endif
-    pbfEnableFlag_          = false;
-    occupancyMapRefinement_ = false;
-    flagColorSmoothing_     = false;
-    flagGeometrySmoothing_  = false;
-    gridSmoothing_          = false;
-    if ( lossyRawPointsPatch_ == true ) {
-      std::cerr << "WARNING: lossyRawPointsPatch_ is only for lossy "
-                   "coding mode for now. Force lossyRawPointsPatch_=FALSE.\n";
-      lossyRawPointsPatch_ = false;
-    }
-    if ( pointLocalReconstruction_ ) {
-      pointLocalReconstruction_ = false;
-      std::cerr << "WARNING: pointLocalReconstruction_ is only for lossy "
-                   "coding mode for now. Force pointLocalReconstruction_=FALSE.\n";
-    }
-    if ( singleMapPixelInterleaving_ ) {
-      singleMapPixelInterleaving_ = false;
-      std::cerr << "WARNING: singleLayerPixelInterleaving is only for lossy "
-                   "coding mode for now. Force singleMapPixelInterleaving_=FALSE.\n";
-    }
-    if ( lossyRawPointsPatch_ ) {
-      lossyRawPointsPatch_ = false;
-      std::cerr << "WARNING: lossyRawPointsPatch_ is only for lossy coding "
-                   "mode for now. Force lossyRawPointsPatch_=FALSE.\n";
-    }
-  } else {
-    if ( enhancedOccupancyMapCode_ ) {
-      enhancedOccupancyMapCode_ = false;
-      std::cerr << "WARNING: enhancedOccupancyMapCode_ is only for lossless "
-                   "coding mode for now. Force enhancedOccupancyMapCode_=FALSE.\n";
-    }
   }
 
   if ( enhancedOccupancyMapCode_ && surfaceThickness_ == 1 ) {
@@ -706,10 +683,9 @@ bool PCCEncoderParameters::check() {
     prefilterLossyOM_ = false;
   }
 
-  if ( useRawPointsSeparateVideo_ && !lossyRawPointsPatch_ && !losslessGeo_ ) {
+  if ( useRawPointsSeparateVideo_ && !lossyRawPointsPatch_ && !rawPointsPatch_ ) {
     useRawPointsSeparateVideo_ = false;
-    std::cerr << "WARNING: useRawPointsSeparateVideo_ is for lossy coding mode "
-                 "if lossyRawPointsPatch_. Force "
+    std::cerr << "WARNING: useRawPointsSeparateVideo_ is for raw point coding. These modes are not enabled, force "
                  "useRawPointsSeparateVideo_=false.\n";
   }
   if ( useRawPointsSeparateVideo_ ) {
@@ -835,6 +811,125 @@ bool PCCEncoderParameters::check() {
     ret = false;
     std::cerr << "EOMFixBitCount shall be greater than 0. \n";
   }
+
+  // Profile reconctruction idc
+  // Rec0
+  if ( profileReconstructionIdc_ == 0 ) {
+    if ( singleMapPixelInterleaving_ ) {
+      singleMapPixelInterleaving_ = false;
+      std::cerr << "singleMapPixelInterleaving is ignored because profileReconstructionIdc set to 0. \n";
+    }
+    if ( pointLocalReconstruction_ ) {
+      pointLocalReconstruction_ = false;
+      std::cerr << "pointLocalReconstruction is ignored because profileReconstructionIdc set to 0. \n";
+    }
+    if ( enhancedOccupancyMapCode_ ) {
+      enhancedOccupancyMapCode_ = 0;
+      std::cerr << "enhancedOccupancyMapCode is ignored because profileReconstructionIdc set to 0. \n";
+    }
+    if ( removeDuplicatePoints_ ) {
+      removeDuplicatePoints_ = 0;
+      std::cerr << "removeDuplicatePoints is ignored because profileReconstructionIdc set to 0. \n";
+    }
+    if ( lossyRawPointsPatch_ ) {
+      lossyRawPointsPatch_ = 0;
+      std::cerr << "lossyRawPointsPatch is ignored because profileReconstructionIdc set to 0. \n";
+    }
+    if ( rawPointsPatch_ ) {
+      rawPointsPatch_ = 0;
+      std::cerr << "rawPointsPatch is ignored because profileReconstructionIdc set to 0. \n";
+    }
+    if ( flagGeometrySmoothing_ ) {
+      flagGeometrySmoothing_ = false;
+      std::cerr << "flagGeometrySmoothing is ignored because profileReconstructionIdc set to 0. \n";
+    }
+    // Note: Attribute transfer cannot be disabled. one encoder input parameter must be added.
+    if ( flagColorPreSmoothing_ ) {
+      flagColorPreSmoothing_ = false;
+      std::cerr << "flagColorPreSmoothing is ignored because profileReconstructionIdc set to 0. \n";
+    }
+    if ( flagColorSmoothing_ ) {
+      flagColorSmoothing_ = false;
+      std::cerr << "flagColorSmoothing is ignored because profileReconstructionIdc set to 0. \n";
+    }
+    if ( pbfEnableFlag_ ) {
+      pbfEnableFlag_ = false;
+      std::cerr << "pbfEnableFlag is ignored because profileReconstructionIdc set to 0. \n";
+    }
+  }
+
+  // Rec1
+  if ( profileReconstructionIdc_ == 1 ) {
+    if ( pbfEnableFlag_ ) {
+      pbfEnableFlag_ = false;
+      std::cerr << "pbfEnableFlag is ignored because profileReconstructionIdc set to 0. \n";
+    }
+  }
+
+  // Rec2
+  if ( profileReconstructionIdc_ == 0 ) {
+    if ( flagGeometrySmoothing_ ) {
+      flagGeometrySmoothing_ = false;
+      std::cerr << "flagGeometrySmoothing is ignored because profileReconstructionIdc set to 0. \n";
+    }
+    // Note: Attribute transfer cannot be disabled. one encoder input parameter must be added.
+  }
+
+  // Based on profileCodecGroupIdc_, fixe the used video codecs.
+  if ( profileCodecGroupIdc_ == CODEC_GROUP_HEVC_MAIN10 && ( geometryVideo444_ || attributeVideo444_ ) ) {
+    profileCodecGroupIdc_ = CODEC_GROUP_HEVC444;
+    std::cerr << "geometry/attributeVideo444 is enabled force profileCodecGroupIdc to CODEC_GROUP_HEVC444\n";
+  }
+  switch ( profileCodecGroupIdc_ ) {
+    case CODEC_GROUP_AVC_PROGRESSIVE_HIGH:
+#if defined( USE_JMAPP_VIDEO_CODEC ) || defined( USE_JMLIB_VIDEO_CODEC )
+      if ( videoEncoderOccupancyCodecId_ != JMLIB || videoEncoderOccupancyCodecId_ != JMAPP ||
+           videoEncoderGeometryCodecId_ != JMLIB || videoEncoderGeometryCodecId_ != JMAPP ||
+           videoEncoderAttributeCodecId_ != JMLIB || videoEncoderAttributeCodecId_ != JMAPP ) {
+        std::cerr << "profileCodecGroupIdc_ is CODEC_GROUP_AVC_PROGRESSIVE_HIGH force codecId. \n";
+        videoEncoderOccupancyCodecId_ = JMLIB;
+        videoEncoderGeometryCodecId_  = JMLIB;
+        videoEncoderAttributeCodecId_ = JMLIB;
+      }
+#else
+      std::cerr << "profileCodecGroupIdc_ is AVC_PROGRESSIVE_HIGH, not supported. \n";
+      ret = false;
+#endif
+      break;
+    case CODEC_GROUP_HEVC444:
+    case CODEC_GROUP_HEVC_MAIN10:
+#if defined( USE_HMAPP_VIDEO_CODEC ) || defined( USE_HMLIB_VIDEO_CODEC )
+      if ( videoEncoderOccupancyCodecId_ != HMLIB || videoEncoderOccupancyCodecId_ != HMAPP ||
+           videoEncoderGeometryCodecId_ != HMLIB || videoEncoderGeometryCodecId_ != HMAPP ||
+           videoEncoderAttributeCodecId_ != HMLIB || videoEncoderAttributeCodecId_ != HMAPP ) {
+        std::cerr << "profileCodecGroupIdc_ is HEVC444 or HEVCMAIN10 force codecId. \n";
+        videoEncoderOccupancyCodecId_ = HMLIB;
+        videoEncoderGeometryCodecId_  = HMLIB;
+        videoEncoderAttributeCodecId_ = HMLIB;
+      }
+#else
+      std::cerr << "profileCodecGroupIdc_ is HEVC444 or HEVCMAIN10, not supported. \n";
+      ret = false;
+#endif
+      break;
+
+    case CODEC_GROUP_VVC_MAIN10:
+#if defined( USE_VTMLIB_VIDEO_CODEC )
+      if ( videoEncoderOccupancyCodecId_ != VTMLIB || videoEncoderGeometryCodecId_ != VTMLIB ||
+           videoEncoderAttributeCodecId_ != VTMLIB ) {
+        std::cerr << "profileCodecGroupIdc_ is VVC_MAIN10 force codecId. \n";
+        videoEncoderOccupancyCodecId_ = VTMLIB;
+        videoEncoderGeometryCodecId_  = VTMLIB;
+        videoEncoderAttributeCodecId_ = VTMLIB;
+      }
+#else
+      std::cerr << "profileCodecGroupIdc_ is VVC_MAIN10, not supported. \n";
+      ret = false;
+#endif
+      break;
+
+    case CODEC_GROUP_MP4RA: break;
+  }
   return ret;
 }
 
@@ -856,6 +951,34 @@ void PCCEncoderParameters::constructAspsRefListStruct( PCCContext& context, size
     }
     asps.addRefListStruct( refList );
   }
+}
+
+uint8_t PCCEncoderParameters::getCodecIdIndex( PCCCodecId codecId ) {
+  switch ( codecId ) {
+#ifdef USE_JMAPP_VIDEO_CODEC
+    case JMAPP:
+#endif
+#ifdef USE_JMLIB_VIDEO_CODEC
+    case JMLIB: return avcCodecIdIndex_; break;
+#endif
+#ifdef USE_FFMPEG_VIDEO_CODEC
+    case FFMPEG:
+#endif
+#ifdef USE_HMLIB_VIDEO_CODEC
+    case HMLIB:
+#endif
+#ifdef USE_HMAPP_VIDEO_CODEC
+    case HMAPP: return hevcCodecIdIndex_; break;
+#endif
+#ifdef USE_VTMLIB_VIDEO_CODEC
+    case VTMLIB: return vvcCodecIdIndex_; break;
+#endif
+    default:
+      printf( "Error: codec id %d not supported \n", (int)codecId );
+      return 0;
+      break;
+  }
+  return 0;
 }
 
 void PCCEncoderParameters::initializeContext( PCCContext& context ) {
@@ -954,7 +1077,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   asps.setVpccExtensionFlag( true );
   asps.setExtension7Bits( 0 );
   asps.setAuxiliaryVideoEnabledFlag( useRawPointsSeparateVideo_ );
-  asps.setRawPatchEnabledFlag( losslessGeo_ || lossyRawPointsPatch_ );
+  asps.setRawPatchEnabledFlag( rawPointsPatch_ || lossyRawPointsPatch_ );
   if ( asps.getVpccExtensionFlag() ) {
     auto& ext = asps.getAspsVpccExtension();
     ext.setRemoveDuplicatePointEnableFlag( removeDuplicatePoints_ );
@@ -981,14 +1104,14 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   oi.setLossyOccupancyCompressionThreshold( thresholdLossyOM_ );
   oi.setOccupancy2DBitdepthMinus1( 7 );
   oi.setOccupancyMSBAlignFlag( false );
-  oi.setOccupancyCodecId( videoEncoderOccupancyCodecId_ );
+  oi.setOccupancyCodecId( getCodecIdIndex( (PCCCodecId)videoEncoderOccupancyCodecId_ ) );
 
   // geometry information
   auto& gi = vps.getGeometryInformation( atlasIndex );
   gi.setGeometry3dCoordinatesBitdepthMinus1( bitdepth3D - 1 );
   gi.setGeometry2dBitdepthMinus1( uint8_t( geometryNominal2dBitdepth_ - 1 ) );
   gi.setGeometryMSBAlignFlag( false );
-  gi.setGeometryCodecId( videoEncoderGeometryCodecId_ );
+  gi.setGeometryCodecId( getCodecIdIndex( (PCCCodecId)videoEncoderGeometryCodecId_ ) );
 
   // Attribute information
   auto& ai = vps.getAttributeInformation( atlasIndex );
@@ -1009,16 +1132,11 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
     }
   }
   for ( uint32_t i = 0; i < ai.getAttributeCount(); i++ ) {
-    ai.setAttributeCodecId( i, videoEncoderAttributeCodecId_ );
+    ai.setAttributeCodecId( i, getCodecIdIndex( (PCCCodecId)videoEncoderAttributeCodecId_ ) );
   }
 
   // atlas video frame allocation
   context.getAtlas( atlasIndex ).allocateVideoFrames( context, 0 );
-
-  // Profile tier level
-  auto& plt = vps.getProfileTierLevel();
-  plt.setProfileCodecGroupIdc( CODEC_GROUP_HEVC_MAIN10 );
-  if ( losslessGeo_ ) { plt.setProfileCodecGroupIdc( CODEC_GROUP_HEVC444 ); }
 
   // Tiles
   auto& frames = context.getFrames();
@@ -1026,7 +1144,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
     auto& atlas = frames[i];
     auto& frame = atlas.getTitleFrameContext();
     frame.setFrameIndex( i );
-    frame.setRawPatchEnabledFlag( losslessGeo_ || lossyRawPointsPatch_ );
+    frame.setRawPatchEnabledFlag( rawPointsPatch_ || lossyRawPointsPatch_ );
     frame.setUseRawPointsSeparateVideo( useRawPointsSeparateVideo_ );
     frame.setGeometry3dCoordinatesBitdepth( bitdepth3D );
     frame.setGeometry2dBitdepth( geometryNominal2dBitdepth_ );
@@ -1058,7 +1176,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
                                        uniformPartitionSpacing_, tilePartitionWidth_, tilePartitionHeight_ );
       for ( size_t ti = 0; ti < numMaxTilePerFrame_; ti++ ) {
         auto& tile = atlas[ti];
-        tile.setRawPatchEnabledFlag( losslessGeo_ || lossyRawPointsPatch_ );
+        tile.setRawPatchEnabledFlag( rawPointsPatch_ || lossyRawPointsPatch_ );
         tile.setUseRawPointsSeparateVideo( useRawPointsSeparateVideo_ );
         tile.setGeometry3dCoordinatesBitdepth( bitdepth3D );
         tile.setGeometry2dBitdepth( geometryNominal2dBitdepth_ );

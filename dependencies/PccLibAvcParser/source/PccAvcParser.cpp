@@ -58,10 +58,15 @@ const char* PccAvcParser::getNaluType( int iNaluType ) {
   return "ERROR";
 }
 
-void PccAvcParser::getVideoSize( const std::vector<uint8_t>& buffer, size_t& width, size_t& height, int isAnnexB ) {
-  //std::cout << "HELLO!!!getVideoSize!!!"<< std::endl;
-  setBuffer( buffer, width, height, isAnnexB );
-  //std::cout << "BYE!!!getVideoSize!!!" << std::endl;
+void PccAvcParser::getVideoSize( const std::vector<uint8_t>& buffer,
+                                 size_t&                     width,
+                                 size_t&                     height,
+                                 int                         isAnnexB,
+                                 size_t&                     bitDepth,
+                                 bool&                       is444 ) {
+  // std::cout << "HELLO!!!getVideoSize!!!"<< std::endl;
+  setBuffer( buffer, width, height, isAnnexB, bitDepth, is444 );
+  // std::cout << "BYE!!!getVideoSize!!!" << std::endl;
 }
 void PccAvcParser::display() {
   int    poc = 0;
@@ -111,19 +116,23 @@ void PccAvcParser::createNalu( const size_t                frameIndex,
   }
 }
 
-void PccAvcParser::setBuffer( const std::vector<uint8_t>& buffer, size_t& width, size_t& height, int isAnnexB ) {
-  const int      size                   = (int)buffer.size();
-  const uint8_t* data                   = buffer.data();
-  TDecCavlc_avc* decCavlc               = new TDecCavlc_avc();
-  int            nalNumber              = 0;
-  int            index                  = 0;
-  int            startCodeSize          = 4;
+void PccAvcParser::setBuffer( const std::vector<uint8_t>& buffer,
+                              size_t&                     width,
+                              size_t&                     height,
+                              int                         isAnnexB,
+                              size_t&                     bitDepth,
+                              bool&                       is444 ) {
+  const int       size                   = (int)buffer.size();
+  const uint8_t*  data                   = buffer.data();
+  TDecCavlc_avc*  decCavlc               = new TDecCavlc_avc();
+  int             nalNumber              = 0;
+  int             index                  = 0;
+  int             startCodeSize          = 4;
   int            frameIndex             = -1;
   int            maxPocFound            = -1;
   int            sequencePoc            = 0;
   int            previousNaluLayerIndex = -1;
   int            currentPoc             = 0;
-
   int             satrtPos = 0;
   //std::cout << "HELLO!!!setBuffer!!!"<< std::endl;
   
@@ -163,11 +172,13 @@ void PccAvcParser::setBuffer( const std::vector<uint8_t>& buffer, size_t& width,
        decCavlc->setBuffer( (UChar*)( data + index + startCodeSize + 1 ), orig_nalu_len - startCodeSize );
        switch ( iNalType ) {
          case NALU_TYPE_SPS:
-           //std::cout << "HELLO!!!NALU_TYPE_SPS!!!" << std::endl;
+           // std::cout << "HELLO!!!NALU_TYPE_SPS!!!" << std::endl;
            TComSPS_avc* pcSPS = decCavlc->getSPS();
            decCavlc->parseSPS( pcSPS );
-           width  = decCavlc->getSPS()->getOutputWidth();
-           height = decCavlc->getSPS()->getOutputHeight();
+           width    = decCavlc->getSPS()->getOutputWidth();
+           height   = decCavlc->getSPS()->getOutputHeight();
+           bitDepth = decCavlc->getSPS()->getBitDepth();
+           is444    = decCavlc->getSPS()->getIs444();
            break;
        }
        //std::cout << "HELLO!!!createNalu!!!" << std::endl;
@@ -264,5 +275,4 @@ void PccAvcParser::setBuffer( const std::vector<uint8_t>& buffer, size_t& width,
    }
    delete decCavlc;
    //std::cout << "BYE!!!setBuffer!!!" << std::endl;
-  
 }
