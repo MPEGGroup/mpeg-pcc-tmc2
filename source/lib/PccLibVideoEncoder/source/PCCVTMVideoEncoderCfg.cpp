@@ -656,6 +656,12 @@ bool PCCVTMLibVideoEncoderCfg::parseCfg( int argc, char* argv[] ) {
   ("InputPathPrefix,-ipp",                            inputPathPrefix,                             string(""), "pathname to prepend to input filename")
   ("BitstreamFile,b",                                 m_bitstreamFileName,                         string(""), "Bitstream output file name")
   ("ReconFile,o",                                     m_reconFileName,                             string(""), "Reconstructed YUV output file name")
+#if PATCH_BASED_MVP || PCC_ME_EXT
+  ("UsePccMotionEstimation",                          m_usePCCExt,                                      false, "Use modified motion estimation for PCC content")
+	  ("BlockToPatchFile",                            m_blockToPatchFileName,                      string(""), "Input block to patch file name")
+	  ("OccupancyMapFile",                            m_occupancyMapFileName,                      string(""), "Input occupancy map file name")
+	  ("PatchInfoFile",                               m_patchInfoFileName,                         string(""), "Input patch info file name")
+#endif
   ("SourceWidth,-wdt",                                m_iSourceWidth,                                       0, "Source picture width")
   ("SourceHeight,-hgt",                               m_iSourceHeight,                                      0, "Source picture height")
   ("InputBitDepth",                                   m_inputBitDepth[CHANNEL_TYPE_LUMA],                   8, "Bit-depth of input file")
@@ -3588,6 +3594,14 @@ void PCCVTMLibVideoEncoderCfg::xPrintParameter() {
   msg( VTM_DETAILS, "Input          File                    : %s\n", m_inputFileName.c_str() );
   msg( VTM_DETAILS, "Bitstream      File                    : %s\n", m_bitstreamFileName.c_str() );
   msg( VTM_DETAILS, "Reconstruction File                    : %s\n", m_reconFileName.c_str() );
+#if PATCH_BASED_MVP || PCC_ME_EXT
+  msg( VTM_DETAILS, "PCCExt                                 : %s\n", ( m_usePCCExt ? "Enabled" : "Disabled" ) );
+  if ( m_usePCCExt ) {
+    msg( VTM_DETAILS, "BlockToPatch   File                    : %s\n", ( m_blockToPatchFileName.c_str() ) );
+    msg( VTM_DETAILS, "OccupancyMap   File                    : %s\n", ( m_occupancyMapFileName.c_str() ) );
+    msg( VTM_DETAILS, "PatchInfo      File                    : %s\n", ( m_patchInfoFileName.c_str() ) );
+  }
+#endif
   msg( VTM_DETAILS, "Real     Format                        : %dx%d %gHz\n",
        m_iSourceWidth - m_confWinLeft - m_confWinRight, m_iSourceHeight - m_confWinTop - m_confWinBottom,
        (double)m_iFrameRate / m_temporalSubsampleRatio );

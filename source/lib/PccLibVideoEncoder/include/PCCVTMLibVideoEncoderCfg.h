@@ -88,6 +88,12 @@ class PCCVTMLibVideoEncoderCfg {
   std::string m_bitstreamFileName;  ///< output bitstream file
   std::string m_reconFileName;      ///< output reconstruction file
 
+#if PCC_ME_EXT
+  bool        m_usePCCExt;
+  std::string m_blockToPatchFileName;
+  std::string m_occupancyMapFileName;
+  std::string m_patchInfoFileName;
+#endif
   // Lambda modifiers
   double              m_adLambdaModifier[MAX_TLAYER];  ///< Lambda modifier array for each temporal layer
   std::vector<double> m_adIntraLambdaModifier;  ///< Lambda modifier for Intra pictures, one for each temporal layer. If
