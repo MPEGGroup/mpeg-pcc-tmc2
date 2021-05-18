@@ -137,7 +137,6 @@ textureT1Config                   &  HM configuration file for texture D1       
                                   &  compression                                        \\ \hline
 rawPointsPatch                    &  Enable raw points patch                            \\ \hline     
 noAttributes                      &  Disable encoding of attributes                     \\ \hline
-geometryVideo444                  &  Use 444 format for geometry video                  \\ \hline
 attributeVideo444                 &  Use 444 format for attribute videos                \\ \hline
 useRawPointsSeparateVideo         &  Compress raw points with video codec               \\ \hline
 textureRawSeparateVideoWidth      &  Width of the MP's texture in separate video        \\ \hline

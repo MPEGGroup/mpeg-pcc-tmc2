@@ -125,7 +125,6 @@ PCCEncoderParameters::PCCEncoderParameters() {
   textureT1Config_                         = {};
   rawPointsPatch_                          = false;
   noAttributes_                            = false;
-  geometryVideo444_                        = false;
   attributeVideo444_                       = false;
   useRawPointsSeparateVideo_               = false;
   geometryAuxVideoConfig_                  = {};
@@ -287,7 +286,6 @@ void PCCEncoderParameters::print() {
   std::cout << "+ Parameters" << std::endl;
   std::cout << "\t rawPointsPatch                             " << rawPointsPatch_ << std::endl;
   std::cout << "\t noAttributes                               " << noAttributes_ << std::endl;
-  std::cout << "\t raw geometry Colour Plane                  " << ( geometryVideo444_ ? "444" : "420" ) << std::endl;
   std::cout << "\t attribute Colour Plane                     " << ( attributeVideo444_ ? "444" : "420" ) << std::endl;
   std::cout << "\t enhancedOccupancyMapCode                   " << enhancedOccupancyMapCode_ << std::endl;
   std::cout << "\t useRawPointsSeparateVideo                  " << useRawPointsSeparateVideo_ << std::endl;
@@ -876,7 +874,7 @@ bool PCCEncoderParameters::check() {
   }
 
   // Based on profileCodecGroupIdc_, fixe the used video codecs.
-  if ( profileCodecGroupIdc_ == CODEC_GROUP_HEVC_MAIN10 && ( geometryVideo444_ || attributeVideo444_ ) ) {
+  if ( profileCodecGroupIdc_ == CODEC_GROUP_HEVC_MAIN10 && attributeVideo444_ ) {
     profileCodecGroupIdc_ = CODEC_GROUP_HEVC444;
     std::cerr << "geometry/attributeVideo444 is enabled force profileCodecGroupIdc to CODEC_GROUP_HEVC444\n";
   }

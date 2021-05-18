@@ -530,10 +530,6 @@ bool parseParameters( int                   argc,
       encoderParams.noAttributes_,
       encoderParams.noAttributes_, 
       "Disable encoding of attributes" )
-    ( "geometryVideo444",
-      encoderParams.geometryVideo444_,
-      encoderParams.geometryVideo444_,
-      "Use 444 format for geometry video" )
     ( "attributeVideo444",
       encoderParams.attributeVideo444_,
       encoderParams.attributeVideo444_,

@@ -167,7 +167,6 @@ class PCCEncoderParameters {
   // lossless
   bool noAttributes_;
   bool rawPointsPatch_;
-  bool geometryVideo444_;
   bool attributeVideo444_;
 
 

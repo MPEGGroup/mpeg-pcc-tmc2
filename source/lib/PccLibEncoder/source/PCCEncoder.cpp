@@ -240,7 +240,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
                          params_.byteStreamVideoCoderGeometry_,  // byteStreamVideoCoder
                          context,                                // context
                          nbyteGeo,                               // nbyte
-                         params_.geometryVideo444_,              // use444CodecIo
+                         false,                                  // use444CodecIo
                          params_.use3dmc_,                       // use3dmv
 #ifdef USE_HM_PCC_RDO
                          params_.usePccRDO_,  // usePccRDO
@@ -282,7 +282,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
                            params_.byteStreamVideoCoderGeometry_,  // byteStreamVideoCoder
                            context,                                // context
                            nbyteGeo,                               // nbyte
-                           params_.geometryVideo444_,              // use444CodecIo
+                           false,                                  // use444CodecIo
                            params_.use3dmc_,                       // use3dmv
 #ifdef USE_HM_PCC_RDO
                            params_.usePccRDO_,  // usePccRDO
@@ -4192,13 +4192,7 @@ void PCCEncoder::generateIntraImage( PCCAtlasFrameContext& atlasFrame,
                 const size_t y = ( v0 + v );
                 assert( x < width && y < height );
                 image.setValue( 0, x + tile.getLeftTopXInFrame(), y + tile.getLeftTopYInFrame(),
-                                uint16_t( rawPointsPatch.x_[p] ) );
-                if ( params_.geometryVideo444_ ) {
-                  image.setValue( 1, x + tile.getLeftTopXInFrame(), y + tile.getLeftTopYInFrame(),
-                                  uint16_t( rawPointsPatch.y_[p] ) );
-                  image.setValue( 2, x + tile.getLeftTopXInFrame(), y + tile.getLeftTopYInFrame(),
-                                  uint16_t( rawPointsPatch.z_[p] ) );
-                }
+                                uint16_t( rawPointsPatch.x_[p] ) );               
               } else {
                 const size_t x = ( u0 + u );
                 const size_t y = ( v0 + v );
@@ -4566,28 +4560,18 @@ void PCCEncoder::generateRawPointsPatch( const PCCPointSet3& source,
           rawPointsPatch.d1_                  = size_t( bboxRawPoints.min_.z() );
           rawPointsPatch.occupancy_.resize( 0 );
           rawPointsPatch.setNumberOfRawPoints( numRawPointsBBox );
-          if ( params_.geometryVideo444_ ) {
-            rawPointsPatch.resize( 3 * numRawPointsBBox );
-            for ( auto i = 0; i < numRawPointsBBox; ++i ) {
-              const PCCPoint3D rawPoints = source[rawPointsBBox[i]];
-              rawPointsPatch.x_[i]       = static_cast<uint16_t>( rawPoints.x() - rawPointsPatch.u1_ );
-              rawPointsPatch.y_[i]       = static_cast<uint16_t>( rawPoints.y() - rawPointsPatch.v1_ );
-              rawPointsPatch.z_[i]       = static_cast<uint16_t>( rawPoints.z() - rawPointsPatch.d1_ );
-            }
-          } else {
-            rawPointsPatch.resize( 3 * numRawPointsBBox );
-            for ( auto i = 0; i < numRawPointsBBox; ++i ) {
-              const PCCPoint3D rawPoints                  = source[rawPointsBBox[i]];
-              rawPointsPatch.x_[i]                        = static_cast<uint16_t>( rawPoints.x() - rawPointsPatch.u1_ );
-              rawPointsPatch.x_[numRawPointsBBox + i]     = static_cast<uint16_t>( rawPoints.y() - rawPointsPatch.v1_ );
-              rawPointsPatch.x_[2 * numRawPointsBBox + i] = static_cast<uint16_t>( rawPoints.z() - rawPointsPatch.d1_ );
-              rawPointsPatch.y_[i]                        = infiniteValue;
-              rawPointsPatch.y_[numRawPointsBBox + i]     = infiniteValue;
-              rawPointsPatch.y_[2 * numRawPointsBBox + i] = infiniteValue;
-              rawPointsPatch.z_[i]                        = infiniteValue;
-              rawPointsPatch.z_[numRawPointsBBox + i]     = infiniteValue;
-              rawPointsPatch.z_[2 * numRawPointsBBox + i] = infiniteValue;
-            }
+          rawPointsPatch.resize( 3 * numRawPointsBBox );
+          for ( auto i = 0; i < numRawPointsBBox; ++i ) {
+            const PCCPoint3D rawPoints                  = source[rawPointsBBox[i]];
+            rawPointsPatch.x_[i]                        = static_cast<uint16_t>( rawPoints.x() - rawPointsPatch.u1_ );
+            rawPointsPatch.x_[numRawPointsBBox + i]     = static_cast<uint16_t>( rawPoints.y() - rawPointsPatch.v1_ );
+            rawPointsPatch.x_[2 * numRawPointsBBox + i] = static_cast<uint16_t>( rawPoints.z() - rawPointsPatch.d1_ );
+            rawPointsPatch.y_[i]                        = infiniteValue;
+            rawPointsPatch.y_[numRawPointsBBox + i]     = infiniteValue;
+            rawPointsPatch.y_[2 * numRawPointsBBox + i] = infiniteValue;
+            rawPointsPatch.z_[i]                        = infiniteValue;
+            rawPointsPatch.z_[numRawPointsBBox + i]     = infiniteValue;
+            rawPointsPatch.z_[2 * numRawPointsBBox + i] = infiniteValue;
           }
           mpsPatches.push_back( rawPointsPatch );
           std::cout << "\t::numberOfRawPointsPatches = " << frame.getNumberOfRawPointsPatches()
@@ -4606,10 +4590,8 @@ void PCCEncoder::sortRawPointsPatchMorton( PCCFrameContext& frame, size_t index 
     PCCPointSet3 rawPointsSet;
     rawPointsSet.resize( numRawPoints );
     for ( size_t i = 0; i < numRawPoints; i++ ) {
-      rawPointsSet[i] = params_.geometryVideo444_
-                            ? PCCPoint3D( rawPointsPatch.x_[i], rawPointsPatch.y_[i], rawPointsPatch.z_[i] )
-                            : PCCPoint3D( rawPointsPatch.x_[i], rawPointsPatch.x_[i + numRawPoints],
-                                          rawPointsPatch.x_[i + numRawPoints * 2] );
+      rawPointsSet[i] = PCCPoint3D( rawPointsPatch.x_[i], rawPointsPatch.x_[i + numRawPoints],
+                                    rawPointsPatch.x_[i + numRawPoints * 2] );
     }
     // calc Morton code of rawPointsSet
     std::vector<std::pair<uint64_t, PCCPoint3D>> mortonPoint;
@@ -4621,16 +4603,10 @@ void PCCEncoder::sortRawPointsPatchMorton( PCCFrameContext& frame, size_t index 
     // sort points according to their Morton codes
     std::sort( mortonPoint.begin(), mortonPoint.end() );
     for ( size_t i = 0; i < numRawPoints; ++i ) {
-      const PCCPoint3D rawPoints = mortonPoint[i].second;
-      if ( params_.geometryVideo444_ ) {
-        rawPointsPatch.x_[i] = static_cast<uint16_t>( rawPoints.x() );
-        rawPointsPatch.y_[i] = static_cast<uint16_t>( rawPoints.y() );
-        rawPointsPatch.z_[i] = static_cast<uint16_t>( rawPoints.z() );
-      } else {
-        rawPointsPatch.x_[i]                    = static_cast<uint16_t>( rawPoints.x() );
-        rawPointsPatch.x_[i + numRawPoints]     = static_cast<uint16_t>( rawPoints.y() );
-        rawPointsPatch.x_[i + numRawPoints * 2] = static_cast<uint16_t>( rawPoints.z() );
-      }
+      const PCCPoint3D rawPoints              = mortonPoint[i].second;
+      rawPointsPatch.x_[i]                    = static_cast<uint16_t>( rawPoints.x() );
+      rawPointsPatch.x_[i + numRawPoints]     = static_cast<uint16_t>( rawPoints.y() );
+      rawPointsPatch.x_[i + numRawPoints * 2] = static_cast<uint16_t>( rawPoints.z() );
     }
   }
 }
@@ -4646,10 +4622,8 @@ void PCCEncoder::sortRawPointsPatch( PCCFrameContext& frame, size_t index ) {
     PCCPointSet3 rawPointsSet;
     rawPointsSet.resize( numRawPoints );
     for ( size_t i = 0; i < numRawPoints; i++ ) {
-      rawPointsSet[i] = params_.geometryVideo444_
-                            ? PCCPoint3D( rawPointsPatch.x_[i], rawPointsPatch.y_[i], rawPointsPatch.z_[i] )
-                            : PCCPoint3D( rawPointsPatch.x_[i], rawPointsPatch.x_[i + numRawPoints],
-                                          rawPointsPatch.x_[i + numRawPoints * 2] );
+      rawPointsSet[i] = PCCPoint3D( rawPointsPatch.x_[i], rawPointsPatch.x_[i + numRawPoints],
+                                    rawPointsPatch.x_[i + numRawPoints * 2] );
     }
     PCCKdTree           kdtreeRawPointsSet( rawPointsSet );
     PCCNNResult         result;
@@ -4679,16 +4653,10 @@ void PCCEncoder::sortRawPointsPatch( PCCFrameContext& frame, size_t index ) {
     }
 
     for ( size_t i = 0; i < numRawPoints; ++i ) {
-      const PCCPoint3D rawPoints = rawPointsSet[sortIdx[i]];
-      if ( params_.geometryVideo444_ ) {
-        rawPointsPatch.x_[i] = static_cast<uint16_t>( rawPoints.x() );
-        rawPointsPatch.y_[i] = static_cast<uint16_t>( rawPoints.y() );
-        rawPointsPatch.z_[i] = static_cast<uint16_t>( rawPoints.z() );
-      } else {
-        rawPointsPatch.x_[i]                    = static_cast<uint16_t>( rawPoints.x() );
-        rawPointsPatch.x_[i + numRawPoints]     = static_cast<uint16_t>( rawPoints.y() );
-        rawPointsPatch.x_[i + numRawPoints * 2] = static_cast<uint16_t>( rawPoints.z() );
-      }
+      const PCCPoint3D rawPoints              = rawPointsSet[sortIdx[i]];
+      rawPointsPatch.x_[i]                    = static_cast<uint16_t>( rawPoints.x() );
+      rawPointsPatch.x_[i + numRawPoints]     = static_cast<uint16_t>( rawPoints.y() );
+      rawPointsPatch.x_[i + numRawPoints * 2] = static_cast<uint16_t>( rawPoints.z() );
     }
   }
 }
@@ -4840,14 +4808,8 @@ void PCCEncoder::generateRawPointsGeometryImage( PCCContext& context, PCCFrameCo
         u0, v0, rawPointsPatch.sizeU_, rawPointsPatch.sizeV_ );
 
     rawPointsPatch.isPatchInAuxVideo_ = true;
-    if ( params_.geometryVideo444_ ) {
-      lastValue = rawPointsPatch.x_[numberOfRawPoints - 1];
-      lastY     = rawPointsPatch.y_[numberOfRawPoints - 1];
-      lastZ     = rawPointsPatch.z_[numberOfRawPoints - 1];
-    } else {
-      numberOfRawPoints *= 3;
-      lastValue = rawPointsPatch.x_[numberOfRawPoints - 1];
-    }
+    numberOfRawPoints *= 3;
+    lastValue = rawPointsPatch.x_[numberOfRawPoints - 1];
     if ( rawPointsPatch.sizeX() != 0u ) {
       for ( size_t v = 0; v < rawPointsPatch.sizeV_; ++v ) {
         for ( size_t u = 0; u < rawPointsPatch.sizeU_; ++u ) {
@@ -4856,19 +4818,11 @@ void PCCEncoder::generateRawPointsGeometryImage( PCCContext& context, PCCFrameCo
             const size_t x = ( u0 + u );  // always starts at 0
             const size_t y = ( v0 + v ) + context.getAuxTileLeftTopY( tile.getTileIndex() );
             assert( x < context.getAuxVideoWidth() && y < context.getAuxVideoHeight() );
-            image.setValue( 0, x, y, uint16_t( rawPointsPatch.x_[p] ) );
-            if ( params_.geometryVideo444_ ) {
-              image.setValue( 1, x, y, uint16_t( rawPointsPatch.y_[p] ) );
-              image.setValue( 2, x, y, uint16_t( rawPointsPatch.z_[p] ) );
-            }
+            image.setValue( 0, x, y, uint16_t( rawPointsPatch.x_[p] ) );          
           } else {
             const size_t x = ( u0 + u );
             const size_t y = ( v0 + v ) + context.getAuxTileLeftTopY( tile.getTileIndex() );
-            image.setValue( 0, x, y, static_cast<uint16_t>( lastValue ) );
-            if ( params_.geometryVideo444_ ) {
-              image.setValue( 1, x, y, uint16_t( lastY ) );
-              image.setValue( 2, x, y, uint16_t( lastZ ) );
-            }
+            image.setValue( 0, x, y, static_cast<uint16_t>( lastValue ) );            
           }
         }  // u
       }    // v
@@ -8466,7 +8420,7 @@ void PCCEncoder::setPostProcessingSeiParameters( GeneratePointCloudParameters& p
   params.radius2Smoothing_           = params_.radius2Smoothing_;
   params.radius2BoundaryDetection_   = params_.radius2BoundaryDetection_;
   params.thresholdSmoothing_         = params_.thresholdSmoothing_;
-  params.rawPointColorFormat_        = size_t( params_.geometryVideo444_ ? COLOURFORMAT444 : COLOURFORMAT420 );
+  params.rawPointColorFormat_        = size_t( COLOURFORMAT420 );
   params.nbThread_                   = params_.nbThread_;
   params.absoluteD1_                 = params_.absoluteD1_;
   params.multipleStreams_            = params_.multipleStreams_;
@@ -8505,7 +8459,7 @@ void PCCEncoder::setGeneratePointCloudParameters( GeneratePointCloudParameters& 
   params.radius2Smoothing_           = params_.radius2Smoothing_;
   params.radius2BoundaryDetection_   = params_.radius2BoundaryDetection_;
   params.thresholdSmoothing_         = params_.thresholdSmoothing_;
-  params.rawPointColorFormat_        = size_t( params_.geometryVideo444_ ? COLOURFORMAT444 : COLOURFORMAT420 );
+  params.rawPointColorFormat_        = size_t( COLOURFORMAT420 );
   params.nbThread_                   = params_.nbThread_;
   params.absoluteD1_                 = params_.absoluteD1_;
   params.multipleStreams_            = params_.multipleStreams_;
