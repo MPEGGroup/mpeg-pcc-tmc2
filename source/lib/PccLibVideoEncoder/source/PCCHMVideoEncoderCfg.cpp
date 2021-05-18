@@ -767,12 +767,13 @@ Bool PCCHMLibVideoEncoderCfg::parseCfg( Int argc, TChar* argv[] ) {
 	  ("OccupancyMapFile",                            m_occupancyMapFileName,                      string(""), "Input occupancy map file name")
 	  ("PatchInfoFile",                               m_patchInfoFileName,                         string(""), "Input patch info file name")
 #endif
-#if PCC_RDO_EXT
+#ifdef USE_HM_PCC_RDO
   ("UsePccRDO",                                       m_usePCCRDO,                                      false, "Use modified RDO for PCC content")
-#endif
-#if PCC_RDO_EXT && !PCC_ME_EXT
+#if !PCC_ME_EXT
   ("OccupancyMapFile",                                m_occupancyMapFileName,                      string(""), "Input occupancy map file name")
 #endif
+#endif
+
 
   ("SourceWidth,-wdt",                                m_iSourceWidth,                                       0, "Source picture width")
   ("SourceHeight,-hgt",                               m_iSourceHeight,                                      0, "Source picture height")
