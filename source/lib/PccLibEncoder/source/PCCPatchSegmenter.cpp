@@ -190,7 +190,7 @@ void PCCPatchSegmenter3::computeAdjacencyInfo( const PCCPointSet3&              
 
 void PCCPatchSegmenter3::computeAdjacencyInfoInRadius( const PCCPointSet3&               pointCloud,
                                                        const PCCKdTree&                  kdtree,
-                                                       std::vector<std::vector<size_t>>& adj,
+                                                       std::vector<std::vector<uint32_t>>& adj,
                                                        const size_t                      maxNNCount,
                                                        const size_t                      radius ) {
   const size_t pointCount = pointCloud.getPointCount();
@@ -200,7 +200,7 @@ void PCCPatchSegmenter3::computeAdjacencyInfoInRadius( const PCCPointSet3&      
     tbb::parallel_for( size_t( 0 ), pointCount, [&]( const size_t i ) {
       PCCNNResult result;
       kdtree.searchRadius( pointCloud[i], maxNNCount, radius, result );
-      std::vector<size_t>& neighbors = adj[i];
+      std::vector<uint32_t>& neighbors = adj[i];
       neighbors.resize( result.count() );
       for ( size_t j = 0; j < result.count(); ++j ) { neighbors[j] = result.indices( j ); }
     } );
@@ -1287,156 +1287,156 @@ void PCCPatchSegmenter3::refineSegmentationGridBased( const PCCPointSet3&       
   const size_t gridDimShiftSqr = gridDimShift << 1;
   const size_t voxDimHalf      = voxDim >> 1;
 
-  // holds the point indices of every point in a given grid cell
-  class PointIndicesOfGridCell {
-   public:
-    std::unique_ptr<std::vector<size_t>> pointIndices;
-    inline void                          init() { pointIndices = std::make_unique<std::vector<size_t>>(); }
-  };
-
-  // holds the scoreSmooths of the points in a cell
-  class ScoreSmoothOfPointsInGridCell {
-   public:
-    std::unique_ptr<std::vector<size_t>> scoreSmooth;
-
-    inline void init( size_t orientationCount ) {
-      // initializes scores as 0
-      scoreSmooth = std::make_unique<std::vector<size_t>>( orientationCount, 0 );
-    }
-
-    inline void updateScores( const std::vector<size_t>& point_indices,
-                              const std::vector<size_t>& partitions ) noexcept {
-      // clears the scores
-      std::fill( scoreSmooth->begin(), scoreSmooth->end(), 0 );
-      auto& scores = *scoreSmooth;
-      for ( const auto& j : point_indices ) { ++scores[partitions[j]]; }
-    }
-  };
-
   auto subToInd = [&]( size_t x, size_t y, size_t z ) { return x + ( y << gridDimShift ) + ( z << gridDimShiftSqr ); };
 
   PCCPointSet3                                              gridCenters;
-  std::unordered_map<size_t, PointIndicesOfGridCell>        gridWithPointIndices;
-  std::unordered_map<size_t, ScoreSmoothOfPointsInGridCell> gridWithScores;
+  std::unordered_map<size_t, std::unique_ptr<PointIndicesOfGridCell>> gridWithPointIndices;
+  std::unordered_map<size_t, std::unique_ptr<AttributeOfGridCell>>    gridWithAttributes;
 
-  // works just like the map, but with sequential access and less data (pointers instead of objects)
-  std::vector<std::pair<PointIndicesOfGridCell*, ScoreSmoothOfPointsInGridCell*>> pointIndexToScoreMap;
-
+  const uint32_t uiMaxNumPointsInOneVox = voxDim * voxDim * voxDim;
   for ( size_t i = 0; i < pointCount; ++i ) {
     const auto&  pos = pointCloud[i];
-    const size_t x0  = ( ( static_cast<size_t>( pos[0] ) + voxDimHalf ) >> voxDimShift );
-    const size_t y0  = ( ( static_cast<size_t>( pos[1] ) + voxDimHalf ) >> voxDimShift );
-    const size_t z0  = ( ( static_cast<size_t>( pos[2] ) + voxDimHalf ) >> voxDimShift );
+    const size_t x0 = ((static_cast<size_t>(pos[0]) + voxDimHalf)) >> voxDimShift;
+    const size_t y0 = ((static_cast<size_t>(pos[1]) + voxDimHalf)) >> voxDimShift;
+    const size_t z0 = ((static_cast<size_t>(pos[2]) + voxDimHalf)) >> voxDimShift;
     size_t       p   = subToInd( x0, y0, z0 );
     if ( gridWithPointIndices.count( p ) == 0u ) {
       gridCenters.addPoint( PCCVector3D( x0, y0, z0 ) );
-      gridWithPointIndices[p].init();
-      gridWithScores[p].init( orientationCount );
+      gridWithPointIndices.emplace(p, std::make_unique<PointIndicesOfGridCell>(uiMaxNumPointsInOneVox));
+      gridWithAttributes.emplace(p, std::make_unique<AttributeOfGridCell>(orientationCount));
     }
-    gridWithPointIndices[p].pointIndices->push_back( i );
+    gridWithPointIndices[p]->addPointIndex((uint32_t)i);
   }
 
+  const uint64_t uiTotalNumOfVoxs = gridCenters.getPointCount();
+
+  // pre-processing steps [m56635]
+  std::vector<PointIndicesOfGridCell*>  pointIndicesOfVox;
+  pointIndicesOfVox.reserve(uiTotalNumOfVoxs);
+
+  std::vector<AttributeOfGridCell*>     attributeOfVox;
+  attributeOfVox.reserve(uiTotalNumOfVoxs);
+
+  for (size_t i = 0; i < uiTotalNumOfVoxs; ++i) {
+    auto& p = gridCenters[i];
+
+    PointIndicesOfGridCell* pPI = gridWithPointIndices[subToInd(p[0], p[1], p[2])].get();
+    AttributeOfGridCell* pAttr  = gridWithAttributes[subToInd(p[0], p[1], p[2])].get();
+
+    pAttr->setNumOfTotalPoints(pPI->getPointCount());
+
+    // 1st voxel classification [m56635]
+    pAttr->updateScores(*(pPI->getPointIndices()), partition);
+
+    pointIndicesOfVox.push_back(pPI);
+    attributeOfVox.push_back(pAttr);
+  }
+
+  // a step for searching adjacents voxels of each voxel within the voxSearchRadius  
   PCCKdTree                        kdtree( gridCenters );
   const size_t                     voxSearchRadius  = searchRadius >> voxDimShift;
   const size_t                     maxNeighborCount = ( std::numeric_limits<int16_t>::max )();
-  std::vector<std::vector<size_t>> adj( gridCenters.getPointCount() );
+  std::vector<std::vector<uint32_t>>  adj(gridCenters.getPointCount());
+
   computeAdjacencyInfoInRadius( gridCenters, kdtree, adj, maxNeighborCount, voxSearchRadius );
 
-  std::vector<size_t> tmpPartition( pointCount );
-  std::vector<size_t> scoreSmooth( orientationCount, 0 );
+  // candidates for the indirect edge voxels from [m56635]
+  std::vector<std::vector<uint32_t>>  adjDEV(uiTotalNumOfVoxs);
+  const size_t idvSearchRange = (voxDim >= 4) ? 1 : 2;
 
   // pre-processing steps from m55143
   std::vector<double> weights;
-  weights.reserve( gridCenters.getPointCount() );
-
-  std::vector<double> weightedScoreSmooths;
-  weightedScoreSmooths.resize( orientationCount, 0.0 );
-
-  std::vector<double> scores;
-  scores.resize( orientationCount, 0.0 );
-
-  std::vector<std::vector<size_t*>> scoreSmoothFromAdjsOf;  // i
-  scoreSmoothFromAdjsOf.reserve( gridCenters.getPointCount() );
-
-  std::vector<std::vector<size_t>*> pointIndicesOfI;
-  pointIndicesOfI.reserve( gridCenters.getPointCount() );
+  weights.reserve(uiTotalNumOfVoxs);
 
   // for each cell of the grid
-  for ( size_t i = 0; i < gridCenters.getPointCount(); ++i ) {
+  for (size_t i = 0; i < uiTotalNumOfVoxs; ++i) {
+    auto& p = gridCenters[i];
+    adjDEV[i].reserve(128);
+
     size_t nnPointCount  = 0;
     auto&  currentAdjOfI = adj[i];
     auto   iter          = currentAdjOfI.begin();
+    for (; iter != currentAdjOfI.end(); ++iter) {
+      // for the 2nd voxel classification [m56635]
+      auto& q = gridCenters[*iter];
+      size_t x_Abs = abs(p[0] - q[0]);
+      size_t y_Abs = abs(p[1] - q[1]);
+      size_t z_Abs = abs(p[2] - q[2]);
 
-    for ( ; iter != currentAdjOfI.end(); ++iter ) {
-      auto& pos = gridCenters[*iter];
-      nnPointCount += gridWithPointIndices[subToInd( pos[0], pos[1], pos[2] )].pointIndices->size();
+      if (x_Abs <= idvSearchRange && y_Abs <= idvSearchRange && z_Abs <= idvSearchRange) { adjDEV[i].push_back(*iter); }
+
+      nnPointCount += pointIndicesOfVox[*iter]->getPointCount();
       if ( nnPointCount >= maxNNCount ) { break; }
     }
+
     // pre-computing weights from lambda and the total number of nearest neighbors
     weights.push_back( lambda / nnPointCount );
 
     // removing points from the adjacent list if there is more than maxNNCount
-    // if ( iter + 1 < currentAdjOfI.end() ) {
     if ( iter != currentAdjOfI.end() ) { currentAdjOfI.erase( iter + 1, currentAdjOfI.end() ); }
+  }
 
-    // sorting the points
-    std::sort( currentAdjOfI.begin(), currentAdjOfI.end() );
+  std::vector<double> scores;
+  scores.resize(orientationCount, 0.0);
 
-    // temporary scores for the adjancent of current i (grid cell i)
-    std::vector<size_t*> tempScoreSmoothFromAdjsOfI;
-    tempScoreSmoothFromAdjsOfI.reserve( currentAdjOfI.size() );
+  ScoresVector_t scoreSmooth(orientationCount, 0);
+
+  size_t iter = 0;
+  do {
+    for (size_t i = 0; i < uiTotalNumOfVoxs; ++i) {
+      // if the current voxel belongs to N-EV(No edge-voxel), then refining steps are skipped. [m56635]
+      uint8_t edgeOfI = attributeOfVox[i]->getEdge();
+      if (edgeOfI == NO_EDGE) { continue; }
+
+      std::fill(scoreSmooth.begin(), scoreSmooth.end(), 0);
+
+      auto&  currentAdjOfI = adj[i];
     for ( const auto& j : currentAdjOfI ) {
-      const auto& pos = gridCenters[j];
-      auto&       vox = *( gridWithScores[subToInd( pos[0], pos[1], pos[2] )].scoreSmooth );
-      tempScoreSmoothFromAdjsOfI.push_back( vox.data() );
+        ScoresVector_t* scoreSmoothOfAdj = attributeOfVox[j]->getScoreSmooth();
+        for (size_t k = 0; k < orientationCount; ++k) { scoreSmooth[k] += (*scoreSmoothOfAdj)[k]; }
     }
 
-    // move the temporary scores to the end of the scores vector
-    scoreSmoothFromAdjsOf.emplace_back( std::move( tempScoreSmoothFromAdjsOfI ) );
+      // 2nd voxel classification (indirect edge-voxel)  [m56635]
+      const auto& maxEleOfScoreSmooth = std::max_element(scoreSmooth.begin(), scoreSmooth.end());
+      size_t ppiOfScoreSmooth = std::distance(scoreSmooth.begin(), maxEleOfScoreSmooth);
 
-    const auto& pos  = gridCenters[i];
-    auto&       uniq = gridWithPointIndices[subToInd( pos[0], pos[1], pos[2] )].pointIndices;
-    pointIndicesOfI.push_back( uniq.get() );
+      for (auto& j : adjDEV[i]) {
+        uint8_t edgeOfAdj = attributeOfVox[j]->getEdge();
+        uint8_t ppi       = attributeOfVox[j]->getPPI();
+        if (edgeOfAdj == NO_EDGE && ppi != ppiOfScoreSmooth) {
+          attributeOfVox[j]->updateEdge(INDIRECT_EDGE);
   }
+      }//for (auto& j : adjDEV[i]) 
 
-  // makes the map of point indices and score smooths.
-  // this map is used only once per iteration < iterationCount, to update the scores
-  for ( auto& gridElm : gridWithPointIndices ) {
-    // gridElm.second is of type PointIndicesOfGridCell
-    // gridElm.first is the index of a grid cell
-    // gridWithScores[gridElm.first] is of type ScoreSmoothOfPointsInGridCell
-    pointIndexToScoreMap.push_back( std::make_pair( &( gridElm.second ), &( gridWithScores[gridElm.first] ) ) );
-  }
+      if (edgeOfI != M_DIRECT_EDGE) { // S_DIRECT_EDGE or INDIRECT_EDGE 
+        size_t validNumOfScores = orientationCount - std::count(scoreSmooth.begin(), scoreSmooth.end(), 0);
+        size_t voxPPI = attributeOfVox[i]->getPPI();
 
-  // main loop
-  for ( size_t n = 0; n < iterationCount; ++n ) {
-    // restarts the values of score smooth by checking to which partition points now is part of
-    for ( auto& pointIndexToScore : pointIndexToScoreMap ) {
-      pointIndexToScore.second->updateScores( *( pointIndexToScore.first->pointIndices ), partition );
+        if (validNumOfScores == 1 && scoreSmooth[voxPPI] > 0) {
+          continue;
     }
-
-    for ( size_t i = 0; i < gridCenters.getPointCount(); ++i ) {
-      std::fill( scoreSmooth.begin(), scoreSmooth.end(), 0 );
-
-      // for each grid cell adjacent to cell center i
-      for ( const auto& scoreFromAdjOfI : scoreSmoothFromAdjsOf[i] ) {
-        for ( size_t k = 0; k < orientationCount; ++k ) { scoreSmooth[k] += scoreFromAdjOfI[k]; }
       }
 
-      const auto& pI = *pointIndicesOfI[i];
+      const auto& pI = *(pointIndicesOfVox[i]->getPointIndices());
 
-      // for each point in a grid cell i
+      // for each point in a grid cell of i
       for ( const auto& j : pI ) {
         const auto& normal = normalsGen.getNormal( j );
         for ( size_t k = 0; k < orientationCount; ++k ) {
           scores[k] = normal * orientations[k] + weights[i] * scoreSmooth[k];
         }
         const auto& result = std::max_element( scores.begin(), scores.end() );
-        tmpPartition[j]    = std::distance( scores.begin(), result );
+        partition[j] = std::distance(scores.begin(), result);
       }
+    
+      attributeOfVox[i]->setUpdatedFlag();
+    } //for (size_t i = 0; i < uiTotalNumOfVoxs; ++i)
+
+    // restarts the values of score smooth by checking to which partition points now is part of
+    for (size_t i = 0; i < uiTotalNumOfVoxs; ++i) {
+      attributeOfVox[i]->updateScores(*(pointIndicesOfVox[i]->getPointIndices()), partition);
     }
-    swap( tmpPartition, partition );
-  }
+  } while (++iter < iterationCount);
 }
 
 float pcc::computeIOU( Rect a, Rect b ) {
