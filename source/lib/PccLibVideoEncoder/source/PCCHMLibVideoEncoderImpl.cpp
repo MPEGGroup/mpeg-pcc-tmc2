@@ -193,6 +193,8 @@ Void PCCHMLibVideoEncoderImpl<T>::xInitLibCfg() {
   m_cTEncTop.setUsePCCExt( m_usePCCExt );
   if ( m_usePCCExt ) {
     m_cTEncTop.setBlockToPatchFileName( m_blockToPatchFileName );
+  }
+  if ( m_usePCCExt || m_usePCCRDO ) {
     m_cTEncTop.setOccupancyMapFileName( m_occupancyMapFileName );
   }
 #endif
