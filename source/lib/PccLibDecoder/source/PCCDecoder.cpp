@@ -59,31 +59,25 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
 
   PCCVideoDecoder videoDecoder;
   videoDecoder.setLogger( *logger_ );
-
   std::stringstream path;
-  auto&             sps                      = context.getVps();
-  auto&             ai                       = sps.getAttributeInformation( atlasIndex );
-  auto&             oi                       = sps.getOccupancyInformation( atlasIndex );
-  auto&             gi                       = sps.getGeometryInformation( atlasIndex );
-  auto&             asps                     = context.getAtlasSequenceParameterSet( 0 );
-  size_t            frameCount               = context.size();
-  auto&             plt                      = sps.getProfileTierLevel();
-  const size_t      mapCount                 = sps.getMapCountMinus1( atlasIndex ) + 1;
-  int               geometryBitDepth         = gi.getGeometry2dBitdepthMinus1() + 1;
-  // bool              isGeometry444            = false;
-  // bool              isAuxiliaryGeometry444   = false;
-  // bool              isAttributes444          = plt.getProfileCodecGroupIdc() == CODEC_GROUP_HEVC444;
-  // bool              isAuxiliaryAttributes444 = plt.getProfileCodecGroupIdc() == CODEC_GROUP_HEVC444;
-  PCCCodecId occupancyCodecId   = getCodedCodecId( context, oi.getOccupancyCodecId() );
-  PCCCodecId geometryCodecId    = getCodedCodecId( context, gi.getGeometryCodecId() );
-  PCCCodecId auxGeometryCodecId = getCodedCodecId( context, gi.getAuxiliaryGeometryCodecId() );
+  auto&             sps                = context.getVps();
+  auto&             ai                 = sps.getAttributeInformation( atlasIndex );
+  auto&             oi                 = sps.getOccupancyInformation( atlasIndex );
+  auto&             gi                 = sps.getGeometryInformation( atlasIndex );
+  auto&             asps               = context.getAtlasSequenceParameterSet( 0 );
+  size_t            frameCount         = context.size();
+  auto&             plt                = sps.getProfileTierLevel();
+  const size_t      mapCount           = sps.getMapCountMinus1( atlasIndex ) + 1;
+  int               geometryBitDepth   = gi.getGeometry2dBitdepthMinus1() + 1;
+  auto occupancyCodecId = getCodedCodecId( context, oi.getOccupancyCodecId(), params_.videoDecoderOccupancyPath_ );
+  auto geometryCodecId  = getCodedCodecId( context, gi.getGeometryCodecId(), params_.videoDecoderOccupancyPath_ );
   path << removeFileExtension( params_.compressedStreamPath_ ) << "_dec_GOF" << sps.getV3CParameterSetId() << "_";
 
   printf( "CodecCodecId: ProfileCodecGroupIdc = %u occupancyCodecId = %u geometry = %u auxGeo = %u \n",
           plt.getProfileCodecGroupIdc(), oi.getOccupancyCodecId(), gi.getGeometryCodecId(),
           gi.getAuxiliaryGeometryCodecId() );
-  printf( "=> Video decoder : occupancy = %d geometry = %d attribute = %d \n", (int)occupancyCodecId,
-          (int)geometryCodecId, (int)auxGeometryCodecId );
+  printf( "=> Video decoder : occupancy = %d geometry = %d \n", (int)occupancyCodecId,
+          (int)geometryCodecId );
   printf( " Decode O size = %zu \n", context.getVideoBitstream( VIDEO_OCCUPANCY ).size() );
   fflush( stdout );
   TRACE_PICTURE( "Occupancy\n" );
@@ -95,7 +89,6 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
                            params_.byteStreamVideoCoderOccupancy_,        // byte stream video coder
                            occupancyCodecId,                              // codecId
                            params_.videoDecoderOccupancyPath_,            // decoder path
-                           frameCount,                                    // frameCount
                            8,                                             // output bit depth
                            params_.keepIntermediateFiles_ );              // keep intermediate files
 
@@ -119,7 +112,6 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
                                params_.byteStreamVideoCoderGeometry_,         // byte stream video coder
                                geometryCodecId,                               // codecId
                                params_.videoDecoderGeometryPath_,             // decoder path
-                               frameCount,                                    // frameCount
                                geometryBitDepth,                              // output bit depth
                                params_.keepIntermediateFiles_ );              // keep intermediate files
       context.getVideoGeometryMultiple()[mapIndex].convertBitdepth(
@@ -142,7 +134,6 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
                              params_.byteStreamVideoCoderGeometry_,  // byte stream video coder
                              geometryCodecId,                        // codecId
                              params_.videoDecoderGeometryPath_,      // decoder path
-                             context.size() * mapCount,              // frameCount
                              geometryBitDepth,                       // output bit depth
                              params_.keepIntermediateFiles_ );       // keep intermediate files
     context.getVideoGeometryMultiple()[0].convertBitdepth( geometryBitDepth, gi.getGeometry2dBitdepthMinus1() + 1,
@@ -155,14 +146,15 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
     TRACE_PICTURE( "MapIdx = 0,  AuxiliaryVideoFlag =  1\n" );
     std::cout << "*******Video Decoding: Aux Geometry ********" << std::endl;
     auto& videoBitstreamMP = context.getVideoBitstream( VIDEO_GEOMETRY_RAW );
+    auto  auxGeometryCodecId =
+        getCodedCodecId( context, gi.getAuxiliaryGeometryCodecId(), params_.videoDecoderGeometryPath_ );
     videoDecoder.decompress( context.getVideoRawPointsGeometry(),    // video
                              context,                                // contexts
                              path.str(),                             // path
                              videoBitstreamMP,                       // bitstream
                              params_.byteStreamVideoCoderGeometry_,  // byte stream video coder
-                             geometryCodecId,                        // codecId
+                             auxGeometryCodecId,                     // codecId
                              params_.videoDecoderGeometryPath_,      // decoder path
-                             frameCount,                             // frameCount
                              geometryBitDepth,                       // output bit depth
                              params_.keepIntermediateFiles_ );       // keep intermediate files
     context.getVideoRawPointsGeometry().convertBitdepth( geometryBitDepth, gi.getGeometry2dBitdepthMinus1() + 1,
@@ -174,11 +166,13 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
     TRACE_PICTURE( "Attribute\n" );
     for ( int attrIndex = 0; attrIndex < ai.getAttributeCount(); attrIndex++ ) {
       TRACE_PICTURE( "AttrIdx = %d, ", attrIndex );
-      int        attributeBitDepth   = ai.getAttribute2dBitdepthMinus1( attrIndex ) + 1;
-      int        attributeTypeId     = ai.getAttributeTypeId( attrIndex );
-      int        attributeDimension  = ai.getAttributeDimensionPartitionsMinus1( attrIndex ) + 1;
-      PCCCodecId attributeCodecId    = getCodedCodecId( context, ai.getAttributeCodecId( attrIndex ) );
-      PCCCodecId auxAttributeCodecId = getCodedCodecId( context, ai.getAuxiliaryAttributeCodecId( attrIndex ) );
+      int  attributeBitDepth   = ai.getAttribute2dBitdepthMinus1( attrIndex ) + 1;
+      int  attributeTypeId     = ai.getAttributeTypeId( attrIndex );
+      int  attributeDimension  = ai.getAttributeDimensionPartitionsMinus1( attrIndex ) + 1;
+      auto attributeCodecId =
+          getCodedCodecId( context, ai.getAttributeCodecId( attrIndex ), params_.videoDecoderAttributePath_ );
+      auto auxAttributeCodecId =
+          getCodedCodecId( context, ai.getAuxiliaryAttributeCodecId( attrIndex ), params_.videoDecoderAttributePath_ );
       printf( "CodecId attributeCodecId = %d auxAttributeCodecId = %d \n", (int)attributeCodecId,
               (int)auxAttributeCodecId );
       for ( int attrPartitionIndex = 0; attrPartitionIndex < attributeDimension; attrPartitionIndex++ ) {
@@ -200,8 +194,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
                                      videoBitstream,                               // bitstream
                                      params_.byteStreamVideoCoderAttribute_,       // byte stream video coder
                                      attributeCodecId,                             // codecId
-                                     params_.videoDecoderAttributePath_,           // decoder path
-                                     context.size(),                               // frameCount
+                                     params_.videoDecoderAttributePath_,           // decoder path                                    
                                      attributeBitDepth,                            // output bit depth
                                      params_.keepIntermediateFiles_,               // keep intermediate files
                                      params_.patchColorSubsampling_,               // patch color subsampling
@@ -225,7 +218,6 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
                                    params_.byteStreamVideoCoderAttribute_,      // byte stream video coder
                                    attributeCodecId,                            // codecId
                                    params_.videoDecoderAttributePath_,          // decoder path
-                                   frameCount * mapCount,                       // frameCount
                                    attributeBitDepth,                           // output bit depth
                                    params_.keepIntermediateFiles_,              // keep intermediate files
                                    params_.patchColorSubsampling_,              // patch color subsampling
@@ -248,7 +240,6 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
                                    params_.byteStreamVideoCoderAttribute_,      // byte stream video coder
                                    auxAttributeCodecId,                         // codecId
                                    params_.videoDecoderAttributePath_,          // decoder path
-                                   frameCount,                                  // frameCount
                                    attributeBitDepth,                           // output bit depth
                                    params_.keepIntermediateFiles_,              // keep intermediate files
                                    false,                                       // patch color subsampling
@@ -1581,14 +1572,16 @@ void PCCDecoder::createHlsAtlasTileLogFiles( PCCContext& context, int frameIndex
   tileB2PPatchParams.clear();
 }
 
-PCCCodecId PCCDecoder::getCodedCodecId( PCCContext& context, uint8_t codecCodecId ) {
+PCCCodecId PCCDecoder::getCodedCodecId( PCCContext& context, const uint8_t codecCodecId, const std::string& videoDecoderPath ) {
   auto& sps = context.getVps();
   auto& plt = sps.getProfileTierLevel();
   printf( "getCodedCodecId profileCodecGroupIdc = %d \n", plt.getProfileCodecGroupIdc() );
   fflush( stdout );
   switch ( plt.getProfileCodecGroupIdc() ) {
     case CODEC_GROUP_AVC_PROGRESSIVE_HIGH:
-#if defined( USE_JMLIB_VIDEO_CODEC )
+#if defined( USE_JMAPP_VIDEO_CODEC ) && defined( USE_JMLIB_VIDEO_CODEC )
+      return videoDecoderPath.empty() ? JMLIB : JMAPP;
+#elif defined( USE_JMLIB_VIDEO_CODEC )
       return JMLIB;
 #elif defined( USE_JMAPP_VIDEO_CODEC )
       return JMAPP;
@@ -1599,7 +1592,9 @@ PCCCodecId PCCDecoder::getCodedCodecId( PCCContext& context, uint8_t codecCodecI
       break;
     case CODEC_GROUP_HEVC_MAIN10:
     case CODEC_GROUP_HEVC444:
-#if defined( USE_JMLIB_VIDEO_CODEC )
+#if defined( USE_JMAPP_VIDEO_CODEC ) && defined( USE_JMLIB_VIDEO_CODEC )
+      return videoDecoderPath.empty() ? HMLIB : HMAPP;
+#elif defined( USE_JMLIB_VIDEO_CODEC )
       return HMLIB;
 #elif defined( USE_JMAPP_VIDEO_CODEC )
       return HMAPP;

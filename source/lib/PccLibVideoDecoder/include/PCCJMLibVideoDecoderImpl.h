@@ -57,7 +57,7 @@ class PCCJMLibVideoDecoderImpl {
 
   void decode( PCCVideoBitstream& bitstream,
                PCCVideo<T, 3>&    video,
-               const size_t       frameCount,
+               // const size_t       frameCount,
                size_t             outputBitDepth,
                const std::string& decoderPath,
                const std::string& fileName );

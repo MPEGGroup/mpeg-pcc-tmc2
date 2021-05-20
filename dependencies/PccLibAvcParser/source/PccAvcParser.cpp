@@ -221,8 +221,10 @@ void PccAvcParser::setBuffer( const std::vector<uint8_t>& buffer,
           TComSPS_avc* pcSPS = decCavlc->getSPS();
           decCavlc->parseSPS( pcSPS );
           // decCavlc->parseSPS( decCavlc->getSPS() );
-          width  = decCavlc->getSPS()->getOutputWidth();
-          height = decCavlc->getSPS()->getOutputHeight();
+          width    = decCavlc->getSPS()->getOutputWidth();
+          height   = decCavlc->getSPS()->getOutputHeight();
+          bitDepth = decCavlc->getSPS()->getBitDepth();
+          is444    = decCavlc->getSPS()->getIs444();
           // bitdepth = decCavlc->getSPS(iLayer)->getBitDepthY();
           break;
           /*

@@ -77,7 +77,7 @@ class PCCDecoder : public PCCCodec {
   void                 createHashSEI( PCCContext& context, int frameIndex );
   void                 createHlsAtlasTileLogFiles( PCCContext& context, int frameIndex );
   
-  PCCCodecId           getCodedCodecId( PCCContext& context, uint8_t codecCodecId );
+  PCCCodecId           getCodedCodecId( PCCContext& context, const uint8_t codecCodecId, const std::string& videoDecoderPath );
   PCCDecoderParameters params_;
 };
 };  // namespace pcc

@@ -726,6 +726,12 @@ bool PCCEncoderParameters::check() {
                  "use in the same time.\n";
   }
 
+  if ( globalPatchAllocation_ == 1 && constrainedPack_ == 0 ) {
+    std::cout << " globalPatchAllocation_ is set 1 but constrainedPack_ is disable. Force "
+                 "constrainedPack_ = 1. \n";
+    constrainedPack_ = true;
+  }
+
   if ( mapCountMinus1_ != 0 ) {
     if ( singleMapPixelInterleaving_ ) {
       ret = false;
@@ -881,9 +887,9 @@ bool PCCEncoderParameters::check() {
   switch ( profileCodecGroupIdc_ ) {
     case CODEC_GROUP_AVC_PROGRESSIVE_HIGH:
 #if defined( USE_JMAPP_VIDEO_CODEC ) || defined( USE_JMLIB_VIDEO_CODEC )
-      if ( videoEncoderOccupancyCodecId_ != JMLIB || videoEncoderOccupancyCodecId_ != JMAPP ||
-           videoEncoderGeometryCodecId_ != JMLIB || videoEncoderGeometryCodecId_ != JMAPP ||
-           videoEncoderAttributeCodecId_ != JMLIB || videoEncoderAttributeCodecId_ != JMAPP ) {
+      if ( ( videoEncoderOccupancyCodecId_ != JMLIB && videoEncoderOccupancyCodecId_ != JMAPP ) ||
+           ( videoEncoderGeometryCodecId_ != JMLIB && videoEncoderGeometryCodecId_ != JMAPP ) ||
+           ( videoEncoderAttributeCodecId_ != JMLIB && videoEncoderAttributeCodecId_ != JMAPP ) ) {
         std::cerr << "profileCodecGroupIdc_ is CODEC_GROUP_AVC_PROGRESSIVE_HIGH force codecId. \n";
         videoEncoderOccupancyCodecId_ = JMLIB;
         videoEncoderGeometryCodecId_  = JMLIB;
@@ -897,9 +903,9 @@ bool PCCEncoderParameters::check() {
     case CODEC_GROUP_HEVC444:
     case CODEC_GROUP_HEVC_MAIN10:
 #if defined( USE_HMAPP_VIDEO_CODEC ) || defined( USE_HMLIB_VIDEO_CODEC )
-      if ( videoEncoderOccupancyCodecId_ != HMLIB || videoEncoderOccupancyCodecId_ != HMAPP ||
-           videoEncoderGeometryCodecId_ != HMLIB || videoEncoderGeometryCodecId_ != HMAPP ||
-           videoEncoderAttributeCodecId_ != HMLIB || videoEncoderAttributeCodecId_ != HMAPP ) {
+      if ( ( videoEncoderOccupancyCodecId_ != HMLIB && videoEncoderOccupancyCodecId_ != HMAPP ) ||
+           ( videoEncoderGeometryCodecId_ != HMLIB && videoEncoderGeometryCodecId_ != HMAPP ) ||
+           ( videoEncoderAttributeCodecId_ != HMLIB && videoEncoderAttributeCodecId_ != HMAPP ) ) {
         std::cerr << "profileCodecGroupIdc_ is HEVC444 or HEVCMAIN10 force codecId. \n";
         videoEncoderOccupancyCodecId_ = HMLIB;
         videoEncoderGeometryCodecId_  = HMLIB;

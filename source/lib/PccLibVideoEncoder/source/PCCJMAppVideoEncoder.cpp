@@ -83,7 +83,7 @@ void PCCJMAppVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
   }
   PCCCOLORFORMAT format = getColorFormat( params.recYuvFileName_ );
   videoRec.clear();
-  videoRec.read( params.recYuvFileName_, width, height, format, frameCount, params.outputBitDepth_ == 8 ? 1 : 2 );
+  videoRec.read( params.recYuvFileName_, width, height, format, params.outputBitDepth_ == 8 ? 1 : 2 );
   bitstream.read( params.binFileName_ );
 }
 

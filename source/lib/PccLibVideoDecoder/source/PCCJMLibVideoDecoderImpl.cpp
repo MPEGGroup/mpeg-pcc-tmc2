@@ -57,7 +57,6 @@ PCCJMLibVideoDecoderImpl<T>::~PCCJMLibVideoDecoderImpl() {}
 template <typename T>
 void PCCJMLibVideoDecoderImpl<T>::decode( PCCVideoBitstream& bitstream,
                                           PCCVideo<T, 3>&    video,
-                                          const size_t       frameCount,
                                           size_t             outputBitDepth,
                                           const std::string& decoderPath,
                                           const std::string& fileName ) {
@@ -67,9 +66,7 @@ void PCCJMLibVideoDecoderImpl<T>::decode( PCCVideoBitstream& bitstream,
 
   std::string binName = fileName + ".bin";
   std::string decName = fileName + ".yuv";
-  // std::cout << "[ JM Dec bin ]: " << binName << std::endl;
-  bitstream.write_JM( binName );
-
+  bitstream.write( binName );
   std::string        arguments = "JMDEC -i " + binName + " -o " + decName;
   std::istringstream aiss( arguments );
   std::string        token;
@@ -120,19 +117,20 @@ void PCCJMLibVideoDecoderImpl<T>::decode( PCCVideoBitstream& bitstream,
 
   iRet = FinitDecoder( &pDecPicList );
   iFramesOutput += WriteOneFrame( pDecPicList, hFileDecOutput0, hFileDecOutput1, 1 );
-  iRet = CloseDecoder();
 
-  // quit;
+  int            decWidth  = pDecPicList->iWidth;
+  int            decHeight = pDecPicList->iHeight;
+  PCCCOLORFORMAT format    = pDecPicList->iYUVFormat == 3 ? PCCCOLORFORMAT::RGB444 : PCCCOLORFORMAT::YUV420;
+  const size_t   nbyte     = pDecPicList->iBitDepth == 8 ? 1 : 2;
+
+  // Close and quit;
+  iRet = CloseDecoder();
   if ( hFileDecOutput0 >= 0 ) { close( hFileDecOutput0 ); }
   if ( hFileDecOutput1 >= 0 ) { close( hFileDecOutput1 ); }
   // end decoding
 
-  int            decWidth  = pDecPicList->iWidth;
-  int            decHeight = pDecPicList->iHeight;  
-  PCCCOLORFORMAT format    = pDecPicList->iYUVFormat == 3 ? PCCCOLORFORMAT::RGB444 : PCCCOLORFORMAT::YUV420;
-  const size_t   nbyte     = pDecPicList->iBitDepth  == 8 ? 1 : 2;
   video.clear();
-  video.read_JM( decName, decWidth, decHeight, format, iFramesDecoded, nbyte );
+  video.read( decName, decWidth, decHeight, format, nbyte );
 
   removeFile( binName ); 
   removeFile( decName ); 
