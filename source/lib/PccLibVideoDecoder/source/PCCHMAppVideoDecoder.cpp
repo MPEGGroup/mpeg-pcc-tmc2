@@ -48,7 +48,6 @@ PCCHMAppVideoDecoder<T>::~PCCHMAppVideoDecoder() {}
 template <typename T>
 void PCCHMAppVideoDecoder<T>::decode( PCCVideoBitstream& bitstream,
                                       PCCVideo<T, 3>&    video,
-                                      const size_t       frameCount,
                                       size_t             outputBitDepth,
                                       const std::string& decoderPath,
                                       const std::string& fileName ) {
@@ -79,7 +78,7 @@ void PCCHMAppVideoDecoder<T>::decode( PCCVideoBitstream& bitstream,
   }
   PCCCOLORFORMAT format = isRGB ? PCCCOLORFORMAT::RGB444 : PCCCOLORFORMAT::YUV420;
   video.clear();
-  video.read( reconFile, width, height, format, frameCount, outputBitDepth == 8 ? 1 : 2 );
+  video.read( reconFile, width, height, format, outputBitDepth == 8 ? 1 : 2 );
   printf( "File read size = %zu x %zu frame count = %zu \n", video.getWidth(), video.getHeight(),
           video.getFrameCount() );
 

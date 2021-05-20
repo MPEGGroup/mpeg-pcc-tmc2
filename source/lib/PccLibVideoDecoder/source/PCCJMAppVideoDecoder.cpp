@@ -48,7 +48,6 @@ PCCJMAppVideoDecoder<T>::~PCCJMAppVideoDecoder() {}
 template <typename T>
 void PCCJMAppVideoDecoder<T>::decode(  PCCVideoBitstream& bitstream,
                                       PCCVideo<T, 3>&    video,
-                                      const size_t       frameCount,
                                       size_t             outputBitDepth,
                                       const std::string& decoderPath,
                                       const std::string& fileName ) {
@@ -60,7 +59,7 @@ void PCCJMAppVideoDecoder<T>::decode(  PCCVideoBitstream& bitstream,
   bool         isRGB = false;
   PccAvcParser avcParser;
   avcParser.getVideoSize( bitstream.vector(), width, height, true, bitDepth, isRGB );
-  printf("avcParser= %zu x %zu %zu bits isRGB = %d \n", width, height, bitDepth, isRGB ); 
+  printf("avcParser => %zu x %zu %zu bits isRGB = %d \n", width, height, bitDepth, isRGB ); 
 
   const std::string binFileName = fileName + ".bin";
   const std::string reconFile =
@@ -76,7 +75,7 @@ void PCCJMAppVideoDecoder<T>::decode(  PCCVideoBitstream& bitstream,
   }
   PCCCOLORFORMAT format = isRGB ? PCCCOLORFORMAT::RGB444 : PCCCOLORFORMAT::YUV420;
   video.clear();
-  video.read( reconFile, width, height, format, frameCount, outputBitDepth == 8 ? 1 : 2 );
+  video.read( reconFile, width, height, format, outputBitDepth == 8 ? 1 : 2 );
   printf( "File read size = %zu x %zu frame count = %zu \n", video.getWidth(), video.getHeight(),
           video.getFrameCount() );
 

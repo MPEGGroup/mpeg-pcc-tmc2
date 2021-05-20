@@ -78,11 +78,31 @@ static std::istream& operator>>( std::istream& in, PCCColorTransform& val ) {
   return in;
 }
 static std::istream& operator>>( std::istream& in, PCCCodecId& val ) {
-  unsigned int tmp;
+  val = UNKNOWN_CODEC;
+  std::string tmp;
   in >> tmp;
-  val = PCCCodecId( tmp );
+#ifdef USE_JMAPP_VIDEO_CODEC
+  if ( tmp == "0" || tmp == "JMAPP" || tmp == "jmapp" ) { val = JMAPP; }
+#endif
+#ifdef USE_HMAPP_VIDEO_CODEC
+  if ( tmp == "1" || tmp == "HMAPP" || tmp == "hmapp" ) { val = HMAPP; }
+#endif
+#ifdef USE_JMLIB_VIDEO_CODEC
+  if ( tmp == "2" || tmp == "JMLIB" || tmp == "jmlib" || tmp == "jm" || tmp == "avc" ) { val = JMLIB; }
+#endif
+#ifdef USE_HMLIB_VIDEO_CODEC
+  if ( tmp == "3" || tmp == "HMLIB" || tmp == "hmlib" || tmp == "hm" || tmp == "hevc" ) { val = HMLIB; }
+#endif
+#ifdef USE_VTMLIB_VIDEO_CODEC
+  if ( tmp == "4" || tmp == "VTMLIB" || tmp == "vtmlib" || tmp == "vtm" || tmp == "vvc" ) { val = VTMLIB; }
+#endif
+#ifdef USE_FFMPEG_VIDEO_CODEC
+  if ( tmp == "5" || tmp == "FFMPEG" || tmp == "ffmpeg" ) { val = FFMPEG; }
+#endif
+  if ( val == UNKNOWN_CODEC ) { fprintf( stderr, "PCCCodecId could not be indentified from: \"%s\" \n", tmp.c_str() ); }
   return in;
 }
+
 static std::istream& operator>>( std::istream& in, std::vector<int>& vector ) {
   std::string str;
   in >> str;
@@ -924,7 +944,7 @@ bool parseParameters( int                   argc,
       encoderParams.no45DegreeProjectionPatchConstraintFlag_,
       encoderParams.no45DegreeProjectionPatchConstraintFlag_, 
       "No 45 Degree Projection Patch Constraint Flag" );
-   
+
   // clang-format on
   po::setDefaults( opts );
   po::ErrorReporter        err;
@@ -993,7 +1013,7 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
                    StopwatchUserTime&          clock ) {
   const size_t startFrameNumber0        = encoderParams.startFrameNumber_;
   size_t       endFrameNumber0          = encoderParams.startFrameNumber_ + encoderParams.frameCount_;
-  const size_t groupOfFramesSize0       = ( std::max )( size_t( 1 ), encoderParams.groupOfFramesSize_ );
+  const size_t groupOfFramesSize0       = (std::max)( size_t( 1 ), encoderParams.groupOfFramesSize_ );
   size_t       startFrameNumber         = startFrameNumber0;
   size_t       reconstructedFrameNumber = encoderParams.startFrameNumber_;
 

@@ -54,23 +54,22 @@ bool parseParameters( int          argc,
                       size_t&      width,
                       size_t&      height,
                       std::string& colorFormat,
-                      size_t&      frameCount,
                       size_t&      inputNumBytes,
                       size_t&      outputNumBytes ) {
   namespace po    = df::program_options_lite;
   bool print_help = false;
   // clang-format off
   po::Options opts;
-  opts.addOptions()("help", print_help, false, "This help text")
-     ( "srcVideoPath", srcVideoPath, srcVideoPath, "Source yuv file path")
-     ( "dstVideoPath", dstVideoPath, dstVideoPath, "Create yuv file path")
-     ("configFile", configFile, configFile, "HDRTools configuration files")
-     ("width", width, width, "Source video width")
-     ("height", height, height,"Source video height")
-     ("colorFormat", colorFormat, colorFormat,"Source color format")
-     ("frameCount", frameCount, frameCount, "Source video frame count")
-     ("inputNumBytes", inputNumBytes, inputNumBytes, "Source video nbyte")
-     ("outputNumBytes", outputNumBytes, outputNumBytes, "Output video nbyte");
+  opts.addOptions()
+     ("help",            print_help,     false,          "This help text" )
+     ( "srcVideoPath",   srcVideoPath,   srcVideoPath,   "Source yuv file path" )
+     ( "dstVideoPath",   dstVideoPath,   dstVideoPath,   "Create yuv file path" )
+     ( "configFile",     configFile,     configFile,     "HDRTools configuration files" )
+     ( "width",          width,          width,          "Source video width" )
+     ( "height",         height,         height,         "Source video height" )
+     ( "colorFormat",    colorFormat,    colorFormat,    "Source color format" )
+     ( "inputNumBytes",  inputNumBytes,  inputNumBytes,  "Source video nbyte" )
+     ( "outputNumBytes", outputNumBytes, outputNumBytes, "Output video nbyte" );
   // clang-format on
   po::setDefaults( opts );
   po::ErrorReporter        err;
@@ -83,12 +82,11 @@ bool parseParameters( int          argc,
   printf( "  width          = %zu \n", width );
   printf( "  height         = %zu \n", height );
   printf( "  colorFormat    = %s  \n", colorFormat.c_str() );
-  printf( "  frameCount     = %zu \n", frameCount );
   printf( "  inputNumBytes  = %zu \n", inputNumBytes );
   printf( "  outputNumBytes = %zu \n", outputNumBytes );
 
   if ( argc == 1 || print_help || srcVideoPath.empty() || dstVideoPath.empty() || configFile.empty() ||
-       colorFormat.empty() || width == 0 || height == 0 || frameCount == 0 || inputNumBytes == 0 ||
+       colorFormat.empty() || width == 0 || height == 0 || inputNumBytes == 0 ||
        outputNumBytes == 0 || ( colorFormat != "RGB444" && colorFormat != "YUV444" && colorFormat != "YUV420" ) ) {
     printf( "Error parameters not correct \n" );
     po::doHelp( std::cout, opts, 78 );
@@ -104,8 +102,8 @@ bool parseParameters( int          argc,
 int main( int argc, char* argv[] ) {
   std::cout << "PccAppVideoConverter v" << TMC2_VERSION_MAJOR << "." << TMC2_VERSION_MINOR << std::endl << std::endl;
   std::string srcVideoPath, dstVideoPath, configFile, colorFormat;
-  size_t      width = 0, height = 0, frameCount = 0, inputNumBytes = 0, outputNumBytes = 0;
-  if ( !parseParameters( argc, argv, srcVideoPath, dstVideoPath, configFile, width, height, colorFormat, frameCount,
+  size_t      width = 0, height = 0, inputNumBytes = 0, outputNumBytes = 0;
+  if ( !parseParameters( argc, argv, srcVideoPath, dstVideoPath, configFile, width, height, colorFormat,
                          inputNumBytes, outputNumBytes ) ) {
     return -1;
   }
@@ -114,7 +112,7 @@ int main( int argc, char* argv[] ) {
                               ? PCCCOLORFORMAT::RGB444
                               : colorFormat == "YUV444" ? PCCCOLORFORMAT::YUV444 : PCCCOLORFORMAT::YUV420;
   PCCVideo<T, 3> videoSrc, videoRec;
-  videoSrc.read( srcVideoPath, width, height, format, frameCount, inputNumBytes );
+  videoSrc.read( srcVideoPath, width, height, format, inputNumBytes );
 #ifdef USE_HDRTOOLS
   PCCHDRToolsLibColorConverter<T> convert;
 #else

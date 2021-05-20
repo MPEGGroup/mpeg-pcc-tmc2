@@ -49,7 +49,6 @@ class PCCHMLibVideoDecoder : public PCCVirtualVideoDecoder<T> {
 
   void decode( PCCVideoBitstream& bitstream,
                PCCVideo<T, 3>&    video,
-               const size_t       frameCount     = 0,
                size_t             outputBitDepth = 8,
                const std::string& decoderPath    = "",
                const std::string& parameters     = "" );
