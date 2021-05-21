@@ -48,6 +48,15 @@ bool PCCVideo<T, N>::read( const std::string    fileName,
 }
 
 template <typename T, size_t N>
+bool PCCVideo<T, N>::readJM( const std::string    fileName,
+                             const size_t         sizeU0,
+                             const size_t         sizeV0,
+                             const PCCCOLORFORMAT format,
+                             const size_t         nbyte ) {
+  return read( fileName, sizeU0, sizeV0, format, nbyte );
+}
+
+template <typename T, size_t N>
 bool PCCVideo<T, N>::read( std::ifstream&       infile,
                            const size_t         sizeU0,
                            const size_t         sizeV0,
@@ -68,6 +77,11 @@ bool PCCVideo<T, N>::write( const std::string fileName, const size_t nbyte ) {
     return true;
   }
   return false;
+}
+
+template <typename T, size_t N>
+bool PCCVideo<T, N>::writeJM( const std::string fileName, const size_t nbyte ) {
+  return write( fileName, nbyte );
 }
 
 template <typename T, size_t N>

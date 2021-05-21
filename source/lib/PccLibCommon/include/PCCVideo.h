@@ -88,6 +88,13 @@ class PCCVideo {
              const size_t         sizeU0,
              const size_t         sizeV0,
              const PCCCOLORFORMAT format,
+             const size_t         nbyte );  
+             
+  bool writeJM( const std::string fileName, const size_t nbyte );
+  bool readJM( const std::string    fileName,
+             const size_t         sizeU0,
+             const size_t         sizeV0,
+             const PCCCOLORFORMAT format,
              const size_t         nbyte );
 
   void        convertBitdepth( uint8_t bitdepthInput, uint8_t bitdepthOutput, bool msbAlignFlag );
