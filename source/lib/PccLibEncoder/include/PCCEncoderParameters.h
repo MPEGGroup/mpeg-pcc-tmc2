@@ -306,6 +306,11 @@ class PCCEncoderParameters {
   bool    oneV3CFrameOnlyFlag_;
   bool    noEightOrientationsConstraintFlag_;
   bool    no45DegreeProjectionPatchConstraintFlag_;
+
+#ifdef USE_SHMAPP_VIDEO_CODEC
+  size_t shvcRateX_;
+  size_t shvcRateY_;
+#endif
 };
 
 };  // namespace pcc

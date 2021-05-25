@@ -40,7 +40,10 @@ IF( USE_JMAPP_VIDEO_CODEC )
   INCLUDE_DIRECTORIES( ${CMAKE_SOURCE_DIR}/dependencies/PccLibAvcParser/include )
   SET( LIBS ${LIBS} PccLibAvcParser )
 ENDIF()
-
+IF( USE_SHMAPP_VIDEO_CODEC )
+  INCLUDE_DIRECTORIES( ${CMAKE_SOURCE_DIR}/dependencies/PccLibHevcParser/include )
+  SET( LIBS ${LIBS} PccLibHevcParser )
+ENDIF()
 ADD_LIBRARY( ${MYNAME} ${LINKER} ${SRC} )
 
 #TARGET_LINK_LIBRARIES( ${MYNAME} ${LIBS} )

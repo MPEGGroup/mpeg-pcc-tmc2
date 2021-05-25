@@ -74,6 +74,10 @@ class PCCDecoderParameters {
   double            maxGeometryDist2Bwd_;
   double            maxColorDist2Fwd_;
   double            maxColorDist2Bwd_;
+#ifdef USE_SHMAPP_VIDEO_CODEC
+  size_t shvcLayerIndex_; 
+#endif
+
 };
 
 };  // namespace pcc

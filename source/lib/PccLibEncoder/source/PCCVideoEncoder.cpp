@@ -67,6 +67,10 @@ bool PCCVideoEncoder::compress( PCCVideo<T, 3>&    video,
 #ifdef USE_HM_PCC_RDO
                                 const bool usePccRDO,
 #endif
+#ifdef USE_SHMAPP_VIDEO_CODEC
+                                const size_t shvcRateX,
+                                const size_t shvcRateY,
+#endif
                                 const size_t       internalBitDepth,
                                 const bool         useConversion,
                                 const bool         keepIntermediateFiles,
@@ -374,6 +378,10 @@ bool PCCVideoEncoder::compress( PCCVideo<T, 3>&    video,
 #ifdef USE_HM_PCC_RDO
   params.usePccRDO_ = usePccRDO;
 #endif
+#ifdef USE_SHMAPP_VIDEO_CODEC
+  params.shvcRateX_ = shvcRateX;
+  params.shvcRateY_ = shvcRateY;
+#endif
   printf( "Encode: video size = %zu x %zu num frames = %zu \n", video.getWidth(), video.getHeight(),
           video.getFrameCount() );
   fflush( stdout );
@@ -429,6 +437,10 @@ template bool pcc::PCCVideoEncoder::compress<uint8_t>( PCCVideo<uint8_t, 3>& vid
 #ifdef USE_HM_PCC_RDO
                                                        const bool usePccRDO,
 #endif
+#ifdef USE_SHMAPP_VIDEO_CODEC
+                                                       const size_t shvcRateX,
+                                                       const size_t shvcRateY,
+#endif
                                                        const size_t       internalBitDepth,
                                                        const bool         useConversion,
                                                        const bool         keepIntermediateFiles,
@@ -453,6 +465,10 @@ template bool pcc::PCCVideoEncoder::compress<uint16_t>( PCCVideo<uint16_t, 3>& v
                                                         const bool             use3dmv,
 #ifdef USE_HM_PCC_RDO
                                                         const bool usePccRDO,
+#endif
+#ifdef USE_SHMAPP_VIDEO_CODEC
+                                                       const size_t shvcRateX,
+                                                       const size_t shvcRateY,
 #endif
                                                         const size_t       internalBitDepth,
                                                         const bool         useConversion,

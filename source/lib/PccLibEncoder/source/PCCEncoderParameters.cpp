@@ -244,6 +244,11 @@ PCCEncoderParameters::PCCEncoderParameters() {
   oneV3CFrameOnlyFlag_                     = 0;  // V-PCC Basic
   noEightOrientationsConstraintFlag_       = 0;  // Default value, does not impose a constraint
   no45DegreeProjectionPatchConstraintFlag_ = 0;  // Default value, does not impose a constraint
+
+#ifdef USE_SHMAPP_VIDEO_CODEC
+  shvcRateX_ = 0;
+  shvcRateY_ = 0;
+#endif
 }
 
 PCCEncoderParameters::~PCCEncoderParameters() = default;
@@ -548,6 +553,16 @@ void PCCEncoderParameters::print() {
   std::cout << "\t   noEightOrientationsConstraintFlag        " << noEightOrientationsConstraintFlag_ << std::endl;
   std::cout << "\t   no45DegreeProjectionPatchConstraintFlag  " << no45DegreeProjectionPatchConstraintFlag_
             << std::endl;
+  // SHVC khu H = > TODO JR: move to  Pcc Encoder Parameter Check function
+
+#ifdef USE_SHMAPP_VIDEO_CODEC
+  if ( shvcRateX_ > 0 || shvcRateY_ > 0 ) {
+    std::cerr << "HEVC scalable video coding (SHVC) " << std::endl;
+    std::cout << "\t   shvcRateX                              " << shvcRateX_ << std::endl;
+    std::cout << "\t   shvcRateY                              " << shvcRateY_ << std::endl;
+  }
+#endif
+
   std::cout << std::endl;
 }
 

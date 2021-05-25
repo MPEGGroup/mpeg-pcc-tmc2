@@ -60,15 +60,15 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
   PCCVideoDecoder videoDecoder;
   videoDecoder.setLogger( *logger_ );
   std::stringstream path;
-  auto&             sps                = context.getVps();
-  auto&             ai                 = sps.getAttributeInformation( atlasIndex );
-  auto&             oi                 = sps.getOccupancyInformation( atlasIndex );
-  auto&             gi                 = sps.getGeometryInformation( atlasIndex );
-  auto&             asps               = context.getAtlasSequenceParameterSet( 0 );
-  size_t            frameCount         = context.size();
-  auto&             plt                = sps.getProfileTierLevel();
-  const size_t      mapCount           = sps.getMapCountMinus1( atlasIndex ) + 1;
-  int               geometryBitDepth   = gi.getGeometry2dBitdepthMinus1() + 1;
+  auto&             sps              = context.getVps();
+  auto&             ai               = sps.getAttributeInformation( atlasIndex );
+  auto&             oi               = sps.getOccupancyInformation( atlasIndex );
+  auto&             gi               = sps.getGeometryInformation( atlasIndex );
+  auto&             asps             = context.getAtlasSequenceParameterSet( 0 );
+  size_t            frameCount       = context.size();
+  auto&             plt              = sps.getProfileTierLevel();
+  const size_t      mapCount         = sps.getMapCountMinus1( atlasIndex ) + 1;
+  int               geometryBitDepth = gi.getGeometry2dBitdepthMinus1() + 1;
   auto occupancyCodecId = getCodedCodecId( context, oi.getOccupancyCodecId(), params_.videoDecoderOccupancyPath_ );
   auto geometryCodecId  = getCodedCodecId( context, gi.getGeometryCodecId(), params_.videoDecoderOccupancyPath_ );
   path << removeFileExtension( params_.compressedStreamPath_ ) << "_dec_GOF" << sps.getV3CParameterSetId() << "_";
@@ -76,8 +76,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
   printf( "CodecCodecId: ProfileCodecGroupIdc = %u occupancyCodecId = %u geometry = %u auxGeo = %u \n",
           plt.getProfileCodecGroupIdc(), oi.getOccupancyCodecId(), gi.getGeometryCodecId(),
           gi.getAuxiliaryGeometryCodecId() );
-  printf( "=> Video decoder : occupancy = %d geometry = %d \n", (int)occupancyCodecId,
-          (int)geometryCodecId );
+  printf( "=> Video decoder : occupancy = %d geometry = %d \n", (int)occupancyCodecId, (int)geometryCodecId );
   printf( " Decode O size = %zu \n", context.getVideoBitstream( VIDEO_OCCUPANCY ).size() );
   fflush( stdout );
   TRACE_PICTURE( "Occupancy\n" );
@@ -113,7 +112,11 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
                                geometryCodecId,                               // codecId
                                params_.videoDecoderGeometryPath_,             // decoder path
                                geometryBitDepth,                              // output bit depth
-                               params_.keepIntermediateFiles_ );              // keep intermediate files
+                               params_.keepIntermediateFiles_,                // keep intermediate files
+#ifdef USE_SHMAPP_VIDEO_CODEC
+                               0  // SHVC layer index
+#endif
+      );
       context.getVideoGeometryMultiple()[mapIndex].convertBitdepth(
           geometryBitDepth, gi.getGeometry2dBitdepthMinus1() + 1, gi.getGeometryMSBAlignFlag() );
       std::cout << "geometry D" << mapIndex << " video ->" << videoBitstream.size() << " B" << std::endl;
@@ -135,7 +138,11 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
                              geometryCodecId,                        // codecId
                              params_.videoDecoderGeometryPath_,      // decoder path
                              geometryBitDepth,                       // output bit depth
-                             params_.keepIntermediateFiles_ );       // keep intermediate files
+                             params_.keepIntermediateFiles_,         // keep intermediate files
+#ifdef USE_SHMAPP_VIDEO_CODEC
+                             params_.shvcLayerIndex_  // SHVC layer index
+#endif
+    );
     context.getVideoGeometryMultiple()[0].convertBitdepth( geometryBitDepth, gi.getGeometry2dBitdepthMinus1() + 1,
                                                            gi.getGeometryMSBAlignFlag() );
     std::cout << "geometry video ->" << videoBitstream.size() << " B" << std::endl;
@@ -156,7 +163,11 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
                              auxGeometryCodecId,                     // codecId
                              params_.videoDecoderGeometryPath_,      // decoder path
                              geometryBitDepth,                       // output bit depth
-                             params_.keepIntermediateFiles_ );       // keep intermediate files
+                             params_.keepIntermediateFiles_,
+#ifdef USE_SHMAPP_VIDEO_CODEC
+                             params_.shvcLayerIndex_  // SHVC layer index
+#endif
+    );  // keep intermediate files
     context.getVideoRawPointsGeometry().convertBitdepth( geometryBitDepth, gi.getGeometry2dBitdepthMinus1() + 1,
                                                          gi.getGeometryMSBAlignFlag() );
     std::cout << " raw points geometry -> " << videoBitstreamMP.size() << " B " << endl;
@@ -166,9 +177,9 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
     TRACE_PICTURE( "Attribute\n" );
     for ( int attrIndex = 0; attrIndex < ai.getAttributeCount(); attrIndex++ ) {
       TRACE_PICTURE( "AttrIdx = %d, ", attrIndex );
-      int  attributeBitDepth   = ai.getAttribute2dBitdepthMinus1( attrIndex ) + 1;
-      int  attributeTypeId     = ai.getAttributeTypeId( attrIndex );
-      int  attributeDimension  = ai.getAttributeDimensionPartitionsMinus1( attrIndex ) + 1;
+      int  attributeBitDepth  = ai.getAttribute2dBitdepthMinus1( attrIndex ) + 1;
+      int  attributeTypeId    = ai.getAttributeTypeId( attrIndex );
+      int  attributeDimension = ai.getAttributeDimensionPartitionsMinus1( attrIndex ) + 1;
       auto attributeCodecId =
           getCodedCodecId( context, ai.getAttributeCodecId( attrIndex ), params_.videoDecoderAttributePath_ );
       auto auxAttributeCodecId =
@@ -194,12 +205,15 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
                                      videoBitstream,                               // bitstream
                                      params_.byteStreamVideoCoderAttribute_,       // byte stream video coder
                                      attributeCodecId,                             // codecId
-                                     params_.videoDecoderAttributePath_,           // decoder path                                    
+                                     params_.videoDecoderAttributePath_,           // decoder path
                                      attributeBitDepth,                            // output bit depth
                                      params_.keepIntermediateFiles_,               // keep intermediate files
-                                     params_.patchColorSubsampling_,               // patch color subsampling
-                                     params_.inverseColorSpaceConversionConfig_,   // inverse color space conversion
-                                     params_.colorSpaceConversionPath_ );          // color space conversion path
+#ifdef USE_SHMAPP_VIDEO_CODEC
+                                     params_.shvcLayerIndex_,  // SHVC layer index
+#endif
+                                     params_.patchColorSubsampling_,              // patch color subsampling
+                                     params_.inverseColorSpaceConversionConfig_,  // inverse color space conversion
+                                     params_.colorSpaceConversionPath_ );         // color space conversion path
             std::cout << "texture T" << mapIndex << " video ->" << videoBitstream.size() << " B" << std::endl;
             sizeTextureVideo += videoBitstream.size();
           }
@@ -208,18 +222,21 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
           TRACE_PICTURE( "MapIdx = 0, AuxiliaryVideoFlag =  0\n" );
           std::cout << "*******Video Decoding: Attribute ********" << std::endl;
           auto  textureIndex   = static_cast<PCCVideoType>( VIDEO_TEXTURE + attrPartitionIndex );
-          auto& videoBitstream = context.getVideoBitstream( textureIndex );          
+          auto& videoBitstream = context.getVideoBitstream( textureIndex );
           printf( " Decode T size = %zu \n", videoBitstream.size() );
           fflush( stdout );
-          videoDecoder.decompress( context.getVideoTextureMultiple( 0 ),        // video
-                                   context,                                     // contexts
-                                   path.str(),                                  // path
-                                   videoBitstream,                              // bitstream
-                                   params_.byteStreamVideoCoderAttribute_,      // byte stream video coder
-                                   attributeCodecId,                            // codecId
-                                   params_.videoDecoderAttributePath_,          // decoder path
-                                   attributeBitDepth,                           // output bit depth
-                                   params_.keepIntermediateFiles_,              // keep intermediate files
+          videoDecoder.decompress( context.getVideoTextureMultiple( 0 ),    // video
+                                   context,                                 // contexts
+                                   path.str(),                              // path
+                                   videoBitstream,                          // bitstream
+                                   params_.byteStreamVideoCoderAttribute_,  // byte stream video coder
+                                   attributeCodecId,                        // codecId
+                                   params_.videoDecoderAttributePath_,      // decoder path
+                                   attributeBitDepth,                       // output bit depth
+                                   params_.keepIntermediateFiles_,          // keep intermediate files
+#ifdef USE_SHMAPP_VIDEO_CODEC
+                                   params_.shvcLayerIndex_,  // SHVC layer index
+#endif
                                    params_.patchColorSubsampling_,              // patch color subsampling
                                    params_.inverseColorSpaceConversionConfig_,  // inverse color space conversionConfig
                                    params_.colorSpaceConversionPath_ );         // color space conversion path
@@ -233,15 +250,18 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
           auto textureIndex = static_cast<PCCVideoType>( VIDEO_TEXTURE_RAW + attrPartitionIndex );
           TRACE_PICTURE( "AttrPartIdx = %d, AttrTypeID = %d, ", textureIndex, attributeTypeId );
           auto& videoBitstreamMP = context.getVideoBitstream( textureIndex );
-          videoDecoder.decompress( context.getVideoRawPointsTexture(),          // video
-                                   context,                                     // contexts
-                                   path.str(),                                  // path
-                                   videoBitstreamMP,                            // bitstream
-                                   params_.byteStreamVideoCoderAttribute_,      // byte stream video coder
-                                   auxAttributeCodecId,                         // codecId
-                                   params_.videoDecoderAttributePath_,          // decoder path
-                                   attributeBitDepth,                           // output bit depth
-                                   params_.keepIntermediateFiles_,              // keep intermediate files
+          videoDecoder.decompress( context.getVideoRawPointsTexture(),      // video
+                                   context,                                 // contexts
+                                   path.str(),                              // path
+                                   videoBitstreamMP,                        // bitstream
+                                   params_.byteStreamVideoCoderAttribute_,  // byte stream video coder
+                                   auxAttributeCodecId,                     // codecId
+                                   params_.videoDecoderAttributePath_,      // decoder path
+                                   attributeBitDepth,                       // output bit depth
+                                   params_.keepIntermediateFiles_,          // keep intermediate files
+#ifdef USE_SHMAPP_VIDEO_CODEC
+                                   params_.shvcLayerIndex_,  // SHVC layer index
+#endif
                                    false,                                       // patch color subsampling
                                    params_.inverseColorSpaceConversionConfig_,  // inverse color space conversionConfig
                                    params_.colorSpaceConversionPath_ );         // color space conversion path
@@ -252,9 +272,10 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
     }
   }
   bool isAttributes444 = context.getVideoTextureMultiple( 0 ).getColorFormat() == PCCCOLORFORMAT::RGB444;
-  printf("isAttributes444 = %d Format = %d \n", isAttributes444,  
-    context.getVideoTextureMultiple( 0 ).getColorFormat()  ); fflush(stdout);
-    
+  printf( "isAttributes444 = %d Format = %d \n", isAttributes444,
+          context.getVideoTextureMultiple( 0 ).getColorFormat() );
+  fflush( stdout );
+
   reconstructs.setFrameCount( frameCount );
   // recreating the prediction list per attribute (either the attribute is coded absolute, or follows the geometry)
   // see contribution m52529
@@ -1572,7 +1593,9 @@ void PCCDecoder::createHlsAtlasTileLogFiles( PCCContext& context, int frameIndex
   tileB2PPatchParams.clear();
 }
 
-PCCCodecId PCCDecoder::getCodedCodecId( PCCContext& context, const uint8_t codecCodecId, const std::string& videoDecoderPath ) {
+PCCCodecId PCCDecoder::getCodedCodecId( PCCContext&        context,
+                                        const uint8_t      codecCodecId,
+                                        const std::string& videoDecoderPath ) {
   auto& sps = context.getVps();
   auto& plt = sps.getProfileTierLevel();
   printf( "getCodedCodecId profileCodecGroupIdc = %d \n", plt.getProfileCodecGroupIdc() );

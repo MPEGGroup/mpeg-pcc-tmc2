@@ -170,6 +170,10 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
 #ifdef USE_HM_PCC_RDO
                          false,  // usePccRDO
 #endif
+#ifdef USE_SHMAPP_VIDEO_CODEC
+                         0,  // SHVC ratio X
+                         0,  // SHVC ratio Y
+#endif
                          8,      // internalBitDepth
                          false,  // useConversion
                          params_.keepIntermediateFiles_ );
@@ -245,6 +249,10 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
 #ifdef USE_HM_PCC_RDO
                          params_.usePccRDO_,  // usePccRDO
 #endif
+#ifdef USE_SHMAPP_VIDEO_CODEC
+                         params_.shvcRateX_,  // SHVC rate X
+                         params_.shvcRateY_,  // SHVC rate Y
+#endif
                          internalBitDepth,                  // internalBitDepth
                          false,                             // useConversion
                          params_.keepIntermediateFiles_ );  // keep intermediate
@@ -287,6 +295,10 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
 #ifdef USE_HM_PCC_RDO
                            params_.usePccRDO_,  // usePccRDO
 #endif
+#ifdef USE_SHMAPP_VIDEO_CODEC
+                           params_.shvcRateX_,  // SHVC rate X
+                           params_.shvcRateY_,  // SHVC rate Y
+#endif
                            internalBitDepth,                  // internalBitDepth
                            false,                             // useConversion
                            params_.keepIntermediateFiles_ );  // keep intermediate
@@ -321,6 +333,10 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
                            false,                                  // use3dmv
 #ifdef USE_HM_PCC_RDO
                            false,  // usePccRDO
+#endif
+#ifdef USE_SHMAPP_VIDEO_CODEC
+                           params_.shvcRateX_,  // SHVC rate X
+                           params_.shvcRateY_,  // SHVC rate Y
 #endif
                            internalBitDepth,  // internalBitDepth
                            false,             // useConversion
@@ -499,6 +515,10 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
 #ifdef USE_HM_PCC_RDO
                            params_.usePccRDO_,  // usePccRDO
 #endif
+#ifdef USE_SHMAPP_VIDEO_CODEC
+                           params_.shvcRateX_,  // SHVC rate X
+                           params_.shvcRateY_,  // SHVC rate Y
+#endif
                            params_.rawPointsPatch_ ? 8 : 10,            // internalBitDepth
                            !params_.rawPointsPatch_,                    // useConversion
                            params_.keepIntermediateFiles_,              // keepIntermediateFiles
@@ -547,6 +567,10 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
 #ifdef USE_HM_PCC_RDO
                              params_.usePccRDO_,  // usePccRDO
 #endif
+#ifdef USE_SHMAPP_VIDEO_CODEC
+                             params_.shvcRateX_,  // SHVC rate X
+                             params_.shvcRateY_,  // SHVC rate Y
+#endif
                              params_.rawPointsPatch_ ? 8 : 10,            // internalBitDepth
                              !params_.rawPointsPatch_,                    // useConversion
                              params_.keepIntermediateFiles_,              // keepIntermediateFiles
@@ -583,6 +607,10 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
                              false,                                   // use3dmv
 #ifdef USE_HM_PCC_RDO
                              false,  // usePccRDO
+#endif
+#ifdef USE_SHMAPP_VIDEO_CODEC
+                             params_.shvcRateX_,  // SHVC rate X
+                             params_.shvcRateY_,  // SHVC rate Y
 #endif
                              10,                                          // internalBitDepth
                              !params_.rawPointsPatch_,                    // useConversion

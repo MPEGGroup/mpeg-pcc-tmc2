@@ -40,25 +40,29 @@
 namespace pcc {
 
 struct PCCVideoEncoderParameters {
-  std::string encoderPath_;
-  std::string srcYuvFileName_;
-  std::string binFileName_;
-  std::string recYuvFileName_;
-  std::string encoderConfig_;
-  int32_t     qp_;
-  int32_t     inputBitDepth_;
-  int32_t     internalBitDepth_;
-  int32_t     outputBitDepth_;
-  bool        use444CodecIo_;
-  bool        usePccMotionEstimation_;
-  std::string blockToPatchFile_;
-  std::string occupancyMapFile_;
-  std::string patchInfoFile_;
-  bool        transquantBypassEnable_;
-  bool        cuTransquantBypassFlagForce_;
-  bool        inputColourSpaceConvert_;
+  std::string encoderPath_                 = {};
+  std::string srcYuvFileName_              = {};
+  std::string binFileName_                 = {};
+  std::string recYuvFileName_              = {};
+  std::string encoderConfig_               = {};
+  int32_t     qp_                          = 30;
+  int32_t     inputBitDepth_               = 8;
+  int32_t     internalBitDepth_            = 8;
+  int32_t     outputBitDepth_              = 8;
+  bool        use444CodecIo_               = false;
+  bool        usePccMotionEstimation_      = false;
+  std::string blockToPatchFile_            = {};
+  std::string occupancyMapFile_            = {};
+  std::string patchInfoFile_               = {};
+  bool        transquantBypassEnable_      = false;
+  bool        cuTransquantBypassFlagForce_ = false;
+  bool        inputColourSpaceConvert_     = false;
 #ifdef USE_HM_PCC_RDO
-  bool usePccRDO_;
+  bool usePccRDO_ = false;
+#endif
+#ifdef USE_SHMAPP_VIDEO_CODEC
+  int32_t shvcRateX_ = 0;
+  int32_t shvcRateY_ = 0;
 #endif
 };
 

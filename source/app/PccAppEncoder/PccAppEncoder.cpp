@@ -633,6 +633,18 @@ bool parseParameters( int                   argc,
       encoderParams.prefilterLossyOM_,
       "Selects whether the occupany map is prefiltered before lossy compression (default=false)\n" )
 
+    // SHVC 
+#ifdef USE_SHMAPP_VIDEO_CODEC
+    ( "shvcRateX",
+      encoderParams.shvcRateX_,
+      encoderParams.shvcRateX_,
+      "SHVCRateX : reduce rate of each SHVC layer X axis in 2D space (should be greater than 1)")
+    ( "shvcRateY",
+      encoderParams.shvcRateY_,
+      encoderParams.shvcRateY_,
+      "SHVCRateY : reduce rate of each SHVC layer Y axis in 2D space (should be greater than 1)")
+#endif	
+
     // visual quality
     ( "patchColorSubsampling",
       encoderParams.patchColorSubsampling_, false,
@@ -1085,6 +1097,26 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
     if ( ret != 0 ) { return ret; }
     if ( !encoderParams.reconstructedDataPath_.empty() ) {
       reconstructs.write( encoderParams.reconstructedDataPath_, reconstructedFrameNumber );
+     
+// // TODO JR: must be remove: 
+//        std::cout << encoderParams.reconstructedDataPath_.substr( 0, encoderParams.reconstructedDataPath_.size() - 4 ) +
+//                        "_LID" + std::to_string( 0 ) + ".ply"
+//                 << std::endl;
+// 	  // SHVC khu H
+//     // SHVC reconstruct ply generate this location
+//       if ( encoderParams.SHVCLayer_ >= 1 && encoderParams.SHVCRateX_ >= 2 && encoderParams.SHVCRateY_ >= 2 ) {
+//         for ( size_t i = 0; i < encoderParams.SHVCLayer_; i++ ) {
+//           reconstructs.clear();
+//           size_t second_reconstructedFrameNumber = reconstructedFrameNumber - context.size();
+//           encoder.reconstructSHVCPointCloud( i, sources, context, reconstructs );
+//           string reconstructedSHVCDataPath =
+//               encoderParams.reconstructedDataPath_.substr( 0, encoderParams.reconstructedDataPath_.size() - 4 ) +
+//               "_LID" + std::to_string( i ) + ".ply";
+		  
+//           reconstructs.write( reconstructedSHVCDataPath, second_reconstructedFrameNumber );
+//         }
+//       }
+// //~TODO JR: must be remove: 
     }
     normals.clear();
     sources.clear();

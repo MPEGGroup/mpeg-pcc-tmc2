@@ -49,6 +49,7 @@
 #include "PCCHDRToolsAppColorConverter.h"
 #endif
 
+    #include "PCCSHMAppVideoDecoder.h"
 
 using namespace pcc;
 
@@ -57,18 +58,21 @@ PCCVideoDecoder::~PCCVideoDecoder() = default;
 
 template <typename T>
 bool PCCVideoDecoder::decompress( PCCVideo<T, 3>&    video,
-                 PCCContext&        contexts,
-                 const std::string& path,
-                 PCCVideoBitstream& bitstream,
-                 bool               byteStreamVideoCoder,
-                 PCCCodecId         codecId,
-                 const std::string& decoderPath,
-                 size_t             outputBitDepth,
-                 const bool         keepIntermediateFiles,
-                 const bool         patchColorSubsampling,
-                 const std::string& inverseColorSpaceConversionConfig,
-                 const std::string& colorSpaceConversionPath,
-                 const size_t       upsamplingFilter ) {
+                                  PCCContext&        contexts,
+                                  const std::string& path,
+                                  PCCVideoBitstream& bitstream,
+                                  bool               byteStreamVideoCoder,
+                                  PCCCodecId         codecId,
+                                  const std::string& decoderPath,
+                                  size_t             outputBitDepth,
+                                  const bool         keepIntermediateFiles,
+#ifdef USE_SHMAPP_VIDEO_CODEC
+                                  const bool shvcLayerIndex,
+#endif
+                                  const bool         patchColorSubsampling,
+                                  const std::string& inverseColorSpaceConversionConfig,
+                                  const std::string& colorSpaceConversionPath,
+                                  const size_t       upsamplingFilter ) {
   const std::string type        = bitstream.getExtension();
   const std::string fileName    = path + type;
   const std::string binFileName = fileName + ".bin";
@@ -83,6 +87,13 @@ bool PCCVideoDecoder::decompress( PCCVideo<T, 3>&    video,
   auto decoder = PCCVirtualVideoDecoder<T>::create( codecId );
   printf( " decompress codecId = %d size(T) = %zu \n", (int)codecId, sizeof( T ) );
   fflush( stdout );
+#ifdef USE_SHMAPP_VIDEO_CODEC
+  if ( codecId == SHMAPP ) {
+    std::shared_ptr<PCCSHMAppVideoDecoder<T>> shmDecoder =
+        std::dynamic_pointer_cast<PCCSHMAppVideoDecoder<T>>( decoder );
+    shmDecoder->setLayerIndex( shvcLayerIndex );
+  }
+#endif
   decoder->decode( bitstream, video, outputBitDepth, decoderPath, fileName );
 
   size_t width      = video.getWidth();
@@ -368,11 +379,14 @@ template bool pcc::PCCVideoDecoder::decompress<uint8_t>( PCCVideo<uint8_t, 3>& v
                                                          const std::string&    decoderPath,
                                                          size_t                outputBitDepth,
                                                          const bool            keepIntermediateFiles,
-                                                         const bool            patchColorSubsampling,
-                                                         const std::string&    inverseColorSpaceConversionConfig,
-                                                         const std::string&    colorSpaceConversionPath,
-                                                         const size_t          upsamplingFilter );
-                                                         
+#ifdef USE_SHMAPP_VIDEO_CODEC
+                                                         const bool shvcLayerIndex,
+#endif
+                                                         const bool         patchColorSubsampling,
+                                                         const std::string& inverseColorSpaceConversionConfig,
+                                                         const std::string& colorSpaceConversionPath,
+                                                         const size_t       upsamplingFilter );
+
 template bool pcc::PCCVideoDecoder::decompress<uint16_t>( PCCVideo<uint16_t, 3>& video,
                                                           PCCContext&            contexts,
                                                           const std::string&     path,
@@ -382,7 +396,10 @@ template bool pcc::PCCVideoDecoder::decompress<uint16_t>( PCCVideo<uint16_t, 3>&
                                                           const std::string&     decoderPath,
                                                           size_t                 outputBitDepth,
                                                           const bool             keepIntermediateFiles,
-                                                          const bool             patchColorSubsampling,
-                                                          const std::string&     inverseColorSpaceConversionConfig,
-                                                          const std::string&     colorSpaceConversionPath,
-                                                          const size_t           upsamplingFilter );
+#ifdef USE_SHMAPP_VIDEO_CODEC
+                                                          const bool shvcLayerIndex,
+#endif
+                                                          const bool         patchColorSubsampling,
+                                                          const std::string& inverseColorSpaceConversionConfig,
+                                                          const std::string& colorSpaceConversionPath,
+                                                          const size_t       upsamplingFilter );
