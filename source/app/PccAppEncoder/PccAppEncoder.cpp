@@ -87,6 +87,9 @@ static std::istream& operator>>( std::istream& in, PCCCodecId& val ) {
 #ifdef USE_HMAPP_VIDEO_CODEC
   if ( tmp == "1" || tmp == "HMAPP" || tmp == "hmapp" ) { val = HMAPP; }
 #endif
+#ifdef USE_SHMAPP_VIDEO_CODEC
+  if ( tmp == "2" || tmp == "SHMAPP" || tmp == "shmapp" || tmp == "shm" ) { val = SHMAPP; }
+#endif
 #ifdef USE_JMLIB_VIDEO_CODEC
   if ( tmp == "2" || tmp == "JMLIB" || tmp == "jmlib" || tmp == "jm" || tmp == "avc" ) { val = JMLIB; }
 #endif

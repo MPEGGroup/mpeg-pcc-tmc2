@@ -30,44 +30,62 @@ void PCCSHMAppVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
   const size_t width      = videoSrc.getWidth();
   const size_t height     = videoSrc.getHeight();
   const size_t frameCount = videoSrc.getFrameCount();
+  printf( "numLayers = %d \n", numLayers );
   if ( numLayers >= 1 ) {
     // Set Layer size and src and rec raw video names
     std::vector<std::string> srcYuvFileName, recYuvFileName;
     std::vector<size_t>      widthLayers, heightLayers;
+    std::vector<PCCVideo<T, 3>> videoSrcLayers;
     for ( size_t i = 0; i < numLayers; i++ ) {
-      widthLayers.push_back( width / ( params.shvcRateX_ * ( numLayers - i ) ) );
-      heightLayers.push_back( height / ( params.shvcRateY_ * ( numLayers - i ) ) );
-      srcYuvFileName.push_back( replace( params.srcYuvFileName_, stringFormat( "_%dx%d_", width, height ),
-                                         stringFormat( "_%dx%d_", widthLayers[i], heightLayers[i] ) ) );
-      recYuvFileName.push_back( replace( params.recYuvFileName_, stringFormat( "_%dx%d_", width, height ),
-                                         stringFormat( "_%dx%d_", widthLayers[i], heightLayers[i] ) ) );
+      if ( i + 1 < numLayers ) {
+        widthLayers.push_back( width / ( params.shvcRateX_ * ( numLayers - i - 1 ) ) );
+        heightLayers.push_back( height / ( params.shvcRateY_ * ( numLayers - i - 1 ) ) );
+        srcYuvFileName.push_back( replace( params.srcYuvFileName_, stringFormat( "_%dx%d_", width, height ),
+                                           stringFormat( "_%dx%d_", widthLayers[i], heightLayers[i] ) ) );
+        recYuvFileName.push_back( replace( params.recYuvFileName_, stringFormat( "_%dx%d_", width, height ),
+                                           stringFormat( "_%dx%d_", widthLayers[i], heightLayers[i] ) ) );
+      } else {
+        widthLayers.push_back( width );
+        heightLayers.push_back( height );
+        srcYuvFileName.push_back( params.srcYuvFileName_ );
+        recYuvFileName.push_back( params.recYuvFileName_ );
+      }
     }
 
     // SHVC khu H video downsampling
-    std::vector<PCCVideo<T, 3>> videoSrcLayers;
     // SHVC khu H using setValue and getValue in YUV420 error channelIndex 1&2
     if ( numLayers >= 1 && params.shvcRateX_ >= 2 && params.shvcRateY_ >= 2 ) {
       std::cout << "SHVC sub video generate" << std::endl;
       for ( size_t i = 0; i < numLayers; i++ ) {
-        int32_t        scaleX = params.shvcRateX_ * ( numLayers - i );
-        int32_t        scaleY = params.shvcRateY_ * ( numLayers - i );
-        PCCVideo<T, 3> videoDst;
-        videoDst.resize( frameCount );
-        for ( size_t j = 0; j < videoDst.getFrameCount(); j++ ) {
-          auto& imageSrc = videoSrc.getFrame( j );
-          auto& imageDst = videoDst.getFrame( j );
-          imageDst.resize( width / scaleX, height / scaleY, imageSrc.getColorFormat() );
-          for ( size_t v = 0; v < height; v += scaleY ) {
-            for ( size_t u = 0; u < width; u += scaleX ) {
-              imageDst.setValue( 0, u / scaleX, v / scaleY, imageSrc.getValue( 0, u, v ) );
-              imageDst.setValue( 1, u / scaleX, v / scaleY, imageSrc.getValue( 1, u, v ) );
-              imageDst.setValue( 2, u / scaleX, v / scaleY, imageSrc.getValue( 2, u, v ) );
+        if ( i + 1 < numLayers ) {
+          int32_t        scaleX = params.shvcRateX_ * ( numLayers - i - 1 );
+          int32_t        scaleY = params.shvcRateY_ * ( numLayers - i - 1 ) ;
+          PCCVideo<T, 3> videoDst;
+          videoDst.resize( frameCount );
+          for ( size_t j = 0; j < videoDst.getFrameCount(); j++ ) {
+            auto& imageSrc = videoSrc.getFrame( j );
+            auto& imageDst = videoDst.getFrame( j );
+            imageDst.resize( width / scaleX, height / scaleY, imageSrc.getColorFormat() );
+            for ( size_t v = 0; v < height; v += scaleY ) {
+              for ( size_t u = 0; u < width; u += scaleX ) {
+                imageDst.setValue( 0, u / scaleX, v / scaleY, imageSrc.getValue( 0, u, v ) );
+                imageDst.setValue( 1, u / scaleX, v / scaleY, imageSrc.getValue( 1, u, v ) );
+                imageDst.setValue( 2, u / scaleX, v / scaleY, imageSrc.getValue( 2, u, v ) );
+              }
             }
           }
+          videoSrcLayers.push_back( videoDst );
+          videoDst.write( srcYuvFileName[i], params.inputBitDepth_ == 8 ? 1 : 2 );
+        } else {
+          videoSrcLayers.push_back( videoSrc );
+          videoSrc.write( srcYuvFileName[i], params.inputBitDepth_ == 8 ? 1 : 2 );
         }
-        videoSrcLayers.push_back( videoDst );
-        videoDst.write( srcYuvFileName[i], params.inputBitDepth_ == 8 ? 1 : 2  ); 
       }
+    }
+
+    for ( size_t i = 0; i < numLayers; i++ ) {
+      printf( "Layer %zu : %zux%zu %zux%zu %s \n", i, widthLayers[i], heightLayers[i], videoSrcLayers[i].getWidth(),
+              videoSrcLayers[i].getHeight(), srcYuvFileName[i].c_str());
     }
 
     std::stringstream cmd;
@@ -88,7 +106,7 @@ void PCCSHMAppVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
       cmd << " --ReconFile" << std::to_string( i ) << "=" << recYuvFileName[i];
       cmd << " --QP" << std::to_string( i ) << "=" << params.qp_;
     }
-    cmd << " --InputFile" << std::to_string( numLayers ) << "=" << params.srcYuvFileName_;
+    // cmd << " --InputFile" << std::to_string( numLayers ) << "=" << params.srcYuvFileName_;
     cmd << " --InputBitDepth" << std::to_string( numLayers ) << "=" << params.inputBitDepth_;
     cmd << " --OutputBitDepth" << std::to_string( numLayers ) << "=" << params.outputBitDepth_;
     cmd << " --FrameRate" << std::to_string( numLayers ) << "=30";

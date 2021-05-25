@@ -989,6 +989,9 @@ uint8_t PCCEncoderParameters::getCodecIdIndex( PCCCodecId codecId ) {
 #ifdef USE_HMAPP_VIDEO_CODEC
     case HMAPP: return hevcCodecIdIndex_; break;
 #endif
+#ifdef USE_SHMAPP_VIDEO_CODEC
+    case SHMAPP: return hevcCodecIdIndex_; break;
+#endif
 #ifdef USE_VTMLIB_VIDEO_CODEC
     case VTMLIB: return vvcCodecIdIndex_; break;
 #endif

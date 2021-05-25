@@ -215,18 +215,18 @@ static inline std::string getParameter( const std::string& config, const std::st
 }
 
 static inline std::string getParameterFromConfigurationFile( const std::string& filename, const std::string& param ) {
-  std::string ret;
+  std::string ret = "0";
   std::cout << "getParameterFromConfigurationFile filename = " << filename << '\n';
   std::ifstream file( filename.c_str(), std::ifstream::in );
   if ( file.is_open() ) {    
     do {
       std::string line;
       std::getline( file, line );
-      std::cout << "getline = " << line << '\n';
+      // std::cout << "getline = " << line << '\n';
       if ( std::string::npos != line.find(param) ) { 
         if(  std::string::npos !=  line.find(":") ) {
           ret = line.substr( line.find(":") + 1); 
-          std::cout << "Match = " << line << "ret = "<< ret << "\n";
+          std::cout << "Match = " << line << " => ret = " << ret << "\n";
           return ret;
         }
       }
