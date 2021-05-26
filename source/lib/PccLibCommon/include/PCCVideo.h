@@ -90,9 +90,14 @@ class PCCVideo {
              const PCCCOLORFORMAT format,
              const size_t         nbyte );  
              
+<<<<<<< source/lib/PccLibCommon/include/PCCVideo.h
+  bool writeJM( const std::string fileName, const size_t nbyte );
+  bool readJM( const std::string    fileName,
+=======
 #if defined( WIN32 )
   bool _write( const std::string fileName, const size_t nbyte );
   bool _read( const std::string    fileName,
+>>>>>>> source/lib/PccLibCommon/include/PCCVideo.h
              const size_t         sizeU0,
              const size_t         sizeV0,
              const PCCCOLORFORMAT format,

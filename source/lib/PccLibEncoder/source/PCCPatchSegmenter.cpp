@@ -71,8 +71,19 @@ void PCCPatchSegmenter3::compute( const PCCPointSet3&                 geometry,
     orientationCount = 18;
   }
   std::cout << std::endl << "============= FRAME " << frameIndex << " ============= " << std::endl;
+  PCCPointSet3 geometryVox;
+  Voxels voxels;
+  if ( params.gridBasedSegmentation_ ) {
+    std::cout << "  Converting points to voxels... ";
+    convertPointsToVoxels( geometry, params.geometryBitDepth3D_, params.voxelDimensionGridBasedSegmentation_,
+                           geometryVox, voxels );
+    std::cout << "[done]" << std::endl;
+  }
+  else {
+    geometryVox = geometry;
+  }
   std::cout << "  Computing normals for original point cloud... ";
-  PCCKdTree            kdtree( geometry );
+  PCCKdTree            kdtree( geometryVox );
   PCCNNResult          result;
   PCCNormalsGenerator3 normalsGen;
   auto                 normalsOrientation = static_cast<PCCNormalsGeneratorOrientation>( params.normalOrientation_ );
@@ -90,33 +101,41 @@ void PCCPatchSegmenter3::compute( const PCCPointSet3&                 geometry,
                                                            false,
                                                            false};
   // PCC_NORMALS_GENERATOR_ORIENTATION_SPANNING_TREE,
-  normalsGen.compute( geometry, kdtree, normalsGenParams, nbThread_ );
+  normalsGen.compute( geometryVox, kdtree, normalsGenParams, nbThread_ );
   std::cout << "[done]" << std::endl;
 
   std::cout << "  Computing initial segmentation... ";
   std::vector<size_t> partition;
   if ( params.additionalProjectionPlaneMode_ == 0 ) {
-    initialSegmentation( geometry, normalsGen, orientations, orientationCount, partition, params.weightNormal_ );
+    initialSegmentation( geometryVox, normalsGen, orientations, orientationCount, partition, params.weightNormal_ );
   } else {
-    initialSegmentation( geometry, normalsGen, orientations, orientationCount,
+    initialSegmentation( geometryVox, normalsGen, orientations, orientationCount,
                          partition );  // flat weight
   }
   std::cout << "[done]" << std::endl;
 
   if ( params.gridBasedRefineSegmentation_ ) {
     std::cout << "  Refining segmentation (grid-based)... ";
-    refineSegmentationGridBased( geometry, normalsGen, orientations, orientationCount,
+    refineSegmentationGridBased( geometryVox, normalsGen, orientations, orientationCount,
                                  params.maxNNCountRefineSegmentation_, params.lambdaRefineSegmentation_,
                                  params.iterationCountRefineSegmentation_, params.voxelDimensionRefineSegmentation_,
                                  params.searchRadiusRefineSegmentation_, partition );
   } else {
     std::cout << "  Refining segmentation... ";
-    refineSegmentation( geometry, kdtree, normalsGen, orientations, orientationCount,
+    refineSegmentation( geometryVox, kdtree, normalsGen, orientations, orientationCount,
                         params.maxNNCountRefineSegmentation_, params.lambdaRefineSegmentation_,
                         params.iterationCountRefineSegmentation_, partition );
   }
   std::cout << "[done]" << std::endl;
 
+  if ( params.gridBasedSegmentation_ ) {
+    std::cout << "  Applying voxels' data to points... ";
+    applyVoxelsDataToPoints( geometry.getPointCount(), params.geometryBitDepth3D_,
+                             params.voxelDimensionGridBasedSegmentation_, voxels, geometryVox,
+                             normalsGen, partition);
+    std::cout << "[done]" << std::endl;
+    kdtree.init(geometry);
+  }
   std::cout << "  Patch segmentation... ";
   PCCPointSet3        resampled;
   std::vector<size_t> patchPartition;
@@ -126,6 +145,71 @@ void PCCPatchSegmenter3::compute( const PCCPointSet3&                 geometry,
   segmentPatches( geometry, frameIndex, kdtree, params, partition, patches, patchPartition, resampledPatchPartition,
                   rawPoints, resampled, subPointCloud, distanceSrcRec, normalsGen, orientations, orientationCount );
   std::cout << "[done]" << std::endl;
+}
+
+void PCCPatchSegmenter3::convertPointsToVoxels( const PCCPointSet3 &source, 
+                                                size_t geoBits,
+                                                size_t voxDim,
+                                                PCCPointSet3 &sourceVox,
+                                                Voxels &voxels ) {
+#define ADD_COLOR 0
+  const size_t geoBits2 = geoBits << 1;
+  size_t voxDimShift = 0;
+  for (size_t i = voxDim; i > 1; ++voxDimShift, i >>= 1) { ; }
+  const size_t voxDimHalf = voxDim >> 1;
+
+  auto subToInd = [&](uint64_t x, uint64_t y, uint64_t z) { return x + (y << geoBits) + (z << geoBits2); };
+
+  for (size_t i = 0; i < source.getPointCount(); ++i) {
+    const auto&  pos = source[i];
+    const auto x0 = (static_cast<uint64_t>(pos[0]) + voxDimHalf) >> voxDimShift;
+    const auto y0 = (static_cast<uint64_t>(pos[1]) + voxDimHalf) >> voxDimShift;
+    const auto z0 = (static_cast<uint64_t>(pos[2]) + voxDimHalf) >> voxDimShift;
+    const auto p = subToInd(x0, y0, z0);
+    if (voxels.count(p) == 0u) {
+      voxels[p].reserve(voxDim * voxDim << 1);
+      const size_t j = sourceVox.addPoint(PCCPoint3D(x0, y0, z0));
+#if ADD_COLOR
+      sourceVox.addColors();
+      sourceVox.setColor(j, source.getColor(i));
+#endif
+    }
+    voxels[p].push_back(i);
+  }
+}
+
+void PCCPatchSegmenter3::applyVoxelsDataToPoints( size_t pointCount,
+                                                  size_t geoBits, 
+                                                  size_t voxDim,
+                                                  Voxels &voxels,   // const
+                                                  const PCCPointSet3 &sourceVox, 
+                                                  PCCNormalsGenerator3  &normalsGen, 
+                                                  std::vector<size_t> &partitions ) {
+  std::vector<size_t> partitionsTmp(pointCount);
+  std::vector<PCCVector3D> normalsTmp(pointCount);
+  auto &normals = normalsGen.getNormals();
+
+  const size_t geoBits2 = geoBits << 1;
+  size_t voxDimShift = 0;
+  for (size_t i = voxDim; i > 1; ++voxDimShift, i >>= 1) { ; }
+  const size_t voxDimHalf = voxDim >> 1;
+
+  auto subToInd = [&](const PCCPoint3D &point) { 
+    return (uint64_t)point[0] + ((uint64_t)point[1] << geoBits) + ((uint64_t)point[2] << geoBits2); 
+  };
+
+  for (size_t i = 0; i < sourceVox.getPointCount(); i++) {
+    const auto &partition = partitions[i];
+    const auto &normal = normals[i];
+    const auto &pos = sourceVox[i];
+    const auto &indices = voxels[subToInd(pos)];
+    for (const auto &index : indices) {
+      partitionsTmp[index] = partition;
+      normalsTmp[index] = normal;
+    }
+  }
+  swap(partitions, partitionsTmp);
+  swap(normalsGen.getNormals(), normalsTmp);
 }
 
 void PCCPatchSegmenter3::initialSegmentation( const PCCPointSet3&         geometry,
