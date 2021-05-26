@@ -82,6 +82,9 @@ class PCCNormalsGenerator3 {
                        const PCCKdTree&                      kdtree,
                        const PCCNormalsGenerator3Parameters& params,
                        const size_t                          nbThread );
+  std::vector<PCCVector3D> &getNormals() {
+    return normals_;
+  }
   PCCVector3D getNormal( const size_t pos ) const {
     assert( pos < normals_.size() );
     return normals_[pos];

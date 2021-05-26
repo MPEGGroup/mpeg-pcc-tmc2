@@ -43,6 +43,8 @@ const std::vector<PointLocalReconstructionMode> g_pointLocalReconstructionMode =
 };
 
 PCCEncoderParameters::PCCEncoderParameters() {
+  gridBasedSegmentation_                   = false;
+  voxelDimensionGridBasedSegmentation_     = 2;
   uncompressedDataPath_                    = {};
   compressedStreamPath_                    = {};
   reconstructedDataPath_                   = {};
@@ -58,10 +60,12 @@ PCCEncoderParameters::PCCEncoderParameters() {
   nnNormalEstimation_                      = 16;
   normalOrientation_                       = 1;
   gridBasedRefineSegmentation_             = true;
-  maxNNCountRefineSegmentation_            = gridBasedRefineSegmentation_ ? 1024 : 256;
-  iterationCountRefineSegmentation_        = gridBasedRefineSegmentation_ ? 10 : 100;
-  voxelDimensionRefineSegmentation_        = 4;
-  searchRadiusRefineSegmentation_          = 192;
+  maxNNCountRefineSegmentation_            = gridBasedRefineSegmentation_ ?
+                                             (gridBasedSegmentation_ ? 384 : 1024) : 256;
+  iterationCountRefineSegmentation_        = gridBasedRefineSegmentation_ ? 
+                                             (gridBasedSegmentation_ ? 5 : 10) : 100;
+  voxelDimensionRefineSegmentation_        = gridBasedSegmentation_ ? 2 : 4;
+  searchRadiusRefineSegmentation_          = gridBasedSegmentation_ ? 128 : 192;
   occupancyResolution_                     = 16;
   enablePatchSplitting_                    = true;
   maxPatchSize_                            = 1024;
@@ -309,6 +313,8 @@ void PCCEncoderParameters::print() {
   std::cout << "\t maxNumRefPatchList                         " << maxNumRefAtlasList_ << std::endl;
   std::cout << "\t maxNumRefIndex                             " << maxNumRefAtlasFrame_ << std::endl;
   std::cout << "\t Segmentation" << std::endl;
+  std::cout << "\t   gridBasedSegmentation                    " << gridBasedSegmentation_ << std::endl;
+  std::cout << "\t   voxelDimensionGridBasedSegmentation      " << voxelDimensionGridBasedSegmentation_ << std::endl;
   std::cout << "\t   nnNormalEstimation                       " << nnNormalEstimation_ << std::endl;
   std::cout << "\t   normalOrientation                        " << normalOrientation_ << std::endl;
   std::cout << "\t   gridBasedRefineSegmentation              " << gridBasedRefineSegmentation_ << std::endl;

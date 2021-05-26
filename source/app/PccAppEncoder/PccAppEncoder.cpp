@@ -198,6 +198,14 @@ bool parseParameters( int                   argc,
       "HDRConvert configuration file used for YUV420 to RGB444 conversion" )
 
     // segmentation
+    ( "gridBasedSegmentation",    // If enabled, change refineSegmentationGridBased() parameters according to m56857"
+      encoderParams.gridBasedSegmentation_,
+      encoderParams.gridBasedSegmentation_,
+      "Voxel dimension for grid-based segmentation (GBS)" )
+    ( "voxelDimensionGridBasedSegmentation",
+      encoderParams.voxelDimensionGridBasedSegmentation_,
+      encoderParams.voxelDimensionGridBasedSegmentation_,
+      "Voxel dimension for grid-based segmentation (GBS)" )
     ( "nnNormalEstimation",
       encoderParams.nnNormalEstimation_,
       encoderParams.nnNormalEstimation_,

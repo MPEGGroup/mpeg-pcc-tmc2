@@ -4911,6 +4911,8 @@ bool PCCEncoder::generateSegments( const PCCGroupOfFrames& sources, PCCContext& 
   PCCPatchSegmenter3Parameters params;
   bool                         res            = true;
   auto&                        frames         = context.getFrames();
+  params.gridBasedSegmentation_               = params_.gridBasedSegmentation_;
+  params.voxelDimensionGridBasedSegmentation_ = params_.voxelDimensionGridBasedSegmentation_;
   params.nnNormalEstimation_                  = params_.nnNormalEstimation_;
   params.normalOrientation_                   = params_.normalOrientation_;
   params.gridBasedRefineSegmentation_         = params_.gridBasedRefineSegmentation_;

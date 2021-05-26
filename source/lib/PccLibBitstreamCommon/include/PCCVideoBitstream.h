@@ -51,6 +51,53 @@ class PCCVideoBitstream {
 
   void trace() { std::cout << toString( type_ ) << " ->" << size() << " B " << std::endl; }
 
+<<<<<<< source/lib/PccLibBitstreamCommon/include/PCCVideoBitstream.h
+  std::string getExtension() {
+    size_t typeIndex = (size_t)type_;
+    if ( typeIndex == (size_t)VIDEO_OCCUPANCY ) {
+      return std::string( "occupancy" );
+    } else if ( typeIndex == (size_t)VIDEO_GEOMETRY ) {
+      return std::string( "geometry" );
+    } else if ( typeIndex >= (size_t)VIDEO_GEOMETRY_D0 && typeIndex <= (size_t)VIDEO_GEOMETRY_D15 ) {
+      return std::string( "geometryD" ) + std::to_string( typeIndex - (size_t)VIDEO_GEOMETRY_D0 );
+    } else if ( typeIndex == (size_t)VIDEO_GEOMETRY_RAW ) {
+      return std::string( "geomteryRaw" );
+    } else if ( typeIndex == (size_t)VIDEO_TEXTURE ) {
+      return std::string( "texture" );
+    } else if ( typeIndex >= (size_t)VIDEO_TEXTURE_T0 && typeIndex <= (size_t)VIDEO_TEXTURE_T15 ) {
+      return std::string( "textureT" ) + std::to_string( typeIndex - ( size_t )( VIDEO_TEXTURE_T0 ) );
+    } else if ( typeIndex == (size_t)VIDEO_TEXTURE_RAW ) {
+      return std::string( "textureRaw" );
+    } else {
+      return std::string( "unknown" );
+    }
+  }
+  bool write( const std::string& filename ) {
+    std::ofstream file( filename, std::ios::binary );
+    if ( !file.good() ) { return false; }
+    file.write( reinterpret_cast<char*>( data_.data() ), data_.size() );
+    file.close();
+    return true;
+  }
+  bool read( const std::string& filename ) {
+    std::ifstream file( filename, std::ios::binary | std::ios::ate );
+    if ( !file.good() ) { return false; }
+    const uint64_t fileSize = file.tellg();
+    resize( (size_t)fileSize );
+    file.clear();
+    file.seekg( 0 );
+    file.read( reinterpret_cast<char*>( data_.data() ), data_.size() );
+    file.close();
+    return true;
+  }  
+  bool readJM( const std::string& filename ) {
+    return read( filename );
+  }
+
+  bool writeJM( const std::string& filename ) {
+    return write( filename );
+  }
+=======
   std::string getExtension();
   bool        write( const std::string& filename );
   bool        read( const std::string& filename );
@@ -60,6 +107,7 @@ class PCCVideoBitstream {
 // #endif
 
   void byteStreamToSampleStream( size_t precision = 4, bool emulationPreventionBytes = false );
+>>>>>>> source/lib/PccLibBitstreamCommon/include/PCCVideoBitstream.h
 
   void sampleStreamToByteStream( bool   isAvc                    = false,
                                  bool   isVvc                    = false,

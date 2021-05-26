@@ -86,6 +86,8 @@ class PCCEncoderParameters {
   int textureQP_;
 
   // segmentation
+  bool   gridBasedSegmentation_;
+  size_t voxelDimensionGridBasedSegmentation_;
   size_t nnNormalEstimation_;
   size_t normalOrientation_;
   bool   gridBasedRefineSegmentation_;
