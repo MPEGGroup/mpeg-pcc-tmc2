@@ -8583,6 +8583,16 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
     #endif
   }                           // frameCount
 
+  //updateNaluInfo;
+  for ( size_t fi = 0; fi < frameCount; fi++ ) {
+    for ( size_t ti = 0; ti < context[fi].getNumTilesInAtlasFrame(); ti++ ) {
+      auto& ath = context.getAtlasTileLayer(fi, ti).getHeader();
+      auto& tile = context[fi].getTile( ti );
+      if ( ( fi != 0 ) && ( params_.constrainedPack_ ) ) ath.setTileNaluTypeInfo(1); //NAL_TRAIL_R
+      if ( !tile.getReferredTile() ) ath.setTileNaluTypeInfo(2); //NAL_TRAIL_N
+    } // tileIdx
+  }
+
   if ( params_.decodedAtlasInformationHash_ > 0 ) {
     TRACE_SEI( "Create  Hash SEI Information \n");
     for ( size_t fi = 0; fi < frameCount; fi++ ) createHashSEI( context, fi, params_.decodedAtlasInformationHash_ - 1 );
@@ -8759,6 +8769,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&         context,
       // INTER patches
       size_t      refPOC   = (size_t)tile.getRefAfoc( patch.getRefAtlasFrameIndex() );
       const auto& refPatch = context.getFrame( refPOC ).getTile( tileIndex ).getPatches()[patch.getBestMatchIdx()];
+      context.getFrame( refPOC ).getTile( tileIndex ).setReferredTile( true );
       auto&       pid      = atgdu.addPatchInformationData( static_cast<uint8_t>( P_INTER ) );
       TRACE_PATCH( "patch %zu / %zu: Inter \n", patchIndex, totalPatchCount );
       auto& ipdu = pid.getInterPatchDataUnit();

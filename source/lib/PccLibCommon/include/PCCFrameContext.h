@@ -147,6 +147,9 @@ class PCCFrameContext {
   size_t getLeftTopXInFrame() { return leftTopXInFrame_; }
   size_t getLeftTopYInFrame() { return leftTopYInFrame_; }
 
+  bool   getReferredTile() { return referredTile_; }
+  void   setReferredTile( bool value ) { referredTile_ = value; }
+        
   void allocOneLayerData();
   void printBlockToPatch( const size_t occupancyResolution );
   void printPatch();
@@ -178,6 +181,7 @@ class PCCFrameContext {
   std::vector<int32_t>                         refAFOCList_;
   size_t                                       numRefIdxActive_;
   size_t                                       bestRefListIndexInAsps_;
+  bool                                         referredTile_;
   size_t                                       log2PatchQuantizerSizeX_;
   size_t                                       log2PatchQuantizerSizeY_;
   std::vector<PCCVector3<size_t>>              pointToPixel_;

@@ -429,10 +429,15 @@ void PCCBitstreamWriter::atlasSubStream( PCCHighLevelSyntax& syntax, PCCBitstrea
   }
   // NAL_TRAIL, NAL_TSA, NAL_STSA, NAL_RADL, NAL_RASL,NAL_SKIP
   for ( size_t tileOrder = 0; tileOrder < atglSizeList.size(); tileOrder++ ) {
-    NalUnit nu( NAL_TSA_N, 0, 1 );
+    auto& ath = syntax.getAtlasTileLayer( tileOrder ).getHeader();
+    NalUnitType naluType= NAL_IDR_N_LP;
+    if(ath.getTileNaluTypeInfo()==1) naluType = NAL_TRAIL_R;
+    else if(ath.getTileNaluTypeInfo()==2) naluType = NAL_TRAIL_N;
+    NalUnit nu( naluType, 0, 1 );
+
     nu.setSize( atglSizeList[tileOrder] );  //+headsize
-    auto& atgl = syntax.getAtlasTileLayer( tileOrder );
-    atgl.getDataUnit().setTileOrder( tileOrder );
+    auto& atl = syntax.getAtlasTileLayer( tileOrder );
+    atl.getDataUnit().setTileOrder( tileOrder );
     sampleStreamNalUnit( syntax, bitstream, ssnu, nu, tileOrder );
     TRACE_BITSTREAM(
         "nalu[%d]:%s, nalSizePrecision:%d, naluSize:%zu, sizeBitstream "
@@ -1463,7 +1468,8 @@ void PCCBitstreamWriter::sampleStreamNalUnit( PCCHighLevelSyntax&  syntax,
     case NAL_RASL_N:
     case NAL_RASL_R:
     case NAL_SKIP_N:
-    case NAL_SKIP_R: atlasTileLayerRbsp( syntax.getAtlasTileLayer( index ), syntax, nalu.getType(), bitstream ); break;
+    case NAL_SKIP_R:
+    case NAL_IDR_N_LP: atlasTileLayerRbsp( syntax.getAtlasTileLayer( index ), syntax, nalu.getType(), bitstream ); break;
     case NAL_SUFFIX_ESEI:
     case NAL_SUFFIX_NSEI: seiRbsp( syntax, bitstream, syntax.getSeiSuffix( index ), nalu.getType() ); break;
     case NAL_PREFIX_ESEI:
