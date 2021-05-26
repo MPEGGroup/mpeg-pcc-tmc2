@@ -100,13 +100,6 @@ PccHevcParser::~PccHevcParser() {
   pps_.clear();
 }
 
-void PccHevcParser::getVideoSize( const std::vector<uint8_t>& buffer,
-                                  size_t&                     width,
-                                  size_t&                     height,
-                                  size_t&                     bitDepth,
-                                  bool&                       is444 ) {
-  setBuffer( buffer, width, height, bitDepth, is444 );
-}
 void PccHevcParser::display() {
   int    poc = 0;
   size_t sum = 0;
@@ -155,14 +148,14 @@ void PccHevcParser::createNalu( const size_t frameIndex,
   }
 }
 
-void PccHevcParser::setBuffer( const std::vector<uint8_t>& buffer,
-                               size_t&                     width,
-                               size_t&                     height,
-                               size_t&                    bitDepth,
-                               bool&                       is444 ) {
+void PccHevcParser::getVideoSize( const std::vector<uint8_t>& buffer,
+                                  size_t&                     width,
+                                  size_t&                     height,
+                                  size_t&                     bitDepth,
+                                  bool&                       is444 ) {
   const int      size                   = (int)buffer.size();
   const uint8_t* data                   = buffer.data();
-  TDecCavlc* decCavlc    = new TDecCavlc();
+  TDecCavlc*     decCavlc               = new TDecCavlc();
   int            nalNumber              = 0;
   int            index                  = 0;
   int            startCodeSize          = 4;
@@ -174,65 +167,77 @@ void PccHevcParser::setBuffer( const std::vector<uint8_t>& buffer,
   for ( Int i = startCodeSize; i <= size; i++ ) {
     if ( i == size || ( ( data[i + 0] == 0x00 ) && ( data[i + 1] == 0x00 ) &&
                         ( ( ( data[i + 2] == 0x00 ) && ( data[i + 3] == 0x01 ) ) || ( data[i + 2] == 0x01 ) ) ) ) {
-      int iNalType       = (   ( data[ index + startCodeSize     ] ) &  126 )>> 1 ;
+      int iNalType       = ( ( data[index + startCodeSize] ) & 126 ) >> 1;
       int iLayer         = ( ( ( data[ index + startCodeSize     ] ) &  1 ) << 6 ) +
                            ( ( ( data[ index + startCodeSize + 1 ] ) &  248 ) >> 3 );
       int iTemporalIndex = (   ( data[ index + startCodeSize + 1 ] ) & 7 ) + 1;
       int iPoc = 0;
       if( iLayer != 0 )
-        return ;
-      decCavlc->setBuffer( (UChar*)( data + index + startCodeSize + 2 ),  ( i - index ) - startCodeSize - 2);
-
+       return ;
+      decCavlc->setBuffer( (UChar*)( data + index + startCodeSize + 2 ), ( i - index ) - startCodeSize - 2 );
       switch ( iNalType ) {
-        case NAL_UNIT_VPS:                                break;
+        case NAL_UNIT_VPS: break;
         case NAL_UNIT_SPS:
-          decCavlc->parseSPS( decCavlc->getSPS() );
+          decCavlc->parseSPS( decCavlc->getSPS() );      
           width    = decCavlc->getSPS()->getOutputWidth();
           height   = decCavlc->getSPS()->getOutputHeight();
           bitDepth = decCavlc->getSPS()->getBitDepth();
           is444    = decCavlc->getSPS()->getIs444();
-          break;
-          /*
-         case NAL_UNIT_PPS: decCavlc->parsePPS( decCavlc->getPPS());  break;
-         case NAL_UNIT_CODED_SLICE_TRAIL_N:
-         case NAL_UNIT_CODED_SLICE_TRAIL_R:
-         case NAL_UNIT_CODED_SLICE_TSA_N:
-         case NAL_UNIT_CODED_SLICE_TSA_R:
-         case NAL_UNIT_CODED_SLICE_STSA_N:
-         case NAL_UNIT_CODED_SLICE_STSA_R:
-         case NAL_UNIT_CODED_SLICE_RADL_N:
-         case NAL_UNIT_CODED_SLICE_RADL_R:
-         case NAL_UNIT_CODED_SLICE_RASL_N:
-         case NAL_UNIT_CODED_SLICE_RASL_R:
-         case NAL_UNIT_CODED_SLICE_BLA_W_LP:
-         case NAL_UNIT_CODED_SLICE_BLA_W_RADL:
-         case NAL_UNIT_CODED_SLICE_BLA_N_LP:
-         case NAL_UNIT_CODED_SLICE_IDR_W_RADL:
-         case NAL_UNIT_CODED_SLICE_IDR_N_LP:
-         case NAL_UNIT_CODED_SLICE_CRA:
-           iPoc = decCavlc->parseSliceHeader( iLayer, (NalUnitType)iNalType, iTemporalIndex );
-           if( iNalType == NAL_UNIT_CODED_SLICE_IDR_W_RADL ||
-               iNalType == NAL_UNIT_CODED_SLICE_IDR_N_LP   ||
-               iNalType == NAL_UNIT_CODED_SLICE_BLA_N_LP   ||
-               iNalType == NAL_UNIT_CODED_SLICE_BLA_W_RADL ||
-               iNalType == NAL_UNIT_CODED_SLICE_BLA_W_LP   ) {
-             sequencePoc += maxPocFound + 1;
-             maxPocFound = -1;
-           } else {
-             if( iPoc >= maxPocFound ) {
-               maxPocFound = iPoc;
-             }
-           }
-           if( previousNaluLayerIndex != iLayer && iLayer == 0 ) {
-             frameIndex++;
-           }
-           previousNaluLayerIndex = iLayer;
-           currentPoc = sequencePoc + iPoc;
-           */
+          break;        
       }
-      createNalu( currentPoc, buffer, index, i - index );
       nalNumber++;
       if( i < size ) {
+        startCodeSize = data[ i + 2 ] == 0 ? 4 : 3;
+        index = i;
+        i += startCodeSize;
+      }
+    }
+  }
+  delete decCavlc;
+}
+
+void PccHevcParser::getVideoSize( const std::vector<uint8_t>& buffer,
+                                  std::vector<size_t>&        width,
+                                  std::vector<size_t>&        height,
+                                  std::vector<size_t>&        bitDepth,
+                                  std::vector<uint8_t>&       is444 ) {
+  const int      size                   = (int)buffer.size();
+  const uint8_t* data                   = buffer.data();
+  TDecCavlc*     decCavlc               = new TDecCavlc();
+  int            nalNumber              = 0;
+  int            index                  = 0;
+  int            startCodeSize          = 4;
+  int            frameIndex             = -1;
+  int            maxPocFound            = -1;
+  int            sequencePoc            = 0;
+  int            previousNaluLayerIndex = -1;
+  int            currentPoc             = 0;
+  for ( Int i = startCodeSize; i <= size; i++ ) {   
+    if ( i == size || ( ( data[i + 0] == 0x00 ) && ( data[i + 1] == 0x00 ) &&
+                        ( ( ( data[i + 2] == 0x00 ) && ( data[i + 3] == 0x01 ) ) || ( data[i + 2] == 0x01 ) ) ) ) {
+      int iNalType       = ( ( data[index + startCodeSize] ) & 126 ) >> 1;
+      int iLayer         = ( ( ( data[ index + startCodeSize     ] ) &  1 ) << 6 ) +
+                           ( ( ( data[ index + startCodeSize + 1 ] ) &  248 ) >> 3 );
+      int iTemporalIndex = (   ( data[ index + startCodeSize + 1 ] ) & 7 ) + 1;
+      int iPoc = 0;
+      decCavlc->setBuffer( (UChar*)( data + index + startCodeSize + 2 ), ( i - index ) - startCodeSize - 2 );
+      switch ( iNalType ) {
+        case NAL_UNIT_VPS: break;
+        case NAL_UNIT_SPS:
+          decCavlc->parseSPS( decCavlc->getSPS() );
+          width.resize( iLayer + 1);
+          height.resize( iLayer + 1);
+          bitDepth.resize( iLayer + 1);
+          is444.resize( iLayer + 1);
+          width[iLayer]    = decCavlc->getSPS()->getOutputWidth();
+          height[iLayer]   = decCavlc->getSPS()->getOutputHeight();
+          bitDepth[iLayer] = decCavlc->getSPS()->getBitDepth();
+          is444[iLayer]    = decCavlc->getSPS()->getIs444();          
+          printf( "SPS Layer %zu => %zu x %zu %zu bits is444 = %d \n", iLayer, width[iLayer], height[iLayer], bitDepth[iLayer], is444[iLayer] );
+          break;
+      }
+      nalNumber++;
+      if ( i < size ) {
         startCodeSize = data[ i + 2 ] == 0 ? 4 : 3;
         index = i;
         i += startCodeSize;

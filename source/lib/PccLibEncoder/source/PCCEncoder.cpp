@@ -171,6 +171,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
                          false,  // usePccRDO
 #endif
 #ifdef USE_SHMAPP_VIDEO_CODEC
+                         0,
                          0,  // SHVC ratio X
                          0,  // SHVC ratio Y
 #endif
@@ -250,8 +251,9 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
                          params_.usePccRDO_,  // usePccRDO
 #endif
 #ifdef USE_SHMAPP_VIDEO_CODEC
-                         params_.shvcRateX_,  // SHVC rate X
-                         params_.shvcRateY_,  // SHVC rate Y
+                         params_.shvcLayerIndex_,  // SHVC layer index
+                         params_.shvcRateX_,       // SHVC rate X
+                         params_.shvcRateY_,       // SHVC rate Y
 #endif
                          internalBitDepth,                  // internalBitDepth
                          false,                             // useConversion
@@ -296,8 +298,9 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
                            params_.usePccRDO_,  // usePccRDO
 #endif
 #ifdef USE_SHMAPP_VIDEO_CODEC
-                           params_.shvcRateX_,  // SHVC rate X
-                           params_.shvcRateY_,  // SHVC rate Y
+                           params_.shvcLayerIndex_,  // SHVC layer index
+                           params_.shvcRateX_,       // SHVC rate X
+                           params_.shvcRateY_,       // SHVC rate Y
 #endif
                            internalBitDepth,                  // internalBitDepth
                            false,                             // useConversion
@@ -335,8 +338,9 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
                            false,  // usePccRDO
 #endif
 #ifdef USE_SHMAPP_VIDEO_CODEC
-                           params_.shvcRateX_,  // SHVC rate X
-                           params_.shvcRateY_,  // SHVC rate Y
+                           params_.shvcLayerIndex_,  // SHVC layer index
+                           params_.shvcRateX_,       // SHVC rate X
+                           params_.shvcRateY_,       // SHVC rate Y
 #endif
                            internalBitDepth,  // internalBitDepth
                            false,             // useConversion
@@ -516,8 +520,9 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
                            params_.usePccRDO_,  // usePccRDO
 #endif
 #ifdef USE_SHMAPP_VIDEO_CODEC
-                           params_.shvcRateX_,  // SHVC rate X
-                           params_.shvcRateY_,  // SHVC rate Y
+                           params_.shvcLayerIndex_,  // SHVC layer index
+                           params_.shvcRateX_,       // SHVC rate X
+                           params_.shvcRateY_,       // SHVC rate Y
 #endif
                            params_.rawPointsPatch_ ? 8 : 10,            // internalBitDepth
                            !params_.rawPointsPatch_,                    // useConversion
@@ -568,8 +573,9 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
                              params_.usePccRDO_,  // usePccRDO
 #endif
 #ifdef USE_SHMAPP_VIDEO_CODEC
-                             params_.shvcRateX_,  // SHVC rate X
-                             params_.shvcRateY_,  // SHVC rate Y
+                             params_.shvcLayerIndex_,  // SHVC layer index
+                             params_.shvcRateX_,       // SHVC rate X
+                             params_.shvcRateY_,       // SHVC rate Y
 #endif
                              params_.rawPointsPatch_ ? 8 : 10,            // internalBitDepth
                              !params_.rawPointsPatch_,                    // useConversion
@@ -609,8 +615,9 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
                              false,  // usePccRDO
 #endif
 #ifdef USE_SHMAPP_VIDEO_CODEC
-                             params_.shvcRateX_,  // SHVC rate X
-                             params_.shvcRateY_,  // SHVC rate Y
+                             params_.shvcLayerIndex_,  // SHVC layer index
+                             params_.shvcRateX_,       // SHVC rate X
+                             params_.shvcRateY_,       // SHVC rate Y
 #endif
                              10,                                          // internalBitDepth
                              !params_.rawPointsPatch_,                    // useConversion
@@ -8682,26 +8689,31 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
     auto&      ai               = vps.getAttributeInformation( atlasIndex );
     auto&      oi               = vps.getOccupancyInformation( atlasIndex );
     auto&      gi               = vps.getGeometryInformation( atlasIndex );
-    bool useAvc = false, useHevc = false, useVvc = false;
-    if ( oi.getOccupancyCodecId() == params_.avcCodecIdIndex_ ||
-         gi.getGeometryCodecId() == params_.avcCodecIdIndex_ ||
-         ai.getAttributeCodecId( 0 ) == params_.avcCodecIdIndex_ ) {
-      useAvc = true;
-    }
-    if ( oi.getOccupancyCodecId() == params_.hevcCodecIdIndex_ ||
-         gi.getGeometryCodecId() == params_.hevcCodecIdIndex_ ||
-         ai.getAttributeCodecId( 0 ) == params_.hevcCodecIdIndex_ ) {
-      useHevc = true;
-    }
-    if ( oi.getOccupancyCodecId() == params_.vvcCodecIdIndex_ ||
-         gi.getGeometryCodecId() == params_.vvcCodecIdIndex_ ||
-         ai.getAttributeCodecId( 0 ) == params_.vvcCodecIdIndex_ ) {
-      useVvc = true;
-    }
+
+    bool useAvc = oi.getOccupancyCodecId() == params_.avcCodecIdIndex_ ||
+                  gi.getGeometryCodecId() == params_.avcCodecIdIndex_ ||
+                  ai.getAttributeCodecId( 0 ) == params_.avcCodecIdIndex_;
+    bool useHevc = oi.getOccupancyCodecId() == params_.hevcCodecIdIndex_ ||
+                   gi.getGeometryCodecId() == params_.hevcCodecIdIndex_ ||
+                   ai.getAttributeCodecId( 0 ) == params_.hevcCodecIdIndex_;
+    bool useShvc = oi.getOccupancyCodecId() == params_.shvcCodecIdIndex_ ||
+                   gi.getGeometryCodecId() == params_.shvcCodecIdIndex_ ||
+                   ai.getAttributeCodecId( 0 ) == params_.shvcCodecIdIndex_;
+    bool useVvc = oi.getOccupancyCodecId() == params_.vvcCodecIdIndex_ ||
+                  gi.getGeometryCodecId() == params_.vvcCodecIdIndex_ ||
+                  ai.getAttributeCodecId( 0 ) == params_.vvcCodecIdIndex_;
+
+                  
+    printf("CODEC ID = %d %d %d \n", oi.getOccupancyCodecId(), gi.getGeometryCodecId(), ai.getAttributeCodecId( 0 ) ); 
+    printf( "ProfileCodecGroupIdc = CODEC_GROUP_MP4RA: AVC = %d HEVC = %d SHVC = %d VVC = %d \n", useAvc, useHevc,
+            useShvc, useVvc );
 
     auto& sei = static_cast<SEIComponentCodecMapping&>( context.addSeiPrefix( COMPONENT_CODEC_MAPPING, true ) );
     sei.setComponentCodecCancelFlag( false );
-    sei.setCodecMappingsCountMinus1( useAvc + useHevc + useVvc - 1 );
+    sei.setCodecMappingsCountMinus1( useAvc + useHevc + useShvc + useVvc - 1 );
+    
+    printf( "sei.getCodecMappingsCountMinus1() = %zu \n", sei.getCodecMappingsCountMinus1() );
+
     sei.allocate();
     uint8_t index = 0;
     if ( useAvc ) {
@@ -8711,6 +8723,10 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
     if ( useHevc ) {
       sei.setCodecId( index++, params_.hevcCodecIdIndex_ );
       sei.setCodec4cc( params_.hevcCodecIdIndex_, "hev1" );
+    }
+    if ( useShvc ) {
+      sei.setCodecId( index++, params_.shvcCodecIdIndex_ );
+      sei.setCodec4cc( params_.shvcCodecIdIndex_, "svc1" );
     }
     if ( useVvc ) {
       sei.setCodecId( index++, params_.vvcCodecIdIndex_ );

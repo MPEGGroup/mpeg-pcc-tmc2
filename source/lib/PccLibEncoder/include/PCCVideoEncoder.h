@@ -64,6 +64,7 @@ class PCCVideoEncoder {
                  const bool usePccRDO,
 #endif
 #ifdef USE_SHMAPP_VIDEO_CODEC
+                 const size_t shvcLayerIndex,
                  const size_t shvcRateX,
                  const size_t shvcRateY,
 #endif

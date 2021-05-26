@@ -300,6 +300,7 @@ class PCCEncoderParameters {
   size_t levelIdc_;
   size_t avcCodecIdIndex_;
   size_t hevcCodecIdIndex_;
+  size_t shvcCodecIdIndex_;
   size_t vvcCodecIdIndex_;
 
   // Profile toolset constraints information
@@ -308,6 +309,7 @@ class PCCEncoderParameters {
   bool    no45DegreeProjectionPatchConstraintFlag_;
 
 #ifdef USE_SHMAPP_VIDEO_CODEC
+  size_t shvcLayerIndex_;
   size_t shvcRateX_;
   size_t shvcRateY_;
 #endif

@@ -731,7 +731,7 @@ Void TDecCavlc::parseSPS(TComSPS* pcSPS)
 #else
   pcSPS->setQpBDOffset(CHANNEL_TYPE_CHROMA,  (Int) (6*uiCode) );
 #endif
-
+/*
   READ_UVLC_CHK( uiCode,    "log2_max_pic_order_cnt_lsb_minus4", 0, 12 );   pcSPS->setBitsForPOC( 4 + uiCode );
 
   UInt subLayerOrderingInfoPresentFlag;
@@ -1034,6 +1034,7 @@ Void TDecCavlc::parseSPS(TComSPS* pcSPS)
   }
 
   xReadRbspTrailingBits();
+  */
 }
 
 Void TDecCavlc::parseVPS(TComVPS* pcVPS)

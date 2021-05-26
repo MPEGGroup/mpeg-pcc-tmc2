@@ -68,6 +68,7 @@ bool PCCVideoEncoder::compress( PCCVideo<T, 3>&    video,
                                 const bool usePccRDO,
 #endif
 #ifdef USE_SHMAPP_VIDEO_CODEC
+                                const size_t shvcLayerIndex,
                                 const size_t shvcRateX,
                                 const size_t shvcRateY,
 #endif
@@ -379,8 +380,9 @@ bool PCCVideoEncoder::compress( PCCVideo<T, 3>&    video,
   params.usePccRDO_ = usePccRDO;
 #endif
 #ifdef USE_SHMAPP_VIDEO_CODEC
-  params.shvcRateX_ = shvcRateX;
-  params.shvcRateY_ = shvcRateY;
+  params.shvcLayerIndex_ = shvcLayerIndex;
+  params.shvcRateX_      = shvcRateX;
+  params.shvcRateY_      = shvcRateY;
 #endif
   printf( "Encode: video size = %zu x %zu num frames = %zu \n", video.getWidth(), video.getHeight(),
           video.getFrameCount() );
@@ -438,6 +440,7 @@ template bool pcc::PCCVideoEncoder::compress<uint8_t>( PCCVideo<uint8_t, 3>& vid
                                                        const bool usePccRDO,
 #endif
 #ifdef USE_SHMAPP_VIDEO_CODEC
+                                                       const size_t shvcLayerIndex,
                                                        const size_t shvcRateX,
                                                        const size_t shvcRateY,
 #endif
@@ -467,8 +470,9 @@ template bool pcc::PCCVideoEncoder::compress<uint16_t>( PCCVideo<uint16_t, 3>& v
                                                         const bool usePccRDO,
 #endif
 #ifdef USE_SHMAPP_VIDEO_CODEC
-                                                       const size_t shvcRateX,
-                                                       const size_t shvcRateY,
+                                                        const size_t shvcLayerIndex,
+                                                        const size_t shvcRateX,
+                                                        const size_t shvcRateY,
 #endif
                                                         const size_t       internalBitDepth,
                                                         const bool         useConversion,

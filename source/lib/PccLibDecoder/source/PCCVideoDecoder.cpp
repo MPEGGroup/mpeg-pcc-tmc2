@@ -67,7 +67,7 @@ bool PCCVideoDecoder::decompress( PCCVideo<T, 3>&    video,
                                   size_t             outputBitDepth,
                                   const bool         keepIntermediateFiles,
 #ifdef USE_SHMAPP_VIDEO_CODEC
-                                  const bool shvcLayerIndex,
+                                  const size_t shvcLayerIndex,
 #endif
                                   const bool         patchColorSubsampling,
                                   const std::string& inverseColorSpaceConversionConfig,
@@ -380,7 +380,7 @@ template bool pcc::PCCVideoDecoder::decompress<uint8_t>( PCCVideo<uint8_t, 3>& v
                                                          size_t                outputBitDepth,
                                                          const bool            keepIntermediateFiles,
 #ifdef USE_SHMAPP_VIDEO_CODEC
-                                                         const bool shvcLayerIndex,
+                                                         const size_t shvcLayerIndex,
 #endif
                                                          const bool         patchColorSubsampling,
                                                          const std::string& inverseColorSpaceConversionConfig,
@@ -397,7 +397,7 @@ template bool pcc::PCCVideoDecoder::decompress<uint16_t>( PCCVideo<uint16_t, 3>&
                                                           size_t                 outputBitDepth,
                                                           const bool             keepIntermediateFiles,
 #ifdef USE_SHMAPP_VIDEO_CODEC
-                                                          const bool shvcLayerIndex,
+                                                          const size_t shvcLayerIndex,
 #endif
                                                           const bool         patchColorSubsampling,
                                                           const std::string& inverseColorSpaceConversionConfig,

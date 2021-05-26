@@ -702,5 +702,31 @@ void PCCInternalColorConverter<T>::upsampling( const std::vector<float>& chromaI
   }
 }
 
+template <typename T>
+void PCCInternalColorConverter<T>::upsample( PCCVideo<T, 3>& video, size_t rate, size_t nbyte, size_t filter ) {
+  for ( auto& image : video ) { upsample( image, rate, nbyte, filter ); }
+}
+
+template <typename T>
+void PCCInternalColorConverter<T>::upsample( PCCImage<T, 3>& image, size_t rate, size_t nbyte, size_t filter ) {
+  for ( size_t i = rate; i > 1; i /= 2 ) {
+    int                width        = (int)image.getWidth();
+    int                height       = (int)image.getHeight();
+    int                widthChroma  = image.getColorFormat() == YUV420 ? width / 2 : width;
+    int                heightChroma = image.getColorFormat() == YUV420 ? height / 2 : height;
+    std::vector<float> src[3], up[3] ;
+    YUVtoFloatYUV( image[0], src[0], 0, nbyte );
+    YUVtoFloatYUV( image[1], src[1], 1, nbyte );
+    YUVtoFloatYUV( image[2], src[2], 1, nbyte );
+    upsampling( src[0], up[0], width, height, nbyte == 1 ? 255 : 1023, filter );
+    upsampling( src[1], up[1], widthChroma, heightChroma, nbyte == 1 ? 255 : 1023, filter );
+    upsampling( src[2], up[2], widthChroma, heightChroma, nbyte == 1 ? 255 : 1023, filter );
+    image.resize( width * 2, height * 2, image.getColorFormat() );
+    floatYUVToYUV( up[0], image[0], 0, nbyte );
+    floatYUVToYUV( up[1], image[1], 1, nbyte );
+    floatYUVToYUV( up[2], image[2], 1, nbyte );
+  }
+}
+
 template class pcc::PCCInternalColorConverter<uint8_t>;
 template class pcc::PCCInternalColorConverter<uint16_t>;

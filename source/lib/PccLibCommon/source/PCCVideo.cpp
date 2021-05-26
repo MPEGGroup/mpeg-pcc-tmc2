@@ -115,5 +115,10 @@ bool PCCVideo<T, N>::allPixelsEqualToZero() {
   return true;
 }
 
+template <typename T, size_t N>
+void PCCVideo<T, N>::upsample( size_t rate ) {
+  for ( auto& frame : frames_ ) { frame.upsample( rate ); }
+}
+
 template class pcc::PCCVideo<uint8_t, 3>;
 template class pcc::PCCVideo<uint16_t, 3>;

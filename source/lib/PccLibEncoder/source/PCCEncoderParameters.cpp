@@ -238,7 +238,8 @@ PCCEncoderParameters::PCCEncoderParameters() {
   levelIdc_                 = 30;                       // Corresponds to level 1.0 in Table A.5
   avcCodecIdIndex_          = 0;                        // Index use if CMC SEI
   hevcCodecIdIndex_         = 1;                        // Index use if CMC SEI
-  vvcCodecIdIndex_          = 2;                        // Index use if CMC SEI
+  shvcCodecIdIndex_         = 2;                        // Index use if CMC SEI
+  vvcCodecIdIndex_          = 3;                        // Index use if CMC SEI
 
   // Profile toolset constraints information
   oneV3CFrameOnlyFlag_                     = 0;  // V-PCC Basic
@@ -246,8 +247,9 @@ PCCEncoderParameters::PCCEncoderParameters() {
   no45DegreeProjectionPatchConstraintFlag_ = 0;  // Default value, does not impose a constraint
 
 #ifdef USE_SHMAPP_VIDEO_CODEC
-  shvcRateX_ = 0;
-  shvcRateY_ = 0;
+  shvcLayerIndex_ = 8;
+  shvcRateX_      = 0;
+  shvcRateY_      = 0;
 #endif
 }
 
@@ -544,9 +546,10 @@ void PCCEncoderParameters::print() {
   std::cout << "\t   profileToolsetIdc                        " << profileToolsetIdc_ << std::endl;
   std::cout << "\t   profileReconstructionIdc                 " << profileReconstructionIdc_ << std::endl;
   std::cout << "\t   levelIdc                                 " << levelIdc_ << std::endl;
-  std::cout << "\t   avcCodecIdIndex_                         " << avcCodecIdIndex_ << std::endl;
-  std::cout << "\t   hevcCodecIdIndex_                        " << hevcCodecIdIndex_ << std::endl;
-  std::cout << "\t   vvcCodecIdIndex_                         " << vvcCodecIdIndex_ << std::endl;
+  std::cout << "\t   avcCodecIdIndex                          " << avcCodecIdIndex_ << std::endl;
+  std::cout << "\t   hevcCodecIdIndex                         " << hevcCodecIdIndex_ << std::endl;
+  std::cout << "\t   shvcCodecIdIndex                         " << shvcCodecIdIndex_ << std::endl;
+  std::cout << "\t   vvcCodecIdIndex                          " << vvcCodecIdIndex_ << std::endl;
 
   std::cout << "\t Profile toolset constraints information" << std::endl;
   std::cout << "\t   oneV3CFrameOnlyFlag                      " << oneV3CFrameOnlyFlag_ << std::endl;
@@ -558,11 +561,11 @@ void PCCEncoderParameters::print() {
 #ifdef USE_SHMAPP_VIDEO_CODEC
   if ( shvcRateX_ > 0 || shvcRateY_ > 0 ) {
     std::cerr << "HEVC scalable video coding (SHVC) " << std::endl;
+    std::cout << "\t   shvcLayerIndex                         " << shvcLayerIndex_ << std::endl;
     std::cout << "\t   shvcRateX                              " << shvcRateX_ << std::endl;
     std::cout << "\t   shvcRateY                              " << shvcRateY_ << std::endl;
   }
 #endif
-
   std::cout << std::endl;
 }
 
@@ -949,6 +952,15 @@ bool PCCEncoderParameters::check() {
 
     case CODEC_GROUP_MP4RA: break;
   }
+
+#if defined( USESHMAPP_VIDEO_CODEC )
+  if ( ( videoEncoderOccupancyCodecId_ == SHMAPP || videoEncoderGeometryCodecId_ == SHMAPP ||
+         videoEncoderAttributeCodecId_ == SHMAPP ) &&
+       ( ( shvcRateX_ != 2 ) || ( shvcRateY_ != 2 ) ) ) {
+    std::cerr << "SHMAPP codec requiered shvcRateX and shvcRateY equal to 2. \n";
+    ret = false;
+  }
+#endif
   return ret;
 }
 
@@ -990,7 +1002,7 @@ uint8_t PCCEncoderParameters::getCodecIdIndex( PCCCodecId codecId ) {
     case HMAPP: return hevcCodecIdIndex_; break;
 #endif
 #ifdef USE_SHMAPP_VIDEO_CODEC
-    case SHMAPP: return hevcCodecIdIndex_; break;
+    case SHMAPP: return shvcCodecIdIndex_; break;
 #endif
 #ifdef USE_VTMLIB_VIDEO_CODEC
     case VTMLIB: return vvcCodecIdIndex_; break;
@@ -1156,6 +1168,9 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   for ( uint32_t i = 0; i < ai.getAttributeCount(); i++ ) {
     ai.setAttributeCodecId( i, getCodecIdIndex( (PCCCodecId)videoEncoderAttributeCodecId_ ) );
   }
+
+  printf("CODEC ID SET = %d %d %d \n", oi.getOccupancyCodecId(), gi.getGeometryCodecId(), ai.getAttributeCodecId( 0 ) ); 
+  
 
   // atlas video frame allocation
   context.getAtlas( atlasIndex ).allocateVideoFrames( context, 0 );

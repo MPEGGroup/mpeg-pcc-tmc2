@@ -638,6 +638,10 @@ bool parseParameters( int                   argc,
 
     // SHVC 
 #ifdef USE_SHMAPP_VIDEO_CODEC
+    ( "shvcLayerIndex",
+      encoderParams.shvcLayerIndex_,
+      encoderParams.shvcLayerIndex_,
+     "Decode Layer ID number using SHVC codec")
     ( "shvcRateX",
       encoderParams.shvcRateX_,
       encoderParams.shvcRateX_,
@@ -940,6 +944,10 @@ bool parseParameters( int                   argc,
       encoderParams.hevcCodecIdIndex_,
       encoderParams.hevcCodecIdIndex_, 
       "index for hevc codec " )
+    ( "shvcCodecIdIndex",
+      encoderParams.shvcCodecIdIndex_,
+      encoderParams.shvcCodecIdIndex_, 
+      "index for shvc codec " )
     ( "vvcCodecIdIndex",
       encoderParams.vvcCodecIdIndex_,
       encoderParams.vvcCodecIdIndex_, 

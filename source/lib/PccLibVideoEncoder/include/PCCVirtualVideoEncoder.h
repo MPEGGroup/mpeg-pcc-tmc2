@@ -61,8 +61,9 @@ struct PCCVideoEncoderParameters {
   bool usePccRDO_ = false;
 #endif
 #ifdef USE_SHMAPP_VIDEO_CODEC
-  int32_t shvcRateX_ = 0;
-  int32_t shvcRateY_ = 0;
+  int32_t shvcLayerIndex_ = 8;
+  int32_t shvcRateX_      = 0;
+  int32_t shvcRateY_      = 0;
 #endif
 };
 

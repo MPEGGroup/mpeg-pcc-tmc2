@@ -355,5 +355,27 @@ std::string PCCImage<T, N>::computeMD5( size_t channel ) {
   return std::string( result );
 }
 
+template <typename T, size_t N>
+void PCCImage<T, N>::upsample( size_t rate ) {
+  for ( size_t i = rate; i > 1; i /= 2 ) {
+    PCCImage<T, 3> up;
+    up.resize( width_ * 2, height_ * 2, format_ );
+    for ( size_t c = 0; c < N; ++c ) {
+      size_t width  = format_ != YUV420 || c == 0 ? width_ * 2 : width_ * 2 / 2;
+      size_t height = format_ != YUV420 || c == 0 ? height_ * 2 : height_ * 2 / 2;
+      T*     src    = channels_[c].data();
+      T*     dst    = up.channels_[c].data();
+      for ( size_t y = 0; y < height; y += 2, dst += width * 2 ) {
+        for ( size_t x = 0; x < width; x += 2, src++ ) {
+          dst[x]     = *src;
+          dst[x + 1] = *src;
+        }
+        memcpy( (char*)( dst + width ), (char*)dst, width * sizeof( T ) );
+      }
+    }
+    swap( up );
+  }
+}
+
 template class pcc::PCCImage<uint8_t, 3>;
 template class pcc::PCCImage<uint16_t, 3>;

@@ -70,7 +70,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
   const size_t      mapCount         = sps.getMapCountMinus1( atlasIndex ) + 1;
   int               geometryBitDepth = gi.getGeometry2dBitdepthMinus1() + 1;
   auto occupancyCodecId = getCodedCodecId( context, oi.getOccupancyCodecId(), params_.videoDecoderOccupancyPath_ );
-  auto geometryCodecId  = getCodedCodecId( context, gi.getGeometryCodecId(), params_.videoDecoderOccupancyPath_ );
+  auto geometryCodecId  = getCodedCodecId( context, gi.getGeometryCodecId(),  params_.videoDecoderGeometryPath_ );
   path << removeFileExtension( params_.compressedStreamPath_ ) << "_dec_GOF" << sps.getV3CParameterSetId() << "_";
 
   printf( "CodecCodecId: ProfileCodecGroupIdc = %u occupancyCodecId = %u geometry = %u auxGeo = %u \n",
@@ -1598,7 +1598,7 @@ PCCCodecId PCCDecoder::getCodedCodecId( PCCContext&        context,
                                         const std::string& videoDecoderPath ) {
   auto& sps = context.getVps();
   auto& plt = sps.getProfileTierLevel();
-  printf( "getCodedCodecId profileCodecGroupIdc = %d \n", plt.getProfileCodecGroupIdc() );
+  printf( "getCodedCodecId profileCodecGroupIdc = %d codecCodecId = %u \n", plt.getProfileCodecGroupIdc(),codecCodecId );
   fflush( stdout );
   switch ( plt.getProfileCodecGroupIdc() ) {
     case CODEC_GROUP_AVC_PROGRESSIVE_HIGH:
@@ -1640,36 +1640,45 @@ PCCCodecId PCCDecoder::getCodedCodecId( PCCContext&        context,
             static_cast<SEIComponentCodecMapping*>( context.getSei( NAL_PREFIX_ESEI, COMPONENT_CODEC_MAPPING ) );
         for ( size_t i = 0; i <= sei->getCodecMappingsCountMinus1(); i++ ) {
           auto        codecId  = sei->getCodecId( i );
-          std::string codec4cc = sei->getCodec4cc( codecId );
-          printf( "codec4cc = %s \n", codec4cc.c_str() );
-          if ( codec4cc.compare( "avc3" ) == 0 ) {
-#if defined( USE_JMLIB_VIDEO_CODEC )
-            return JMLIB;
-#elif defined( USE_JMAPP_VIDEO_CODEC )
-            return JMAPP;
-#else
-            fprintf( stderr, "JM Codec not supported \n" );
-            exit( -1 );
-#endif
-          } else if ( codec4cc.compare( "hev1" ) == 0 ) {
-#if defined( USE_JMLIB_VIDEO_CODEC )
-            return HMLIB;
-#elif defined( USE_JMAPP_VIDEO_CODEC )
-            return HMAPP;
-#else
-            fprintf( stderr, "HM Codec not supported \n" );
-            exit( -1 );
-#endif
-          } else if ( codec4cc.compare( "vvc1" ) == 0 ) {
-#if defined( USE_VTMLIB_VIDEO_CODEC )
-            return VTMLIB;
-#else
-            fprintf( stderr, "VTM Codec not supported \n" );
-            exit( -1 );
-#endif
-          } else {
-            fprintf( stderr, "CODEC_GROUP_MP4RA but codec4cc \"%s\" not supported \n", codec4cc.c_str() );
-            exit( -1 );
+          if( codecId == codecCodecId ){
+            std::string codec4cc = sei->getCodec4cc( codecId );
+            printf( "=> codecId = %u => codec4cc = %s \n", codecId, codec4cc.c_str() );
+            if ( codec4cc.compare( "avc3" ) == 0 ) {
+  #if defined( USE_JMLIB_VIDEO_CODEC )
+              return JMLIB;
+  #elif defined( USE_JMAPP_VIDEO_CODEC )
+              return JMAPP;
+  #else
+              fprintf( stderr, "JM Codec not supported \n" );
+              exit( -1 );
+  #endif
+            } else if ( codec4cc.compare( "hev1" ) == 0 ) {
+  #if defined( USE_JMLIB_VIDEO_CODEC )
+              return HMLIB;
+  #elif defined( USE_JMAPP_VIDEO_CODEC )
+              return HMAPP;
+  #else
+              fprintf( stderr, "HM Codec not supported \n" );
+              exit( -1 );
+  #endif
+            } else if ( codec4cc.compare( "svc1" ) == 0 ) {
+  #if defined( USE_SHMAPP_VIDEO_CODEC )
+              return SHMAPP;
+  #else
+              fprintf( stderr, "SHM Codec not supported \n" );
+              exit( -1 );
+  #endif
+            } else if ( codec4cc.compare( "vvc1" ) == 0 ) {
+  #if defined( USE_VTMLIB_VIDEO_CODEC )
+              return VTMLIB;
+  #else
+              fprintf( stderr, "VTM Codec not supported \n" );
+              exit( -1 );
+  #endif
+            } else {
+              fprintf( stderr, "CODEC_GROUP_MP4RA but codec4cc \"%s\" not supported \n", codec4cc.c_str() );
+              exit( -1 );
+            }
           }
         }
       } else {

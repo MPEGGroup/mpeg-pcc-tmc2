@@ -30,11 +30,12 @@ void PCCSHMAppVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
   const size_t width      = videoSrc.getWidth();
   const size_t height     = videoSrc.getHeight();
   const size_t frameCount = videoSrc.getFrameCount();
-  printf( "numLayers = %d \n", numLayers );
+  printf( "numLayers = %d LayerIndex = %d \n", numLayers, params.shvcLayerIndex_ );
+  fflush( stdout );
   if ( numLayers >= 1 ) {
     // Set Layer size and src and rec raw video names
-    std::vector<std::string> srcYuvFileName, recYuvFileName;
-    std::vector<size_t>      widthLayers, heightLayers;
+    std::vector<std::string>    srcYuvFileName, recYuvFileName;
+    std::vector<size_t>         widthLayers, heightLayers;
     std::vector<PCCVideo<T, 3>> videoSrcLayers;
     for ( size_t i = 0; i < numLayers; i++ ) {
       if ( i + 1 < numLayers ) {
@@ -84,8 +85,9 @@ void PCCSHMAppVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
     }
 
     for ( size_t i = 0; i < numLayers; i++ ) {
-      printf( "Layer %zu : %zux%zu %zux%zu %s \n", i, widthLayers[i], heightLayers[i], videoSrcLayers[i].getWidth(),
+      printf( "Layer %zu : %4zux%-4zu %4zux%-4zu %s \n", i, widthLayers[i], heightLayers[i], videoSrcLayers[i].getWidth(),
               videoSrcLayers[i].getHeight(), srcYuvFileName[i].c_str());
+              fflush(stdout);
     }
 
     std::stringstream cmd;
@@ -117,8 +119,10 @@ void PCCSHMAppVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
     cmd << " --FrameSkip=0";
     std::cout << cmd.str() << std::endl;
 
-    videoSrc.write( params.srcYuvFileName_, params.inputBitDepth_ == 8 ? 1 : 2 );
+    // videoSrc.write( params.srcYuvFileName_, params.inputBitDepth_ == 8 ? 1 : 2 );
     for ( size_t i = 0; i < numLayers; i++ ) {
+      printf( "Write video src layer %d / %zu: size = %4zux%-4zu %s \n", i, numLayers, videoSrcLayers[i].getWidth(),
+              videoSrcLayers[i].getHeight(), recYuvFileName[i].c_str() );
       videoSrcLayers[i].write( recYuvFileName[i], params.inputBitDepth_ == 8 ? 1 : 2 );
     }
     if ( pcc::system( cmd.str().c_str() ) ) {
@@ -128,16 +132,21 @@ void PCCSHMAppVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
 
     PCCCOLORFORMAT format = getColorFormat( params.recYuvFileName_ );
     videoRec.clear();
-    std::cout << "videoRec.clear();" << std::endl;
-    videoRec.read( params.recYuvFileName_, width, height, format, params.outputBitDepth_ == 8 ? 1 : 2 );
-    std::cout << "videoRec.read" << std::endl;
-    // for ( size_t i = 0; i < numLayers; i++ ) {
-    //   PCCVideo<T, 3> video_temp;
-    //   video_temp.read( params.sub_recYuvFileName_[i], sub_width[i], sub_height[i], format, frameCount,
-    //                    params.outputBitDepth_ == 8 ? 1 : 2 );
-    //   sub_videoRec.push_back( video_temp );
-    // }
-
+    
+    if ( params.shvcLayerIndex_ < numLayers - 1 ) {
+      int32_t index = (std::min)( numLayers - 1, params.shvcLayerIndex_ );
+      printf( "Num Layer = %zu layerIndex = %zu => layer index = %zu \n", numLayers, params.shvcLayerIndex_,  index );
+      videoRec.read( recYuvFileName[index], widthLayers[index], heightLayers[index], format,
+                     params.outputBitDepth_ == 8 ? 1 : 2 );
+      float rateX = (float)widthLayers[numLayers - 1] / (float)widthLayers[index];
+      float rateY = (float)heightLayers[numLayers - 1] / (float)heightLayers[index];
+      videoRec.upsample( rateX );
+      printf( "Upsample video size = % zu x % zu frame count = % zu \n ", videoRec.getWidth(), videoRec.getHeight(),
+              videoRec.getFrameCount() );
+      fflush( stdout );
+    } else {
+      videoRec.read( params.recYuvFileName_, width, height, format, params.outputBitDepth_ == 8 ? 1 : 2 );
+    }
     bitstream.read( params.binFileName_ );
   } else {
     std::stringstream cmd;
