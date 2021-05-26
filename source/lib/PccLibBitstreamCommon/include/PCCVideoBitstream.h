@@ -51,149 +51,24 @@ class PCCVideoBitstream {
 
   void trace() { std::cout << toString( type_ ) << " ->" << size() << " B " << std::endl; }
 
-  std::string getExtension() {
-    size_t typeIndex = (size_t)type_;
-    if ( typeIndex == (size_t)VIDEO_OCCUPANCY ) {
-      return std::string( "occupancy" );
-    } else if ( typeIndex == (size_t)VIDEO_GEOMETRY ) {
-      return std::string( "geometry" );
-    } else if ( typeIndex >= (size_t)VIDEO_GEOMETRY_D0 && typeIndex <= (size_t)VIDEO_GEOMETRY_D15 ) {
-      return std::string( "geometryD" ) + std::to_string( typeIndex - (size_t)VIDEO_GEOMETRY_D0 );
-    } else if ( typeIndex == (size_t)VIDEO_GEOMETRY_RAW ) {
-      return std::string( "geomteryRaw" );
-    } else if ( typeIndex == (size_t)VIDEO_TEXTURE ) {
-      return std::string( "texture" );
-    } else if ( typeIndex >= (size_t)VIDEO_TEXTURE_T0 && typeIndex <= (size_t)VIDEO_TEXTURE_T15 ) {
-      return std::string( "textureT" ) + std::to_string( typeIndex - ( size_t )( VIDEO_TEXTURE_T0 ) );
-    } else if ( typeIndex == (size_t)VIDEO_TEXTURE_RAW ) {
-      return std::string( "textureRaw" );
-    } else {
-      return std::string( "unknown" );
-    }
-  }
-  bool write( const std::string& filename ) {
-    std::ofstream file( filename, std::ios::binary );
-    if ( !file.good() ) { return false; }
-    file.write( reinterpret_cast<char*>( data_.data() ), data_.size() );
-    file.close();
-    return true;
-  }
-  bool read( const std::string& filename ) {
-    std::ifstream file( filename, std::ios::binary | std::ios::ate );
-    if ( !file.good() ) { return false; }
-    const uint64_t fileSize = file.tellg();
-    resize( (size_t)fileSize );
-    file.clear();
-    file.seekg( 0 );
-    file.read( reinterpret_cast<char*>( data_.data() ), data_.size() );
-    file.close();
-    return true;
-  }  
-  bool readJM( const std::string& filename ) {
-    return read( filename );
-  }
+  std::string getExtension();
+  bool        write( const std::string& filename );
+  bool        read( const std::string& filename );
+// #if defined( WIN32 )
+//   bool _write( const std::string& filename );
+//   bool _read( const std::string& filename );
+// #endif
 
-  bool writeJM( const std::string& filename ) {
-    return write( filename );
-  }
+  void byteStreamToSampleStream( size_t precision = 4, bool emulationPreventionBytes = false );
 
-  void byteStreamToSampleStream( size_t precision = 4, bool emulationPreventionBytes = false ) {
-    size_t               startIndex = 0, endIndex = 0;
-    std::vector<uint8_t> data;
-    do {
-      size_t sizeStartCode = data_[startIndex + 2] == 0x00 ? 4 : 3;
-      endIndex             = getEndOfNaluPosition( startIndex + sizeStartCode );
-      size_t headerIndex   = data.size();
-      for ( size_t i = 0; i < precision; i++ ) { data.push_back( 0 ); }  // reserve nalu size
-      if ( emulationPreventionBytes ) {
-        for ( size_t i = startIndex + sizeStartCode, zeroCount = 0; i < endIndex; i++ ) {
-          if ( ( zeroCount == 3 ) && ( data_[i] <= 3 ) ) {
-            zeroCount = 0;
-          } else {
-            zeroCount = ( data_[i] == 0 ) ? zeroCount + 1 : 0;
-            data.push_back( data_[i] );
-          }
-        }
-      } else {
-        for ( size_t i = startIndex + sizeStartCode; i < endIndex; i++ ) { data.push_back( data_[i] ); }
-      }
-      size_t naluSize = data.size() - ( headerIndex + precision );
-      for ( size_t i = 0; i < precision; i++ ) {
-        data[headerIndex + i] = ( naluSize >> ( 8 * ( precision - ( i + 1 ) ) ) ) & 0xff;
-      }
-      startIndex = endIndex;
-    } while ( endIndex < data_.size() );
-    data_.swap( data );
-  }
-
-  void sampleStreamToByteStream( bool   isVvc                    = false,
+  void sampleStreamToByteStream( bool   isAvc                    = false,
+                                 bool   isVvc                    = false,
                                  size_t precision                = 4,
                                  bool   emulationPreventionBytes = false,
-                                 bool   changeStartCodeSize      = true ) {
-    size_t               sizeStartCode = 4, startIndex = 0, endIndex = 0;
-    std::vector<uint8_t> data;
-    bool                 newFrame = true;
-    do {
-      int32_t naluSize = 0;
-      for ( size_t i = 0; i < precision; i++ ) { naluSize = ( naluSize << 8 ) + data_[startIndex + i]; }
-      endIndex = startIndex + precision + naluSize;
-      for ( size_t i = 0; i < sizeStartCode - 1; i++ ) { data.push_back( 0 ); }
-      data.push_back( 1 );
-      if ( emulationPreventionBytes ) {
-        for ( size_t i = startIndex + precision, zeroCount = 0; i < endIndex; i++ ) {
-          if ( zeroCount == 3 && data_[i] <= 0x03 ) {
-            data.push_back( 0x03 );
-            zeroCount = 0;
-          }
-          zeroCount = ( data_[i] == 0x00 ) ? zeroCount + 1 : 0;
-          data.push_back( data_[i] );
-        }
-      } else {
-        for ( size_t i = startIndex + precision; i < endIndex; i++ ) { data.push_back( data_[i] ); }
-      }
-      startIndex = endIndex;
-      if ( ( startIndex + precision ) < data_.size() ) {
-        // HEVC
-        //   Bool forbidden_zero_bit = bs.read(1);           // forbidden_zero_bit
-        //   nalu.m_nalUnitType = (NalUnitType) bs.read(6);  // nal_unit_type
-        //   nalu.m_nuhLayerId = bs.read(6);                 // nuh_layer_id
-        //   nalu.m_temporalId = bs.read(3) - 1;             // nuh_temporal_id_plus1
-        // VVC
-        //   nalu.m_forbiddenZeroBit   = bs.read(1);                 // forbidden zero bit
-        //   nalu.m_nuhReservedZeroBit = bs.read(1);                 // nuh_reserved_zero_bit
-        //   nalu.m_nuhLayerId         = bs.read(6);                 // nuh_layer_id
-        //   nalu.m_nalUnitType        = (NalUnitType) bs.read(5);   // nal_unit_type
-        //   nalu.m_temporalId         = bs.read(3) - 1;             // nuh_temporal_id_plus1
-        int naluType = isVvc ? ( ( ( data_[startIndex + precision + 1] ) & 248 ) >> 3 )
-                             : ( ( ( data_[startIndex + precision] ) & 126 ) >> 1 );
-        bool useLongStartCode = false;
-        if ( isVvc ) {
-          useLongStartCode = newFrame || ( naluType >= 12 && naluType < 20 );
-          newFrame         = false;
-          if ( naluType < 12 ) { newFrame = true; }
-        } else {
-          useLongStartCode = newFrame || ( naluType >= 32 && naluType < 41 );
-          newFrame         = false;
-          if ( naluType < 12 ) { newFrame = true; }
-        }
-        sizeStartCode = useLongStartCode ? 4 : 3;
-      }
-    } while ( endIndex < data_.size() );
-    data_.swap( data );
-  }
+                                 bool   changeStartCodeSize      = true );
 
  private:
-  size_t getEndOfNaluPosition( size_t startIndex ) {
-    const size_t size = data_.size();
-    if ( size < startIndex + 4 ) { return size; }
-    for ( size_t i = startIndex; i < size - 4; i++ ) {
-      if ( ( data_[i + 0] == 0x00 ) && ( data_[i + 1] == 0x00 ) &&
-           ( ( data_[i + 2] == 0x01 ) || ( ( data_[i + 2] == 0x00 ) && ( data_[i + 3] == 0x01 ) ) ) ) {
-        return i;
-      }
-    }
-    return size;
-  }
+  size_t               getEndOfNaluPosition( size_t startIndex );
   std::vector<uint8_t> data_;
   PCCVideoType         type_;
 };

@@ -118,8 +118,7 @@ void PCCJMLibVideoEncoderImpl<T>::encode( PCCVideo<T, 3>&    videoSrc,
   std::string srcName = p_Enc->p_Inp->input_file1.fname;
   std::string binName = p_Enc->p_Inp->outfile;
   std::string recName = p_Enc->p_Inp->ReconFile;
-
-  videoSrc.writeJM( srcName, nbyte );
+  videoSrc.write( srcName, nbyte );
 
   // init encoder
   init_encoder( p_Enc->p_Vid, p_Enc->p_Inp );
@@ -134,8 +133,13 @@ void PCCJMLibVideoEncoderImpl<T>::encode( PCCVideo<T, 3>&    videoSrc,
 
   // === need to fill buffer
   videoRec.clear();
-  videoRec.readJM( recName, srcWidth, srcHeight, format, nbyte );
-  bitstream.readJM( binName );
+  videoRec.read( recName, srcWidth, srcHeight, format, nbyte );
+  bitstream.read( binName );
+  
+  // Remove temp files
+  removeFile( srcName );
+  removeFile( recName );
+  removeFile( binName );  
   return;
 }
 

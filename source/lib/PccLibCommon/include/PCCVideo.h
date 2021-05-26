@@ -90,12 +90,14 @@ class PCCVideo {
              const PCCCOLORFORMAT format,
              const size_t         nbyte );  
              
-  bool writeJM( const std::string fileName, const size_t nbyte );
-  bool readJM( const std::string    fileName,
+#if defined( WIN32 )
+  bool _write( const std::string fileName, const size_t nbyte );
+  bool _read( const std::string    fileName,
              const size_t         sizeU0,
              const size_t         sizeV0,
              const PCCCOLORFORMAT format,
              const size_t         nbyte );
+#endif
 
   void        convertBitdepth( uint8_t bitdepthInput, uint8_t bitdepthOutput, bool msbAlignFlag );
   void        convertYUV420ToYUV444();

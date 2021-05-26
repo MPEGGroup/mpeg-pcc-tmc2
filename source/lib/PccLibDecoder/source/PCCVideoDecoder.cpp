@@ -72,12 +72,23 @@ bool PCCVideoDecoder::decompress( PCCVideo<T, 3>&    video,
   const std::string type        = bitstream.getExtension();
   const std::string fileName    = path + type;
   const std::string binFileName = fileName + ".bin";
-#ifdef USE_VTMLIB_VIDEO_CODEC
-  if ( byteStreamVideoCoder ) { bitstream.sampleStreamToByteStream( codecId == VTMLIB ); }
+
+  printf("byteStreamVideoCoder = %d codecId = %d \n",byteStreamVideoCoder,codecId);
+  fflush(stdout);
+  const std::string binbeforeFileName = fileName + "_before_ss2bs.bin";
+  bitstream.write( binbeforeFileName );
+  if ( byteStreamVideoCoder ) {
+    bitstream.sampleStreamToByteStream(
+#if defined( USE_JMAPP_VIDEO_CODEC ) || defined( USE_JMLIB_VIDEO_CODEC )
+        codecId == JMAPP || codecId == JMLIB,
 #else
-  if ( byteStreamVideoCoder ) { bitstream.sampleStreamToByteStream(); }
+        false,
 #endif
-  if ( keepIntermediateFiles ) { bitstream.write( binFileName ); }
+#if defined( USE_VTMLIB_VIDEO_CODEC )
+        codecId == VTMLIB
+#endif
+    );
+  }
 
   // Decode video
   auto decoder = PCCVirtualVideoDecoder<T>::create( codecId );
@@ -101,6 +112,7 @@ bool PCCVideoDecoder::decompress( PCCVideo<T, 3>&    video,
           video.getFrameCount() );
   fflush( stdout );
   if ( keepIntermediateFiles ) {
+    bitstream.write( binFileName );
     video.write( video.addFormat( fileName + "_rec", outputBitDepth == 8 ? "8" : "10" ), outputBitDepth == 8 ? 1 : 2 );
   }
 
