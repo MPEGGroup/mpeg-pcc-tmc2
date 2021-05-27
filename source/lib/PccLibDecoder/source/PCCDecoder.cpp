@@ -704,10 +704,10 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context ) {
   }
   context.resize( frameCount );
   setPointLocalReconstruction( context );
-  for ( size_t atglOrder = 0; atglOrder < atlList.size(); atglOrder++ ) {
+  for ( size_t atglOrder = 0; atglOrder < atlList.size(); atglOrder++ ) {    
     if ( atglOrder == 0 ||
-         atlList[atglOrder].getAtlasFrmOrderCntVal() != atlList[atglOrder - 1].getAtlasFrmOrderCntVal() ) {
-      setTileSizeAndLocation( context, atlList[atglOrder].getHeader().getFrameIndex(), atlList[atglOrder].getHeader() );
+         atlList[atglOrder].getAtlasFrmOrderCntVal() != atlList[atglOrder - 1].getAtlasFrmOrderCntVal() ) {            
+      setTileSizeAndLocation( context, atlList[atglOrder].getAtlasFrmOrderCntVal(), atlList[atglOrder].getHeader() );       
     }
     createPatchFrameDataStructure( context, atglOrder );
   }
@@ -726,42 +726,34 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context ) {
 
 void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atglOrder ) {
   TRACE_PATCH( "createPatchFrameDataStructure Tile %zu \n", atglOrder );
-  auto&  sps        = context.getVps();
-  size_t atlasIndex = context.getAtlasIndex();
-  // auto&  gi         = sps.getGeometryInformation( atlasIndex );
-  auto& atlu = context.getAtlasTileLayer( atglOrder );
-  auto& ath  = atlu.getHeader();
-  // the header indicates the structures used
-  auto& afps               = context.getAtlasFrameParameterSet( ath.getAtlasFrameParameterSetId() );
-  auto& asps               = context.getAtlasSequenceParameterSet( afps.getAtlasSequenceParameterSetId() );
-  auto& afti               = afps.getAtlasFrameTileInformation();
-  auto& atgdu              = atlu.getDataUnit();
-  auto  geometryBitDepth2D = asps.getGeometry2dBitdepthMinus1() + 1;
-  auto  geometryBitDepth3D = asps.getGeometry3dBitdepthMinus1() + 1;
+  auto&  sps                = context.getVps();
+  size_t atlasIndex         = context.getAtlasIndex();
+  auto&  atlu               = context.getAtlasTileLayer( atglOrder );
+  auto&  ath                = atlu.getHeader();
+  auto&  afps               = context.getAtlasFrameParameterSet( ath.getAtlasFrameParameterSetId() );
+  auto&  asps               = context.getAtlasSequenceParameterSet( afps.getAtlasSequenceParameterSetId() );
+  auto&  afti               = afps.getAtlasFrameTileInformation();
+  auto&  atgdu              = atlu.getDataUnit();
+  auto   geometryBitDepth2D = asps.getGeometry2dBitdepthMinus1() + 1;
+  auto   geometryBitDepth3D = asps.getGeometry3dBitdepthMinus1() + 1;
+  size_t frameIndex         = atlu.getAtlasFrmOrderCntVal();
+  size_t tileIndex          = afti.getSignalledTileIdFlag() ? afti.getTileId( ath.getId() ) : ath.getId();
 
-  // current tile position derivation
-  size_t frameIndex = atlu.getAtlasFrmOrderCntVal();
-//  size_t tileIndex  = setTileSizeAndLocation( context, frameIndex, ath );  // width,height,leftTopPosition
-  size_t tileIndex  = afti.getSignalledTileIdFlag() ? afti.getTileId( ath.getId() ) : ath.getId();
-
-  std::printf( "createPatchFrameDataStructure Frame = %zu Tiles = %zu atlasIndex = %zu atglOrder %zu \n", frameIndex,
+  printf( "createPatchFrameDataStructure Frame = %zu Tiles = %zu atlasIndex = %zu atglOrder %zu \n", frameIndex,
                tileIndex, context.getAtlasIndex(), atglOrder );
   fflush( stdout );
-
   PCCFrameContext& tile = context[frameIndex].getTile( tileIndex );
   tile.setFrameIndex( atlu.getAtlasFrmOrderCntVal() );
-  tile.setAtlasFrmOrderCntVal( atlu.getAtlasFrmOrderCntVal() );  // ajt::setting tile frame order count values
+  tile.setAtlasFrmOrderCntVal( atlu.getAtlasFrmOrderCntVal() );  
   tile.setAtlasFrmOrderCntMsb( atlu.getAtlasFrmOrderCntMsb() );
   tile.setTileIndex( tileIndex );
   tile.setAtlIndex( atglOrder );
   tile.setUseRawPointsSeparateVideo( sps.getAuxiliaryVideoPresentFlag( atlasIndex ) &&
                                      asps.getAuxiliaryVideoEnabledFlag() );
   tile.setRawPatchEnabledFlag( asps.getRawPatchEnabledFlag() );
-
   if ( tile.getFrameIndex() > 0 && ath.getType() != I_TILE ) {
     tile.setRefAfocList( context, ath, ath.getAtlasFrameParameterSetId() );
-
-    TRACE_PATCH( "\tframe[%zu]\tRefAfocList:", frameIndex );
+    TRACE_PATCH( "\tframe[%zu]\tRefAfocList:", frameIndex );    
     for ( size_t i = 0; i < tile.getRefAfocListSize(); i++ ) { TRACE_PATCH( "\t%zu", tile.getRefAfoc( i ) ); }
     TRACE_PATCH( "\n" );
   }
@@ -1682,17 +1674,18 @@ size_t PCCDecoder::setTileSizeAndLocation( PCCContext& context, size_t frameInde
   auto&  asps      = context.getAtlasSequenceParameterSet( afps.getAtlasSequenceParameterSetId() );
   auto&  afti      = afps.getAtlasFrameTileInformation();
   size_t tileIndex = 0;
-  
-  //this is for the hash functions
-  context[frameIndex].getPartitionPosX().clear(); //size( afti.getPartitionWidth().size() );
-  context[frameIndex].getPartitionPosY().clear(); //size( afti.getPartitionHeight().size()  );
-  context[frameIndex].getPartitionWidth().clear(); //size( afti.getPartitionWidth().size() );
-  context[frameIndex].getPartitionHeight().clear(); //size( afti.getPartitionHeight().size()  );
-  for(auto v : afti.getPartitionWidth()) context[frameIndex].getPartitionWidth().push_back(v);
-  for(auto v : afti.getPartitionHeight()) context[frameIndex].getPartitionHeight().push_back(v);
-  for(auto v : afti.getPartitionPosX()) context[frameIndex].getPartitionPosX().push_back(v);
-  for(auto v : afti.getPartitionPosY()) context[frameIndex].getPartitionPosY().push_back(v);
-  
+  printf( "setTileSizeAndLocation frameIndex = %zu \n", frameIndex );
+  fflush( stdout );
+  // this is for the hash functions
+  context[frameIndex].getPartitionPosX().clear();    // size( afti.getPartitionWidth().size() );
+  context[frameIndex].getPartitionPosY().clear();    // size( afti.getPartitionHeight().size()  );
+  context[frameIndex].getPartitionWidth().clear();   // size( afti.getPartitionWidth().size() );
+  context[frameIndex].getPartitionHeight().clear();  // size( afti.getPartitionHeight().size()  );
+  for ( auto v : afti.getPartitionWidth() ) { context[frameIndex].getPartitionWidth().push_back( v ); }
+  for ( auto v : afti.getPartitionHeight() ) { context[frameIndex].getPartitionHeight().push_back( v ); }
+  for ( auto v : afti.getPartitionPosX() ) { context[frameIndex].getPartitionPosX().push_back( v ); }
+  for ( auto v : afti.getPartitionPosY() ) { context[frameIndex].getPartitionPosY().push_back( v ); }
+
   if ( afti.getSingleTileInAtlasFrameFlag() ) {
     if ( afti.getNumTilesInAtlasFrameMinus1() == 0 ) {
       context[frameIndex].setAtlasFrameWidth( asps.getFrameWidth() );
@@ -1759,7 +1752,7 @@ size_t PCCDecoder::setTileSizeAndLocation( PCCContext& context, size_t frameInde
 #endif
     }
   }
-  
+
   if ( asps.getAuxiliaryVideoEnabledFlag() ) {
     context[frameIndex].setAuxVideoWidth( ( afti.getAuxiliaryVideoTileRowWidthMinus1() + 1 ) * 64 );
     context[frameIndex].getAuxTileLeftTopY().resize( afti.getNumTilesInAtlasFrameMinus1() + 1, 0 );
