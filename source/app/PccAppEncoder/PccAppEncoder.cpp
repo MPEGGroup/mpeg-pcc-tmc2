@@ -793,12 +793,21 @@ bool parseParameters( int                   argc,
   ("numMaxTilePerFrame",
    encoderParams.numMaxTilePerFrame_,
    encoderParams.numMaxTilePerFrame_,"number of maximum tiles in a frame")
+  ("uniformPartitionSpacing",
+   encoderParams.uniformPartitionSpacing_,
+   encoderParams.uniformPartitionSpacing_, "indictation of uniform partitioning")
   ("tilePartitionWidth",
    encoderParams.tilePartitionWidth_,
    encoderParams.tilePartitionWidth_,"uniform partition width in the unit of 64 pixels")
   ("tilePartitionHeight",
    encoderParams.tilePartitionHeight_,
    encoderParams.tilePartitionHeight_,"uniform partition height in the unit of 64 pixels")
+  ("tilePartitionWidthList",
+   encoderParams.tilePartitionWidthList_,
+   encoderParams.tilePartitionWidthList_,"non uniform partition width in the unit of 64 pixels")
+  ("tilePartitionHeightList",
+   encoderParams.tilePartitionHeightList_,
+   encoderParams.tilePartitionHeightList_,"non uniform partition height in the unit of 64 pixels")
   ( "tileSegmentationType",
       encoderParams.tileSegmentationType_,
       encoderParams.tileSegmentationType_,

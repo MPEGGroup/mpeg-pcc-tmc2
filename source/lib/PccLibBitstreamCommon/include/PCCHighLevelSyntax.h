@@ -479,16 +479,7 @@ class PCCHighLevelSyntax {
   uint8_t getLog2PatchQuantizerSizeX() { return log2PatchQuantizerSizeX_; }
   uint8_t getLog2PatchQuantizerSizeY() { return log2PatchQuantizerSizeY_; }
   bool    getEnablePatchSizeQuantization() { return enablePatchSizeQuantization_; }
-  size_t  getAuxVideoWidth() { return auxVideWidth_; }
-  size_t  getAuxVideoHeight() {
-    size_t videoHeight = 0;
-    for ( auto& height : auxTileHeight_ ) { videoHeight += height; }
-    return videoHeight;
-  }
-  size_t               getAuxTileHeight( size_t index ) { return auxTileHeight_[index]; }
-  std::vector<size_t>& getAuxTileHeight() { return auxTileHeight_; }
-  size_t               getAuxTileLeftTopY( size_t index ) { return auxTileLeftTopY_[index]; }
-  std::vector<size_t>& getAuxTileLeftTopY() { return auxTileLeftTopY_; }
+
   bool&                getPrefilterLossyOM() { return prefilterLossyOM_; }
   size_t&              getOffsetLossyOM() { return offsetLossyOM_; }
   size_t               getGeometry3dCoordinatesBitdepth() { return geometry3dCoordinatesBitdepth_; }
@@ -496,9 +487,6 @@ class PCCHighLevelSyntax {
   void                 setLog2PatchQuantizerSizeX( uint8_t value ) { log2PatchQuantizerSizeX_ = value; }
   void                 setLog2PatchQuantizerSizeY( uint8_t value ) { log2PatchQuantizerSizeY_ = value; }
   void                 setEnablePatchSizeQuantization( bool value ) { enablePatchSizeQuantization_ = value; }
-  void                 setAuxVideoWidth( size_t value ) { auxVideWidth_ = value; }
-  void                 setAuxTileHeight( size_t index, size_t value ) { auxTileHeight_[index] = value; }
-  void                 setAuxTileLeftTopY( size_t index, size_t value ) { auxTileLeftTopY_[index] = value; }
   void                 setPrefilterLossyOM( bool value ) { prefilterLossyOM_ = value; }
   void                 setOffsetLossyOM( size_t value ) { offsetLossyOM_ = value; }
   void                 setGeometry3dCoordinatesBitdepth( size_t value ) { geometry3dCoordinatesBitdepth_ = value; }
@@ -520,9 +508,6 @@ class PCCHighLevelSyntax {
   PCCBitstreamStat*                           bitstreamStat_;
   std::vector<PCCAtlasHighLevelSyntax>        atlasHLS_;
   size_t                                      atlasIndex_;
-  size_t                                      auxVideWidth_;
-  std::vector<size_t>                         auxTileHeight_;
-  std::vector<size_t>                         auxTileLeftTopY_;
   std::vector<SEIDecodedAtlasInformationHash> seiHash_;
 };
 };  // namespace pcc

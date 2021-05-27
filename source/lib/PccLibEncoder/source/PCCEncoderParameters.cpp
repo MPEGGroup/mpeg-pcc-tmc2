@@ -233,6 +233,8 @@ PCCEncoderParameters::PCCEncoderParameters() {
   uniformPartitionSpacing_      = true;
   tilePartitionWidth_           = 0;
   tilePartitionHeight_          = 0;
+  tilePartitionWidthList_.clear();
+  tilePartitionHeightList_.clear();
 
   // Profile tier level
   tierFlag_                 = 0;                        // Low Tier
@@ -480,9 +482,18 @@ void PCCEncoderParameters::print() {
   if ( tileSegmentationType_ > 1 ) {
     std::cout << "\t   numMaxTilePerFrame                       " << numMaxTilePerFrame_ << std::endl;
     if ( numMaxTilePerFrame_ > 1 ) {
+      if(uniformPartitionSpacing_){
       std::cout << "\t   uniformPartitionSpacing                " << uniformPartitionSpacing_ << std::endl;
       std::cout << "\t   tilePartitionWidth                     " << tilePartitionWidth_ << std::endl;
       std::cout << "\t   tilePartitionHeight                    " << tilePartitionHeight_ << std::endl;
+      } else {
+        std::cout << "\t   tilePartitionWidthList                   ";
+        for(auto v: tilePartitionWidthList_) std::cout<< v<<"\t";
+        std::cout<<std::endl;
+        std::cout << "\t   tilePartitionHeightList                  ";
+        for(auto v: tilePartitionHeightList_) std::cout<< v<<"\t";
+        std::cout<<std::endl;
+        }
     }
   }
   std::cout << "\t Point cloud partitions and tiles           " << std::endl;
@@ -1013,7 +1024,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   context.setOccupancyPrecision( occupancyPrecision_ );
   context.setModelScale( modelScale_ );
   context.setModelOrigin( modelOrigin_ );
-  context.setAuxVideoWidth( textureRawSeparateVideoWidth_ );
+  //context.setAuxVideoWidth( textureRawSeparateVideoWidth_ );
   context.setGeometry3dCoordinatesBitdepth( bitdepth3D );
   context.setMaxNumRefAtlasFrame( maxNumRefAtlasFrame_ );
   context.setNumOfRefAtlasFrameList( maxNumRefAtlasList_ );
@@ -1177,8 +1188,9 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
                                        partitionWidthIn64, partitionHeightIn64 );
     } else {
       if ( useRawPointsSeparateVideo_ ) {
-        context.getAuxTileHeight().resize( numMaxTilePerFrame_ );
-        context.getAuxTileLeftTopY().resize( numMaxTilePerFrame_ );
+        context[i].setAuxVideoWidth( textureRawSeparateVideoWidth_ );
+        context[i].getAuxTileHeight().resize( numMaxTilePerFrame_ );
+        context[i].getAuxTileLeftTopY().resize( numMaxTilePerFrame_ );
       }
       atlas.setNumTilesInAtlasFrame( numMaxTilePerFrame_ );
       atlas.initNumTiles( numMaxTilePerFrame_ );

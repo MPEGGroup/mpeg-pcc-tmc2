@@ -262,8 +262,6 @@ class PCCCodec {
                                           const bool                           filling     = 0,
                                           const size_t                         minD1       = 0,
                                           const size_t                         neighbor    = 0 );
-  void                    setTilePartitionSizeAfti( PCCContext& context );
-  size_t                  setTileSizeAndLocation( PCCContext& context, size_t frameIndex, AtlasTileHeader& atgh );
   void                    generateAfti( PCCContext& context, size_t frameIndex, AtlasFrameTileInformation& afti );
 
   inline double entropy( std::vector<uint8_t>& Data, int N ) {
