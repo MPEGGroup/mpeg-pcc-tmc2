@@ -78,7 +78,7 @@ class AtlasTileHeader {
   uint32_t              getId() { return id_; }
   PCCTileType           getType() { return type_; }
   bool                  getAtlasOutputFlag() { return atlasOutputFlag_; }
-  uint8_t               getAtlasFrmOrderCntLsb() { return atlasFrmOrderCntLsb_; }
+  size_t                getAtlasFrmOrderCntLsb() { return atlasFrmOrderCntLsb_; }
   bool                  getRefAtlasFrameListSpsFlag() { return refAtlasFrameListSpsFlag_; }
   uint8_t               getRefAtlasFrameListIdx() { return refAtlasFrameListIdx_; }
   uint8_t               getPosMinDQuantizer() { return posMinDQuantizer_; }
@@ -100,7 +100,7 @@ class AtlasTileHeader {
   void setId( uint32_t value ) { id_ = value; }
   void setType( PCCTileType value ) { type_ = value; }
   void setAtlasOutputFlag( bool value ) { atlasOutputFlag_ = value; }
-  void setAtlasFrmOrderCntLsb( uint8_t value ) { atlasFrmOrderCntLsb_ = value; }
+  void setAtlasFrmOrderCntLsb( size_t value ) { atlasFrmOrderCntLsb_ = value; }
   void setRefAtlasFrameListSpsFlag( bool value ) { refAtlasFrameListSpsFlag_ = value; }
   void setRefAtlasFrameListIdx( uint8_t value ) { refAtlasFrameListIdx_ = value; }
   void setPosMinDQuantizer( uint8_t value ) { posMinDQuantizer_ = value; }
@@ -124,7 +124,7 @@ class AtlasTileHeader {
   uint32_t             id_;
   PCCTileType          type_;
   bool                 atlasOutputFlag_;
-  uint8_t              atlasFrmOrderCntLsb_;
+  size_t               atlasFrmOrderCntLsb_;
   bool                 refAtlasFrameListSpsFlag_;
   uint8_t              refAtlasFrameListIdx_;
   std::vector<bool>    additionalAfocLsbPresentFlag_;

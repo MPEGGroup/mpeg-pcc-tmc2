@@ -79,7 +79,7 @@ size_t PCCContext::calculateAFOCval( std::vector<AtlasTileLayerRbsp>& atglList, 
   auto&  afps                    = getAtlasFrameParameterSet( atgh.getAtlasFrameParameterSetId() );
   auto&  asps                    = getAtlasSequenceParameterSet( afps.getAtlasSequenceParameterSetId() );
 
-  size_t maxAtlasFrmOrderCntLsb  = size_t( 1 ) << ( asps.getLog2MaxAtlasFrameOrderCntLsbMinus4() + 1 );
+  size_t maxAtlasFrmOrderCntLsb  = size_t( 1 ) << ( asps.getLog2MaxAtlasFrameOrderCntLsbMinus4() + 4 );
   size_t afocLsb                 = atgh.getAtlasFrmOrderCntLsb();
   size_t prevAtlasFrmOrderCntLsb = atglList[atglOrder - 1].getHeader().getAtlasFrmOrderCntLsb();
   if ( ( afocLsb < prevAtlasFrmOrderCntLsb ) &&

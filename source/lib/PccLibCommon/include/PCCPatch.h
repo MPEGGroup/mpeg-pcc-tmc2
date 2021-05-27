@@ -40,29 +40,29 @@
 namespace pcc {
 
 struct GPAPatchData {
-  bool              isMatched;
-  bool              isGlobalPatch;
-  int               globalPatchIndex;
-  size_t            sizeU0;
-  size_t            sizeV0;
-  size_t            u0;
-  size_t            v0;
-  size_t            patchOrientation;
-  std::vector<bool> occupancy;
+  bool              isMatched_;
+  bool              isGlobalPatch_;
+  int               globalPatchIndex_;
+  size_t            sizeU0_;
+  size_t            sizeV0_;
+  size_t            u0_;
+  size_t            v0_;
+  size_t            patchOrientation_;
+  std::vector<bool> occupancy_;
   void              initialize() {
-    isMatched        = false;
-    isGlobalPatch    = false;
-    globalPatchIndex = -1;
-    sizeU0           = 0;
-    sizeV0           = 0;
-    occupancy.clear();
-    u0               = -1;
-    v0               = -1;
-    patchOrientation = -1;
+    isMatched_        = false;
+    isGlobalPatch_    = false;
+    globalPatchIndex_ = -1;
+    sizeU0_           = 0;
+    sizeV0_           = 0;
+    occupancy_.clear();
+    u0_               = -1;
+    v0_               = -1;
+    patchOrientation_ = -1;
   }
   bool isPatchDimensionSwitched() {
-    if ( ( patchOrientation == PATCH_ORIENTATION_DEFAULT ) || ( patchOrientation == PATCH_ORIENTATION_ROT180 ) ||
-         ( patchOrientation == PATCH_ORIENTATION_MIRROR ) || ( patchOrientation == PATCH_ORIENTATION_MROT180 ) ) {
+    if ( ( patchOrientation_ == PATCH_ORIENTATION_DEFAULT ) || ( patchOrientation_ == PATCH_ORIENTATION_ROT180 ) ||
+         ( patchOrientation_ == PATCH_ORIENTATION_MIRROR ) || ( patchOrientation_ == PATCH_ORIENTATION_MROT180 ) ) {
       return false;
     } else {
       return true;
@@ -234,137 +234,40 @@ class PCCPatch {
     }
     return coord;
   }
+  void setAxis( size_t axisOfAdditionalPlane,
+                size_t normalAxis,
+                size_t tangentAxis,
+                size_t bitangentAxis,
+                size_t projectionMode ) {
+    axisOfAdditionalPlane_ = axisOfAdditionalPlane;
+    normalAxis_            = normalAxis;
+    tangentAxis_           = tangentAxis;
+    bitangentAxis_         = bitangentAxis;
+    projectionMode_        = projectionMode;
+  }
 
   void setViewId( size_t viewId ) {
     viewId_ = viewId;
     // now set the other variables according to the viewId
     switch ( viewId ) {
-      case 0:
-        getAxisOfAdditionalPlane() = 0;
-        getNormalAxis()            = 0;
-        getTangentAxis()           = 2;
-        getBitangentAxis()         = 1;
-        getProjectionMode()        = 0;
-        break;
-      case 1:
-        getAxisOfAdditionalPlane() = 0;
-        getNormalAxis()            = 1;
-        getTangentAxis()           = 2;
-        getBitangentAxis()         = 0;
-        getProjectionMode()        = 0;
-        break;
-      case 2:
-        getAxisOfAdditionalPlane() = 0;
-        getNormalAxis()            = 2;
-        getTangentAxis()           = 0;
-        getBitangentAxis()         = 1;
-        getProjectionMode()        = 0;
-        break;
-      case 3:
-        getAxisOfAdditionalPlane() = 0;
-        getNormalAxis()            = 0;
-        getTangentAxis()           = 2;
-        getBitangentAxis()         = 1;
-        getProjectionMode()        = 1;
-        break;
-      case 4:
-        getAxisOfAdditionalPlane() = 0;
-        getNormalAxis()            = 1;
-        getTangentAxis()           = 2;
-        getBitangentAxis()         = 0;
-        getProjectionMode()        = 1;
-        break;
-      case 5:
-        getAxisOfAdditionalPlane() = 0;
-        getNormalAxis()            = 2;
-        getTangentAxis()           = 0;
-        getBitangentAxis()         = 1;
-        getProjectionMode()        = 1;
-        break;
-      case 6:
-        getAxisOfAdditionalPlane() = 1;
-        getNormalAxis()            = 0;
-        getTangentAxis()           = 2;
-        getBitangentAxis()         = 1;
-        getProjectionMode()        = 0;
-        break;
-      case 7:
-        getAxisOfAdditionalPlane() = 1;
-        getNormalAxis()            = 2;
-        getTangentAxis()           = 0;
-        getBitangentAxis()         = 1;
-        getProjectionMode()        = 0;
-        break;
-      case 8:
-        getAxisOfAdditionalPlane() = 1;
-        getNormalAxis()            = 0;
-        getTangentAxis()           = 2;
-        getBitangentAxis()         = 1;
-        getProjectionMode()        = 1;
-        break;
-      case 9:
-        getAxisOfAdditionalPlane() = 1;
-        getNormalAxis()            = 2;
-        getTangentAxis()           = 0;
-        getBitangentAxis()         = 1;
-        getProjectionMode()        = 1;
-        break;
-      case 10:
-        getAxisOfAdditionalPlane() = 2;
-        getNormalAxis()            = 2;
-        getTangentAxis()           = 0;
-        getBitangentAxis()         = 1;
-        getProjectionMode()        = 0;
-        break;
-      case 11:
-        getAxisOfAdditionalPlane() = 2;
-        getNormalAxis()            = 1;
-        getTangentAxis()           = 2;
-        getBitangentAxis()         = 0;
-        getProjectionMode()        = 0;
-        break;
-      case 12:
-        getAxisOfAdditionalPlane() = 2;
-        getNormalAxis()            = 2;
-        getTangentAxis()           = 0;
-        getBitangentAxis()         = 1;
-        getProjectionMode()        = 1;
-        break;
-      case 13:
-        getAxisOfAdditionalPlane() = 2;
-        getNormalAxis()            = 1;
-        getTangentAxis()           = 2;
-        getBitangentAxis()         = 0;
-        getProjectionMode()        = 1;
-        break;
-      case 14:
-        getAxisOfAdditionalPlane() = 3;
-        getNormalAxis()            = 1;
-        getTangentAxis()           = 2;
-        getBitangentAxis()         = 0;
-        getProjectionMode()        = 0;
-        break;
-      case 15:
-        getAxisOfAdditionalPlane() = 3;
-        getNormalAxis()            = 0;
-        getTangentAxis()           = 2;
-        getBitangentAxis()         = 1;
-        getProjectionMode()        = 0;
-        break;
-      case 16:
-        getAxisOfAdditionalPlane() = 3;
-        getNormalAxis()            = 1;
-        getTangentAxis()           = 2;
-        getBitangentAxis()         = 0;
-        getProjectionMode()        = 1;
-        break;
-      case 17:
-        getAxisOfAdditionalPlane() = 3;
-        getNormalAxis()            = 0;
-        getTangentAxis()           = 2;
-        getBitangentAxis()         = 1;
-        getProjectionMode()        = 1;
-        break;
+      case 0: setAxis( 0, 0, 2, 1, 0 ); break;
+      case 1: setAxis( 0, 1, 2, 0, 0 ); break;
+      case 2: setAxis( 0, 2, 0, 1, 0 ); break;
+      case 3: setAxis( 0, 0, 2, 1, 1 ); break;
+      case 4: setAxis( 0, 1, 2, 0, 1 ); break;
+      case 5: setAxis( 0, 2, 0, 1, 1 ); break;
+      case 6: setAxis( 1, 0, 2, 1, 0 ); break;
+      case 7: setAxis( 1, 2, 0, 1, 0 ); break;
+      case 8: setAxis( 1, 0, 2, 1, 1 ); break;
+      case 9: setAxis( 1, 2, 0, 1, 1 ); break;
+      case 10: setAxis( 2, 2, 0, 1, 0 ); break;
+      case 11: setAxis( 2, 1, 2, 0, 0 ); break;
+      case 12: setAxis( 2, 2, 0, 1, 1 ); break;
+      case 13: setAxis( 2, 1, 2, 0, 1 ); break;
+      case 14: setAxis( 3, 1, 2, 0, 0 ); break;
+      case 15: setAxis( 3, 0, 2, 1, 0 ); break;
+      case 16: setAxis( 3, 1, 2, 0, 1 ); break;
+      case 17: setAxis( 3, 0, 2, 1, 1 ); break;
       default:
         std::cout << "ViewId (" << viewId << ") not allowed... exiting" << std::endl;
         exit( -1 );
@@ -477,19 +380,16 @@ class PCCPatch {
     if ( x >= canvasStride || y >= canvasHeight ) {
       printf(
           "patch2Canvas (x,y) is out of boundary : frame %zu, tile %zu canvassize %zux%zu : uvstart(%zu,%zu) "
-          "size(%zu,%zu), "
-          "uv(%zu,%zu), xy(%zu,%zu), orientation(%zu)\n",
+          "size(%zu,%zu), uv(%zu,%zu), xy(%zu,%zu), orientation(%zu)\n",
           getFrameIndex(), getTileIndex(), canvasStride, canvasHeight, u0_ * occupancyResolution_,
           v0_ * occupancyResolution_, sizeU0_ * occupancyResolution_, sizeV0_ * occupancyResolution_, u, v, x, y,
           patchOrientation_ );
       exit( 180 );
     }
-
     assert( x >= 0 );
     assert( y >= 0 );
     assert( x < canvasStride );
     assert( y < canvasHeight );
-
     return ( x + canvasStride * y );
   }
 
@@ -539,15 +439,15 @@ class PCCPatch {
       default: return -1; break;
     }
     // checking the results are within canvasHeightBlk boundary (missing y check)
-    if ( x < 0 ) return -1;
-    if ( y < 0 ) return -1;
-    if ( x >= canvasStrideBlk ) return -1;
-    if ( y >= canvasHeightBlk ) return -1;
+    if ( x < 0 ) { return -1; }
+    if ( y < 0 ) { return -1; }
+    if ( x >= canvasStrideBlk ) { return -1; }
+    if ( y >= canvasHeightBlk ) { return -1; }
     if ( tile.minU != -1 ) {
-      if ( x < tile.minU ) return -1;
-      if ( y < tile.minV ) return -1;
-      if ( x > tile.maxU ) return -1;
-      if ( y > tile.maxV ) return -1;
+      if ( x < tile.minU ) { return -1; }
+      if ( y < tile.minV ) { return -1; }
+      if ( x > tile.maxU ) { return -1; }
+      if ( y > tile.maxV ) { return -1; }
     }
     return int( x + canvasStrideBlk * y );
   }
@@ -611,22 +511,19 @@ class PCCPatch {
       rhsMinDim = rhs.getSizeU0();
     }
     // if the dimensions are the same, decide by the index
-    return maxDim != rhsMaxDim ? ( maxDim > rhsMaxDim )
-                               : ( minDim != rhsMinDim ) ? ( minDim > rhsMinDim ) : ( index_ < rhs.index_ );
+    return maxDim != rhsMaxDim       ? ( maxDim > rhsMaxDim )
+           : ( minDim != rhsMinDim ) ? ( minDim > rhsMinDim )
+                                     : ( index_ < rhs.index_ );
   }
 
   void print() const {
-    printf(
-        "Patch[%3zu] uv0 = %4zu %4zu / %4zu %4zu uvd1 = %4zu %4zu %4zu / %4zu "
-        "%4zu %4zu \n",
-        index_, u0_, v0_, sizeU0_, sizeV0_, u1_, v1_, d1_, sizeU_, sizeV_, sizeD_ );
+    printf( "Patch[%3zu] uv0 = %4zu %4zu / %4zu %4zu uvd1 = %4zu %4zu %4zu / %4zu %4zu %4zu \n", index_, u0_, v0_,
+            sizeU0_, sizeV0_, u1_, v1_, d1_, sizeU_, sizeV_, sizeD_ );
   }
 
   void printDecoder() const {
-    printf(
-        "Patch uv0 = %4zu %4zu / %4zu %4zu uvd1 = %4zu %4zu %4zu orientation = "
-        "%4zu  \n",
-        u0_, v0_, sizeU0_, sizeV0_, u1_, v1_, d1_, patchOrientation_ );
+    printf( "Patch uv0 = %4zu %4zu / %4zu %4zu uvd1 = %4zu %4zu %4zu orientation = %4zu \n", u0_, v0_, sizeU0_, sizeV0_,
+            u1_, v1_, d1_, patchOrientation_ );
   }
 
   friend bool operator<( const PCCPatch& lhs, const PCCPatch& rhs ) {
@@ -825,7 +722,7 @@ class PCCPatch {
       return true;
   }
 
-  void update_horizon( std::vector<int>& horizon,
+  void updateHorizon( std::vector<int>& horizon,
                        std::vector<int>& top_horizon,
                        std::vector<int>& bottom_horizon,
                        std::vector<int>& right_horizon,
@@ -884,7 +781,6 @@ class PCCPatch {
 
   GPAPatchData& getPreGPAPatchData() { return preGPAPatchData_; }
   GPAPatchData  getPreGPAPatchData() const { return preGPAPatchData_; }
-
   GPAPatchData& getCurGPAPatchData() { return curGPAPatchData_; }
   GPAPatchData  getCurGPAPatchData() const { return curGPAPatchData_; }
 
@@ -893,42 +789,42 @@ class PCCPatch {
                                     size_t       canvasStrideBlk,
                                     size_t       canvasHeightBlk ) const {
     size_t x, y;
-    switch ( curGPAPatchData_.patchOrientation ) {
+    switch ( curGPAPatchData_.patchOrientation_ ) {
       case PATCH_ORIENTATION_DEFAULT:
-        x = uBlk + curGPAPatchData_.u0;
-        y = vBlk + curGPAPatchData_.v0;
+        x = uBlk + curGPAPatchData_.u0_;
+        y = vBlk + curGPAPatchData_.v0_;
         break;
       case PATCH_ORIENTATION_ROT90:
-        x = ( curGPAPatchData_.sizeV0 - 1 - vBlk ) + curGPAPatchData_.u0;
-        y = uBlk + curGPAPatchData_.v0;
+        x = ( curGPAPatchData_.sizeV0_ - 1 - vBlk ) + curGPAPatchData_.u0_;
+        y = uBlk + curGPAPatchData_.v0_;
         break;
       case PATCH_ORIENTATION_ROT180:
-        x = ( curGPAPatchData_.sizeU0 - 1 - uBlk ) + curGPAPatchData_.u0;
-        y = ( curGPAPatchData_.sizeV0 - 1 - vBlk ) + curGPAPatchData_.v0;
+        x = ( curGPAPatchData_.sizeU0_ - 1 - uBlk ) + curGPAPatchData_.u0_;
+        y = ( curGPAPatchData_.sizeV0_ - 1 - vBlk ) + curGPAPatchData_.v0_;
         break;
       case PATCH_ORIENTATION_ROT270:
-        x = vBlk + curGPAPatchData_.u0;
-        y = ( curGPAPatchData_.sizeU0 - 1 - uBlk ) + curGPAPatchData_.v0;
+        x = vBlk + curGPAPatchData_.u0_;
+        y = ( curGPAPatchData_.sizeU0_ - 1 - uBlk ) + curGPAPatchData_.v0_;
         break;
       case PATCH_ORIENTATION_MIRROR:
-        x = ( curGPAPatchData_.sizeU0 - 1 - uBlk ) + curGPAPatchData_.u0;
-        y = vBlk + curGPAPatchData_.v0;
+        x = ( curGPAPatchData_.sizeU0_ - 1 - uBlk ) + curGPAPatchData_.u0_;
+        y = vBlk + curGPAPatchData_.v0_;
         break;
       case PATCH_ORIENTATION_MROT90:
-        x = ( curGPAPatchData_.sizeV0 - 1 - vBlk ) + curGPAPatchData_.u0;
-        y = ( curGPAPatchData_.sizeU0 - 1 - uBlk ) + curGPAPatchData_.v0;
+        x = ( curGPAPatchData_.sizeV0_ - 1 - vBlk ) + curGPAPatchData_.u0_;
+        y = ( curGPAPatchData_.sizeU0_ - 1 - uBlk ) + curGPAPatchData_.v0_;
         break;
       case PATCH_ORIENTATION_MROT180:
-        x = uBlk + curGPAPatchData_.u0;
-        y = ( curGPAPatchData_.sizeV0 - 1 - vBlk ) + curGPAPatchData_.v0;
+        x = uBlk + curGPAPatchData_.u0_;
+        y = ( curGPAPatchData_.sizeV0_ - 1 - vBlk ) + curGPAPatchData_.v0_;
         break;
       case PATCH_ORIENTATION_MROT270:
-        x = vBlk + curGPAPatchData_.u0;
-        y = uBlk + curGPAPatchData_.v0;
+        x = vBlk + curGPAPatchData_.u0_;
+        y = uBlk + curGPAPatchData_.v0_;
         break;
       case PATCH_ORIENTATION_SWAP:  // swapAxis
-        x = vBlk + curGPAPatchData_.u0;
-        y = uBlk + curGPAPatchData_.v0;
+        x = vBlk + curGPAPatchData_.u0_;
+        y = uBlk + curGPAPatchData_.v0_;
         break;
       default: return -1; break;
     }
@@ -945,8 +841,8 @@ class PCCPatch {
                                   size_t            canvasHeightBlk,
                                   bool              bPrecedence,
                                   int               safeguard = 0 ) {
-    for ( size_t v0 = 0; v0 < curGPAPatchData_.sizeV0; ++v0 ) {
-      for ( size_t u0 = 0; u0 < curGPAPatchData_.sizeU0; ++u0 ) {
+    for ( size_t v0 = 0; v0 < curGPAPatchData_.sizeV0_; ++v0 ) {
+      for ( size_t u0 = 0; u0 < curGPAPatchData_.sizeU0_; ++u0 ) {
         for ( int deltaY = -safeguard; deltaY < safeguard + 1; deltaY++ ) {
           for ( int deltaX = -safeguard; deltaX < safeguard + 1; deltaX++ ) {
             int pos = patchBlock2CanvasBlockForGPA( u0 + deltaX, v0 + deltaY, canvasStrideBlk, canvasHeightBlk );
@@ -1318,27 +1214,26 @@ class PCCPatch {
   }
 
  private:
-  size_t index_;          // patch index
-  size_t originalIndex_;  // patch original index
-  size_t frameIndex_;
-  size_t tileIndex_;
-  size_t indexInFrame_;
-  size_t u1_;     // tangential shift
-  size_t v1_;     // bitangential shift
-  size_t d1_;     // depth shift
-  size_t sizeD_;  // size for depth
-  size_t sizeDPixel_;
-  size_t sizeU_;   // size for depth
-  size_t sizeV_;   // size for depth
-  size_t u0_;      // location in packed image (n*occupancyResolution_)
-  size_t v0_;      // location in packed image (n*occupancyResolution_)
-  size_t sizeU0_;  // size of occupancy map (n*occupancyResolution_)
-  size_t sizeV0_;  // size of occupancy map (n*occupancyResolution_)
-  size_t size2DXInPixel_;
-  size_t size2DYInPixel_;
-  size_t occupancyResolution_;  // occupancy map resolution
-  size_t projectionMode_;       // 0: related to the min depth value; 1: related to
-                                // the max value
+  size_t                  index_;          // patch index
+  size_t                  originalIndex_;  // patch original index
+  size_t                  frameIndex_;     // Frame index
+  size_t                  tileIndex_;      // Tile index
+  size_t                  indexInFrame_;   // index in frame
+  size_t                  u1_;             // tangential shift
+  size_t                  v1_;             // bitangential shift
+  size_t                  d1_;             // depth shift
+  size_t                  sizeD_;          // size for depth
+  size_t                  sizeDPixel_;     // Size D pixel
+  size_t                  sizeU_;          // size for depth
+  size_t                  sizeV_;          // size for depth
+  size_t                  u0_;             // location in packed image (n*occupancyResolution_)
+  size_t                  v0_;             // location in packed image (n*occupancyResolution_)
+  size_t                  sizeU0_;         // size of occupancy map (n*occupancyResolution_)
+  size_t                  sizeV0_;         // size of occupancy map (n*occupancyResolution_)
+  size_t                  size2DXInPixel_;
+  size_t                  size2DYInPixel_;
+  size_t                  occupancyResolution_;  // occupancy map resolution
+  size_t                  projectionMode_;       // 0: related to the min depth value; 1: related to the max value
   size_t                  levelOfDetailX_;
   size_t                  levelOfDetailY_;
   size_t                  normalAxis_;     // x
@@ -1374,8 +1269,7 @@ class PCCPatch {
   std::vector<size_t>     neighboringPatches_;  // List of neighboring patch index
   std::vector<int16_t>    depthMap_;            // Depth map
   std::vector<uint8_t>    occupancyMap_;        // Occupancy map
-  std::vector<PCCPoint3D> borderPoints_;        // 3D points created from borders of
-                                                // the patch
+  std::vector<PCCPoint3D> borderPoints_;        // 3D points created from borders of the patch
 };
 
 class PatchBlockFiltering {

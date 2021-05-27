@@ -694,11 +694,11 @@ void PCCDecoder::setGeneratePointCloudParameters( GeneratePointCloudParameters& 
 
 void PCCDecoder::createPatchFrameDataStructure( PCCContext& context ) {
   TRACE_PATCH( "createPatchFrameDataStructure GOP start \n" );
-  auto& atlList = context.getAtlasTileLayerList();
+  size_t frameCount = 0;
+  auto&  atlList    = context.getAtlasTileLayerList();
+
   // partition information derivation
-  setTilePartitionSizeAfti( context );
-  static size_t frmIdx     = 0;
-  size_t        frameCount = 0;
+  setTilePartitionSizeAfti( context );  
   for ( size_t i = 0; i < atlList.size(); i++ ) {
     frameCount = std::max( frameCount, ( context.calculateAFOCval( atlList, i ) + 1 ) );
   }
@@ -711,11 +711,9 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context ) {
     }
     createPatchFrameDataStructure( context, atglOrder );
   }
-
 #ifdef CONFORMANCE_TRACE
   for ( size_t fi = 0; fi < frameCount; fi++ ) { createHlsAtlasTileLogFiles( context, fi ); }
 #endif
-
   bool bHashSeiIsPresent = context.seiIsPresent( NAL_SUFFIX_NSEI, DECODED_ATLAS_INFORMATION_HASH );
   if ( bHashSeiIsPresent ) {
     TRACE_PATCH( "create Hash SEI \n" );
@@ -1677,10 +1675,10 @@ size_t PCCDecoder::setTileSizeAndLocation( PCCContext& context, size_t frameInde
   printf( "setTileSizeAndLocation frameIndex = %zu \n", frameIndex );
   fflush( stdout );
   // this is for the hash functions
-  context[frameIndex].getPartitionPosX().clear();    // size( afti.getPartitionWidth().size() );
-  context[frameIndex].getPartitionPosY().clear();    // size( afti.getPartitionHeight().size()  );
-  context[frameIndex].getPartitionWidth().clear();   // size( afti.getPartitionWidth().size() );
-  context[frameIndex].getPartitionHeight().clear();  // size( afti.getPartitionHeight().size()  );
+  context[frameIndex].getPartitionPosX().clear();    
+  context[frameIndex].getPartitionPosY().clear();    
+  context[frameIndex].getPartitionWidth().clear();   
+  context[frameIndex].getPartitionHeight().clear();  
   for ( auto v : afti.getPartitionWidth() ) { context[frameIndex].getPartitionWidth().push_back( v ); }
   for ( auto v : afti.getPartitionHeight() ) { context[frameIndex].getPartitionHeight().push_back( v ); }
   for ( auto v : afti.getPartitionPosX() ) { context[frameIndex].getPartitionPosX().push_back( v ); }
