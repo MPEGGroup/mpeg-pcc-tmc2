@@ -943,11 +943,10 @@ void PCCBitstreamWriter::atlasTileHeader( AtlasTileHeader&    ath,
   bitstream.writeUvlc( ath.getAtlasFrameParameterSetId() );       // ue(v)
   bitstream.writeUvlc( ath.getAtlasAdaptationParameterSetId() );  // ue(v)
   if ( afti.getSignalledTileIdFlag() )
-    bitstream.write( uint32_t( ath.getId() ),
-                     afti.getSignalledTileIdLengthMinus1() + 1 );  // u(v)
+    bitstream.write( uint32_t( ath.getId() ), afti.getSignalledTileIdLengthMinus1() + 1 );  // u(v)
   else {
     TRACE_BITSTREAM( " getNumTilesInAtlasFrameMinus1: %zu\n", afti.getNumTilesInAtlasFrameMinus1() );
-    if ( afti.getNumTilesInAtlasFrameMinus1() != 0 ){
+    if ( afti.getNumTilesInAtlasFrameMinus1() != 0 ) {
       bitstream.write( uint32_t( ath.getId() ),
                        ceilLog2( afti.getNumTilesInAtlasFrameMinus1() + 1 ) );  // u(v)
     }

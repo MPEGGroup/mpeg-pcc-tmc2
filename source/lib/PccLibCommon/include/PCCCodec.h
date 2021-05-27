@@ -101,65 +101,50 @@ struct GeneratePointCloudParameters {
 };
 
 struct PatchParams {
-  PatchParams( bool plrFlag = 0, uint16_t mapCnt = 1 ) {
-    patchType             = PROJECTED;
-    patch2dPosX           = 0;
-    patch2dPosY           = 0;
-    patch2dSizeX          = 1;
-    patch2dSizeY          = 1;
-    patch3dOffsetU        = 0;
-    patch3dOffsetV        = 0;
-    patch3dOffsetD        = 0;
-    patch3dRangeD         = 1;
-    patchProjectionID     = 0;
-    patchOrientationIndex = 0;
-    patchLoDScaleX        = 1;
-    patchLoDScaleY        = 1;
-    patchRawPoints        = 0;
-    patchInAuxVideo       = 0;
-
-    patchRawPoints           = 0;
-    epduAssociatedPatchCount = 0;
-    // std::vector<int64_t>  patchEomPatchCount;  // this needs to be cheked later?
+  PatchParams( bool plrFlag = 0, uint16_t mapCnt = 1 ) :
+      patchType_( PROJECTED ),
+      patchInAuxVideo_( 0 ),
+      patch2dPosX_( 0 ),
+      patch2dPosY_( 0 ),
+      patch2dSizeX_( 1 ),
+      patch2dSizeY_( 1 ),
+      patch3dOffsetU_( 0 ),
+      patch3dOffsetV_( 0 ),
+      patch3dOffsetD_( 0 ),
+      patch3dRangeD_( 1 ),
+      patchProjectionID_( 0 ),
+      patchOrientationIndex_( 0 ),
+      patchLoDScaleX_( 1 ),
+      patchLoDScaleY_( 1 ),
+      patchRawPoints_( 0 ),
+      epduAssociatedPatchCount_( 0 ) {
+    // std::vector<int64_t>  patchEomPatchCount_;  // this needs to be cheked later?
 
     /*if ( plrFlag == true ) {// ajt:: need to revise this later! as part of a new application structure?
-      size_t size = patchPlrdLevel.size();
-      patchPlrdLevel.resize( size + 1 );
-      for ( int m = 0; m < mapCnt; m++ ) patchPlrdLevel[size]=  0 );
+      size_t size = patchPlrdLevel_.size();
+      patchPlrdLevel_.resize( size + 1 );
+      for ( int m = 0; m < mapCnt; m++ ) patchPlrdLevel_[size]=  0 );
     }*/
   }
-  ~PatchParams() { epduAssociatedPoints.clear(); };
+  ~PatchParams() { epduAssociatedPoints_.clear(); };
 
-  // void initPatchParams( bool plrFlag, uint16_t mapCnt );
-
-  int64_t patchType;
-  int8_t  patchInAuxVideo;
-
-  int64_t patch2dPosX;
-  int64_t patch2dPosY;
-  int64_t patch2dSizeX;
-
-  int64_t patch2dSizeY;
-
-  int64_t patch3dOffsetU;
-  int64_t patch3dOffsetV;
-  int64_t patch3dOffsetD;
-
-  int64_t patch3dRangeD;
-
-  int64_t patchProjectionID;
-  int64_t patchOrientationIndex;
-
-  int64_t patchLoDScaleX;
-  int64_t patchLoDScaleY;
-
-  // ajt:: Application related Patch data, maybe an alternative way to do it is t have two spearte structures, one for
-  // common and one for application?
-  int64_t patchRawPoints;
-  // std::vector<int64_t>  patchEomPatchCount;  // this needs to be cheked later?
-  int64_t             epduAssociatedPatchCount;
-  std::vector<size_t> epduAssociatedPoints;
-  // std::vector<std::vector<uint8_t>> patchPlrdLevel; ajt:: this should be 3-dimensional - work on it later!
+  int64_t             patchType_;
+  int8_t              patchInAuxVideo_;
+  int64_t             patch2dPosX_;
+  int64_t             patch2dPosY_;
+  int64_t             patch2dSizeX_;
+  int64_t             patch2dSizeY_;
+  int64_t             patch3dOffsetU_;
+  int64_t             patch3dOffsetV_;
+  int64_t             patch3dOffsetD_;
+  int64_t             patch3dRangeD_;
+  int64_t             patchProjectionID_;
+  int64_t             patchOrientationIndex_;
+  int64_t             patchLoDScaleX_;
+  int64_t             patchLoDScaleY_;
+  int64_t             patchRawPoints_;
+  int64_t             epduAssociatedPatchCount_;
+  std::vector<size_t> epduAssociatedPoints_;
 };
 
 class PCCCodec {
@@ -294,7 +279,6 @@ class PCCCodec {
   }
 
   // seiMessage
-
   void aspsCommonByteString( std::vector<uint8_t>& stringByte, AtlasSequenceParameterSetRbsp& asps );
   void aspsApplicationByteString( std::vector<uint8_t>&          strinByte,
                                   AtlasSequenceParameterSetRbsp& asps,
@@ -339,6 +323,7 @@ class PCCCodec {
                                    std::vector<std::vector<std::vector<int64_t>>>& tileB2PPatchParams,
                                    std::vector<std::vector<int64_t>>&              atlasB2PPatchParams );
 
+  void inverseRotatePosition45DegreeOnAxis( size_t Axis, size_t lod, PCCPoint3D input, PCCVector3D& output );
   PCCLogger* logger_ = nullptr;
 
  private:
