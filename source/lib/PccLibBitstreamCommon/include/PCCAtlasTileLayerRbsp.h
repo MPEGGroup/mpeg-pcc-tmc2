@@ -42,7 +42,7 @@ namespace pcc {
 // 8.3.6.10  Atlas tile layer RBSP syntax
 class AtlasTileLayerRbsp {
  public:
-  AtlasTileLayerRbsp() : atlasFrmOrderCntVal_( 0 ), atlasFrmOrderCntMsb_( 0 ), tileOrder_( 0 ) {}
+  AtlasTileLayerRbsp() : atlasFrmOrderCntVal_( 0 ), atlasFrmOrderCntMsb_( 0 ), tileOrder_( 0 ) { encFrameIndex_=-1; encTileIndex_=-1; }
   ~AtlasTileLayerRbsp() {}
 
   AtlasTileLayerRbsp& operator=( const AtlasTileLayerRbsp& ) = default;
@@ -59,12 +59,20 @@ class AtlasTileLayerRbsp {
   void   setHeader( AtlasTileHeader value ) { header_ = value; }
   void   setDataUnit( AtlasTileDataUnit value ) { dataUnit_ = value; }
 
+  size_t getEncFrameIndex() {return encFrameIndex_; }
+  void   setEncFrameIndex(size_t value) { encFrameIndex_ = value; }
+  size_t getEncTileIndex() {return encTileIndex_; }
+  void   setEncTileIndex(size_t value) { encTileIndex_ = value; }
+
  private:
   AtlasTileHeader   header_;
   AtlasTileDataUnit dataUnit_;
   size_t            atlasFrmOrderCntVal_;
   size_t            atlasFrmOrderCntMsb_;
   size_t            tileOrder_;
+  
+  int            encFrameIndex_;
+  int            encTileIndex_;
 };
 
 };  // namespace pcc

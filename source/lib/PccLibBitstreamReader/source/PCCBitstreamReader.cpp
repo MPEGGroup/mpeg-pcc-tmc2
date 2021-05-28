@@ -626,12 +626,18 @@ void PCCBitstreamReader::atlasFrameTileInformation( AtlasFrameTileInformation&  
     afti.setUniformPartitionSpacingFlag( bitstream.read( 1 ) != 0U );  // u(1)
     TRACE_BITSTREAM( "afti: uniformPartition :%zu !singleTile\n", afti.getUniformPartitionSpacingFlag() );
     if ( afti.getUniformPartitionSpacingFlag() ) {
-      afti.setPartitionColumnsWidthMinus1( bitstream.readUvlc() );  //  ue(v)
+      afti.setPartitionColsWidthMinus1( bitstream.readUvlc() );  //  ue(v)
       afti.setPartitionRowsHeightMinus1( bitstream.readUvlc() );    //  ue(v)
       afti.setNumPartitionColumnsMinus1(
-          ceil( asps.getFrameWidth() / ( ( afti.getPartitionColumnsWidthMinus1() + 1 ) * 64.0 ) ) - 1 );
+          ceil( asps.getFrameWidth() / ( ( afti.getPartitionColsWidthMinus1() + 1 ) * 64.0 ) ) - 1 );
       afti.setNumPartitionRowsMinus1(
-          ceil( asps.getFrameHeight() / ( ( afti.getPartitionRowHeightMinus1() + 1 ) * 64.0 ) ) - 1 );
+          ceil( asps.getFrameHeight() / ( ( afti.getPartitionRowsHeightMinus1() + 1 ) * 64.0 ) ) - 1 );
+      TRACE_BITSTREAM( "afti: aspsWidth :%zu, partitionWidth: %zu, Number of Partitions Hor: %zu\n", asps.getFrameWidth(),
+                       afti.getPartitionColumnWidthMinus1( 0 ) + 1, afti.getNumPartitionColumnsMinus1() + 1 );
+      TRACE_BITSTREAM( "afti: aspsHeight :%zu, partitionHeight: %zu, Number of Partitions Ver: %zu\n",
+                       asps.getFrameHeight(), afti.getPartitionRowHeightMinus1( 0 ) + 1,
+                       afti.getNumPartitionRowsMinus1() + 1 );
+
     } else {
       afti.setNumPartitionColumnsMinus1( bitstream.readUvlc() );  //  ue(v)
       afti.setNumPartitionRowsMinus1( bitstream.readUvlc() );     //  ue(v)
@@ -641,12 +647,19 @@ void PCCBitstreamReader::atlasFrameTileInformation( AtlasFrameTileInformation&  
       for ( size_t i = 0; i < afti.getNumPartitionRowsMinus1(); i++ ) {
         afti.setPartitionRowHeightMinus1( i, bitstream.readUvlc() );  //  ue(v)
       }
+      
+      TRACE_BITSTREAM( "afti: aspsWidth :%zu, partitionWidth: ", asps.getFrameWidth() );
+      for ( size_t i = 0; i < afti.getNumPartitionColumnsMinus1(); i++ ) {
+        TRACE_BITSTREAM( "%d, ",afti.getPartitionColumnWidthMinus1( i ) );
     }
-    TRACE_BITSTREAM( "afti: aspsWidth :%zu, partitionWidth: %zu, Number of Partitions Hor: %zu\n", asps.getFrameWidth(),
-                     afti.getPartitionColumnWidthMinus1( 0 ) + 1, afti.getNumPartitionColumnsMinus1() + 1 );
-    TRACE_BITSTREAM( "afti: aspsHeight :%zu, partitionHeight: %zu, Number of Partitions Ver: %zu\n",
-                     asps.getFrameHeight(), afti.getPartitionRowHeightMinus1( 0 ) + 1,
-                     afti.getNumPartitionRowsMinus1() + 1 );
+      TRACE_BITSTREAM( "Number of Partitions Hor: %zu\n", afti.getNumPartitionColumnsMinus1() + 1 );
+
+      TRACE_BITSTREAM( "afti: aspsHeight :%zu, partitionWidth: ", asps.getFrameHeight() );
+      for ( size_t i = 0; i < afti.getNumPartitionRowsMinus1(); i++ ) {
+        TRACE_BITSTREAM( "%d, ",afti.getPartitionRowHeightMinus1( i ) );
+      }
+      TRACE_BITSTREAM( "Number of Partitions Ver: %zu\n", afti.getNumPartitionRowsMinus1() + 1 );
+    }
     afti.setSinglePartitionPerTileFlag( bitstream.read( 1 ) );  //  u(1)
     if ( afti.getSinglePartitionPerTileFlag() == 0U ) {
       uint32_t NumPartitionsInAtlasFrame =
@@ -1409,7 +1422,8 @@ void PCCBitstreamReader::sampleStreamNalUnit( PCCHighLevelSyntax&  syntax,
     case NAL_RASL_N:
     case NAL_RASL_R:
     case NAL_SKIP_N:
-    case NAL_SKIP_R: atlasTileLayerRbsp( syntax.addAtlasTileLayer(), syntax, nalu.getType(), bitstream ); break;
+    case NAL_SKIP_R:
+    case NAL_IDR_N_LP: atlasTileLayerRbsp( syntax.addAtlasTileLayer(), syntax, nalu.getType(), bitstream ); break;
     case NAL_SUFFIX_ESEI:
     case NAL_SUFFIX_NSEI: seiRbsp( syntax, bitstream, nalu.getType() ); break;
     case NAL_PREFIX_ESEI:

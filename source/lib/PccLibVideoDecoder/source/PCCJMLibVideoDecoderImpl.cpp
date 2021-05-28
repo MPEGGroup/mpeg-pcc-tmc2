@@ -66,7 +66,7 @@ void PCCJMLibVideoDecoderImpl<T>::decode( PCCVideoBitstream& bitstream,
 
   std::string binName = fileName + ".bin";
   std::string decName = fileName + ".yuv";
-  bitstream.writeJM( binName );
+  bitstream.write( binName );
   std::string        arguments = "JMDEC -i " + binName + " -o " + decName;
   std::istringstream aiss( arguments );
   std::string        token;
@@ -130,7 +130,7 @@ void PCCJMLibVideoDecoderImpl<T>::decode( PCCVideoBitstream& bitstream,
   // end decoding
 
   video.clear();
-  video.readJM( decName, decWidth, decHeight, format, nbyte );
+  video.read( decName, decWidth, decHeight, format, nbyte );
 
   removeFile( binName ); 
   removeFile( decName ); 

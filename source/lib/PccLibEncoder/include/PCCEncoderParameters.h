@@ -86,6 +86,8 @@ class PCCEncoderParameters {
   int textureQP_;
 
   // segmentation
+  bool   gridBasedSegmentation_;
+  size_t voxelDimensionGridBasedSegmentation_;
   size_t nnNormalEstimation_;
   size_t normalOrientation_;
   bool   gridBasedRefineSegmentation_;
@@ -291,6 +293,8 @@ class PCCEncoderParameters {
   bool   uniformPartitionSpacing_;
   size_t tilePartitionWidth_;
   size_t tilePartitionHeight_;
+  std::vector<int32_t> tilePartitionWidthList_;
+  std::vector<int32_t> tilePartitionHeightList_;
 
   // Profile tier level
   bool   tierFlag_;

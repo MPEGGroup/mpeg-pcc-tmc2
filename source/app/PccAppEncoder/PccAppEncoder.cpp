@@ -30,42 +30,28 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
-#include "PccAppEncoder.h"
+#ifndef _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+#include "PCCCommon.h"
+#include "PCCChrono.h"
+#include "PCCMemory.h"
+#include "PCCEncoder.h"
+#include "PCCMetrics.h"
+#include "PCCChecksum.h"
+#include "PCCContext.h"
+#include "PCCFrameContext.h"
+#include "PCCBitstream.h"
+#include "PCCGroupOfFrames.h"
+#include "PCCEncoderParameters.h"
+#include "PCCBitstreamWriter.h"
+#include "PCCMetricsParameters.h"
+#include <program_options_lite.h>
+#include <tbb/tbb.h>
 
 using namespace std;
 using namespace pcc;
 using pcc::chrono::StopwatchUserTime;
-
-int main( int argc, char* argv[] ) {
-  std::cout << "PccAppEncoder v" << TMC2_VERSION_MAJOR << "." << TMC2_VERSION_MINOR << std::endl << std::endl;
-
-  PCCEncoderParameters encoderParams;
-  PCCMetricsParameters metricsParams;
-  if ( !parseParameters( argc, argv, encoderParams, metricsParams ) ) { return -1; }
-  if ( encoderParams.nbThread_ > 0 ) { tbb::task_scheduler_init init( static_cast<int>( encoderParams.nbThread_ ) ); }
-
-  // Timers to count elapsed wall/user time
-  pcc::chrono::Stopwatch<std::chrono::steady_clock> clockWall;
-  pcc::chrono::StopwatchUserTime                    clockUser;
-
-  clockWall.start();
-  int ret = compressVideo( encoderParams, metricsParams, clockUser );
-  clockWall.stop();
-
-  using namespace std::chrono;
-  using ms       = milliseconds;
-  auto totalWall = duration_cast<ms>( clockWall.count() ).count();
-  std::cout << "Processing time (wall): " << ( ret == 0 ? totalWall / 1000.0 : -1 ) << " s\n";
-
-  auto totalUserSelf = duration_cast<ms>( clockUser.self.count() ).count();
-  std::cout << "Processing time (user.self): " << ( ret == 0 ? totalUserSelf / 1000.0 : -1 ) << " s\n";
-
-  auto totalUserChild = duration_cast<ms>( clockUser.children.count() ).count();
-  std::cout << "Processing time (user.children): " << ( ret == 0 ? totalUserChild / 1000.0 : -1 ) << " s\n";
-
-  std::cout << "Peak memory: " << getPeakMemory() << " KB\n";
-  return ret;
-}
 
 //---------------------------------------------------------------------------
 // :: Command line / config parsing helpers
@@ -201,6 +187,14 @@ bool parseParameters( int                   argc,
       "HDRConvert configuration file used for YUV420 to RGB444 conversion" )
 
     // segmentation
+    ( "gridBasedSegmentation",    // If enabled, change refineSegmentationGridBased() parameters according to m56857"
+      encoderParams.gridBasedSegmentation_,
+      encoderParams.gridBasedSegmentation_,
+      "Voxel dimension for grid-based segmentation (GBS)" )
+    ( "voxelDimensionGridBasedSegmentation",
+      encoderParams.voxelDimensionGridBasedSegmentation_,
+      encoderParams.voxelDimensionGridBasedSegmentation_,
+      "Voxel dimension for grid-based segmentation (GBS)" )
     ( "nnNormalEstimation",
       encoderParams.nnNormalEstimation_,
       encoderParams.nnNormalEstimation_,
@@ -804,12 +798,21 @@ bool parseParameters( int                   argc,
   ("numMaxTilePerFrame",
    encoderParams.numMaxTilePerFrame_,
    encoderParams.numMaxTilePerFrame_,"number of maximum tiles in a frame")
+  ("uniformPartitionSpacing",
+   encoderParams.uniformPartitionSpacing_,
+   encoderParams.uniformPartitionSpacing_, "indictation of uniform partitioning")
   ("tilePartitionWidth",
    encoderParams.tilePartitionWidth_,
    encoderParams.tilePartitionWidth_,"uniform partition width in the unit of 64 pixels")
   ("tilePartitionHeight",
    encoderParams.tilePartitionHeight_,
    encoderParams.tilePartitionHeight_,"uniform partition height in the unit of 64 pixels")
+  ("tilePartitionWidthList",
+   encoderParams.tilePartitionWidthList_,
+   encoderParams.tilePartitionWidthList_,"non uniform partition width in the unit of 64 pixels")
+  ("tilePartitionHeightList",
+   encoderParams.tilePartitionHeightList_,
+   encoderParams.tilePartitionHeightList_,"non uniform partition height in the unit of 64 pixels")
   ( "tileSegmentationType",
       encoderParams.tileSegmentationType_,
       encoderParams.tileSegmentationType_,
@@ -1017,11 +1020,11 @@ bool parseParameters( int                   argc,
                  "0\n";
   }
   encoderParams.completePath();
-  encoderParams.print();
-  if ( !encoderParams.check() ) { std::cerr << "Input encoder parameters not correct \n"; }
   metricsParams.completePath();
-  metricsParams.print();
+  if ( !encoderParams.check() ) { std::cerr << "Input encoder parameters not correct \n"; }
   if ( !metricsParams.check() ) { std::cerr << "Input metrics parameters not correct \n"; }
+  encoderParams.print();
+  metricsParams.print();
   metricsParams.startFrameNumber_ = encoderParams.startFrameNumber_;
 
   // report the current configuration (only in the absence of errors so
@@ -1156,4 +1159,35 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
     checksum.write( encoderParams.compressedStreamPath_ );
   }
   return checksumEqual ? 0 : -1;
+}
+
+int main( int argc, char* argv[] ) {
+  std::cout << "PccAppEncoder v" << TMC2_VERSION_MAJOR << "." << TMC2_VERSION_MINOR << std::endl << std::endl;
+
+  PCCEncoderParameters encoderParams;
+  PCCMetricsParameters metricsParams;
+  if ( !parseParameters( argc, argv, encoderParams, metricsParams ) ) { return -1; }
+  if ( encoderParams.nbThread_ > 0 ) { tbb::task_scheduler_init init( static_cast<int>( encoderParams.nbThread_ ) ); }
+
+  // Timers to count elapsed wall/user time
+  pcc::chrono::Stopwatch<std::chrono::steady_clock> clockWall;
+  pcc::chrono::StopwatchUserTime                    clockUser;
+
+  clockWall.start();
+  int ret = compressVideo( encoderParams, metricsParams, clockUser );
+  clockWall.stop();
+
+  using namespace std::chrono;
+  using ms       = milliseconds;
+  auto totalWall = duration_cast<ms>( clockWall.count() ).count();
+  std::cout << "Processing time (wall): " << ( ret == 0 ? totalWall / 1000.0 : -1 ) << " s\n";
+
+  auto totalUserSelf = duration_cast<ms>( clockUser.self.count() ).count();
+  std::cout << "Processing time (user.self): " << ( ret == 0 ? totalUserSelf / 1000.0 : -1 ) << " s\n";
+
+  auto totalUserChild = duration_cast<ms>( clockUser.children.count() ).count();
+  std::cout << "Processing time (user.children): " << ( ret == 0 ? totalUserChild / 1000.0 : -1 ) << " s\n";
+
+  std::cout << "Peak memory: " << getPeakMemory() << " KB\n";
+  return ret;
 }

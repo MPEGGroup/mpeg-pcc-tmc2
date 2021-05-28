@@ -115,8 +115,10 @@ class AtlasFrameTileInformation {
   uint32_t getNumTilesInAtlasFrameMinus1() { return numTilesInAtlasFrameMinus1_; }
   bool     getSignalledTileIdFlag() { return signalledTileIdFlag_; }
   uint32_t getSignalledTileIdLengthMinus1() { return signalledTileIdLengthMinus1_; }
-  uint32_t getPartitionColumnsWidthMinus1() { return partitionColumnWidthMinus1_[0]; }
-  uint32_t getPartitionRowHeightMinus1() { return partitionRowHeightMinus1_[0]; }
+  uint32_t getPartitionColsWidthMinus1() { return partitionColumnWidthMinus1_[0]; }
+  uint32_t getPartitionRowsHeightMinus1() { return partitionRowHeightMinus1_[0]; }
+  std::vector<uint32_t>& getPartitionColumnWidthMinus1() { return partitionColumnWidthMinus1_; }
+  std::vector<uint32_t>& getPartitionRowHeightMinus1()   { return partitionRowHeightMinus1_; }
   uint32_t getPartitionColumnWidthMinus1( size_t index ) { return partitionColumnWidthMinus1_[index]; }
   uint32_t getPartitionRowHeightMinus1( size_t index ) { return partitionRowHeightMinus1_[index]; }
   uint32_t getTopLeftPartitionIdx( size_t index ) { return topLeftPartitionIdx_[index]; }
@@ -130,13 +132,13 @@ class AtlasFrameTileInformation {
 
   void setSingleTileInAtlasFrameFlag( bool value ) { singleTileInAtlasFrameFlag_ = value; }
   void setUniformPartitionSpacingFlag( bool value ) { uniformPartitionSpacingFlag_ = value; }
-  void setNumPartitionColumnsMinus1( uint32_t value ) { numPartitionColumnsMinus1_ = value; }
-  void setNumPartitionRowsMinus1( uint32_t value ) { numPartitionRowsMinus1_ = value; }
+  void setNumPartitionColumnsMinus1( uint32_t value ) { numPartitionColumnsMinus1_ = value; partitionColumnWidthMinus1_.resize(std::max((uint32_t)1, value)); }
+  void setNumPartitionRowsMinus1( uint32_t value ) { numPartitionRowsMinus1_ = value; partitionRowHeightMinus1_.resize(std::max((uint32_t)1, value)); }
   void setSinglePartitionPerTileFlag( uint32_t value ) { singlePartitionPerTileFlag_ = value; }
   void setNumTilesInAtlasFrameMinus1( uint32_t value ) { numTilesInAtlasFrameMinus1_ = value; }
   void setSignalledTileIdFlag( bool value ) { signalledTileIdFlag_ = value; }
   void setSignalledTileIdLengthMinus1( uint32_t value ) { signalledTileIdLengthMinus1_ = value; }
-  void setPartitionColumnsWidthMinus1( uint32_t value ) { partitionColumnWidthMinus1_[0] = value; }
+  void setPartitionColsWidthMinus1( uint32_t value ) { partitionColumnWidthMinus1_[0] = value; }
   void setPartitionRowsHeightMinus1( uint32_t value ) { partitionRowHeightMinus1_[0] = value; }
   void setPartitionColumnWidthMinus1( size_t index, uint32_t value ) {
     if ( index == ( partitionColumnWidthMinus1_.size() ) )
@@ -188,8 +190,14 @@ class AtlasFrameTileInformation {
       assert( 0 );
     auxiliaryVideoTileRowHeight_[index] = value;
   }
-  std::vector<size_t>& getColWidth() { return colWidth_; }
-  std::vector<size_t>& getRowHeight() { return rowHeight_; }
+  std::vector<size_t>& getPartitionWidth() { return colWidth_; }
+  std::vector<size_t>& getPartitionHeight() { return rowHeight_; }
+  std::vector<size_t>& getPartitionPosX() { return partitionPosX_; }
+  std::vector<size_t>& getPartitionPosY() { return partitionPosY_; }
+  size_t getPartitionPosX( size_t index ) { return partitionPosX_[index]; }
+  size_t getPartitionPosY( size_t index ) { return partitionPosY_[index]; }
+  size_t getPartitionWidth( size_t index ) { return colWidth_[index]; }
+  size_t getPartitionHeight( size_t index ) { return rowHeight_[index]; }
 
  private:
   bool                  singleTileInAtlasFrameFlag_;
@@ -210,6 +218,8 @@ class AtlasFrameTileInformation {
   std::vector<uint32_t> auxiliaryVideoTileRowHeight_;
   std::vector<size_t>   colWidth_;
   std::vector<size_t>   rowHeight_;
+  std::vector<size_t>   partitionPosX_;
+  std::vector<size_t>   partitionPosY_;
 };
 
 };  // namespace pcc

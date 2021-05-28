@@ -30,40 +30,19 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
-#include "PccAppNormalGenerator.h"
+#ifndef _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+#include "PCCCommon.h"
+#include "PCCMath.h"
+#include "PCCKdTree.h"
+#include "PCCGroupOfFrames.h"
+#include "PCCNormalsGenerator.h"
+#include <program_options_lite.h>
+#include <tbb/tbb.h>
 
 using namespace std;
 using namespace pcc;
-
-int main( int argc, char* argv[] ) {
-  std::cout << "PccAppNormalGenerator v" << TMC2_VERSION_MAJOR << "." << TMC2_VERSION_MINOR << std::endl << std::endl;
-  std::string                    uncompressedDataPath;
-  std::string                    reconstructedDataPath;
-  size_t                         startFrameNumber;
-  size_t                         frameCount;
-  size_t                         nbThread     = 0;
-  PCCNormalsGenerator3Parameters normalParams = {PCCVector3D( 0.0 ),
-                                                 ( std::numeric_limits<double>::max )(),
-                                                 ( std::numeric_limits<double>::max )(),
-                                                 ( std::numeric_limits<double>::max )(),
-                                                 ( std::numeric_limits<double>::max )(),
-                                                 16,
-                                                 16,
-                                                 16,
-                                                 0,
-                                                 PCC_NORMALS_GENERATOR_ORIENTATION_SPANNING_TREE,
-                                                 false,
-                                                 false,
-                                                 false};  // default values
-  if ( !parseParameters( argc, argv, uncompressedDataPath, reconstructedDataPath, startFrameNumber, frameCount,
-                         nbThread, normalParams ) ) {
-    return -1;
-  }
-  if ( nbThread > 0 ) { tbb::task_scheduler_init init( static_cast<int>( nbThread ) ); }
-  int ret = generateNormal( uncompressedDataPath, reconstructedDataPath, startFrameNumber, frameCount, nbThread,
-                            normalParams );
-  return ret;
-}
 
 //---------------------------------------------------------------------------
 // :: Command line / config parsing helpers
@@ -245,4 +224,34 @@ int generateNormal( const std::string                     uncompressedDataPath,
   if ( !reconstructedDataPath.empty() ) { sources.write( reconstructedDataPath, startFrame ); }
   sources.clear();
   return 0;
+}
+
+int main( int argc, char* argv[] ) {
+  std::cout << "PccAppNormalGenerator v" << TMC2_VERSION_MAJOR << "." << TMC2_VERSION_MINOR << std::endl << std::endl;
+  std::string                    uncompressedDataPath;
+  std::string                    reconstructedDataPath;
+  size_t                         startFrameNumber;
+  size_t                         frameCount;
+  size_t                         nbThread     = 0;
+  PCCNormalsGenerator3Parameters normalParams = {PCCVector3D( 0.0 ),
+                                                 ( std::numeric_limits<double>::max )(),
+                                                 ( std::numeric_limits<double>::max )(),
+                                                 ( std::numeric_limits<double>::max )(),
+                                                 ( std::numeric_limits<double>::max )(),
+                                                 16,
+                                                 16,
+                                                 16,
+                                                 0,
+                                                 PCC_NORMALS_GENERATOR_ORIENTATION_SPANNING_TREE,
+                                                 false,
+                                                 false,
+                                                 false};  // default values
+  if ( !parseParameters( argc, argv, uncompressedDataPath, reconstructedDataPath, startFrameNumber, frameCount,
+                         nbThread, normalParams ) ) {
+    return -1;
+  }
+  if ( nbThread > 0 ) { tbb::task_scheduler_init init( static_cast<int>( nbThread ) ); }
+  int ret = generateNormal( uncompressedDataPath, reconstructedDataPath, startFrameNumber, frameCount, nbThread,
+                            normalParams );
+  return ret;
 }

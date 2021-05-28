@@ -76,12 +76,21 @@ bool PCCVideoDecoder::decompress( PCCVideo<T, 3>&    video,
   const std::string type        = bitstream.getExtension();
   const std::string fileName    = path + type;
   const std::string binFileName = fileName + ".bin";
-#ifdef USE_VTMLIB_VIDEO_CODEC
-  if ( byteStreamVideoCoder ) { bitstream.sampleStreamToByteStream( codecId == VTMLIB ); }
+
+  printf("byteStreamVideoCoder = %d codecId = %d \n",byteStreamVideoCoder,codecId);
+  fflush(stdout);
+  if ( byteStreamVideoCoder ) {
+    bitstream.sampleStreamToByteStream(
+#if defined( USE_JMAPP_VIDEO_CODEC ) || defined( USE_JMLIB_VIDEO_CODEC )
+        codecId == JMAPP || codecId == JMLIB,
 #else
-  if ( byteStreamVideoCoder ) { bitstream.sampleStreamToByteStream(); }
+        false,
 #endif
-  if ( keepIntermediateFiles ) { bitstream.write( binFileName ); }
+#if defined( USE_VTMLIB_VIDEO_CODEC )
+        codecId == VTMLIB
+#endif
+    );
+  }
 
   // Decode video
   auto decoder = PCCVirtualVideoDecoder<T>::create( codecId );
@@ -95,7 +104,6 @@ bool PCCVideoDecoder::decompress( PCCVideo<T, 3>&    video,
   }
 #endif
   decoder->decode( bitstream, video, outputBitDepth, decoderPath, fileName );
-
   size_t width      = video.getWidth();
   size_t height     = video.getHeight();
   bool   is444      = video.is444();
@@ -107,11 +115,11 @@ bool PCCVideoDecoder::decompress( PCCVideo<T, 3>&    video,
     TRACE_PICTURE( " MD5checksumChan2 = %s \n", image.computeMD5( 2 ).c_str() );
   }
   TRACE_PICTURE( "Width =  %d, Height = %d \n", video.getWidth(), video.getHeight() );
-
   printf( "Decoded frame = %zu x %zu %zu bits is444 = %d NumFrames = %zu \n", width, height, outputBitDepth, is444,
           video.getFrameCount() );
   fflush( stdout );
   if ( keepIntermediateFiles ) {
+    bitstream.write( binFileName );
     video.write( video.addFormat( fileName + "_rec", outputBitDepth == 8 ? "8" : "10" ), outputBitDepth == 8 ? 1 : 2 );
   }
 

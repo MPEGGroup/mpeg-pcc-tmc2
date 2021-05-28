@@ -147,6 +147,9 @@ class PCCFrameContext {
   size_t getLeftTopXInFrame() { return leftTopXInFrame_; }
   size_t getLeftTopYInFrame() { return leftTopYInFrame_; }
 
+  bool   getReferredTile() { return referredTile_; }
+  void   setReferredTile( bool value ) { referredTile_ = value; }
+        
   void allocOneLayerData();
   void printBlockToPatch( const size_t occupancyResolution );
   void printPatch();
@@ -178,6 +181,7 @@ class PCCFrameContext {
   std::vector<int32_t>                         refAFOCList_;
   size_t                                       numRefIdxActive_;
   size_t                                       bestRefListIndexInAsps_;
+  bool                                         referredTile_;
   size_t                                       log2PatchQuantizerSizeX_;
   size_t                                       log2PatchQuantizerSizeY_;
   std::vector<PCCVector3<size_t>>              pointToPixel_;
@@ -233,6 +237,11 @@ class PCCAtlasFrameContext {
   size_t getNumPartitionRows() { return numPartitionRows_; }
   bool   getSignalledTileId() { return signalledTileId_; }
 
+  std::vector<size_t>& getPartitionWidth() { return partitionWidth_;}
+  std::vector<size_t>& getPartitionHeight() { return partitionHeight_;}
+  std::vector<size_t>& getPartitionPosX() { return partitionPosX_;}
+  std::vector<size_t>& getPartitionPosY() { return partitionPosY_;}
+  
   size_t getPartitionWidth( size_t index ) const {
     assert( index < partitionWidth_.size() );
     return partitionWidth_[index];
@@ -300,6 +309,19 @@ class PCCAtlasFrameContext {
     assert( index < partitionPosY_.size() );
     partitionPosY_[index] = value;
   }
+  size_t               getAuxTileHeight( size_t index ) { return auxTileHeight_[index]; }
+  std::vector<size_t>& getAuxTileHeight() { return auxTileHeight_; }
+  size_t               getAuxTileLeftTopY( size_t index ) { return auxTileLeftTopY_[index]; }
+  std::vector<size_t>& getAuxTileLeftTopY() { return auxTileLeftTopY_; }
+  void                 setAuxVideoWidth( size_t value ) { auxVideWidth_ = value; }
+  void                 setAuxTileHeight( size_t index, size_t value ) { auxTileHeight_[index] = value; }
+  void                 setAuxTileLeftTopY( size_t index, size_t value ) { auxTileLeftTopY_[index] = value; }
+  size_t  getAuxVideoWidth() { return auxVideWidth_; }
+  size_t  getAuxVideoHeight() {
+    size_t videoHeight = 0;
+    for ( auto& height : auxTileHeight_ ) { videoHeight += height; }
+    return videoHeight;
+  }
 
   void setTileId( std::vector<size_t>& value ) { tileId_ = value; }
   void setTiles( std::vector<PCCFrameContext>& value ) { tileContexts_ = value; }
@@ -316,7 +338,9 @@ class PCCAtlasFrameContext {
                                   size_t numTiles,
                                   bool   uniformPartitionSpacing,
                                   size_t partitionWidthIn64,
-                                  size_t partitionHeightIn64 ) {
+                                  size_t partitionHeightIn64
+                                 ,std::vector<int> partitionWidthListIn64 = {}
+                                 ,std::vector<int> partitionHeightListIn64 = {} ) {
     titleFrameContext_.setWidth( width );
     titleFrameContext_.setHeight( height );
     atlasFrameWidth_         = width;
@@ -337,10 +361,26 @@ class PCCAtlasFrameContext {
       partitionHeight_[0] = atlasFrameHeight_;
     } else {
       uniformPartitionSpacing_ = uniformPartitionSpacing;
+      if(uniformPartitionSpacing_){
       numPartitionCols_ =
           (size_t)std::ceil( static_cast<double>( atlasFrameWidth_ ) / static_cast<double>( partitionWidthIn ) );
       numPartitionRows_ =
           (size_t)std::ceil( static_cast<double>( atlasFrameHeight_ ) / static_cast<double>( partitionHeightIn ) );
+      }else {
+        //in case params_'s partitionWidthList and partitionHeightList are empty
+        if(partitionWidthListIn64.size() == 0 ){
+          size_t numPartWidth =
+          (size_t)std::ceil( static_cast<double>( atlasFrameWidth_ ) / static_cast<double>( partitionWidthIn ) );
+          for(size_t i=0; i<numPartWidth; i++) partitionWidthListIn64.push_back(partitionWidthIn);
+        }
+        if(partitionHeightListIn64.size() == 0){
+          size_t numPartHeight =
+          (size_t)std::ceil( static_cast<double>( atlasFrameHeight_ ) / static_cast<double>( partitionHeightIn ) );
+          for(size_t i=0; i<numPartHeight; i++) partitionHeightListIn64.push_back(partitionHeightIn);
+        }
+        numPartitionCols_ = partitionWidthListIn64.size();
+        numPartitionRows_ = partitionHeightListIn64.size();
+      }
       partitionWidth_.resize( numPartitionCols_ );
       partitionHeight_.resize( numPartitionRows_ );
       partitionPosX_.resize( numPartitionCols_ );
@@ -372,14 +412,30 @@ class PCCAtlasFrameContext {
         }
       } else {
         printf( "non uniform tile partitioning\n" );
-        exit( 128 );
-        for ( size_t col = 0; col < numPartitionCols_; col++ ) {
-          partitionWidth_[col] = partitionWidthIn;
-          partitionPosX_[col]  = partitionPosX_[col - 1] + partitionWidth_[col];
+//        exit( 130 );
+        
+        partitionPosX_[0]  = 0;
+        partitionWidth_[0] = partitionWidthListIn64[0];
+        for ( size_t col = 1; col < numPartitionCols_ - 1; col++ ) {
+          partitionPosX_[col]  = partitionPosX_[col - 1] + partitionWidth_[col - 1];
+          partitionWidth_[col] = partitionWidthListIn64[col];
         }
-        for ( size_t row = 0; row < numPartitionRows_; row++ ) {
-          partitionHeight_[row] = partitionHeightIn;
-          partitionPosY_[row]   = partitionPosY_[row - 1] + partitionHeight_[row];
+        if ( numPartitionCols_ > 1 ) {
+          partitionPosX_[numPartitionCols_ - 1] =
+              partitionPosX_[numPartitionCols_ - 2] + partitionWidth_[numPartitionCols_ - 2];
+          partitionWidth_[numPartitionCols_ - 1] = atlasFrameWidth_ - partitionPosX_[numPartitionCols_ - 1];
+        }
+
+        partitionPosY_[0]   = 0;
+        partitionHeight_[0] = partitionHeightListIn64[0];
+        for ( size_t row = 1; row < numPartitionRows_ - 1; row++ ) {
+          partitionPosY_[row]   = partitionPosY_[row - 1] + partitionHeight_[row - 1];
+          partitionHeight_[row] = partitionHeightListIn64[row];
+        }
+        if ( numPartitionRows_ > 1 ) {
+          partitionPosY_[numPartitionRows_ - 1] =
+              partitionPosY_[numPartitionRows_ - 2] + partitionHeight_[numPartitionRows_ - 2];
+          partitionHeight_[numPartitionRows_ - 1] = atlasFrameHeight_ - partitionPosY_[numPartitionRows_ - 1];
         }
       }
     }  // numTiles!=1
@@ -394,6 +450,8 @@ class PCCAtlasFrameContext {
                                     bool   uniformPartitionSpacing,
                                     size_t partitionWidthIn64,
                                     size_t partitionHeightIn64,
+                                    std::vector<int32_t> partitionWidthListIn64,
+                                    std::vector<int32_t> partitionHeightListIn64,
                                     int    numPartitionWidth      = -1,
                                     int    numPartitionHeight     = -1,
                                     bool   singlePartitionPerTile = false,
@@ -418,10 +476,28 @@ class PCCAtlasFrameContext {
       partitionHeight_[0] = atlasFrameHeight_;
     } else {
       uniformPartitionSpacing_ = uniformPartitionSpacing;
+      if(uniformPartitionSpacing_){
       numPartitionCols_ =
           (size_t)std::ceil( static_cast<double>( atlasFrameWidth_ ) / static_cast<double>( partitionWidthIn ) );
       numPartitionRows_ =
           (size_t)std::ceil( static_cast<double>( atlasFrameHeight_ ) / static_cast<double>( partitionHeightIn ) );
+      }else {
+        //in case params_'s partitionWidthList and partitionHeightList are empty
+        if(partitionWidthListIn64.size() == 0 ){
+          size_t numPartWidth =
+          (size_t)std::ceil( static_cast<double>( atlasFrameWidth_ ) / static_cast<double>( partitionWidthIn ) );
+          for(size_t i=0; i<numPartWidth; i++) partitionWidthListIn64.push_back(partitionWidthIn);
+        }
+        if(partitionHeightListIn64.size() == 0){
+          size_t numPartHeight =
+          (size_t)std::ceil( static_cast<double>( atlasFrameHeight_ ) / static_cast<double>( partitionHeightIn ) );
+          for(size_t i=0; i<numPartHeight; i++) partitionHeightListIn64.push_back(partitionHeightIn);
+        }
+//        assert(partitionWidthListIn64.size()>0);
+//        assert(partitionHeightListIn64.size()>0);
+        numPartitionCols_ = partitionWidthListIn64.size();
+        numPartitionRows_ = partitionHeightListIn64.size();
+      }
       partitionWidth_.resize( numPartitionCols_ );
       partitionHeight_.resize( numPartitionRows_ );
       partitionPosX_.resize( numPartitionCols_ );
@@ -452,14 +528,28 @@ class PCCAtlasFrameContext {
         }
       } else {
         printf( "non uniform tile partitioning\n" );
-        exit( 130 );
-        for ( size_t col = 0; col < numPartitionCols_; col++ ) {
-          partitionWidth_[col] = partitionWidthIn;
-          partitionPosX_[col]  = partitionPosX_[col - 1] + partitionWidth_[col];
+        partitionPosX_[0]  = 0;
+        partitionWidth_[0] = partitionWidthListIn64[0];
+        for ( size_t col = 1; col < numPartitionCols_ - 1; col++ ) {
+          partitionPosX_[col]  = partitionPosX_[col - 1] + partitionWidth_[col - 1];
+          partitionWidth_[col] = partitionWidthListIn64[col];
         }
-        for ( size_t row = 0; row < numPartitionRows_; row++ ) {
-          partitionHeight_[row] = partitionHeightIn;
-          partitionPosY_[row]   = partitionPosY_[row - 1] + partitionHeight_[row];
+        if ( numPartitionCols_ > 1 ) {
+          partitionPosX_[numPartitionCols_ - 1] =
+              partitionPosX_[numPartitionCols_ - 2] + partitionWidth_[numPartitionCols_ - 2];
+          partitionWidth_[numPartitionCols_ - 1] = atlasFrameWidth_ - partitionPosX_[numPartitionCols_ - 1];
+        }
+
+        partitionPosY_[0]   = 0;
+        partitionHeight_[0] = partitionHeightListIn64[0];
+        for ( size_t row = 1; row < numPartitionRows_ - 1; row++ ) {
+          partitionPosY_[row]   = partitionPosY_[row - 1] + partitionHeight_[row - 1];
+          partitionHeight_[row] = partitionHeightListIn64[row];
+        }
+        if ( numPartitionRows_ > 1 ) {
+          partitionPosY_[numPartitionRows_ - 1] =
+              partitionPosY_[numPartitionRows_ - 2] + partitionHeight_[numPartitionRows_ - 2];
+          partitionHeight_[numPartitionRows_ - 1] = atlasFrameHeight_ - partitionPosY_[numPartitionRows_ - 1];
         }
       }
     }  // numTiles!=1
@@ -484,6 +574,10 @@ class PCCAtlasFrameContext {
   std::vector<size_t>          partitionHeight_;  // in pixel
   std::vector<size_t>          partitionPosX_;    // in pixel
   std::vector<size_t>          partitionPosY_;    // in pixel
+  size_t                       auxVideWidth_;
+  std::vector<size_t>          auxTileHeight_;
+  std::vector<size_t>          auxTileLeftTopY_;
+
   std::vector<size_t>          tileId_;
   std::vector<PCCFrameContext> tileContexts_;
   std::vector<int>             partitionToTileMap_;
