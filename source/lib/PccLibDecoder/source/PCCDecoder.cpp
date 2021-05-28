@@ -707,7 +707,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context ) {
   for ( size_t atglOrder = 0; atglOrder < atlList.size(); atglOrder++ ) {
     if ( atglOrder == 0 ||
          atlList[atglOrder].getAtlasFrmOrderCntVal() != atlList[atglOrder - 1].getAtlasFrmOrderCntVal() ) {
-      setTileSizeAndLocation( context, atlList[atglOrder].getAtlasFrmOrderCntVal(), atlList[atglOrder].getHeader() );
+      setTileSizeAndLocation( context, atlList[atglOrder].getHeader().getFrameIndex(), atlList[atglOrder].getHeader() );
     }
     createPatchFrameDataStructure( context, atglOrder );
   }
