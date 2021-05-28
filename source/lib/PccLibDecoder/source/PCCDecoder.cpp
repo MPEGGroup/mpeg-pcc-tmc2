@@ -700,7 +700,9 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context ) {
   // partition information derivation
   setTilePartitionSizeAfti( context );
   for ( size_t i = 0; i < atlList.size(); i++ ) {
-    frameCount = std::max( frameCount, ( context.calculateAFOCval( atlList, i ) + 1 ) );
+    size_t afocVal = context.calculateAFOCval( atlList, i );
+    frameCount = std::max( frameCount, ( afocVal + 1 ) );
+    atlList[i].getHeader().setFrameIndex(afocVal);
   }
   context.resize( frameCount );
   setPointLocalReconstruction( context );
@@ -734,14 +736,14 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
   auto&  atgdu              = atlu.getDataUnit();
   auto   geometryBitDepth2D = asps.getGeometry2dBitdepthMinus1() + 1;
   auto   geometryBitDepth3D = asps.getGeometry3dBitdepthMinus1() + 1;
-  size_t frameIndex         = atlu.getAtlasFrmOrderCntVal();
+  size_t frameIndex         = ath.getFrameIndex(); //atlu.getAtlasFrmOrderCntVal();
   size_t tileIndex          = afti.getSignalledTileIdFlag() ? afti.getTileId( ath.getId() ) : ath.getId();
 
   printf( "createPatchFrameDataStructure Frame = %zu Tiles = %zu atlasIndex = %zu atglOrder %zu \n", frameIndex,
           tileIndex, context.getAtlasIndex(), atglOrder );
   fflush( stdout );
   PCCFrameContext& tile = context[frameIndex].getTile( tileIndex );
-  tile.setFrameIndex( atlu.getAtlasFrmOrderCntVal() );
+  tile.setFrameIndex( frameIndex );
   tile.setAtlasFrmOrderCntVal( atlu.getAtlasFrmOrderCntVal() );
   tile.setAtlasFrmOrderCntMsb( atlu.getAtlasFrmOrderCntMsb() );
   tile.setTileIndex( tileIndex );
