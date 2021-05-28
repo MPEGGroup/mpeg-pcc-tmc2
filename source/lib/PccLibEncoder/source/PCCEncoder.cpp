@@ -663,6 +663,8 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     auto& reconstruct = reconstructs[frameIdx];
     auto& partition   = partitions[frameIdx];
 
+    printf( "Post-Processing: postprocessSmoothing = %zu flagGeometrySmoothing_ = %d pbfEnableFlag = %d \n",
+            params_.postprocessSmoothingFilter_, ppSEIParams.flagGeometrySmoothing_, params_.pbfEnableFlag_ );
     TRACE_PATCH( "Post-Processing: postprocessSmoothing = %zu pbfEnableFlag = %d \n",
                  params_.postprocessSmoothingFilter_, params_.pbfEnableFlag_ );
     if ( ppSEIParams.flagGeometrySmoothing_ ) {

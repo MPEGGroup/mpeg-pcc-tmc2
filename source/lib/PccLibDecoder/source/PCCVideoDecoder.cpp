@@ -75,8 +75,6 @@ bool PCCVideoDecoder::decompress( PCCVideo<T, 3>&    video,
 
   printf("byteStreamVideoCoder = %d codecId = %d \n",byteStreamVideoCoder,codecId);
   fflush(stdout);
-  const std::string binbeforeFileName = fileName + "_before_ss2bs.bin";
-  bitstream.write( binbeforeFileName );
   if ( byteStreamVideoCoder ) {
     bitstream.sampleStreamToByteStream(
 #if defined( USE_JMAPP_VIDEO_CODEC ) || defined( USE_JMLIB_VIDEO_CODEC )
@@ -95,7 +93,6 @@ bool PCCVideoDecoder::decompress( PCCVideo<T, 3>&    video,
   printf( " decompress codecId = %d size(T) = %zu \n", (int)codecId, sizeof( T ) );
   fflush( stdout );
   decoder->decode( bitstream, video, outputBitDepth, decoderPath, fileName );
-
   size_t width      = video.getWidth();
   size_t height     = video.getHeight();
   bool   is444      = video.is444();
@@ -107,7 +104,6 @@ bool PCCVideoDecoder::decompress( PCCVideo<T, 3>&    video,
     TRACE_PICTURE( " MD5checksumChan2 = %s \n", image.computeMD5( 2 ).c_str() );
   }
   TRACE_PICTURE( "Width =  %d, Height = %d \n", video.getWidth(), video.getHeight() );
-
   printf( "Decoded frame = %zu x %zu %zu bits is444 = %d NumFrames = %zu \n", width, height, outputBitDepth, is444,
           video.getFrameCount() );
   fflush( stdout );
