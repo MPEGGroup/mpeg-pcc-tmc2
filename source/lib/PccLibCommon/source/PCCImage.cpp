@@ -70,13 +70,13 @@ template <typename T, size_t N>
 void PCCImage<T, N>::convertYUV420ToYUV444() {
   PCCImage<T, 3> image;
   image.convertYUV420ToYUV444( *this );
-  this->swap( image );
+  swap( image );
 }
 template <typename T, size_t N>
 void PCCImage<T, N>::convertYUV444ToYUV420() {
   PCCImage<T, 3> image;
-  image.convertYUV444ToYUV420( *this );
-  this->swap( image );
+  image.convertYUV444ToYUV420( *this );    
+  swap( image );  
 }
 
 template <typename T, size_t N>
@@ -85,23 +85,21 @@ void PCCImage<T, N>::convertRGB2BGR() {
   channels_[1].swap( channels_[2] );
 }
 template <typename T, size_t N>
-void PCCImage<T, N>::convertYUV444ToYUV420( const PCCImage<T, 3>& image ) {
-  if ( image.getColorFormat() != PCCCOLORFORMAT::YUV444 ) {
+void PCCImage<T, N>::convertYUV444ToYUV420( const PCCImage<T, 3>& src ) {
+  if ( src.getColorFormat() != PCCCOLORFORMAT::YUV444 ) {
     printf(
         "Error: convertYUV44ToYUV420 not possible from image of format = %d "
         "!= YUV444 \n",
-        (int32_t)image.getColorFormat() );
+        (int32_t)src.getColorFormat() );
     exit( -1 );
   }
-  resize( image.getWidth(), image.getHeight(), PCCCOLORFORMAT::YUV420 );
-  std::copy( image.channels_[0].begin(), image.channels_[0].end(), channels_[0].begin() );
+  resize( src.getWidth(), src.getHeight(), PCCCOLORFORMAT::YUV420 );
+  std::copy( src.channels_[0].begin(), src.channels_[0].end(), channels_[0].begin() );
   for ( size_t c = 1; c < N; ++c ) {
-    const auto& channel = image.channels_[c];
-    for ( size_t y = 0; y < height_; y += 2 ) {
-      const T* const buffer1 = channel.data() + y * width_;
+    for ( size_t y = 0, y2 = 0 ; y < height_; y += 2, y2 += 1 ) {
+      const T* const buffer1 = src.channels_[c].data() + y * width_;
       const T* const buffer2 = buffer1 + width_;
-      for ( size_t x = 0; x < width_; x += 2 ) {
-        const size_t   x2  = x / 2;
+      for ( size_t x = 0, x2 = y2 * ( width_ >> 1 ); x < width_; x += 2, x2 += 1 ) {
         const uint64_t sum = buffer1[x] + buffer1[x + 1] + buffer2[x] + buffer2[x + 1];
         channels_[c][x2]   = T( ( sum + 2 ) / 4 );
       }

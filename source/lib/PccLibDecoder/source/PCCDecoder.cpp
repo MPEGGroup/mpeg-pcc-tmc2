@@ -721,14 +721,16 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context ) {
   // partition information derivation
   setTilePartitionSizeAfti( context );
   for ( size_t i = 0; i < atlList.size(); i++ ) {
-    frameCount = std::max( frameCount, ( context.calculateAFOCval( atlList, i ) + 1 ) );
+    size_t afocVal = context.calculateAFOCval( atlList, i );
+    frameCount = std::max( frameCount, ( afocVal + 1 ) );
+    atlList[i].getHeader().setFrameIndex(afocVal);
   }
   context.resize( frameCount );
   setPointLocalReconstruction( context );
   for ( size_t atglOrder = 0; atglOrder < atlList.size(); atglOrder++ ) {
     if ( atglOrder == 0 ||
          atlList[atglOrder].getAtlasFrmOrderCntVal() != atlList[atglOrder - 1].getAtlasFrmOrderCntVal() ) {
-      setTileSizeAndLocation( context, atlList[atglOrder].getAtlasFrmOrderCntVal(), atlList[atglOrder].getHeader() );
+      setTileSizeAndLocation( context, atlList[atglOrder].getHeader().getFrameIndex(), atlList[atglOrder].getHeader() );
     }
     createPatchFrameDataStructure( context, atglOrder );
   }
@@ -755,14 +757,14 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
   auto&  atgdu              = atlu.getDataUnit();
   auto   geometryBitDepth2D = asps.getGeometry2dBitdepthMinus1() + 1;
   auto   geometryBitDepth3D = asps.getGeometry3dBitdepthMinus1() + 1;
-  size_t frameIndex         = atlu.getAtlasFrmOrderCntVal();
+  size_t frameIndex         = ath.getFrameIndex(); //atlu.getAtlasFrmOrderCntVal();
   size_t tileIndex          = afti.getSignalledTileIdFlag() ? afti.getTileId( ath.getId() ) : ath.getId();
 
   printf( "createPatchFrameDataStructure Frame = %zu Tiles = %zu atlasIndex = %zu atglOrder %zu \n", frameIndex,
           tileIndex, context.getAtlasIndex(), atglOrder );
   fflush( stdout );
   PCCFrameContext& tile = context[frameIndex].getTile( tileIndex );
-  tile.setFrameIndex( atlu.getAtlasFrmOrderCntVal() );
+  tile.setFrameIndex( frameIndex );
   tile.setAtlasFrmOrderCntVal( atlu.getAtlasFrmOrderCntVal() );
   tile.setAtlasFrmOrderCntMsb( atlu.getAtlasFrmOrderCntMsb() );
   tile.setTileIndex( tileIndex );
@@ -1778,8 +1780,8 @@ size_t PCCDecoder::setTileSizeAndLocation( PCCContext& context, size_t frameInde
 
   if ( asps.getAuxiliaryVideoEnabledFlag() ) {
     context[frameIndex].setAuxVideoWidth( ( afti.getAuxiliaryVideoTileRowWidthMinus1() + 1 ) * 64 );
-    context[frameIndex].getAuxTileLeftTopY().resize( afti.getNumTilesInAtlasFrameMinus1() + 1, 0 );
-    context[frameIndex].getAuxTileHeight().resize( afti.getNumTilesInAtlasFrameMinus1() + 1, 0 );
+    context[frameIndex].resizeAuxTileLeftTopY( afti.getNumTilesInAtlasFrameMinus1() + 1, 0 );
+    context[frameIndex].resizeAuxTileHeight( afti.getNumTilesInAtlasFrameMinus1() + 1, 0 );
     for ( size_t ti = 0; ti <= afti.getNumTilesInAtlasFrameMinus1(); ti++ ) {
       context[frameIndex].setAuxTileHeight( ti, afti.getAuxiliaryVideoTileRowHeight( ti ) * 64 );
       if ( ti < afti.getNumTilesInAtlasFrameMinus1() )

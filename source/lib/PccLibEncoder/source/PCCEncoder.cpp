@@ -318,14 +318,14 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     TRACE_PICTURE( "MapIdx = 0, AuxiliaryVideoFlag = 1\n" );
     std::cout << "*******Video: Aux (Geometry) ********" << std::endl;
     placeAuxiliaryPointsTiles( context );
-    auto& videoBitstreamMP = context.createVideoBitstream( VIDEO_GEOMETRY_RAW );
+    auto& videoRawPointsGeometryBitstream = context.createVideoBitstream( VIDEO_GEOMETRY_RAW );
     generateRawPointsGeometryVideo( context );
     auto& videoRawPointsGeometry = context.getVideoRawPointsGeometry();
-    auto  qpRaw = params_.lossyRawPointsPatch_ ? params_.lossyRawPointPatchGeoQP_ : params_.geometryQP_;
+    auto  qpRaw = params_.lossyRawPointsPatch_ ? params_.lossyRawPointPatchGeoQP_ : params_.geometryQP_;    
     videoEncoder.compress( videoRawPointsGeometry,                 // video,
                            path.str(),                             // path,
                            qpRaw,                                  // qp,
-                           videoBitstreamMP,                       // bitstream,
+                           videoRawPointsGeometryBitstream,        // bitstream,
                            params_.geometryAuxVideoConfig_,        // encoderConfig,
                            params_.videoEncoderGeometryPath_,      // encoderPath,
                            params_.videoEncoderGeometryCodecId_,   // codecId,
@@ -345,7 +345,6 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
                            internalBitDepth,  // internalBitDepth
                            false,             // useConversion
                            params_.keepIntermediateFiles_ );
-
     if ( params_.lossyRawPointsPatch_ ) {
       for ( size_t fi = 0; fi < context.size(); fi++ ) generateRawPointsGeometryfromVideo( context, fi );
     }
@@ -4699,7 +4698,7 @@ void PCCEncoder::placeAuxiliaryPointsTiles( PCCContext& context ) {
   size_t maxHeight    = 0;
   auto&  framesInAFPS = context.getFramesInAFPS();
   size_t numInterval  = 1;
-  if ( params_.tileSegmentationType_ == 1 ) numInterval = framesInAFPS.size();
+  if ( params_.tileSegmentationType_ == 1 ) { numInterval = framesInAFPS.size(); }
   for ( size_t segIdx = 0; segIdx < numInterval; segIdx++ ) {
     size_t tempMaxTotalHeight = 0;
     size_t firstFrame         = ( params_.tileSegmentationType_ == 1 ) ? framesInAFPS[segIdx].first : 0;
@@ -4720,35 +4719,45 @@ void PCCEncoder::placeAuxiliaryPointsTiles( PCCContext& context ) {
         size_t            auxPointsTileHeight     = 0;
         size_t            auxPointsTileWidth      = maxWidth;
         auxPointsOccupancyMap.resize( auxPointsOccupancySizeU * auxPointsOccupancySizeV, false );
-        if ( tile.getRawPointsPatches().size() == 0 )
+        if ( tile.getRawPointsPatches().size() == 0 ) {
           printf( "packRawPointsPatch[0/0]: none\n" );
-        else
+        } else {
           packRawPointsPatch( tile, auxPointsOccupancyMap, auxPointsTileWidth, auxPointsTileHeight,
                               auxPointsOccupancySizeU, auxPointsOccupancySizeV, 0 );
-        if ( tile.getEomPatches().size() == 0 )
+        }
+        if ( tile.getEomPatches().size() == 0 ) {
           printf( "packEOMTexturePointsPatch[0/0]: none\n" );
-        else
+        } else {
           packEOMTexturePointsPatch( tile, auxPointsOccupancyMap, auxPointsTileWidth, auxPointsTileHeight,
                                      auxPointsOccupancySizeU, auxPointsOccupancySizeV, 0 );
+        }
         auxPointsTileHeight = size_t( std::ceil( double( auxPointsTileHeight ) / 64.0 ) ) * 64;
-        context[frameIdx].setAuxTileHeight( tileIdx, std::max( context[frameIdx].getAuxTileHeight( tileIdx ), auxPointsTileHeight ) );
+        context[frameIdx].setAuxTileHeight(
+            tileIdx, std::max( context[frameIdx].getAuxTileHeight( tileIdx ), auxPointsTileHeight ) );
       }
     }
     for ( size_t frameIdx = firstFrame; frameIdx < lastFrame; frameIdx++ ) {
       context[frameIdx].setAuxTileLeftTopY( 0, 0 );
-      for ( size_t ti = 1; ti < context[frameIdx].getAuxTileHeight().size(); ti++ ) {
-        context[frameIdx].setAuxTileLeftTopY( ti, context[frameIdx].getAuxTileLeftTopY( ti - 1 ) + context[frameIdx].getAuxTileHeight( ti - 1 ) );
-  }
+      for ( size_t ti = 1; ti < context[frameIdx].getAuxTileHeightSize(); ti++ ) {
+        context[frameIdx].setAuxTileLeftTopY(
+            ti, context[frameIdx].getAuxTileLeftTopY( ti - 1 ) + context[frameIdx].getAuxTileHeight( ti - 1 ) );
+        printf("frameIdx = %zu Tile %zu = AuxTileLeftTopY = %zu : prev = %zu TileHeight = %zu ) " ,frameIdx, ti,
+         context[frameIdx].getAuxTileLeftTopY( ti ), 
+          context[frameIdx].getAuxTileLeftTopY( ti - 1 ),
+          context[frameIdx].getAuxTileHeight( ti - 1 ) ); 
+          fflush(stdout);
+      }
     }
   }
 #if 1
   std::cout << "placeAuxTileInAuxVideo tile info: frame[0] ";
-  for ( size_t ti = 0; ti < context[0].getAuxTileHeight().size(); ti++ )
+  for ( size_t ti = 0; ti < context[0].getAuxTileHeightSize(); ti++ )
     std::cout << "tile[" << ti << "] LeftTopY: " << context[0].getAuxTileLeftTopY( ti )
               << "Height: " << context[0].getAuxTileHeight( ti ) << "\n";
 
   for ( size_t frameIdx = 0; frameIdx < context.size(); frameIdx++ ) {
     printf( "frame[%zu] video size: %zux%zu\n", frameIdx, context[frameIdx].getAuxVideoWidth(), context[frameIdx].getAuxVideoHeight() );
+
     for ( size_t tileIdx = 0; tileIdx < context[frameIdx].getNumTilesInAtlasFrame(); tileIdx++ ) {
       auto& rawPatches = context[frameIdx].getTile( tileIdx ).getRawPointsPatches();
       auto& eomPatches = context[frameIdx].getTile( tileIdx ).getEomPatches();
@@ -4777,7 +4786,7 @@ void PCCEncoder::generateRawPointsGeometryVideo( PCCContext& context ) {
   if ( params_.tileSegmentationType_ == 1 ) numInterval = framesInAFPS.size();
 
   size_t maxVideoHeight = 0;
-  for ( size_t ti = 0; ti < context[0].getAuxTileHeight().size(); ti++ ) {
+  for ( size_t ti = 0; ti < context[0].getAuxTileHeightSize(); ti++ ) {
     maxVideoHeight += context[0].getAuxTileHeight( ti );
   }
   for ( size_t fi = 0; fi < context.size(); fi++ ) {
@@ -4808,16 +4817,18 @@ void PCCEncoder::generateRawPointsGeometryVideo( PCCContext& context ) {
 }
 
 void PCCEncoder::generateRawPointsTextureVideo( PCCContext& context ) {
-  auto& videoRawPointsTexture = context.getVideoRawPointsTexture();
-  videoRawPointsTexture.resize( context.size() );
+  auto& video = context.getVideoRawPointsTexture();
+  video.resize( context.size() );
+  size_t widthMax = 0, heightMax = 0;
   for ( size_t frameIdx = 0; frameIdx < context.size(); frameIdx++ ) {
-    videoRawPointsTexture.getFrame( frameIdx )
-        .resize( context[frameIdx].getAuxVideoWidth(), context[frameIdx].getAuxVideoHeight(), PCCCOLORFORMAT::YUV444 );
+    widthMax = (std::max) ( widthMax, context[frameIdx].getAuxVideoWidth() );
+    heightMax = (std::max) ( heightMax, context[frameIdx].getAuxVideoHeight() );
   }
   for ( size_t frameIdx = 0; frameIdx < context.size(); frameIdx++ ) {
+    video.getFrame( frameIdx ).resize( widthMax, heightMax, PCCCOLORFORMAT::YUV444 );
     for ( size_t tileIdx = 0; tileIdx < context[frameIdx].getNumTilesInAtlasFrame(); tileIdx++ ) {
       auto& tile = context[frameIdx].getTile( tileIdx );
-      generateRawPointsTextureImage( context, tile, videoRawPointsTexture.getFrame( frameIdx ) );
+      generateRawPointsTextureImage( context, tile, video.getFrame( frameIdx ) );
       std::cout << "generate raw Points Video (Texture) frame[" << frameIdx << "] tile[" << tileIdx << "] :"
                 << " #rawPatches: " << tile.getNumberOfRawPointsPatches()
                 << " #rawPoints: " << tile.getTotalNumberOfRawPoints()
@@ -4852,12 +4863,27 @@ void PCCEncoder::generateRawPointsGeometryImage( PCCContext& context, PCCFrameCo
           if ( p < numberOfRawPoints && rawPointsPatch.x_[p] < g_infiniteDepth ) {
             const size_t x = ( u0 + u );  // always starts at 0
             const size_t y = ( v0 + v ) + context[tile.getFrameIndex()].getAuxTileLeftTopY( tile.getTileIndex() );
-            assert( x < context[tile.getFrameIndex()].getAuxVideoWidth() && y < context[tile.getFrameIndex()].getAuxVideoHeight() );
-            image.setValue( 0, x, y, uint16_t( rawPointsPatch.x_[p] ) );          
+            assert( x < context[tile.getFrameIndex()].getAuxVideoWidth() &&
+                    y < context[tile.getFrameIndex()].getAuxVideoHeight() );
+            assert( x < image.getWidth() && y < image.getHeight() );
+            if ( !( x < image.getWidth() && y < image.getHeight() ) ) {
+              printf( "ERROR: X and y outside the picture: ( %zu, %zu) / ( %zu, %zu) (then) \n", x, y, image.getWidth(),
+                      image.getHeight() );
+              fflush( stdout );
+            } else {
+              image.setValue( 0, x, y, uint16_t( rawPointsPatch.x_[p] ) );
+            }
           } else {
             const size_t x = ( u0 + u );
             const size_t y = ( v0 + v ) + context[tile.getFrameIndex()].getAuxTileLeftTopY( tile.getTileIndex() );
-            image.setValue( 0, x, y, static_cast<uint16_t>( lastValue ) );            
+            assert( x < image.getWidth() && y < image.getHeight() );
+            if ( !( x < image.getWidth() && y < image.getHeight() ) ) {
+              printf( "ERROR: X and y outside the picture: ( %zu, %zu) / ( %zu, %zu) (else) \n", x, y, image.getWidth(),
+                      image.getHeight() );
+              fflush( stdout );
+            } else {
+              image.setValue( 0, x, y, static_cast<uint16_t>( lastValue ) );
+            }
           }
         }  // u
       }    // v
@@ -5106,8 +5132,8 @@ bool PCCEncoder::placeSegments( const PCCGroupOfFrames& sources, PCCContext& con
 
     if ( params_.useRawPointsSeparateVideo_ ) {
       for ( size_t frameIdx = 0; frameIdx < context.getFrames().size(); frameIdx++ ){
-      context[frameIdx].getAuxTileHeight().resize( maxNumTile );
-      context[frameIdx].getAuxTileLeftTopY().resize( maxNumTile );
+      context[frameIdx].resizeAuxTileHeight( maxNumTile, 0 );
+      context[frameIdx].resizeAuxTileLeftTopY( maxNumTile, 0 );
       }
     }
 #if 1
