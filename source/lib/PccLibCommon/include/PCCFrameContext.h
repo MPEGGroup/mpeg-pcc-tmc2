@@ -309,15 +309,17 @@ class PCCAtlasFrameContext {
     assert( index < partitionPosY_.size() );
     partitionPosY_[index] = value;
   }
-  size_t               getAuxTileHeight( size_t index ) { return auxTileHeight_[index]; }
-  std::vector<size_t>& getAuxTileHeight() { return auxTileHeight_; }
-  size_t               getAuxTileLeftTopY( size_t index ) { return auxTileLeftTopY_[index]; }
-  std::vector<size_t>& getAuxTileLeftTopY() { return auxTileLeftTopY_; }
-  void                 setAuxVideoWidth( size_t value ) { auxVideWidth_ = value; }
-  void                 setAuxTileHeight( size_t index, size_t value ) { auxTileHeight_[index] = value; }
-  void                 setAuxTileLeftTopY( size_t index, size_t value ) { auxTileLeftTopY_[index] = value; }
-  size_t  getAuxVideoWidth() { return auxVideWidth_; }
-  size_t  getAuxVideoHeight() {
+  size_t getAuxTileHeightSize() { return auxTileHeight_.size(); }
+  size_t getAuxTileLeftTopYSize() { return auxTileLeftTopY_.size(); }
+  void   resizeAuxTileHeight( size_t size, size_t value ) { auxTileHeight_.resize( size, value ); }
+  void   resizeAuxTileLeftTopY( size_t size, size_t value ) { auxTileLeftTopY_.resize( size, value ); }
+  size_t getAuxTileHeight( size_t index ) { return auxTileHeight_[index]; }
+  size_t getAuxTileLeftTopY( size_t index ) { return auxTileLeftTopY_[index]; }
+  void   setAuxVideoWidth( size_t value ) { auxVideWidth_ = value; }
+  void   setAuxTileHeight( size_t index, size_t value ) { auxTileHeight_[index] = value; }
+  void   setAuxTileLeftTopY( size_t index, size_t value ) { auxTileLeftTopY_[index] = value; }
+  size_t getAuxVideoWidth() { return auxVideWidth_; }
+  size_t getAuxVideoHeight() {
     size_t videoHeight = 0;
     for ( auto& height : auxTileHeight_ ) { videoHeight += height; }
     return videoHeight;

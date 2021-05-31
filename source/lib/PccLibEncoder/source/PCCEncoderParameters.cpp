@@ -1226,14 +1226,9 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
     frame.setMaxDepth( ( 1 << geometryNominal2dBitdepth_ ) - 1 );
     frame.setLog2PatchQuantizerSizeX( context.getLog2PatchQuantizerSizeX() );
     frame.setLog2PatchQuantizerSizeY( context.getLog2PatchQuantizerSizeY() );
-    frame.setAtlasFrmOrderCntLsb( context.calculateAFOCLsb(
-        i ) );  // ajt:: lsb and afoc values of tileFrame is set during the initilaization process
+    frame.setAtlasFrmOrderCntLsb( context.calculateAFOCLsb( i ) ); 
     frame.setAtlasFrmOrderCntVal( i );
-    if ( i == 0 ) {
-      frame.setNumRefIdxActive( 0 );
-    } else {
-      frame.setNumRefIdxActive( constrainedPack_ ? ( std::min )( i, maxNumRefAtlasFrame_ ) : 0 );
-    }
+    frame.setNumRefIdxActive( i == 0 ? 0 : ( constrainedPack_ ? ( std::min )( i, maxNumRefAtlasFrame_ ) : 0  ) );
     frame.setRefAfocList( context, 0 );
     if ( tileSegmentationType_ == 1 ) {
       size_t partitionWidthIn64  = ( minimumImageWidth_ / ( 64 * numTilesHor_ ) );
@@ -1243,8 +1238,8 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
     } else {
       if ( useRawPointsSeparateVideo_ ) {
         context[i].setAuxVideoWidth( textureRawSeparateVideoWidth_ );
-        context[i].getAuxTileHeight().resize( numMaxTilePerFrame_ );
-        context[i].getAuxTileLeftTopY().resize( numMaxTilePerFrame_ );
+        context[i].resizeAuxTileHeight( numMaxTilePerFrame_, 0 );
+        context[i].resizeAuxTileLeftTopY( numMaxTilePerFrame_, 0 );
       }
       atlas.setNumTilesInAtlasFrame( numMaxTilePerFrame_ );
       atlas.initNumTiles( numMaxTilePerFrame_ );

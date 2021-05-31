@@ -1759,8 +1759,8 @@ size_t PCCDecoder::setTileSizeAndLocation( PCCContext& context, size_t frameInde
 
   if ( asps.getAuxiliaryVideoEnabledFlag() ) {
     context[frameIndex].setAuxVideoWidth( ( afti.getAuxiliaryVideoTileRowWidthMinus1() + 1 ) * 64 );
-    context[frameIndex].getAuxTileLeftTopY().resize( afti.getNumTilesInAtlasFrameMinus1() + 1, 0 );
-    context[frameIndex].getAuxTileHeight().resize( afti.getNumTilesInAtlasFrameMinus1() + 1, 0 );
+    context[frameIndex].resizeAuxTileLeftTopY( afti.getNumTilesInAtlasFrameMinus1() + 1, 0 );
+    context[frameIndex].resizeAuxTileHeight( afti.getNumTilesInAtlasFrameMinus1() + 1, 0 );
     for ( size_t ti = 0; ti <= afti.getNumTilesInAtlasFrameMinus1(); ti++ ) {
       context[frameIndex].setAuxTileHeight( ti, afti.getAuxiliaryVideoTileRowHeight( ti ) * 64 );
       if ( ti < afti.getNumTilesInAtlasFrameMinus1() )

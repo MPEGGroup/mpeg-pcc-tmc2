@@ -117,7 +117,9 @@ bool PCCVideoEncoder::compress( PCCVideo<T, 3>&    video,
   if ( yuvVideo ) {
     if ( !use444CodecIo ) {
       printf( "Encoder convert : write420 without conversion: %s \n", srcYuvFileName.c_str() );
-      if ( video.getColorFormat() == PCCCOLORFORMAT::YUV444 ) { video.convertYUV444ToYUV420(); }
+      if ( video.getColorFormat() == PCCCOLORFORMAT::YUV444 ) {         
+        video.convertYUV444ToYUV420();
+      }
     }
   } else {
     if ( keepIntermediateFiles ) { video.write( srcRgbFileName, nbyte ); }
@@ -350,6 +352,7 @@ bool PCCVideoEncoder::compress( PCCVideo<T, 3>&    video,
       converter->convert( configColorSpace, video, colorSpaceConversionPath, fileName + "_rec" );
     }
   }
+  
   if ( keepIntermediateFiles ) { video.write( srcYuvFileName, nbyte ); }
 
   // Encode video
