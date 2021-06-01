@@ -108,18 +108,9 @@ void PCCSHMAppVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
       cmd << " --ReconFile" << std::to_string( i ) << "=" << recYuvFileName[i];
       cmd << " --QP" << std::to_string( i ) << "=" << params.qp_;
     }
-    // cmd << " --InputFile" << std::to_string( numLayers ) << "=" << params.srcYuvFileName_;
-    cmd << " --InputBitDepth" << std::to_string( numLayers ) << "=" << params.inputBitDepth_;
-    cmd << " --OutputBitDepth" << std::to_string( numLayers ) << "=" << params.outputBitDepth_;
-    cmd << " --FrameRate" << std::to_string( numLayers ) << "=30";
-    cmd << " --SourceWidth" << std::to_string( numLayers ) << "=" << width;
-    cmd << " --SourceHeight" << std::to_string( numLayers ) << "=" << height;
-    cmd << " --ReconFile" << std::to_string( numLayers ) << "=" << params.recYuvFileName_;
-    cmd << " --QP" << std::to_string( numLayers ) << "=" << params.qp_;
     cmd << " --FrameSkip=0";
     std::cout << cmd.str() << std::endl;
 
-    // videoSrc.write( params.srcYuvFileName_, params.inputBitDepth_ == 8 ? 1 : 2 );
     for ( size_t i = 0; i < numLayers; i++ ) {
       printf( "Write video src layer %d / %zu: size = %4zux%-4zu %s \n", i, numLayers, videoSrcLayers[i].getWidth(),
               videoSrcLayers[i].getHeight(), recYuvFileName[i].c_str() );

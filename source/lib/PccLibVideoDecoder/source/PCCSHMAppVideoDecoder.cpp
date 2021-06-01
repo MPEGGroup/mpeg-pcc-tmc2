@@ -30,6 +30,8 @@ void PCCSHMAppVideoDecoder<T>::decode( PCCVideoBitstream& bitstream,
   pcc_hevc::PccHevcParser hevcParser;
   hevcParser.getVideoSize( bitstream.vector(), width, height, bitDepth, isRGB );
   layerIndex_ = (std::min)( width.size() - 1, layerIndex_ ); 
+
+
   printf( "Num Layer = %zu layerIndex = %zu \n", width.size(), layerIndex_ );
   for ( size_t i = 0; i < width.size(); i++ ) {
     printf( "  Layer %zu = %4zux%-4zu %zu bits isRGB = %d \n", i, width[i], height[i], bitDepth[i], isRGB[i] );
@@ -44,15 +46,15 @@ void PCCSHMAppVideoDecoder<T>::decode( PCCVideoBitstream& bitstream,
   cmd << decoderPath; 
   cmd << " --BitstreamFile=" << binFileName;
   // cmd << " --OutpuLayerSetIdx=" << std::to_string( layerIndex_ );
-  cmd << " --ReconFileL" << layerIndex_ << "=" << reconFile;
+  cmd << " --ReconFile" << layerIndex_ << "=" << reconFile;
   cmd << " --LayerNum=" << layerIndex_ + 1;
 
   if ( isRGB[layerIndex_] ) {
     cmd << " --OutputColourSpaceConvert=GBRtoRGB";
   } else {
     if ( outputBitDepth == 8 ) {
-      cmd << " --OutputBitDepth" << "=8";
-      cmd << " --OutputBitDepthC" << "=8";
+      cmd << " --OutputBitDepth" << layerIndex_ << "=8";
+      cmd << " --OutputBitDepthC" << layerIndex_ <<  "=8";
     }
   }
   std::cout << cmd.str() << '\n';
