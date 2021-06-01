@@ -2457,7 +2457,7 @@ void PCCCodec::getB2PHashPatchParams( PCCContext&                               
   size_t atlIdx                     = context[frameIndex].getTile( 0 ).getAtlIndex();
   auto&  tileHeader                 = context.getAtlasTileLayerList()[atlIdx].getHeader();
   size_t afpsIndex                  = tileHeader.getAtlasFrameParameterSetId();
-  size_t aspsIndex                  = context.getAtlasFrameParameterSet( afpsIndex ).getAtlasFrameParameterSetId();
+  size_t aspsIndex                  = context.getAtlasFrameParameterSet( afpsIndex ).getAtlasSequenceParameterSetId();
   auto&  asps                       = context.getAtlasSequenceParameterSet( aspsIndex );
   auto&  afps                       = context.getAtlasFrameParameterSet( afpsIndex );
   auto&  afti                       = afps.getAtlasFrameTileInformation();
@@ -2648,7 +2648,7 @@ void PCCCodec::afpsCommonByteString( std::vector<uint8_t>& stringByte,
   uint8_t val  = afti.getNumTilesInAtlasFrameMinus1() & 0xFF;
   stringByte.push_back( val );
   std::vector<size_t> hashAuxTileHeight;
-  auto                asps                = context.getAtlasSequenceParameterSet( afps.getAtlasFrameParameterSetId() );
+  auto                asps                = context.getAtlasSequenceParameterSet( afps.getAtlasSequenceParameterSetId() );
   size_t              prevAuxTileOffset   = 0;
   size_t              hashAuxVideoWidthNF = 0;
   if ( asps.getAuxiliaryVideoEnabledFlag() ) {

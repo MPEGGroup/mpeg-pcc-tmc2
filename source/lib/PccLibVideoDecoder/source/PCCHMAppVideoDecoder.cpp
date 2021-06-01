@@ -68,6 +68,7 @@ void PCCHMAppVideoDecoder<T>::decode( PCCVideoBitstream& bitstream,
   cmd << decoderPath << " --BitstreamFile=" << binFileName << " --ReconFile=" << reconFile;
   if ( isRGB ) {
     cmd << " --OutputColourSpaceConvert=GBRtoRGB";
+    if ( outputBitDepth == 8 ) { cmd << " --OutputBitDepth=8 --OutputBitDepthC=8"; }
   } else {
     if ( outputBitDepth == 8 ) { cmd << " --OutputBitDepth=8 --OutputBitDepthC=8"; }
   }
