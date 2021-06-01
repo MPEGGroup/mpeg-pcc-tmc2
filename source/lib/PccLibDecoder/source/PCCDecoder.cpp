@@ -1856,7 +1856,7 @@ PCCCodecId PCCDecoder::getCodedCodecId( PCCContext&        context,
               fprintf( stderr, "SHM Codec not supported \n" );
               exit( -1 );
 #endif
-            } else if ( codec4cc.compare( "vvc1" ) == 0 ) {
+            } else if ( codec4cc.compare( "vvi1" ) == 0 ) {
 #if defined( USE_VTMLIB_VIDEO_CODEC )
               return VTMLIB;
 #else
