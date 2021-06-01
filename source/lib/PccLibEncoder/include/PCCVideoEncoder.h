@@ -60,14 +60,10 @@ class PCCVideoEncoder {
                  const size_t       nbyte,
                  const bool         use444CodecIo,
                  const bool         use3dmv,
-#ifdef USE_HM_PCC_RDO
-                 const bool usePccRDO,
-#endif
-#ifdef USE_SHMAPP_VIDEO_CODEC
-                 const size_t shvcLayerIndex,
-                 const size_t shvcRateX,
-                 const size_t shvcRateY,
-#endif
+                 const bool         usePccRDO,
+                 const size_t       shvcLayerIndex,
+                 const size_t       shvcRateX,
+                 const size_t       shvcRateY,
                  const size_t       internalBitDepth,
                  const bool         useConversion,
                  const bool         keepIntermediateFiles             = false,

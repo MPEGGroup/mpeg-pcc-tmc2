@@ -67,15 +67,13 @@ class PCCEncoderParameters {
   bool              byteStreamVideoCoderGeometry_;
   bool              byteStreamVideoCoderAttribute_;
   bool              use3dmc_;
-#ifdef USE_HM_PCC_RDO
-  bool usePccRDO_;
-#endif
-  std::string colorSpaceConversionConfig_;
-  std::string inverseColorSpaceConversionConfig_;
-  size_t      nbThread_;
-  size_t      frameCount_;
-  size_t      groupOfFramesSize_;
-  std::string uncompressedDataPath_;
+  bool              usePccRDO_;
+  std::string       colorSpaceConversionConfig_;
+  std::string       inverseColorSpaceConversionConfig_;
+  size_t            nbThread_;
+  size_t            frameCount_;
+  size_t            groupOfFramesSize_;
+  std::string       uncompressedDataPath_;
 
   // packing
   size_t minimumImageWidth_;
@@ -311,12 +309,11 @@ class PCCEncoderParameters {
   bool    oneV3CFrameOnlyFlag_;
   bool    noEightOrientationsConstraintFlag_;
   bool    no45DegreeProjectionPatchConstraintFlag_;
-
-#ifdef USE_SHMAPP_VIDEO_CODEC
+  
+  // SHVC
   size_t shvcLayerIndex_;
   size_t shvcRateX_;
   size_t shvcRateY_;
-#endif
 };
 
 };  // namespace pcc

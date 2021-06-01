@@ -57,14 +57,10 @@ struct PCCVideoEncoderParameters {
   bool        transquantBypassEnable_      = false;
   bool        cuTransquantBypassFlagForce_ = false;
   bool        inputColourSpaceConvert_     = false;
-#ifdef USE_HM_PCC_RDO
-  bool usePccRDO_ = false;
-#endif
-#ifdef USE_SHMAPP_VIDEO_CODEC
-  int32_t shvcLayerIndex_ = 8;
-  int32_t shvcRateX_      = 0;
-  int32_t shvcRateY_      = 0;
-#endif
+  bool        usePccRDO_                   = false;
+  int32_t     shvcLayerIndex_              = 8;
+  int32_t     shvcRateX_                   = 0;
+  int32_t     shvcRateY_                   = 0;
 };
 
 template <class T>

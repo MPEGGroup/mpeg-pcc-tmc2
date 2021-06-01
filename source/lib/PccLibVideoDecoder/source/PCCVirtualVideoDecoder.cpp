@@ -38,9 +38,7 @@
 #include "PCCJMLibVideoDecoder.h"
 #include "PCCHMLibVideoDecoder.h"
 #include "PCCVTMLibVideoDecoder.h"
-#ifdef USE_SHMAPP_VIDEO_CODEC
 #include "PCCSHMAppVideoDecoder.h"
-#endif
 #ifdef USE_FFMPEG_VIDEO_CODEC
 #include "PCCFFMPEGLibVideoDecoder.h"
 #endif

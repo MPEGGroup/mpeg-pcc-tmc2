@@ -187,13 +187,11 @@ PCCEncoderParameters::PCCEncoderParameters() {
   // GPA
   globalPatchAllocation_ = 0;
   // GTP
-  globalPackingStrategyGOF_       = 0;
-  globalPackingStrategyReset_     = false;
-  globalPackingStrategyThreshold_ = 0;
-  use3dmc_                        = true;
-#ifdef USE_HM_PCC_RDO
-  usePccRDO_ = false;
-#endif
+  globalPackingStrategyGOF_         = 0;
+  globalPackingStrategyReset_       = false;
+  globalPackingStrategyThreshold_   = 0;
+  use3dmc_                          = true;
+  usePccRDO_                        = false;
   enhancedPP_                       = true;
   minWeightEPP_                     = 0.6;
   additionalProjectionPlaneMode_    = 0;
@@ -252,11 +250,10 @@ PCCEncoderParameters::PCCEncoderParameters() {
   noEightOrientationsConstraintFlag_       = 0;  // Default value, does not impose a constraint
   no45DegreeProjectionPatchConstraintFlag_ = 0;  // Default value, does not impose a constraint
 
-#ifdef USE_SHMAPP_VIDEO_CODEC
+  // SHVC
   shvcLayerIndex_ = 8;
   shvcRateX_      = 0;
   shvcRateY_      = 0;
-#endif
 }
 
 PCCEncoderParameters::~PCCEncoderParameters() = default;
@@ -573,16 +570,12 @@ void PCCEncoderParameters::print() {
   std::cout << "\t   noEightOrientationsConstraintFlag        " << noEightOrientationsConstraintFlag_ << std::endl;
   std::cout << "\t   no45DegreeProjectionPatchConstraintFlag  " << no45DegreeProjectionPatchConstraintFlag_
             << std::endl;
-  // SHVC khu H = > TODO JR: move to  Pcc Encoder Parameter Check function
-
-#ifdef USE_SHMAPP_VIDEO_CODEC
   if ( shvcRateX_ > 0 || shvcRateY_ > 0 ) {
     std::cerr << "HEVC scalable video coding (SHVC) " << std::endl;
     std::cout << "\t   shvcLayerIndex                         " << shvcLayerIndex_ << std::endl;
     std::cout << "\t   shvcRateX                              " << shvcRateX_ << std::endl;
     std::cout << "\t   shvcRateY                              " << shvcRateY_ << std::endl;
   }
-#endif
   std::cout << std::endl;
 }
 
@@ -685,9 +678,6 @@ bool PCCEncoderParameters::check() {
     absoluteT1_ = 1;
   }
   if ( rawPointsPatch_ ) {
-// #ifdef USE_HM_PCC_RDO
-//     usePccRDO_ = false;
-// #endif
     if ( pbfEnableFlag_ ) {
       pbfEnableFlag_ = false;
       std::cerr << "WARNING: pbfEnableFlag_ is only for lossy "
@@ -1024,14 +1014,12 @@ bool PCCEncoderParameters::check() {
     case CODEC_GROUP_MP4RA: break;
   }
 
-#if defined( USESHMAPP_VIDEO_CODEC )
   if ( ( videoEncoderOccupancyCodecId_ == SHMAPP || videoEncoderGeometryCodecId_ == SHMAPP ||
          videoEncoderAttributeCodecId_ == SHMAPP ) &&
        ( ( shvcRateX_ != 2 ) || ( shvcRateY_ != 2 ) ) ) {
     std::cerr << "SHMAPP codec requiered shvcRateX and shvcRateY equal to 2. \n";
     ret = false;
   }
-#endif
   return ret;
 }
 

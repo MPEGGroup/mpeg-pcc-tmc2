@@ -266,7 +266,6 @@ public:
   Void  parseQtRootCbf      ( UInt uiAbsPartIdx, UInt& uiQtRootCbf );
   Void  parseVPS            ( TComVPS* pcVPS );
   Void  parseSPS            ( TComSPS* pcSPS );  
-  Void  parseSPSSHVC        ( TComSPS* pcSPS, size_t layerId );
   Void  parsePPS            ( TComPPS* pcPPS );
   Void  parseVUI            ( TComVUI* pcVUI, TComSPS* pcSPS );
   Void  parseSEI            ( SEIMessages& );

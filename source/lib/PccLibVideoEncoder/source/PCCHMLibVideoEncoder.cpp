@@ -75,13 +75,15 @@ void PCCHMLibVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
     cmd << " --InternalBitDepth=" << params.internalBitDepth_;
     cmd << " --InternalBitDepthC=" << params.internalBitDepth_;
   }
+#if defined( PCC_ME_EXT ) && PCC_ME_EXT
   if ( params.usePccMotionEstimation_ ) {
     cmd << " --UsePccMotionEstimation=1";
     cmd << " --BlockToPatchFile=" << params.blockToPatchFile_;
     cmd << " --OccupancyMapFile=" << params.occupancyMapFile_;
     cmd << " --PatchInfoFile=" << params.patchInfoFile_;
   }
-#ifdef USE_HM_PCC_RDO
+#endif
+#if defined( PCC_RDO_EXT ) && PCC_RDO_EXT
   if ( params.usePccRDO_ ) {
     cmd << " --UsePccRDO=1";
     cmd << " --OccupancyMapFile=" << params.occupancyMapFile_;

@@ -631,7 +631,6 @@ bool parseParameters( int                   argc,
       "Selects whether the occupany map is prefiltered before lossy compression (default=false)\n" )
 
     // SHVC 
-#ifdef USE_SHMAPP_VIDEO_CODEC
     ( "shvcLayerIndex",
       encoderParams.shvcLayerIndex_,
       encoderParams.shvcLayerIndex_,
@@ -644,7 +643,6 @@ bool parseParameters( int                   argc,
       encoderParams.shvcRateY_,
       encoderParams.shvcRateY_,
       "SHVCRateY : reduce rate of each SHVC layer Y axis in 2D space (should be greater than 1)")
-#endif	
 
     // visual quality
     ( "patchColorSubsampling",
@@ -757,12 +755,10 @@ bool parseParameters( int                   argc,
       encoderParams.use3dmc_,
       encoderParams.use3dmc_,
       "Use auxilliary information for 3d motion compensation.(0: conventional video coding, 1: 3D motion compensated)" )
-#ifdef USE_HM_PCC_RDO
     ( "usePccRDO",
       encoderParams.usePccRDO_,
       encoderParams.usePccRDO_,
       "Use HEVC PCC RDO optimization" )
-#endif
     ( "geometry3dCoordinatesBitdepth",
       encoderParams.geometry3dCoordinatesBitdepth_,
       encoderParams.geometry3dCoordinatesBitdepth_,

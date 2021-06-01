@@ -59,9 +59,7 @@ class PCCVideoDecoder {
                    const std::string& decoderPath,
                    size_t             outputBitDepth,
                    const bool         keepIntermediateFiles             = false,
-#ifdef USE_SHMAPP_VIDEO_CODEC
                    const size_t       shvcLayerIndex                    = 8,
-#endif
                    const bool         patchColorSubsampling             = false,
                    const std::string& inverseColorSpaceConversionConfig = "",
                    const std::string& colorSpaceConversionPath          = "",

@@ -64,14 +64,10 @@ bool PCCVideoEncoder::compress( PCCVideo<T, 3>&    video,
                                 const size_t       nbyte,
                                 const bool         use444CodecIo,
                                 const bool         use3dmv,
-#ifdef USE_HM_PCC_RDO
                                 const bool usePccRDO,
-#endif
-#ifdef USE_SHMAPP_VIDEO_CODEC
                                 const size_t shvcLayerIndex,
                                 const size_t shvcRateX,
                                 const size_t shvcRateY,
-#endif
                                 const size_t       internalBitDepth,
                                 const bool         useConversion,
                                 const bool         keepIntermediateFiles,
@@ -379,14 +375,10 @@ bool PCCVideoEncoder::compress( PCCVideo<T, 3>&    video,
   params.cuTransquantBypassFlagForce_ = false;
   params.transquantBypassEnable_      = false;
   params.inputColourSpaceConvert_     = use444CodecIo;
-#ifdef USE_HM_PCC_RDO
-  params.usePccRDO_ = usePccRDO;
-#endif
-#ifdef USE_SHMAPP_VIDEO_CODEC
-  params.shvcLayerIndex_ = shvcLayerIndex;
-  params.shvcRateX_      = shvcRateX;
-  params.shvcRateY_      = shvcRateY;
-#endif
+  params.usePccRDO_                   = usePccRDO;
+  params.shvcLayerIndex_              = shvcLayerIndex;
+  params.shvcRateX_                   = shvcRateX;
+  params.shvcRateY_                   = shvcRateY;
   printf( "Encode: video size = %zu x %zu num frames = %zu \n", video.getWidth(), video.getHeight(),
           video.getFrameCount() );
   fflush( stdout );
@@ -439,23 +431,19 @@ template bool pcc::PCCVideoEncoder::compress<uint8_t>( PCCVideo<uint8_t, 3>& vid
                                                        const size_t          nbyte,
                                                        const bool            use444CodecIo,
                                                        const bool            use3dmv,
-#ifdef USE_HM_PCC_RDO
-                                                       const bool usePccRDO,
-#endif
-#ifdef USE_SHMAPP_VIDEO_CODEC
-                                                       const size_t shvcLayerIndex,
-                                                       const size_t shvcRateX,
-                                                       const size_t shvcRateY,
-#endif
-                                                       const size_t       internalBitDepth,
-                                                       const bool         useConversion,
-                                                       const bool         keepIntermediateFiles,
-                                                       const std::string& colorSpaceConversionConfig,
-                                                       const std::string& inverseColorSpaceConversionConfig,
-                                                       const std::string& colorSpaceConversionPath,
-                                                       const size_t       downsamplingFilter,
-                                                       const size_t       upsamplingFilter,
-                                                       const bool         patchColorSubsampling );
+                                                       const bool            usePccRDO,
+                                                       const size_t          shvcLayerIndex,
+                                                       const size_t          shvcRateX,
+                                                       const size_t          shvcRateY,
+                                                       const size_t          internalBitDepth,
+                                                       const bool            useConversion,
+                                                       const bool            keepIntermediateFiles,
+                                                       const std::string&    colorSpaceConversionConfig,
+                                                       const std::string&    inverseColorSpaceConversionConfig,
+                                                       const std::string&    colorSpaceConversionPath,
+                                                       const size_t          downsamplingFilter,
+                                                       const size_t          upsamplingFilter,
+                                                       const bool            patchColorSubsampling );
 
 template bool pcc::PCCVideoEncoder::compress<uint16_t>( PCCVideo<uint16_t, 3>& video,
                                                         const std::string&     path,
@@ -469,20 +457,16 @@ template bool pcc::PCCVideoEncoder::compress<uint16_t>( PCCVideo<uint16_t, 3>& v
                                                         const size_t           nbyte,
                                                         const bool             use444CodecIo,
                                                         const bool             use3dmv,
-#ifdef USE_HM_PCC_RDO
-                                                        const bool usePccRDO,
-#endif
-#ifdef USE_SHMAPP_VIDEO_CODEC
-                                                        const size_t shvcLayerIndex,
-                                                        const size_t shvcRateX,
-                                                        const size_t shvcRateY,
-#endif
-                                                        const size_t       internalBitDepth,
-                                                        const bool         useConversion,
-                                                        const bool         keepIntermediateFiles,
-                                                        const std::string& colorSpaceConversionConfig,
-                                                        const std::string& inverseColorSpaceConversionConfig,
-                                                        const std::string& colorSpaceConversionPath,
-                                                        const size_t       downsamplingFilter,
-                                                        const size_t       upsamplingFilter,
-                                                        const bool         patchColorSubsampling );
+                                                        const bool             usePccRDO,
+                                                        const size_t           shvcLayerIndex,
+                                                        const size_t           shvcRateX,
+                                                        const size_t           shvcRateY,
+                                                        const size_t           internalBitDepth,
+                                                        const bool             useConversion,
+                                                        const bool             keepIntermediateFiles,
+                                                        const std::string&     colorSpaceConversionConfig,
+                                                        const std::string&     inverseColorSpaceConversionConfig,
+                                                        const std::string&     colorSpaceConversionPath,
+                                                        const size_t           downsamplingFilter,
+                                                        const size_t           upsamplingFilter,
+                                                        const bool             patchColorSubsampling );

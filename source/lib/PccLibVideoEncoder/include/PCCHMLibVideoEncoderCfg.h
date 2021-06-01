@@ -71,13 +71,13 @@ class PCCHMLibVideoEncoderCfg {
   std::string m_bitstreamFileName;  ///< output bitstream file
   std::string m_reconFileName;      ///< output reconstruction file
 
-#if PCC_ME_EXT
+#if defined( PCC_ME_EXT ) && PCC_ME_EXT
   Bool        m_usePCCExt;
   std::string m_blockToPatchFileName;
   std::string m_occupancyMapFileName;
   std::string m_patchInfoFileName;
 #endif
-#ifdef USE_HM_PCC_RDO
+#if defined( PCC_RDO_EXT ) && PCC_RDO_EXT
   Bool m_usePCCRDO;
 #if !PCC_ME_EXT
   std::string m_occupancyMapFileName;

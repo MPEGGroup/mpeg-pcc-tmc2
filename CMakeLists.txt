@@ -23,9 +23,9 @@ OPTION( USE_HM_PCC_RDO            "Use HM optimized RDO (run \"./clear.sh all\" 
 OPTION( ENABLE_PAPI_PROFILING     "Enable PAPI profiling"                                   FALSE )
 
 ## CLANG-TIDY CHECK
-set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set( CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set( CMAKE_CXX_STANDARD            14 )
+set( CMAKE_CXX_STANDARD_REQUIRED   ON )
+set( CMAKE_EXPORT_COMPILE_COMMANDS ON )
 set( CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/dependencies/cmake")
 
 INCLUDE( CheckCXXCompilerFlag )
@@ -33,11 +33,11 @@ CHECK_CXX_COMPILER_FLAG( "-std=c++14" COMPILER_SUPPORTS_CXX14 )
 if (COMPILER_SUPPORTS_CXX14)
   SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14" )
 ELSEIF (COMPILER_SUPPORTS_CXX11)
- SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11" )
+  SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11" )
 ELSEIF (COMPILER_SUPPORTS_CXX0X)
- SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x" )
+  SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x" )
 ELSE ()
- MESSAGE(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
+  MESSAGE(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
 ENDIF()
 
 IF( ENABLE_PAPI_PROFILING )

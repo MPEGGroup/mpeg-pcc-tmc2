@@ -16,6 +16,5 @@
 
 #cmakedefine USE_HDRTOOLS
 
-#cmakedefine USE_HM_PCC_RDO
 
 

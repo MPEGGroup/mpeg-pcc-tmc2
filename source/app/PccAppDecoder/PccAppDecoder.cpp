@@ -156,15 +156,11 @@ bool parseParameters( int                       argc,
     ( "keepIntermediateFiles",
       decoderParams.keepIntermediateFiles_,
       decoderParams.keepIntermediateFiles_,
-    "Keep intermediate files: RGB, YUV and bin")
-
-#ifdef USE_SHMAPP_VIDEO_CODEC
-	  //SHVC
+      "Keep intermediate files: RGB, YUV and bin")
 	  ( "shvcLayerIndex",
 	    decoderParams.shvcLayerIndex_,
 	    decoderParams.shvcLayerIndex_,
      "Decode Layer ID number using SHVC codec")
-#endif
 
     // visual quality
     ( "patchColorSubsampling",
