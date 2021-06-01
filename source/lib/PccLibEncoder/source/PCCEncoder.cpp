@@ -9139,7 +9139,7 @@ void PCCEncoder::createHashSEI( PCCContext& context, int frameIndex, size_t hash
     //auto&                tileHeader = context.getAtlasTileLayerList()[atlIdx].getHeader();
     auto&                tileHeader = context.getAtlasTileLayerList()[0].getHeader();
     size_t               afpsIndex  = tileHeader.getAtlasFrameParameterSetId();
-    size_t               aspsIndex  = context.getAtlasFrameParameterSet( afpsIndex ).getAtlasFrameParameterSetId();
+    size_t               aspsIndex  = context.getAtlasFrameParameterSet( afpsIndex ).getAtlasSequenceParameterSetId();
     auto&                asps       = context.getAtlasSequenceParameterSet( aspsIndex );
     auto&                afps       = context.getAtlasFrameParameterSet( afpsIndex );
     std::vector<uint8_t> highLevelAtlasData;

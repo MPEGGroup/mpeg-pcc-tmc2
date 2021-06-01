@@ -2457,7 +2457,7 @@ void PCCCodec::getB2PHashPatchParams( PCCContext&                               
   size_t atlIdx                     = context[frameIndex].getTile( 0 ).getAtlIndex();
   auto&  tileHeader                 = context.getAtlasTileLayerList()[atlIdx].getHeader();
   size_t afpsIndex                  = tileHeader.getAtlasFrameParameterSetId();
-  size_t aspsIndex                  = context.getAtlasFrameParameterSet( afpsIndex ).getAtlasFrameParameterSetId();
+  size_t aspsIndex                  = context.getAtlasFrameParameterSet( afpsIndex ).getAtlasSequenceParameterSetId();
   auto&  asps                       = context.getAtlasSequenceParameterSet( aspsIndex );
   auto&  afps                       = context.getAtlasFrameParameterSet( afpsIndex );
   auto&  afti                       = afps.getAtlasFrameTileInformation();
