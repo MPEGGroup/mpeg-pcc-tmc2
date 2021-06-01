@@ -73,6 +73,9 @@ static std::istream& operator>>( std::istream& in, PCCCodecId& val ) {
 #ifdef USE_HMAPP_VIDEO_CODEC
   if ( tmp == "1" || tmp == "HMAPP" || tmp == "hmapp" ) { val = HMAPP; }
 #endif
+#ifdef USE_SHMAPP_VIDEO_CODEC
+  if ( tmp == "2" || tmp == "SHMAPP" || tmp == "shmapp" || tmp == "shm" ) { val = SHMAPP; }
+#endif
 #ifdef USE_JMLIB_VIDEO_CODEC
   if ( tmp == "2" || tmp == "JMLIB" || tmp == "jmlib" || tmp == "jm" || tmp == "avc" ) { val = JMLIB; }
 #endif
@@ -627,6 +630,20 @@ bool parseParameters( int                   argc,
       encoderParams.prefilterLossyOM_,
       "Selects whether the occupany map is prefiltered before lossy compression (default=false)\n" )
 
+    // SHVC 
+    ( "shvcLayerIndex",
+      encoderParams.shvcLayerIndex_,
+      encoderParams.shvcLayerIndex_,
+     "Decode Layer ID number using SHVC codec")
+    ( "shvcRateX",
+      encoderParams.shvcRateX_,
+      encoderParams.shvcRateX_,
+      "SHVCRateX : reduce rate of each SHVC layer X axis in 2D space (should be greater than 1)")
+    ( "shvcRateY",
+      encoderParams.shvcRateY_,
+      encoderParams.shvcRateY_,
+      "SHVCRateY : reduce rate of each SHVC layer Y axis in 2D space (should be greater than 1)")
+
     // visual quality
     ( "patchColorSubsampling",
       encoderParams.patchColorSubsampling_, false,
@@ -738,12 +755,10 @@ bool parseParameters( int                   argc,
       encoderParams.use3dmc_,
       encoderParams.use3dmc_,
       "Use auxilliary information for 3d motion compensation.(0: conventional video coding, 1: 3D motion compensated)" )
-#ifdef USE_HM_PCC_RDO
     ( "usePccRDO",
       encoderParams.usePccRDO_,
       encoderParams.usePccRDO_,
       "Use HEVC PCC RDO optimization" )
-#endif
     ( "geometry3dCoordinatesBitdepth",
       encoderParams.geometry3dCoordinatesBitdepth_,
       encoderParams.geometry3dCoordinatesBitdepth_,
@@ -928,6 +943,10 @@ bool parseParameters( int                   argc,
       encoderParams.hevcCodecIdIndex_,
       encoderParams.hevcCodecIdIndex_, 
       "index for hevc codec " )
+    ( "shvcCodecIdIndex",
+      encoderParams.shvcCodecIdIndex_,
+      encoderParams.shvcCodecIdIndex_, 
+      "index for shvc codec " )
     ( "vvcCodecIdIndex",
       encoderParams.vvcCodecIdIndex_,
       encoderParams.vvcCodecIdIndex_, 
@@ -1088,6 +1107,26 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
     if ( ret != 0 ) { return ret; }
     if ( !encoderParams.reconstructedDataPath_.empty() ) {
       reconstructs.write( encoderParams.reconstructedDataPath_, reconstructedFrameNumber );
+     
+// // TODO JR: must be remove: 
+//        std::cout << encoderParams.reconstructedDataPath_.substr( 0, encoderParams.reconstructedDataPath_.size() - 4 ) +
+//                        "_LID" + std::to_string( 0 ) + ".ply"
+//                 << std::endl;
+// 	  // SHVC khu H
+//     // SHVC reconstruct ply generate this location
+//       if ( encoderParams.SHVCLayer_ >= 1 && encoderParams.SHVCRateX_ >= 2 && encoderParams.SHVCRateY_ >= 2 ) {
+//         for ( size_t i = 0; i < encoderParams.SHVCLayer_; i++ ) {
+//           reconstructs.clear();
+//           size_t second_reconstructedFrameNumber = reconstructedFrameNumber - context.size();
+//           encoder.reconstructSHVCPointCloud( i, sources, context, reconstructs );
+//           string reconstructedSHVCDataPath =
+//               encoderParams.reconstructedDataPath_.substr( 0, encoderParams.reconstructedDataPath_.size() - 4 ) +
+//               "_LID" + std::to_string( i ) + ".ply";
+		  
+//           reconstructs.write( reconstructedSHVCDataPath, second_reconstructedFrameNumber );
+//         }
+//       }
+// //~TODO JR: must be remove: 
     }
     normals.clear();
     sources.clear();

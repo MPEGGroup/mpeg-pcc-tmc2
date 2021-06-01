@@ -52,6 +52,7 @@ PCCDecoderParameters::PCCDecoderParameters() {
   keepIntermediateFiles_             = false;
   postprocessSmoothingFilter_        = 1;
   patchColorSubsampling_             = false;
+  shvcLayerIndex_                    = 8;
 }
 
 PCCDecoderParameters::~PCCDecoderParameters() = default;
@@ -69,7 +70,8 @@ void PCCDecoderParameters::print() {
   std::cout << "\t   videoDecoderGeometryPath          " << videoDecoderGeometryPath_ << std::endl;
   std::cout << "\t   videoDecoderAttributePath         " << videoDecoderAttributePath_ << std::endl;
   std::cout << "\t   inverseColorSpaceConversionConfig " << inverseColorSpaceConversionConfig_ << std::endl;
-  std::cout << "\t   patchColorSubsampling             " << patchColorSubsampling_ << std::endl;
+  std::cout << "\t   patchColorSubsampling             " << patchColorSubsampling_ << std::endl;  
+  std::cout << "\t   shvcLayerIndex                    " << shvcLayerIndex_ << std::endl;
 }
 
 void PCCDecoderParameters::completePath() {}

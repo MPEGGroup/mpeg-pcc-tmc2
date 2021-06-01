@@ -97,17 +97,20 @@ enum PCCCodecId {
 #ifdef USE_HMAPP_VIDEO_CODEC
   HMAPP = 1,
 #endif
+#ifdef USE_SHMAPP_VIDEO_CODEC
+  SHMAPP = 2,
+#endif
 #ifdef USE_JMLIB_VIDEO_CODEC
-  JMLIB = 2,
+  JMLIB = 3,
 #endif
 #ifdef USE_HMLIB_VIDEO_CODEC
-  HMLIB = 3,
+  HMLIB = 4,
 #endif
 #ifdef USE_VTMLIB_VIDEO_CODEC
-  VTMLIB = 4,
+  VTMLIB = 5,
 #endif
 #ifdef USE_FFMPEG_VIDEO_CODEC
-  FFMPEG = 5,
+  FFMPEG = 6,
 #endif
   UNKNOWN_CODEC = 255
 };
@@ -210,6 +213,27 @@ static inline std::string getParameter( const std::string& config, const std::st
   }
   pos += param.length();
   return config.substr( pos, config.find( " ", pos ) - pos );
+}
+
+static inline std::string getParameterFromConfigurationFile( const std::string& filename, const std::string& param ) {
+  std::string ret = "0";
+  std::cout << "getParameterFromConfigurationFile filename = " << filename << '\n';
+  std::ifstream file( filename.c_str(), std::ifstream::in );
+  if ( file.is_open() ) {    
+    do {
+      std::string line;
+      std::getline( file, line );
+      // std::cout << "getline = " << line << '\n';
+      if ( std::string::npos != line.find(param) ) { 
+        if(  std::string::npos !=  line.find(":") ) {
+          ret = line.substr( line.find(":") + 1); 
+          std::cout << "Match = " << line << " => ret = " << ret << "\n";
+          return ret;
+        }
+      }
+    } while ( !file.eof() );
+  }
+  return ret;
 }
 
 using Range = std::pair<int, int>;

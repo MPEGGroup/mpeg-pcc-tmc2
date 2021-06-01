@@ -167,11 +167,12 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
                          ( params_.EOMFixBitCount_ <= 8 ) ? 1 : 2,  // nByte
                          false,                                     // use444CodecIo
                          false,                                     // use3dmv
-#ifdef USE_HM_PCC_RDO
-                         false,  // usePccRDO
-#endif
-                         8,      // internalBitDepth
-                         false,  // useConversion
+                         false,                                     // usePccRDO
+                         0,                                         // SHVC Layer Index
+                         0,                                         // SHVC ratio X
+                         0,                                         // SHVC ratio Y
+                         8,                                         // internalBitDepth
+                         false,                                     // useConversion
                          params_.keepIntermediateFiles_ );
   if ( params_.offsetLossyOM_ > 0 ) {
     changedPixCnt     = 0;
@@ -209,11 +210,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   // ENCODE GEOMETRY IMAGE
   TRACE_PICTURE( "Geometry\n" );
   TRACE_PICTURE( "MapIdx = 0, AuxiliaryVideoFlag = 0\n" );
-#ifdef USE_HM_PCC_RDO
   if ( params_.use3dmc_ || params_.usePccRDO_ ) { create3DMotionEstimationFiles( context, path.str() ); }
-#else
-  if ( params_.use3dmc_ ) { create3DMotionEstimationFiles( context, path.str() ); }
-#endif
   auto&  gi                      = context.getVps().getGeometryInformation( atlasIndex );
   size_t geometryVideoBitDepth   = gi.getGeometry2dBitdepthMinus1() + 1;
   size_t geometryMPVideoBitDepth = gi.getGeometry2dBitdepthMinus1() + 1;
@@ -229,7 +226,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   std::string geometryConfigFile =
       params_.multipleStreams_
           ? params_.geometryD0Config_
-          : ( params_.mapCountMinus1_ == 0 ? getEncoderConfig1L( params_.geometryConfig_ ) : params_.geometryConfig_ );
+          : ( params_.mapCountMinus1_ == 0 ? getEncoderConfig1L( params_.geometryConfig_ ) : params_.geometryConfig_ );          
   videoEncoder.compress( videoGeometry,                                                             // video
                          path.str(),                                                                // path
                          params_.multipleStreams_ ? params_.geometryQP_ - 1 : params_.geometryQP_,  // QP
@@ -242,12 +239,13 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
                          nbyteGeo,                               // nbyte
                          false,                                  // use444CodecIo
                          params_.use3dmc_,                       // use3dmv
-#ifdef USE_HM_PCC_RDO
-                         params_.usePccRDO_,  // usePccRDO
-#endif
-                         internalBitDepth,                  // internalBitDepth
-                         false,                             // useConversion
-                         params_.keepIntermediateFiles_ );  // keep intermediate
+                         params_.usePccRDO_,                     // usePccRDO
+                         params_.shvcLayerIndex_,                // SHVC layer index
+                         params_.shvcRateX_,                     // SHVC rate X
+                         params_.shvcRateY_,                     // SHVC rate Y
+                         internalBitDepth,                       // internalBitDepth
+                         false,                                  // useConversion
+                         params_.keepIntermediateFiles_ );       // keep intermediate
   size_t sizeGeometryVideo = videoBitstreamD0.size();
   std::cout << "sizeGeometryVideo: " << sizeGeometryVideo << std::endl;
   if ( params_.multipleStreams_ ) {
@@ -284,12 +282,13 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
                            nbyteGeo,                               // nbyte
                            false,                                  // use444CodecIo
                            params_.use3dmc_,                       // use3dmv
-#ifdef USE_HM_PCC_RDO
-                           params_.usePccRDO_,  // usePccRDO
-#endif
-                           internalBitDepth,                  // internalBitDepth
-                           false,                             // useConversion
-                           params_.keepIntermediateFiles_ );  // keep intermediate
+                           params_.usePccRDO_,                     // usePccRDO
+                           params_.shvcLayerIndex_,                // SHVC layer index
+                           params_.shvcRateX_,                     // SHVC rate X
+                           params_.shvcRateY_,                     // SHVC rate Y
+                           internalBitDepth,                       // internalBitDepth
+                           false,                                  // useConversion
+                           params_.keepIntermediateFiles_ );       // keep intermediate
 
     size_t sizeGeometryVideoD1 = videoBitstreamD1.size();
     std::cout << "sizeGeometryVideoD1: " << sizeGeometryVideoD1 << std::endl;
@@ -306,7 +305,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     auto& videoRawPointsGeometryBitstream = context.createVideoBitstream( VIDEO_GEOMETRY_RAW );
     generateRawPointsGeometryVideo( context );
     auto& videoRawPointsGeometry = context.getVideoRawPointsGeometry();
-    auto  qpRaw = params_.lossyRawPointsPatch_ ? params_.lossyRawPointPatchGeoQP_ : params_.geometryQP_;    
+    auto  qpRaw = params_.lossyRawPointsPatch_ ? params_.lossyRawPointPatchGeoQP_ : params_.geometryQP_;
     videoEncoder.compress( videoRawPointsGeometry,                 // video,
                            path.str(),                             // path,
                            qpRaw,                                  // qp,
@@ -319,11 +318,12 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
                            nbyteGeoMP,                             // nbyte
                            false,                                  // use444CodecIo
                            false,                                  // use3dmv
-#ifdef USE_HM_PCC_RDO
-                           false,  // usePccRDO
-#endif
-                           internalBitDepth,  // internalBitDepth
-                           false,             // useConversion
+                           false,                                  // usePccRDO
+                           params_.shvcLayerIndex_,                // SHVC layer index
+                           params_.shvcRateX_,                     // SHVC rate X
+                           params_.shvcRateY_,                     // SHVC rate Y
+                           internalBitDepth,                       // internalBitDepth
+                           false,                                  // useConversion
                            params_.keepIntermediateFiles_ );
     if ( params_.lossyRawPointsPatch_ ) {
       for ( size_t fi = 0; fi < context.size(); fi++ ) generateRawPointsGeometryfromVideo( context, fi );
@@ -483,21 +483,22 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
         params_.multipleStreams_
             ? ( params_.mapCountMinus1_ == 0 ? getEncoderConfig1L( params_.textureConfig_ ) : params_.textureT0Config_ )
             : ( params_.mapCountMinus1_ == 0 ? getEncoderConfig1L( params_.textureConfig_ ) : params_.textureConfig_ );
-    videoEncoder.compress( context.getVideoTextureMultiple()[0],    // video,
-                           path.str(),                              // path
-                           params_.textureQP_,                      // qp
-                           videoBitstream,                          // bitstream
-                           encoderConfig0,                          // encoderConfig
-                           params_.videoEncoderAttributePath_,      // encoderPath
-                           params_.videoEncoderAttributeCodecId_,   // codecId
-                           params_.byteStreamVideoCoderAttribute_,  // byteStreamVideoCoder
-                           context,                                 // context
-                           nbyteAtt,                                // nbyte
-                           params_.attributeVideo444_,              // use444CodecIo
-                           params_.use3dmc_,                        // use3dmv
-#ifdef USE_HM_PCC_RDO
-                           params_.usePccRDO_,  // usePccRDO
-#endif
+    videoEncoder.compress( context.getVideoTextureMultiple()[0],        // video,
+                           path.str(),                                  // path
+                           params_.textureQP_,                          // qp
+                           videoBitstream,                              // bitstream
+                           encoderConfig0,                              // encoderConfig
+                           params_.videoEncoderAttributePath_,          // encoderPath
+                           params_.videoEncoderAttributeCodecId_,       // codecId
+                           params_.byteStreamVideoCoderAttribute_,      // byteStreamVideoCoder
+                           context,                                     // context
+                           nbyteAtt,                                    // nbyte
+                           params_.attributeVideo444_,                  // use444CodecIo
+                           params_.use3dmc_,                            // use3dmv
+                           params_.usePccRDO_,                          // usePccRDO
+                           params_.shvcLayerIndex_,                     // SHVC layer index
+                           params_.shvcRateX_,                          // SHVC rate X
+                           params_.shvcRateY_,                          // SHVC rate Y
                            params_.rawPointsPatch_ ? 8 : 10,            // internalBitDepth
                            !params_.rawPointsPatch_,                    // useConversion
                            params_.keepIntermediateFiles_,              // keepIntermediateFiles
@@ -531,21 +532,22 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
       auto& videoBitstreamT1 = context.createVideoBitstream( VIDEO_TEXTURE_T1 );
       auto encoderConfig1 =
           params_.mapCountMinus1_ == 0 ? getEncoderConfig1L( params_.textureConfig_ ) : params_.textureT1Config_;
-      videoEncoder.compress( context.getVideoTextureMultiple()[1],    // video,
-                             path.str(),                              // path
-                             params_.textureQP_ + params_.qpAdjT1_,   // qp
-                             videoBitstreamT1,                        // bitstream
-                             encoderConfig1,                          // encoderConfig
-                             params_.videoEncoderAttributePath_,      // encoderPath
-                             params_.videoEncoderAttributeCodecId_,   // codecId
-                             params_.byteStreamVideoCoderAttribute_,  // byteStreamVideoCoder
-                             context,                                 // context
-                             nbyteAtt,                                // nbyte
-                             params_.attributeVideo444_,              // use444CodecIo
-                             params_.use3dmc_,                        // use3dmv
-#ifdef USE_HM_PCC_RDO
-                             params_.usePccRDO_,  // usePccRDO
-#endif
+      videoEncoder.compress( context.getVideoTextureMultiple()[1],        // video,
+                             path.str(),                                  // path
+                             params_.textureQP_ + params_.qpAdjT1_,       // qp
+                             videoBitstreamT1,                            // bitstream
+                             encoderConfig1,                              // encoderConfig
+                             params_.videoEncoderAttributePath_,          // encoderPath
+                             params_.videoEncoderAttributeCodecId_,       // codecId
+                             params_.byteStreamVideoCoderAttribute_,      // byteStreamVideoCoder
+                             context,                                     // context
+                             nbyteAtt,                                    // nbyte
+                             params_.attributeVideo444_,                  // use444CodecIo
+                             params_.use3dmc_,                            // use3dmv
+                             params_.usePccRDO_,                          // usePccRDO
+                             params_.shvcLayerIndex_,                     // SHVC layer index
+                             params_.shvcRateX_,                          // SHVC rate X
+                             params_.shvcRateY_,                          // SHVC rate Y
                              params_.rawPointsPatch_ ? 8 : 10,            // internalBitDepth
                              !params_.rawPointsPatch_,                    // useConversion
                              params_.keepIntermediateFiles_,              // keepIntermediateFiles
@@ -568,21 +570,22 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
       generateRawPointsTextureVideo( context );
       auto&        videoRawPointsTexture = context.getVideoRawPointsTexture();
       const size_t nByteAttMP            = 1;
-      videoEncoder.compress( videoRawPointsTexture,                   // video,
-                             path.str(),                              // path
-                             params_.textureQP_,                      // qp
-                             videoBitstreamMP,                        // bitstream
-                             params_.textureAuxVideoConfig_,          // encoderConfig
-                             params_.videoEncoderAttributePath_,      // encoderPath
-                             params_.videoEncoderAttributeCodecId_,   // codecId
-                             params_.byteStreamVideoCoderAttribute_,  // byteStreamVideoCoder
-                             context,                                 // context
-                             nByteAttMP,                              // nbyte
-                             params_.attributeVideo444_,              // use444CodecIo
-                             false,                                   // use3dmv
-#ifdef USE_HM_PCC_RDO
-                             false,  // usePccRDO
-#endif
+      videoEncoder.compress( videoRawPointsTexture,                       // video,
+                             path.str(),                                  // path
+                             params_.textureQP_,                          // qp
+                             videoBitstreamMP,                            // bitstream
+                             params_.textureAuxVideoConfig_,              // encoderConfig
+                             params_.videoEncoderAttributePath_,          // encoderPath
+                             params_.videoEncoderAttributeCodecId_,       // codecId
+                             params_.byteStreamVideoCoderAttribute_,      // byteStreamVideoCoder
+                             context,                                     // context
+                             nByteAttMP,                                  // nbyte
+                             params_.attributeVideo444_,                  // use444CodecIo
+                             false,                                       // use3dmv
+                             false,                                       // usePccRDO
+                             params_.shvcLayerIndex_,                     // SHVC layer index
+                             params_.shvcRateX_,                          // SHVC rate X
+                             params_.shvcRateY_,                          // SHVC rate Y
                              10,                                          // internalBitDepth
                              !params_.rawPointsPatch_,                    // useConversion
                              params_.keepIntermediateFiles_,              // keepIntermediateFiles
@@ -748,11 +751,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     TRACE_RECFRAME( "\n" );
   }  // frame
 
-#ifdef USE_HM_PCC_RDO
   if ( !params_.keepIntermediateFiles_ && ( params_.use3dmc_ || params_.usePccRDO_ ) ) {
-#else
-  if ( !params_.keepIntermediateFiles_ && params_.use3dmc_ ) {
-#endif
     remove3DMotionEstimationFiles( path.str() );
   }
 
@@ -8696,26 +8695,31 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
     auto&      ai               = vps.getAttributeInformation( atlasIndex );
     auto&      oi               = vps.getOccupancyInformation( atlasIndex );
     auto&      gi               = vps.getGeometryInformation( atlasIndex );
-    bool useAvc = false, useHevc = false, useVvc = false;
-    if ( oi.getOccupancyCodecId() == params_.avcCodecIdIndex_ ||
-         gi.getGeometryCodecId() == params_.avcCodecIdIndex_ ||
-         ai.getAttributeCodecId( 0 ) == params_.avcCodecIdIndex_ ) {
-      useAvc = true;
-    }
-    if ( oi.getOccupancyCodecId() == params_.hevcCodecIdIndex_ ||
-         gi.getGeometryCodecId() == params_.hevcCodecIdIndex_ ||
-         ai.getAttributeCodecId( 0 ) == params_.hevcCodecIdIndex_ ) {
-      useHevc = true;
-    }
-    if ( oi.getOccupancyCodecId() == params_.vvcCodecIdIndex_ ||
-         gi.getGeometryCodecId() == params_.vvcCodecIdIndex_ ||
-         ai.getAttributeCodecId( 0 ) == params_.vvcCodecIdIndex_ ) {
-      useVvc = true;
-    }
+
+    bool useAvc = oi.getOccupancyCodecId() == params_.avcCodecIdIndex_ ||
+                  gi.getGeometryCodecId() == params_.avcCodecIdIndex_ ||
+                  ai.getAttributeCodecId( 0 ) == params_.avcCodecIdIndex_;
+    bool useHevc = oi.getOccupancyCodecId() == params_.hevcCodecIdIndex_ ||
+                   gi.getGeometryCodecId() == params_.hevcCodecIdIndex_ ||
+                   ai.getAttributeCodecId( 0 ) == params_.hevcCodecIdIndex_;
+    bool useShvc = oi.getOccupancyCodecId() == params_.shvcCodecIdIndex_ ||
+                   gi.getGeometryCodecId() == params_.shvcCodecIdIndex_ ||
+                   ai.getAttributeCodecId( 0 ) == params_.shvcCodecIdIndex_;
+    bool useVvc = oi.getOccupancyCodecId() == params_.vvcCodecIdIndex_ ||
+                  gi.getGeometryCodecId() == params_.vvcCodecIdIndex_ ||
+                  ai.getAttributeCodecId( 0 ) == params_.vvcCodecIdIndex_;
+
+                  
+    printf("CODEC ID = %d %d %d \n", oi.getOccupancyCodecId(), gi.getGeometryCodecId(), ai.getAttributeCodecId( 0 ) ); 
+    printf( "ProfileCodecGroupIdc = CODEC_GROUP_MP4RA: AVC = %d HEVC = %d SHVC = %d VVC = %d \n", useAvc, useHevc,
+            useShvc, useVvc );
 
     auto& sei = static_cast<SEIComponentCodecMapping&>( context.addSeiPrefix( COMPONENT_CODEC_MAPPING, true ) );
     sei.setComponentCodecCancelFlag( false );
-    sei.setCodecMappingsCountMinus1( useAvc + useHevc + useVvc - 1 );
+    sei.setCodecMappingsCountMinus1( useAvc + useHevc + useShvc + useVvc - 1 );
+    
+    printf( "sei.getCodecMappingsCountMinus1() = %zu \n", sei.getCodecMappingsCountMinus1() );
+
     sei.allocate();
     uint8_t index = 0;
     if ( useAvc ) {
@@ -8725,6 +8729,10 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
     if ( useHevc ) {
       sei.setCodecId( index++, params_.hevcCodecIdIndex_ );
       sei.setCodec4cc( params_.hevcCodecIdIndex_, "hev1" );
+    }
+    if ( useShvc ) {
+      sei.setCodecId( index++, params_.shvcCodecIdIndex_ );
+      sei.setCodec4cc( params_.shvcCodecIdIndex_, "svc1" );
     }
     if ( useVvc ) {
       sei.setCodecId( index++, params_.vvcCodecIdIndex_ );

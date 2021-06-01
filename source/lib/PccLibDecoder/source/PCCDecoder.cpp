@@ -70,7 +70,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
   const size_t      mapCount         = sps.getMapCountMinus1( atlasIndex ) + 1;
   int               geometryBitDepth = gi.getGeometry2dBitdepthMinus1() + 1;
   auto occupancyCodecId = getCodedCodecId( context, oi.getOccupancyCodecId(), params_.videoDecoderOccupancyPath_ );
-  auto geometryCodecId  = getCodedCodecId( context, gi.getGeometryCodecId(), params_.videoDecoderOccupancyPath_ );
+  auto geometryCodecId  = getCodedCodecId( context, gi.getGeometryCodecId(), params_.videoDecoderGeometryPath_ );
   path << removeFileExtension( params_.compressedStreamPath_ ) << "_dec_GOF" << sps.getV3CParameterSetId() << "_";
 
   printf( "CodecCodecId: ProfileCodecGroupIdc = %u occupancyCodecId = %u geometry = %u auxGeo = %u \n",
@@ -112,7 +112,9 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
                                geometryCodecId,                               // codecId
                                params_.videoDecoderGeometryPath_,             // decoder path
                                geometryBitDepth,                              // output bit depth
-                               params_.keepIntermediateFiles_ );              // keep intermediate files
+                               params_.keepIntermediateFiles_,                // keep intermediate files
+                               0 );                                           // SHVC layer index
+
       context.getVideoGeometryMultiple()[mapIndex].convertBitdepth(
           geometryBitDepth, gi.getGeometry2dBitdepthMinus1() + 1, gi.getGeometryMSBAlignFlag() );
       std::cout << "geometry D" << mapIndex << " video ->" << videoBitstream.size() << " B" << std::endl;
@@ -134,7 +136,9 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
                              geometryCodecId,                        // codecId
                              params_.videoDecoderGeometryPath_,      // decoder path
                              geometryBitDepth,                       // output bit depth
-                             params_.keepIntermediateFiles_ );       // keep intermediate files
+                             params_.keepIntermediateFiles_,         // keep intermediate files
+                             params_.shvcLayerIndex_ );              // SHVC layer index
+
     context.getVideoGeometryMultiple()[0].convertBitdepth( geometryBitDepth, gi.getGeometry2dBitdepthMinus1() + 1,
                                                            gi.getGeometryMSBAlignFlag() );
     std::cout << "geometry video ->" << videoBitstream.size() << " B" << std::endl;
@@ -155,7 +159,9 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
                              auxGeometryCodecId,                     // codecId
                              params_.videoDecoderGeometryPath_,      // decoder path
                              geometryBitDepth,                       // output bit depth
-                             params_.keepIntermediateFiles_ );       // keep intermediate files
+                             params_.keepIntermediateFiles_,         // keep intermediate files
+                             params_.shvcLayerIndex_ );              // SHVC layer index
+
     context.getVideoRawPointsGeometry().convertBitdepth( geometryBitDepth, gi.getGeometry2dBitdepthMinus1() + 1,
                                                          gi.getGeometryMSBAlignFlag() );
     std::cout << " raw points geometry -> " << videoBitstreamMP.size() << " B " << endl;
@@ -196,6 +202,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
                                      params_.videoDecoderAttributePath_,           // decoder path
                                      attributeBitDepth,                            // output bit depth
                                      params_.keepIntermediateFiles_,               // keep intermediate files
+                                     params_.shvcLayerIndex_,                      // SHVC layer index
                                      params_.patchColorSubsampling_,               // patch color subsampling
                                      params_.inverseColorSpaceConversionConfig_,   // inverse color space conversion
                                      params_.colorSpaceConversionPath_ );          // color space conversion path
@@ -219,6 +226,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
                                    params_.videoDecoderAttributePath_,          // decoder path
                                    attributeBitDepth,                           // output bit depth
                                    params_.keepIntermediateFiles_,              // keep intermediate files
+                                   params_.shvcLayerIndex_,                     // SHVC layer index
                                    params_.patchColorSubsampling_,              // patch color subsampling
                                    params_.inverseColorSpaceConversionConfig_,  // inverse color space conversionConfig
                                    params_.colorSpaceConversionPath_ );         // color space conversion path
@@ -241,6 +249,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
                                    params_.videoDecoderAttributePath_,          // decoder path
                                    attributeBitDepth,                           // output bit depth
                                    params_.keepIntermediateFiles_,              // keep intermediate files
+                                   params_.shvcLayerIndex_,                     // SHVC layer index
                                    false,                                       // patch color subsampling
                                    params_.inverseColorSpaceConversionConfig_,  // inverse color space conversionConfig
                                    params_.colorSpaceConversionPath_ );         // color space conversion path
@@ -701,8 +710,8 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context ) {
   setTilePartitionSizeAfti( context );
   for ( size_t i = 0; i < atlList.size(); i++ ) {
     size_t afocVal = context.calculateAFOCval( atlList, i );
-    frameCount = std::max( frameCount, ( afocVal + 1 ) );
-    atlList[i].getHeader().setFrameIndex(afocVal);
+    frameCount     = std::max( frameCount, ( afocVal + 1 ) );
+    atlList[i].getHeader().setFrameIndex( afocVal );
   }
   context.resize( frameCount );
   setPointLocalReconstruction( context );
@@ -736,7 +745,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
   auto&  atgdu              = atlu.getDataUnit();
   auto   geometryBitDepth2D = asps.getGeometry2dBitdepthMinus1() + 1;
   auto   geometryBitDepth3D = asps.getGeometry3dBitdepthMinus1() + 1;
-  size_t frameIndex         = ath.getFrameIndex(); //atlu.getAtlasFrmOrderCntVal();
+  size_t frameIndex         = ath.getFrameIndex();  // atlu.getAtlasFrmOrderCntVal();
   size_t tileIndex          = afti.getSignalledTileIdFlag() ? afti.getTileId( ath.getId() ) : ath.getId();
 
   printf( "createPatchFrameDataStructure Frame = %zu Tiles = %zu atlasIndex = %zu atglOrder %zu \n", frameIndex,
@@ -1776,7 +1785,8 @@ PCCCodecId PCCDecoder::getCodedCodecId( PCCContext&        context,
                                         const std::string& videoDecoderPath ) {
   auto& sps = context.getVps();
   auto& plt = sps.getProfileTierLevel();
-  printf( "getCodedCodecId profileCodecGroupIdc = %d \n", plt.getProfileCodecGroupIdc() );
+  printf( "getCodedCodecId profileCodecGroupIdc = %d codecCodecId = %u \n", plt.getProfileCodecGroupIdc(),
+          codecCodecId );
   fflush( stdout );
   switch ( plt.getProfileCodecGroupIdc() ) {
     case CODEC_GROUP_AVC_PROGRESSIVE_HIGH:
@@ -1817,37 +1827,46 @@ PCCCodecId PCCDecoder::getCodedCodecId( PCCContext&        context,
         auto* sei =
             static_cast<SEIComponentCodecMapping*>( context.getSei( NAL_PREFIX_ESEI, COMPONENT_CODEC_MAPPING ) );
         for ( size_t i = 0; i <= sei->getCodecMappingsCountMinus1(); i++ ) {
-          auto        codecId  = sei->getCodecId( i );
-          std::string codec4cc = sei->getCodec4cc( codecId );
-          printf( "codec4cc = %s \n", codec4cc.c_str() );
-          if ( codec4cc.compare( "avc3" ) == 0 ) {
+          auto codecId = sei->getCodecId( i );
+          if ( codecId == codecCodecId ) {
+            std::string codec4cc = sei->getCodec4cc( codecId );
+            printf( "=> codecId = %u => codec4cc = %s \n", codecId, codec4cc.c_str() );
+            if ( codec4cc.compare( "avc3" ) == 0 ) {
 #if defined( USE_JMLIB_VIDEO_CODEC )
-            return JMLIB;
+              return JMLIB;
 #elif defined( USE_JMAPP_VIDEO_CODEC )
-            return JMAPP;
+              return JMAPP;
 #else
-            fprintf( stderr, "JM Codec not supported \n" );
-            exit( -1 );
+              fprintf( stderr, "JM Codec not supported \n" );
+              exit( -1 );
 #endif
-          } else if ( codec4cc.compare( "hev1" ) == 0 ) {
+            } else if ( codec4cc.compare( "hev1" ) == 0 ) {
 #if defined( USE_JMLIB_VIDEO_CODEC )
-            return HMLIB;
+              return HMLIB;
 #elif defined( USE_JMAPP_VIDEO_CODEC )
-            return HMAPP;
+              return HMAPP;
 #else
-            fprintf( stderr, "HM Codec not supported \n" );
-            exit( -1 );
+              fprintf( stderr, "HM Codec not supported \n" );
+              exit( -1 );
 #endif
-          } else if ( codec4cc.compare( "vvc1" ) == 0 ) {
+            } else if ( codec4cc.compare( "svc1" ) == 0 ) {
+#if defined( USE_SHMAPP_VIDEO_CODEC )
+              return SHMAPP;
+#else
+              fprintf( stderr, "SHM Codec not supported \n" );
+              exit( -1 );
+#endif
+            } else if ( codec4cc.compare( "vvc1" ) == 0 ) {
 #if defined( USE_VTMLIB_VIDEO_CODEC )
-            return VTMLIB;
+              return VTMLIB;
 #else
-            fprintf( stderr, "VTM Codec not supported \n" );
-            exit( -1 );
+              fprintf( stderr, "VTM Codec not supported \n" );
+              exit( -1 );
 #endif
-          } else {
-            fprintf( stderr, "CODEC_GROUP_MP4RA but codec4cc \"%s\" not supported \n", codec4cc.c_str() );
-            exit( -1 );
+            } else {
+              fprintf( stderr, "CODEC_GROUP_MP4RA but codec4cc \"%s\" not supported \n", codec4cc.c_str() );
+              exit( -1 );
+            }
           }
         }
       } else {

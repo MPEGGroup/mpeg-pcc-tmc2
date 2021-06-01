@@ -62,8 +62,7 @@ class PCCChecksum {
  private:
   bool compare( std::vector<std::vector<uint8_t>>& checksumsA, std::vector<std::vector<uint8_t>>& checksumsB );
 
-  PCCMetricsParameters params_;
-
+  PCCMetricsParameters              params_;
   std::vector<std::vector<uint8_t>> checksumsSrc_;
   std::vector<std::vector<uint8_t>> checksumsOrd_;
   std::vector<std::vector<uint8_t>> checksumsRec_;

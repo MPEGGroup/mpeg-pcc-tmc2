@@ -107,6 +107,7 @@ class PCCVideo {
     return addVideoFormat( filename, getWidth(), getHeight(), isYUV(), is420(), bitdepth );
   }
 
+  void upsample( size_t rate );
  private:
   bool write( std::ofstream& outfile, const size_t nbyte );
   bool read( std::ifstream&       infile,

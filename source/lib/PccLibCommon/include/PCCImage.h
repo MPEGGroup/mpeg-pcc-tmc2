@@ -61,6 +61,7 @@ class PCCImage {
   }
 
   void resize( const size_t sizeU0, const size_t sizeV0, PCCCOLORFORMAT format );
+  
   void clear() {
     for ( auto& channel : channels_ ) { channel.clear(); }
   }
@@ -84,6 +85,7 @@ class PCCImage {
   void convertYUV444ToYUV420();
   void convertYUV444ToYUV420( const PCCImage<T, 3>& image );
   void convertYUV420ToYUV444( const PCCImage<T, 3>& image );
+  void upsample( size_t rate );
 
   template <typename Pel>
   void set( const Pel*     Y,
@@ -192,10 +194,11 @@ class PCCImage {
 
   void setValue( const size_t channelIndex, const size_t u, const size_t v, const T value ) {
     assert( channelIndex < N && u < width_ && v < height_ );
-    if ( format_ == YUV420 && channelIndex != 0 )
-      channels_[channelIndex][( v * width_ >> 1 ) + u] = value;
-    else
+    if ( format_ == YUV420 && channelIndex != 0 ) {
+      channels_[channelIndex][( v >> 1 ) * ( width_ >> 1 ) + ( u >> 1 )] = value; 
+    } else {
       channels_[channelIndex][v * width_ + u] = value;
+    }
   }
   void setValueYuvChroma( const size_t channelIndex, const size_t u, const size_t v, const T value ) {
     channels_[channelIndex][v * ( width_ >> 1 ) + u] = value;
@@ -203,14 +206,19 @@ class PCCImage {
 
   T getValue( const size_t channelIndex, const size_t u, const size_t v ) const {
     assert( channelIndex < N && u < width_ && v < height_ );
-    return channels_[channelIndex][v * width_ + u];
+    if ( format_ == YUV420 && channelIndex != 0 ) {
+      return channels_[channelIndex][( v >> 1 ) * ( width_ >> 1 ) + ( u >> 1 )];
+    } else {
+      return channels_[channelIndex][v * width_ + u];
+    }
   }
   T& getValue( const size_t channelIndex, const size_t u, const size_t v ) {
     assert( channelIndex < N && u < width_ && v < height_ );
-    if ( format_ == YUV420 && channelIndex != 0 )
-      return channels_[channelIndex][( v * width_ >> 1 ) + u];
-    else
+    if ( format_ == YUV420 && channelIndex != 0 ) {
+      return channels_[channelIndex][( v >> 1 ) * ( width_ >> 1 ) + ( u >> 1 )];
+    } else {
       return channels_[channelIndex][v * width_ + u];
+    }
   }
 
   bool copyBlock( size_t top, size_t left, size_t width, size_t height, PCCImage& block );
