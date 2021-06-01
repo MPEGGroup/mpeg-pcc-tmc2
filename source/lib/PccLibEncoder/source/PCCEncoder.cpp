@@ -1053,7 +1053,7 @@ void PCCEncoder::modifyOccupancyMapEOM( PCCFrameContext& tile ) {
           bool updateOccupancy = ( ( d < g_infiniteDepth ) && ( occupancyMap[indx] == 1 ) && ( ( d1 - d0 ) > 1 ) );
           if ( updateOccupancy ) {
             uint16_t bits       = d1 - d0 - 1;
-            uint16_t eomExtract = eomCode & ( ~( ( ~0 ) << bits ) );
+            uint16_t eomExtract = eomCode & ( ~( ( ~0 ) << bits ) ); // Note JR: could be clean ( 0xff > ( 8 - bits ) )  
             uint16_t symbol     = ( ( ( 1 << bits ) - 1 ) - eomExtract );
             occupancyMap[indx] += symbol;
           }
@@ -8736,7 +8736,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
     }
     if ( useVvc ) {
       sei.setCodecId( index++, params_.vvcCodecIdIndex_ );
-      sei.setCodec4cc( params_.vvcCodecIdIndex_, "vvc1" );
+      sei.setCodec4cc( params_.vvcCodecIdIndex_, "vvi1" );
     }
   }
 #if 1

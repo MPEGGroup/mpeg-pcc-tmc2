@@ -1880,8 +1880,7 @@ void PCCBitstreamWriter::patchInformation( PCCBitstream& bitstream, SEI& seiAbst
 // F.2.12.4 Volumetric rectangle information SEI message syntax
 void PCCBitstreamWriter::volumetricRectangleInformation( PCCBitstream& bitstream, SEI& seiAbstract ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
-  auto&         sei           = static_cast<SEIVolumetricRectangleInformation&>( seiAbstract );
-  const int32_t fixedBitcount = 16;
+  auto&         sei           = static_cast<SEIVolumetricRectangleInformation&>( seiAbstract );  
   bitstream.write( sei.getPersistenceFlag(), 1 );        // u(1)
   bitstream.write( sei.getResetFlag(), 1 );              // u(1)
   bitstream.writeUvlc( sei.getNumRectanglesUpdates() );  // ue(v)
@@ -1897,10 +1896,10 @@ void PCCBitstreamWriter::volumetricRectangleInformation( PCCBitstream& bitstream
     if ( !sei.getRectangleCancelFlag( p ) ) {
       bitstream.write( sei.getBoundingBoxUpdateFlag( p ), 1 );  // u(1)
       if ( sei.getBoundingBoxUpdateFlag( p ) ) {
-        bitstream.write( sei.getBoundingBoxTop( p ), fixedBitcount );     // u(v)
-        bitstream.write( sei.getBoundingBoxLeft( p ), fixedBitcount );    // u(v)
-        bitstream.write( sei.getBoundingBoxWidth( p ), fixedBitcount );   // u(v)
-        bitstream.write( sei.getBoundingBoxHeight( p ), fixedBitcount );  // u(v)
+        bitstream.writeUvlc( sei.getBoundingBoxTop( p ) );     // ue(v)
+        bitstream.writeUvlc( sei.getBoundingBoxLeft( p ) );    // ue(v)
+        bitstream.writeUvlc( sei.getBoundingBoxWidth( p ) );   // ue(v)
+        bitstream.writeUvlc( sei.getBoundingBoxHeight( p ) );  // ue(v)
       }
       bitstream.writeUvlc( sei.getRectangleNumberOfObjectsMinus1( p ) );  // ue(v)
       for ( size_t n = 0; n < sei.getRectangleNumberOfObjectsMinus1( p ) + 1; n++ ) {
