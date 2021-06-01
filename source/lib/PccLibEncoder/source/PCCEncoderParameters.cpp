@@ -365,6 +365,7 @@ void PCCEncoderParameters::print() {
   std::cout << "\t Video encoding" << std::endl;
   std::cout << "\t   geometryQP                               " << geometryQP_ << std::endl;
   std::cout << "\t   textureQP                                " << textureQP_ << std::endl;
+  std::cout << "\t   usePccRDO                                " << usePccRDO_ << std::endl;  
   std::cout << "\t   colorSpaceConversionPath                 " << colorSpaceConversionPath_ << std::endl;
   std::cout << "\t   videoEncoderOccupancyPath                " << videoEncoderOccupancyPath_ << std::endl;
   std::cout << "\t   videoEncoderGeometryPath                 " << videoEncoderGeometryPath_ << std::endl;
@@ -677,8 +678,12 @@ bool PCCEncoderParameters::check() {
     std::cerr << "absoluteT1 should be true when absoluteD1 is true\n";
     absoluteT1_ = 1;
   }
-  if ( rawPointsPatch_ ) {
-    usePccRDO_ = false;  // Note: disabling RDO optimization for lossless configurations
+  if ( rawPointsPatch_ ) {    
+    if ( usePccRDO_ ) { // Note: disabling RDO optimization for lossless configurations
+      usePccRDO_ = false;
+      std::cerr << "WARNING: usePccRDO_ is only for lossy "
+                   "coding mode for now. Force usePccRDO_=FALSE.\n";
+    }
     if ( pbfEnableFlag_ ) {
       pbfEnableFlag_ = false;
       std::cerr << "WARNING: pbfEnableFlag_ is only for lossy "

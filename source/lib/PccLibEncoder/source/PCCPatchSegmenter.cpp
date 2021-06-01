@@ -1268,19 +1268,15 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
       // update rawPointsChunks using rawPoints
       std::set<size_t>                 rawPointsSet( rawPoints.begin(), rawPoints.end() );
       std::vector<std::vector<size_t>> rawPointsChunksNextIter( numChunks );
-      std::vector<std::vector<size_t>> pointsIndexChunksNextIter( numChunks );
-      for ( size_t chunkIndex = 0; chunkIndex < numChunks; ++chunkIndex ) {
-        for ( size_t i = 0; i < pointsIndexChunks[chunkIndex].size(); ++i ) {
+      for ( size_t chunkIndex = 0; chunkIndex < numChunks; ++chunkIndex ) {        
+        for ( const auto i : rawPointsChunks[chunkIndex] ) {
           if ( rawPointsSet.find( pointsIndexChunks[chunkIndex][i] ) != rawPointsSet.end() ) {
             rawPointsChunksNextIter[chunkIndex].push_back( i );
-            pointsIndexChunksNextIter[chunkIndex].push_back( pointsIndexChunks[chunkIndex][i] );
             rawPointsDistanceChunks[chunkIndex][i] = rawPointsDistance[pointsIndexChunks[chunkIndex][i]];
           }
         }
         rawPointsChunks[chunkIndex].resize( 0 );
         rawPointsChunks[chunkIndex] = rawPointsChunksNextIter[chunkIndex];
-        pointsIndexChunks[chunkIndex].resize( 0 );
-        pointsIndexChunks[chunkIndex] = pointsIndexChunksNextIter[chunkIndex];
       }
     }
     std::cout << " # patches " << patches.size() << std::endl;
