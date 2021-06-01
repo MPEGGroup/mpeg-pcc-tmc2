@@ -47,14 +47,10 @@ PCCHMLibVideoDecoder<T>::~PCCHMLibVideoDecoder() {}
 template <typename T>
 void PCCHMLibVideoDecoder<T>::decode(  PCCVideoBitstream& bitstream,
                                       PCCVideo<T, 3>&    video,
-                                      const size_t       frameCount,
                                       size_t             outputBitDepth,
                                       const std::string& decoderPath,
                                       const std::string& fileName ) {
   PCCHMLibVideoDecoderImpl<T> decoder;
-  // #if PCC_CF_EXT
-  //   decoder.setLogger( *logger_ );
-  // #endif
   decoder.decode( bitstream, outputBitDepth, video );
 }
 

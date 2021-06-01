@@ -580,16 +580,16 @@ bool PCCPointSet3::read( const std::string& fileName, const bool readNormals ) {
     return false;
   }
 
-  size_t       indexX           = PCC_UNDEFINED_INDEX;
-  size_t       indexY           = PCC_UNDEFINED_INDEX;
-  size_t       indexZ           = PCC_UNDEFINED_INDEX;
-  size_t       indexR           = PCC_UNDEFINED_INDEX;
-  size_t       indexG           = PCC_UNDEFINED_INDEX;
-  size_t       indexB           = PCC_UNDEFINED_INDEX;
-  size_t       indexReflectance = PCC_UNDEFINED_INDEX;
-  size_t       indexNX          = PCC_UNDEFINED_INDEX;
-  size_t       indexNY          = PCC_UNDEFINED_INDEX;
-  size_t       indexNZ          = PCC_UNDEFINED_INDEX;
+  size_t       indexX           = g_undefined_index;
+  size_t       indexY           = g_undefined_index;
+  size_t       indexZ           = g_undefined_index;
+  size_t       indexR           = g_undefined_index;
+  size_t       indexG           = g_undefined_index;
+  size_t       indexB           = g_undefined_index;
+  size_t       indexReflectance = g_undefined_index;
+  size_t       indexNX          = g_undefined_index;
+  size_t       indexNY          = g_undefined_index;
+  size_t       indexNZ          = g_undefined_index;
   const size_t attributeCount   = attributesInfo.size();
   for ( size_t a = 0; a < attributeCount; ++a ) {
     const auto& attributeInfo = attributesInfo[a];
@@ -616,13 +616,13 @@ bool PCCPointSet3::read( const std::string& fileName, const bool readNormals ) {
       indexReflectance = a;
     }
   }
-  if ( indexX == PCC_UNDEFINED_INDEX || indexY == PCC_UNDEFINED_INDEX || indexZ == PCC_UNDEFINED_INDEX ) {
+  if ( indexX == g_undefined_index || indexY == g_undefined_index || indexZ == g_undefined_index ) {
     std::cout << "Error: missing coordinates!" << std::endl;
     return false;
   }
-  withColors_       = indexR != PCC_UNDEFINED_INDEX && indexG != PCC_UNDEFINED_INDEX && indexB != PCC_UNDEFINED_INDEX;
-  withReflectances_ = indexReflectance != PCC_UNDEFINED_INDEX;
-  withNormals_ = indexNX != PCC_UNDEFINED_INDEX && indexNY != PCC_UNDEFINED_INDEX && indexNZ != PCC_UNDEFINED_INDEX;
+  withColors_       = indexR != g_undefined_index && indexG != g_undefined_index && indexB != g_undefined_index;
+  withReflectances_ = indexReflectance != g_undefined_index;
+  withNormals_ = indexNX != g_undefined_index && indexNY != g_undefined_index && indexNZ != g_undefined_index;
   resize( pointCount );
   if ( isAscii ) {
     size_t pointCounter = 0;

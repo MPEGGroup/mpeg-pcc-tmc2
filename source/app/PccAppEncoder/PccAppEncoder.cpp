@@ -30,42 +30,28 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
-#include "PccAppEncoder.h"
+#ifndef _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+#include "PCCCommon.h"
+#include "PCCChrono.h"
+#include "PCCMemory.h"
+#include "PCCEncoder.h"
+#include "PCCMetrics.h"
+#include "PCCChecksum.h"
+#include "PCCContext.h"
+#include "PCCFrameContext.h"
+#include "PCCBitstream.h"
+#include "PCCGroupOfFrames.h"
+#include "PCCEncoderParameters.h"
+#include "PCCBitstreamWriter.h"
+#include "PCCMetricsParameters.h"
+#include <program_options_lite.h>
+#include <tbb/tbb.h>
 
 using namespace std;
 using namespace pcc;
 using pcc::chrono::StopwatchUserTime;
-
-int main( int argc, char* argv[] ) {
-  std::cout << "PccAppEncoder v" << TMC2_VERSION_MAJOR << "." << TMC2_VERSION_MINOR << std::endl << std::endl;
-
-  PCCEncoderParameters encoderParams;
-  PCCMetricsParameters metricsParams;
-  if ( !parseParameters( argc, argv, encoderParams, metricsParams ) ) { return -1; }
-  if ( encoderParams.nbThread_ > 0 ) { tbb::task_scheduler_init init( static_cast<int>( encoderParams.nbThread_ ) ); }
-
-  // Timers to count elapsed wall/user time
-  pcc::chrono::Stopwatch<std::chrono::steady_clock> clockWall;
-  pcc::chrono::StopwatchUserTime                    clockUser;
-
-  clockWall.start();
-  int ret = compressVideo( encoderParams, metricsParams, clockUser );
-  clockWall.stop();
-
-  using namespace std::chrono;
-  using ms       = milliseconds;
-  auto totalWall = duration_cast<ms>( clockWall.count() ).count();
-  std::cout << "Processing time (wall): " << ( ret == 0 ? totalWall / 1000.0 : -1 ) << " s\n";
-
-  auto totalUserSelf = duration_cast<ms>( clockUser.self.count() ).count();
-  std::cout << "Processing time (user.self): " << ( ret == 0 ? totalUserSelf / 1000.0 : -1 ) << " s\n";
-
-  auto totalUserChild = duration_cast<ms>( clockUser.children.count() ).count();
-  std::cout << "Processing time (user.children): " << ( ret == 0 ? totalUserChild / 1000.0 : -1 ) << " s\n";
-
-  std::cout << "Peak memory: " << getPeakMemory() << " KB\n";
-  return ret;
-}
 
 //---------------------------------------------------------------------------
 // :: Command line / config parsing helpers
@@ -78,11 +64,34 @@ static std::istream& operator>>( std::istream& in, PCCColorTransform& val ) {
   return in;
 }
 static std::istream& operator>>( std::istream& in, PCCCodecId& val ) {
-  unsigned int tmp;
+  val = UNKNOWN_CODEC;
+  std::string tmp;
   in >> tmp;
-  val = PCCCodecId( tmp );
+#ifdef USE_JMAPP_VIDEO_CODEC
+  if ( tmp == "0" || tmp == "JMAPP" || tmp == "jmapp" ) { val = JMAPP; }
+#endif
+#ifdef USE_HMAPP_VIDEO_CODEC
+  if ( tmp == "1" || tmp == "HMAPP" || tmp == "hmapp" ) { val = HMAPP; }
+#endif
+#ifdef USE_SHMAPP_VIDEO_CODEC
+  if ( tmp == "2" || tmp == "SHMAPP" || tmp == "shmapp" || tmp == "shm" ) { val = SHMAPP; }
+#endif
+#ifdef USE_JMLIB_VIDEO_CODEC
+  if ( tmp == "2" || tmp == "JMLIB" || tmp == "jmlib" || tmp == "jm" || tmp == "avc" ) { val = JMLIB; }
+#endif
+#ifdef USE_HMLIB_VIDEO_CODEC
+  if ( tmp == "3" || tmp == "HMLIB" || tmp == "hmlib" || tmp == "hm" || tmp == "hevc" ) { val = HMLIB; }
+#endif
+#ifdef USE_VTMLIB_VIDEO_CODEC
+  if ( tmp == "4" || tmp == "VTMLIB" || tmp == "vtmlib" || tmp == "vtm" || tmp == "vvc" ) { val = VTMLIB; }
+#endif
+#ifdef USE_FFMPEG_VIDEO_CODEC
+  if ( tmp == "5" || tmp == "FFMPEG" || tmp == "ffmpeg" ) { val = FFMPEG; }
+#endif
+  if ( val == UNKNOWN_CODEC ) { fprintf( stderr, "PCCCodecId could not be indentified from: \"%s\" \n", tmp.c_str() ); }
   return in;
 }
+
 static std::istream& operator>>( std::istream& in, std::vector<int>& vector ) {
   std::string str;
   in >> str;
@@ -178,6 +187,14 @@ bool parseParameters( int                   argc,
       "HDRConvert configuration file used for YUV420 to RGB444 conversion" )
 
     // segmentation
+    ( "gridBasedSegmentation",    // If enabled, change refineSegmentationGridBased() parameters according to m56857"
+      encoderParams.gridBasedSegmentation_,
+      encoderParams.gridBasedSegmentation_,
+      "Voxel dimension for grid-based segmentation (GBS)" )
+    ( "voxelDimensionGridBasedSegmentation",
+      encoderParams.voxelDimensionGridBasedSegmentation_,
+      encoderParams.voxelDimensionGridBasedSegmentation_,
+      "Voxel dimension for grid-based segmentation (GBS)" )
     ( "nnNormalEstimation",
       encoderParams.nnNormalEstimation_,
       encoderParams.nnNormalEstimation_,
@@ -613,6 +630,20 @@ bool parseParameters( int                   argc,
       encoderParams.prefilterLossyOM_,
       "Selects whether the occupany map is prefiltered before lossy compression (default=false)\n" )
 
+    // SHVC 
+    ( "shvcLayerIndex",
+      encoderParams.shvcLayerIndex_,
+      encoderParams.shvcLayerIndex_,
+     "Decode Layer ID number using SHVC codec")
+    ( "shvcRateX",
+      encoderParams.shvcRateX_,
+      encoderParams.shvcRateX_,
+      "SHVCRateX : reduce rate of each SHVC layer X axis in 2D space (should be greater than 1)")
+    ( "shvcRateY",
+      encoderParams.shvcRateY_,
+      encoderParams.shvcRateY_,
+      "SHVCRateY : reduce rate of each SHVC layer Y axis in 2D space (should be greater than 1)")
+
     // visual quality
     ( "patchColorSubsampling",
       encoderParams.patchColorSubsampling_, false,
@@ -724,12 +755,10 @@ bool parseParameters( int                   argc,
       encoderParams.use3dmc_,
       encoderParams.use3dmc_,
       "Use auxilliary information for 3d motion compensation.(0: conventional video coding, 1: 3D motion compensated)" )
-#ifdef USE_HM_PCC_RDO
     ( "usePccRDO",
       encoderParams.usePccRDO_,
       encoderParams.usePccRDO_,
       "Use HEVC PCC RDO optimization" )
-#endif
     ( "geometry3dCoordinatesBitdepth",
       encoderParams.geometry3dCoordinatesBitdepth_,
       encoderParams.geometry3dCoordinatesBitdepth_,
@@ -765,12 +794,21 @@ bool parseParameters( int                   argc,
   ("numMaxTilePerFrame",
    encoderParams.numMaxTilePerFrame_,
    encoderParams.numMaxTilePerFrame_,"number of maximum tiles in a frame")
+  ("uniformPartitionSpacing",
+   encoderParams.uniformPartitionSpacing_,
+   encoderParams.uniformPartitionSpacing_, "indictation of uniform partitioning")
   ("tilePartitionWidth",
    encoderParams.tilePartitionWidth_,
    encoderParams.tilePartitionWidth_,"uniform partition width in the unit of 64 pixels")
   ("tilePartitionHeight",
    encoderParams.tilePartitionHeight_,
    encoderParams.tilePartitionHeight_,"uniform partition height in the unit of 64 pixels")
+  ("tilePartitionWidthList",
+   encoderParams.tilePartitionWidthList_,
+   encoderParams.tilePartitionWidthList_,"non uniform partition width in the unit of 64 pixels")
+  ("tilePartitionHeightList",
+   encoderParams.tilePartitionHeightList_,
+   encoderParams.tilePartitionHeightList_,"non uniform partition height in the unit of 64 pixels")
   ( "tileSegmentationType",
       encoderParams.tileSegmentationType_,
       encoderParams.tileSegmentationType_,
@@ -905,6 +943,10 @@ bool parseParameters( int                   argc,
       encoderParams.hevcCodecIdIndex_,
       encoderParams.hevcCodecIdIndex_, 
       "index for hevc codec " )
+    ( "shvcCodecIdIndex",
+      encoderParams.shvcCodecIdIndex_,
+      encoderParams.shvcCodecIdIndex_, 
+      "index for shvc codec " )
     ( "vvcCodecIdIndex",
       encoderParams.vvcCodecIdIndex_,
       encoderParams.vvcCodecIdIndex_, 
@@ -924,7 +966,7 @@ bool parseParameters( int                   argc,
       encoderParams.no45DegreeProjectionPatchConstraintFlag_,
       encoderParams.no45DegreeProjectionPatchConstraintFlag_, 
       "No 45 Degree Projection Patch Constraint Flag" );
-   
+
   // clang-format on
   po::setDefaults( opts );
   po::ErrorReporter        err;
@@ -974,11 +1016,11 @@ bool parseParameters( int                   argc,
                  "0\n";
   }
   encoderParams.completePath();
-  encoderParams.print();
-  if ( !encoderParams.check() ) { std::cerr << "Input encoder parameters not correct \n"; }
   metricsParams.completePath();
-  metricsParams.print();
+  if ( !encoderParams.check() ) { std::cerr << "Input encoder parameters not correct \n"; }
   if ( !metricsParams.check() ) { std::cerr << "Input metrics parameters not correct \n"; }
+  encoderParams.print();
+  metricsParams.print();
   metricsParams.startFrameNumber_ = encoderParams.startFrameNumber_;
 
   // report the current configuration (only in the absence of errors so
@@ -993,7 +1035,7 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
                    StopwatchUserTime&          clock ) {
   const size_t startFrameNumber0        = encoderParams.startFrameNumber_;
   size_t       endFrameNumber0          = encoderParams.startFrameNumber_ + encoderParams.frameCount_;
-  const size_t groupOfFramesSize0       = ( std::max )( size_t( 1 ), encoderParams.groupOfFramesSize_ );
+  const size_t groupOfFramesSize0       = (std::max)( size_t( 1 ), encoderParams.groupOfFramesSize_ );
   size_t       startFrameNumber         = startFrameNumber0;
   size_t       reconstructedFrameNumber = encoderParams.startFrameNumber_;
 
@@ -1065,6 +1107,26 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
     if ( ret != 0 ) { return ret; }
     if ( !encoderParams.reconstructedDataPath_.empty() ) {
       reconstructs.write( encoderParams.reconstructedDataPath_, reconstructedFrameNumber );
+     
+// // TODO JR: must be remove: 
+//        std::cout << encoderParams.reconstructedDataPath_.substr( 0, encoderParams.reconstructedDataPath_.size() - 4 ) +
+//                        "_LID" + std::to_string( 0 ) + ".ply"
+//                 << std::endl;
+// 	  // SHVC khu H
+//     // SHVC reconstruct ply generate this location
+//       if ( encoderParams.SHVCLayer_ >= 1 && encoderParams.SHVCRateX_ >= 2 && encoderParams.SHVCRateY_ >= 2 ) {
+//         for ( size_t i = 0; i < encoderParams.SHVCLayer_; i++ ) {
+//           reconstructs.clear();
+//           size_t second_reconstructedFrameNumber = reconstructedFrameNumber - context.size();
+//           encoder.reconstructSHVCPointCloud( i, sources, context, reconstructs );
+//           string reconstructedSHVCDataPath =
+//               encoderParams.reconstructedDataPath_.substr( 0, encoderParams.reconstructedDataPath_.size() - 4 ) +
+//               "_LID" + std::to_string( i ) + ".ply";
+		  
+//           reconstructs.write( reconstructedSHVCDataPath, second_reconstructedFrameNumber );
+//         }
+//       }
+// //~TODO JR: must be remove: 
     }
     normals.clear();
     sources.clear();
@@ -1097,4 +1159,35 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
     checksum.write( encoderParams.compressedStreamPath_ );
   }
   return checksumEqual ? 0 : -1;
+}
+
+int main( int argc, char* argv[] ) {
+  std::cout << "PccAppEncoder v" << TMC2_VERSION_MAJOR << "." << TMC2_VERSION_MINOR << std::endl << std::endl;
+
+  PCCEncoderParameters encoderParams;
+  PCCMetricsParameters metricsParams;
+  if ( !parseParameters( argc, argv, encoderParams, metricsParams ) ) { return -1; }
+  if ( encoderParams.nbThread_ > 0 ) { tbb::task_scheduler_init init( static_cast<int>( encoderParams.nbThread_ ) ); }
+
+  // Timers to count elapsed wall/user time
+  pcc::chrono::Stopwatch<std::chrono::steady_clock> clockWall;
+  pcc::chrono::StopwatchUserTime                    clockUser;
+
+  clockWall.start();
+  int ret = compressVideo( encoderParams, metricsParams, clockUser );
+  clockWall.stop();
+
+  using namespace std::chrono;
+  using ms       = milliseconds;
+  auto totalWall = duration_cast<ms>( clockWall.count() ).count();
+  std::cout << "Processing time (wall): " << ( ret == 0 ? totalWall / 1000.0 : -1 ) << " s\n";
+
+  auto totalUserSelf = duration_cast<ms>( clockUser.self.count() ).count();
+  std::cout << "Processing time (user.self): " << ( ret == 0 ? totalUserSelf / 1000.0 : -1 ) << " s\n";
+
+  auto totalUserChild = duration_cast<ms>( clockUser.children.count() ).count();
+  std::cout << "Processing time (user.children): " << ( ret == 0 ? totalUserChild / 1000.0 : -1 ) << " s\n";
+
+  std::cout << "Peak memory: " << getPeakMemory() << " KB\n";
+  return ret;
 }

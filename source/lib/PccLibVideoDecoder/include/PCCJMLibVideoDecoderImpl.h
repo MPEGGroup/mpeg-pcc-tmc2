@@ -40,12 +40,6 @@
 #include "PCCVideo.h"
 #include "PCCVideoBitstream.h"
 
-//#include <TLibCommon/TComList.h>
-//#include <TLibCommon/TComPicYuv.h>
-//#include <TLibDecoder/AnnexBread.h>
-//#include <TLibDecoder/NALread.h>
-//#include <TLibDecoder/TDecTop.h>
-
 namespace pcc {
 
 template <class T>
@@ -57,7 +51,6 @@ class PCCJMLibVideoDecoderImpl {
 
   void decode( PCCVideoBitstream& bitstream,
                PCCVideo<T, 3>&    video,
-               const size_t       frameCount,
                size_t             outputBitDepth,
                const std::string& decoderPath,
                const std::string& fileName );

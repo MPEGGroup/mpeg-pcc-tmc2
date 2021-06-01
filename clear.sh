@@ -18,6 +18,11 @@ then
     echo -e "\033[0;32mClean: ${CURDIR}/dependencies/HM-16.20+SCM-8.8 \033[0m";
     rm -rf ${CURDIR}/dependencies/HM-16.20+SCM-8.8;
   fi
+  if [ "$1" == "shm" ] || [ "$1" == "all" ]
+  then 
+    echo -e "\033[0;32mClean: ${CURDIR}/dependencies/SHM-12.4 \033[0m";
+    rm -rf ${CURDIR}/dependencies/SHM-12.4;
+  fi
   if [ "$1" == "jm" ] || [ "$1" == "all" ]
   then 
     echo -e "\033[0;32mClean: ${CURDIR}/dependencies/jm19.0_app \033[0m";

@@ -188,7 +188,7 @@ class PCCBitstream {
   void readVideoStream( PCCVideoBitstream& videoBitstream, size_t videoStreamSize );
   bool byteAligned() { return ( position_.bits_ == 0 ); }
   bool moreData() { return position_.bytes_ < data_.size(); }
-  void PCCBitstream::computeMD5( );
+  void computeMD5();
 
   inline std::string readString() {
     while ( !byteAligned() ) { read( 1 ); }

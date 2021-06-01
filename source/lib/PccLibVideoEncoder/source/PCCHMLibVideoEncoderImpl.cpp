@@ -189,14 +189,14 @@ Void PCCHMLibVideoEncoderImpl<T>::xInitLibCfg() {
     vps.setMaxDecPicBuffering( m_maxDecPicBuffering[i], i );
   }
   m_cTEncTop.setVPS( &vps );
-#if PCC_ME_EXT
+#if defined( PCC_ME_EXT ) & PCC_ME_EXT
   m_cTEncTop.setUsePCCExt( m_usePCCExt );
   if ( m_usePCCExt ) {
     m_cTEncTop.setBlockToPatchFileName( m_blockToPatchFileName );
     m_cTEncTop.setOccupancyMapFileName( m_occupancyMapFileName );
   }
 #endif
-#ifdef USE_HM_PCC_RDO
+#if defined( PCC_ME_EXT ) &  PCC_RDO_EXT
   m_cTEncTop.setUsePCCRDOExt( m_usePCCRDO );
   if ( m_usePCCRDO ) {
     m_cTEncTop.setOccupancyMapFileName( m_occupancyMapFileName );

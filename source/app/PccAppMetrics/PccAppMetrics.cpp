@@ -30,39 +30,20 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
-#include "PccAppMetrics.h"
+#ifndef _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+#include "PCCCommon.h"
+#include "PCCChrono.h"
+#include "PCCGroupOfFrames.h"
+#include "PCCMetrics.h"
+#include "PCCMetricsParameters.h"
+#include <program_options_lite.h>
+#include <tbb/tbb.h>
 
 using namespace std;
 using namespace pcc;
 using pcc::chrono::StopwatchUserTime;
-
-int main( int argc, char* argv[] ) {
-  std::cout << "PccAppMetrics v" << TMC2_VERSION_MAJOR << "." << TMC2_VERSION_MINOR << std::endl << std::endl;
-
-  PCCMetricsParameters metricsParams;
-  if ( !parseParameters( argc, argv, metricsParams ) ) { return -1; }
-  if ( metricsParams.nbThread_ > 0 ) { tbb::task_scheduler_init init( static_cast<int>( metricsParams.nbThread_ ) ); }
-
-  // Timers to count elapsed wall/user time
-  pcc::chrono::Stopwatch<std::chrono::steady_clock> clockWall;
-  pcc::chrono::StopwatchUserTime                    clockUser;
-
-  clockWall.start();
-  int ret = computeMetrics( metricsParams, clockUser );
-  clockWall.stop();
-
-  using namespace std::chrono;
-  using ms       = milliseconds;
-  auto totalWall = duration_cast<ms>( clockWall.count() ).count();
-  std::cout << "metric:Processing time (wall): " << totalWall / 1000.0 << " s\n";
-
-  auto totalUserSelf = duration_cast<ms>( clockUser.self.count() ).count();
-  std::cout << "metric:Processing time (user.self): " << totalUserSelf / 1000.0 << " s\n";
-
-  auto totalUserChild = duration_cast<ms>( clockUser.children.count() ).count();
-  std::cout << "metric:Processing time (user.children): " << totalUserChild / 1000.0 << " s\n";
-  return ret;
-}
 
 bool parseParameters( int argc, char* argv[], PCCMetricsParameters& metricsParams ) {
   namespace po      = df::program_options_lite;
@@ -156,4 +137,32 @@ int computeMetrics( const PCCMetricsParameters& metricsParams, StopwatchUserTime
   }
   metrics.display();
   return 0;
+}
+
+int main( int argc, char* argv[] ) {
+  std::cout << "PccAppMetrics v" << TMC2_VERSION_MAJOR << "." << TMC2_VERSION_MINOR << std::endl << std::endl;
+
+  PCCMetricsParameters metricsParams;
+  if ( !parseParameters( argc, argv, metricsParams ) ) { return -1; }
+  if ( metricsParams.nbThread_ > 0 ) { tbb::task_scheduler_init init( static_cast<int>( metricsParams.nbThread_ ) ); }
+
+  // Timers to count elapsed wall/user time
+  pcc::chrono::Stopwatch<std::chrono::steady_clock> clockWall;
+  pcc::chrono::StopwatchUserTime                    clockUser;
+
+  clockWall.start();
+  int ret = computeMetrics( metricsParams, clockUser );
+  clockWall.stop();
+
+  using namespace std::chrono;
+  using ms       = milliseconds;
+  auto totalWall = duration_cast<ms>( clockWall.count() ).count();
+  std::cout << "metric:Processing time (wall): " << totalWall / 1000.0 << " s\n";
+
+  auto totalUserSelf = duration_cast<ms>( clockUser.self.count() ).count();
+  std::cout << "metric:Processing time (user.self): " << totalUserSelf / 1000.0 << " s\n";
+
+  auto totalUserChild = duration_cast<ms>( clockUser.children.count() ).count();
+  std::cout << "metric:Processing time (user.children): " << totalUserChild / 1000.0 << " s\n";
+  return ret;
 }

@@ -74,10 +74,8 @@ namespace pcc {
 // ******************************************************************* //
 // Common constants
 // ******************************************************************* //
+#define MAX_NUM_ATTR_PARTITIONS   64
 
-const uint32_t PCC_UNDEFINED_INDEX     = -1;
-const bool     printDetailedInfo       = false;
-const uint8_t  MAX_NUM_ATTR_PARTITIONS = 64;
 enum PCCVideoType {
   VIDEO_OCCUPANCY = 0,
   VIDEO_GEOMETRY,
@@ -241,35 +239,6 @@ enum PCCHashPatchType {  // Note JR: must be check with Ali. It is fine (Ali)
   EOM                    // 2: eom
 };
 
-static inline PCCPatchType getPatchType( PCCTileType tileType, uint8_t patchMode ) {
-  if ( tileType == SKIP_TILE ) {
-    return SKIP_PATCH;
-  } else if ( tileType == P_TILE ) {
-    if ( patchMode == P_SKIP ) {
-      return SKIP_PATCH;
-    } else if ( patchMode == P_MERGE ) {
-      return MERGE_PATCH;
-    } else if ( patchMode == P_INTRA ) {
-      return INTRA_PATCH;
-    } else if ( patchMode == P_INTER ) {
-      return INTER_PATCH;
-    } else if ( patchMode == P_RAW ) {
-      return RAW_PATCH;
-    } else if ( patchMode == P_EOM ) {
-      return EOM_PATCH;
-    }
-  } else if ( tileType == I_TILE ) {
-    if ( patchMode == I_INTRA ) {
-      return INTRA_PATCH;
-    } else if ( patchMode == I_RAW ) {
-      return RAW_PATCH;
-    } else if ( patchMode == I_EOM ) {
-      return EOM_PATCH;
-    }
-  }
-  return ERROR_PATCH;
-}
-
 enum SeiPayloadType {
   BUFFERING_PERIOD                 = 0,   //  0: buffering period
   ATLAS_FRAME_TIMING               = 1,   //  1: atlas frame timing
@@ -368,6 +337,35 @@ enum NalUnitType {
 // ******************************************************************* //
 // Static functions
 // ******************************************************************* //
+static inline PCCPatchType getPatchType( PCCTileType tileType, uint8_t patchMode ) {
+  if ( tileType == SKIP_TILE ) {
+    return SKIP_PATCH;
+  } else if ( tileType == P_TILE ) {
+    if ( patchMode == P_SKIP ) {
+      return SKIP_PATCH;
+    } else if ( patchMode == P_MERGE ) {
+      return MERGE_PATCH;
+    } else if ( patchMode == P_INTRA ) {
+      return INTRA_PATCH;
+    } else if ( patchMode == P_INTER ) {
+      return INTER_PATCH;
+    } else if ( patchMode == P_RAW ) {
+      return RAW_PATCH;
+    } else if ( patchMode == P_EOM ) {
+      return EOM_PATCH;
+    }
+  } else if ( tileType == I_TILE ) {
+    if ( patchMode == I_INTRA ) {
+      return INTRA_PATCH;
+    } else if ( patchMode == I_RAW ) {
+      return RAW_PATCH;
+    } else if ( patchMode == I_EOM ) {
+      return EOM_PATCH;
+    }
+  }
+  return ERROR_PATCH;
+}
+
 static inline std::string toString( NalUnitType type ) {
   switch ( type ) {
     case NAL_ASPS: return std::string( "NAL_ASPS" ); break;
@@ -385,6 +383,7 @@ static inline std::string toString( NalUnitType type ) {
     case NAL_RASL_R: return std::string( "NAL_RASL_R" ); break;
     case NAL_SKIP_N: return std::string( "NAL_SKIP_N" ); break;
     case NAL_SKIP_R: return std::string( "NAL_SKIP_R" ); break;
+    case NAL_IDR_N_LP: return std::string( "NAL_IDR_N_LP" ); break;
     case NAL_PREFIX_ESEI: return std::string( "NAL_PREFIX_ESEI" ); break;
     case NAL_PREFIX_NSEI: return std::string( "NAL_PREFIX_NSEI" ); break;
     case NAL_SUFFIX_ESEI: return std::string( "NAL_SUFFIX_ESEI" ); break;

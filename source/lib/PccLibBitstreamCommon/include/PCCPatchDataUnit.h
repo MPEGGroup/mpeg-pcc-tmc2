@@ -54,7 +54,7 @@ class PatchDataUnit {
       orientationIndex_( 0 ),
       lodEnableFlag_( false ),
       lodScaleXminus1_( 0 ),
-      lodScaleYIdc_( 0 ),
+      lodScaleYIdc_( 1 ),
       patchIndex_( 0 ),
       frameIndex_( 0 ),
       tileOrder_( 0 ) {}
@@ -76,26 +76,26 @@ class PatchDataUnit {
   uint8_t        getLodScaleYIdc() { return lodScaleYIdc_; }
   PLRData&       getPLRData() { return pointLocalReconstructionData_; }
   size_t         getTileOrder() { return tileOrder_; }
+  size_t         getPatchIndex() { return patchIndex_; }
+  size_t         getFrameIndex() { return frameIndex_; }
 
-  size_t getPatchIndex() { return patchIndex_; }
-  size_t getFrameIndex() { return frameIndex_; }
-  void   setPatchIndex( size_t value ) { patchIndex_ = value; }
-  void   setFrameIndex( size_t value ) { frameIndex_ = value; }
-  void   set2dPosX( size_t value ) { pos2dX_ = value; }
-  void   set2dPosY( size_t value ) { pos2dY_ = value; }
-  void   set2dSizeXMinus1( uint64_t value ) { size2dXMinus1_ = value; }
-  void   set2dSizeYMinus1( uint64_t value ) { size2dYMinus1_ = value; }
-  void   set3dOffsetU( size_t value ) { pos3dOffsetU_ = value; }
-  void   set3dOffsetV( size_t value ) { pos3dOffsetV_ = value; }
-  void   set3dOffsetD( size_t value ) { pos3dOffsetD_ = value; }
-  void   set3dRangeD( size_t value ) { pos3dRangeD_ = value; }
-  void   setProjectionId( size_t value ) { projectionId_ = value; }
-  void   setOrientationIndex( size_t value ) { orientationIndex_ = value; }
-  void   setLodEnableFlag( bool value ) { lodEnableFlag_ = value; }
-  void   setLodScaleXMinus1( uint8_t value ) { lodScaleXminus1_ = value; }
-  void   setLodScaleYIdc( uint8_t value ) { lodScaleYIdc_ = value; }
-  void   setPLRData( PLRData value ) { pointLocalReconstructionData_ = value; }
-  void   setTileOrder( size_t value ) { tileOrder_ = value; }
+  void setPatchIndex( size_t value ) { patchIndex_ = value; }
+  void setFrameIndex( size_t value ) { frameIndex_ = value; }
+  void set2dPosX( size_t value ) { pos2dX_ = value; }
+  void set2dPosY( size_t value ) { pos2dY_ = value; }
+  void set2dSizeXMinus1( uint64_t value ) { size2dXMinus1_ = value; }
+  void set2dSizeYMinus1( uint64_t value ) { size2dYMinus1_ = value; }
+  void set3dOffsetU( size_t value ) { pos3dOffsetU_ = value; }
+  void set3dOffsetV( size_t value ) { pos3dOffsetV_ = value; }
+  void set3dOffsetD( size_t value ) { pos3dOffsetD_ = value; }
+  void set3dRangeD( size_t value ) { pos3dRangeD_ = value; }
+  void setProjectionId( size_t value ) { projectionId_ = value; }
+  void setOrientationIndex( size_t value ) { orientationIndex_ = value; }
+  void setLodEnableFlag( bool value ) { lodEnableFlag_ = value; }
+  void setLodScaleXMinus1( uint8_t value ) { lodScaleXminus1_ = value; }
+  void setLodScaleYIdc( uint8_t value ) { lodScaleYIdc_ = value; }
+  void setPLRData( PLRData value ) { pointLocalReconstructionData_ = value; }
+  void setTileOrder( size_t value ) { tileOrder_ = value; }
 
  private:
   size_t   pos2dX_;

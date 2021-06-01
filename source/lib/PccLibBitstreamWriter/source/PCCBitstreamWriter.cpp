@@ -429,10 +429,15 @@ void PCCBitstreamWriter::atlasSubStream( PCCHighLevelSyntax& syntax, PCCBitstrea
   }
   // NAL_TRAIL, NAL_TSA, NAL_STSA, NAL_RADL, NAL_RASL,NAL_SKIP
   for ( size_t tileOrder = 0; tileOrder < atglSizeList.size(); tileOrder++ ) {
-    NalUnit nu( NAL_TSA_N, 0, 1 );
+    auto& ath = syntax.getAtlasTileLayer( tileOrder ).getHeader();
+    NalUnitType naluType= NAL_IDR_N_LP;
+    if(ath.getTileNaluTypeInfo()==1) naluType = NAL_TRAIL_R;
+    else if(ath.getTileNaluTypeInfo()==2) naluType = NAL_TRAIL_N;
+    NalUnit nu( naluType, 0, 1 );
+
     nu.setSize( atglSizeList[tileOrder] );  //+headsize
-    auto& atgl = syntax.getAtlasTileLayer( tileOrder );
-    atgl.getDataUnit().setTileOrder( tileOrder );
+    auto& atl = syntax.getAtlasTileLayer( tileOrder );
+    atl.getDataUnit().setTileOrder( tileOrder );
     sampleStreamNalUnit( syntax, bitstream, ssnu, nu, tileOrder );
     TRACE_BITSTREAM(
         "nalu[%d]:%s, nalSizePrecision:%d, naluSize:%zu, sizeBitstream "
@@ -782,8 +787,14 @@ void PCCBitstreamWriter::atlasFrameTileInformation( AtlasFrameTileInformation&  
     bitstream.write( afti.getUniformPartitionSpacingFlag(), 1 );  // u(1)
     TRACE_BITSTREAM( "afti: uniformPartition :%zu !singleTile\n", afti.getUniformPartitionSpacingFlag() );
     if ( afti.getUniformPartitionSpacingFlag() ) {
-      bitstream.writeUvlc( afti.getPartitionColumnsWidthMinus1() );  //  ue(v)
-      bitstream.writeUvlc( afti.getPartitionRowHeightMinus1() );     //  ue(v)
+      bitstream.writeUvlc( afti.getPartitionColsWidthMinus1() );  //  ue(v)
+      bitstream.writeUvlc( afti.getPartitionRowsHeightMinus1() );     //  ue(v)
+      TRACE_BITSTREAM( "afti: aspsWidth :%zu, partitionWidth: %zu, Number of Partitions Hor: %zu\n", asps.getFrameWidth(),
+                       afti.getPartitionColumnWidthMinus1( 0 ) + 1, afti.getNumPartitionColumnsMinus1() + 1 );
+      TRACE_BITSTREAM( "afti: aspsHeight :%zu, partitionHeight: %zu, Number of Partitions Ver: %zu\n",
+                       asps.getFrameHeight(), afti.getPartitionRowHeightMinus1( 0 ) + 1,
+                       afti.getNumPartitionRowsMinus1() + 1 );
+
     } else {
       bitstream.writeUvlc( afti.getNumPartitionColumnsMinus1() );  //  ue(v)
       bitstream.writeUvlc( afti.getNumPartitionRowsMinus1() );     //  ue(v)
@@ -793,12 +804,18 @@ void PCCBitstreamWriter::atlasFrameTileInformation( AtlasFrameTileInformation&  
       for ( size_t i = 0; i < afti.getNumPartitionRowsMinus1(); i++ ) {
         bitstream.writeUvlc( afti.getPartitionRowHeightMinus1( i ) );  //  ue(v)
       }
+      TRACE_BITSTREAM( "afti: aspsWidth :%zu, partitionWidth: ", asps.getFrameWidth() );
+      for ( size_t i = 0; i < afti.getNumPartitionColumnsMinus1(); i++ ) {
+        TRACE_BITSTREAM( "%d, ",afti.getPartitionColumnWidthMinus1( i ) );
     }
-    TRACE_BITSTREAM( "afti: aspsWidth :%zu, partitionWidth: %zu, Number of Partitions Hor: %zu\n", asps.getFrameWidth(),
-                     afti.getPartitionColumnWidthMinus1( 0 ) + 1, afti.getNumPartitionColumnsMinus1() + 1 );
-    TRACE_BITSTREAM( "afti: aspsHeight :%zu, partitionHeight: %zu, Number of Partitions Ver: %zu\n",
-                     asps.getFrameHeight(), afti.getPartitionRowHeightMinus1( 0 ) + 1,
-                     afti.getNumPartitionRowsMinus1() + 1 );
+      TRACE_BITSTREAM( "Number of Partitions Hor: %zu\n", afti.getNumPartitionColumnsMinus1() + 1 );
+
+      TRACE_BITSTREAM( "afti: aspsHeight :%zu, partitionWidth: ", asps.getFrameHeight() );
+      for ( size_t i = 0; i < afti.getNumPartitionRowsMinus1(); i++ ) {
+        TRACE_BITSTREAM( "%d, ",afti.getPartitionRowHeightMinus1( i ) );
+      }
+      TRACE_BITSTREAM( "Number of Partitions Ver: %zu\n", afti.getNumPartitionRowsMinus1() + 1 );
+    }
     bitstream.write( afti.getSinglePartitionPerTileFlag(), 1 );  //  u(1)
     if ( afti.getSinglePartitionPerTileFlag() == 0u ) {
       uint32_t NumPartitionsInAtlasFrame =
@@ -926,13 +943,13 @@ void PCCBitstreamWriter::atlasTileHeader( AtlasTileHeader&    ath,
   bitstream.writeUvlc( ath.getAtlasFrameParameterSetId() );       // ue(v)
   bitstream.writeUvlc( ath.getAtlasAdaptationParameterSetId() );  // ue(v)
   if ( afti.getSignalledTileIdFlag() )
-    bitstream.write( uint32_t( ath.getId() ),
-                     afti.getSignalledTileIdLengthMinus1() + 1 );  // u(v)
+    bitstream.write( uint32_t( ath.getId() ), afti.getSignalledTileIdLengthMinus1() + 1 );  // u(v)
   else {
     TRACE_BITSTREAM( " getNumTilesInAtlasFrameMinus1: %zu\n", afti.getNumTilesInAtlasFrameMinus1() );
-    if ( afti.getNumTilesInAtlasFrameMinus1() != 0 )
+    if ( afti.getNumTilesInAtlasFrameMinus1() != 0 ) {
       bitstream.write( uint32_t( ath.getId() ),
                        ceilLog2( afti.getNumTilesInAtlasFrameMinus1() + 1 ) );  // u(v)
+    }
   }
   bitstream.writeUvlc( ath.getType() );  // ue(v)
   if ( afps.getOutputFlagPresentFlag() ) { bitstream.write( ath.getAtlasOutputFlag(), 1 ); }
@@ -1463,7 +1480,8 @@ void PCCBitstreamWriter::sampleStreamNalUnit( PCCHighLevelSyntax&  syntax,
     case NAL_RASL_N:
     case NAL_RASL_R:
     case NAL_SKIP_N:
-    case NAL_SKIP_R: atlasTileLayerRbsp( syntax.getAtlasTileLayer( index ), syntax, nalu.getType(), bitstream ); break;
+    case NAL_SKIP_R:
+    case NAL_IDR_N_LP: atlasTileLayerRbsp( syntax.getAtlasTileLayer( index ), syntax, nalu.getType(), bitstream ); break;
     case NAL_SUFFIX_ESEI:
     case NAL_SUFFIX_NSEI: seiRbsp( syntax, bitstream, syntax.getSeiSuffix( index ), nalu.getType() ); break;
     case NAL_PREFIX_ESEI:
@@ -1862,8 +1880,7 @@ void PCCBitstreamWriter::patchInformation( PCCBitstream& bitstream, SEI& seiAbst
 // F.2.12.4 Volumetric rectangle information SEI message syntax
 void PCCBitstreamWriter::volumetricRectangleInformation( PCCBitstream& bitstream, SEI& seiAbstract ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
-  auto&         sei           = static_cast<SEIVolumetricRectangleInformation&>( seiAbstract );
-  const int32_t fixedBitcount = 16;
+  auto&         sei           = static_cast<SEIVolumetricRectangleInformation&>( seiAbstract );  
   bitstream.write( sei.getPersistenceFlag(), 1 );        // u(1)
   bitstream.write( sei.getResetFlag(), 1 );              // u(1)
   bitstream.writeUvlc( sei.getNumRectanglesUpdates() );  // ue(v)
@@ -1879,10 +1896,10 @@ void PCCBitstreamWriter::volumetricRectangleInformation( PCCBitstream& bitstream
     if ( !sei.getRectangleCancelFlag( p ) ) {
       bitstream.write( sei.getBoundingBoxUpdateFlag( p ), 1 );  // u(1)
       if ( sei.getBoundingBoxUpdateFlag( p ) ) {
-        bitstream.write( sei.getBoundingBoxTop( p ), fixedBitcount );     // u(v)
-        bitstream.write( sei.getBoundingBoxLeft( p ), fixedBitcount );    // u(v)
-        bitstream.write( sei.getBoundingBoxWidth( p ), fixedBitcount );   // u(v)
-        bitstream.write( sei.getBoundingBoxHeight( p ), fixedBitcount );  // u(v)
+        bitstream.writeUvlc( sei.getBoundingBoxTop( p ) );     // ue(v)
+        bitstream.writeUvlc( sei.getBoundingBoxLeft( p ) );    // ue(v)
+        bitstream.writeUvlc( sei.getBoundingBoxWidth( p ) );   // ue(v)
+        bitstream.writeUvlc( sei.getBoundingBoxHeight( p ) );  // ue(v)
       }
       bitstream.writeUvlc( sei.getRectangleNumberOfObjectsMinus1( p ) );  // ue(v)
       for ( size_t n = 0; n < sei.getRectangleNumberOfObjectsMinus1( p ) + 1; n++ ) {

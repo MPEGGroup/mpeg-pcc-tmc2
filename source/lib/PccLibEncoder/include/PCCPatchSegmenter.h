@@ -39,11 +39,15 @@
 
 namespace pcc {
 
+typedef std::unordered_map<uint64_t, std::vector<size_t>> Voxels;
+
 class PCCNormalsGenerator3;
 class PCCKdTree;
 class PCCPatch;
 
 struct PCCPatchSegmenter3Parameters {
+  bool             gridBasedSegmentation_;
+  size_t           voxelDimensionGridBasedSegmentation_;
   size_t           nnNormalEstimation_;
   size_t           normalOrientation_;
   bool             gridBasedRefineSegmentation_;
@@ -108,6 +112,20 @@ class PCCPatchSegmenter3 {
                 std::vector<PCCPatch>&              patches,
                 std::vector<PCCPointSet3>&          subPointCloud,
                 float&                              distanceSrcRec );
+
+  void convertPointsToVoxels( const PCCPointSet3 &source,
+                              size_t geoBits,
+                              size_t voxDim,
+                              PCCPointSet3 &sourceVox,
+                              Voxels &voxels );
+
+  void applyVoxelsDataToPoints( size_t pointCount, 
+                                size_t geoBits, 
+                                size_t voxDim,
+                                Voxels &voxels,   // const
+                                const PCCPointSet3 &source, 
+                                PCCNormalsGenerator3  &normalsGen, 
+                                std::vector<size_t> &partitions );
 
   void initialSegmentation( const PCCPointSet3&         geometry,
                             const PCCNormalsGenerator3& normalsGen,

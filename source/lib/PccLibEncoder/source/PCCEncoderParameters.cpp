@@ -43,6 +43,8 @@ const std::vector<PointLocalReconstructionMode> g_pointLocalReconstructionMode =
 };
 
 PCCEncoderParameters::PCCEncoderParameters() {
+  gridBasedSegmentation_                   = false;
+  voxelDimensionGridBasedSegmentation_     = 2;
   uncompressedDataPath_                    = {};
   compressedStreamPath_                    = {};
   reconstructedDataPath_                   = {};
@@ -58,10 +60,12 @@ PCCEncoderParameters::PCCEncoderParameters() {
   nnNormalEstimation_                      = 16;
   normalOrientation_                       = 1;
   gridBasedRefineSegmentation_             = true;
-  maxNNCountRefineSegmentation_            = gridBasedRefineSegmentation_ ? 1024 : 256;
-  iterationCountRefineSegmentation_        = gridBasedRefineSegmentation_ ? 10 : 100;
-  voxelDimensionRefineSegmentation_        = 4;
-  searchRadiusRefineSegmentation_          = 192;
+  maxNNCountRefineSegmentation_            = gridBasedRefineSegmentation_ ?
+                                             (gridBasedSegmentation_ ? 384 : 1024) : 256;
+  iterationCountRefineSegmentation_        = gridBasedRefineSegmentation_ ? 
+                                             (gridBasedSegmentation_ ? 5 : 10) : 100;
+  voxelDimensionRefineSegmentation_        = gridBasedSegmentation_ ? 2 : 4;
+  searchRadiusRefineSegmentation_          = gridBasedSegmentation_ ? 128 : 192;
   occupancyResolution_                     = 16;
   enablePatchSplitting_                    = true;
   maxPatchSize_                            = 1024;
@@ -183,13 +187,11 @@ PCCEncoderParameters::PCCEncoderParameters() {
   // GPA
   globalPatchAllocation_ = 0;
   // GTP
-  globalPackingStrategyGOF_       = 0;
-  globalPackingStrategyReset_     = false;
-  globalPackingStrategyThreshold_ = 0;
-  use3dmc_                        = true;
-#ifdef USE_HM_PCC_RDO
-  usePccRDO_ = false;
-#endif
+  globalPackingStrategyGOF_         = 0;
+  globalPackingStrategyReset_       = false;
+  globalPackingStrategyThreshold_   = 0;
+  use3dmc_                          = true;
+  usePccRDO_                        = false;
   enhancedPP_                       = true;
   minWeightEPP_                     = 0.6;
   additionalProjectionPlaneMode_    = 0;
@@ -229,6 +231,8 @@ PCCEncoderParameters::PCCEncoderParameters() {
   uniformPartitionSpacing_      = true;
   tilePartitionWidth_           = 0;
   tilePartitionHeight_          = 0;
+  tilePartitionWidthList_.clear();
+  tilePartitionHeightList_.clear();
 
   // Profile tier level
   tierFlag_                 = 0;                        // Low Tier
@@ -238,12 +242,18 @@ PCCEncoderParameters::PCCEncoderParameters() {
   levelIdc_                 = 30;                       // Corresponds to level 1.0 in Table A.5
   avcCodecIdIndex_          = 0;                        // Index use if CMC SEI
   hevcCodecIdIndex_         = 1;                        // Index use if CMC SEI
-  vvcCodecIdIndex_          = 2;                        // Index use if CMC SEI
+  shvcCodecIdIndex_         = 2;                        // Index use if CMC SEI
+  vvcCodecIdIndex_          = 3;                        // Index use if CMC SEI
 
   // Profile toolset constraints information
   oneV3CFrameOnlyFlag_                     = 0;  // V-PCC Basic
   noEightOrientationsConstraintFlag_       = 0;  // Default value, does not impose a constraint
   no45DegreeProjectionPatchConstraintFlag_ = 0;  // Default value, does not impose a constraint
+
+  // SHVC
+  shvcLayerIndex_ = 8;
+  shvcRateX_      = 0;
+  shvcRateY_      = 0;
 }
 
 PCCEncoderParameters::~PCCEncoderParameters() = default;
@@ -309,6 +319,8 @@ void PCCEncoderParameters::print() {
   std::cout << "\t maxNumRefPatchList                         " << maxNumRefAtlasList_ << std::endl;
   std::cout << "\t maxNumRefIndex                             " << maxNumRefAtlasFrame_ << std::endl;
   std::cout << "\t Segmentation" << std::endl;
+  std::cout << "\t   gridBasedSegmentation                    " << gridBasedSegmentation_ << std::endl;
+  std::cout << "\t   voxelDimensionGridBasedSegmentation      " << voxelDimensionGridBasedSegmentation_ << std::endl;
   std::cout << "\t   nnNormalEstimation                       " << nnNormalEstimation_ << std::endl;
   std::cout << "\t   normalOrientation                        " << normalOrientation_ << std::endl;
   std::cout << "\t   gridBasedRefineSegmentation              " << gridBasedRefineSegmentation_ << std::endl;
@@ -353,6 +365,7 @@ void PCCEncoderParameters::print() {
   std::cout << "\t Video encoding" << std::endl;
   std::cout << "\t   geometryQP                               " << geometryQP_ << std::endl;
   std::cout << "\t   textureQP                                " << textureQP_ << std::endl;
+  std::cout << "\t   usePccRDO                                " << usePccRDO_ << std::endl;  
   std::cout << "\t   colorSpaceConversionPath                 " << colorSpaceConversionPath_ << std::endl;
   std::cout << "\t   videoEncoderOccupancyPath                " << videoEncoderOccupancyPath_ << std::endl;
   std::cout << "\t   videoEncoderGeometryPath                 " << videoEncoderGeometryPath_ << std::endl;
@@ -474,9 +487,18 @@ void PCCEncoderParameters::print() {
   if ( tileSegmentationType_ > 1 ) {
     std::cout << "\t   numMaxTilePerFrame                       " << numMaxTilePerFrame_ << std::endl;
     if ( numMaxTilePerFrame_ > 1 ) {
+      if(uniformPartitionSpacing_){
       std::cout << "\t   uniformPartitionSpacing                " << uniformPartitionSpacing_ << std::endl;
       std::cout << "\t   tilePartitionWidth                     " << tilePartitionWidth_ << std::endl;
       std::cout << "\t   tilePartitionHeight                    " << tilePartitionHeight_ << std::endl;
+      } else {
+        std::cout << "\t   tilePartitionWidthList                   ";
+        for(auto v: tilePartitionWidthList_) std::cout<< v<<"\t";
+        std::cout<<std::endl;
+        std::cout << "\t   tilePartitionHeightList                  ";
+        for(auto v: tilePartitionHeightList_) std::cout<< v<<"\t";
+        std::cout<<std::endl;
+        }
     }
   }
   std::cout << "\t Point cloud partitions and tiles           " << std::endl;
@@ -539,15 +561,22 @@ void PCCEncoderParameters::print() {
   std::cout << "\t   profileToolsetIdc                        " << profileToolsetIdc_ << std::endl;
   std::cout << "\t   profileReconstructionIdc                 " << profileReconstructionIdc_ << std::endl;
   std::cout << "\t   levelIdc                                 " << levelIdc_ << std::endl;
-  std::cout << "\t   avcCodecIdIndex_                         " << avcCodecIdIndex_ << std::endl;
-  std::cout << "\t   hevcCodecIdIndex_                        " << hevcCodecIdIndex_ << std::endl;
-  std::cout << "\t   vvcCodecIdIndex_                         " << vvcCodecIdIndex_ << std::endl;
+  std::cout << "\t   avcCodecIdIndex                          " << avcCodecIdIndex_ << std::endl;
+  std::cout << "\t   hevcCodecIdIndex                         " << hevcCodecIdIndex_ << std::endl;
+  std::cout << "\t   shvcCodecIdIndex                         " << shvcCodecIdIndex_ << std::endl;
+  std::cout << "\t   vvcCodecIdIndex                          " << vvcCodecIdIndex_ << std::endl;
 
   std::cout << "\t Profile toolset constraints information" << std::endl;
   std::cout << "\t   oneV3CFrameOnlyFlag                      " << oneV3CFrameOnlyFlag_ << std::endl;
   std::cout << "\t   noEightOrientationsConstraintFlag        " << noEightOrientationsConstraintFlag_ << std::endl;
   std::cout << "\t   no45DegreeProjectionPatchConstraintFlag  " << no45DegreeProjectionPatchConstraintFlag_
             << std::endl;
+  if ( shvcRateX_ > 0 || shvcRateY_ > 0 ) {
+    std::cerr << "HEVC scalable video coding (SHVC) " << std::endl;
+    std::cout << "\t   shvcLayerIndex                         " << shvcLayerIndex_ << std::endl;
+    std::cout << "\t   shvcRateX                              " << shvcRateX_ << std::endl;
+    std::cout << "\t   shvcRateY                              " << shvcRateY_ << std::endl;
+  }
   std::cout << std::endl;
 }
 
@@ -650,10 +679,58 @@ bool PCCEncoderParameters::check() {
     std::cerr << "absoluteT1 should be true when absoluteD1 is true\n";
     absoluteT1_ = 1;
   }
-  if ( rawPointsPatch_ ) {
-#ifdef USE_HM_PCC_RDO
-    usePccRDO_ = false;
-#endif
+  if ( rawPointsPatch_ ) {    
+    if ( usePccRDO_ ) { // Note: disabling RDO optimization for lossless configurations
+      usePccRDO_ = false;
+      std::cerr << "WARNING: usePccRDO_ is only for lossy "
+                   "coding mode for now. Force usePccRDO_=FALSE.\n";
+    }
+    if ( pbfEnableFlag_ ) {
+      pbfEnableFlag_ = false;
+      std::cerr << "WARNING: pbfEnableFlag_ is only for lossy "
+                   "coding mode for now. Force pbfEnableFlag_=FALSE.\n";
+    }
+    if ( occupancyMapRefinement_ ) {
+      occupancyMapRefinement_ = false;
+      std::cerr << "WARNING: occupancyMapRefinement_ is only for lossy "
+                   "coding mode for now. Force pbfEnableFlag_=FALSE.\n";
+    }
+    if ( flagGeometrySmoothing_ ) {
+      flagGeometrySmoothing_ = false;
+      std::cerr << "WARNING: flagGeometrySmoothing_ is only for lossy "
+                   "coding mode for now. Force flagGeometrySmoothing_=FALSE.\n";
+    }
+    if ( gridSmoothing_ ) {
+      gridSmoothing_ = false;
+      std::cerr << "WARNING: gridSmoothing_ is only for lossy "
+                   "coding mode for now. Force gridSmoothing_=FALSE.\n";
+    }
+    if ( flagColorSmoothing_ ) {
+      gridSmoothing_ = false;
+      std::cerr << "WARNING: flagColorSmoothing_ is only for lossy "
+                   "coding mode for now. Force flagColorSmoothing_=FALSE.\n";
+    }
+    if ( pointLocalReconstruction_ ) {
+      pointLocalReconstruction_ = false;
+      std::cerr << "WARNING: pointLocalReconstruction_ is only for lossy "
+                   "coding mode for now. Force pointLocalReconstruction_=FALSE.\n";
+    }
+    if ( singleMapPixelInterleaving_ ) {
+      singleMapPixelInterleaving_ = false;
+      std::cerr << "WARNING: singleLayerPixelInterleaving is only for lossy "
+                   "coding mode for now. Force singleMapPixelInterleaving_=FALSE.\n";
+    }
+    if ( lossyRawPointsPatch_ ) {
+      lossyRawPointsPatch_ = false;
+      std::cerr << "WARNING: lossyRawPointsPatch_ is only for lossy coding "
+                   "mode for now. Force lossyRawPointsPatch_=FALSE.\n";
+    }
+  }else {    
+    if ( enhancedOccupancyMapCode_ ) {
+      enhancedOccupancyMapCode_ = false;
+      std::cerr << "WARNING: enhancedOccupancyMapCode_ is only for lossless "
+                   "coding mode for now. Force enhancedOccupancyMapCode_=FALSE.\n";
+    }
   }
 
   if ( enhancedOccupancyMapCode_ && surfaceThickness_ == 1 ) {
@@ -723,8 +800,14 @@ bool PCCEncoderParameters::check() {
 
   if ( singleMapPixelInterleaving_ && pointLocalReconstruction_ ) {
     ret = false;
-    std::cerr << "Pixel Interleaving and Point local reconstruction cna't be "
+    std::cerr << "Pixel Interleaving and Point local reconstruction can not be "
                  "use in the same time.\n";
+  }
+
+  if ( globalPatchAllocation_ == 1 && constrainedPack_ == 0 ) {
+    std::cout << " globalPatchAllocation_ is set 1 but constrainedPack_ is disable. Force "
+                 "constrainedPack_ = 1. \n";
+    constrainedPack_ = true;
   }
 
   if ( mapCountMinus1_ != 0 ) {
@@ -842,6 +925,10 @@ bool PCCEncoderParameters::check() {
       flagGeometrySmoothing_ = false;
       std::cerr << "flagGeometrySmoothing is ignored because profileReconstructionIdc set to 0. \n";
     }
+    if ( gridSmoothing_ ) {
+      gridSmoothing_ = false;
+      std::cerr << "gridSmoothing is ignored because profileReconstructionIdc set to 0. \n";
+    }    
     // Note: Attribute transfer cannot be disabled. one encoder input parameter must be added.
     if ( flagColorPreSmoothing_ ) {
       flagColorPreSmoothing_ = false;
@@ -869,8 +956,12 @@ bool PCCEncoderParameters::check() {
   if ( profileReconstructionIdc_ == 0 ) {
     if ( flagGeometrySmoothing_ ) {
       flagGeometrySmoothing_ = false;
-      std::cerr << "flagGeometrySmoothing is ignored because profileReconstructionIdc set to 0. \n";
+      std::cerr << "flagGeometrySmoothing is ignored because profileReconstructionIdc set to 2. \n";
     }
+    if ( gridSmoothing_ ) {
+      gridSmoothing_ = false;
+      std::cerr << "gridSmoothing_ is ignored because profileReconstructionIdc set to 2. \n";
+    }    
     // Note: Attribute transfer cannot be disabled. one encoder input parameter must be added.
   }
 
@@ -882,9 +973,9 @@ bool PCCEncoderParameters::check() {
   switch ( profileCodecGroupIdc_ ) {
     case CODEC_GROUP_AVC_PROGRESSIVE_HIGH:
 #if defined( USE_JMAPP_VIDEO_CODEC ) || defined( USE_JMLIB_VIDEO_CODEC )
-      if ( videoEncoderOccupancyCodecId_ != JMLIB || videoEncoderOccupancyCodecId_ != JMAPP ||
-           videoEncoderGeometryCodecId_ != JMLIB || videoEncoderGeometryCodecId_ != JMAPP ||
-           videoEncoderAttributeCodecId_ != JMLIB || videoEncoderAttributeCodecId_ != JMAPP ) {
+      if ( ( videoEncoderOccupancyCodecId_ != JMLIB && videoEncoderOccupancyCodecId_ != JMAPP ) ||
+           ( videoEncoderGeometryCodecId_ != JMLIB && videoEncoderGeometryCodecId_ != JMAPP ) ||
+           ( videoEncoderAttributeCodecId_ != JMLIB && videoEncoderAttributeCodecId_ != JMAPP ) ) {
         std::cerr << "profileCodecGroupIdc_ is CODEC_GROUP_AVC_PROGRESSIVE_HIGH force codecId. \n";
         videoEncoderOccupancyCodecId_ = JMLIB;
         videoEncoderGeometryCodecId_  = JMLIB;
@@ -898,9 +989,9 @@ bool PCCEncoderParameters::check() {
     case CODEC_GROUP_HEVC444:
     case CODEC_GROUP_HEVC_MAIN10:
 #if defined( USE_HMAPP_VIDEO_CODEC ) || defined( USE_HMLIB_VIDEO_CODEC )
-      if ( videoEncoderOccupancyCodecId_ != HMLIB || videoEncoderOccupancyCodecId_ != HMAPP ||
-           videoEncoderGeometryCodecId_ != HMLIB || videoEncoderGeometryCodecId_ != HMAPP ||
-           videoEncoderAttributeCodecId_ != HMLIB || videoEncoderAttributeCodecId_ != HMAPP ) {
+      if ( ( videoEncoderOccupancyCodecId_ != HMLIB && videoEncoderOccupancyCodecId_ != HMAPP ) ||
+           ( videoEncoderGeometryCodecId_ != HMLIB && videoEncoderGeometryCodecId_ != HMAPP ) ||
+           ( videoEncoderAttributeCodecId_ != HMLIB && videoEncoderAttributeCodecId_ != HMAPP ) ) {
         std::cerr << "profileCodecGroupIdc_ is HEVC444 or HEVCMAIN10 force codecId. \n";
         videoEncoderOccupancyCodecId_ = HMLIB;
         videoEncoderGeometryCodecId_  = HMLIB;
@@ -928,6 +1019,13 @@ bool PCCEncoderParameters::check() {
       break;
 
     case CODEC_GROUP_MP4RA: break;
+  }
+
+  if ( ( videoEncoderOccupancyCodecId_ == SHMAPP || videoEncoderGeometryCodecId_ == SHMAPP ||
+         videoEncoderAttributeCodecId_ == SHMAPP ) &&
+       ( ( shvcRateX_ != 2 ) || ( shvcRateY_ != 2 ) ) ) {
+    std::cerr << "SHMAPP codec requiered shvcRateX and shvcRateY equal to 2. \n";
+    ret = false;
   }
   return ret;
 }
@@ -969,6 +1067,9 @@ uint8_t PCCEncoderParameters::getCodecIdIndex( PCCCodecId codecId ) {
 #ifdef USE_HMAPP_VIDEO_CODEC
     case HMAPP: return hevcCodecIdIndex_; break;
 #endif
+#ifdef USE_SHMAPP_VIDEO_CODEC
+    case SHMAPP: return shvcCodecIdIndex_; break;
+#endif
 #ifdef USE_VTMLIB_VIDEO_CODEC
     case VTMLIB: return vvcCodecIdIndex_; break;
 #endif
@@ -1002,7 +1103,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   context.setOccupancyPrecision( occupancyPrecision_ );
   context.setModelScale( modelScale_ );
   context.setModelOrigin( modelOrigin_ );
-  context.setAuxVideoWidth( textureRawSeparateVideoWidth_ );
+  //context.setAuxVideoWidth( textureRawSeparateVideoWidth_ );
   context.setGeometry3dCoordinatesBitdepth( bitdepth3D );
   context.setMaxNumRefAtlasFrame( maxNumRefAtlasFrame_ );
   context.setNumOfRefAtlasFrameList( maxNumRefAtlasList_ );
@@ -1134,6 +1235,9 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
     ai.setAttributeCodecId( i, getCodecIdIndex( (PCCCodecId)videoEncoderAttributeCodecId_ ) );
   }
 
+  printf("CODEC ID SET = %d %d %d \n", oi.getOccupancyCodecId(), gi.getGeometryCodecId(), ai.getAttributeCodecId( 0 ) ); 
+  
+
   // atlas video frame allocation
   context.getAtlas( atlasIndex ).allocateVideoFrames( context, 0 );
 
@@ -1150,14 +1254,9 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
     frame.setMaxDepth( ( 1 << geometryNominal2dBitdepth_ ) - 1 );
     frame.setLog2PatchQuantizerSizeX( context.getLog2PatchQuantizerSizeX() );
     frame.setLog2PatchQuantizerSizeY( context.getLog2PatchQuantizerSizeY() );
-    frame.setAtlasFrmOrderCntLsb( context.calculateAFOCLsb(
-        i ) );  // ajt:: lsb and afoc values of tileFrame is set during the initilaization process
+    frame.setAtlasFrmOrderCntLsb( context.calculateAFOCLsb( i ) ); 
     frame.setAtlasFrmOrderCntVal( i );
-    if ( i == 0 ) {
-      frame.setNumRefIdxActive( 0 );
-    } else {
-      frame.setNumRefIdxActive( constrainedPack_ ? ( std::min )( i, maxNumRefAtlasFrame_ ) : 0 );
-    }
+    frame.setNumRefIdxActive( i == 0 ? 0 : ( constrainedPack_ ? ( std::min )( i, maxNumRefAtlasFrame_ ) : 0  ) );
     frame.setRefAfocList( context, 0 );
     if ( tileSegmentationType_ == 1 ) {
       size_t partitionWidthIn64  = ( minimumImageWidth_ / ( 64 * numTilesHor_ ) );
@@ -1166,8 +1265,9 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
                                        partitionWidthIn64, partitionHeightIn64 );
     } else {
       if ( useRawPointsSeparateVideo_ ) {
-        context.getAuxTileHeight().resize( numMaxTilePerFrame_ );
-        context.getAuxTileLeftTopY().resize( numMaxTilePerFrame_ );
+        context[i].setAuxVideoWidth( textureRawSeparateVideoWidth_ );
+        context[i].resizeAuxTileHeight( numMaxTilePerFrame_, 0 );
+        context[i].resizeAuxTileLeftTopY( numMaxTilePerFrame_, 0 );
       }
       atlas.setNumTilesInAtlasFrame( numMaxTilePerFrame_ );
       atlas.initNumTiles( numMaxTilePerFrame_ );

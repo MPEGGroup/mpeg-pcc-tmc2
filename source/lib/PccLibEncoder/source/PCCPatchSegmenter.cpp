@@ -71,8 +71,19 @@ void PCCPatchSegmenter3::compute( const PCCPointSet3&                 geometry,
     orientationCount = 18;
   }
   std::cout << std::endl << "============= FRAME " << frameIndex << " ============= " << std::endl;
+  PCCPointSet3 geometryVox;
+  Voxels voxels;
+  if ( params.gridBasedSegmentation_ ) {
+    std::cout << "  Converting points to voxels... ";
+    convertPointsToVoxels( geometry, params.geometryBitDepth3D_, params.voxelDimensionGridBasedSegmentation_,
+                           geometryVox, voxels );
+    std::cout << "[done]" << std::endl;
+  }
+  else {
+    geometryVox = geometry;
+  }
   std::cout << "  Computing normals for original point cloud... ";
-  PCCKdTree            kdtree( geometry );
+  PCCKdTree            kdtree( geometryVox );
   PCCNNResult          result;
   PCCNormalsGenerator3 normalsGen;
   auto                 normalsOrientation = static_cast<PCCNormalsGeneratorOrientation>( params.normalOrientation_ );
@@ -90,33 +101,41 @@ void PCCPatchSegmenter3::compute( const PCCPointSet3&                 geometry,
                                                            false,
                                                            false};
   // PCC_NORMALS_GENERATOR_ORIENTATION_SPANNING_TREE,
-  normalsGen.compute( geometry, kdtree, normalsGenParams, nbThread_ );
+  normalsGen.compute( geometryVox, kdtree, normalsGenParams, nbThread_ );
   std::cout << "[done]" << std::endl;
 
   std::cout << "  Computing initial segmentation... ";
   std::vector<size_t> partition;
   if ( params.additionalProjectionPlaneMode_ == 0 ) {
-    initialSegmentation( geometry, normalsGen, orientations, orientationCount, partition, params.weightNormal_ );
+    initialSegmentation( geometryVox, normalsGen, orientations, orientationCount, partition, params.weightNormal_ );
   } else {
-    initialSegmentation( geometry, normalsGen, orientations, orientationCount,
+    initialSegmentation( geometryVox, normalsGen, orientations, orientationCount,
                          partition );  // flat weight
   }
   std::cout << "[done]" << std::endl;
 
   if ( params.gridBasedRefineSegmentation_ ) {
     std::cout << "  Refining segmentation (grid-based)... ";
-    refineSegmentationGridBased( geometry, normalsGen, orientations, orientationCount,
+    refineSegmentationGridBased( geometryVox, normalsGen, orientations, orientationCount,
                                  params.maxNNCountRefineSegmentation_, params.lambdaRefineSegmentation_,
                                  params.iterationCountRefineSegmentation_, params.voxelDimensionRefineSegmentation_,
                                  params.searchRadiusRefineSegmentation_, partition );
   } else {
     std::cout << "  Refining segmentation... ";
-    refineSegmentation( geometry, kdtree, normalsGen, orientations, orientationCount,
+    refineSegmentation( geometryVox, kdtree, normalsGen, orientations, orientationCount,
                         params.maxNNCountRefineSegmentation_, params.lambdaRefineSegmentation_,
                         params.iterationCountRefineSegmentation_, partition );
   }
   std::cout << "[done]" << std::endl;
 
+  if ( params.gridBasedSegmentation_ ) {
+    std::cout << "  Applying voxels' data to points... ";
+    applyVoxelsDataToPoints( geometry.getPointCount(), params.geometryBitDepth3D_,
+                             params.voxelDimensionGridBasedSegmentation_, voxels, geometryVox,
+                             normalsGen, partition);
+    std::cout << "[done]" << std::endl;
+    kdtree.init(geometry);
+  }
   std::cout << "  Patch segmentation... ";
   PCCPointSet3        resampled;
   std::vector<size_t> patchPartition;
@@ -126,6 +145,71 @@ void PCCPatchSegmenter3::compute( const PCCPointSet3&                 geometry,
   segmentPatches( geometry, frameIndex, kdtree, params, partition, patches, patchPartition, resampledPatchPartition,
                   rawPoints, resampled, subPointCloud, distanceSrcRec, normalsGen, orientations, orientationCount );
   std::cout << "[done]" << std::endl;
+}
+
+void PCCPatchSegmenter3::convertPointsToVoxels( const PCCPointSet3 &source, 
+                                                size_t geoBits,
+                                                size_t voxDim,
+                                                PCCPointSet3 &sourceVox,
+                                                Voxels &voxels ) {
+#define ADD_COLOR 0
+  const size_t geoBits2 = geoBits << 1;
+  size_t voxDimShift = 0;
+  for (size_t i = voxDim; i > 1; ++voxDimShift, i >>= 1) { ; }
+  const size_t voxDimHalf = voxDim >> 1;
+
+  auto subToInd = [&](uint64_t x, uint64_t y, uint64_t z) { return x + (y << geoBits) + (z << geoBits2); };
+
+  for (size_t i = 0; i < source.getPointCount(); ++i) {
+    const auto&  pos = source[i];
+    const auto x0 = (static_cast<uint64_t>(pos[0]) + voxDimHalf) >> voxDimShift;
+    const auto y0 = (static_cast<uint64_t>(pos[1]) + voxDimHalf) >> voxDimShift;
+    const auto z0 = (static_cast<uint64_t>(pos[2]) + voxDimHalf) >> voxDimShift;
+    const auto p = subToInd(x0, y0, z0);
+    if (voxels.count(p) == 0u) {
+      voxels[p].reserve(voxDim * voxDim << 1);
+      const size_t j = sourceVox.addPoint(PCCPoint3D(x0, y0, z0));
+#if ADD_COLOR
+      sourceVox.addColors();
+      sourceVox.setColor(j, source.getColor(i));
+#endif
+    }
+    voxels[p].push_back(i);
+  }
+}
+
+void PCCPatchSegmenter3::applyVoxelsDataToPoints( size_t pointCount,
+                                                  size_t geoBits, 
+                                                  size_t voxDim,
+                                                  Voxels &voxels,   // const
+                                                  const PCCPointSet3 &sourceVox, 
+                                                  PCCNormalsGenerator3  &normalsGen, 
+                                                  std::vector<size_t> &partitions ) {
+  std::vector<size_t> partitionsTmp(pointCount);
+  std::vector<PCCVector3D> normalsTmp(pointCount);
+  auto &normals = normalsGen.getNormals();
+
+  const size_t geoBits2 = geoBits << 1;
+  size_t voxDimShift = 0;
+  for (size_t i = voxDim; i > 1; ++voxDimShift, i >>= 1) { ; }
+  const size_t voxDimHalf = voxDim >> 1;
+
+  auto subToInd = [&](const PCCPoint3D &point) { 
+    return (uint64_t)point[0] + ((uint64_t)point[1] << geoBits) + ((uint64_t)point[2] << geoBits2); 
+  };
+
+  for (size_t i = 0; i < sourceVox.getPointCount(); i++) {
+    const auto &partition = partitions[i];
+    const auto &normal = normals[i];
+    const auto &pos = sourceVox[i];
+    const auto &indices = voxels[subToInd(pos)];
+    for (const auto &index : indices) {
+      partitionsTmp[index] = partition;
+      normalsTmp[index] = normal;
+    }
+  }
+  swap(partitions, partitionsTmp);
+  swap(normalsGen.getNormals(), normalsTmp);
 }
 
 void PCCPatchSegmenter3::initialSegmentation( const PCCPointSet3&         geometry,
@@ -263,7 +347,7 @@ void PCCPatchSegmenter3::resampledPointcloud( std::vector<size_t>& pointCount,
   for ( size_t v = 0; v < patch.getSizeV(); ++v ) {
     for ( size_t u = 0; u < patch.getSizeU(); ++u ) {
       const size_t p = v * patch.getSizeU() + u;
-      if ( patch.getDepth( 0 )[p] < infiniteDepth ) {
+      if ( patch.getDepth( 0 )[p] < g_infiniteDepth ) {
         int16_t depth0 = patch.getDepth( 0 )[p];
         // add depth0
         const size_t u0 = u / patch.getOccupancyResolution();
@@ -271,7 +355,7 @@ void PCCPatchSegmenter3::resampledPointcloud( std::vector<size_t>& pointCount,
         const size_t p0 = v0 * patch.getSizeU0() + u0;
         assert( u0 >= 0 && u0 < patch.getSizeU0() );
         assert( v0 >= 0 && v0 < patch.getSizeV0() );
-        patch.getOccupancy()[p0] = true;
+        patch.setOccupancy( p0, true );
 
         PCCVector3D point;
         point[patch.getNormalAxis()]    = double( depth0 );
@@ -337,11 +421,11 @@ void PCCPatchSegmenter3::resampledPointcloud( std::vector<size_t>& pointCount,
           assert( abs( patch.getDepth( 0 )[p] - patch.getDepth( 1 )[p] ) <= int( surfaceThickness ) );
         }
         // adjust depth(0), depth(1)
-        patch.getDepth( 0 )[p] = projectionTypeIndication * ( patch.getDepth( 0 )[p] - int16_t( patch.getD1() ) );
-        patch.getSizeD()       = ( std::max )( patch.getSizeD(), static_cast<size_t>( patch.getDepth( 0 )[p] ) );
+        patch.setDepth( 0, p, projectionTypeIndication * ( patch.getDepth( 0 )[p] - int16_t( patch.getD1() ) ) );
+        patch.setSizeD( (std::max)( patch.getSizeD(), static_cast<size_t>( patch.getDepth( 0 )[p] ) ) );
         if ( !( useEnhancedOccupancyMapCode && !multipleMaps ) ) {
-          patch.getDepth( 1 )[p] = projectionTypeIndication * ( patch.getDepth( 1 )[p] - int16_t( patch.getD1() ) );
-          patch.getSizeD()       = ( std::max )( patch.getSizeD(), static_cast<size_t>( patch.getDepth( 1 )[p] ) );
+          patch.setDepth( 1, p, projectionTypeIndication * ( patch.getDepth( 1 )[p] - int16_t( patch.getD1() ) ) );
+          patch.setSizeD( (std::max)( patch.getSizeD(), static_cast<size_t>( patch.getDepth( 1 )[p] ) ) );
         }
       }
     }
@@ -392,14 +476,14 @@ int16_t PCCPatchSegmenter3::getPatchSurfaceThickness( const PCCPointSet3&      p
     const size_t  p      = v * patch.getSizeU() + u;
     const int16_t depth0 = patch.getDepth( 0 )[p];
 
-    if ( !( depth0 < infiniteDepth ) ) { continue; }
+    if ( !( depth0 < g_infiniteDepth ) ) { continue; }
     bool bsimilar = colorSimilarity( frame_pcc_color[i], frame_pcc_color[patch.getDepth0PccIdx()[p]], 128 );
     for ( size_t thickness = 0; thickness < patchSurfaceThicknessList.size(); thickness++ ) {
       bool bValid =
           projectionMode != 0
-              ? ( depth0 < infiniteDepth && ( depth0 - d ) <= int16_t( patchSurfaceThicknessList[thickness] ) &&
+              ? ( depth0 < g_infiniteDepth && ( depth0 - d ) <= int16_t( patchSurfaceThicknessList[thickness] ) &&
                   d < patch.getDepth( 1 )[p] && bsimilar )
-              : ( depth0 < infiniteDepth && ( d - depth0 ) <= int16_t( patchSurfaceThicknessList[thickness] ) &&
+              : ( depth0 < g_infiniteDepth && ( d - depth0 ) <= int16_t( patchSurfaceThicknessList[thickness] ) &&
                   d > patch.getDepth( 1 )[p] && bsimilar );
       if ( bValid ) {
         d1NumList[thickness]++;
@@ -795,11 +879,11 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
       const size_t patchIndex = patches.size();
       patches.resize( patchIndex + 1 );
       if ( createSubPointCloud ) { subPointCloud.resize( patchIndex + 1 ); }
-      PCCPatch& patch         = patches[patchIndex];
-      patch.getIndex()        = patchIndex;
+      PCCPatch& patch = patches[patchIndex];
       size_t d0CountPerPatch  = 0;
       size_t d1CountPerPatch  = 0;
       size_t eomCountPerPatch = 0;
+      patch.setIndex( patchIndex );
       patch.setEOMCount( 0 );
       patch.setPatchType( static_cast<uint8_t>( P_INTRA ) );
       size_t clusterIndex          = partition[connectedComponent[0]];
@@ -807,7 +891,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
       if ( bIsAdditionalProjectionPlane && ( additionalProjectionAxis == 2 ) ) clusterIndex += 4;
       if ( bIsAdditionalProjectionPlane && ( additionalProjectionAxis == 3 ) ) clusterIndex += 8;
       patch.setViewId( clusterIndex );
-      patch.setBestMatchIdx( InvalidPatchIndex );
+      patch.setBestMatchIdx( g_invalidPatchIndex );
       patch.getPreGPAPatchData().initialize();
       patch.getCurGPAPatchData().initialize();
       if ( params.enablePatchSplitting_ ) {
@@ -892,24 +976,22 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
           roiBB.max_[1] = roiBoundingBoxMaxY[roiIndex];
           roiBB.min_[2] = roiBoundingBoxMinZ[roiIndex];
           roiBB.max_[2] = roiBoundingBoxMaxZ[roiIndex];
-          if ( roiBB.fullyContains( boundingBox ) ) { patch.getRoiIndex() = roiIndex; }
+          if ( roiBB.fullyContains( boundingBox ) ) { patch.setRoiIndex( roiIndex ); }
         }
       }
-      patch.getSizeU() = 1 + size_t( round( boundingBox.max_[patch.getTangentAxis()] ) -
-                                     floor( boundingBox.min_[patch.getTangentAxis()] ) );
-      patch.getSizeV() = 1 + size_t( round( boundingBox.max_[patch.getBitangentAxis()] ) -
-                                     floor( boundingBox.min_[patch.getBitangentAxis()] ) );
-      patch.getU1()    = size_t( boundingBox.min_[patch.getTangentAxis()] );
-      patch.getV1()    = size_t( boundingBox.min_[patch.getBitangentAxis()] );
-      patch.getD1()    = patch.getProjectionMode() == 0 ? infiniteDepth : 0;
-      patch.getDepth( 0 ).resize( patch.getSizeU() * patch.getSizeV(), infiniteDepth );
-      patch.getDepth0PccIdx().resize( patch.getSizeU() * patch.getSizeV(), infinitenumber );
-      if ( useEnhancedOccupancyMapCode ) {
-        patch.getDepthEnhancedDeltaD().resize( patch.getSizeU() * patch.getSizeV(), 0 );
-      }
-      patch.getOccupancyResolution() = occupancyResolution;
-      patch.getSizeU0()              = 0;
-      patch.getSizeV0()              = 0;
+      patch.setSizeU( 1 + size_t( round( boundingBox.max_[patch.getTangentAxis()] ) -
+                                  floor( boundingBox.min_[patch.getTangentAxis()] ) ) );
+      patch.setSizeV( 1 + size_t( round( boundingBox.max_[patch.getBitangentAxis()] ) -
+                                  floor( boundingBox.min_[patch.getBitangentAxis()] ) ) );
+      patch.setU1( size_t( boundingBox.min_[patch.getTangentAxis()] ) );
+      patch.setV1( size_t( boundingBox.min_[patch.getBitangentAxis()] ) );
+      patch.setD1( patch.getProjectionMode() == 0 ? g_infiniteDepth : 0 );
+      patch.allocDepth( 0, patch.getSizeU() * patch.getSizeV(), g_infiniteDepth );
+      patch.allocDepth0PccIdx( patch.getSizeU() * patch.getSizeV(), g_infinitenumber );
+      if ( useEnhancedOccupancyMapCode ) { patch.allocDepthEnhancedDeltaD( patch.getSizeU() * patch.getSizeV(), 0 ); }
+      patch.setOccupancyResolution( occupancyResolution );
+      patch.setSizeU0( 0 );
+      patch.setSizeV0( 0 );
       patch.setPatchSize2DXInPixel( 0 );
       patch.setPatchSize2DYInPixel( 0 );
       for ( const auto i : connectedComponent ) {
@@ -927,23 +1009,23 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
         const size_t p           = v * patch.getSizeU() + u;
         bool         bValidPoint = ( patch.getProjectionMode() == 0 )
                                ? ( patch.getDepth( 0 )[p] > d )
-                               : ( ( patch.getDepth( 0 )[p] == infiniteDepth ) || ( patch.getDepth( 0 )[p] < d ) );
+                               : ( ( patch.getDepth( 0 )[p] == g_infiniteDepth ) || ( patch.getDepth( 0 )[p] < d ) );
         int16_t minD0;
         int16_t maxD0;
         if ( bValidPoint ) {  // min
-          minD0 = maxD0              = patch.getD1();
-          patch.getDepth( 0 )[p]     = d;
-          patch.getDepth0PccIdx()[p] = i;
-          patch.setPatchSize2DXInPixel( ( std::max )( patch.getPatchSize2DXInPixel(), u ) );
-          patch.setPatchSize2DYInPixel( ( std::max )( patch.getPatchSize2DYInPixel(), v ) );
-          patch.getSizeU0() = ( std::max )( patch.getSizeU0(), u / patch.getOccupancyResolution() );
-          patch.getSizeV0() = ( std::max )( patch.getSizeV0(), v / patch.getOccupancyResolution() );
-          minD0             = ( std::min )( minD0, d );
-          maxD0             = ( std::max )( maxD0, d );
+          minD0 = maxD0 = patch.getD1();
+          patch.setDepth( 0, p, d );
+          patch.setDepth0PccIdx( p, i );
+          patch.setPatchSize2DXInPixel( (std::max)( patch.getPatchSize2DXInPixel(), u ) );
+          patch.setPatchSize2DYInPixel( (std::max)( patch.getPatchSize2DYInPixel(), v ) );
+          patch.setSizeU0( (std::max)( patch.getSizeU0(), u / patch.getOccupancyResolution() ) );
+          patch.setSizeV0( (std::max)( patch.getSizeV0(), v / patch.getOccupancyResolution() ) );
+          minD0 = (std::min)( minD0, d );
+          maxD0 = (std::max)( maxD0, d );
           if ( patch.getProjectionMode() == 0 ) {
-            patch.getD1() = ( minD0 / minLevel ) * minLevel;
+            patch.setD1( ( minD0 / minLevel ) * minLevel );
           } else {
-            patch.getD1() = size_t( ceil( static_cast<double>( maxD0 ) / static_cast<double>( minLevel ) ) ) * minLevel;
+            patch.setD1( size_t( ceil( static_cast<double>( maxD0 ) / static_cast<double>( minLevel ) ) ) * minLevel );
           }
         }
       }  // i
@@ -962,18 +1044,18 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
             ceil( static_cast<double>( noquantizedPatchSize2DY ) / static_cast<double>( quantizerSizeY ) ) *
             quantizerSizeY );
       }
-      ++patch.getSizeU0();
-      ++patch.getSizeV0();
-      patch.getOccupancy().resize( patch.getSizeU0() * patch.getSizeV0(), false );
+      patch.setSizeU0( patch.getSizeU0() + 1 );
+      patch.setSizeV0( patch.getSizeV0() + 1 );
+      patch.allocOccupancy( patch.getSizeU0() * patch.getSizeV0(), false );
 
       // filter depth
       std::vector<int16_t> peakPerBlock;
-      peakPerBlock.resize( patch.getSizeU0() * patch.getSizeV0(), patch.getProjectionMode() == 0 ? infiniteDepth : 0 );
+      peakPerBlock.resize( patch.getSizeU0() * patch.getSizeV0(), patch.getProjectionMode() == 0 ? g_infiniteDepth : 0 );
       for ( int64_t v = 0; v < int64_t( patch.getSizeV() ); ++v ) {
         for ( int64_t u = 0; u < int64_t( patch.getSizeU() ); ++u ) {
           const size_t  p      = v * patch.getSizeU() + u;
           const int16_t depth0 = patch.getDepth( 0 )[p];
-          if ( depth0 == infiniteDepth ) { continue; }
+          if ( depth0 == g_infiniteDepth ) { continue; }
           const size_t u0 = u / patch.getOccupancyResolution();
           const size_t v0 = v / patch.getOccupancyResolution();
           const size_t p0 = v0 * patch.getSizeU0() + u0;
@@ -988,17 +1070,17 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
         for ( int64_t u = 0; u < int64_t( patch.getSizeU() ); ++u ) {
           const size_t  p      = v * patch.getSizeU() + u;
           const int16_t depth0 = patch.getDepth( 0 )[p];
-          if ( depth0 == infiniteDepth ) { continue; }
+          if ( depth0 == g_infiniteDepth ) { continue; }
           const size_t u0    = u / patch.getOccupancyResolution();
           const size_t v0    = v / patch.getOccupancyResolution();
           const size_t p0    = v0 * patch.getSizeU0() + u0;
           int16_t      tmp_a = std::abs( depth0 - peakPerBlock[p0] );
           int16_t      tmp_b = int16_t( surfaceThickness ) + projectionDirectionType * depth0;
           int16_t      tmp_c = projectionDirectionType * patch.getD1() + int16_t( maxAllowedDepth );
-          if ( depth0 != infiniteDepth ) {
+          if ( depth0 != g_infiniteDepth ) {
             if ( ( tmp_a > 32 ) || ( tmp_b > tmp_c ) ) {
-              patch.getDepth( 0 )[p]     = infiniteDepth;
-              patch.getDepth0PccIdx()[p] = infinitenumber;
+              patch.setDepth( 0, p, g_infiniteDepth );
+              patch.setDepth0PccIdx( p, g_infinitenumber );
             }
           }
         }
@@ -1028,16 +1110,16 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
             const int16_t diff   = std::abs( depth0 - d );
             int16_t       eomThickness =
                 useSurfaceSeparation ? ( patch_surfaceThickness + EOMFixBitCount - surfaceThickness ) : EOMFixBitCount;
-            if ( depth0 < infiniteDepth && ( projectionDirectionType * ( d - depth0 ) ) > 0 &&
+            if ( depth0 < g_infiniteDepth && ( projectionDirectionType * ( d - depth0 ) ) > 0 &&
                  diff <= int16_t( eomThickness ) ) {
               uint16_t deltaD = diff;
-              patch.getDepthEnhancedDeltaD()[p] |= 1 << ( deltaD - 1 );
+              patch.setDepthEnhancedDeltaD( p, patch.getDepthEnhancedDeltaD( p ) | 1 << ( deltaD - 1 ) );
             }
           }
         }
       } else {
         // compute d1 map
-        patch.getDepth( 1 ) = patch.getDepth( 0 );
+        patch.setDepth( 1, patch.getDepth( 0 ) );
         int16_t patch_surfaceThickness =
             useSurfaceSeparation ? getPatchSurfaceThickness(
                                        points, patch, patchIndex, frame_pcc_color, connectedComponent, surfaceThickness,
@@ -1060,12 +1142,14 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
             const size_t  p      = v * patch.getSizeU() + u;
             const int16_t depth0 = patch.getDepth( 0 )[p];
             const int16_t deltaD = projectionDirectionType * ( d - depth0 );
-            if ( !( depth0 < infiniteDepth ) ) { continue; }
+            if ( !( depth0 < g_infiniteDepth ) ) { continue; }
             bool bsimilar = colorSimilarity( frame_pcc_color[i], frame_pcc_color[patch.getDepth0PccIdx()[p]], 128 );
-            if ( depth0 < infiniteDepth && ( deltaD ) <= int16_t( patch_surfaceThickness ) && deltaD >= 0 &&
+            if ( depth0 < g_infiniteDepth && ( deltaD ) <= int16_t( patch_surfaceThickness ) && deltaD >= 0 &&
                  bsimilar ) {
-              if ( projectionDirectionType * ( d - patch.getDepth( 1 )[p] ) > 0 ) { patch.getDepth( 1 )[p] = d; }
-              if ( useEnhancedOccupancyMapCode ) { patch.getDepthEnhancedDeltaD()[p] |= 1 << ( deltaD - 1 ); }
+              if ( projectionDirectionType * ( d - patch.getDepth( 1 )[p] ) > 0 ) { patch.setDepth( 1, p, d ); }
+              if ( useEnhancedOccupancyMapCode ) {
+                patch.setDepthEnhancedDeltaD( p, patch.getDepthEnhancedDeltaD( p ) | 1 << ( deltaD - 1 ) );
+              }
             }
             if ( ( patch.getProjectionMode() == 0 && ( patch.getDepth( 1 )[p] < patch.getDepth( 0 )[p] ) ) ||
                  ( patch.getProjectionMode() == 1 && ( patch.getDepth( 1 )[p] > patch.getDepth( 0 )[p] ) ) ) {
@@ -1075,7 +1159,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
           }
         }
       }
-      patch.getSizeD() = 0;
+      patch.setSizeD( 0 );
       PCCPointSet3 rec;
       rec.resize( 0 );
       std::vector<size_t> pointCount;
@@ -1090,14 +1174,14 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
 
       // note: patch.getSizeD() cannot generate maximum depth(e.g. getSizeD=255, quantDD=3, quantDD needs to be limitted
       // to satisfy the bitcount) max : (1<<std::min(geometryBitDepth3D, geometryBitDepth2D))
-      patch.getSizeDPixel() = patch.getSizeD();
-      patch.getSizeD() =
-          std::min( ( size_t )( 1 << std::min( geometryBitDepth3D, geometryBitDepth2D ) ) - 1, patch.getSizeD() );
+      patch.setSizeDPixel( patch.getSizeD() );
+      patch.setSizeD(
+          std::min( (size_t)( 1 << std::min( geometryBitDepth3D, geometryBitDepth2D ) ) - 1, patch.getSizeD() ) );
       size_t bitdepthD  = std::min( geometryBitDepth3D, geometryBitDepth2D ) - std::log2( minLevel );
       size_t maxDDplus1 = 1 << bitdepthD;  // e.g. 4
       size_t quantDD    = patch.getSizeD() == 0 ? 0 : ( ( patch.getSizeD() - 1 ) / minLevel + 1 );
-      quantDD           = std::min( quantDD, maxDDplus1 - 1 );            // 1,2,3,3
-      patch.getSizeD()  = quantDD == 0 ? 0 : ( quantDD * minLevel - 1 );  // 63, 127, 191, 191
+      quantDD           = std::min( quantDD, maxDDplus1 - 1 );          // 1,2,3,3
+      patch.setSizeD( quantDD == 0 ? 0 : ( quantDD * minLevel - 1 ) );  // 63, 127, 191, 191
 
       if ( createSubPointCloud ) {
         PCCPointSet3 testSrc;
@@ -1184,19 +1268,15 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
       // update rawPointsChunks using rawPoints
       std::set<size_t>                 rawPointsSet( rawPoints.begin(), rawPoints.end() );
       std::vector<std::vector<size_t>> rawPointsChunksNextIter( numChunks );
-      std::vector<std::vector<size_t>> pointsIndexChunksNextIter( numChunks );
-      for ( size_t chunkIndex = 0; chunkIndex < numChunks; ++chunkIndex ) {
-        for ( size_t i = 0; i < pointsIndexChunks[chunkIndex].size(); ++i ) {
+      for ( size_t chunkIndex = 0; chunkIndex < numChunks; ++chunkIndex ) {        
+        for ( const auto i : rawPointsChunks[chunkIndex] ) {
           if ( rawPointsSet.find( pointsIndexChunks[chunkIndex][i] ) != rawPointsSet.end() ) {
             rawPointsChunksNextIter[chunkIndex].push_back( i );
-            pointsIndexChunksNextIter[chunkIndex].push_back( pointsIndexChunks[chunkIndex][i] );
             rawPointsDistanceChunks[chunkIndex][i] = rawPointsDistance[pointsIndexChunks[chunkIndex][i]];
           }
         }
         rawPointsChunks[chunkIndex].resize( 0 );
         rawPointsChunks[chunkIndex] = rawPointsChunksNextIter[chunkIndex];
-        pointsIndexChunks[chunkIndex].resize( 0 );
-        pointsIndexChunks[chunkIndex] = pointsIndexChunksNextIter[chunkIndex];
       }
     }
     std::cout << " # patches " << patches.size() << std::endl;
@@ -1466,7 +1546,7 @@ void PCCPatchSegmenter3::separateHighGradientPoints( const PCCPointSet3&        
   size_t                           idx = 0;
   for ( auto& connectedComponent : connectedComponents ) {
     PCCPatch patch;
-    patch.getIndex() = idx++;
+    patch.setIndex( idx++ );
     std::vector<bool> isComponentRemoved;
     isComponentRemoved.resize( connectedComponent.size(), false );
     bool bIsAdditionalProjectionPlane;
@@ -1599,16 +1679,15 @@ void PCCPatchSegmenter3::generatePatchD0( const PCCPointSet3&  points,
     }
   }
 
-  const int16_t infiniteDepth = ( std::numeric_limits<int16_t>::max )();
+  const int16_t g_infiniteDepth = (std::numeric_limits<int16_t>::max)();
 
-  patch.getSizeU() = 1 + size_t( round( boundingBox.max_[patch.getTangentAxis()] ) -
-                                 floor( boundingBox.min_[patch.getTangentAxis()] ) );
-  patch.getSizeV() = 1 + size_t( round( boundingBox.max_[patch.getBitangentAxis()] ) -
-                                 floor( boundingBox.min_[patch.getBitangentAxis()] ) );
-  patch.getU1()    = size_t( boundingBox.min_[patch.getTangentAxis()] );
-  patch.getV1()    = size_t( boundingBox.min_[patch.getBitangentAxis()] );
-
-  patch.getDepth( 0 ).resize( patch.getSizeU() * patch.getSizeV(), infiniteDepth );
+  patch.setSizeU( 1 + size_t( round( boundingBox.max_[patch.getTangentAxis()] ) -
+                              floor( boundingBox.min_[patch.getTangentAxis()] ) ) );
+  patch.setSizeV( 1 + size_t( round( boundingBox.max_[patch.getBitangentAxis()] ) -
+                              floor( boundingBox.min_[patch.getBitangentAxis()] ) ) );
+  patch.setU1( size_t( boundingBox.min_[patch.getTangentAxis()] ) );
+  patch.setV1( size_t( boundingBox.min_[patch.getBitangentAxis()] ) );
+  patch.allocDepth( 0, patch.getSizeU() * patch.getSizeV(), g_infiniteDepth );
 
   for ( const auto i : connectedComponent ) {
     PCCPoint3D pointTmp = points[i];
@@ -1624,12 +1703,12 @@ void PCCPatchSegmenter3::generatePatchD0( const PCCPointSet3&  points,
     assert( v >= 0 && v < patch.getSizeV() );
     const size_t p = v * patch.getSizeU() + u;
     if ( patch.getProjectionMode() == 0 ) {  // min
-      if ( patch.getDepth( 0 )[p] > d ) { patch.getDepth( 0 )[p] = d; }
+      if ( patch.getDepth( 0 )[p] > d ) { patch.setDepth( 0, p, d ); }
     } else {  // max
-      if ( patch.getDepth( 0 )[p] == infiniteDepth ) {
-        patch.getDepth( 0 )[p] = d;
+      if ( patch.getDepth( 0 )[p] == g_infiniteDepth ) {
+        patch.setDepth( 0, p, d );
       } else {
-        if ( patch.getDepth( 0 )[p] < d ) { patch.getDepth( 0 )[p] = d; }
+        if ( patch.getDepth( 0 )[p] < d ) { patch.setDepth( 0, p, d ); }
       }
     }
   }
@@ -1653,7 +1732,7 @@ void PCCPatchSegmenter3::calculateGradient( const PCCPointSet3&               po
   /* for the case that the xyz components of a normal are the same:
        sqrt( nx^2 + ny^2 + nz^2 ) = 1, where nx = ny = nz = 0.577 */
   const double        normalThreshold = 0.577;
-  const int16_t       infiniteDepth   = ( std::numeric_limits<int16_t>::max )();
+  const int16_t       g_infiniteDepth   = ( std::numeric_limits<int16_t>::max )();
   std::vector<double> Gmag;
   Gmag.resize( patch.getSizeU() * patch.getSizeV(), 0 );
   int patchWidth  = int( patch.getSizeU() );
@@ -1662,35 +1741,35 @@ void PCCPatchSegmenter3::calculateGradient( const PCCPointSet3&               po
     for ( int u = 0; u < patchWidth; ++u ) {
       const size_t  p      = v * patchWidth + u;
       const int16_t depth0 = patch.getDepth( 0 )[p];
-      if ( depth0 < infiniteDepth ) {
+      if ( depth0 < g_infiniteDepth ) {
         int16_t Gx = 0;
         int16_t Gy = 0;
         int16_t depth[8];
-        depth[0] = ( u != 0 && v != 0 && patch.getDepth( 0 )[( v - 1 ) * patchWidth + u - 1] < infiniteDepth )
+        depth[0] = ( u != 0 && v != 0 && patch.getDepth( 0 )[( v - 1 ) * patchWidth + u - 1] < g_infiniteDepth )
                        ? patch.getDepth( 0 )[( v - 1 ) * patchWidth + u - 1]
                        : depth0;
-        depth[1] = ( v != 0 && patch.getDepth( 0 )[( v - 1 ) * patchWidth + u] < infiniteDepth )
+        depth[1] = ( v != 0 && patch.getDepth( 0 )[( v - 1 ) * patchWidth + u] < g_infiniteDepth )
                        ? patch.getDepth( 0 )[( v - 1 ) * patchWidth + u]
                        : depth0;
         depth[2] =
-            ( u != patchWidth - 1 && v != 0 && patch.getDepth( 0 )[( v - 1 ) * patchWidth + u + 1] < infiniteDepth )
+            ( u != patchWidth - 1 && v != 0 && patch.getDepth( 0 )[( v - 1 ) * patchWidth + u + 1] < g_infiniteDepth )
                 ? patch.getDepth( 0 )[( v - 1 ) * patchWidth + u + 1]
                 : depth0;
-        depth[3] = ( u != 0 && patch.getDepth( 0 )[v * patchWidth + u - 1] < infiniteDepth )
+        depth[3] = ( u != 0 && patch.getDepth( 0 )[v * patchWidth + u - 1] < g_infiniteDepth )
                        ? patch.getDepth( 0 )[v * patchWidth + u - 1]
                        : depth0;
-        depth[4] = ( u != patchWidth - 1 && patch.getDepth( 0 )[v * patchWidth + u + 1] < infiniteDepth )
+        depth[4] = ( u != patchWidth - 1 && patch.getDepth( 0 )[v * patchWidth + u + 1] < g_infiniteDepth )
                        ? patch.getDepth( 0 )[v * patchWidth + u + 1]
                        : depth0;
         depth[5] =
-            ( u != 0 && v != patchHeight - 1 && patch.getDepth( 0 )[( v + 1 ) * patchWidth + u - 1] < infiniteDepth )
+            ( u != 0 && v != patchHeight - 1 && patch.getDepth( 0 )[( v + 1 ) * patchWidth + u - 1] < g_infiniteDepth )
                 ? patch.getDepth( 0 )[( v + 1 ) * patchWidth + u - 1]
                 : depth0;
-        depth[6] = ( v != patchHeight - 1 && patch.getDepth( 0 )[( v + 1 ) * patchWidth + u] < infiniteDepth )
+        depth[6] = ( v != patchHeight - 1 && patch.getDepth( 0 )[( v + 1 ) * patchWidth + u] < g_infiniteDepth )
                        ? patch.getDepth( 0 )[( v + 1 ) * patchWidth + u]
                        : depth0;
         depth[7] = ( u != patchWidth - 1 && v != patchHeight - 1 &&
-                     patch.getDepth( 0 )[( v + 1 ) * patchWidth + u + 1] < infiniteDepth )
+                     patch.getDepth( 0 )[( v + 1 ) * patchWidth + u + 1] < g_infiniteDepth )
                        ? patch.getDepth( 0 )[( v + 1 ) * patchWidth + u + 1]
                        : depth0;
 

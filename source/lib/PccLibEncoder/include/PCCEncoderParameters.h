@@ -67,15 +67,13 @@ class PCCEncoderParameters {
   bool              byteStreamVideoCoderGeometry_;
   bool              byteStreamVideoCoderAttribute_;
   bool              use3dmc_;
-#ifdef USE_HM_PCC_RDO
-  bool usePccRDO_;
-#endif
-  std::string colorSpaceConversionConfig_;
-  std::string inverseColorSpaceConversionConfig_;
-  size_t      nbThread_;
-  size_t      frameCount_;
-  size_t      groupOfFramesSize_;
-  std::string uncompressedDataPath_;
+  bool              usePccRDO_;
+  std::string       colorSpaceConversionConfig_;
+  std::string       inverseColorSpaceConversionConfig_;
+  size_t            nbThread_;
+  size_t            frameCount_;
+  size_t            groupOfFramesSize_;
+  std::string       uncompressedDataPath_;
 
   // packing
   size_t minimumImageWidth_;
@@ -86,6 +84,8 @@ class PCCEncoderParameters {
   int textureQP_;
 
   // segmentation
+  bool   gridBasedSegmentation_;
+  size_t voxelDimensionGridBasedSegmentation_;
   size_t nnNormalEstimation_;
   size_t normalOrientation_;
   bool   gridBasedRefineSegmentation_;
@@ -291,6 +291,8 @@ class PCCEncoderParameters {
   bool   uniformPartitionSpacing_;
   size_t tilePartitionWidth_;
   size_t tilePartitionHeight_;
+  std::vector<int32_t> tilePartitionWidthList_;
+  std::vector<int32_t> tilePartitionHeightList_;
 
   // Profile tier level
   bool   tierFlag_;
@@ -300,12 +302,18 @@ class PCCEncoderParameters {
   size_t levelIdc_;
   size_t avcCodecIdIndex_;
   size_t hevcCodecIdIndex_;
+  size_t shvcCodecIdIndex_;
   size_t vvcCodecIdIndex_;
 
   // Profile toolset constraints information
   bool    oneV3CFrameOnlyFlag_;
   bool    noEightOrientationsConstraintFlag_;
   bool    no45DegreeProjectionPatchConstraintFlag_;
+  
+  // SHVC
+  size_t shvcLayerIndex_;
+  size_t shvcRateX_;
+  size_t shvcRateY_;
 };
 
 };  // namespace pcc

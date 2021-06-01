@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2017, ISO/IEC
+ * Copyright (c) 2010-2016, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -14,7 +14,7 @@
  *  * Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- *  * Neither the name of the ISO/IEC nor the names of its contributors may
+ *  * Neither the name of the ITU/ISO/IEC nor the names of its contributors may
  *    be used to endorse or promote products derived from this software without
  *    specific prior written permission.
  *
@@ -30,34 +30,21 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef PCC_APP_DECODER_H
-#define PCC_APP_DECODER_H
 
-#ifndef _CRT_SECURE_NO_WARNINGS
-#define _CRT_SECURE_NO_WARNINGS
+
+#ifndef __PCC_SHVC_TCOMRECTANGLE__
+#define __PCC_SHVC_TCOMRECTANGLE__
+
+namespace pcc_shvc{
+
+struct TComRectangle
+{
+  UInt width;
+  UInt height;
+  UInt x0;
+  UInt y0;
+};
+
+}; // namespace pcc_shvc
+
 #endif
-#include "PCCCommon.h"
-#include "PCCMath.h"
-#include "PCCKdTree.h"
-#include "PCCGroupOfFrames.h"
-#include "PCCNormalsGenerator.h"
-#include <program_options_lite.h>
-#include <tbb/tbb.h>
-
-bool parseParameters( int                                  argc,
-                      char*                                argv[],
-                      std::string&                         srcPlyPath,
-                      std::string&                         dstPlyPath,
-                      size_t&                              startFrame,
-                      size_t&                              numFrames,
-                      size_t&                              numThread,
-                      pcc::PCCNormalsGenerator3Parameters& normalParams );
-void usage();
-int  generateNormal( const std::string                          uncompressedDataPath,
-                     const std::string                          reconstructedDataPath,
-                     const size_t                               startFrameNumber,
-                     const size_t                               frameCount,
-                     const size_t                               nbThread,
-                     const pcc::PCCNormalsGenerator3Parameters& normalParams );
-
-#endif /* PCC_APP_DECODER_H */

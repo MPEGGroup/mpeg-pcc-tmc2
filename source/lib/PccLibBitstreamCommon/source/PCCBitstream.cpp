@@ -130,7 +130,7 @@ void PCCBitstream::copyTo( PCCBitstream& dataBitstream, uint64_t startByte, uint
   dataBitstream.setPosition( pos );
 }
 
- void PCCBitstream::computeMD5( ) {
+void PCCBitstream::computeMD5() {
   MD5                  md5Hash;
   std::vector<uint8_t> tmp_digest;
   tmp_digest.resize( 16 );
@@ -140,4 +140,4 @@ void PCCBitstream::copyTo( PCCBitstream& dataBitstream, uint64_t startByte, uint
   for ( auto& bitStr : tmp_digest ) TRACE_BITSTRMD5( "%02x", bitStr );
   std::cout << std::endl;
   return;
- }
+}

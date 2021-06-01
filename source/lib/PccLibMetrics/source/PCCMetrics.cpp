@@ -80,14 +80,13 @@ QualityMetrics::QualityMetrics() :
 void QualityMetrics::setParameters( const PCCMetricsParameters& params ) { params_ = params; }
 
 void QualityMetrics::compute( const PCCPointSet3& pointcloudA, const PCCPointSet3& pointcloudB ) {
-  double maxC2c         = ( std::numeric_limits<double>::min )();
-  double maxC2p         = ( std::numeric_limits<double>::min )();
+  double maxC2c         = (std::numeric_limits<double>::min)();
+  double maxC2p         = (std::numeric_limits<double>::min)();
   double sseC2p         = 0;
   double sseC2c         = 0;
   double sseReflectance = 0;
   size_t num            = 0;
-  double sseColor[3];
-  sseColor[0] = sseColor[1] = sseColor[2] = 0.0;
+  double sseColor[3]    = { 0.0, 0.0, 0.0 };
 
   psnr_ = params_.resolution_;
 
@@ -379,23 +378,22 @@ void PCCMetrics::compute( PCCPointSet3& source, PCCPointSet3& reconstruct, const
   q1.compute( source, reconstruct );
   q2.setParameters( params_ );
   q2.compute( reconstruct, source );
-  quality1.push_back( q1 );
-  quality2.push_back( q2 );
-  qualityF.push_back( q1 + q2 );
+  quality1_.push_back( q1 );
+  quality2_.push_back( q2 );
+  qualityF_.push_back( q1 + q2 );
 }
 
 void PCCMetrics::display() {
   printf( "Metrics results \n" );
-  for ( size_t i = 0; i < qualityF.size(); i++ ) {
+  for ( size_t i = 0; i < qualityF_.size(); i++ ) {
     printf( "WARNING: %zu points with same coordinates found\n", reconstructPoints_[i] - reconstructDuplicates_[i] );
     std::cout << "Imported intrinsic resoluiton: " << params_.resolution_ << std::endl;
     std::cout << "Peak distance for PSNR: " << params_.resolution_ << std::endl;
-    std::cout << "Point cloud sizes for org version, dec version, and the "
-                 "scaling ratio: "
-              << sourcePoints_[i] << ", " << reconstructDuplicates_[i] << ", "
+    std::cout << "Point cloud sizes for org version, dec version, and the scaling ratio: " << sourcePoints_[i] << ", "
+              << reconstructDuplicates_[i] << ", "
               << static_cast<float>( reconstructDuplicates_[i] ) / static_cast<float>( sourcePoints_[i] ) << std::endl;
-    quality1[i].print( '1' );
-    quality2[i].print( '2' );
-    qualityF[i].print( 'F' );
+    quality1_[i].print( '1' );
+    quality2_[i].print( '2' );
+    qualityF_[i].print( 'F' );
   }
 }

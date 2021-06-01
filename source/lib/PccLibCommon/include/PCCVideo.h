@@ -46,24 +46,21 @@ class PCCVideo {
   PCCVideo( const PCCVideo& ) = default;
   PCCVideo& operator=( const PCCVideo& rhs ) = default;
   ~PCCVideo()                                = default;
-
+  void resize( const size_t frameCount ) { frames_.resize( frameCount ); }
   void clear() {
     for ( auto& frame : frames_ ) { frame.clear(); }
     frames_.clear();
   }
-  std::string getName( std::string path ) {
-    PCCCOLORFORMAT format = getColorFormat();
-    return addVideoFormat( path,                                                                  // path
-                           getWidth(),                                                            // width
-                           getHeight(),                                                           // height
-                           format == PCCCOLORFORMAT::YUV444 || format == PCCCOLORFORMAT::YUV420,  // isYUV
-                           format == PCCCOLORFORMAT::YUV420,                                      // is 420
-                           sizeof( T ) == 1 ? "8" : "10" );
+
+  typename std::vector<PCCImage<T, N> >::iterator begin() { return frames_.begin(); }
+  typename std::vector<PCCImage<T, N> >::iterator end() { return frames_.end(); }
+  const size_t                                    size() { return frames_.size(); }
+  PCCImage<T, N>&                                 operator[]( int index ) { return frames_[index]; }
+  void                                            setDeprecatedColorFormat( size_t value ) {
+    for ( auto& f : frames_ ) f.setDeprecatedColorFormat( value );
   }
   std::vector<PCCImage<T, N> >& getFrames() { return frames_; }
-  void                          swap( PCCVideo<T, N>& video ) { frames_.swap( video.frames_ ); }
-
-  PCCImage<T, N>& getFrame( const size_t index ) {
+  PCCImage<T, N>&               getFrame( const size_t index ) {
     assert( index < frames_.size() );
     return frames_[index];
   }
@@ -71,132 +68,53 @@ class PCCVideo {
     assert( index < frames_.size() );
     return frames_[index];
   }
-  PCCImage<T, N>& operator[]( int index ) { return frames_[index]; }
-  void            setDeprecatedColorFormat( size_t value ) {
-    for ( auto& f : frames_ ) f.setDeprecatedColorFormat( value );
+  void   swap( PCCVideo<T, N>& video ) { frames_.swap( video.frames_ ); }
+  size_t getWidth() const { return frames_.empty() ? 0 : frames_[0].getWidth(); }
+  size_t getHeight() const { return frames_.empty() ? 0 : frames_[0].getHeight(); }
+  bool   is420() const { return getColorFormat() == PCCCOLORFORMAT::YUV420; }
+  bool   is444() const {
+    return getColorFormat() == PCCCOLORFORMAT::RGB444 || getColorFormat() == PCCCOLORFORMAT::YUV444;
   }
-  void resize( const size_t frameCount ) { frames_.resize( frameCount ); }
-
-  typename std::vector<PCCImage<T, N> >::iterator begin() { return frames_.begin(); }
-  typename std::vector<PCCImage<T, N> >::iterator end() { return frames_.end(); }
-  const size_t                                    size() { return frames_.size(); }
-
-  size_t         getWidth() const { return frames_.empty() ? 0 : frames_[0].getWidth(); }
-  size_t         getHeight() const { return frames_.empty() ? 0 : frames_[0].getHeight(); }
+  bool isYUV() const {
+    return getColorFormat() == PCCCOLORFORMAT::YUV420 || getColorFormat() == PCCCOLORFORMAT::YUV444;
+  }
   PCCCOLORFORMAT getColorFormat() const {
     return frames_.empty() ? PCCCOLORFORMAT::UNKNOWN : frames_[0].getColorFormat();
   }
   size_t getFrameCount() const { return frames_.size(); }
 
-  bool write( const std::string fileName, const size_t nbyte ) {
-    printf( "Write video: %s \n", fileName.c_str() );
-    fflush( stdout );
-    std::ofstream outfile( fileName, std::ios::binary );
-    if ( write( outfile, nbyte ) ) {
-      outfile.close();
-      return true;
-    }
-    return false;
-  }
+  bool write( const std::string fileName, const size_t nbyte );
   bool read( const std::string    fileName,
              const size_t         sizeU0,
              const size_t         sizeV0,
              const PCCCOLORFORMAT format,
-             const size_t         frameCount,
-             const size_t         nbyte ) {
-    printf( "Read video: %s \n", fileName.c_str() );
-    fflush( stdout );
-    std::ifstream infile( fileName, std::ios::binary );
-    if ( read( infile, sizeU0, sizeV0, format, frameCount, nbyte ) ) {
-      infile.close();
-      return true;
-    }
-    infile.close();
-    return false;
+             const size_t         nbyte );  
+             
+#if defined( WIN32 )
+  bool _write( const std::string fileName, const size_t nbyte );
+  bool _read( const std::string    fileName,
+             const size_t         sizeU0,
+             const size_t         sizeV0,
+             const PCCCOLORFORMAT format,
+             const size_t         nbyte );
+#endif
+
+  void        convertBitdepth( uint8_t bitdepthInput, uint8_t bitdepthOutput, bool msbAlignFlag );
+  void        convertYUV420ToYUV444();
+  void        convertYUV444ToYUV420();
+  bool        allPixelsEqualToZero();
+  std::string addFormat( std::string filename, const char* bitdepth ) {
+    return addVideoFormat( filename, getWidth(), getHeight(), isYUV(), is420(), bitdepth );
   }
 
-  bool write_JM( const std::string fileName, const size_t nbyte ) {
-    printf( "Write video: %s \n", fileName.c_str() );
-    fflush( stdout );
-    std::ofstream outfile( fileName, std::ios::binary );
-    if ( write( outfile, nbyte ) ) {
-      outfile.close();
-      return true;
-    }
-    return false;
-  }
-  bool read_JM( const std::string    fileName,
-                const size_t         sizeU0,
-                const size_t         sizeV0,
-                const PCCCOLORFORMAT format,
-                const size_t         frameCount,
-                const size_t         nbyte ) {
-    printf( "Read video: %s \n", fileName.c_str() );
-    fflush( stdout );
-    std::ifstream infile( fileName, std::ios::binary );
-    if ( read( infile, sizeU0, sizeV0, format, frameCount, nbyte ) ) {
-      infile.close();
-      return true;
-    }
-    infile.close();
-    return false;
-  }
-
-  void convertBitdepth( uint8_t bitdepthInput, uint8_t bitdepthOutput, bool msbAlignFlag ) {
-    for ( auto& frame : frames_ ) { frame.convertBitdepth( bitdepthInput, bitdepthOutput, msbAlignFlag ); }
-  }
-  void convertYUV420ToYUV444() {
-    for ( auto& frame : frames_ ) { frame.convertYUV420ToYUV444(); }
-  }
-  void convertYUV444ToYUV420() {
-    for ( auto& frame : frames_ ) { frame.convertYUV444ToYUV420(); }
-  }
-
-  bool allPixelsEqualToZero() {
-    for ( auto& frame : frames_ ) {
-      if ( !frame.allPixelsEqualToZero() ) { return false; }
-    }
-    return true;
-  }
-
+  void upsample( size_t rate );
  private:
-  bool write( std::ofstream& outfile, const size_t nbyte ) {
-    for ( auto& frame : frames_ ) {
-      if ( !frame.write( outfile, nbyte ) ) { return false; }
-    }
-    return true;
-  }
+  bool write( std::ofstream& outfile, const size_t nbyte );
   bool read( std::ifstream&       infile,
              const size_t         sizeU0,
              const size_t         sizeV0,
              const PCCCOLORFORMAT format,
-             const size_t         frameCount,
-             const size_t         nbyte ) {
-    frames_.resize( frameCount );
-    for ( auto& frame : frames_ ) {
-      if ( !frame.read( infile, sizeU0, sizeV0, format, nbyte ) ) { return false; }
-    }
-    return true;
-  }
-
-  bool write_JM( std::ofstream& outfile, const size_t nbyte ) {
-    for ( auto& frame : frames_ ) {
-      if ( !frame.write( outfile, nbyte ) ) { return false; }
-    }
-    return true;
-  }
-  bool read_JM( std::ifstream&       infile,
-                const size_t         sizeU0,
-                const size_t         sizeV0,
-                const PCCCOLORFORMAT format,
-                const size_t         frameCount,
-                const size_t         nbyte ) {
-    frames_.resize( frameCount );
-    for ( auto& frame : frames_ ) {
-      if ( !frame.read( infile, sizeU0, sizeV0, format, nbyte ) ) { return false; }
-    }
-    return true;
-  }
+             const size_t         nbyte );
 
   std::vector<PCCImage<T, N> > frames_;
 };

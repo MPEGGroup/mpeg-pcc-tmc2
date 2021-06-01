@@ -30,11 +30,12 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+#ifndef _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
+#endif
 #include "PCCCommon.h"
 #include "PCCVideo.h"
-
 #include "program_options_lite.h"
-
 #include "PCCVirtualVideoEncoder.h"
 
 using namespace std;
@@ -55,7 +56,6 @@ bool parseParameters( int          argc,
                       std::string& encoderParameters,
                       size_t&      width,
                       size_t&      height,
-                      size_t&      frameCount,
                       size_t&      nbyte,
                       PCCCodecId&  codecId ) {
   namespace po    = df::program_options_lite;
@@ -63,14 +63,13 @@ bool parseParameters( int          argc,
   // clang-format off
   po::Options opts;
   opts.addOptions()
-  ("help,h", print_help, false, "This help text")
-  ("srcVideo,i", srcVideo, srcVideo, "Source yuv file")
-  ("codecId,c", codecId, codecId, "Codec Id")
-  ("width", width, width, "Source video width")
-  ("height", height, height,"Source video height")
-  ("frameCount,f", frameCount, frameCount, "Source video frame count")
-  ("nbyte,b", nbyte, nbyte, "Source video nbyte")
-  ("encoderParameters,p", encoderParameters, encoderParameters,"Encoder parameters");
+  ( "help,h",       print_help, false,      "This help text" )
+  ( "srcVideo,i",   srcVideo,   srcVideo,   "Source yuv file" )
+  ( "codecId,c",    codecId,    codecId,    "Codec Id" )
+  ( "width",        width,      width,      "Source video width" )
+  ( "height",       height,     height,     "Source video height" )
+  ( "nbyte,b",      nbyte,      nbyte,      "Source video nbyte" )
+  ( "encoderParameters,p", encoderParameters, encoderParameters,"Encoder parameters") ;
   // clang-format on
   po::setDefaults( opts );
   po::ErrorReporter        err;
@@ -85,10 +84,9 @@ bool parseParameters( int          argc,
   printf( "  codecId           = %zu \n", size_t( codecId ) );
   printf( "  width             = %zu \n", width );
   printf( "  height            = %zu \n", height );
-  printf( "  frameCount        = %zu \n", frameCount );
   printf( "  nbyte             = %zu \n", nbyte );
   if ( argc == 1 || print_help || srcVideo.empty() || encoderParameters.empty() || width == 0 || height == 0 ||
-           frameCount == 0 || nbyte == 0,
+           nbyte == 0,
        codecId == PCCCodecId::UNKNOWN_CODEC ) {
     printf( "Error parameters not correct \n" );
     return false;
@@ -103,32 +101,30 @@ bool parseParameters( int          argc,
 int main( int argc, char* argv[] ) {
   std::cout << "PccAppVideoEncoder v" << TMC2_VERSION_MAJOR << "." << TMC2_VERSION_MINOR << std::endl << std::endl;
   std::string srcVideo, encoderParameters;
-  size_t      width = 0, height = 0, frameCount = 0, nbyte = 0;
+  size_t      width = 0, height = 0, nbyte = 0;
   PCCCodecId  codecId = PCCCodecId::UNKNOWN_CODEC;
-  if ( !parseParameters( argc, argv, srcVideo, encoderParameters, width, height, frameCount, nbyte, codecId ) ) {
+  if ( !parseParameters( argc, argv, srcVideo, encoderParameters, width, height, nbyte, codecId ) ) {
     return -1;
   }
   PCCVideoBitstream bitstream( VIDEO_OCCUPANCY );
 
   PCCVideo<uint8_t, 3> videoSrc, videoRec;
-  videoSrc.read( srcVideo, width, height, PCCCOLORFORMAT::YUV420, frameCount, nbyte );
+  videoSrc.read( srcVideo, width, height, PCCCOLORFORMAT::YUV420, nbyte );
 
   PCCVideoEncoderParameters params;
-  params.encoderPath_            = "EncoderPath";
-  params.srcYuvFileName_         = srcVideo;
-  params.binFileName_            = removeFileExtension( srcVideo ) + ".bin";
-  params.recYuvFileName_         = removeFileExtension( srcVideo ) + "_rec.yuv";
-  params.encoderConfig_          = encoderParameters;
-  params.qp_                     = 0;
-  params.inputBitDepth_          = 8;
-  params.internalBitDepth_       = 10;
-  params.outputBitDepth_         = 8;
-  params.use444CodecIo_          = false;
-  params.usePccMotionEstimation_ = false;
+  params.encoderPath_             = "EncoderPath";
+  params.srcYuvFileName_          = srcVideo;
+  params.binFileName_             = removeFileExtension( srcVideo ) + ".bin";
+  params.recYuvFileName_          = removeFileExtension( srcVideo ) + "_rec.yuv";
+  params.encoderConfig_           = encoderParameters;
+  params.qp_                      = 0;
+  params.inputBitDepth_           = 8;
+  params.internalBitDepth_        = 10;
+  params.outputBitDepth_          = 8;
+  params.use444CodecIo_           = false;
+  params.usePccMotionEstimation_  = false;
   params.inputColourSpaceConvert_ = false;
-#ifdef USE_HM_PCC_RDO
-  params.usePccRDO_ = false;
-#endif
+  params.usePccRDO_               = false;
 
   auto encoder = PCCVirtualVideoEncoder<uint8_t>::create( codecId );
   encoder->encode( videoSrc, params, bitstream, videoRec );

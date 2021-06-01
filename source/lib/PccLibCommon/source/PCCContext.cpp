@@ -42,76 +42,6 @@ PCCContext::PCCContext() = default;
 
 PCCContext::~PCCContext() { atlasContexts_.clear(); }
 
-void PCCContext::setTilePartitionSizeAfti() {  // decoder
-  for ( size_t afpsIdx = 0; afpsIdx < getAtlasFrameParameterSetList().size(); afpsIdx++ ) {
-    auto&  afps             = getAtlasFrameParameterSet( afpsIdx );
-    auto&  asps             = getAtlasSequenceParameterSet( afps.getAtlasFrameParameterSetId() );
-    auto&  afti             = afps.getAtlasFrameTileInformation();
-    size_t frameWidth       = asps.getFrameWidth();
-    size_t frameHeight      = asps.getFrameHeight();
-    size_t numPartitionCols = afti.getNumPartitionColumnsMinus1() + 1;
-    size_t numPartitionRows = afti.getNumPartitionRowsMinus1() + 1;
-    auto&  partitionWidth   = afti.getColWidth();
-    auto&  partitionHeight  = afti.getRowHeight();
-    auto&  partitionPosX    = afti.getColWidth();
-    auto&  partitionPosY    = afti.getRowHeight();
-    partitionWidth.resize( numPartitionCols );
-    partitionHeight.resize( numPartitionRows );
-    partitionPosX.resize( numPartitionCols );
-    partitionPosY.resize( numPartitionRows );
-    if ( afti.getUniformPartitionSpacingFlag() ) {
-      size_t uniformPatitionWidth  = 64 * ( afti.getPartitionColumnWidthMinus1( 0 ) + 1 );
-      size_t uniformPatitionHeight = 64 * ( afti.getPartitionRowHeightMinus1( 0 ) + 1 );
-      partitionPosX[0]             = 0;
-      partitionWidth[0]            = uniformPatitionWidth;
-      for ( size_t col = 1; col < numPartitionCols - 1; col++ ) {
-        partitionPosX[col]  = partitionPosX[col - 1] + partitionWidth[col - 1];
-        partitionWidth[col] = uniformPatitionWidth;
-      }
-      if ( numPartitionCols > 1 ) {
-        partitionPosX[numPartitionCols - 1] =
-            partitionPosX[numPartitionCols - 2] + partitionWidth[numPartitionCols - 2];
-        partitionWidth[numPartitionCols - 1] = frameWidth - partitionPosX[numPartitionCols - 1];
-      }
-
-      partitionPosY[0]   = 0;
-      partitionHeight[0] = uniformPatitionHeight;
-      for ( size_t row = 1; row < numPartitionRows - 1; row++ ) {
-        partitionPosY[row]   = partitionPosY[row - 1] + partitionHeight[row - 1];
-        partitionHeight[row] = uniformPatitionHeight;
-      }
-      if ( numPartitionRows > 1 ) {
-        partitionPosY[numPartitionRows - 1] =
-            partitionPosY[numPartitionRows - 2] + partitionHeight[numPartitionRows - 2];
-        partitionHeight[numPartitionRows - 1] = frameHeight - partitionPosY[numPartitionRows - 1];
-      }
-    } else {
-      printf( "non uniform tile partitioning\n" );
-      exit( 129 );
-      size_t multiPatitionWidth  = 64 * ( afti.getPartitionColumnWidthMinus1( 0 ) + 1 );
-      size_t multiPatitionHeight = 64 * ( afti.getPartitionRowHeightMinus1( 0 ) + 1 );
-      for ( size_t col = 0; col < numPartitionCols; col++ ) {
-        partitionWidth[col] = multiPatitionWidth;
-        partitionPosX[col]  = partitionPosX[col - 1] + partitionWidth[col];
-      }
-      for ( size_t row = 0; row < numPartitionRows; row++ ) {
-        partitionHeight[row] = multiPatitionHeight;
-        partitionPosY[row]   = partitionPosY[row - 1] + partitionHeight[row];
-      }
-    }
-    if ( asps.getAuxiliaryVideoEnabledFlag() ) {
-      setAuxVideoWidth( ( afti.getAuxiliaryVideoTileRowWidthMinus1() + 1 ) * 64 );
-      getAuxTileLeftTopY().resize( afti.getNumTilesInAtlasFrameMinus1() + 1, 0 );
-      getAuxTileHeight().resize( afti.getNumTilesInAtlasFrameMinus1() + 1, 0 );
-      for ( size_t ti = 0; ti <= afti.getNumTilesInAtlasFrameMinus1(); ti++ ) {
-        setAuxTileHeight( ti, afti.getAuxiliaryVideoTileRowHeight( ti ) * 64 );
-        if ( ti < afti.getNumTilesInAtlasFrameMinus1() )
-          setAuxTileLeftTopY( ti + 1, getAuxTileLeftTopY( ti ) + getAuxTileHeight( ti ) );
-      }
-    }
-  }  // afpsIdx
-}
-
 void PCCContext::resizeAtlas( size_t size ) {
   atlasContexts_.resize( size );
   for ( int atlIdx = 0; atlIdx < size; atlIdx++ ) { atlasContexts_[atlIdx].setAtlasIndex( atlIdx ); }
@@ -149,7 +79,7 @@ size_t PCCContext::calculateAFOCval( std::vector<AtlasTileLayerRbsp>& atglList, 
   auto&  afps                    = getAtlasFrameParameterSet( atgh.getAtlasFrameParameterSetId() );
   auto&  asps                    = getAtlasSequenceParameterSet( afps.getAtlasSequenceParameterSetId() );
 
-  size_t maxAtlasFrmOrderCntLsb  = size_t( 1 ) << ( asps.getLog2MaxAtlasFrameOrderCntLsbMinus4() + 1 );
+  size_t maxAtlasFrmOrderCntLsb  = size_t( 1 ) << ( asps.getLog2MaxAtlasFrameOrderCntLsbMinus4() + 4 );
   size_t afocLsb                 = atgh.getAtlasFrmOrderCntLsb();
   size_t prevAtlasFrmOrderCntLsb = atglList[atglOrder - 1].getHeader().getAtlasFrmOrderCntLsb();
   if ( ( afocLsb < prevAtlasFrmOrderCntLsb ) &&

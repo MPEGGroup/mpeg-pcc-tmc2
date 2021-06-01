@@ -5,27 +5,27 @@ SET( TMC2_VERSION_MAJOR 13 )
 SET( TMC2_VERSION_MINOR 0  )
 
 # Video encoder and decoder library and application:
-OPTION( USE_JMAPP_VIDEO_CODEC     "Use JM application to encode and decode video"           TRUE  )  #JMAPP = 0
-OPTION( USE_HMAPP_VIDEO_CODEC     "Use HM application to encode and decode video"           TRUE  )  #HMAPP = 1
-OPTION( USE_JMLIB_VIDEO_CODEC     "Clone, build and use JM video encoder and decoder"       TRUE  )  #JMLIB = 2
-OPTION( USE_HMLIB_VIDEO_CODEC     "Clone, build and use HM video encoder and decoder"       TRUE  )  #HMLIB = 3
-OPTION( USE_VTMLIB_VIDEO_CODEC    "Clone, build and use VTM video encoder and decoder"      TRUE )   #VTMLIB = 4
-OPTION( USE_FFMPEG_VIDEO_CODEC    "Clone, build and use FFMPEG video encoder and decoder"   FALSE )  #FFMPEG = 5
-                                                                                                     #UNKNOWN_CODEC = 6
+OPTION( USE_JMAPP_VIDEO_CODEC     "Use JM application to encode and decode video"           TRUE  )  # JMAPP  = 0
+OPTION( USE_HMAPP_VIDEO_CODEC     "Use HM application to encode and decode video"           TRUE  )  # HMAPP  = 1
+OPTION( USE_SHMAPP_VIDEO_CODEC    "Use SHM application to encode and decode video"          TRUE  )  # SHMAPP = 2    
+OPTION( USE_JMLIB_VIDEO_CODEC     "Clone, build and use JM video encoder and decoder"       TRUE  )  # JMLIB  = 3
+OPTION( USE_HMLIB_VIDEO_CODEC     "Clone, build and use HM video encoder and decoder"       TRUE  )  # HMLIB  = 4
+OPTION( USE_VTMLIB_VIDEO_CODEC    "Clone, build and use VTM video encoder and decoder"      TRUE )   # VTMLIB = 5
+OPTION( USE_FFMPEG_VIDEO_CODEC    "Clone, build and use FFMPEG video encoder and decoder"   FALSE )  # FFMPEG = 6                                                                                                 #UNKNOWN_CODEC = 7
 
 # Color conversion library:
 OPTION( USE_HDRTOOLS              "Clone, build and use HDRTools for color conversions"     FALSE )
 
 # Use HM optimized RDO
-OPTION( USE_HM_PCC_RDO            "Use HM optimized RDO (run \"./clear.sh all\" for each modification)" FALSE )
+OPTION( USE_HM_PCC_RDO            "Use HM optimized RDO (run \"./clear.sh all\" for each modification)" TRUE )
 
 # PAPI profiling tools
 OPTION( ENABLE_PAPI_PROFILING     "Enable PAPI profiling"                                   FALSE )
 
 ## CLANG-TIDY CHECK
-set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set( CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set( CMAKE_CXX_STANDARD            14 )
+set( CMAKE_CXX_STANDARD_REQUIRED   ON )
+set( CMAKE_EXPORT_COMPILE_COMMANDS ON )
 set( CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/dependencies/cmake")
 
 INCLUDE( CheckCXXCompilerFlag )
@@ -33,11 +33,11 @@ CHECK_CXX_COMPILER_FLAG( "-std=c++14" COMPILER_SUPPORTS_CXX14 )
 if (COMPILER_SUPPORTS_CXX14)
   SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14" )
 ELSEIF (COMPILER_SUPPORTS_CXX11)
- SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11" )
+  SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11" )
 ELSEIF (COMPILER_SUPPORTS_CXX0X)
- SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x" )
+  SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x" )
 ELSE ()
- MESSAGE(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
+  MESSAGE(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
 ENDIF()
 
 IF( ENABLE_PAPI_PROFILING )
@@ -70,6 +70,9 @@ IF( USE_FFMPEG_VIDEO_CODEC )
 ENDIF()
 IF( USE_VTMLIB_VIDEO_CODEC )
   INCLUDE( ${CMAKE_SOURCE_DIR}/dependencies/cmake/vtm.cmake )
+ENDIF()
+IF( USE_SHMAPP_VIDEO_CODEC )
+  INCLUDE( ${CMAKE_SOURCE_DIR}/dependencies/cmake/shm_app.cmake )
 ENDIF()
 IF( USE_HDRTOOLS )  
   INCLUDE( ${CMAKE_SOURCE_DIR}/dependencies/cmake/hdrtools.cmake )
