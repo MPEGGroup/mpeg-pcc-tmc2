@@ -27,7 +27,7 @@ void PCCSHMAppVideoDecoder<T>::decode( PCCVideoBitstream& bitstream,
 
   std::vector<size_t>     width, height, bitDepth;
   std::vector<uint8_t>    isRGB;
-  pcc_hevc::PccHevcParser hevcParser;
+  pcc_shvc::PccShvcParser hevcParser;
   hevcParser.getVideoSize( bitstream.vector(), width, height, bitDepth, isRGB );
   layerIndex_ = (std::min)( width.size() - 1, layerIndex_ ); 
 
