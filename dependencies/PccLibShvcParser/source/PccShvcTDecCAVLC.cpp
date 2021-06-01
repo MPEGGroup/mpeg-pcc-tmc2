@@ -470,7 +470,7 @@ Void TDecCavlc::parsePPS(TComPPS* pcPPS)
               // when pps_pic_parameter_set_id greater than or equal to 8, colour_mapping_enabled_flag shall be equal to 0
               assert( pcPPS->getPPSId() < 8 );
 
-              xParse3DAsymLUT( pc3DAsymLUT );
+              // xParse3DAsymLUT( pc3DAsymLUT );
               // pcPPS->setCGSOutputBitDepthY( pc3DAsymLUT->getOutputBitDepthY() );
               // pcPPS->setCGSOutputBitDepthC( pc3DAsymLUT->getOutputBitDepthC() );
             }
@@ -686,6 +686,7 @@ Void TDecCavlc::parseSPS(TComSPS* pcSPS)
   xTraceSPSHeader ();
 #endif
 
+  printf("Parse SPS : pcSPS->getLayerId() = %d \n",pcSPS->getLayerId());
   UInt  uiCode;
   READ_CODE( 4,  uiCode, "sps_video_parameter_set_id");          pcSPS->setVPSId        ( uiCode );
 #if SVC_EXTENSION
@@ -715,7 +716,7 @@ Void TDecCavlc::parseSPS(TComSPS* pcSPS)
 #endif
   READ_FLAG( uiCode, "sps_temporal_id_nesting_flag" );           pcSPS->setTemporalIdNestingFlag ( uiCode > 0 ? true : false );
 #if SVC_EXTENSION
-    parsePTL(pcSPS->getPTL(), 1, pcSPS->getMaxTLayers() - 1);
+   parsePTL(pcSPS->getPTL(), 1, pcSPS->getMaxTLayers() - 1);
   }
 #else
   if ( pcSPS->getMaxTLayers() == 1 )
@@ -726,6 +727,8 @@ Void TDecCavlc::parseSPS(TComSPS* pcSPS)
 
   parsePTL(pcSPS->getPTL(), 1, pcSPS->getMaxTLayers() - 1);
 #endif
+
+  
   READ_UVLC(     uiCode, "sps_seq_parameter_set_id" );           pcSPS->setSPSId( uiCode );
   assert(uiCode <= 15);
 
@@ -810,7 +813,8 @@ Void TDecCavlc::parseSPS(TComSPS* pcSPS)
   }
 #endif
 
-
+ return ; 
+/*
   READ_UVLC( uiCode,    "log2_max_pic_order_cnt_lsb_minus4" );   pcSPS->setBitsForPOC( 4 + uiCode );
   assert(uiCode <= 12);
 
@@ -1028,6 +1032,7 @@ Void TDecCavlc::parseSPS(TComSPS* pcSPS)
   }
 
   xReadRbspTrailingBits();
+  */
 }
 
 Void TDecCavlc::parseVPS(TComVPS* pcVPS)
@@ -1036,7 +1041,7 @@ Void TDecCavlc::parseVPS(TComVPS* pcVPS)
   xTraceVPSHeader ();
 #endif
   UInt  uiCode;
-
+printf("parseVPS \n");
   READ_CODE( 4,  uiCode,  "vps_video_parameter_set_id" );         pcVPS->setVPSId( uiCode );
 #if SVC_EXTENSION
   READ_FLAG( uiCode, "vps_base_layer_internal_flag");             pcVPS->setBaseLayerInternalFlag( uiCode ? true : false );
@@ -3250,6 +3255,7 @@ Void  TDecCavlc::parseRepFormat( RepFormat *repFormat, RepFormat *repFormatPrev 
   READ_CODE( 16, uiCode, "pic_height_vps_in_luma_samples" );       repFormat->setPicHeightVpsInLumaSamples( uiCode );
   READ_FLAG( uiCode, "chroma_and_bit_depth_vps_present_flag" );    repFormat->setChromaAndBitDepthVpsPresentFlag( uiCode ? true : false ); 
 
+  printf("parseRepFormat => %d %d \n", repFormat->getPicWidthVpsInLumaSamples (), repFormat->getPicHeightVpsInLumaSamples () );
   if( !repFormatPrev )
   {
     // The value of chroma_and_bit_depth_vps_present_flag of the first rep_format( ) syntax structure in the VPS shall be equal to 1

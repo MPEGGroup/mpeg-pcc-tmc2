@@ -57,6 +57,15 @@ extern       unsigned int   gPccShvc_auiRasterToPelY[ pcc_shvc::MAX_NUM_PART_IDX
 
 extern       signed char    gPccShvc_aucConvertToBit  [ pcc_shvc::MAX_CU_SIZE+1 ];   // from width to log2(width)-2
 
+extern const unsigned int gPccShvc_scalingListSize [pcc_shvc::SCALING_LIST_SIZE_NUM];
+extern const unsigned int gPccShvc_scalingListSizeX[pcc_shvc::SCALING_LIST_SIZE_NUM];
+
+extern const char *gPccShvc_MatrixType[pcc_shvc::SCALING_LIST_SIZE_NUM][pcc_shvc::SCALING_LIST_NUM];
+extern const char *gPccShvc_MatrixType_DC[pcc_shvc::SCALING_LIST_SIZE_NUM][pcc_shvc::SCALING_LIST_NUM];
+
+extern const int gPccShvc_quantTSDefault4x4[4*4];
+extern const int gPccShvc_quantIntraDefault8x8[8*8];
+extern const int gPccShvc_quantInterDefault8x8[8*8];
 
 namespace pcc_shvc{
 
@@ -165,15 +174,6 @@ extern UInt64 gPccShvc_nSymbolCounter;
 
 const TChar* nalUnitTypeToString(NalUnitType type);
 
-extern const TChar *MatrixType[SCALING_LIST_SIZE_NUM][SCALING_LIST_NUM];
-extern const TChar *MatrixType_DC[SCALING_LIST_SIZE_NUM][SCALING_LIST_NUM];
-
-extern const Int gPccShvc_quantTSDefault4x4[4*4];
-extern const Int gPccShvc_quantIntraDefault8x8[8*8];
-extern const Int gPccShvc_quantInterDefault8x8[8*8];
-
-extern const UInt gPccShvc_scalingListSize [SCALING_LIST_SIZE_NUM];
-extern const UInt gPccShvc_scalingListSizeX[SCALING_LIST_SIZE_NUM];
 
 #if LAYER_CTB
 extern       UInt gPccShvc_auiLayerZscanToRaster[MAX_LAYERS][ MAX_NUM_PART_IDXS_IN_CTU_WIDTH*MAX_NUM_PART_IDXS_IN_CTU_WIDTH ];

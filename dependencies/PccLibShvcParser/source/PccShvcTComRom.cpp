@@ -57,6 +57,9 @@ unsigned int* gPccShvc_scanOrder[pcc_shvc::SCAN_NUMBER_OF_GROUP_TYPES][pcc_shvc:
 
 signed char  gPccShvc_aucConvertToBit  [ pcc_shvc::MAX_CU_SIZE+1 ];
 
+const unsigned int gPccShvc_scalingListSize   [pcc_shvc::SCALING_LIST_SIZE_NUM] = {16,64,256,1024};
+const unsigned int gPccShvc_scalingListSizeX  [pcc_shvc::SCALING_LIST_SIZE_NUM] = { 4, 8, 16,  32};
+
 using namespace pcc_shvc;
 
 const UInt ctxIndMap4x4[4*4] =
@@ -65,6 +68,7 @@ const UInt ctxIndMap4x4[4*4] =
   2, 3, 4, 5,
   6, 6, 8, 8,
   7, 7, 8, 8
+
 };
 
 // ====================================================================================================================
@@ -85,7 +89,7 @@ const UInt gPccShvc_auiPUOffset[NUMBER_OF_PART_SIZES] = { 0, 8, 4, 4, 2, 10, 1, 
 const UInt gPccShvc_uiMinInGroup[ LAST_SIGNIFICANT_GROUPS ] = {0,1,2,3,4,6,8,12,16,24};
 const UInt gPccShvc_uiGroupIdx[ MAX_TU_SIZE ]   = {0,1,2,3,4,4,5,5,6,6,6,6,7,7,7,7,8,8,8,8,8,8,8,8,9,9,9,9,9,9,9,9};
 
-const TChar *MatrixType[SCALING_LIST_SIZE_NUM][SCALING_LIST_NUM] =
+const TChar *gPccShvc_MatrixType[SCALING_LIST_SIZE_NUM][SCALING_LIST_NUM] =
 {
   {
     "INTRA4X4_LUMA",
@@ -121,7 +125,7 @@ const TChar *MatrixType[SCALING_LIST_SIZE_NUM][SCALING_LIST_NUM] =
   },
 };
 
-const TChar *MatrixType_DC[SCALING_LIST_SIZE_NUM][SCALING_LIST_NUM] =
+const TChar *gPccShvc_MatrixType_DC[SCALING_LIST_SIZE_NUM][SCALING_LIST_NUM] =
 {
   {
   },
@@ -177,8 +181,6 @@ const Int gPccShvc_quantInterDefault8x8[8*8] =
   24,25,28,33,41,54,71,91
 };
 
-const UInt gPccShvc_scalingListSize   [SCALING_LIST_SIZE_NUM] = {16,64,256,1024};
-const UInt gPccShvc_scalingListSizeX  [SCALING_LIST_SIZE_NUM] = { 4, 8, 16,  32};
 
 #if LAYER_CTB
 UInt gPccShvc_auiLayerZscanToRaster[MAX_LAYERS][ MAX_NUM_PART_IDXS_IN_CTU_WIDTH*MAX_NUM_PART_IDXS_IN_CTU_WIDTH ];

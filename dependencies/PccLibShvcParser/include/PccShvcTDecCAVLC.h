@@ -337,6 +337,7 @@ public:
   Void  parsePPS            ( TComPPS* pcPPS );
 #endif
 
+ TComVPS* getVPS(){ return &m_pVPS[ 0 ]; }
  TComPPS* getPPS(){ return &m_pPPS[ 0 ]; }
  TComSPS* getSPS(){ return &m_pSPS[ 0 ]; }
  

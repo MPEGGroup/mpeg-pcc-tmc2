@@ -3,7 +3,7 @@
 #ifdef USE_SHMAPP_VIDEO_CODEC
 
 #include "PCCSHMAppVideoDecoder.h"
-#include "PccHevcParser.h"
+#include "PccShvcParser.h"
 #include "PCCSystem.h"
 
 using namespace pcc;
@@ -27,10 +27,9 @@ void PCCSHMAppVideoDecoder<T>::decode( PCCVideoBitstream& bitstream,
 
   std::vector<size_t>     width, height, bitDepth;
   std::vector<uint8_t>    isRGB;
-  pcc_shvc::PccShvcParser hevcParser;
-  hevcParser.getVideoSize( bitstream.vector(), width, height, bitDepth, isRGB );
+  pcc_shvc::PccShvcParser shvcParser;
+  shvcParser.getVideoSize( bitstream.vector(), width, height, bitDepth, isRGB );
   layerIndex_ = (std::min)( width.size() - 1, layerIndex_ ); 
-
 
   printf( "Num Layer = %zu layerIndex = %zu \n", width.size(), layerIndex_ );
   for ( size_t i = 0; i < width.size(); i++ ) {
@@ -45,10 +44,9 @@ void PCCSHMAppVideoDecoder<T>::decode( PCCVideoBitstream& bitstream,
   std::stringstream cmd;
   cmd << decoderPath; 
   cmd << " --BitstreamFile=" << binFileName;
-  // cmd << " --OutpuLayerSetIdx=" << std::to_string( layerIndex_ );
   cmd << " --ReconFile" << layerIndex_ << "=" << reconFile;
   cmd << " --LayerNum=" << layerIndex_ + 1;
-
+  cmd << " --OutpuLayerSetIdx=" <<  layerIndex_;
   if ( isRGB[layerIndex_] ) {
     cmd << " --OutputColourSpaceConvert=GBRtoRGB";
   } else {
@@ -84,7 +82,6 @@ void PCCSHMAppVideoDecoder<T>::decode( PCCVideoBitstream& bitstream,
             video.getFrameCount() );
     fflush( stdout );
   }
-
   removeFile( binFileName );
   removeFile( reconFile );
 }

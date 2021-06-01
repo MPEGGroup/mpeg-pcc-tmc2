@@ -1644,7 +1644,6 @@ public:
 
 
 /// Reference Picture Lists class
-
 class TComRefPicListModification
 {
 private:
@@ -1666,7 +1665,6 @@ public:
   UInt    getRefPicSetIdxL1(UInt idx) const              { assert(idx<REF_PIC_LIST_NUM_IDX); return m_RefPicSetIdxL1[idx];         }
   Void    setRefPicSetIdxL1(UInt idx, UInt refPicSetIdx) { assert(idx<REF_PIC_LIST_NUM_IDX); m_RefPicSetIdxL1[idx] = refPicSetIdx; }
 };
-
 
 
 /// PPS RExt class

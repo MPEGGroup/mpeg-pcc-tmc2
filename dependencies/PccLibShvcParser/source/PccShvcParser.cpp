@@ -14,7 +14,7 @@
 using namespace std;
 using namespace pcc_shvc;
 
-const char* getNaluType( int iNaluType ) {
+const char* getNaluTypeShvc( int iNaluType ) {
   switch( iNaluType ) {
     case NAL_UNIT_CODED_SLICE_TRAIL_N   : return "TRAIL_N  "; break;
     case NAL_UNIT_CODED_SLICE_TRAIL_R   : return "TRAIL_R  "; break;
@@ -105,23 +105,23 @@ void PccShvcParser::display() {
   size_t sum = 0;
   for ( auto& nalu : vps_ ) {
     printf( "%4d / %4zu : Size = %8zu type = %4zu %9s VPS \n", poc, frames_.size(), nalu.size(), nalu.getNaluType(),
-            getNaluType( nalu.getNaluType() ) );
+            getNaluTypeShvc( nalu.getNaluType() ) );
     sum += nalu.size();
   }
   for ( auto& nalu : sps_ ) {
     printf( "%4d / %4zu : Size = %8zu type = %4zu %9s SPS \n", poc, frames_.size(), nalu.size(), nalu.getNaluType(),
-            getNaluType( nalu.getNaluType() ) );
+            getNaluTypeShvc( nalu.getNaluType() ) );
     sum += nalu.size();
   }
   for ( auto& nalu : pps_ ) {
     printf( "%4d / %4zu : Size = %8zu type = %4zu %9s PPS \n", poc, frames_.size(), nalu.size(), nalu.getNaluType(),
-            getNaluType( nalu.getNaluType() ) );
+            getNaluTypeShvc( nalu.getNaluType() ) );
     sum += nalu.size();
   }
   for ( auto& frame : frames_ ) {
     for ( auto& nalu : frame.getNalu() ) {
       printf( "%4d / %4zu : Size = %8zu type = %4zu %9s \n", poc, frames_.size(), nalu.size(), nalu.getNaluType(),
-              getNaluType( nalu.getNaluType() ) );
+              getNaluTypeShvc( nalu.getNaluType() ) );
       sum += nalu.size();
     }
     poc++;
@@ -149,54 +149,6 @@ void PccShvcParser::createNalu( const size_t frameIndex,
 }
 
 void PccShvcParser::getVideoSize( const std::vector<uint8_t>& buffer,
-                                  size_t&                     width,
-                                  size_t&                     height,
-                                  size_t&                     bitDepth,
-                                  bool&                       is444 ) {
-  const int      size                   = (int)buffer.size();
-  const uint8_t* data                   = buffer.data();
-  TDecCavlc*     decCavlc               = new TDecCavlc();
-  int            nalNumber              = 0;
-  int            index                  = 0;
-  int            startCodeSize          = 4;
-  int            frameIndex             = -1;
-  int            maxPocFound            = -1;
-  int            sequencePoc            = 0;
-  int            previousNaluLayerIndex = -1;
-  int            currentPoc             = 0;
-  for ( Int i = startCodeSize; i <= size; i++ ) {
-    if ( i == size || ( ( data[i + 0] == 0x00 ) && ( data[i + 1] == 0x00 ) &&
-                        ( ( ( data[i + 2] == 0x00 ) && ( data[i + 3] == 0x01 ) ) || ( data[i + 2] == 0x01 ) ) ) ) {
-      int iNalType       = ( ( data[index + startCodeSize] ) & 126 ) >> 1;
-      int iLayer         = ( ( ( data[ index + startCodeSize     ] ) &  1 ) << 6 ) +
-                           ( ( ( data[ index + startCodeSize + 1 ] ) &  248 ) >> 3 );
-      int iTemporalIndex = (   ( data[ index + startCodeSize + 1 ] ) & 7 ) + 1;
-      int iPoc = 0;
-      if( iLayer != 0 )
-       return ;
-      decCavlc->setBuffer( (UChar*)( data + index + startCodeSize + 2 ), ( i - index ) - startCodeSize - 2 );
-      switch ( iNalType ) {
-        case NAL_UNIT_VPS: break;
-        case NAL_UNIT_SPS:
-          decCavlc->parseSPS( decCavlc->getSPS() );      
-          width    = decCavlc->getSPS()->getOutputWidth();
-          height   = decCavlc->getSPS()->getOutputHeight();
-          bitDepth = decCavlc->getSPS()->getBitDepth();
-          is444    = decCavlc->getSPS()->getIs444();
-          break;        
-      }
-      nalNumber++;
-      if( i < size ) {
-        startCodeSize = data[ i + 2 ] == 0 ? 4 : 3;
-        index = i;
-        i += startCodeSize;
-      }
-    }
-  }
-  delete decCavlc;
-}
-
-void PccShvcParser::getVideoSize( const std::vector<uint8_t>& buffer,
                                   std::vector<size_t>&        width,
                                   std::vector<size_t>&        height,
                                   std::vector<size_t>&        bitDepth,
@@ -212,6 +164,7 @@ void PccShvcParser::getVideoSize( const std::vector<uint8_t>& buffer,
   int            sequencePoc            = 0;
   int            previousNaluLayerIndex = -1;
   int            currentPoc             = 0;
+  
   for ( Int i = startCodeSize; i <= size; i++ ) {   
     if ( i == size || ( ( data[i + 0] == 0x00 ) && ( data[i + 1] == 0x00 ) &&
                         ( ( ( data[i + 2] == 0x00 ) && ( data[i + 3] == 0x01 ) ) || ( data[i + 2] == 0x01 ) ) ) ) {
@@ -222,17 +175,24 @@ void PccShvcParser::getVideoSize( const std::vector<uint8_t>& buffer,
       int iPoc = 0;
       decCavlc->setBuffer( (UChar*)( data + index + startCodeSize + 2 ), ( i - index ) - startCodeSize - 2 );
       switch ( iNalType ) {
-        case NAL_UNIT_VPS: break;
+        case NAL_UNIT_VPS: decCavlc->parseVPS( decCavlc->getVPS() ); break;
         case NAL_UNIT_SPS:
+          decCavlc->getSPS()->setLayerId( iLayer );
           decCavlc->parseSPS( decCavlc->getSPS() );
-          width.resize( iLayer + 1);
-          height.resize( iLayer + 1);
-          bitDepth.resize( iLayer + 1);
-          is444.resize( iLayer + 1);
+          decCavlc->getSPS()->inferSPS( iLayer, decCavlc->getVPS() );
+          width.resize( iLayer + 1 );
+          height.resize( iLayer + 1 );
+          bitDepth.resize( iLayer + 1 );
+          is444.resize( iLayer + 1 );
           width[iLayer]    = decCavlc->getSPS()->getOutputWidth();
           height[iLayer]   = decCavlc->getSPS()->getOutputHeight();
           bitDepth[iLayer] = decCavlc->getSPS()->getBitDepth();
-          is444[iLayer]    = decCavlc->getSPS()->getIs444();          
+          is444[iLayer]    = decCavlc->getSPS()->getIs444();
+
+          // if ( iLayer == 1 ) {
+          //   width[iLayer]    = 1280;
+          //   height[iLayer]   = 1280;
+          // }
           printf( "SPS Layer %d => %zu x %zu %zu bits is444 = %d \n", iLayer, width[iLayer], height[iLayer], bitDepth[iLayer], is444[iLayer] );
           break;
       }
@@ -244,5 +204,9 @@ void PccShvcParser::getVideoSize( const std::vector<uint8_t>& buffer,
       }
     }
   }
+  
+  printf("parser done \n"); fflush(stdout);
   delete decCavlc;
+  
+  printf("delete done \n"); fflush(stdout);
 }
