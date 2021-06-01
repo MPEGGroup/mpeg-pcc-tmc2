@@ -2648,7 +2648,7 @@ void PCCCodec::afpsCommonByteString( std::vector<uint8_t>& stringByte,
   uint8_t val  = afti.getNumTilesInAtlasFrameMinus1() & 0xFF;
   stringByte.push_back( val );
   std::vector<size_t> hashAuxTileHeight;
-  auto                asps                = context.getAtlasSequenceParameterSet( afps.getAtlasFrameParameterSetId() );
+  auto                asps                = context.getAtlasSequenceParameterSet( afps.getAtlasSequenceParameterSetId() );
   size_t              prevAuxTileOffset   = 0;
   size_t              hashAuxVideoWidthNF = 0;
   if ( asps.getAuxiliaryVideoEnabledFlag() ) {
