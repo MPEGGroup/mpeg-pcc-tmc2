@@ -291,12 +291,13 @@ int decompressVideo( const PCCDecoderParameters&     decoderParams,
   PCCBitstreamStat bitstreamStat;
   PCCLogger        logger;
   logger.initilalize( removeFileExtension( decoderParams.compressedStreamPath_ ), false );
-#ifdef BITSTREAM_TRACE
+#if defined( BITSTREAM_TRACE ) || defined( CONFORMANCE_TRACE)
   bitstream.setLogger( logger );
   bitstream.setTrace( true );
   size_t index = 0;
 #endif
   if ( !bitstream.initialize( decoderParams.compressedStreamPath_ ) ) { return -1; }
+  bitstream.computeMD5();
   // if ( !bitstream.readHeader() ) { return -1; }
   bitstreamStat.setHeader( bitstream.size() );
   size_t         frameNumber = decoderParams.startFrameNumber_;

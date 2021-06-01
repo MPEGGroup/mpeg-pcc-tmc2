@@ -175,6 +175,12 @@ enum PCCCodecGroup {
   CODEC_GROUP_MP4RA                = 127 // => CCM SEI + oi/gi/ai codec id
 };
 
+enum PCCCodecGroup4CCCode {
+  AVC3 = 0,
+  HEV1 = 1,
+  VVC1 = 2,
+};
+
 enum PCCTileType {
   P_TILE = 0,  // 0: Inter atlas tile
   I_TILE,      // 1: Intra atlas tile

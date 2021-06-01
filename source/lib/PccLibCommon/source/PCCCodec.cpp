@@ -2378,7 +2378,7 @@ void PCCCodec::setTilePartitionSizeAfti( PCCContext& context ) {  // decoder
     partitionPosX.resize( numPartitionCols );
     partitionPosY.resize( numPartitionRows );
     if ( afti.getUniformPartitionSpacingFlag() ) {
-      size_t uniformPatitionWidth  = 64 * ( afti.getPartitionColumnWidthMinus1( 0 ) + 1 );
+      size_t uniformPatitionWidth  = 64 * ( afti.getPartitionColumnWidthMinus1( 0 ) + 1 ); //ajt0527: better to change 64 to 1 << asps.getLog2PatchPackingBlockSize()?
       size_t uniformPatitionHeight = 64 * ( afti.getPartitionRowHeightMinus1( 0 ) + 1 );
       partitionPosX[0]             = 0;
       partitionWidth[0]            = uniformPatitionWidth;
@@ -2478,7 +2478,7 @@ size_t PCCCodec::setTileSizeAndLocation( PCCContext& context, size_t frameIndex,
     }
 
     tileIndex =
-        afti.getSignalledTileIdFlag() ? afti.getTileId( ath.getId() ) : ath.getId();  // ajt:: tileId vs. tileIndex?
+        afti.getSignalledTileIdFlag() ? afti.getTileId( ath.getId() ) : ath.getId();
     auto&  tile = context[frameIndex].getTile( tileIndex );
     size_t TopLeftPartitionColumn =
         afti.getTopLeftPartitionIdx( tileIndex ) % ( afti.getNumPartitionColumnsMinus1() + 1 );
@@ -2615,7 +2615,8 @@ void PCCCodec::getHashPatchParams( PCCContext&                            contex
 
   size_t patchCount = tile.getPatches().size();
   for ( size_t patchIdx = 0; patchIdx < patchCount; patchIdx++ ) {
-    PatchParams pps( asps.getPLREnabledFlag(), asps.getMapCountMinus1() + 1 );
+    PatchParams pps;
+    PCCPatchType currPatchType = getPatchType( tileType, atl.getDataUnit().getPatchMode( patchIdx ) );
     auto&       patch = tile.getPatch( patchIdx );
     assert( getPatchType( tileType, atl.getDataUnit().getPatchMode( patchIdx ) ) != RAW_PATCH && getPatchType( tileType, atl.getDataUnit().getPatchMode( patchIdx ) ) != EOM_PATCH );
     pps.patchType      = PCCHashPatchType::PROJECTED;
@@ -2636,6 +2637,23 @@ void PCCCodec::getHashPatchParams( PCCContext&                            contex
     pps.patchInAuxVideo       = 0;  // ajt::check
     pps.patchLoDScaleX        = patch.getLodScaleX();
     pps.patchLoDScaleY        = patch.getLodScaleY();
+    if ( asps.getPLREnabledFlag() ) {
+      pps.aspsMapCountMinus1    = asps.getMapCountMinus1();
+      pps.patchPackingBlockSize = size_t( 1 ) << asps.getLog2PatchPackingBlockSize();
+      pps.plriMapPresentFlag.resize( asps.getMapCountMinus1() + 1 );
+      for ( size_t j = 0; j < asps.getMapCountMinus1() + 1; j++ ) {
+        auto& plri                = asps.getPLRInformation( j );
+        pps.plriMapPresentFlag[j] = plri.getMapEnabledFlag();
+      }
+      auto& pid = atl.getDataUnit().getPatchInformationData( patchIdx );
+      if ( currPatchType == INTRA_PATCH ) {
+        auto& pdu        = pid.getPatchDataUnit();
+        pps.patchPLRData = pdu.getPLRData();
+      } else if ( currPatchType == INTER_PATCH ) {
+        auto& ipdu       = pid.getInterPatchDataUnit();
+        pps.patchPLRData = ipdu.getPLRData();
+      }
+    }
     if ( tilePatchParams.size() != 0 ) tilePatchParams[tileIndex].push_back( pps );
     pps.patch2dPosX += tileOffsetX;
     pps.patch2dPosY += tileOffsetY;
@@ -2644,7 +2662,7 @@ void PCCCodec::getHashPatchParams( PCCContext&                            contex
 
   size_t rawPatchCount = tile.getRawPointsPatches().size();
   for ( size_t patchIdx = 0; patchIdx < rawPatchCount; patchIdx++ ) {
-    PatchParams pps( asps.getPLREnabledFlag(), asps.getMapCountMinus1() + 1 );
+    PatchParams pps;
     auto&       rawPointsPatch = tile.getRawPointsPatch( patchIdx );
     //assert( getPatchType( tileType, atl.getDataUnit().getPatchMode( patchCount + patchIdx ) ) == RAW_PATCH );
     pps.patchType       = RAW;
@@ -2665,7 +2683,7 @@ void PCCCodec::getHashPatchParams( PCCContext&                            contex
 
   size_t eomPatchCount = tile.getEomPatches().size();
   for ( size_t patchIdx = 0; patchIdx < eomPatchCount; patchIdx++ ) {
-    PatchParams pps( asps.getPLREnabledFlag(), asps.getMapCountMinus1() + 1 );
+    PatchParams pps;
     auto&       eomPatch = tile.getEomPatches( patchIdx );
     assert( getPatchType( tileType, atl.getDataUnit().getPatchMode( patchCount + rawPatchCount + patchIdx ) ) == EOM_PATCH );
     pps.patchType                = EOM;
@@ -2864,15 +2882,15 @@ void PCCCodec::aspsApplicationByteString( std::vector<uint8_t>&          stringB
       }
     }
   }
-  auto& ext = asps.getAspsVpccExtension();
-  val       = uint8_t( ext.getRemoveDuplicatePointEnableFlag() ) & 0xFF;
-  stringByte.push_back( val );
-  if ( asps.getPixelDeinterleavingFlag() || asps.getPLREnabledFlag() ) {
-    val = ext.getSurfaceThicknessMinus1() & 0xFF;
-    stringByte.push_back( val );
-    val = ( size_t( ext.getSurfaceThicknessMinus1() ) >> 8 ) & 0xFF;
-    stringByte.push_back( val );
-  }
+  //auto& ext = asps.getAspsVpccExtension(); //ajt0527: check with Danillo![]o99m,./
+  //val       = uint8_t( ext.getRemoveDuplicatePointEnableFlag() ) & 0xFF;
+  //stringByte.push_back( val );
+  //if ( asps.getPixelDeinterleavingFlag() || asps.getPLREnabledFlag() ) {
+  //  val = ext.getSurfaceThicknessMinus1() & 0xFF;
+  //  stringByte.push_back( val );
+  //  val = ( size_t( ext.getSurfaceThicknessMinus1() ) >> 8 ) & 0xFF;
+  //  stringByte.push_back( val );
+  //}
 }
 
 void PCCCodec::afpsCommonByteString( std::vector<uint8_t>& stringByte,
@@ -3017,32 +3035,27 @@ void PCCCodec::atlasPatchApplicationByteString( std::vector<uint8_t>&     string
     val = ( atlasPatchParams[p].patchRawPoints >> 8 ) & 0xFF;
     stringByte.push_back( val );
   } else if ( atlasPatchParams[p].patchType == PROJECTED ) {
-    /*
-    size_t blockCnt = ( ( atlasPatchParams[ p ].patch2dSizeX + bSize - 1 ) / bSize ) *
+     size_t bSize    = atlasPatchParams[p].patchPackingBlockSize;
+     size_t blockCnt = ( ( atlasPatchParams[ p ].patch2dSizeX + bSize - 1 ) / bSize ) *
                       ( ( atlasPatchParams[ p ].patch2dSizeY + bSize - 1 ) / bSize );
-
-    for ( int m = 0; m < mapCount + 1; m++ ) { //ajt:: need to work on it later for multiple maps!
-      if ( atlasPatchParams.patchPlrdLevel== 1 ) {
-        if ( atlasPatchParams.patchPlrdLevel[p][m] == 0 ) {
-          for ( int j = 0; j < blockCnt; j++ ) {
-            val = atlasPatchParams.patchPlrdBlockModeMinus1[p][m][j] & 0xFF;
-            stringByte.push_back( val );
-            val = ( atlasPatchParams.[p][m][j] >> 8 ) & 0xFF;
-            stringByte.push_back( val );
-          }
-        } else {
-          val = atlasPatchParams.patchPlrdModeMinus1[p][m] & 0xFF;
-            stringByte.push_back( val );
-            val = ( AtlasPlrdBlockModeMinus1[p][m] >> 8 ) & 0xFF;
-            stringByte.push_back( val );
-        }
-      }
-    }*/
+     for ( int m = 0; m < atlasPatchParams[p].aspsMapCountMinus1 + 1; m++ ) {
+         if ( atlasPatchParams[p].plriMapPresentFlag[ m ] == 1 ) {
+             if ( atlasPatchParams[p].patchPLRData.getLevelFlag() == 0 ) {
+                 for ( int j = 0; j < blockCnt; j++ ) {
+                     val = atlasPatchParams[p].patchPLRData.getBlockModeMinus1( j ) & 0xFF;
+                     stringByte.push_back( val );
+                     val = ( atlasPatchParams[p].patchPLRData.getBlockModeMinus1( j ) >> 8 ) & 0xFF;
+                     stringByte.push_back( val );
+                 }
+             } else {
+               val = atlasPatchParams[p].patchPLRData.getModeMinus1() & 0xFF;
+                 stringByte.push_back( val );
+               val = ( atlasPatchParams[p].patchPLRData.getModeMinus1() >> 8 ) & 0xFF;
+                 stringByte.push_back( val );
+             }
+         }
+     }
   } else if ( atlasPatchParams[p].patchType == EOM ) {
-    // val = atlasPatchParams.patchEomPatchCount[ p ] & 0xFF; // ajt:: this needs to be checked
-    // stringByte.push_back( val );
-    // val = (atlasPatchParams.patchEomPatchCount[ p ] >> 8 ) & 0xFF;
-    // stringByte.push_back( val );
     val = atlasPatchParams[p].epduAssociatedPatchCount & 0xFF;
     stringByte.push_back( val );
     val = ( atlasPatchParams[p].epduAssociatedPatchCount >> 8 ) & 0xFF;
@@ -3120,27 +3133,26 @@ void PCCCodec::tilePatchApplicationByteString( std::vector<uint8_t>&            
     val = ( tilePatchParams[tileId][p].patchRawPoints >> 8 ) & 0xFF;
     stringByte.push_back( val );
   } else if ( tilePatchParams[tileId][p].patchType == PROJECTED ) {
-    /*size_t blockCnt = ( ( tilePatchParams[ tileId ][ p ].patch2dSizeX + bSize - 1 ) / bSize ) *
-                      ( ( tilePatchParams[ tileId ][ p ].patch2dSizeY + bSize - 1 ) / bSize );
-
-    for ( int m = 0; m < mapCount + 1; m++ ) { //ajt:: need to work on it later for multiple maps!
-      if ( tilePatchParams[ tileId ][ p ].patchPlrdLevel== 1 ) {
-        if ( tilePatchParams[ tileId ][ p ].patchPlrdLevel[m] == 0 ) {
+    size_t bSize    = tilePatchParams[tileId][p].patchPackingBlockSize;
+    size_t blockCnt = ( ( tilePatchParams[tileId][p].patch2dSizeX + bSize - 1 ) / bSize ) *
+                      ( ( tilePatchParams[tileId][p].patch2dSizeY + bSize - 1 ) / bSize );
+    for ( int m = 0; m < tilePatchParams[tileId][p].aspsMapCountMinus1 + 1; m++ ) {
+      if ( tilePatchParams[tileId][p].plriMapPresentFlag[m] == 1 ) {
+        if ( tilePatchParams[tileId][p].patchPLRData.getLevelFlag() == 0 ) {
           for ( int j = 0; j < blockCnt; j++ ) {
-            val = tilePatchParams[ tileId ][ p ].patchPlrdBlockModeMinus1[m][j] & 0xFF;
+            val = tilePatchParams[tileId][p].patchPLRData.getBlockModeMinus1( j ) & 0xFF;
             stringByte.push_back( val );
-            val = ( tilePatchParams[ tileId ][ p ].[m][j] >> 8 ) & 0xFF;
+            val = ( tilePatchParams[tileId][p].patchPLRData.getBlockModeMinus1( j ) >> 8 ) & 0xFF;
             stringByte.push_back( val );
           }
         } else {
-          val = tilePatchParams[ tileId ][ p ].patchPlrdModeMinus1[m] & 0xFF;
-            stringByte.push_back( val );
-            val = ( AtlasPlrdBlockModeMinus1[m] >> 8 ) & 0xFF;
-            stringByte.push_back( val );
+          val = tilePatchParams[tileId][p].patchPLRData.getModeMinus1() & 0xFF;
+          stringByte.push_back( val );
+          val = ( tilePatchParams[tileId][p].patchPLRData.getModeMinus1() >> 8 ) & 0xFF;
+          stringByte.push_back( val );
         }
       }
-    }*/
-
+    }
   } else if ( tilePatchParams[tileId][p].patchType == EOM ) {
     // val = tilePatchParams[ tileId ][ p ].patchEomPatchCount[ p ] & 0xFF; // ajt:: this needs to be checked
     // stringByte.push_back( val );

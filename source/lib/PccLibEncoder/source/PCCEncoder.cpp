@@ -8582,7 +8582,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
   }                           // frameCount
 
   if ( params_.decodedAtlasInformationHash_ > 0 ) {
-    TRACE_SEI( "Create  Hash SEI Information \n");
+    printf( "Create  Hash SEI Information \n");
     for ( size_t fi = 0; fi < frameCount; fi++ ) createHashSEI( context, fi, params_.decodedAtlasInformationHash_ - 1 );
   }
 
@@ -8649,11 +8649,30 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
   }
   auto& vps = context.getVps();
   auto& plt = vps.getProfileTierLevel();
+  size_t atlasIndex = context.getAtlasIndex();
+  auto&  ai         = vps.getAttributeInformation( atlasIndex );
+  auto&  oi         = vps.getOccupancyInformation( atlasIndex );
+  auto&  gi         = vps.getGeometryInformation( atlasIndex );
+
+  if ( plt.getProfileCodecGroupIdc() == CODEC_GROUP_AVC_PROGRESSIVE_HIGH ) {
+    if ( oi.getOccupancyCodecId() != AVC3 && gi.getGeometryCodecId() != AVC3 &&
+         ai.getAttributeCodecId( 0 ) != AVC3 )
+      std::cerr << "ERROR: CodecID : " << " should be set to 4CC code 'avc3' " << std::endl;
+  }
+  if ( plt.getProfileCodecGroupIdc() == CODEC_GROUP_HEVC_MAIN10 ) {
+    if ( oi.getOccupancyCodecId() != HEV1 && gi.getGeometryCodecId() != HEV1 && ai.getAttributeCodecId( 0 ) != HEV1 )
+      std::cerr << "ERROR: CodecID : " << " should be set to 4CC code 'hev1' " << std::endl;
+  }
+  if ( plt.getProfileCodecGroupIdc() == CODEC_GROUP_HEVC444 ) {
+    if ( oi.getOccupancyCodecId() != HEV1 && gi.getGeometryCodecId() != HEV1 && ai.getAttributeCodecId( 0 ) != HEV1 )
+      std::cerr << "ERROR: CodecID : " << " should be set to 4CC code 'hev1' " << std::endl;
+  }
+  if ( plt.getProfileCodecGroupIdc() == CODEC_GROUP_VVC_MAIN10 ) {
+    if ( oi.getOccupancyCodecId() != VVC1 && gi.getGeometryCodecId() != VVC1 && ai.getAttributeCodecId( 0 ) != VVC1 )
+      std::cerr << "ERROR: CodecID : " << " should be set to 4CC code 'vvc1' " << std::endl;
+  }
+  
   if ( plt.getProfileCodecGroupIdc() == CODEC_GROUP_MP4RA ) {
-    size_t     atlasIndex       = context.getAtlasIndex();
-    auto&      ai               = vps.getAttributeInformation( atlasIndex );
-    auto&      oi               = vps.getOccupancyInformation( atlasIndex );
-    auto&      gi               = vps.getGeometryInformation( atlasIndex );
     bool useAvc = false, useHevc = false, useVvc = false;
     if ( oi.getOccupancyCodecId() == params_.avcCodecIdIndex_ ||
          gi.getGeometryCodecId() == params_.avcCodecIdIndex_ ||
@@ -8667,11 +8686,11 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
     }
     if ( oi.getOccupancyCodecId() == params_.vvcCodecIdIndex_ ||
          gi.getGeometryCodecId() == params_.vvcCodecIdIndex_ ||
-         ai.getAttributeCodecId( 0 ) == params_.vvcCodecIdIndex_ ) {
+         ai.getAttributeCodecId( 0 ) == params_.vvcCodecIdIndex_ ) { //ajt0526: instead of 0, indexing should be based on the ai_attribute_count?
       useVvc = true;
     }
 
-    auto& sei = static_cast<SEIComponentCodecMapping&>( context.addSeiPrefix( COMPONENT_CODEC_MAPPING, true ) );
+    auto& sei = static_cast<SEIComponentCodecMapping&>( context.addSeiPrefix( COMPONENT_CODEC_MAPPING, true ) );//ajt0526:what happens if all components have the same codecId but CCM changes codecId to another codec. The intention was to use the new codec for geometry component, only?
     sei.setComponentCodecCancelFlag( false );
     sei.setCodecMappingsCountMinus1( useAvc + useHevc + useVvc - 1 );
     sei.allocate();
@@ -9098,21 +9117,20 @@ void PCCEncoder::createHashSEI( PCCContext& context, int frameIndex, size_t hash
     aspsApplicationByteString( highLevelAtlasData, asps, afps );
     afpsCommonByteString( highLevelAtlasData, context, afpsIndex, frameIndex );
     afpsApplicationByteString( highLevelAtlasData, asps, afps );
-    TRACE_SEI( "**sei** HighLevel Hash\n" );
     if ( sei.getHashType() == 0 ) {
       std::vector<uint8_t> encMD5( 16 );
       encMD5 = context.computeMD5( highLevelAtlasData.data(), highLevelAtlasData.size() );
-      TRACE_SEI( "\t**sei** (MD5): " );
+      TRACE_SEI( "HLS MD5: " );
       for ( auto& e : encMD5 ) TRACE_SEI( "%02x", e );
       TRACE_SEI( "\n" );
       for ( int j = 0; j < 16; j++ ) sei.setHighLevelMd5( j, encMD5[j] );
     } else if ( sei.getHashType() == 1 ) {
       uint16_t crc = context.computeCRC( highLevelAtlasData.data(), highLevelAtlasData.size() );
-      TRACE_SEI( "\t**sei** (CRC): %04x\n", crc );
+      TRACE_SEI( "HLS CRC: %04x\n", crc );
       sei.setHighLevelCrc( crc );
     } else if ( sei.getHashType() == 2 ) {
       uint32_t checkSum = context.computeCheckSum( highLevelAtlasData.data(), highLevelAtlasData.size() );
-      TRACE_SEI( "\t**sei** (CheckSum): %08x\n", checkSum );
+      TRACE_SEI( "HLS CheckSum): %08x\n", checkSum );
       sei.setHighLevelCheckSum( checkSum );
     }
     highLevelAtlasData.clear();
@@ -9144,21 +9162,21 @@ void PCCEncoder::createHashSEI( PCCContext& context, int frameIndex, size_t hash
       atlasPatchApplicationByteString( atlasData, atlasPatchIdx, atlasPatchParams );
     }
 
-    TRACE_SEI( "**sei** AtlasPatchHash: frame(%d) (#patches %zu)\n", frameIndex, patchCount );
+    printf( "**sei** AtlasPatchHash: frame(%d) (#patches %zu)\n", frameIndex, patchCount );
     if ( sei.getHashType() == 0 ) {
       std::vector<uint8_t> md5Digest( 16 );
       md5Digest = context.computeMD5( atlasData.data(), atlasData.size() );
-      TRACE_SEI( "\t**sei** (MD5): " );
+      TRACE_SEI( "Atlas MD5: " );
       for ( auto& e : md5Digest ) TRACE_SEI( "%02x", e );
       TRACE_SEI( "\n" );
       for ( int j = 0; j < 16; j++ ) sei.setAtlasMd5( j, md5Digest[j] );
     } else if ( sei.getHashType() == 1 ) {
       uint16_t crc = context.computeCRC( atlasData.data(), atlasData.size() );
-      TRACE_SEI( "\t**sei** (CRC): % 04x ", crc );
+      TRACE_SEI( "Atlas CRC: % 04x ", crc );
       sei.setAtlasCrc( crc );
     } else if ( sei.getHashType() == 2 ) {
       uint32_t checkSum = context.computeCheckSum( atlasData.data(), atlasData.size() );
-      TRACE_SEI( "\t**sei** (checkSum): % 08x ", checkSum );
+      TRACE_SEI( "Atlas CheckSum): % 08x ", checkSum );
       sei.setAtlasCheckSum( checkSum );
     }
     atlasData.clear();
@@ -9167,21 +9185,21 @@ void PCCEncoder::createHashSEI( PCCContext& context, int frameIndex, size_t hash
   if ( sei.getDecodedAtlasB2pHashPresentFlag() && !seiHashCancelFlag ) {
     std::vector<uint8_t> atlasB2PData;
     atlasBlockToPatchByteString( atlasB2PData, atlasB2PPatchParams );
-    TRACE_SEI( "**sei** AtlasBlockToPatchHash: frame(%d) \n", frameIndex );
+    printf( "**sei** AtlasBlockToPatchHash: frame(%d) \n", frameIndex );
     if ( sei.getHashType() == 0 ) {
       std::vector<uint8_t> md5Digest( 16 );
       md5Digest = context.computeMD5( atlasB2PData.data(), atlasB2PData.size() );
-      TRACE_SEI( "\t**sei** (MD5): " );
+      TRACE_SEI( "Atlas B2P MD5: " );
       for ( auto& e : md5Digest ) TRACE_SEI( "%02x", e );
       TRACE_SEI( "\n" );
       for ( int j = 0; j < 16; j++ ) sei.setAtlasB2pMd5( j, md5Digest[j] );
     } else if ( sei.getHashType() == 1 ) {
       uint16_t crc = context.computeCRC( atlasB2PData.data(), atlasB2PData.size() );
-      TRACE_SEI( "\t**sei** (CRC): % 04x ", crc );
+      TRACE_SEI( "Atlas B2P CRC: % 04x ", crc );
       sei.setAtlasB2pCrc( crc );
     } else if ( sei.getHashType() == 2 ) {
       uint32_t checkSum = context.computeCheckSum( atlasB2PData.data(), atlasB2PData.size() );
-      TRACE_SEI( "\t**sei** (checkSum): % 08x ", checkSum );
+      TRACE_SEI( "Atlas B2P CheckSum): % 08x ", checkSum );
       sei.setAtlasB2pCheckSum( checkSum );
     }
     atlasB2PData.clear();
@@ -9221,21 +9239,23 @@ void PCCEncoder::createHashSEI( PCCContext& context, int frameIndex, size_t hash
           tilePatchCommonByteString( atlasTileData, tileId, patchIdx, tilePatchParams );
           tilePatchApplicationByteString( atlasTileData, tileId, patchIdx, tilePatchParams );
         }
-        TRACE_SEI( "**sei** TilesPatchHash: frame(%d), tile(tileIdx Made %zu, tileId %zu)\n", frameIndex, tileIdx, tileId );
+        printf( "**sei** TilesPatchHash: frame(%d), tile(tileIdx = %zu, tileId  = %zu)\n", frameIndex, tileIdx, tileId );
         if ( sei.getHashType() == 0 ) {
           std::vector<uint8_t> md5Digest( 16 );
           md5Digest = context.computeMD5( atlasTileData.data(), atlasTileData.size() );
-          TRACE_SEI( "\t**sei** (MD5): " );
-          for ( auto& e : md5Digest ) printf( "%02x", e );
+          TRACE_SEI( "Tile( Id = %zu, Idx = %zu) MD5: ", tileId, tileIdx );
+          for ( auto& e : md5Digest ) TRACE_SEI( "%02x", e );
           TRACE_SEI( "\n" );
           for ( int j = 0; j < 16; j++ ) sei.setAtlasTilesMd5( tileId, j, md5Digest[j] );
         } else if ( sei.getHashType() == 1 ) {
           uint16_t crc = context.computeCRC( atlasTileData.data(), atlasTileData.size() );
-          TRACE_SEI( "\t**sei** (crc): % 02x ", crc );
+          TRACE_SEI( "Tile( Id = %zu, Idx = %zu) CRC: ", tileId, tileIdx );
+          TRACE_SEI( " % 02x ", crc );
           sei.setAtlasTilesCrc( tileId, crc );
         } else if ( sei.getHashType() == 2 ) {
+          TRACE_SEI( "Tile( Id = %zu, Idx = %zu) CheckSum: ", tileId, tileIdx );
           uint32_t checkSum = context.computeCheckSum( atlasTileData.data(), atlasTileData.size() );
-          TRACE_SEI( "\t**sei** (checkSum): % 08x ", checkSum );
+          TRACE_SEI( " % 08x ", checkSum );
           sei.setAtlasTilesCheckSum( tileId, checkSum );
         }
         atlasTileData.clear();
@@ -9243,21 +9263,23 @@ void PCCEncoder::createHashSEI( PCCContext& context, int frameIndex, size_t hash
       if ( sei.getDecodedAtlasTilesB2pHashPresentFlag() ) {
         std::vector<uint8_t> tileB2PData;
         tileBlockToPatchByteString( tileB2PData, tileId, tileB2PPatchParams );
-        TRACE_SEI( "**sei** TilesB2pPatchHash: frame(%d), tileIdx(%zu)\n", frameIndex, tileIdx );
+        printf( "**sei** TilesB2pPatchHash: frame(%d), tileIdx(%zu)\n", frameIndex, tileIdx );
         if ( sei.getHashType() == 0 ) {
           std::vector<uint8_t> md5Digest( 16 );
           md5Digest = context.computeMD5( tileB2PData.data(), tileB2PData.size() );
-          TRACE_SEI( "\t**sei** (MD5): " );
+          TRACE_SEI( "Tile B2P( Id = %zu, Idx = %zu) MD5: ", tileId, tileIdx );
           for ( auto& e : md5Digest ) TRACE_SEI( "%02x", e );
           TRACE_SEI( "\n" );
           for ( int j = 0; j < 16; j++ ) sei.setAtlasTilesB2pMd5( tileId, j, md5Digest[j] );
         } else if ( sei.getHashType() == 1 ) {
+          TRACE_SEI( "Tile B2P( Id = %zu, Idx = %zu) CRC: ", tileId, tileIdx );
           uint16_t crc = context.computeCRC( tileB2PData.data(), tileB2PData.size() );
-          TRACE_SEI( "\t**sei** (CRC): % 04x ", crc );
+          TRACE_SEI( " % 04x ", crc );
           sei.setAtlasTilesB2pCrc( tileId, crc );
         } else if ( sei.getHashType() == 2 ) {
+          TRACE_SEI( "Tile B2P( Id = %zu, Idx = %zu) CheckSum: ", tileId, tileIdx );
           uint32_t checkSum = context.computeCheckSum( tileB2PData.data(), tileB2PData.size() );
-          TRACE_SEI( "\t**sei** (checkSum): % 08x ", checkSum );
+          TRACE_SEI( " % 08x ", checkSum );
           sei.setAtlasTilesB2pCheckSum( tileId, checkSum );
         }
         tileB2PData.clear();

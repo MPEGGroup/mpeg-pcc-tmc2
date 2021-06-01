@@ -63,7 +63,9 @@ class PCCConformance {
   inline void convertString( const std::string& keyValue, T& val );
 
   size_t levelLimitsCount_;
+  size_t levelLimitsExceedCount_;
   size_t logFilesCount_;
+  size_t logFilesMatchCount_;
   bool   logFileTestsMatch_;
   bool   levelLimitTestsMatch_;
 };

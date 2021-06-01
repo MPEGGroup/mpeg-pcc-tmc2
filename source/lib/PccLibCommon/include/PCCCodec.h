@@ -101,7 +101,7 @@ struct GeneratePointCloudParameters {
 };
 
 struct PatchParams {
-  PatchParams( bool plrFlag = 0, uint16_t mapCnt = 1 ) {
+  PatchParams(uint8_t mapCntMinus1 = 0) {
     patchType             = PROJECTED;
     patch2dPosX           = 0;
     patch2dPosY           = 0;
@@ -120,15 +120,17 @@ struct PatchParams {
 
     patchRawPoints           = 0;
     epduAssociatedPatchCount = 0;
-    // std::vector<int64_t>  patchEomPatchCount;  // this needs to be cheked later?
 
-    /*if ( plrFlag == true ) {// ajt:: need to revise this later! as part of a new application structure?
-      size_t size = patchPlrdLevel.size();
-      patchPlrdLevel.resize( size + 1 );
-      for ( int m = 0; m < mapCnt; m++ ) patchPlrdLevel[size]=  0 );
-    }*/
+    aspsMapCountMinus1 = mapCntMinus1;
+    patchPackingBlockSize = 64;
+    plriMapPresentFlag.resize( mapCntMinus1 + 1 );
+
   }
-  ~PatchParams() { epduAssociatedPoints.clear(); };
+
+  ~PatchParams() {
+    epduAssociatedPoints.clear();
+    plriMapPresentFlag.clear();
+  };
 
   // void initPatchParams( bool plrFlag, uint16_t mapCnt );
 
@@ -153,13 +155,14 @@ struct PatchParams {
   int64_t patchLoDScaleX;
   int64_t patchLoDScaleY;
 
-  // ajt:: Application related Patch data, maybe an alternative way to do it is t have two spearte structures, one for
-  // common and one for application?
+  size_t aspsMapCountMinus1;
+  size_t  patchPackingBlockSize;
+  PLRData patchPLRData;
+
   int64_t patchRawPoints;
-  // std::vector<int64_t>  patchEomPatchCount;  // this needs to be cheked later?
   int64_t             epduAssociatedPatchCount;
   std::vector<size_t> epduAssociatedPoints;
-  // std::vector<std::vector<uint8_t>> patchPlrdLevel; ajt:: this should be 3-dimensional - work on it later!
+  std::vector<bool>   plriMapPresentFlag;
 };
 
 class PCCCodec {

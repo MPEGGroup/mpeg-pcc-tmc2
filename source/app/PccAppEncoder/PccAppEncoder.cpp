@@ -900,7 +900,7 @@ bool parseParameters( int                   argc,
     ( "avcCodecIdIndex",
       encoderParams.avcCodecIdIndex_,
       encoderParams.avcCodecIdIndex_, 
-      "index for avc codec " )
+      "index for avc codec " ) //ajt0526: avcCodecIdIndex/hevcCodecIdIndex/vvcCodecIdIndex when using CCM SEI and profileCodecGroupIdc beeds to correspond to mp4RA?
     ( "hevcCodecIdIndex",
       encoderParams.hevcCodecIdIndex_,
       encoderParams.hevcCodecIdIndex_, 
@@ -937,21 +937,21 @@ bool parseParameters( int                   argc,
     return false;
   }
 
-  if ( ( encoderParams.levelOfDetailX_ == 0 || encoderParams.levelOfDetailY_ == 0 ) ) {
+  if ( ( encoderParams.levelOfDetailX_ == 0 || encoderParams.levelOfDetailY_ == 0 ) ) { //ajt0526::this refers to pdu_lod_scale_x_minus1/pdu_lod_scale_y_minus1 which is 0 by default!
     if ( encoderParams.levelOfDetailX_ == 0 ) { encoderParams.levelOfDetailX_ = 1; }
     if ( encoderParams.levelOfDetailY_ == 0 ) { encoderParams.levelOfDetailY_ = 1; }
     std::cerr << "levelOfDetailX and levelOfDetailY should be greater than "
-                 "1. levelOfDetailX="
+                 "1. levelOfDetailX=" //ajt0526:: 0?
               << encoderParams.levelOfDetailX_ << "., levelOfDetailY=" << encoderParams.levelOfDetailY_ << std::endl;
   }
 
-  if ( encoderParams.rawPointsPatch_ && ( encoderParams.levelOfDetailX_ > 1 || encoderParams.levelOfDetailY_ > 1 ) ) {
+  if ( encoderParams.rawPointsPatch_ && ( encoderParams.levelOfDetailX_ > 1 || encoderParams.levelOfDetailY_ > 1 ) ) {//ajt0526::rawPointsPatch does it imply lossless?
     encoderParams.levelOfDetailX_ = 1;
     encoderParams.levelOfDetailY_ = 1;
     std::cerr << "scaling is not allowed in lossless case\n";
   }
 
-  if ( encoderParams.enablePointCloudPartitioning_ && encoderParams.patchExpansion_ ) {
+  if ( encoderParams.enablePointCloudPartitioning_ && encoderParams.patchExpansion_ ) { //ajt0526::check as well as segmentation type?
     std::cerr << "Point cloud partitioning does not currently support patch "
                  "expansion. \n";
   }
@@ -1074,10 +1074,12 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
   }
 
   PCCBitstream bitstream;
-#ifdef BITSTREAM_TRACE
+
+ #if defined( BITSTREAM_TRACE ) || defined( CONFORMANCE_TRACE )
   bitstream.setLogger( logger );
   bitstream.setTrace( true );
-#endif
+ #endif
+
   bitstreamStat.setHeader( bitstream.size() );
   PCCBitstreamWriter bitstreamWriter;
   size_t             headerSize = bitstreamWriter.write( ssvu, bitstream );
@@ -1085,6 +1087,8 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
   bitstream.write( encoderParams.compressedStreamPath_ );
   bitstreamStat.trace();
   std::cout << "Total bitstream size " << bitstream.size() << " B" << std::endl;
+  
+  bitstream.computeMD5();
 
   if ( metricsParams.computeMetrics_ ) { metrics.display(); }
   bool checksumEqual = true;

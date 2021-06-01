@@ -590,6 +590,7 @@ bool PCCEncoderParameters::check() {
     std::cerr << "ERROR: CodecId is not correct" << std::endl;
     ret = false;
   }
+
 #if defined( USE_HMAPP_VIDEO_CODEC ) || defined( USE_JMAPP_VIDEO_CODEC )
   if ( ( (int)videoEncoderOccupancyCodecId_ ) < 2 &&
        ( ( videoEncoderOccupancyPath_.empty() || !exist( videoEncoderOccupancyPath_ ) ) ) ) {
@@ -860,7 +861,7 @@ bool PCCEncoderParameters::check() {
   if ( profileReconstructionIdc_ == 1 ) {
     if ( pbfEnableFlag_ ) {
       pbfEnableFlag_ = false;
-      std::cerr << "pbfEnableFlag is ignored because profileReconstructionIdc set to 0. \n";
+      std::cerr << "pbfEnableFlag is ignored because profileReconstructionIdc set to 1. \n";
     }
   }
 

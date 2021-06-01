@@ -38,7 +38,9 @@
 
 namespace pcc {
 
-const std::vector<std::string> hlsKeys = {"AtlasFrameIndex", "HLSMD5"};
+const std::vector<std::string> bitStrMD5Keys = { "BITSTRMD5" };
+
+const std::vector<std::string> hlsKeys = { "AtlasFrameIndex", "HLSMD5" };
 
 const std::vector<std::string> atlasKeys = {"AtlasFrameIndex",
                                             "AtlasFrameOrderCntVal",
@@ -68,7 +70,7 @@ const std::vector<std::string> recPcframeKeys = {
     "AtlasFrameIndex", "PointCloudFrameOrderCntVal", "MD5checksum" };
 
 const std::vector<std::string> pictureKeys = {
-    "Occupancy",   "Geometry",   "Attribute", "MapIdx", "AuxiliaryVideoFlag", "PicOrderCntVal",   "AttrIdx",
+    "Occupancy",   "Geometry",   "Attribute", "MapIdx", "AuxiliaryVideoFlag", "IdxOutOrderCntVal",   "AttrIdx",
     "AttrPartIdx", "AttrTypeID", "Width",     "Height", "MD5checksumChan0",   "MD5checksumChan1", "MD5checksumChan2"};
 
 const size_t V3CLevelTable[6][9] = {  // Table A-5

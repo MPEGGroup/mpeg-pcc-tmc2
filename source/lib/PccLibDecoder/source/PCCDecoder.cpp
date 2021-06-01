@@ -1184,6 +1184,7 @@ void PCCDecoder::createHashSEI( PCCContext& context, int frameIndex ) {
   std::vector<std::vector<PatchParams>>          tilePatchParams;
   std::vector<std::vector<std::vector<int64_t>>> tileB2PPatchParams;
   std::vector<std::vector<int64_t>>              atlasB2PPatchParams;
+  TRACE_SEI( "*** Hash SEI Frame (%d) ***\n", frameIndex );
 
   if ( !seiHashCancelFlag && sei.getDecodedHighLevelHashPresentFlag() ) {
     size_t               atlIdx     = context[frameIndex].getTile( 0 ).getAtlIndex();
@@ -1198,30 +1199,31 @@ void PCCDecoder::createHashSEI( PCCContext& context, int frameIndex ) {
     afpsCommonByteString( highLevelAtlasData, context, afpsIndex, frameIndex );
     afpsApplicationByteString( highLevelAtlasData, asps, afps );
 
-    TRACE_SEI( "**sei** HighLevel Hash\n" );
     if ( sei.getHashType() == 0 ) {
       bool                 equal = false;
       std::vector<uint8_t> encMD5( 16 ), decMD5( 16 );
       encMD5 = context.computeMD5( highLevelAtlasData.data(), highLevelAtlasData.size() );
-      TRACE_HLS( " HLSMD5 = " );
+      //TRACE_SEI( " Derived (MD5) = " );
       for ( int j = 0; j < 16; j++ ) {
         decMD5[j] = sei.getHighLevelMd5( j );
-        TRACE_HLS( "%02x", encMD5[j] );
+       // TRACE_SEI( "%02x", encMD5[j] );
       }
-      TRACE_HLS( "\n" );
-      TRACE_SEI( "\t**sei** (MD5): " );
+      //TRACE_SEI( "\t Derived vs. SEI (MD5) : " );
+      TRACE_SEI( "HLS MD5: " );
       equal = compareHashSEIMD5( encMD5, decMD5 );
       TRACE_SEI( " (%s) \n", equal ? "OK" : "DIFF" );
     } else if ( sei.getHashType() == 1 ) {
       bool     equal = true;
       uint16_t crc   = context.computeCRC( highLevelAtlasData.data(), highLevelAtlasData.size() );
-      TRACE_SEI( "\t**sei** (CRC): " );
+      //TRACE_SEI( " Derived (CRC): %d ", crc );
+      TRACE_SEI( "HLS CRC: " );
       equal = compareHashSEICrc( crc, sei.getHighLevelCrc() );
       TRACE_SEI( " (%s) \n", equal ? "OK" : "DIFF" );
     } else if ( sei.getHashType() == 2 ) {
       bool     equal    = true;
       uint32_t checkSum = context.computeCheckSum( highLevelAtlasData.data(), highLevelAtlasData.size() );
-      TRACE_SEI( "\t**sei** (CheckSum): " );
+      //TRACE_SEI( " Derived (CheckSum): %d ", checkSum );
+      TRACE_SEI( "HLS CheckSum: " );
       equal = compareHashSEICheckSum( checkSum, sei.getHighLevelCheckSum() );
       TRACE_SEI( " (%s) \n", equal ? "OK" : "DIFF" );
     }
@@ -1241,6 +1243,7 @@ void PCCDecoder::createHashSEI( PCCContext& context, int frameIndex ) {
     getB2PHashPatchParams( context, frameIndex, tileB2PPatchParams, atlasB2PPatchParams );
   }
   // frame
+  TRACE_SEI( "\n" );
   if ( !seiHashCancelFlag && sei.getDecodedAtlasHashPresentFlag() ) {
     std::vector<uint8_t> atlasData;
     size_t               patchCount = atlasPatchParams.size();
@@ -1248,7 +1251,7 @@ void PCCDecoder::createHashSEI( PCCContext& context, int frameIndex ) {
       atlasPatchCommonByteString( atlasData, patchIdx, atlasPatchParams );
       atlasPatchApplicationByteString( atlasData, patchIdx, atlasPatchParams );
     }
-    printf( "**sei** AtlasPatchHash: frame(%d) (#patches %zu)\n", frameIndex, patchCount );
+    printf( "AtlasPatchHash: frame(%d) (#patches %zu)\n", frameIndex, patchCount );
 
     size_t atlIdx               = context[frameIndex].getTile( 0 ).getAtlIndex();
     auto&  atlu                 = context.getAtlasTileLayer( atlIdx );
@@ -1269,40 +1272,32 @@ void PCCDecoder::createHashSEI( PCCContext& context, int frameIndex ) {
       numEomPoints += tile.getTotalNumberOfEOMPoints();
       numRawPoints += tile.getTotalNumberOfRawPoints();
     }
-    TRACE_ATLAS( "Atlas Frame Index = %d \n", frameIndex );
-    TRACE_ATLAS(
-        "AtlasFrameOrderCntVal = %d,  AtlasFrameWidthMax =  %d, AtlasFrameHeightMax = %d, AtlasID = %d, "
-        "ASPSFrameSize = %d, VPSMapCount = %d, AttributeCount = %d, AttributeDimension = %d, NumTilesAtlasFrame = %d, "
-        "AtlasTotalNumProjPatches = %d, AtlasTotalNumRawPatches = %d, AtlasTotalNumEomPatches = %d, ",
-        atlasFrameOrderCnt, asps.getFrameWidth(), asps.getFrameHeight(), vps.getAtlasId( 0 ),
-        asps.getFrameWidth() * asps.getFrameHeight(), vps.getMapCountMinus1( 0 ) + 1,
-        vps.getAttributeInformation( 0 ).getAttributeCount(),
-        vps.getAttributeInformation( 0 ).getAttributeDimensionMinus1( 0 ) + 1,
-        afps.getAtlasFrameTileInformation().getNumTilesInAtlasFrameMinus1() + 1, numProjPatches, numRawPatches,
-        numEomPatches );
 
     if ( sei.getHashType() == 0 ) {
       bool                 equal = false;
       std::vector<uint8_t> encMD5( 16 ), decMD5( 16 );
       encMD5 = context.computeMD5( atlasData.data(), atlasData.size() );
-      TRACE_ATLAS( " Atlas MD5 = " );
+      //TRACE_SEI( " Derived Atlas MD5 = " );
+      TRACE_SEI( "Atlas MD5: " );
       for ( int j = 0; j < 16; j++ ) {
         decMD5[j] = sei.getAtlasMd5( j );
-        TRACE_ATLAS( "%02x", encMD5[j] );
+        //TRACE_SEI( "%02x", encMD5[j] );
       }
-      TRACE_SEI( "\n\t**sei** (MD5): " );
+      //TRACE_SEI( "\n\t**sei** (MD5): " );
       equal = compareHashSEIMD5( encMD5, decMD5 );
       TRACE_SEI( " (%s) \n", equal ? "OK" : "DIFF" );
     } else if ( sei.getHashType() == 1 ) {
       bool     equal = true;
       uint16_t crc   = context.computeCRC( atlasData.data(), atlasData.size() );
-      TRACE_SEI( "\n\t**sei** (CRC): " );
+      //TRACE_SEI( "\n Derived (CRC): %d", crc );
+      TRACE_SEI( "Atlas CRC: " );
       equal = compareHashSEICrc( crc, sei.getAtlasCrc() );
       TRACE_SEI( " (%s) \n", equal ? "OK" : "DIFF" );
     } else if ( sei.getHashType() == 2 ) {
       bool     equal    = true;
       uint32_t checkSum = context.computeCheckSum( atlasData.data(), atlasData.size() );
-      TRACE_SEI( "\n\t**sei** (CheckSum): " );
+      //TRACE_SEI( "\n Derived (CheckSum): %d", checkSum );
+      TRACE_SEI( "Atlas CheckSum: " );
       equal = compareHashSEICheckSum( checkSum, sei.getAtlasCheckSum() );
       TRACE_SEI( " (%s) \n", equal ? "OK" : "DIFF" );
     }
@@ -1312,29 +1307,31 @@ void PCCDecoder::createHashSEI( PCCContext& context, int frameIndex ) {
     std::vector<uint8_t> atlasB2PData;
     atlasBlockToPatchByteString( atlasB2PData, atlasB2PPatchParams );
 
-    TRACE_SEI( "**sei** AtlasBlockToPatchHash: frame(%d)", frameIndex );
+    //TRACE_SEI( "**sei** AtlasBlockToPatchHash: frame(%d)", frameIndex );
     if ( sei.getHashType() == 0 ) {
       bool                 equal = true;
       std::vector<uint8_t> encMD5( 16 ), decMD5( 16 );
       encMD5 = context.computeMD5( atlasB2PData.data(), atlasB2PData.size() );
-      TRACE_ATLAS( " Atlas B2P MD5 = " );
+      //TRACE_SEI( " Derived Atlas B2P MD5 = " );
+      TRACE_SEI( "Atlas B2P MD5: " );
       for ( int j = 0; j < 16; j++ ) {
         decMD5[j] = sei.getAtlasB2pMd5( j );
-        TRACE_ATLAS( "%02x", encMD5[j] );
+        //TRACE_SEI( "%02x", encMD5[j] );
       }
-      TRACE_SEI( "\n\t**sei** (B2P MD5): " );
       equal = compareHashSEIMD5( encMD5, decMD5 );
       TRACE_SEI( " (%s) \n", equal ? "OK" : "DIFF" );
     } else if ( sei.getHashType() == 1 ) {
       bool     equal = false;
       uint16_t crc   = context.computeCRC( atlasB2PData.data(), atlasB2PData.size() );
-      TRACE_SEI( "\n\t**sei** (CRC): " );
+      //TRACE_SEI( "\n Derived (CRC): %d ", crc );
+      TRACE_SEI( "Atlas B2P CRC: " );
       equal = compareHashSEICrc( crc, sei.getAtlasB2pCrc() );
       TRACE_SEI( " (%s) \n", equal ? "OK" : "DIFF" );
     } else if ( sei.getHashType() == 2 ) {
       bool     equal    = false;
       uint32_t checkSum = context.computeCheckSum( atlasB2PData.data(), atlasB2PData.size() );
-      TRACE_SEI( "\n\t**sei** (CheckSum): " );
+      // TRACE_SEI( "\n Derived (CheckSum): %d ", checkSum );
+      TRACE_SEI( "Atlas B2P CheckSum: " );
       equal = compareHashSEICheckSum( checkSum, sei.getAtlasB2pCheckSum() );
       TRACE_SEI( " (%s) \n", equal ? "OK" : "DIFF" );
     }
@@ -1346,7 +1343,7 @@ void PCCDecoder::createHashSEI( PCCContext& context, int frameIndex ) {
   if ( !seiHashCancelFlag && sei.getDecodedAtlasTilesHashPresentFlag() ||
        sei.getDecodedAtlasTilesB2pHashPresentFlag() ) {
     size_t numTilesInPatchFrame = context[frameIndex].getNumTilesInAtlasFrame();
-    TRACE_SEI( "**sei** AtlasTilesHash: frame(%d) (#Tiles %zu)", frameIndex, numTilesInPatchFrame );
+    printf( "**sei** AtlasTilesHash: frame(%d) (#Tiles %zu)", frameIndex, numTilesInPatchFrame );
     for ( size_t tileIdx = 0; tileIdx < numTilesInPatchFrame; tileIdx++ ) {
       auto&       tile          = context[frameIndex].getTile( tileIdx );
       auto&       atlu          = context.getAtlasTileLayer( tile.getAtlIndex() );
@@ -1359,10 +1356,6 @@ void PCCDecoder::createHashSEI( PCCContext& context, int frameIndex ) {
       size_t      topLeftRow    = afti.getTopLeftPartitionIdx( tileIdx ) / ( afti.getNumPartitionColumnsMinus1() + 1 );
       size_t      tileOffsetX   = context[frameIndex].getPartitionPosX( topLeftColumn );
       size_t      tileOffsetY   = context[frameIndex].getPartitionPosY( topLeftRow );
-      TRACE_TILE(
-          "TileID = %d, AtlasFrameOrderCntVal = %d, TileType = %d, TileOffsetX = %d, TileOffsetY = %d, TileWidth = %d, "
-          "TileHeight = %d,",
-          tileId, ath.getAtlasFrmOrderCntLsb(), tileType, tileOffsetX, tileOffsetY, tile.getWidth(), tile.getHeight() );
 
       if ( sei.getDecodedAtlasTilesHashPresentFlag() ) {
         std::vector<uint8_t> atlasTileData;
@@ -1370,29 +1363,31 @@ void PCCDecoder::createHashSEI( PCCContext& context, int frameIndex ) {
           tilePatchCommonByteString( atlasTileData, tileId, patchIdx, tilePatchParams );
           tilePatchApplicationByteString( atlasTileData, tileId, patchIdx, tilePatchParams );
         }
-        TRACE_SEI( "**sei** TilesPatchHash: frame(%d), tile(tileIdx %zu, tileId %zu)\n", frameIndex, tileIdx, tileId );
+        printf( "**sei** TilesPatchHash: frame(%d), tile(tileIdx %zu, tileId %zu)\n", frameIndex, tileIdx, tileId );
         if ( sei.getHashType() == 0 ) {
           bool                 equal = true;
           std::vector<uint8_t> encMD5( 16 ), decMD5( 16 );
           encMD5 = context.computeMD5( atlasTileData.data(), atlasTileData.size() );
-          TRACE_TILE( " Tile MD5 = " );
+          //TRACE_SEI( " Derived Tile MD5 = " );
+          TRACE_SEI( "Tile( id = %d, idx = %d ) MD5: ", tileId, tileIdx );
           for ( int j = 0; j < 16; j++ ) {
             decMD5[j] = sei.getAtlasTilesMd5( tileId, j );
-            TRACE_TILE( "%02x", encMD5[j] );
+            //TRACE_SEI( "%02x", encMD5[j] );
           }
-          TRACE_SEI( "\n\t**sei** (MD5): " );
           equal = compareHashSEIMD5( encMD5, decMD5 );
           TRACE_SEI( " (%s) \n", equal ? "OK" : "DIFF" );
         } else if ( sei.getHashType() == 1 ) {
           bool     equal = true;
           uint16_t crc   = context.computeCRC( atlasTileData.data(), atlasTileData.size() );
-          TRACE_SEI( "\n\t**sei** (CRC): " );
+          //TRACE_SEI( "\n Derived  (CRC): %d ", crc );
+          TRACE_SEI( "Tile( id = %d, idx = %d ) CRC: ", tileId, tileIdx );
           equal = compareHashSEICrc( crc, sei.getAtlasTilesCrc( tileId ) );
           TRACE_SEI( " (%s) \n", equal ? "OK" : "DIFF" );
         } else if ( sei.getHashType() == 2 ) {
           bool     equal    = false;
           uint32_t checkSum = context.computeCheckSum( atlasTileData.data(), atlasTileData.size() );
-          TRACE_SEI( "\n\t**sei** (CheckSum): " );
+          //TRACE_SEI( "\n Derived CheckSum: %d ", checkSum );
+          TRACE_SEI( "Tile( id = %d, idx = %d ) CheckSum: ", tileId, tileIdx );
           equal = compareHashSEICheckSum( checkSum, sei.getAtlasTilesCheckSum( tileId ) );
           TRACE_SEI( " (%s) \n", equal ? "OK" : "DIFF" );
         }
@@ -1401,30 +1396,32 @@ void PCCDecoder::createHashSEI( PCCContext& context, int frameIndex ) {
       if ( sei.getDecodedAtlasTilesB2pHashPresentFlag() ) {
         std::vector<uint8_t> tileB2PData;
         tileBlockToPatchByteString( tileB2PData, tileId, tileB2PPatchParams );
-        TRACE_SEI( "\n**sei** TilesBlockToPatchHash: frame(%d), tile(tileIdx %zu, tileId %zu)", frameIndex, tileIdx,
+        printf( "\n**sei** TilesBlockToPatchHash: frame(%d), tile(tileIdx %zu, tileId %zu)", frameIndex, tileIdx,
                    tileId );
         if ( sei.getHashType() == 0 ) {
           bool                 equal = false;
           std::vector<uint8_t> encMD5( 16 ), decMD5( 16 );
           encMD5 = context.computeMD5( tileB2PData.data(), tileB2PData.size() );
-          TRACE_TILE( " Tile B2P MD5 = " );
+          //TRACE_SEI( " Derived Tile B2P MD5 = " );
+          TRACE_SEI( "Tile B2P( id = %d, idx = %d ) MD5: ", tileId, tileIdx );
           for ( int j = 0; j < 16; j++ ) {
             decMD5[j] = sei.getAtlasTilesB2pMd5( tileId, j );
-            TRACE_TILE( "%02x", encMD5[j] );
+            TRACE_SEI( "%02x", encMD5[j] );
           }
-          TRACE_SEI( "\n\t**sei** (B2P MD5): " );
           equal = compareHashSEIMD5( encMD5, decMD5 );
           TRACE_SEI( " (%s) \n", equal ? "OK" : "DIFF" );
         } else if ( sei.getHashType() == 1 ) {
           bool     equal = false;
           uint16_t crc   = context.computeCRC( tileB2PData.data(), tileB2PData.size() );
-          TRACE_SEI( "\n\t**sei** (B2P CRC): " );
+          //TRACE_SEI( "\n Derived Tile B2P CRC: %d ", crc );
+          TRACE_SEI( "Tile B2P( id = %d, idx = %d ) CRC: ", tileId, tileIdx );
           equal = compareHashSEICrc( crc, sei.getAtlasTilesB2pCrc( tileId ) );
           TRACE_SEI( " (%s) \n", equal ? "OK" : "DIFF" );
         } else if ( sei.getHashType() == 2 ) {
           bool     equal    = false;
           uint32_t checkSum = context.computeCheckSum( tileB2PData.data(), tileB2PData.size() );
-          TRACE_SEI( "\n\t**sei** (B2P CheckSum): " );
+          //TRACE_SEI( "\n Derived Tile B2P CheckSum: %d ", checkSum );
+          TRACE_SEI( "Tile( id = %d, idx = %d ) CheckSum: ", tileId, tileIdx );
           equal = compareHashSEICheckSum( checkSum, sei.getAtlasTilesB2pCheckSum( tileId ) );
           TRACE_SEI( " (%s) \n", equal ? "OK" : "DIFF" );
         }
