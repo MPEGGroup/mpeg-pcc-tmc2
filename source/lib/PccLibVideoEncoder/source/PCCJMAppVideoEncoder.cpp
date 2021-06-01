@@ -51,7 +51,8 @@ void PCCJMAppVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
   const size_t width      = videoSrc.getWidth();
   const size_t height     = videoSrc.getHeight();
   const size_t frameCount = videoSrc.getFrameCount();
-
+  std::string srcYuvFileName = params.srcYuvFileName_.insert( params.srcYuvFileName_.find_last_of("."), "_jmapp" ); 
+  std::string recYuvFileName = params.recYuvFileName_.insert( params.recYuvFileName_.find_last_of("."), "_jmapp" ); 
   std::stringstream cmd;
   cmd << params.encoderPath_ << " -d " << params.encoderConfig_;
   if ( bitstream.type() == VIDEO_GEOMETRY && bitstream.type() != VIDEO_TEXTURE ) {
@@ -62,7 +63,7 @@ void PCCJMAppVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
     cmd << " -p QPPSlice=" << params.qp_;
     cmd << " -p QPISlice=" << params.qp_;
   }
-  cmd << " -p InputFile=" << params.srcYuvFileName_;
+  cmd << " -p InputFile=" << srcYuvFileName;
   cmd << " -p SourceBitDepthLuma=" << params.inputBitDepth_;
   cmd << " -p YUVFormat=" << ( params.use444CodecIo_ ? "3" : "1" );
   cmd << " -p FrameRate=30 ";
@@ -71,20 +72,22 @@ void PCCJMAppVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
   cmd << " -p SourceHeight=" << height;
   cmd << " -p FramesToBeEncoded=" << frameCount;
   cmd << " -p OutputFile=" << params.binFileName_;
-  cmd << " -p ReconFile=" << params.recYuvFileName_;
+  cmd << " -p ReconFile=" << recYuvFileName;
   cmd << " -p OutputBitDepthLuma=" << params.outputBitDepth_;
   cmd << " -p OutputBitDepthChroma=" << params.outputBitDepth_;
 
   std::cout << cmd.str() << std::endl;
-  videoSrc.write( params.srcYuvFileName_, params.inputBitDepth_ == 8 ? 1 : 2 );
+  videoSrc.write( srcYuvFileName, params.inputBitDepth_ == 8 ? 1 : 2 );
   if ( pcc::system( cmd.str().c_str() ) ) {
     std::cout << "Error: can't run system command!" << std::endl;
     exit( -1 );
   }
   PCCCOLORFORMAT format = getColorFormat( params.recYuvFileName_ );
   videoRec.clear();
-  videoRec.read( params.recYuvFileName_, width, height, format, params.outputBitDepth_ == 8 ? 1 : 2 );
+  videoRec.read( recYuvFileName, width, height, format, params.outputBitDepth_ == 8 ? 1 : 2 );
   bitstream.read( params.binFileName_ );
+  removeFile( srcYuvFileName ); 
+  removeFile( recYuvFileName ); 
 }
 
 template <typename T>

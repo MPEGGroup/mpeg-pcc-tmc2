@@ -1188,7 +1188,7 @@ void PCCDecoder::createHashSEI( PCCContext& context, int frameIndex ) {
     size_t               atlIdx     = context[frameIndex].getTile( 0 ).getAtlIndex();
     auto&                tileHeader = context.getAtlasTileLayerList()[atlIdx].getHeader();
     size_t               afpsIndex  = tileHeader.getAtlasFrameParameterSetId();
-    size_t               aspsIndex  = context.getAtlasFrameParameterSet( afpsIndex ).getAtlasFrameParameterSetId();
+    size_t               aspsIndex  = context.getAtlasFrameParameterSet( afpsIndex ).getAtlasSequenceParameterSetId();
     auto&                asps       = context.getAtlasSequenceParameterSet( aspsIndex );
     auto&                afps       = context.getAtlasFrameParameterSet( afpsIndex );
     std::vector<uint8_t> highLevelAtlasData;
@@ -1451,7 +1451,7 @@ void PCCDecoder::createHlsAtlasTileLogFiles( PCCContext& context, int frameIndex
   auto&  tileHeader = context.getAtlasTileLayerList()[atlIdx].getHeader();
   auto&  atlu       = context.getAtlasTileLayer( atlIdx );
   size_t afpsIndex  = tileHeader.getAtlasFrameParameterSetId();
-  size_t aspsIndex  = context.getAtlasFrameParameterSet( afpsIndex ).getAtlasFrameParameterSetId();
+  size_t aspsIndex  = context.getAtlasFrameParameterSet( afpsIndex ).getAtlasSequenceParameterSetId();
   auto&  asps       = context.getAtlasSequenceParameterSet( aspsIndex );
   auto&  afps       = context.getAtlasFrameParameterSet( afpsIndex );
   auto&  vps        = context.getVps();
@@ -1581,7 +1581,7 @@ void PCCDecoder::setTilePartitionSizeAfti( PCCContext& context ) {  // decoder
 
   for ( size_t afpsIdx = 0; afpsIdx < context.getAtlasFrameParameterSetList().size(); afpsIdx++ ) {
     auto&  afps             = context.getAtlasFrameParameterSet( afpsIdx );
-    auto&  asps             = context.getAtlasSequenceParameterSet( afps.getAtlasFrameParameterSetId() );
+    auto&  asps             = context.getAtlasSequenceParameterSet( afps.getAtlasSequenceParameterSetId() );
     auto&  afti             = afps.getAtlasFrameTileInformation();
     size_t frameWidth       = asps.getFrameWidth();
     size_t frameHeight      = asps.getFrameHeight();

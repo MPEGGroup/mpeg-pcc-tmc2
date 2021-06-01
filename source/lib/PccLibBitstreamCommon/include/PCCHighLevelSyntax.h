@@ -191,7 +191,7 @@ class PCCAtlasHighLevelSyntax {
   AtlasTileLayerRbsp&              getAtlasTileLayer( size_t atglOrder ) { return atlasTileLayer_[atglOrder]; }
   AtlasTileLayerRbsp&              getAtlasTileLayer( size_t frameIndex, size_t tileIndex ) {
     for(size_t atglOrder=0; atglOrder<atlasTileLayer_.size(); atglOrder++){
-      if( atlasTileLayer_[atglOrder].getEncFrameIndex() == frameIndex &&  atlasTileLayer_[atglOrder].getEncFrameIndex() == tileIndex)
+      if( atlasTileLayer_[atglOrder].getEncFrameIndex() == frameIndex &&  atlasTileLayer_[atglOrder].getEncTileIndex() == tileIndex)
         return atlasTileLayer_[atglOrder];
     }
     assert(0);
