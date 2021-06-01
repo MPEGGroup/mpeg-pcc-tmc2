@@ -51,10 +51,12 @@ void PCCHMAppVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
   const size_t      width      = videoSrc.getWidth();
   const size_t      height     = videoSrc.getHeight();
   const size_t      frameCount = videoSrc.getFrameCount();
+  std::string srcYuvFileName = params.srcYuvFileName_.insert( params.srcYuvFileName_.find_last_of("."), "_jmapp" ); 
+  std::string recYuvFileName = params.recYuvFileName_.insert( params.recYuvFileName_.find_last_of("."), "_jmapp" ); 
   std::stringstream cmd;
   cmd << params.encoderPath_;
   cmd << " -c " << params.encoderConfig_;
-  cmd << " --InputFile=" << params.srcYuvFileName_;
+  cmd << " --InputFile=" << srcYuvFileName;
   cmd << " --InputBitDepth=" << params.inputBitDepth_;
   cmd << " --InputChromaFormat=" << ( params.use444CodecIo_ ? "444" : "420" );
   cmd << " --OutputBitDepth=" << params.outputBitDepth_;
@@ -66,7 +68,7 @@ void PCCHMAppVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
   cmd << " --ConformanceWindowMode=1 ";
   cmd << " --FramesToBeEncoded=" << frameCount;
   cmd << " --BitstreamFile=" << params.binFileName_;
-  cmd << " --ReconFile=" << params.recYuvFileName_;
+  cmd << " --ReconFile=" << recYuvFileName;
   cmd << " --QP=" << params.qp_;
   if ( params.transquantBypassEnable_ != 0 ) { cmd << " --TransquantBypassEnable=1"; }
   if ( params.cuTransquantBypassFlagForce_ != 0 ) { cmd << " --CUTransquantBypassFlagForce=1"; }
@@ -84,15 +86,17 @@ void PCCHMAppVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
 
   std::cout << cmd.str() << std::endl;
 
-  videoSrc.write( params.srcYuvFileName_, params.inputBitDepth_ == 8 ? 1 : 2 );
+  videoSrc.write( srcYuvFileName, params.inputBitDepth_ == 8 ? 1 : 2 );
   if ( pcc::system( cmd.str().c_str() ) ) {
     std::cout << "Error: can't run system command!" << std::endl;
     exit( -1 );
   }
   PCCCOLORFORMAT format = getColorFormat( params.recYuvFileName_ );
   videoRec.clear();
-  videoRec.read( params.recYuvFileName_, width, height, format, params.outputBitDepth_ == 8 ? 1 : 2 );
+  videoRec.read( recYuvFileName, width, height, format, params.outputBitDepth_ == 8 ? 1 : 2 );
   bitstream.read( params.binFileName_ );
+  removeFile( srcYuvFileName ); 
+  removeFile( recYuvFileName ); 
 }
 
 template <typename T>
