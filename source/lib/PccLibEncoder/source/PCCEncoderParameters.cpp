@@ -1186,7 +1186,6 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   asps.setEomFixBitCountMinus1( EOMFixBitCount_ - 1 );
   asps.setGeometry2dBitdepthMinus1( uint8_t( geometryNominal2dBitdepth_ - 1 ) );
   asps.setGeometry3dBitdepthMinus1( bitdepth3D - 1 );
-  // NOTE JR: decoder/reader must used asps value and the reconstruction must used gi value.
 
   // Atlas frame parameter set
   auto& afps = context.addAtlasFrameParameterSet( 0 );

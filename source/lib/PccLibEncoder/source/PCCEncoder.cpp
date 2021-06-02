@@ -8690,29 +8690,6 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
   }
   auto& vps = context.getVps();
   auto& plt = vps.getProfileTierLevel();
-  size_t atlasIndex = context.getAtlasIndex();
-  auto&  ai         = vps.getAttributeInformation( atlasIndex );
-  auto&  oi         = vps.getOccupancyInformation( atlasIndex );
-  auto&  gi         = vps.getGeometryInformation( atlasIndex );
-
-  if ( plt.getProfileCodecGroupIdc() == CODEC_GROUP_AVC_PROGRESSIVE_HIGH ) {
-    if ( oi.getOccupancyCodecId() != AVC3 && gi.getGeometryCodecId() != AVC3 &&
-         ai.getAttributeCodecId( 0 ) != AVC3 )
-      std::cerr << "ERROR: CodecID : " << " should be set to 4CC code 'avc3' " << std::endl;
-  }
-  if ( plt.getProfileCodecGroupIdc() == CODEC_GROUP_HEVC_MAIN10 ) {
-    if ( oi.getOccupancyCodecId() != HEV1 && gi.getGeometryCodecId() != HEV1 && ai.getAttributeCodecId( 0 ) != HEV1 )
-      std::cerr << "ERROR: CodecID : " << " should be set to 4CC code 'hev1' " << std::endl;
-  }
-  if ( plt.getProfileCodecGroupIdc() == CODEC_GROUP_HEVC444 ) {
-    if ( oi.getOccupancyCodecId() != HEV1 && gi.getGeometryCodecId() != HEV1 && ai.getAttributeCodecId( 0 ) != HEV1 )
-      std::cerr << "ERROR: CodecID : " << " should be set to 4CC code 'hev1' " << std::endl;
-  }
-  if ( plt.getProfileCodecGroupIdc() == CODEC_GROUP_VVC_MAIN10 ) {
-    if ( oi.getOccupancyCodecId() != VVC1 && gi.getGeometryCodecId() != VVC1 && ai.getAttributeCodecId( 0 ) != VVC1 )
-      std::cerr << "ERROR: CodecID : " << " should be set to 4CC code 'vvc1' " << std::endl;
-  }
-  
   if ( plt.getProfileCodecGroupIdc() == CODEC_GROUP_MP4RA ) {
     size_t     atlasIndex       = context.getAtlasIndex();
     auto&      ai               = vps.getAttributeInformation( atlasIndex );
@@ -8731,7 +8708,6 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
     bool useVvc = oi.getOccupancyCodecId() == params_.vvcCodecIdIndex_ ||
                   gi.getGeometryCodecId() == params_.vvcCodecIdIndex_ ||
                   ai.getAttributeCodecId( 0 ) == params_.vvcCodecIdIndex_;
-
                   
     printf("CODEC ID = %d %d %d \n", oi.getOccupancyCodecId(), gi.getGeometryCodecId(), ai.getAttributeCodecId( 0 ) ); 
     printf( "ProfileCodecGroupIdc = CODEC_GROUP_MP4RA: AVC = %d HEVC = %d SHVC = %d VVC = %d \n", useAvc, useHevc,

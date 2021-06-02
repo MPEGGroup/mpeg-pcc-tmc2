@@ -2646,15 +2646,13 @@ void PCCCodec::aspsApplicationByteString( std::vector<uint8_t>&          stringB
       }
     }
   }
-  //auto& ext = asps.getAspsVpccExtension(); //ajt0527: check with Danillo![]o99m,./
-  //val       = uint8_t( ext.getRemoveDuplicatePointEnableFlag() ) & 0xFF;
-  //stringByte.push_back( val );
-  //if ( asps.getPixelDeinterleavingFlag() || asps.getPLREnabledFlag() ) {
-  //  val = ext.getSurfaceThicknessMinus1() & 0xFF;
-  //  stringByte.push_back( val );
-  //  val = ( size_t( ext.getSurfaceThicknessMinus1() ) >> 8 ) & 0xFF;
-  //  stringByte.push_back( val );
-  //}
+  auto& ext = asps.getAspsVpccExtension();
+  val       = uint8_t( ext.getRemoveDuplicatePointEnableFlag() ) & 0xFF;
+  stringByte.push_back( val );
+  val = ext.getSurfaceThicknessMinus1() & 0xFF;
+  stringByte.push_back( val );
+  val = ( size_t( ext.getSurfaceThicknessMinus1() ) >> 8 ) & 0xFF;
+  stringByte.push_back( val );
 }
 
 void PCCCodec::afpsCommonByteString( std::vector<uint8_t>& stringByte,

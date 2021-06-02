@@ -78,7 +78,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
           plt.getProfileCodecGroupIdc(), oi.getOccupancyCodecId(), gi.getGeometryCodecId(),
           gi.getAuxiliaryGeometryCodecId() );
   printf( "=> Video decoder : occupancy = %d geometry = %d \n", (int)occupancyCodecId, (int)geometryCodecId );
-  printf( " Decode O size = %zu \n", context.getVideoBitstream( VIDEO_OCCUPANCY ).size() );
+  printf( " Decode 0 size = %zu \n", context.getVideoBitstream( VIDEO_OCCUPANCY ).size() );
   fflush( stdout );
   TRACE_PICTURE( "Occupancy\n" );
   TRACE_PICTURE( "MapIdx = 0,  AuxiliaryVideoFlag =  0\n" );
