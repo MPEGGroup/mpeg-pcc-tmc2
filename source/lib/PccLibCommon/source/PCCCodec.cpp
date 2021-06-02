@@ -939,29 +939,58 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                       reconstru
   TRACE_CODEC( " totalEOMPointsInFrame = %zu  \n", totalEOMPointsInFrame );
   TRACE_CODEC( " point = %zu  \n", reconstruct.getPointCount() );
   if ( params.useAdditionalPointsPatch_ ) {
-    if ( useRawPointsSeparateVideo ) {
-      PCCColor3B rawPointsColor( uint8_t( 0 ) );
-      rawPointsColor[0] = 0;
-      rawPointsColor[1] = 255;
-      rawPointsColor[2] = 255;
-      // Add point GPS from rawPointsPatch without inserting to pointToPixel
-      size_t numberOfRawPointsPatches = tile.getNumberOfRawPointsPatches();
-      for ( int j = 0; j < numberOfRawPointsPatches; j++ ) {
-        auto&  rawPointsPatch = tile.getRawPointsPatch( j );
-        size_t numRawPoints   = rawPointsPatch.getNumberOfRawPoints();
-        for ( int i = 0; i < numRawPoints; i++ ) {
-          PCCVector3D point0;
-          point0[0]               = rawPointsPatch.x_[i] + rawPointsPatch.u1_;
-          point0[1]               = rawPointsPatch.x_[i + numRawPoints] + rawPointsPatch.v1_;
-          point0[2]               = rawPointsPatch.x_[i + 2 * numRawPoints] + rawPointsPatch.d1_;
-          const size_t pointIndex = reconstruct.addPoint( point0 );
-          reconstruct.setPointPatchIndex( pointIndex, tileIndex, patchIndex );
-          reconstruct.setColor( pointIndex, rawPointsColor );
-          partition.push_back( uint32_t( patchIndex ) );
-        }
-        rawPointsPatch.resizeColor( numRawPoints );
-      }
+    if ( useRawPointsSeparateVideo && false ) {
+      // PCCColor3B rawPointsColor( uint8_t( 0 ) );
+      // rawPointsColor[0] = 0;
+      // rawPointsColor[1] = 255;
+      // rawPointsColor[2] = 255;
+      // // Add point GPS from rawPointsPatch without inserting to pointToPixel
+      // size_t numberOfRawPointsPatches = tile.getNumberOfRawPointsPatches();
+      
+      // printf( "numberOfRawPointsPatches = %zu \n", numberOfRawPointsPatches );
+      // TRACE_CODEC( "numberOfRawPointsPatches = %zu \n", numberOfRawPointsPatches );
+      // for ( int j = 0; j < numberOfRawPointsPatches; j++ ) {
+      //   auto&  rawPointsPatch = tile.getRawPointsPatch( j );
+      //   size_t numRawPoints   = rawPointsPatch.getNumberOfRawPoints();
+        
+      //   printf( "numRawPoints = %zu \n", numRawPoints );
+      //   TRACE_CODEC( "numRawPoints = %zu \n", numRawPoints );
+      //   printf(" tile.getLeftTopXInFrame() = %zu \n", tile.getLeftTopXInFrame());
+      //   printf(" tile.getLeftTopYInFrame() = %zu \n", tile.getLeftTopYInFrame());
+      //   printf(" rawPointsPatch.sizeU0_    = %zu \n", rawPointsPatch.sizeU0_);
+      //   printf(" rawPointsPatch.sizeV0_    = %zu \n", rawPointsPatch.sizeV0_);
+      //   printf(" rawPointsPatch.u0_        = %zu \n", rawPointsPatch.u0_);
+      //   printf(" rawPointsPatch.v0_        = %zu \n", rawPointsPatch.v0_);
+      //   printf(" rawPointsPatch.u1_        = %zu \n", rawPointsPatch.u1_);
+      //   printf(" rawPointsPatch.v1_        = %zu \n", rawPointsPatch.v1_);
+      //   printf(" rawPointsPatch.d1_        = %zu \n", rawPointsPatch.d1_);        
+      //   for ( int i = 0; i < numRawPoints; i++ ) {
+      //     PCCVector3D point0;
+      //     point0[0] = rawPointsPatch.x_[i] + rawPointsPatch.u1_;
+      //     point0[1] = rawPointsPatch.x_[i + numRawPoints] + rawPointsPatch.v1_;
+      //     point0[2] = rawPointsPatch.x_[i + 2 * numRawPoints] + rawPointsPatch.d1_;
+      //     // printf( "Raw point patch %zu / %zu point  %6d / %9zu : %9f %9f %9f \n", j, numberOfRawPointsPatches, i,
+      //     //        numRawPoints, point0[0], point0[1], point0[2] );
+      //     TRACE_CODEC( "Raw point patch %zu / %zu point  %6d / %9zu : %9f %9f %9f \n", j, numberOfRawPointsPatches, i,
+      //             numRawPoints, point0[0], point0[1], point0[2] );
+      //     const size_t pointIndex = reconstruct.addPoint( point0 );
+      //     reconstruct.setPointPatchIndex( pointIndex, tileIndex, patchIndex );
+      //     reconstruct.setColor( pointIndex, rawPointsColor );
+      //     partition.push_back( uint32_t( patchIndex ) );
+      //   }
+      //   rawPointsPatch.resizeColor( numRawPoints );
+      // }
     } else {  // else useRawPointsSeparateVideo
+      printf("videoFrameIndex = %zu \n",tile.getFrameIndex()); fflush(stdout);
+      printf("getFrameCount   = %zu \n",context.getVideoRawPointsGeometry().getFrameCount()); fflush(stdout);
+      auto& frameRawPoint = useRawPointsSeparateVideo
+                                ? (const PCCImageGeometry&)context.getVideoRawPointsGeometry()[tile.getFrameIndex()]
+                                : frame0;
+      printf("video size = %zu %zu  \n",context.getVideoRawPointsGeometry().getWidth(), context.getVideoRawPointsGeometry().getHeight()); fflush(stdout);
+      printf("video size = %zu %zu  \n",frameRawPoint.getWidth(), frameRawPoint.getHeight()); fflush(stdout);
+
+
+
       TRACE_CODEC( " Add points from rawPointsPatch \n" );
       // Add points from rawPointsPatch
       size_t numberOfRawPointsPatches = tile.getNumberOfRawPointsPatches();
@@ -972,41 +1001,62 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                       reconstru
         rawPointsColor[1]     = 255;
         rawPointsColor[2]     = 255;
         size_t numRawPoints   = rawPointsPatch.getNumberOfRawPoints();
-        size_t ores           = rawPointsPatch.occupancyResolution_;
-        rawPointsPatch.sizeV_ = rawPointsPatch.sizeV0_ * ores;
-        rawPointsPatch.sizeU_ = rawPointsPatch.sizeU0_ * ores;
-
+        rawPointsPatch.sizeV_ = rawPointsPatch.sizeV0_ * rawPointsPatch.occupancyResolution_;
+        rawPointsPatch.sizeU_ = rawPointsPatch.sizeU0_ * rawPointsPatch.occupancyResolution_;
+        
+        printf(" tile.getLeftTopXInFrame() = %zu \n", tile.getLeftTopXInFrame());
+        printf(" tile.getLeftTopYInFrame() = %zu \n", tile.getLeftTopYInFrame());
+        printf(" rawPointsPatch.sizeU0_    = %zu \n", rawPointsPatch.sizeU0_);
+        printf(" rawPointsPatch.sizeV0_    = %zu \n", rawPointsPatch.sizeV0_);
+        printf(" rawPointsPatch.u0_        = %zu \n", rawPointsPatch.u0_);
+        printf(" rawPointsPatch.v0_        = %zu \n", rawPointsPatch.v0_);
+        printf(" rawPointsPatch.u1_        = %zu \n", rawPointsPatch.u1_);
+        printf(" rawPointsPatch.v1_        = %zu \n", rawPointsPatch.v1_);
+        printf(" rawPointsPatch.d1_        = %zu \n", rawPointsPatch.d1_);
         std::vector<PCCPoint3D> rawPoints;
         rawPoints.resize( numRawPoints );
         size_t       numRawPointsAdded{0};
         const size_t v0 = rawPointsPatch.v0_ * rawPointsPatch.occupancyResolution_;
         const size_t u0 = rawPointsPatch.u0_ * rawPointsPatch.occupancyResolution_;
+        printf("here \n"); fflush(stdout);
         for ( size_t v = 0; v < rawPointsPatch.sizeV_; ++v ) {
           for ( size_t u = 0; u < rawPointsPatch.sizeU_; ++u ) {
             const size_t x = ( u0 + u );
             const size_t y = ( v0 + v );
+            //  printf("uv = %4zu %4zu => %4zu %4zu \n",u,v,x,y); fflush(stdout);
             if ( numRawPointsAdded < numRawPoints ) {
               rawPoints[numRawPointsAdded][0] =
-                  double( frame0.getValue( 0, tile.getLeftTopXInFrame() + x, tile.getLeftTopYInFrame() + y ) +
+                  double( frameRawPoint.getValue( 0, tile.getLeftTopXInFrame() + x, tile.getLeftTopYInFrame() + y ) +
                           rawPointsPatch.u1_ );
             } else if ( numRawPoints <= numRawPointsAdded && numRawPointsAdded < 2 * numRawPoints ) {
               rawPoints[numRawPointsAdded - numRawPoints][1] =
-                  double( frame0.getValue( 0, tile.getLeftTopXInFrame() + x, tile.getLeftTopYInFrame() + y ) +
+                  double( frameRawPoint.getValue( 0, tile.getLeftTopXInFrame() + x, tile.getLeftTopYInFrame() + y ) +
                           rawPointsPatch.v1_ );
             } else if ( 2 * numRawPoints <= numRawPointsAdded && numRawPointsAdded < 3 * numRawPoints ) {
+              if( tile.getLeftTopXInFrame() + x >= frameRawPoint.getWidth() || 
+                  tile.getLeftTopYInFrame() + y >= frameRawPoint.getHeight() ){
+                    printf(" %4zu x %4zu >  %4zu x %4zu \n",  tile.getLeftTopXInFrame() + x,  tile.getLeftTopYInFrame() + y,
+                     frameRawPoint.getWidth(), frameRawPoint.getHeight() ); 
+                     fflush(stdout);
+                  }
               rawPoints[numRawPointsAdded - 2 * numRawPoints][2] =
-                  double( frame0.getValue( 0, tile.getLeftTopXInFrame() + x, tile.getLeftTopYInFrame() + y ) +
+                  double( frameRawPoint.getValue( 0, tile.getLeftTopXInFrame() + x, tile.getLeftTopYInFrame() + y ) +
                           rawPointsPatch.d1_ );
             }
             numRawPointsAdded++;
           }  // u
         }    // v
+        printf("done \n"); fflush(stdout);
         size_t counter{0};
         for ( size_t v = 0; v < rawPointsPatch.sizeV_; ++v ) {
           for ( size_t u = 0; u < rawPointsPatch.sizeU_; ++u ) {
             const size_t x = ( u0 + u );
             const size_t y = ( v0 + v );
-            if ( counter < numRawPoints ) {
+            if ( counter < numRawPoints ) {              
+            if ( counter %1000 == 0 ) { 
+              printf( "Raw point patch %zu / %zu point  %6d / %9zu : %9d %9d %9d \n", i, numberOfRawPointsPatches, counter,
+                    numRawPoints, rawPoints[counter][0], rawPoints[counter][1], rawPoints[counter][2] );
+            }
               const size_t pointIndex = reconstruct.addPoint( rawPoints[counter] );
               reconstruct.setPointPatchIndex( pointIndex, tileIndex, patchIndex );
               reconstruct.setColor( pointIndex, rawPointsColor );
@@ -1931,7 +1981,6 @@ void PCCCodec::generateRawPointsGeometryfromVideo( PCCContext& context, PCCFrame
   auto&  videoRawPointsGeometry   = context.getVideoRawPointsGeometry();
   auto&  image                    = videoRawPointsGeometry.getFrame( frameIndex );
   size_t numberOfRawPointsPatches = tile.getNumberOfRawPointsPatches();
-  bool   isAuxiliarygeometrys444  = false;
   for ( int i = 0; i < numberOfRawPointsPatches; i++ ) {
     auto&        rawPointsPatch = tile.getRawPointsPatch( i );
     const size_t v0             = rawPointsPatch.v0_ * rawPointsPatch.occupancyResolution_;
@@ -1939,21 +1988,15 @@ void PCCCodec::generateRawPointsGeometryfromVideo( PCCContext& context, PCCFrame
     rawPointsPatch.sizeV_       = rawPointsPatch.sizeV0_ * rawPointsPatch.occupancyResolution_;
     rawPointsPatch.sizeU_       = rawPointsPatch.sizeU0_ * rawPointsPatch.occupancyResolution_;
     size_t numberOfRawPoints    = rawPointsPatch.getNumberOfRawPoints();
-    if ( !isAuxiliarygeometrys444 ) { numberOfRawPoints *= 3; }
+    numberOfRawPoints *= 3;
     rawPointsPatch.resize( numberOfRawPoints );
     for ( size_t v = 0; v < rawPointsPatch.sizeV_; ++v ) {
       for ( size_t u = 0; u < rawPointsPatch.sizeU_; ++u ) {
         const size_t p = v * rawPointsPatch.sizeU_ + u;
         if ( p < numberOfRawPoints ) {
-          const size_t x = ( u0 + u );
-          const size_t y = ( v0 + v ) + context[frameIndex].getAuxTileLeftTopY( tile.getTileIndex() );
-          if ( isAuxiliarygeometrys444 ) {
-            rawPointsPatch.x_[p] = image.getValue( 0, x, y );
-            rawPointsPatch.y_[p] = image.getValue( 1, x, y );
-            rawPointsPatch.z_[p] = image.getValue( 2, x, y );
-          } else {
-            rawPointsPatch.x_[p] = image.getValue( 0, x, y );
-          }
+          const size_t x       = ( u0 + u );
+          const size_t y       = ( v0 + v ) + context[frameIndex].getAuxTileLeftTopY( tile.getTileIndex() );
+          rawPointsPatch.x_[p] = image.getValue( 0, x, y );
         }
       }
     }

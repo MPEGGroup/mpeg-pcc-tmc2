@@ -326,7 +326,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
                            false,                                  // useConversion
                            params_.keepIntermediateFiles_ );
     if ( params_.lossyRawPointsPatch_ ) {
-      for ( size_t fi = 0; fi < context.size(); fi++ ) generateRawPointsGeometryfromVideo( context, fi );
+      for ( size_t fi = 0; fi < context.size(); fi++ ) { generateRawPointsGeometryfromVideo( context, fi ); }
     }
   }
 
@@ -594,7 +594,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
                              params_.colorSpaceConversionPath_ );         // colorSpaceConversionPath
       if ( params_.lossyRawPointsPatch_ ) {
         printf( "generateRawPointsTexturefromVideo \n" );
-        for ( size_t fi = 0; fi < context.size(); fi++ ) generateRawPointsTexturefromVideo( context, fi );
+        for ( size_t fi = 0; fi < context.size(); fi++ ) { generateRawPointsTexturefromVideo( context, fi ); }
       }
     }
   }
@@ -4743,18 +4743,23 @@ void PCCEncoder::generateRawPointsGeometryVideo( PCCContext& context ) {
   printf("width and height is based on the first frame: context[0]");
   auto& videoRawPointsGeometry = context.getVideoRawPointsGeometry();
   videoRawPointsGeometry.resize( context.size() );
-  size_t maxWidth = context[0].getAuxVideoWidth();
   // context.setAuxVideoWidth( ?? );
-  auto&  framesInAFPS = context.getFramesInAFPS();
-  size_t numInterval  = 1;
-  if ( params_.tileSegmentationType_ == 1 ) numInterval = framesInAFPS.size();
-
+  auto&  framesInAFPS   = context.getFramesInAFPS();
+  size_t numInterval    = 1;
+  size_t maxVideoWidth  = 0;
   size_t maxVideoHeight = 0;
-  for ( size_t ti = 0; ti < context[0].getAuxTileHeightSize(); ti++ ) {
-    maxVideoHeight += context[0].getAuxTileHeight( ti );
+  if ( params_.tileSegmentationType_ == 1 ) { numInterval = framesInAFPS.size(); }
+
+  for ( size_t fi = 0; fi < context.size(); fi++ ) {
+    size_t maxVideoHeightCurrentFrame = 0;
+    for ( size_t ti = 0; ti < context[fi].getAuxTileHeightSize(); ti++ ) {
+      maxVideoHeightCurrentFrame += context[fi].getAuxTileHeight( ti );
+    }
+    maxVideoWidth = (std::max)( maxVideoWidth,  context[fi].getAuxVideoWidth() );
+    maxVideoHeight = (std::max)( maxVideoHeight, maxVideoHeightCurrentFrame );
   }
   for ( size_t fi = 0; fi < context.size(); fi++ ) {
-    videoRawPointsGeometry.getFrame( fi ).resize( maxWidth, maxVideoHeight, PCCCOLORFORMAT::YUV444 );
+    videoRawPointsGeometry.getFrame( fi ).resize( maxVideoWidth, maxVideoHeight, PCCCOLORFORMAT::YUV444 );
   }
 
   for ( size_t segIdx = 0; segIdx < numInterval; segIdx++ ) {
