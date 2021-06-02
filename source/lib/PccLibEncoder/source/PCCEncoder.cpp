@@ -220,32 +220,32 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
 
   if ( params_.rawPointsPatch_ ) { internalBitDepth = geometryVideoBitDepth; }
 
-  auto& videoBitstreamD0 = params_.multipleStreams_ ? context.createVideoBitstream( VIDEO_GEOMETRY_D0 )
-                                                    : context.createVideoBitstream( VIDEO_GEOMETRY );
+  auto&       videoBitstreamD0 = params_.multipleStreams_ ? context.createVideoBitstream( VIDEO_GEOMETRY_D0 )
+                                                          : context.createVideoBitstream( VIDEO_GEOMETRY );
   auto&       videoGeometry    = context.getVideoGeometryMultiple()[0];
   std::string geometryConfigFile =
       params_.multipleStreams_
           ? params_.geometryD0Config_
-          : ( params_.mapCountMinus1_ == 0 ? getEncoderConfig1L( params_.geometryConfig_ ) : params_.geometryConfig_ );          
-  videoEncoder.compress( videoGeometry,                                                             // video
-                         path.str(),                                                                // path
-                         params_.multipleStreams_ ? params_.geometryQP_ - 1 : params_.geometryQP_,  // QP
-                         videoBitstreamD0,                                                          // bitstream
-                         geometryConfigFile,                                                        // config file
-                         params_.videoEncoderGeometryPath_,                                         // encoder path
-                         params_.videoEncoderGeometryCodecId_,                                      // Codec id
-                         params_.byteStreamVideoCoderGeometry_,  // byteStreamVideoCoder
-                         context,                                // context
-                         nbyteGeo,                               // nbyte
-                         false,                                  // use444CodecIo
-                         params_.use3dmc_,                       // use3dmv
-                         params_.usePccRDO_,                     // usePccRDO
-                         params_.shvcLayerIndex_,                // SHVC layer index
-                         params_.shvcRateX_,                     // SHVC rate X
-                         params_.shvcRateY_,                     // SHVC rate Y
-                         internalBitDepth,                       // internalBitDepth
-                         false,                                  // useConversion
-                         params_.keepIntermediateFiles_ );       // keep intermediate
+          : ( params_.mapCountMinus1_ == 0 ? getEncoderConfig1L( params_.geometryConfig_ ) : params_.geometryConfig_ );
+  videoEncoder.compress( videoGeometry,                             // video
+                         path.str(),                                // path
+                         params_.geometryQP_ + params_.deltaQPD0_,  // QP
+                         videoBitstreamD0,                          // bitstream
+                         geometryConfigFile,                        // config file
+                         params_.videoEncoderGeometryPath_,         // encoder path
+                         params_.videoEncoderGeometryCodecId_,      // Codec id
+                         params_.byteStreamVideoCoderGeometry_,     // byteStreamVideoCoder
+                         context,                                   // context
+                         nbyteGeo,                                  // nbyte
+                         false,                                     // use444CodecIo
+                         params_.use3dmc_,                          // use3dmv
+                         params_.usePccRDO_,                        // usePccRDO
+                         params_.shvcLayerIndex_,                   // SHVC layer index
+                         params_.shvcRateX_,                        // SHVC rate X
+                         params_.shvcRateY_,                        // SHVC rate Y
+                         internalBitDepth,                          // internalBitDepth
+                         false,                                     // useConversion
+                         params_.keepIntermediateFiles_ );          // keep intermediate
   size_t sizeGeometryVideo = videoBitstreamD0.size();
   std::cout << "sizeGeometryVideo: " << sizeGeometryVideo << std::endl;
   if ( params_.multipleStreams_ ) {
@@ -270,25 +270,25 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     TRACE_PICTURE( "MapIdx = 1, AuxiliaryVideoFlag = 0\n" );
     auto& videoGeometryD1  = context.getVideoGeometryMultiple()[1];
     auto& videoBitstreamD1 = context.createVideoBitstream( VIDEO_GEOMETRY_D1 );
-    videoEncoder.compress( videoGeometryD1,                        // video
-                           path.str(),                             // path
-                           params_.geometryQP_,                    // QP
-                           videoBitstreamD1,                       // bitstream
-                           params_.geometryD1Config_,              // config file
-                           params_.videoEncoderGeometryPath_,      // encoder path
-                           params_.videoEncoderGeometryCodecId_,   // Codec id
-                           params_.byteStreamVideoCoderGeometry_,  // byteStreamVideoCoder
-                           context,                                // context
-                           nbyteGeo,                               // nbyte
-                           false,                                  // use444CodecIo
-                           params_.use3dmc_,                       // use3dmv
-                           params_.usePccRDO_,                     // usePccRDO
-                           params_.shvcLayerIndex_,                // SHVC layer index
-                           params_.shvcRateX_,                     // SHVC rate X
-                           params_.shvcRateY_,                     // SHVC rate Y
-                           internalBitDepth,                       // internalBitDepth
-                           false,                                  // useConversion
-                           params_.keepIntermediateFiles_ );       // keep intermediate
+    videoEncoder.compress( videoGeometryD1,                           // video
+                           path.str(),                                // path
+                           params_.geometryQP_ + params_.deltaQPD1_,  // QP
+                           videoBitstreamD1,                          // bitstream
+                           params_.geometryD1Config_,                 // config file
+                           params_.videoEncoderGeometryPath_,         // encoder path
+                           params_.videoEncoderGeometryCodecId_,      // Codec id
+                           params_.byteStreamVideoCoderGeometry_,     // byteStreamVideoCoder
+                           context,                                   // context
+                           nbyteGeo,                                  // nbyte
+                           false,                                     // use444CodecIo
+                           params_.use3dmc_,                          // use3dmv
+                           params_.usePccRDO_,                        // usePccRDO
+                           params_.shvcLayerIndex_,                   // SHVC layer index
+                           params_.shvcRateX_,                        // SHVC rate X
+                           params_.shvcRateY_,                        // SHVC rate Y
+                           internalBitDepth,                          // internalBitDepth
+                           false,                                     // useConversion
+                           params_.keepIntermediateFiles_ );          // keep intermediate
 
     size_t sizeGeometryVideoD1 = videoBitstreamD1.size();
     std::cout << "sizeGeometryVideoD1: " << sizeGeometryVideoD1 << std::endl;
@@ -485,7 +485,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
             : ( params_.mapCountMinus1_ == 0 ? getEncoderConfig1L( params_.textureConfig_ ) : params_.textureConfig_ );
     videoEncoder.compress( context.getVideoTextureMultiple()[0],        // video,
                            path.str(),                                  // path
-                           params_.textureQP_,                          // qp
+                           params_.textureQP_ + params_.deltaQPT0_,     // qp
                            videoBitstream,                              // bitstream
                            encoderConfig0,                              // encoderConfig
                            params_.videoEncoderAttributePath_,          // encoderPath
@@ -530,11 +530,11 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
       // compress textureT1
       TRACE_PICTURE( "MapIdx = 1, AuxiliaryVideoFlag = 0\n" );
       auto& videoBitstreamT1 = context.createVideoBitstream( VIDEO_TEXTURE_T1 );
-      auto encoderConfig1 =
+      auto  encoderConfig1 =
           params_.mapCountMinus1_ == 0 ? getEncoderConfig1L( params_.textureConfig_ ) : params_.textureT1Config_;
       videoEncoder.compress( context.getVideoTextureMultiple()[1],        // video,
                              path.str(),                                  // path
-                             params_.textureQP_ + params_.qpAdjT1_,       // qp
+                             params_.textureQP_ + params_.deltaQPT1_,     // qp
                              videoBitstreamT1,                            // bitstream
                              encoderConfig1,                              // encoderConfig
                              params_.videoEncoderAttributePath_,          // encoderPath

@@ -80,8 +80,19 @@ class PCCEncoderParameters {
   size_t minimumImageHeight_;
 
   // video encoding
-  int geometryQP_;
-  int textureQP_;
+  int         geometryQP_;
+  int         textureQP_;
+  int         deltaQPD0_;
+  int         deltaQPD1_;
+  int         deltaQPT0_;
+  int         deltaQPT1_;
+  std::string geometryConfig_;
+  std::string geometryD0Config_;
+  std::string geometryD1Config_;
+  std::string textureConfig_;
+  std::string textureT0Config_;
+  std::string textureT1Config_;
+  bool        multipleStreams_;
 
   // segmentation
   bool   gridBasedSegmentation_;
@@ -182,18 +193,9 @@ class PCCEncoderParameters {
   // patch sampling resolution
   size_t      levelOfDetailX_;
   size_t      levelOfDetailY_;
-  std::string geometryConfig_;
-  std::string geometryD0Config_;
-  std::string geometryD1Config_;
-  std::string textureConfig_;
-  std::string textureT0Config_;
-  std::string textureT1Config_;
   bool        keepIntermediateFiles_;
   bool        absoluteD1_;
-  int         qpAdjD1_;
   bool        absoluteT1_;
-  int         qpAdjT1_;
-  bool        multipleStreams_;
   bool        constrainedPack_;
 
   // dilation

@@ -590,15 +590,23 @@ bool parseParameters( int                   argc,
     // 0. absolute 1 delta
       encoderParams.multipleStreams_,
       "number of video(geometry and attribute) streams" )
-    ( "qpT1",
-      encoderParams.qpAdjT1_,
-    // 0. absolute 1 delta
-      encoderParams.qpAdjT1_, 
-      "qp adjustment for T1 0, +3, -3..." )
-    ( "qpD1",
-      encoderParams.qpAdjD1_,
-      encoderParams.qpAdjD1_,
-      "qp adjustment for D1 : 0, +3, -3..." )
+    ( "deltaQPD0",
+      encoderParams.deltaQPD0_,
+      encoderParams.deltaQPD0_, 
+      "qp adjustment for geometry0 video: 0, +3, -3..." )
+    ( "deltaQPD1",
+      encoderParams.deltaQPD1_,
+      encoderParams.deltaQPD1_,
+      "qp adjustment for geometry1 video: 0, +3, -3..." )
+    ( "deltaQPT0",
+      encoderParams.deltaQPT0_,
+      encoderParams.deltaQPT0_, 
+      "qp adjustment for attribute0 video: 0, +3, -3..." )
+    ( "deltaQPT1",
+      encoderParams.deltaQPT1_,
+      encoderParams.deltaQPT1_, 
+      "qp adjustment for attribute1 video: 0, +3, -3..." )
+      
     ( "constrainedPack",
       encoderParams.constrainedPack_,
       encoderParams.constrainedPack_,

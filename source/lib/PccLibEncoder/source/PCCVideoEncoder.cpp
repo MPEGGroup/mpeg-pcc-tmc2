@@ -64,10 +64,10 @@ bool PCCVideoEncoder::compress( PCCVideo<T, 3>&    video,
                                 const size_t       nbyte,
                                 const bool         use444CodecIo,
                                 const bool         use3dmv,
-                                const bool usePccRDO,
-                                const size_t shvcLayerIndex,
-                                const size_t shvcRateX,
-                                const size_t shvcRateY,
+                                const bool         usePccRDO,
+                                const size_t       shvcLayerIndex,
+                                const size_t       shvcRateX,
+                                const size_t       shvcRateY,
                                 const size_t       internalBitDepth,
                                 const bool         useConversion,
                                 const bool         keepIntermediateFiles,
@@ -363,7 +363,7 @@ bool PCCVideoEncoder::compress( PCCVideo<T, 3>&    video,
   params.binFileName_                 = binFileName;
   params.recYuvFileName_              = recYuvFileName;
   params.encoderConfig_               = encoderConfig;
-  params.qp_                          = qp;
+  params.qp_                          = (std::min)( (std::max)( qp, -12 ), 51 );
   params.inputBitDepth_               = depth;
   params.internalBitDepth_            = internalBitDepth;
   params.outputBitDepth_              = depth;

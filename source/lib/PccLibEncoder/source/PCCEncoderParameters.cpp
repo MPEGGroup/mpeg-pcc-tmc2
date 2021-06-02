@@ -138,8 +138,10 @@ PCCEncoderParameters::PCCEncoderParameters() {
   absoluteD1_                              = true;
   absoluteT1_                              = true;
   multipleStreams_                         = false;
-  qpAdjT1_                                 = 0;
-  qpAdjD1_                                 = 0;
+  deltaQPD0_                               = 0;
+  deltaQPD1_                               = 0;
+  deltaQPT0_                               = 0;
+  deltaQPT1_                               = 0;
   constrainedPack_                         = true;
   thresholdColorSmoothing_                 = 10.0;
   thresholdColorDifference_                = 10.0;
@@ -312,9 +314,11 @@ void PCCEncoderParameters::print() {
   std::cout << "\t keepIntermediateFiles                      " << keepIntermediateFiles_ << std::endl;
   std::cout << "\t absoluteD1                                 " << absoluteD1_ << std::endl;
   std::cout << "\t multipleStreams                            " << multipleStreams_ << std::endl;
-  std::cout << "\t qpD1                                       " << qpAdjD1_ << std::endl;
+  std::cout << "\t deltaQPD0                                  " << deltaQPD0_ << std::endl;
+  std::cout << "\t deltaQPD1                                  " << deltaQPD1_ << std::endl;
+  std::cout << "\t deltaQPT0                                  " << deltaQPT0_ << std::endl;
+  std::cout << "\t deltaQPT1                                  " << deltaQPT1_ << std::endl;
   std::cout << "\t absoluteT1                                 " << absoluteT1_ << std::endl;
-  std::cout << "\t qpT1                                       " << qpAdjT1_ << std::endl;
   std::cout << "\t constrainedPack                            " << constrainedPack_ << std::endl;
   std::cout << "\t maxNumRefPatchList                         " << maxNumRefAtlasList_ << std::endl;
   std::cout << "\t maxNumRefIndex                             " << maxNumRefAtlasFrame_ << std::endl;
