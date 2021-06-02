@@ -69,6 +69,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
   auto&             plt              = sps.getProfileTierLevel();
   const size_t      mapCount         = sps.getMapCountMinus1( atlasIndex ) + 1;
   int               geometryBitDepth = gi.getGeometry2dBitdepthMinus1() + 1;
+  setConsitantFourCCCode( context ); 
   auto occupancyCodecId = getCodedCodecId( context, oi.getOccupancyCodecId(), params_.videoDecoderOccupancyPath_ );
   auto geometryCodecId  = getCodedCodecId( context, gi.getGeometryCodecId(), params_.videoDecoderGeometryPath_ );
   path << removeFileExtension( params_.compressedStreamPath_ ) << "_dec_GOF" << sps.getV3CParameterSetId() << "_";
@@ -176,10 +177,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
       int  attributeDimension = ai.getAttributeDimensionPartitionsMinus1( attrIndex ) + 1;
       auto attributeCodecId =
           getCodedCodecId( context, ai.getAttributeCodecId( attrIndex ), params_.videoDecoderAttributePath_ );
-      auto auxAttributeCodecId =
-          getCodedCodecId( context, ai.getAuxiliaryAttributeCodecId( attrIndex ), params_.videoDecoderAttributePath_ );
-      printf( "CodecId attributeCodecId = %d auxAttributeCodecId = %d \n", (int)attributeCodecId,
-              (int)auxAttributeCodecId );
+      printf( "CodecId attributeCodecId = %d \n", (int)attributeCodecId );
       for ( int attrPartitionIndex = 0; attrPartitionIndex < attributeDimension; attrPartitionIndex++ ) {
         TRACE_PICTURE( "AttrPartIdx = %d, AttrTypeID = %d, ", attrPartitionIndex, attributeTypeId );
         if ( sps.getMultipleMapStreamsPresentFlag( atlasIndex ) ) {
@@ -235,11 +233,15 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
 
         if ( asps.getRawPatchEnabledFlag() && asps.getAuxiliaryVideoEnabledFlag() &&
              sps.getAuxiliaryVideoPresentFlag( atlasIndex ) ) {
+
           TRACE_PICTURE( "MapIdx = 0, AuxiliaryVideoFlag =  1," );
           std::cout << "*******Video Decoding: Aux Attribute ********" << std::endl;
           auto textureIndex = static_cast<PCCVideoType>( VIDEO_TEXTURE_RAW + attrPartitionIndex );
           TRACE_PICTURE( "AttrPartIdx = %d, AttrTypeID = %d, ", textureIndex, attributeTypeId );
           auto& videoBitstreamMP = context.getVideoBitstream( textureIndex );
+          auto auxAttributeCodecId = getCodedCodecId( context, ai.getAuxiliaryAttributeCodecId( attrIndex ),
+                                                      params_.videoDecoderAttributePath_ );
+          printf( "CodecId auxAttributeCodecId = %d \n", (int)auxAttributeCodecId );
           videoDecoder.decompress( context.getVideoRawPointsTexture(),          // video
                                    context,                                     // contexts
                                    path.str(),                                  // path
@@ -1777,6 +1779,19 @@ size_t PCCDecoder::setTileSizeAndLocation( PCCContext& context, size_t frameInde
   return tileIndex;
 }
 
+void PCCDecoder::setConsitantFourCCCode( PCCContext& context ) {
+  if ( context.seiIsPresent( NAL_PREFIX_ESEI, COMPONENT_CODEC_MAPPING ) ) {
+    auto* sei = static_cast<SEIComponentCodecMapping*>( context.getSei( NAL_PREFIX_ESEI, COMPONENT_CODEC_MAPPING ) );
+    consitantFourCCCode_.resize( 256, std::string( "" ) );
+    for ( size_t i = 0; i <= sei->getCodecMappingsCountMinus1(); i++ ) {
+      auto codecId                  = sei->getCodecId( i );
+      consitantFourCCCode_[codecId] = sei->getCodec4cc( codecId );
+      printf("setConsitantFourCCCode: codecId = %3zu  fourCCCode = %s \n",
+       codecId, consitantFourCCCode_[codecId].c_str() );
+    }
+  }
+}
+
 PCCCodecId PCCDecoder::getCodedCodecId( PCCContext&        context,
                                         const uint8_t      codecCodecId,
                                         const std::string& videoDecoderPath ) {
@@ -1820,54 +1835,52 @@ PCCCodecId PCCDecoder::getCodedCodecId( PCCContext&        context,
 #endif
       break;
     case CODEC_GROUP_MP4RA:
-      if ( context.seiIsPresent( NAL_PREFIX_ESEI, COMPONENT_CODEC_MAPPING ) ) {
-        auto* sei =
-            static_cast<SEIComponentCodecMapping*>( context.getSei( NAL_PREFIX_ESEI, COMPONENT_CODEC_MAPPING ) );
-        for ( size_t i = 0; i <= sei->getCodecMappingsCountMinus1(); i++ ) {
-          auto codecId = sei->getCodecId( i );
-          if ( codecId == codecCodecId ) {
-            std::string codec4cc = sei->getCodec4cc( codecId );
-            printf( "=> codecId = %u => codec4cc = %s \n", codecId, codec4cc.c_str() );
-            if ( codec4cc.compare( "avc3" ) == 0 ) {
-#if defined( USE_JMLIB_VIDEO_CODEC )
-              return JMLIB;
+      if ( consitantFourCCCode_.size() > codecCodecId && !consitantFourCCCode_[codecCodecId].empty() ) {
+        std::string codec4cc = consitantFourCCCode_[codecCodecId];
+        printf( "=> codecId = %u => codec4cc = %s \n", codecCodecId, codec4cc.c_str() );
+        if ( codec4cc.compare( "avc3" ) == 0 ) {
+#if defined( USE_JMAPP_VIDEO_CODEC ) && defined( USE_JMLIB_VIDEO_CODEC )
+          return videoDecoderPath.empty() ? JMLIB : JMAPP;
+#elif defined( USE_JMLIB_VIDEO_CODEC )
+          return JMLIB;
 #elif defined( USE_JMAPP_VIDEO_CODEC )
-              return JMAPP;
+          return JMAPP;
 #else
-              fprintf( stderr, "JM Codec not supported \n" );
-              exit( -1 );
+          fprintf( stderr, "JM Codec not supported \n" );
+          exit( -1 );
 #endif
-            } else if ( codec4cc.compare( "hev1" ) == 0 ) {
-#if defined( USE_JMLIB_VIDEO_CODEC )
-              return HMLIB;
+        } else if ( codec4cc.compare( "hev1" ) == 0 ) {
+#if defined( USE_JMAPP_VIDEO_CODEC ) && defined( USE_JMLIB_VIDEO_CODEC )
+          return videoDecoderPath.empty() ? HMLIB : HMAPP;
+#elif defined( USE_JMLIB_VIDEO_CODEC )
+          return HMLIB;
 #elif defined( USE_JMAPP_VIDEO_CODEC )
-              return HMAPP;
+          return HMAPP;
 #else
-              fprintf( stderr, "HM Codec not supported \n" );
-              exit( -1 );
+          fprintf( stderr, "HM Codec not supported \n" );
+          exit( -1 );
 #endif
-            } else if ( codec4cc.compare( "svc1" ) == 0 ) {
+        } else if ( codec4cc.compare( "svc1" ) == 0 ) {
 #if defined( USE_SHMAPP_VIDEO_CODEC )
-              return SHMAPP;
+          return SHMAPP;
 #else
-              fprintf( stderr, "SHM Codec not supported \n" );
-              exit( -1 );
+          fprintf( stderr, "SHM Codec not supported \n" );
+          exit( -1 );
 #endif
-            } else if ( codec4cc.compare( "vvi1" ) == 0 ) {
+        } else if ( codec4cc.compare( "vvi1" ) == 0 ) {
 #if defined( USE_VTMLIB_VIDEO_CODEC )
-              return VTMLIB;
+          return VTMLIB;
 #else
-              fprintf( stderr, "VTM Codec not supported \n" );
-              exit( -1 );
+          fprintf( stderr, "VTM Codec not supported \n" );
+          exit( -1 );
 #endif
-            } else {
-              fprintf( stderr, "CODEC_GROUP_MP4RA but codec4cc \"%s\" not supported \n", codec4cc.c_str() );
-              exit( -1 );
-            }
-          }
+        } else {
+          fprintf( stderr, "CODEC_GROUP_MP4RA but codec4cc \"%s\" not supported \n", codec4cc.c_str() );
+          exit( -1 );
         }
       } else {
-        fprintf( stderr, "CODEC_GROUP_MP4RA but component codec mapping SEI not present \n" );
+        fprintf( stderr, "CODEC_GROUP_MP4RA but component codec mapping SEI not present or codec index = %u not set \n",
+                 codecCodecId );
         exit( -1 );
       }
       break;
