@@ -51,8 +51,12 @@ void PCCJMAppVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
   const size_t width      = videoSrc.getWidth();
   const size_t height     = videoSrc.getHeight();
   const size_t frameCount = videoSrc.getFrameCount();
-  std::string srcYuvFileName = params.srcYuvFileName_.insert( params.srcYuvFileName_.find_last_of("."), "_jmapp" ); 
-  std::string recYuvFileName = params.recYuvFileName_.insert( params.recYuvFileName_.find_last_of("."), "_jmapp" ); 
+  std::string  srcYuvFileName = params.srcYuvFileName_;
+  std::string  recYuvFileName = params.recYuvFileName_;
+  std::string  binFileName    = params.binFileName_;
+  srcYuvFileName.insert( srcYuvFileName.find_last_of( "." ), "_jmapp" );
+  recYuvFileName.insert( recYuvFileName.find_last_of( "." ), "_jmapp" );
+  binFileName.insert( binFileName.find_last_of( "." ), "_jmapp" );
   std::stringstream cmd;
   cmd << params.encoderPath_ << " -d " << params.encoderConfig_;
   if ( bitstream.type() == VIDEO_GEOMETRY && bitstream.type() != VIDEO_TEXTURE ) {
@@ -71,7 +75,7 @@ void PCCJMAppVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
   cmd << " -p SourceWidth=" << width;
   cmd << " -p SourceHeight=" << height;
   cmd << " -p FramesToBeEncoded=" << frameCount;
-  cmd << " -p OutputFile=" << params.binFileName_;
+  cmd << " -p OutputFile=" << binFileName;
   cmd << " -p ReconFile=" << recYuvFileName;
   cmd << " -p OutputBitDepthLuma=" << params.outputBitDepth_;
   cmd << " -p OutputBitDepthChroma=" << params.outputBitDepth_;
@@ -85,9 +89,10 @@ void PCCJMAppVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
   PCCCOLORFORMAT format = getColorFormat( params.recYuvFileName_ );
   videoRec.clear();
   videoRec.read( recYuvFileName, width, height, format, params.outputBitDepth_ == 8 ? 1 : 2 );
-  bitstream.read( params.binFileName_ );
+  bitstream.read( binFileName );
   removeFile( srcYuvFileName ); 
   removeFile( recYuvFileName ); 
+  removeFile( binFileName ); 
 }
 
 template <typename T>

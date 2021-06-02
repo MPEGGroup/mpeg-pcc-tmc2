@@ -50,9 +50,13 @@ void PCCHMAppVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
                                       PCCVideo<T, 3>&            videoRec ) {
   const size_t      width      = videoSrc.getWidth();
   const size_t      height     = videoSrc.getHeight();
-  const size_t      frameCount = videoSrc.getFrameCount();
-  std::string srcYuvFileName = params.srcYuvFileName_.insert( params.srcYuvFileName_.find_last_of("."), "_jmapp" ); 
-  std::string recYuvFileName = params.recYuvFileName_.insert( params.recYuvFileName_.find_last_of("."), "_jmapp" ); 
+  const size_t      frameCount     = videoSrc.getFrameCount();
+  std::string       srcYuvFileName = params.srcYuvFileName_;
+  std::string       recYuvFileName = params.recYuvFileName_;
+  std::string       binFileName    = params.binFileName_;
+  srcYuvFileName.insert( srcYuvFileName.find_last_of( "." ), "_hmapp" );
+  recYuvFileName.insert( recYuvFileName.find_last_of( "." ), "_hmapp" );
+  binFileName.insert( binFileName.find_last_of( "." ), "_hmapp" );
   std::stringstream cmd;
   cmd << params.encoderPath_;
   cmd << " -c " << params.encoderConfig_;
@@ -67,7 +71,7 @@ void PCCHMAppVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
   cmd << " --SourceHeight=" << height;
   cmd << " --ConformanceWindowMode=1 ";
   cmd << " --FramesToBeEncoded=" << frameCount;
-  cmd << " --BitstreamFile=" << params.binFileName_;
+  cmd << " --BitstreamFile=" << binFileName;
   cmd << " --ReconFile=" << recYuvFileName;
   cmd << " --QP=" << params.qp_;
   if ( params.transquantBypassEnable_ != 0 ) { cmd << " --TransquantBypassEnable=1"; }
@@ -94,9 +98,10 @@ void PCCHMAppVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
   PCCCOLORFORMAT format = getColorFormat( params.recYuvFileName_ );
   videoRec.clear();
   videoRec.read( recYuvFileName, width, height, format, params.outputBitDepth_ == 8 ? 1 : 2 );
-  bitstream.read( params.binFileName_ );
+  bitstream.read( binFileName );
   removeFile( srcYuvFileName ); 
   removeFile( recYuvFileName ); 
+  removeFile( binFileName ); 
 }
 
 template <typename T>
