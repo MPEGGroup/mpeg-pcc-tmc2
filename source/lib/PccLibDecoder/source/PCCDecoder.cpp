@@ -1775,6 +1775,14 @@ size_t PCCDecoder::setTileSizeAndLocation( PCCContext& context, size_t frameInde
         context[frameIndex].setAuxTileLeftTopY(
             ti + 1, context[frameIndex].getAuxTileLeftTopY( ti ) + context[frameIndex].getAuxTileHeight( ti ) );
     }
+#if 1
+    for ( size_t ti = 0; ti <= afti.getNumTilesInAtlasFrameMinus1(); ti++ ) {
+      auto& atlasFrame = context[frameIndex];
+      printf( "decAux:%zu frame %zu tile:(%zu,%zu), %zux%zu\n",
+              frameIndex, ti, size_t(0), atlasFrame.getAuxTileLeftTopY(ti),
+             atlasFrame.getAuxVideoWidth(), atlasFrame.getAuxTileHeight(ti));
+    }
+#endif
   }
   return tileIndex;
 }

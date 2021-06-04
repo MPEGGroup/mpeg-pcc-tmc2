@@ -78,7 +78,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
 
   if ( sources.getFrameCount() == 0 ) { return 0; }
   assert( sources.getFrameCount() < 256 );
-  if ( params_.rawPointsPatch_ && params_.tileSegmentationType_ > 1 && params_.numMaxTilePerFrame_ > 1 ) {
+  if ( ( params_.rawPointsPatch_ || params_.lossyRawPointsPatch_) && params_.tileSegmentationType_ > 1 && params_.numMaxTilePerFrame_ > 1 ) {
     params_.numMaxTilePerFrame_ += 1;
   }
   reconstructs.setFrameCount( sources.getFrameCount() );
@@ -4750,8 +4750,12 @@ void PCCEncoder::generateRawPointsGeometryVideo( PCCContext& context ) {
   if ( params_.tileSegmentationType_ == 1 ) numInterval = framesInAFPS.size();
 
   size_t maxVideoHeight = 0;
-  for ( size_t ti = 0; ti < context[0].getAuxTileHeightSize(); ti++ ) {
-    maxVideoHeight += context[0].getAuxTileHeight( ti );
+  for ( size_t fi = 0; fi < context.size(); fi++ ) {
+    size_t maxVideoHeightFrame = 0;
+    for ( size_t ti = 0; ti < context[fi].getAuxTileHeightSize(); ti++ ) {
+      maxVideoHeightFrame += context[fi].getAuxTileHeight( ti );
+    }
+    maxVideoHeight = std::max(maxVideoHeightFrame, maxVideoHeight);
   }
   for ( size_t fi = 0; fi < context.size(); fi++ ) {
     videoRawPointsGeometry.getFrame( fi ).resize( maxWidth, maxVideoHeight, PCCCOLORFORMAT::YUV444 );
@@ -4763,7 +4767,8 @@ void PCCEncoder::generateRawPointsGeometryVideo( PCCContext& context ) {
     size_t numTilesInSeg = ( params_.tileSegmentationType_ == 0 ) ? 1 : context[firstFrame].getNumTilesInAtlasFrame();
 #if 1
     std::cout << "sequence group[" << segIdx << "] : " << firstFrame << " ~ " << lastFrame
-              << " numTile: " << numTilesInSeg << std::endl;
+              << " numTile: " << numTilesInSeg << "size(frame0): "
+              <<videoRawPointsGeometry.getFrame( 0 ).getWidth()<<"x"<<videoRawPointsGeometry.getFrame( 0 ).getHeight()<< std::endl;
 #endif
     for ( size_t tileIdx = 0; tileIdx < numTilesInSeg; tileIdx++ ) {
       for ( size_t frameIdx = firstFrame; frameIdx < lastFrame; frameIdx++ ) {
@@ -4774,7 +4779,7 @@ void PCCEncoder::generateRawPointsGeometryVideo( PCCContext& context ) {
           totalNumRawPoints += tile.getRawPointsPatch( ii ).sizeX();
         std::cout << "generate raw Points Video (Geometry) frame[" << frameIdx << "] tile[" << tileIdx << "] : "
                   << "#rawPatches: " << tile.getNumberOfRawPointsPatches()
-                  << "#rawPoints(pixels): " << totalNumRawPoints << std::endl;
+                  << "\t#rawPoints(pixels): " << totalNumRawPoints << std::endl;
       }  // frame;
     }    // tiles
   }      // interval
@@ -4834,6 +4839,7 @@ void PCCEncoder::generateRawPointsGeometryImage( PCCContext& context, PCCFrameCo
               printf( "ERROR: X and y outside the picture: ( %zu, %zu) / ( %zu, %zu) (then) \n", x, y, image.getWidth(),
                       image.getHeight() );
               fflush( stdout );
+              exit(19);
             } else {
               image.setValue( 0, x, y, uint16_t( rawPointsPatch.x_[p] ) );
             }
@@ -4845,6 +4851,7 @@ void PCCEncoder::generateRawPointsGeometryImage( PCCContext& context, PCCFrameCo
               printf( "ERROR: X and y outside the picture: ( %zu, %zu) / ( %zu, %zu) (else) \n", x, y, image.getWidth(),
                       image.getHeight() );
               fflush( stdout );
+              exit(19);
             } else {
               image.setValue( 0, x, y, static_cast<uint16_t>( lastValue ) );
             }

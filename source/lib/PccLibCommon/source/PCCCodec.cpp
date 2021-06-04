@@ -1029,7 +1029,10 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                       reconstru
     if ( useRawPointsSeparateVideo ) {
       assert( ( reconstruct.getPointCount() - tile.getTotalNumberOfRawPoints() ) == pointToPixel.size() );
     } else {
-      assert( ( reconstruct.getPointCount() + tile.getTotalNumberOfRawPoints() ) == pointToPixel.size() );
+      if(tile.getPatches().size() == 0 )
+        assert( ( tile.getTotalNumberOfRawPoints() ) == pointToPixel.size() );
+      else
+        assert( ( reconstruct.getPointCount() + tile.getTotalNumberOfRawPoints() ) == pointToPixel.size() );
     }
     size_t pointCount = reconstruct.getPointCount() - tile.getTotalNumberOfRawPoints();
     for ( size_t i = 0; i < pointCount; ++i ) {

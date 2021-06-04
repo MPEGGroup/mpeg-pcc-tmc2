@@ -1031,6 +1031,12 @@ bool PCCEncoderParameters::check() {
     std::cerr << "SHMAPP codec requiered shvcRateX and shvcRateY equal to 2. \n";
     ret = false;
   }
+  
+  if( !rawPointsPatch_ && !lossyRawPointsPatch_ ){
+    useRawPointsSeparateVideo_ = 0;
+    std::cerr << "useRawPointsSeparateVideo_ is false since rawPointsPatch_=false & lossyRawPointsPatch_=false. \n";
+  }
+
   return ret;
 }
 
