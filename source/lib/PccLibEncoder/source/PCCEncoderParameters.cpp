@@ -1031,7 +1031,7 @@ bool PCCEncoderParameters::check() {
     std::cerr << "SHMAPP codec requiered shvcRateX and shvcRateY equal to 2. \n";
     ret = false;
   }
-s
+
   return ret;
 }
 
