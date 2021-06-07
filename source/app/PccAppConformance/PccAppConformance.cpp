@@ -57,6 +57,7 @@ bool parseParameters( int argc, char* argv[], PCCConformanceParameters& params )
   po::setDefaults( opts );
   po::ErrorReporter        err;
   const list<const char*>& argv_unhandled = po::scanArgv( opts, argc, (const char**)argv, err );
+  for ( const auto arg : argv_unhandled ) { printf( "Unhandled argument ignored: %s \n", arg ); }
 
   params.print();
   if ( !params.check() ) {

@@ -47,14 +47,7 @@ float getPSNR( float dist, float p, float factor = 1.0 ) {
   return psnr;
 }
 
-void convertRGBtoYUV( const PCCColor3B& rgb, std::vector<float>& yuv ) {
-  yuv.resize( 3 );
-  yuv[0] = float( ( 0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2] ) / 255.0 );
-  yuv[1] = float( ( -0.147 * rgb[0] - 0.289 * rgb[1] + 0.436 * rgb[2] ) / 255.0 );
-  yuv[2] = float( ( 0.615 * rgb[0] - 0.515 * rgb[1] - 0.100 * rgb[2] ) / 255.0 );
-}
-
-void convertRGBtoYUV_BT709( const PCCColor3B& rgb, std::vector<float>& yuv ) {
+void convertRGBtoYUVBT709( const PCCColor3B& rgb, std::vector<float>& yuv ) {
   yuv.resize( 3 );
   yuv[0] = float( ( 0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2] ) / 255.0 );
   yuv[1] = float( ( -0.1146 * rgb[0] - 0.3854 * rgb[1] + 0.5000 * rgb[2] ) / 255.0 + 0.5000 );
@@ -137,7 +130,7 @@ void QualityMetrics::compute( const PCCPointSet3& pointcloudA, const PCCPointSet
       std::vector<float> yuvA;
       std::vector<float> yuvB;
       PCCColor3B         rgb;
-      convertRGBtoYUV_BT709( pointcloudA.getColor( indexA ), yuvA );
+      convertRGBtoYUVBT709( pointcloudA.getColor( indexA ), yuvA );
       if ( params_.neighborsProc_ != 0 ) {
         switch ( params_.neighborsProc_ ) {
           case 0: break;
@@ -158,7 +151,7 @@ void QualityMetrics::compute( const PCCPointSet3& pointcloudA, const PCCPointSet
             rgb[0] = static_cast<unsigned char>( round( static_cast<double>( r ) / nbdupcumul ) );
             rgb[1] = static_cast<unsigned char>( round( static_cast<double>( g ) / nbdupcumul ) );
             rgb[2] = static_cast<unsigned char>( round( static_cast<double>( b ) / nbdupcumul ) );
-            convertRGBtoYUV_BT709( rgb, yuvB );
+            convertRGBtoYUVBT709( rgb, yuvB );
             for ( size_t i = 0; i < 3; i++ ) { distColor[i] = pow( yuvA[i] - yuvB[i], 2.F ); }
           } break;
           case 3:  // Min
@@ -167,7 +160,7 @@ void QualityMetrics::compute( const PCCPointSet3& pointcloudA, const PCCPointSet
             float  distBest  = 0;
             size_t indexBest = 0;
             for ( auto index : sameDistList ) {
-              convertRGBtoYUV_BT709( pointcloudB.getColor( index ), yuvB );
+              convertRGBtoYUVBT709( pointcloudB.getColor( index ), yuvB );
               float dist =
                   pow( yuvA[0] - yuvB[0], 2.F ) + pow( yuvA[1] - yuvB[1], 2.F ) + pow( yuvA[2] - yuvB[2], 2.F );
               if ( ( ( params_.neighborsProc_ == 3 ) && ( dist < distBest ) ) ||
@@ -176,11 +169,11 @@ void QualityMetrics::compute( const PCCPointSet3& pointcloudA, const PCCPointSet
                 indexBest = index;
               }
             }
-            convertRGBtoYUV_BT709( pointcloudB.getColor( indexBest ), yuvB );
+            convertRGBtoYUVBT709( pointcloudB.getColor( indexBest ), yuvB );
           } break;
         }
       } else {
-        convertRGBtoYUV_BT709( pointcloudB.getColor( indexB ), yuvB );
+        convertRGBtoYUVBT709( pointcloudB.getColor( indexB ), yuvB );
       }
       for ( size_t i = 0; i < 3; i++ ) { distColor[i] = pow( yuvA[i] - yuvB[i], 2.F ); }
     }

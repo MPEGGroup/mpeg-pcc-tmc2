@@ -75,6 +75,7 @@ bool parseParameters( int          argc,
   po::setDefaults( opts );
   po::ErrorReporter        err;
   const list<const char*>& argv_unhandled = po::scanArgv( opts, argc, (const char**)argv, err );
+  for ( const auto arg : argv_unhandled ) { printf( "Unhandled argument ignored: %s \n", arg ); }
 
   printf( "parseParameters : \n" );
   printf( "  srcVideoPath   = %s \n", srcVideoPath.c_str() );

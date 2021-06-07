@@ -51,17 +51,6 @@ static std::istream& operator>>( std::istream& in, PCCCodecId& val ) {
 }
 }  // namespace pcc
 
-size_t getFileSize( const std::string& file ) {
-  size_t        size = 0;
-  std::ifstream in( file.c_str(), ios_base::binary );
-  if ( in.good() ) {
-    in.seekg( 0, ios_base::end );
-    size = in.tellg();
-  }
-  in.close();
-  return size;
-}
-
 int main( int argc, char* argv[] ) {
   std::cout << "PccAppVideoDecoder v" << TMC2_VERSION_MAJOR << "." << TMC2_VERSION_MINOR << std::endl << std::endl;
   std::string binFile, path;
@@ -84,6 +73,7 @@ int main( int argc, char* argv[] ) {
   po::setDefaults( opts );
   po::ErrorReporter        err;
   const list<const char*>& argv_unhandled = po::scanArgv( opts, argc, (const char**)argv, err );
+  for ( const auto arg : argv_unhandled ) { printf( "Unhandled argument ignored: %s \n", arg ); }
   if ( argc == 1 || print_help ) {
     po::doHelp( std::cout, opts, 78 );
     return false;

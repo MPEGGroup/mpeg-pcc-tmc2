@@ -157,8 +157,8 @@ bool PCCVideoDecoder::decompress( PCCVideo<T, 3>&    video,
         auto& destImage = video.getFrame( frNum );
         destImage.resize( width, height, PCCCOLORFORMAT::YUV444 );
         // iterate the patch information and perform chroma down-sampling on each patch individually
-        std::vector<PCCPatch> patches      = context.getTitleFrameContext().getPatches();
-        std::vector<size_t>   blockToPatch = context.getTitleFrameContext().getBlockToPatch();
+        std::vector<PCCPatch>& patches      = context.getTitleFrameContext().getPatches();
+        std::vector<size_t>&   blockToPatch = context.getTitleFrameContext().getBlockToPatch();
         for ( int patchIdx = 0; patchIdx <= patches.size(); patchIdx++ ) {
           size_t occupancyResolution;
           size_t patch_left;
@@ -195,8 +195,7 @@ bool PCCVideoDecoder::decompress( PCCVideo<T, 3>&    video,
           // fill in the blocks by extending the edges
           for ( size_t i = 0; i < patch_height / occupancyResolution; i++ ) {
             for ( size_t j = 0; j < patch_width / occupancyResolution; j++ ) {
-              if ( context.getTitleFrameContext()
-                       .getBlockToPatch()[( i + patch_top / occupancyResolution ) * ( width / occupancyResolution ) +
+              if ( blockToPatch[( i + patch_top / occupancyResolution ) * ( width / occupancyResolution ) +
                                           j + patch_left / occupancyResolution] == patchIdx ) {
                 // do nothing
                 continue;
@@ -211,8 +210,7 @@ bool PCCVideoDecoder::decompress( PCCVideo<T, 3>&    video,
                 // current block
                 searchIndex = j;
                 while ( searchIndex >= 0 ) {
-                  if ( context.getTitleFrameContext()
-                           .getBlockToPatch()[( i + patch_top / occupancyResolution ) *
+                  if ( blockToPatch[( i + patch_top / occupancyResolution ) *
                                                   ( width / occupancyResolution ) +
                                               searchIndex + patch_left / occupancyResolution] == patchIdx ) {
                     neighborIdx[0]      = searchIndex;
@@ -225,8 +223,7 @@ bool PCCVideoDecoder::decompress( PCCVideo<T, 3>&    video,
                 // current block
                 searchIndex = j;
                 while ( searchIndex < patch_width / occupancyResolution ) {
-                  if ( context.getTitleFrameContext()
-                           .getBlockToPatch()[( i + patch_top / occupancyResolution ) *
+                  if ( blockToPatch[( i + patch_top / occupancyResolution ) *
                                                   ( width / occupancyResolution ) +
                                               searchIndex + patch_left / occupancyResolution] == patchIdx ) {
                     neighborIdx[1]      = searchIndex;
@@ -238,8 +235,7 @@ bool PCCVideoDecoder::decompress( PCCVideo<T, 3>&    video,
                 // looking for the neighboring block above the current block
                 searchIndex = i;
                 while ( searchIndex >= 0 ) {
-                  if ( context.getTitleFrameContext()
-                           .getBlockToPatch()[( searchIndex + patch_top / occupancyResolution ) *
+                  if ( blockToPatch[( searchIndex + patch_top / occupancyResolution ) *
                                                   ( width / occupancyResolution ) +
                                               j + patch_left / occupancyResolution] == patchIdx ) {
                     neighborIdx[2]      = searchIndex;
@@ -251,8 +247,7 @@ bool PCCVideoDecoder::decompress( PCCVideo<T, 3>&    video,
                 // looking for the neighboring block below the current block
                 searchIndex = i;
                 while ( searchIndex < patch_height / occupancyResolution ) {
-                  if ( context.getTitleFrameContext()
-                           .getBlockToPatch()[( searchIndex + patch_top / occupancyResolution ) *
+                  if ( blockToPatch[( searchIndex + patch_top / occupancyResolution ) *
                                                   ( width / occupancyResolution ) +
                                               j + patch_left / occupancyResolution] == patchIdx ) {
                     neighborIdx[3]      = searchIndex;
