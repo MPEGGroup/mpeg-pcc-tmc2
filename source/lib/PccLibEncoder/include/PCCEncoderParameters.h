@@ -81,17 +81,17 @@ class PCCEncoderParameters {
 
   // video encoding
   int         geometryQP_;
-  int         textureQP_;
+  int         attributeQP_;
   int         deltaQPD0_;
   int         deltaQPD1_;
   int         deltaQPT0_;
   int         deltaQPT1_;
   std::string geometryConfig_;
-  std::string geometryD0Config_;
-  std::string geometryD1Config_;
-  std::string textureConfig_;
-  std::string textureT0Config_;
-  std::string textureT1Config_;
+  std::string geometry0Config_;
+  std::string geometry1Config_;
+  std::string attributeConfig_;
+  std::string attribute0Config_;
+  std::string attribute1Config_;
   bool        multipleStreams_;
 
   // segmentation
@@ -184,7 +184,7 @@ class PCCEncoderParameters {
   // raw points video
   bool        useRawPointsSeparateVideo_;
   std::string geometryAuxVideoConfig_;
-  std::string textureAuxVideoConfig_;
+  std::string attributeAuxVideoConfig_;
 
   // scale and bias
   float             modelScale_;
@@ -225,7 +225,7 @@ class PCCEncoderParameters {
 
   // Flexible Patch Packing
   size_t packingStrategy_;
-  size_t textureBGFill_;
+  size_t attributeBGFill_;
   size_t safeGuardDistance_;
   bool   useEightOrientations_;
 
@@ -274,7 +274,7 @@ class PCCEncoderParameters {
 
   // Sort raw points by Morton code
   bool   mortonOrderSortRawPoints_;
-  size_t textureRawSeparateVideoWidth_;
+  size_t attributeRawSeparateVideoWidth_;
 
   // Patch block filtering
   bool    pbfEnableFlag_;

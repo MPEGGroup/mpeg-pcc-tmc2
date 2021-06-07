@@ -100,7 +100,7 @@ int main( int argc, char* argv[] ) {
     printf( "Error parameters not correct \n" );
     return -1;
   }
-  PCCVideoBitstream bitstream( VIDEO_TEXTURE );
+  PCCVideoBitstream bitstream( VIDEO_ATTRIBUTE );
   bitstream.read( binFile );
   PCCVideo<uint16_t, 3> video;
   auto                  decoder = PCCVirtualVideoDecoder<uint16_t>::create( codecId );

@@ -181,17 +181,17 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
       for ( int attrPartitionIndex = 0; attrPartitionIndex < attributeDimension; attrPartitionIndex++ ) {
         TRACE_PICTURE( "AttrPartIdx = %d, AttrTypeID = %d, ", attrPartitionIndex, attributeTypeId );
         if ( sps.getMultipleMapStreamsPresentFlag( atlasIndex ) ) {
-          int sizeTextureVideo = 0;
-          context.getVideoTextureMultiple().resize( sps.getMapCountMinus1( atlasIndex ) + 1 );
+          int sizeAttributeVideo = 0;
+          context.getVideoAttributesMultiple().resize( sps.getMapCountMinus1( atlasIndex ) + 1 );
           // this allocation is considering only one attribute, with a single partition, but multiple streams
           for ( uint32_t mapIndex = 0; mapIndex < sps.getMapCountMinus1( atlasIndex ) + 1; mapIndex++ ) {
             // decompress T[mapIndex]
             TRACE_PICTURE( "MapIdx = %d, AuxiliaryVideoFlag =  0\n", mapIndex );
             std::cout << "*******Video Decoding: Attribute [" << mapIndex << "] ********" << std::endl;
-            auto textureIndex =
-                static_cast<PCCVideoType>( VIDEO_TEXTURE_T0 + attrPartitionIndex + MAX_NUM_ATTR_PARTITIONS * mapIndex );
-            auto& videoBitstream = context.getVideoBitstream( textureIndex );
-            videoDecoder.decompress( context.getVideoTextureMultiple( mapIndex ),  // video
+            auto attributeIndex =
+                static_cast<PCCVideoType>( VIDEO_ATTRIBUTE_T0 + attrPartitionIndex + MAX_NUM_ATTR_PARTITIONS * mapIndex );
+            auto& videoBitstream = context.getVideoBitstream( attributeIndex );
+            videoDecoder.decompress( context.getVideoAttributesMultiple( mapIndex ),  // video
                                      context,                                      // contexts
                                      path.str(),                                   // path
                                      videoBitstream,                               // bitstream
@@ -204,18 +204,18 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
                                      params_.patchColorSubsampling_,               // patch color subsampling
                                      params_.inverseColorSpaceConversionConfig_,   // inverse color space conversion
                                      params_.colorSpaceConversionPath_ );          // color space conversion path
-            std::cout << "texture T" << mapIndex << " video ->" << videoBitstream.size() << " B" << std::endl;
-            sizeTextureVideo += videoBitstream.size();
+            std::cout << "attribute T" << mapIndex << " video ->" << videoBitstream.size() << " B" << std::endl;
+            sizeAttributeVideo += videoBitstream.size();
           }
-          std::cout << "texture    video ->" << sizeTextureVideo << " B" << std::endl;
+          std::cout << "attribute    video ->" << sizeAttributeVideo << " B" << std::endl;
         } else {
           TRACE_PICTURE( "MapIdx = 0, AuxiliaryVideoFlag =  0\n" );
           std::cout << "*******Video Decoding: Attribute ********" << std::endl;
-          auto  textureIndex   = static_cast<PCCVideoType>( VIDEO_TEXTURE + attrPartitionIndex );
-          auto& videoBitstream = context.getVideoBitstream( textureIndex );
+          auto  attributeIndex   = static_cast<PCCVideoType>( VIDEO_ATTRIBUTE + attrPartitionIndex );
+          auto& videoBitstream = context.getVideoBitstream( attributeIndex );
           printf( " Decode T size = %zu \n", videoBitstream.size() );
           fflush( stdout );
-          videoDecoder.decompress( context.getVideoTextureMultiple( 0 ),        // video
+          videoDecoder.decompress( context.getVideoAttributesMultiple( 0 ),        // video
                                    context,                                     // contexts
                                    path.str(),                                  // path
                                    videoBitstream,                              // bitstream
@@ -228,7 +228,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
                                    params_.patchColorSubsampling_,              // patch color subsampling
                                    params_.inverseColorSpaceConversionConfig_,  // inverse color space conversionConfig
                                    params_.colorSpaceConversionPath_ );         // color space conversion path
-          std::cout << "texture video  ->" << videoBitstream.size() << " B" << std::endl;
+          std::cout << "attribute video  ->" << videoBitstream.size() << " B" << std::endl;
         }
 
         if ( asps.getRawPatchEnabledFlag() && asps.getAuxiliaryVideoEnabledFlag() &&
@@ -236,13 +236,13 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
 
           TRACE_PICTURE( "MapIdx = 0, AuxiliaryVideoFlag =  1," );
           std::cout << "*******Video Decoding: Aux Attribute ********" << std::endl;
-          auto textureIndex = static_cast<PCCVideoType>( VIDEO_TEXTURE_RAW + attrPartitionIndex );
-          TRACE_PICTURE( "AttrPartIdx = %d, AttrTypeID = %d, ", textureIndex, attributeTypeId );
-          auto& videoBitstreamMP = context.getVideoBitstream( textureIndex );
+          auto attributeIndex = static_cast<PCCVideoType>( VIDEO_ATTRIBUTE_RAW + attrPartitionIndex );
+          TRACE_PICTURE( "AttrPartIdx = %d, AttrTypeID = %d, ", attributeIndex, attributeTypeId );
+          auto& videoBitstreamMP = context.getVideoBitstream( attributeIndex );
           auto auxAttributeCodecId = getCodedCodecId( context, ai.getAuxiliaryAttributeCodecId( attrIndex ),
                                                       params_.videoDecoderAttributePath_ );
           printf( "CodecId auxAttributeCodecId = %d \n", (int)auxAttributeCodecId );
-          videoDecoder.decompress( context.getVideoRawPointsTexture(),          // video
+          videoDecoder.decompress( context.getVideoRawPointsAttribute(),          // video
                                    context,                                     // contexts
                                    path.str(),                                  // path
                                    videoBitstreamMP,                            // bitstream
@@ -255,15 +255,15 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
                                    false,                                       // patch color subsampling
                                    params_.inverseColorSpaceConversionConfig_,  // inverse color space conversionConfig
                                    params_.colorSpaceConversionPath_ );         // color space conversion path
-          // generateRawPointsTexturefromVideo( context, reconstructs );
-          std::cout << " raw points texture -> " << videoBitstreamMP.size() << " B" << endl;
+          // generateRawPointsAttributefromVideo( context, reconstructs );
+          std::cout << " raw points attribute -> " << videoBitstreamMP.size() << " B" << endl;
         }
       }
     }
   }
-  bool isAttributes444 = context.getVideoTextureMultiple( 0 ).getColorFormat() == PCCCOLORFORMAT::RGB444;
+  bool isAttributes444 = context.getVideoAttributesMultiple( 0 ).getColorFormat() == PCCCOLORFORMAT::RGB444;
   printf( "isAttributes444 = %d Format = %d \n", isAttributes444,
-          context.getVideoTextureMultiple( 0 ).getColorFormat() );
+          context.getVideoAttributesMultiple( 0 ).getColorFormat() );
   fflush( stdout );
 
   reconstructs.setFrameCount( frameCount );
@@ -294,10 +294,10 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
       for ( int attrIndex = 0; attrIndex < ai.getAttributeCount(); attrIndex++ ) {
         int attributeDimensionPartitions = ai.getAttributeDimensionPartitionsMinus1( attrIndex ) + 1;
         for ( int attrPartitionIndex = 0; attrPartitionIndex < attributeDimensionPartitions; attrPartitionIndex++ ) {
-          printf( "generateRawPointsTexturefromVideo attrIndex = %d attrPartitionIndex = %d \n", attrIndex,
+          printf( "generateRawPointsAttributefromVideo attrIndex = %d attrPartitionIndex = %d \n", attrIndex,
                   attrPartitionIndex );
           fflush( stdout );
-          generateRawPointsTexturefromVideo( context, frameIdx );
+          generateRawPointsAttributefromVideo( context, frameIdx );
         }
       }
     }  // getAuxiliaryVideoEnabledFlag()
@@ -382,7 +382,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
           tempFrameBuffer.transferColors16bitBP( reconstruct,                          // target
                                                  params_.postprocessSmoothingFilter_,  // filterType
                                                  int32_t( 0 ),                         // searchRange
-                                                 isAttributes444,                      // losslessTexture
+                                                 isAttributes444,                      // losslessAttribute
                                                  8,                                    // numNeighborsColorTransferFwd
                                                  1,                                    // numNeighborsColorTransferBwd
                                                  true,                                 // useDistWeightedAverageFwd
@@ -407,7 +407,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
           tempFrameBuffer.transferColorsBackward16bitBP( reconstruct,                          //  target
                                                          params_.postprocessSmoothingFilter_,  //  filterType
                                                          int32_t( 0 ),                         //  searchRange
-                                                         isAttributes444,                      //  losslessTexture
+                                                         isAttributes444,                      //  losslessAttribute
                                                          8,           //  numNeighborsColorTransferFwd
                                                          1,           //  numNeighborsColorTransferBwd
                                                          true,        //  useDistWeightedAverageFwd
@@ -1437,9 +1437,7 @@ void PCCDecoder::createHashSEI( PCCContext& context, int frameIndex ) {
 }
 
 void PCCDecoder::createHlsAtlasTileLogFiles( PCCContext& context, int frameIndex ) {
-  size_t atlIdx = context[frameIndex]
-                      .getTile( 0 )
-                      .getAtlIndex();  // ajt::Taking the first tile to get afpsId since all tiles use the same afps
+  size_t atlIdx     = context[frameIndex].getTile( 0 ).getAtlIndex();
   auto&  tileHeader = context.getAtlasTileLayerList()[atlIdx].getHeader();
   auto&  atlu       = context.getAtlasTileLayer( atlIdx );
   size_t afpsIndex  = tileHeader.getAtlasFrameParameterSetId();

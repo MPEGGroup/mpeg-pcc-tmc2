@@ -46,12 +46,12 @@ std::string PCCVideoBitstream::getExtension() {
     return std::string( "geometryD" ) + std::to_string( typeIndex - (size_t)VIDEO_GEOMETRY_D0 );
   } else if ( typeIndex == (size_t)VIDEO_GEOMETRY_RAW ) {
     return std::string( "geomteryRaw" );
-  } else if ( typeIndex == (size_t)VIDEO_TEXTURE ) {
-    return std::string( "texture" );
-  } else if ( typeIndex >= (size_t)VIDEO_TEXTURE_T0 && typeIndex <= (size_t)VIDEO_TEXTURE_T15 ) {
-    return std::string( "textureT" ) + std::to_string( typeIndex - (size_t)( VIDEO_TEXTURE_T0 ) );
-  } else if ( typeIndex == (size_t)VIDEO_TEXTURE_RAW ) {
-    return std::string( "textureRaw" );
+  } else if ( typeIndex == (size_t)VIDEO_ATTRIBUTE ) {
+    return std::string( "attribute" );
+  } else if ( typeIndex >= (size_t)VIDEO_ATTRIBUTE_T0 && typeIndex <= (size_t)VIDEO_ATTRIBUTE_T15 ) {
+    return std::string( "attributeT" ) + std::to_string( typeIndex - (size_t)( VIDEO_ATTRIBUTE_T0 ) );
+  } else if ( typeIndex == (size_t)VIDEO_ATTRIBUTE_RAW ) {
+    return std::string( "attributeRaw" );
   } else {
     return std::string( "unknown" );
   }

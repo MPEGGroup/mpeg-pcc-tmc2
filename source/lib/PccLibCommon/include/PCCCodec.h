@@ -52,9 +52,8 @@ class PCCGroupOfFrames;
 class PCCPointSet3;
 template <typename T, size_t N>
 class PCCVideo;
-typedef pcc::PCCVideo<uint16_t, 3> PCCVideoTexture;
 typedef pcc::PCCVideo<uint16_t, 3> PCCVideoGeometry;
-
+typedef pcc::PCCVideo<uint16_t, 3> PCCVideoAttribute;
 template <typename T, size_t N>
 class PCCImage;
 typedef pcc::PCCImage<uint16_t, 3> PCCImageGeometry;
@@ -182,10 +181,10 @@ class PCCCodec {
 
   void generateRawPointsGeometryfromVideo( PCCContext& context, PCCFrameContext& tile, size_t frameIndex );
 
-  void generateRawPointsTexturefromVideo( PCCContext& context, PCCFrameContext& tile, size_t frameIndex );
+  void generateRawPointsAttributefromVideo( PCCContext& context, PCCFrameContext& tile, size_t frameIndex );
 
   void generateRawPointsGeometryfromVideo( PCCContext& context, size_t frameIndex );
-  void generateRawPointsTexturefromVideo( PCCContext& context, size_t frameIndex );
+  void generateRawPointsAttributefromVideo( PCCContext& context, size_t frameIndex );
 
   void setLogger( PCCLogger& logger ) { logger_ = &logger; }
 

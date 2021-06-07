@@ -54,14 +54,14 @@ struct PatchParams;
 
 template <typename T, size_t N>
 class PCCVideo;
-typedef pcc::PCCVideo<uint16_t, 3> PCCVideoTexture;
-typedef pcc::PCCVideo<uint16_t, 3> PCCVideoGeometry;
 typedef pcc::PCCVideo<uint8_t, 3>  PCCVideoOccupancyMap;
+typedef pcc::PCCVideo<uint16_t, 3> PCCVideoGeometry;
+typedef pcc::PCCVideo<uint16_t, 3> PCCVideoAttribute;
 template <typename T, size_t N>
 class PCCImage;
-typedef pcc::PCCImage<uint16_t, 3> PCCImageTexture;
-typedef pcc::PCCImage<uint16_t, 3> PCCImageGeometry;
 typedef pcc::PCCImage<uint8_t, 3>  PCCImageOccupancyMap;
+typedef pcc::PCCImage<uint16_t, 3> PCCImageGeometry;
+typedef pcc::PCCImage<uint16_t, 3> PCCImageAttribute;
 struct PCCPatchSegmenter3Parameters;
 class PCCPatch;
 struct PCCBistreamPosition;
@@ -193,31 +193,31 @@ class PCCEncoder : public PCCCodec {
   bool   placeEomPatchInTile( PCCContext& context, std::vector<std::pair<size_t, size_t>>& framesInAFPS );
   bool   placeRawPatchTile( PCCContext& context, std::vector<std::pair<size_t, size_t>>& framesInAFPS );
   bool   generateGeometryVideo( const PCCGroupOfFrames& sources, PCCContext& context );
-  bool   generateTextureVideo( const PCCGroupOfFrames&     sources,
+  bool   generateAttributeVideo( const PCCGroupOfFrames&     sources,
                                PCCGroupOfFrames&           reconstruct,
                                PCCContext&                 context,
                                const PCCEncoderParameters& params );
   void   placeAuxiliaryPointsTiles( PCCContext& context );
   void   generateRawPointsGeometryVideo( PCCContext& context );
-  void   generateRawPointsTextureVideo( PCCContext& context );
+  void   generateRawPointsAttributeVideo( PCCContext& context );
   void   generateRawPointsGeometryImage( PCCContext& context, PCCFrameContext& tile, PCCImageGeometry& image );
-  void   generateRawPointsTextureImage( PCCContext& context, PCCFrameContext& tile, PCCImageTexture& image );
+  void   generateRawPointsAttributeImage( PCCContext& context, PCCFrameContext& tile, PCCImageAttribute& image );
   void   generateIntraImage( PCCAtlasFrameContext& frameContext, const size_t mapIndex, PCCImageGeometry& image );
   bool predictGeometryFrame( PCCFrameContext& titleFrame, const PCCImageGeometry& reference, PCCImageGeometry& image );
-  static bool predictTextureFrame( PCCFrameContext&       titleFrame,
-                                   const PCCImageTexture& reference,
-                                   PCCImageTexture&       image );
+  static bool predictAttributeFrame( PCCFrameContext&       titleFrame,
+                                   const PCCImageAttribute& reference,
+                                   PCCImageAttribute&       image );
   void        generateEomPatch( const PCCPointSet3& source, PCCFrameContext& titleFrame );
   void        generateRawPointsPatch( const PCCPointSet3& source,
                                       PCCFrameContext&    titleFrame,
                                       bool                useEnhancedOccupancyMapCode );
   bool        generateScaledGeometry( const PCCPointSet3& source, PCCFrameContext& tile );
-  size_t      generateTextureVideo( const PCCPointSet3& reconstruct,
+  size_t      generateAttributeVideo( const PCCPointSet3& reconstruct,
                                     PCCContext&         context,
                                     size_t              frameIndex,
                                     size_t              tileIndex,
-                                    PCCVideoTexture&    video,
-                                    PCCVideoTexture&    videoT1,
+                                    PCCVideoAttribute&    video,
+                                    PCCVideoAttribute&    videoT1,
                                     const size_t        mapCount,
                                     size_t              accTilePointCount );
 
@@ -292,7 +292,7 @@ class PCCEncoder : public PCCCodec {
                              size_t             occupancySizeU,
                              size_t             occupancySizeV,
                              size_t             maxOccupancyRow );
-  void   packEOMTexturePointsPatch( PCCFrameContext&   frame,
+  void   packEOMAttributePointsPatch( PCCFrameContext&   frame,
                                     std::vector<bool>& occupancyMap,
                                     size_t             width,
                                     size_t&            height,

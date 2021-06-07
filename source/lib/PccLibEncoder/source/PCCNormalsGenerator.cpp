@@ -372,9 +372,9 @@ void PCCNormalsGenerator3::orientNormals( const PCCPointSet3&                   
     for ( int j = 0; j < 3; j++ ) {
 #ifdef DEBUG_NORMAL
       char name[1024];
-      sprintf( name, "texture_%d_%dx%d_8bit_p444.rgb", j, planeWidth[j], planeHeight[j] );
+      sprintf( name, "attribute_%d_%dx%d_8bit_p444.rgb", j, planeWidth[j], planeHeight[j] );
       projectionImage[j].write( name, 1 );
-      sprintf( name, "texture_%d_%dx%d_8bit_p444.rgb", j + 3, planeWidth[j], planeHeight[j] );
+      sprintf( name, "attribute_%d_%dx%d_8bit_p444.rgb", j + 3, planeWidth[j], planeHeight[j] );
       projectionImage[j + 3].write( name, 1 );
       sprintf( name, "depth_%d_%dx%d_8bit_p444.rgb", j, planeWidth[j], planeHeight[j] );
       projectionDepth[j].write( name, 1 );

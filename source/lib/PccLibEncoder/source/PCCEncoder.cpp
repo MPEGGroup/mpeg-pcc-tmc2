@@ -84,33 +84,21 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   }
   reconstructs.setFrameCount( sources.getFrameCount() );
 
-#if 0  // Note JR: logger examples
-  logger_->traceDescr( "test descr = %d \n", 10 );
-  logger_->traceDescr( "test descr = %d \n", 11 );
-  logger_->traceAtlas( "test atlas = %d \n", 12 );
-  logger_->traceAtlas( "test atlas = %d \n", 13 );
-  logger_->traceFrame( "test frame = %d \n", 14 );
-  logger_->traceFrame( "test frame = %d \n", 15 );
-  logger_->traceTiles( "test tiles = %d \n", 16 );
-  logger_->traceTiles( "test tiles = %d \n", 17 );
-  logger_->traceTrace( "test trace = %d \n", 18 );
-  logger_->traceTrace( "test trace = %d \n", 19 );
-#endif
-
   context.resizeAtlas( 1 );
   context.setAtlasIndex( 0 );
   context.resize( sources.getFrameCount() );
   auto& frames = context.getFrames();
   for ( size_t i = 0; i < frames.size(); i++ ) {
-    frames[i].getTitleFrameContext().setFrameIndex( i );  // should before setRefAFOCList
-    frames[i].getTitleFrameContext().setRawPatchEnabledFlag( params_.rawPointsPatch_ || params_.lossyRawPointsPatch_ );
-    frames[i].getTitleFrameContext().setUseRawPointsSeparateVideo( params_.useRawPointsSeparateVideo_ );
-    frames[i].getTitleFrameContext().setGeometry3dCoordinatesBitdepth( params_.geometry3dCoordinatesBitdepth_ +
-                                                                       ( params_.additionalProjectionPlaneMode_ > 0 ) );
-    frames[i].getTitleFrameContext().setGeometry2dBitdepth( params_.geometryNominal2dBitdepth_ );
-    frames[i].getTitleFrameContext().setMaxDepth( ( 1 << params_.geometryNominal2dBitdepth_ ) - 1 );
-    frames[i].getTitleFrameContext().setLog2PatchQuantizerSizeX( params_.log2QuantizerSizeX_ );
-    frames[i].getTitleFrameContext().setLog2PatchQuantizerSizeY( params_.log2QuantizerSizeY_ );
+    auto &frameContext = frames[i].getTitleFrameContext();
+    frameContext.setFrameIndex( i );  // should before setRefAFOCList
+    frameContext.setRawPatchEnabledFlag( params_.rawPointsPatch_ || params_.lossyRawPointsPatch_ );
+    frameContext.setUseRawPointsSeparateVideo( params_.useRawPointsSeparateVideo_ );
+    frameContext.setGeometry3dCoordinatesBitdepth( params_.geometry3dCoordinatesBitdepth_ +
+                                                   ( params_.additionalProjectionPlaneMode_ > 0 ) );
+    frameContext.setGeometry2dBitdepth( params_.geometryNominal2dBitdepth_ );
+    frameContext.setMaxDepth( ( 1 << params_.geometryNominal2dBitdepth_ ) - 1 );
+    frameContext.setLog2PatchQuantizerSizeX( params_.log2QuantizerSizeX_ );
+    frameContext.setLog2PatchQuantizerSizeY( params_.log2QuantizerSizeY_ );
   }
 
   // Segmentation
@@ -121,6 +109,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
 
   // Segment Placement
   placeSegments( sources, context );
+
   // updatePartitionInformation
   if ( params_.tileSegmentationType_ > 1 && params_.numMaxTilePerFrame_ > 1 ) {
     placeTiles( context, params_.minimumImageWidth_, params_.minimumImageHeight_ );
@@ -145,9 +134,6 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   }
 
   // GENERATE OCCUPANCY MAP
-#if 1
-  printf( "Processing Occupancy map\n" );
-#endif
   generateOccupancyMap( context, true );
 
   // ENCODE OCCUPANCY MAP
@@ -226,7 +212,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   auto&       videoGeometry    = context.getVideoGeometryMultiple()[0];
   std::string geometryConfigFile =
       params_.multipleStreams_
-          ? params_.geometryD0Config_
+          ? params_.geometry0Config_
           : ( params_.mapCountMinus1_ == 0 ? getEncoderConfig1L( params_.geometryConfig_ ) : params_.geometryConfig_ );
   videoEncoder.compress( videoGeometry,                             // video
                          path.str(),                                // path
@@ -258,7 +244,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
       std::exit( -1 );
     }
     if ( !params_.absoluteD1_ ) {
-      // Form differential video geometryD1
+      // Form differential video geometry1
       for ( size_t f = 0; f < frames.size(); ++f ) {
         auto& frame1 = context.getVideoGeometryMultiple()[1].getFrame( f );
         predictGeometryFrame( frames[f].getTitleFrameContext(), videoGeometry.getFrame( f ), frame1 );
@@ -267,7 +253,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
       }
     }
 
-    // Compress geometryD1
+    // Compress geometry1
     TRACE_PICTURE( "MapIdx = 1, AuxiliaryVideoFlag = 0\n" );
     auto& videoGeometryD1  = context.getVideoGeometryMultiple()[1];
     auto& videoBitstreamD1 = context.createVideoBitstream( VIDEO_GEOMETRY_D1 );
@@ -275,7 +261,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
                            path.str(),                                // path
                            params_.geometryQP_ + params_.deltaQPD1_,  // QP
                            videoBitstreamD1,                          // bitstream
-                           params_.geometryD1Config_,                 // config file
+                           params_.geometry1Config_,                 // config file
                            params_.videoEncoderGeometryPath_,         // encoder path
                            params_.videoEncoderGeometryCodecId_,      // Codec id
                            params_.byteStreamVideoCoderGeometry_,     // byteStreamVideoCoder
@@ -379,16 +365,16 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   }
 
   if ( ai.getAttributeCount() > 0 ) {
-    std::cout << "Texture Coding starts" << std::endl;
+    std::cout << "Attribute Coding starts" << std::endl;
     const size_t mapCount = params_.mapCountMinus1_ + 1;
     // GENERATE ATTRIBUTE
-    printf( "generateTextureVideo \n" );
+    printf( "generateAttributeVideo \n" );
     fflush( stdout );
-    generateTextureVideo( sources, reconstructs, context, params_ );
+    generateAttributeVideo( sources, reconstructs, context, params_ );
 
-    printf( "generateTextureVideo done \n" );
+    printf( "generateAttributeVideo done \n" );
     fflush( stdout );
-    if ( params_.textureBGFill_ < 3 ) {
+    if ( params_.attributeBGFill_ < 3 ) {
       // ATTRIBUTE IMAGE PADDING
       tbb::task_arena limited( static_cast<int>( params_.nbThread_ ) );
       limited.execute( [&] {
@@ -398,39 +384,39 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
           pcc::chrono::Stopwatch<std::chrono::steady_clock> clockPadding;
           clockPadding.start();
           if ( params_.absoluteT1_ ) {
-            switch ( params_.textureBGFill_ ) {
+            switch ( params_.attributeBGFill_ ) {
               case 0:
                 for ( int mapIdx = 0; mapIdx < mapCount; mapIdx++ ) {
                   size_t videoFrameIdx = params_.multipleStreams_ ? f : ( f * mapCount + mapIdx );
-                  auto&  videoTexture  = context.getVideoTextureMultiple()[params_.multipleStreams_ ? mapIdx : 0];
-                  dilate( frames[f].getTitleFrameContext(), videoTexture.getFrame( videoFrameIdx ) );
+                  auto&  videoAttribute  = context.getVideoAttributesMultiple()[params_.multipleStreams_ ? mapIdx : 0];
+                  dilate( frames[f].getTitleFrameContext(), videoAttribute.getFrame( videoFrameIdx ) );
                 }
                 break;
               case 1:
                 for ( int mapIdx = 0; mapIdx < mapCount; mapIdx++ ) {
                   size_t videoFrameIdx = params_.multipleStreams_ ? f : ( f * mapCount + mapIdx );
-                  auto&  videoTexture  = context.getVideoTextureMultiple()[params_.multipleStreams_ ? mapIdx : 0];
-                  dilateSmoothedPushPull( frames[f].getTitleFrameContext(), videoTexture.getFrame( videoFrameIdx ) );
+                  auto&  videoAttribute  = context.getVideoAttributesMultiple()[params_.multipleStreams_ ? mapIdx : 0];
+                  dilateSmoothedPushPull( frames[f].getTitleFrameContext(), videoAttribute.getFrame( videoFrameIdx ) );
                 }
                 break;
               case 2:
                 for ( int mapIdx = 0; mapIdx < mapCount; mapIdx++ ) {
                   size_t videoFrameIdx = params_.multipleStreams_ ? f : ( f * mapCount + mapIdx );
-                  auto&  videoTexture  = context.getVideoTextureMultiple()[params_.multipleStreams_ ? mapIdx : 0];
+                  auto&  videoAttribute  = context.getVideoAttributesMultiple()[params_.multipleStreams_ ? mapIdx : 0];
                   dilateHarmonicBackgroundFill( frames[f].getTitleFrameContext(),
-                                                videoTexture.getFrame( videoFrameIdx ) );
+                                                videoAttribute.getFrame( videoFrameIdx ) );
                 }
                 break;
-              default: std::cout << "Warning: no texture padding applied!" << std::endl;
+              default: std::cout << "Warning: no attribute padding applied!" << std::endl;
             }  // switch
             if ( mapCount > 1 && !params_.multipleStreams_ && params_.groupDilation_ ) {
-              // Group dilation in texture
+              // Group dilation in attribute
               auto& frame        = frames[f].getTitleFrameContext();
               auto& occupancyMap = frame.getOccupancyMap();
               auto& width        = frame.getWidth();
               auto& height       = frame.getHeight();
-              auto& frame1       = context.getVideoTextureMultiple()[0].getFrame( f * mapCount );
-              auto& frame2       = context.getVideoTextureMultiple()[0].getFrame( f * mapCount + 1 );
+              auto& frame1       = context.getVideoAttributesMultiple()[0].getFrame( f * mapCount );
+              auto& frame2       = context.getVideoAttributesMultiple()[0].getFrame( f * mapCount + 1 );
               for ( size_t y = 0; y < height; y++ ) {
                 for ( size_t x = 0; x < width; x++ ) {
                   const size_t pos = y * width + x;
@@ -449,12 +435,12 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
           }    // absoluteT1
           else if ( params_.multipleStreams_ ) {
             // params_.multipleStreams_ && !absoluteT1
-            auto& frame = context.getVideoTextureMultiple()[0].getFrame( f );
-            switch ( params_.textureBGFill_ ) {
+            auto& frame = context.getVideoAttributesMultiple()[0].getFrame( f );
+            switch ( params_.attributeBGFill_ ) {
               case 0: dilate( frames[f].getTitleFrameContext(), frame ); break;
               case 1: dilateSmoothedPushPull( frames[f].getTitleFrameContext(), frame ); break;
               case 2: dilateHarmonicBackgroundFill( frames[f].getTitleFrameContext(), frame ); break;
-              default: std::cout << "Warning: no texture padding applied!" << std::endl;
+              default: std::cout << "Warning: no attribute padding applied!" << std::endl;
             }
           }
           clockPadding.stop();
@@ -468,9 +454,9 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     }
     // ENCODE ATTRIBUTE IMAGE
     TRACE_PICTURE( "Attribute\n" );
-    std::cout << "texture video " << std::endl;
-    auto& videoBitstream = params_.multipleStreams_ ? context.createVideoBitstream( VIDEO_TEXTURE_T0 )
-                                                    : context.createVideoBitstream( VIDEO_TEXTURE );
+    std::cout << "attribute video " << std::endl;
+    auto& videoBitstream = params_.multipleStreams_ ? context.createVideoBitstream( VIDEO_ATTRIBUTE_T0 )
+                                                    : context.createVideoBitstream( VIDEO_ATTRIBUTE );
     const size_t nbyteAtt = 1;
     int          attrPartitionIndex =
         sps.getAttributeInformation( atlasIndex )
@@ -483,11 +469,11 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
 
     auto encoderConfig0 =
         params_.multipleStreams_
-            ? ( params_.mapCountMinus1_ == 0 ? getEncoderConfig1L( params_.textureConfig_ ) : params_.textureT0Config_ )
-            : ( params_.mapCountMinus1_ == 0 ? getEncoderConfig1L( params_.textureConfig_ ) : params_.textureConfig_ );
-    videoEncoder.compress( context.getVideoTextureMultiple()[0],        // video,
+            ? ( params_.mapCountMinus1_ == 0 ? getEncoderConfig1L( params_.attributeConfig_ ) : params_.attribute0Config_ )
+            : ( params_.mapCountMinus1_ == 0 ? getEncoderConfig1L( params_.attributeConfig_ ) : params_.attributeConfig_ );
+    videoEncoder.compress( context.getVideoAttributesMultiple()[0],        // video,
                            path.str(),                                  // path
-                           params_.textureQP_ + params_.deltaQPT0_,     // qp
+                           params_.attributeQP_ + params_.deltaQPT0_,     // qp
                            videoBitstream,                              // bitstream
                            encoderConfig0,                              // encoderConfig
                            params_.videoEncoderAttributePath_,          // encoderPath
@@ -508,35 +494,35 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
                            params_.inverseColorSpaceConversionConfig_,  // inverseColorSpaceConversionConfig
                            params_.colorSpaceConversionPath_ );         // colorSpaceConversionPath
 
-    auto sizeTextureVideo = videoBitstream.size();
-    std::cout << "texture video ->" << sizeTextureVideo << " B ("
-              << ( sizeTextureVideo * 8.0 ) / ( 2 * frames.size() * pointCount ) << " bpp)" << std::endl;
+    auto sizeAttributeVideo = videoBitstream.size();
+    std::cout << "attribute video ->" << sizeAttributeVideo << " B ("
+              << ( sizeAttributeVideo * 8.0 ) / ( 2 * frames.size() * pointCount ) << " bpp)" << std::endl;
 
     if ( params_.multipleStreams_ ) {
-      // Form differential video textureT1
+      // Form differential video attribute1
       if ( !params_.absoluteT1_ ) {
         for ( size_t f = 0; f < frames.size(); ++f ) {
-          auto& frame0 = context.getVideoTextureMultiple()[0].getFrame( f );
-          auto& frame1 = context.getVideoTextureMultiple()[1].getFrame( f );
-          predictTextureFrame( frames[f].getTitleFrameContext(), frame0, frame1 );
-          switch ( params_.textureBGFill_ ) {
+          auto& frame0 = context.getVideoAttributesMultiple()[0].getFrame( f );
+          auto& frame1 = context.getVideoAttributesMultiple()[1].getFrame( f );
+          predictAttributeFrame( frames[f].getTitleFrameContext(), frame0, frame1 );
+          switch ( params_.attributeBGFill_ ) {
             case 0: dilate( frames[f].getTitleFrameContext(), frame1 ); break;
             case 1: dilateSmoothedPushPull( frames[f].getTitleFrameContext(), frame1 ); break;
             case 2: dilateHarmonicBackgroundFill( frames[f].getTitleFrameContext(), frame1 ); break;
-            default: std::cout << "Warning: no texture padding applied!" << std::endl;
+            default: std::cout << "Warning: no attribute padding applied!" << std::endl;
           }
         }
-        std::cout << "texture prediction done " << std::endl;
+        std::cout << "attribute prediction done " << std::endl;
       }  //! absoluteT1
 
-      // compress textureT1
+      // compress attribute1
       TRACE_PICTURE( "MapIdx = 1, AuxiliaryVideoFlag = 0\n" );
-      auto& videoBitstreamT1 = context.createVideoBitstream( VIDEO_TEXTURE_T1 );
+      auto& videoBitstreamT1 = context.createVideoBitstream( VIDEO_ATTRIBUTE_T1 );
       auto  encoderConfig1 =
-          params_.mapCountMinus1_ == 0 ? getEncoderConfig1L( params_.textureConfig_ ) : params_.textureT1Config_;
-      videoEncoder.compress( context.getVideoTextureMultiple()[1],        // video,
+          params_.mapCountMinus1_ == 0 ? getEncoderConfig1L( params_.attributeConfig_ ) : params_.attribute1Config_;
+      videoEncoder.compress( context.getVideoAttributesMultiple()[1],        // video,
                              path.str(),                                  // path
-                             params_.textureQP_ + params_.deltaQPT1_,     // qp
+                             params_.attributeQP_ + params_.deltaQPT1_,     // qp
                              videoBitstreamT1,                            // bitstream
                              encoderConfig1,                              // encoderConfig
                              params_.videoEncoderAttributePath_,          // encoderPath
@@ -557,26 +543,26 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
                              params_.inverseColorSpaceConversionConfig_,  // inverseColorSpaceConversionConfig
                              params_.colorSpaceConversionPath_ );
 
-      size_t sizeTextureVideoT1 = videoBitstreamT1.size();
-      std::cout << "texture video ->" << ( sizeTextureVideo + sizeTextureVideoT1 ) << "=" << sizeTextureVideo << "+"
-                << sizeTextureVideoT1 << " B ("
-                << ( ( sizeTextureVideo + sizeTextureVideoT1 ) * 8.0 ) / ( 2 * frames.size() * pointCount ) << " bpp)"
+      size_t sizeAttributeVideoT1 = videoBitstreamT1.size();
+      std::cout << "attribute video ->" << ( sizeAttributeVideo + sizeAttributeVideoT1 ) << "=" << sizeAttributeVideo << "+"
+                << sizeAttributeVideoT1 << " B ("
+                << ( ( sizeAttributeVideo + sizeAttributeVideoT1 ) * 8.0 ) / ( 2 * frames.size() * pointCount ) << " bpp)"
                 << std::endl;
     }
 
     if ( asps.getRawPatchEnabledFlag() && asps.getAuxiliaryVideoEnabledFlag() ) {
       TRACE_PICTURE( "AttrIdx = 0, AttrPartIdx = %d, AttrTypeID = %d ", attrPartitionIndex, attrTypeId );
       TRACE_PICTURE( "MapIdx = 0, AuxiliaryVideoFlag = 1\n" );
-      std::cout << "*******Video: Aux (Texture) ********" << std::endl;
-      auto& videoBitstreamMP = context.createVideoBitstream( VIDEO_TEXTURE_RAW );
-      generateRawPointsTextureVideo( context );
-      auto&        videoRawPointsTexture = context.getVideoRawPointsTexture();
+      std::cout << "*******Video: Aux (Attribute) ********" << std::endl;
+      auto& videoBitstreamMP = context.createVideoBitstream( VIDEO_ATTRIBUTE_RAW );
+      generateRawPointsAttributeVideo( context );
+      auto&        videoRawPointsAttribute = context.getVideoRawPointsAttribute();
       const size_t nByteAttMP            = 1;
-      videoEncoder.compress( videoRawPointsTexture,                       // video,
+      videoEncoder.compress( videoRawPointsAttribute,                       // video,
                              path.str(),                                  // path
-                             params_.textureQP_,                          // qp
+                             params_.attributeQP_,                          // qp
                              videoBitstreamMP,                            // bitstream
-                             params_.textureAuxVideoConfig_,              // encoderConfig
+                             params_.attributeAuxVideoConfig_,              // encoderConfig
                              params_.videoEncoderAttributePath_,          // encoderPath
                              params_.videoEncoderAttributeCodecId_,       // codecId
                              params_.byteStreamVideoCoderAttribute_,      // byteStreamVideoCoder
@@ -595,8 +581,8 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
                              params_.inverseColorSpaceConversionConfig_,  // inverseColorSpaceConversionConfig
                              params_.colorSpaceConversionPath_ );         // colorSpaceConversionPath
       if ( params_.lossyRawPointsPatch_ ) {
-        printf( "generateRawPointsTexturefromVideo \n" );
-        for ( size_t fi = 0; fi < context.size(); fi++ ) { generateRawPointsTexturefromVideo( context, fi ); }
+        printf( "generateRawPointsAttributefromVideo \n" );
+        for ( size_t fi = 0; fi < context.size(); fi++ ) { generateRawPointsAttributefromVideo( context, fi ); }
       }
     }
   }
@@ -683,7 +669,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
           tempFrameBuffer.transferColors16bitBP( reconstruct,                          // target
                                                  params_.postprocessSmoothingFilter_,  // filterType
                                                  int32_t( 0 ),                         // searchRange
-                                                 isAttributes444,                      // losslessTexture
+                                                 isAttributes444,                      // losslessAttribute
                                                  8,                                    // numNeighborsColorTransferFwd
                                                  1,                                    // numNeighborsColorTransferBwd
                                                  true,                                 // useDistWeightedAverageFwd
@@ -708,7 +694,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
           tempFrameBuffer.transferColorsBackward16bitBP( reconstruct,                          //  target
                                                          params_.postprocessSmoothingFilter_,  //  filterType
                                                          int32_t( 0 ),                         //  searchRange
-                                                         isAttributes444,                      //  losslessTexture
+                                                         isAttributes444,                      //  losslessAttribute
                                                          8,           //  numNeighborsColorTransferFwd
                                                          1,           //  numNeighborsColorTransferBwd
                                                          true,        //  useDistWeightedAverageFwd
@@ -1315,7 +1301,7 @@ void PCCEncoder::spatialConsistencyPackFlexible( PCCFrameContext& tile,
       if ( g_printDetailedInfo ) { printMap( occupancyMap, occupancySizeU, occupancySizeV ); }
     }
     if ( params_.enhancedOccupancyMapCode_ && !tile.getUseRawPointsSeparateVideo() ) {
-      packEOMTexturePointsPatch( tile, occupancyMap, width, height, occupancySizeU, occupancySizeV, 0 );
+      packEOMAttributePointsPatch( tile, occupancyMap, width, height, occupancySizeU, occupancySizeV, 0 );
     }
     if ( g_printDetailedInfo ) { printMap( occupancyMap, occupancySizeU, occupancySizeV ); }
     bool emptyTile = false;
@@ -1516,7 +1502,7 @@ void PCCEncoder::spatialConsistencyPackFlexible( PCCFrameContext& tile,
     if ( g_printDetailedInfo ) { printMap( occupancyMap, occupancySizeU, occupancySizeV ); }
   }
   if ( params_.enhancedOccupancyMapCode_ && !tile.getUseRawPointsSeparateVideo() ) {
-    packEOMTexturePointsPatch( tile, occupancyMap, width, height, occupancySizeU, occupancySizeV, maxOccupancyRow );
+    packEOMAttributePointsPatch( tile, occupancyMap, width, height, occupancySizeU, occupancySizeV, maxOccupancyRow );
   }
   if ( g_printDetailedInfo ) { printMap( occupancyMap, occupancySizeU, occupancySizeV ); }
   std::cout << "frame " << tile.getFrameIndex() << " tile " << tile.getTileIndex()
@@ -1745,7 +1731,7 @@ void PCCEncoder::spatialConsistencyPackTetris( PCCFrameContext& frame,
     if ( g_printDetailedInfo ) { printMap( occupancyMap, occupancySizeU, occupancySizeV ); }
   }
   if ( params_.enhancedOccupancyMapCode_ && !frame.getUseRawPointsSeparateVideo() ) {
-    packEOMTexturePointsPatch( frame, occupancyMap, width, height, occupancySizeU, occupancySizeV, maxOccupancyRow );
+    packEOMAttributePointsPatch( frame, occupancyMap, width, height, occupancySizeU, occupancySizeV, maxOccupancyRow );
   }
   if ( g_printDetailedInfo ) { printMap( occupancyMap, occupancySizeU, occupancySizeV ); }
   std::cout << "actualImageSize (spatialConsistencyPackTetris) " << width << " x " << height << std::endl;
@@ -2439,7 +2425,7 @@ void PCCEncoder::doGlobalTetrisPacking( PCCContext& context,
       }
       if ( params_.enhancedOccupancyMapCode_ &&
            !frames[frameIdx].getTile( tileIndex ).getUseRawPointsSeparateVideo() ) {
-        packEOMTexturePointsPatch( frames[frameIdx].getTile( tileIndex ), occupancyMap, width, height, occupancySizeU,
+        packEOMAttributePointsPatch( frames[frameIdx].getTile( tileIndex ), occupancyMap, width, height, occupancySizeU,
                                    occupancySizeV, maxOccupancyRow );
       }
       if ( g_printDetailedInfo ) { printMap( occupancyMap, occupancySizeU, occupancySizeV ); }
@@ -2481,7 +2467,7 @@ void PCCEncoder::packFlexible( PCCFrameContext& tile,
       if ( g_printDetailedInfo ) { printMap( occupancyMap, occupancySizeU, occupancySizeV ); }
     }
     if ( params_.enhancedOccupancyMapCode_ && !tile.getUseRawPointsSeparateVideo() ) {
-      packEOMTexturePointsPatch( tile, occupancyMap, width, height, occupancySizeU, occupancySizeV, 0 );
+      packEOMAttributePointsPatch( tile, occupancyMap, width, height, occupancySizeU, occupancySizeV, 0 );
     }
     if ( g_printDetailedInfo ) { printMap( occupancyMap, occupancySizeU, occupancySizeV ); }
     bool emptyTile = false;
@@ -2593,7 +2579,7 @@ void PCCEncoder::packFlexible( PCCFrameContext& tile,
     if ( g_printDetailedInfo ) { printMap( occupancyMap, occupancySizeU, occupancySizeV ); }
   }
   if ( params_.enhancedOccupancyMapCode_ && !tile.getUseRawPointsSeparateVideo() ) {
-    packEOMTexturePointsPatch( tile, occupancyMap, width, height, occupancySizeU, occupancySizeV, maxOccupancyRow );
+    packEOMAttributePointsPatch( tile, occupancyMap, width, height, occupancySizeU, occupancySizeV, maxOccupancyRow );
   }
   if ( g_printDetailedInfo ) { printMap( occupancyMap, occupancySizeU, occupancySizeV ); }
   std::cout << "frame " << tile.getFrameIndex() << " tile " << tile.getTileIndex() << " packFlexible: actualImageSize "
@@ -3541,13 +3527,13 @@ void PCCEncoder::packTetris( PCCFrameContext& frame, size_t presetWidth, size_t 
     if ( g_printDetailedInfo ) { printMap( occupancyMap, occupancySizeU, occupancySizeV ); }
   }
   if ( params_.enhancedOccupancyMapCode_ && !frame.getUseRawPointsSeparateVideo() ) {
-    packEOMTexturePointsPatch( frame, occupancyMap, width, height, occupancySizeU, occupancySizeV, maxOccupancyRow );
+    packEOMAttributePointsPatch( frame, occupancyMap, width, height, occupancySizeU, occupancySizeV, maxOccupancyRow );
   }
   if ( g_printDetailedInfo ) { printMap( occupancyMap, occupancySizeU, occupancySizeV ); }
   std::cout << "actualImageSize(packTetris) " << width << " x " << height << std::endl;
 }
 
-void PCCEncoder::packEOMTexturePointsPatch( PCCFrameContext&   frame,
+void PCCEncoder::packEOMAttributePointsPatch( PCCFrameContext&   frame,
                                             std::vector<bool>& occupancyMap,
                                             size_t             width,
                                             size_t&            height,
@@ -3568,7 +3554,7 @@ void PCCEncoder::packEOMTexturePointsPatch( PCCFrameContext&   frame,
     eomPatches[i].sizeU_             = occupancySizeU;
     eomPatches[i].sizeV_             = eomPointsPatchBlocksV;
     printf(
-        "packEOMTexturePointsPatch %zu frame\t%zu tile\t [%zu/%zu] eompatch: pos %zu,%zu(block) size(%zux%zu)(block), "
+        "packEOMAttributePointsPatch %zu frame\t%zu tile\t [%zu/%zu] eompatch: pos %zu,%zu(block) size(%zux%zu)(block), "
         "#EOMBlock:%zu #EOM:%zu\n",
         frame.getFrameIndex(), frame.getTileIndex(), i, eomPatches.size(), eomPatches[i].u0_, eomPatches[i].v0_,
         eomPatches[i].sizeU_, eomPatches[i].sizeV_, eomPointsPatchBlocks, eomPatches[i].eomCount_ );
@@ -4202,9 +4188,9 @@ void PCCEncoder::generateIntraImage( PCCAtlasFrameContext& atlasFrame,
     }
   }  // tile
 }
-bool PCCEncoder::predictTextureFrame( PCCFrameContext&       frame,
-                                      const PCCImageTexture& reference,
-                                      PCCImageTexture&       image ) {
+bool PCCEncoder::predictAttributeFrame( PCCFrameContext&       frame,
+                                      const PCCImageAttribute& reference,
+                                      PCCImageAttribute&       image ) {
   assert( reference.getWidth() == image.getWidth() );
   assert( reference.getHeight() == image.getHeight() );
   const size_t  refWidth     = reference.getWidth();
@@ -4691,9 +4677,9 @@ void PCCEncoder::placeAuxiliaryPointsTiles( PCCContext& context ) {
                               auxPointsOccupancySizeU, auxPointsOccupancySizeV, 0 );
         }
         if ( tile.getEomPatches().size() == 0 ) {
-          printf( "packEOMTexturePointsPatch[0/0]: none\n" );
+          printf( "packEOMAttributePointsPatch[0/0]: none\n" );
         } else {
-          packEOMTexturePointsPatch( tile, auxPointsOccupancyMap, auxPointsTileWidth, auxPointsTileHeight,
+          packEOMAttributePointsPatch( tile, auxPointsOccupancyMap, auxPointsTileWidth, auxPointsTileHeight,
                                      auxPointsOccupancySizeU, auxPointsOccupancySizeV, 0 );
         }
         auxPointsTileHeight = size_t( std::ceil( double( auxPointsTileHeight ) / 64.0 ) ) * 64;
@@ -4743,25 +4729,22 @@ void PCCEncoder::placeAuxiliaryPointsTiles( PCCContext& context ) {
 void PCCEncoder::generateRawPointsGeometryVideo( PCCContext& context ) {
   printf("width and height is based on the first frame: context[0]");
   auto& videoRawPointsGeometry = context.getVideoRawPointsGeometry();
-  videoRawPointsGeometry.resize( context.size() );
-  // context.setAuxVideoWidth( ?? );
+  videoRawPointsGeometry.resize( context.size() );  
   auto&  framesInAFPS   = context.getFramesInAFPS();
-  size_t numInterval    = 1;
+  size_t numInterval    = params_.tileSegmentationType_ == 1 ? framesInAFPS.size() : 1;
   size_t maxVideoWidth  = 0;
   size_t maxVideoHeight = 0;
-  if ( params_.tileSegmentationType_ == 1 ) { numInterval = framesInAFPS.size(); }
   for ( size_t fi = 0; fi < context.size(); fi++ ) {
-    size_t maxVideoHeight = 0;
+    size_t auxTileHeight = 0;
     for ( size_t ti = 0; ti < context[fi].getAuxTileHeightSize(); ti++ ) {
-      maxVideoHeight += context[fi].getAuxTileHeight( ti );
+      auxTileHeight += context[fi].getAuxTileHeight( ti );
     }
     maxVideoWidth  = (std::max)( maxVideoWidth, context[fi].getAuxVideoWidth() );
-    maxVideoHeight = (std::max)( maxVideoHeight, maxVideoHeight );
+    maxVideoHeight = (std::max)( maxVideoHeight, auxTileHeight );
   }
   for ( size_t fi = 0; fi < context.size(); fi++ ) {
     videoRawPointsGeometry.getFrame( fi ).resize( maxVideoWidth, maxVideoHeight, PCCCOLORFORMAT::YUV444 );
   }
-
   for ( size_t segIdx = 0; segIdx < numInterval; segIdx++ ) {
     size_t firstFrame = ( params_.tileSegmentationType_ == 1 ) ? framesInAFPS[segIdx].first : 0;
     size_t lastFrame  = ( params_.tileSegmentationType_ == 1 ) ? ( framesInAFPS[segIdx].second + 1 ) : context.size();
@@ -4786,8 +4769,8 @@ void PCCEncoder::generateRawPointsGeometryVideo( PCCContext& context ) {
   }      // interval
 }
 
-void PCCEncoder::generateRawPointsTextureVideo( PCCContext& context ) {
-  auto& video = context.getVideoRawPointsTexture();
+void PCCEncoder::generateRawPointsAttributeVideo( PCCContext& context ) {
+  auto& video = context.getVideoRawPointsAttribute();
   video.resize( context.size() );
   size_t widthMax = 0, heightMax = 0;
   for ( size_t frameIdx = 0; frameIdx < context.size(); frameIdx++ ) {
@@ -4798,15 +4781,15 @@ void PCCEncoder::generateRawPointsTextureVideo( PCCContext& context ) {
     video.getFrame( frameIdx ).resize( widthMax, heightMax, PCCCOLORFORMAT::YUV444 );
     for ( size_t tileIdx = 0; tileIdx < context[frameIdx].getNumTilesInAtlasFrame(); tileIdx++ ) {
       auto& tile = context[frameIdx].getTile( tileIdx );
-      generateRawPointsTextureImage( context, tile, video.getFrame( frameIdx ) );
-      std::cout << "generate raw Points Video (Texture) frame[" << frameIdx << "] tile[" << tileIdx << "] :"
+      generateRawPointsAttributeImage( context, tile, video.getFrame( frameIdx ) );
+      std::cout << "generate raw Points Video (Attribute) frame[" << frameIdx << "] tile[" << tileIdx << "] :"
                 << " #rawPatches: " << tile.getNumberOfRawPointsPatches()
                 << " #rawPoints: " << tile.getTotalNumberOfRawPoints()
                 << " #eomPatches: " << tile.getEomPatches().size()
                 << " #eomPoints: " << tile.getTotalNumberOfEOMPoints() << std::endl;
     }
   }
-  cout << "RawPoints Texture [done]" << endl;
+  cout << "RawPoints Attribute [done]" << endl;
 }
 void PCCEncoder::generateRawPointsGeometryImage( PCCContext& context, PCCFrameContext& tile, PCCImageGeometry& image ) {
   uint16_t lastValue{0};
@@ -4863,13 +4846,12 @@ void PCCEncoder::generateRawPointsGeometryImage( PCCContext& context, PCCFrameCo
   }
 }
 
-void PCCEncoder::generateRawPointsTextureImage( PCCContext& context, PCCFrameContext& tile, PCCImageTexture& image ) {
+void PCCEncoder::generateRawPointsAttributeImage( PCCContext& context, PCCFrameContext& tile, PCCImageAttribute& image ) {
   bool   losslessAtt              = params_.rawPointsPatch_;
   size_t numberOfRawPointsPatches = tile.getNumberOfRawPointsPatches();
   size_t numberOfEOMPoints        = tile.getTotalNumberOfEOMPoints();
   size_t numberOfRawPoints        = tile.getTotalNumberOfRawPoints();
   size_t width                    = context[tile.getFrameIndex()].getAuxVideoWidth();
-
   if ( numberOfRawPoints != 0 ) {
     size_t imageWidthInBlock = width / params_.occupancyResolution_;
     int    rawPatchOffset    = 0;
@@ -4877,13 +4859,11 @@ void PCCEncoder::generateRawPointsTextureImage( PCCContext& context, PCCFrameCon
       int    pointIndex        = 0;
       auto&  rawPointsPatch    = tile.getRawPointsPatch( i );
       size_t numRawColorPoints = rawPointsPatch.getNumberOfRawPoints();
-
-      printf( "\tgenerateRawPointsTextureImage:: (u0,v0) %zu,%zu, (sizeU,sizeU) %zux%zu\n", rawPointsPatch.u0_,
+      printf( "\tgenerateRawPointsAttributeImage:: (u0,v0) %zu,%zu, (sizeU,sizeU) %zux%zu\n", rawPointsPatch.u0_,
               rawPointsPatch.v0_, rawPointsPatch.sizeU_, rawPointsPatch.sizeV_ );
-
       const size_t             v0          = rawPointsPatch.v0_ * rawPointsPatch.occupancyResolution_;
       const size_t             u0          = rawPointsPatch.u0_ * rawPointsPatch.occupancyResolution_;
-      std::vector<PCCColor3B>& rawTextures = tile.getRawPointsTextures();
+      std::vector<PCCColor3B>& rawAttributes = tile.getRawPointsAttribute();
 
       for ( size_t v = 0; v < rawPointsPatch.sizeV_; ++v ) {
         for ( size_t u = 0; u < rawPointsPatch.sizeU_; ++u ) {
@@ -4891,9 +4871,9 @@ void PCCEncoder::generateRawPointsTextureImage( PCCContext& context, PCCFrameCon
           const size_t x = ( u0 + u );
           const size_t y = ( v0 + v ) + context[tile.getFrameIndex()].getAuxTileLeftTopY( tile.getTileIndex() );
           if ( pointIndex < numRawColorPoints ) {
-            image.setValue( 0, x, y, uint16_t( rawTextures[rawPatchOffset + pointIndex].r() ) );
-            image.setValue( 1, x, y, uint16_t( rawTextures[rawPatchOffset + pointIndex].g() ) );
-            image.setValue( 2, x, y, uint16_t( rawTextures[rawPatchOffset + pointIndex].b() ) );
+            image.setValue( 0, x, y, uint16_t( rawAttributes[rawPatchOffset + pointIndex].r() ) );
+            image.setValue( 1, x, y, uint16_t( rawAttributes[rawPatchOffset + pointIndex].g() ) );
+            image.setValue( 2, x, y, uint16_t( rawAttributes[rawPatchOffset + pointIndex].b() ) );
             pointIndex++;
           } else {
             break;
@@ -4915,7 +4895,7 @@ void PCCEncoder::generateRawPointsTextureImage( PCCContext& context, PCCFrameCon
     double avgB{0.0};
 
     for ( auto& eomPointsPatch : tile.getEomPatches() ) {
-      std::vector<PCCColor3B>& eomTextures    = tile.getEOMTextures();
+      std::vector<PCCColor3B>& eomAttributes    = tile.getEOMAttribute();
       size_t                   patchStartPosX = eomPointsPatch.u0_ * params_.occupancyResolution_;
       size_t                   patchStartPosY = eomPointsPatch.v0_ * params_.occupancyResolution_;
 
@@ -4928,12 +4908,12 @@ void PCCEncoder::generateRawPointsTextureImage( PCCContext& context, PCCFrameCon
              context[tile.getFrameIndex()].getAuxTileLeftTopY( tile.getTileIndex() );
         ++nPixelInCurrentBlockCount;
         if ( nPixelInCurrentBlockCount >= 256 ) { nPixelInCurrentBlockCount = 0; }
-        image.setValue( 0, xx, yy, eomTextures[k + eomPatchOffset].r() );
-        image.setValue( 1, xx, yy, eomTextures[k + eomPatchOffset].g() );
-        image.setValue( 2, xx, yy, eomTextures[k + eomPatchOffset].b() );
-        avgR = avgR + double( eomTextures[k + eomPatchOffset].r() ) / eomPointsPatch.eomCount_;
-        avgG = avgG + double( eomTextures[k + eomPatchOffset].g() ) / eomPointsPatch.eomCount_;
-        avgB = avgB + double( eomTextures[k + eomPatchOffset].b() ) / eomPointsPatch.eomCount_;
+        image.setValue( 0, xx, yy, eomAttributes[k + eomPatchOffset].r() );
+        image.setValue( 1, xx, yy, eomAttributes[k + eomPatchOffset].g() );
+        image.setValue( 2, xx, yy, eomAttributes[k + eomPatchOffset].b() );
+        avgR = avgR + double( eomAttributes[k + eomPatchOffset].r() ) / eomPointsPatch.eomCount_;
+        avgG = avgG + double( eomAttributes[k + eomPatchOffset].g() ) / eomPointsPatch.eomCount_;
+        avgB = avgB + double( eomAttributes[k + eomPatchOffset].b() ) / eomPointsPatch.eomCount_;
       }
       eomPatchOffset += eomPointsPatch.eomCount_;
     }  // eomPatches
@@ -6063,7 +6043,7 @@ bool PCCEncoder::placeEomPatchInTile( PCCContext& context, std::vector<std::pair
         size_t occupancySizeV = 0;
         size_t tileWidth      = context[frameIdx].getTile( tileIdx ).getWidth();
         size_t tileHeight     = maxOccupiedHeightInBlock[tileIdx] * params_.occupancyResolution_;
-        packEOMTexturePointsPatch( context[frameIdx].getTile( tileIdx ), occupancyMap, tileWidth, tileHeight,
+        packEOMAttributePointsPatch( context[frameIdx].getTile( tileIdx ), occupancyMap, tileWidth, tileHeight,
                                    occupancySizeU, occupancySizeV, tileHeight );
         context[frameIdx].getTile( tileIdx ).setHeight( ceil( (double)tileHeight / 64.0 ) * 64 );
         // eom
@@ -7128,7 +7108,7 @@ void PCCEncoder::presmoothPointCloudColor( PCCPointSet3& reconstruct, const PCCE
             centroid[k] = double( int64_t( centroid[k] + ( neighborCount / 2 ) ) / neighborCount );
           }
 
-          // Texture characterization
+          // Attribute characterization
           double     H               = entropy( Lum, int( neighborCount ) );
           PCCColor3B colorQP         = reconstruct.getColor( i );
           double     distToCentroid2 = 0;
@@ -7153,14 +7133,14 @@ void PCCEncoder::presmoothPointCloudColor( PCCPointSet3& reconstruct, const PCCE
   } );
 }
 
-bool PCCEncoder::generateTextureVideo( const PCCGroupOfFrames&     sources,
+bool PCCEncoder::generateAttributeVideo( const PCCGroupOfFrames&     sources,
                                        PCCGroupOfFrames&           reconstructs,
                                        PCCContext&                 context,
                                        const PCCEncoderParameters& params ) {
-  auto& video   = context.getVideoTextureMultiple()[0];
+  auto& video   = context.getVideoAttributesMultiple()[0];
   if ( params_.multipleStreams_ ) {
     video.resize( context.size() );
-    auto& videoT1 = context.getVideoTextureMultiple()[1];
+    auto& videoT1 = context.getVideoAttributesMultiple()[1];
     videoT1.resize( context.size() );
   } else {
     video.resize( context.size() * ( params.mapCountMinus1_ + 1 ) );
@@ -7172,7 +7152,7 @@ bool PCCEncoder::generateTextureVideo( const PCCGroupOfFrames&     sources,
     sources[i].transferColors(
         reconstructs[i],                                   // target
         int32_t( params_.bestColorSearchRange_ ),          // searchRange
-        params_.rawPointsPatch_,                           // losslessTexture,
+        params_.rawPointsPatch_,                           // losslessAttribute,
         params_.numNeighborsColorTransferFwd_,             // numNeighborsColorTransferFwd
         params_.numNeighborsColorTransferBwd_,             // numNeighborsColorTransferBwd
         params_.useDistWeightedAverageFwd_,                // useDistWeightedAverageFwd
@@ -7196,14 +7176,14 @@ bool PCCEncoder::generateTextureVideo( const PCCGroupOfFrames&     sources,
       auto& image = video.getFrame( i );
       image.resize( imageWidth, imageHeight, PCCCOLORFORMAT::RGB444 );
       image.set( 0 );
-      auto& videoT1 = context.getVideoTextureMultiple()[1];
+      auto& videoT1 = context.getVideoAttributesMultiple()[1];
       auto& image1  = videoT1.getFrame( i );
       image1.resize( imageWidth, imageHeight, PCCCOLORFORMAT::RGB444 );
       image1.set( 0 );
       size_t accTilePointCount = 0;
       for ( size_t tileIdx = 0; tileIdx < context[i].getNumTilesInAtlasFrame(); tileIdx++ ) {
         accTilePointCount =
-            generateTextureVideo( reconstructs[i], context, i, tileIdx, video, videoT1, mapCount, accTilePointCount );
+            generateAttributeVideo( reconstructs[i], context, i, tileIdx, video, videoT1, mapCount, accTilePointCount );
       }
     } else {
       for ( size_t f = 0; f < mapCount; ++f ) {
@@ -7214,19 +7194,19 @@ bool PCCEncoder::generateTextureVideo( const PCCGroupOfFrames&     sources,
       size_t accTilePointCount = 0;
       for ( size_t tileIdx = 0; tileIdx < context[i].getNumTilesInAtlasFrame(); tileIdx++ ) {
         accTilePointCount =
-            generateTextureVideo( reconstructs[i], context, i, tileIdx, video, video, mapCount, accTilePointCount );
+            generateAttributeVideo( reconstructs[i], context, i, tileIdx, video, video, mapCount, accTilePointCount );
       }
     }
   }
   return ret;
 }
 
-size_t PCCEncoder::generateTextureVideo( const PCCPointSet3& reconstruct,
+size_t PCCEncoder::generateAttributeVideo( const PCCPointSet3& reconstruct,
                                          PCCContext&         context,
                                          size_t              frameIndex,
                                          size_t              tileIndex,
-                                         PCCVideoTexture&    video,
-                                         PCCVideoTexture&    videoT1,
+                                         PCCVideoAttribute&    video,
+                                         PCCVideoAttribute&    videoT1,
                                          const size_t        mapCount,
                                          size_t              accTilePointCount ) {
   auto&  tile          = context[frameIndex].getTile( tileIndex );
@@ -7288,19 +7268,19 @@ size_t PCCEncoder::generateTextureVideo( const PCCPointSet3& reconstruct,
     size_t numOfRawGeos       = tile.getTotalNumberOfRawPoints();
     // raw points
     std::cout.flush();
-    std::vector<PCCColor3B>& rawTextures = tile.getRawPointsTextures();
-    std::vector<PCCColor3B>& eomTextures = tile.getEOMTextures();
+    std::vector<PCCColor3B>& rawAttributes = tile.getRawPointsAttribute();
+    std::vector<PCCColor3B>& eomAttributes = tile.getEOMAttribute();
     std::cout.flush();
-    rawTextures.resize( numOfRawGeos );
-    eomTextures.resize( numberOfEOMPoints );
+    rawAttributes.resize( numOfRawGeos );
+    eomAttributes.resize( numberOfEOMPoints );
     for ( size_t i = 0; i < numOfRawGeos; ++i ) {
       const PCCColor3B color = reconstruct.getColor( accTilePointCount + numOfRegularPoints + numberOfEOMPoints + i );
-      rawTextures[i]         = color;
+      rawAttributes[i]         = color;
     }
     if ( params_.enhancedOccupancyMapCode_ ) {
       for ( size_t i = 0; i < numberOfEOMPoints; ++i ) {
         const PCCColor3B color = reconstruct.getColor( accTilePointCount + numOfRegularPoints + i );
-        eomTextures[i]         = color;
+        eomAttributes[i]         = color;
       }
     }
   }
@@ -7863,7 +7843,7 @@ void PCCEncoder::packingFirstFrame( PCCContext& context,
       if ( g_printDetailedInfo ) { printMap( occupancyMap, occupancySizeU, occupancySizeV ); }
     }
     if ( params_.enhancedOccupancyMapCode_ && !tile.getUseRawPointsSeparateVideo() ) {
-      packEOMTexturePointsPatch( tile, occupancyMap, widthGPA, heithGPA, occupancySizeU, occupancySizeV,
+      packEOMAttributePointsPatch( tile, occupancyMap, widthGPA, heithGPA, occupancySizeU, occupancySizeV,
                                  maxOccupancyRow );
     }
     if ( g_printDetailedInfo ) { printMap( occupancyMap, occupancySizeU, occupancySizeV ); }
@@ -8150,7 +8130,7 @@ void PCCEncoder::performGPAPacking( const SubContext& subContext,
       if ( g_printDetailedInfo ) { printMap( occupancyMap, occupancySizeU, occupancySizeV ); }
     }
     if ( params_.enhancedOccupancyMapCode_ && !curFrameContext.getUseRawPointsSeparateVideo() ) {
-      packEOMTexturePointsPatch( curFrameContext, occupancyMap, widthGPA, heightGPA, occupancySizeU, occupancySizeV,
+      packEOMAttributePointsPatch( curFrameContext, occupancyMap, widthGPA, heightGPA, occupancySizeU, occupancySizeV,
                                  maxOccupancyRow );
     }
     if ( g_printDetailedInfo ) { printMap( occupancyMap, occupancySizeU, occupancySizeV ); }

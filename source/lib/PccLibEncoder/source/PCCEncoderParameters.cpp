@@ -43,63 +43,61 @@ const std::vector<PointLocalReconstructionMode> g_pointLocalReconstructionMode =
 };
 
 PCCEncoderParameters::PCCEncoderParameters() {
-  gridBasedSegmentation_                   = false;
-  voxelDimensionGridBasedSegmentation_     = 2;
-  uncompressedDataPath_                    = {};
-  compressedStreamPath_                    = {};
-  reconstructedDataPath_                   = {};
-  configurationFolder_                     = {};
-  uncompressedDataFolder_                  = {};
-  startFrameNumber_                        = 0;
-  frameCount_                              = 300;
-  groupOfFramesSize_                       = 32;
-  colorTransform_                          = COLOR_TRANSFORM_NONE;
-  colorSpaceConversionPath_                = {};
-  colorSpaceConversionConfig_              = {};
-  inverseColorSpaceConversionConfig_       = {};
-  nnNormalEstimation_                      = 16;
-  normalOrientation_                       = 1;
-  gridBasedRefineSegmentation_             = true;
-  maxNNCountRefineSegmentation_            = gridBasedRefineSegmentation_ ?
-                                             (gridBasedSegmentation_ ? 384 : 1024) : 256;
-  iterationCountRefineSegmentation_        = gridBasedRefineSegmentation_ ? 
-                                             (gridBasedSegmentation_ ? 5 : 10) : 100;
-  voxelDimensionRefineSegmentation_        = gridBasedSegmentation_ ? 2 : 4;
-  searchRadiusRefineSegmentation_          = gridBasedSegmentation_ ? 128 : 192;
-  occupancyResolution_                     = 16;
-  enablePatchSplitting_                    = true;
-  maxPatchSize_                            = 1024;
-  log2QuantizerSizeX_                      = 4;
-  log2QuantizerSizeY_                      = 4;
-  minPointCountPerCCPatchSegmentation_     = 16;
-  maxNNCountPatchSegmentation_             = 16;
-  surfaceThickness_                        = 4;
-  minLevel_                                = 64;  // fix value
-  maxAllowedDist2RawPointsDetection_       = 9.0;
-  maxAllowedDist2RawPointsSelection_       = 1.0;
-  lambdaRefineSegmentation_                = 3.0;
-  minimumImageWidth_                       = 1280;
-  minimumImageHeight_                      = 1280;
-  maxCandidateCount_                       = 4;
-  occupancyPrecision_                      = 4;
-  occupancyMapVideoEncoderConfig_          = {};
-  occupancyMapQP_                          = 8;
-  occupancyMapRefinement_                  = false;
-  decodedAtlasInformationHash_             = 0;
-  postprocessSmoothingFilter_              = 1;
-  flagGeometrySmoothing_                   = true;
-  patchExpansion_                          = false;
-  gridSmoothing_                           = true;
-  gridSize_                                = 8;
-  neighborCountSmoothing_                  = 4 * 16;
-  radius2Smoothing_                        = 4.0 * 16;
-  radius2BoundaryDetection_                = 4.0 * 16;
-  thresholdSmoothing_                      = 64.0;
-  bestColorSearchRange_                    = 0;
-  numNeighborsColorTransferFwd_            = 1;
-  numNeighborsColorTransferBwd_            = 1;
-  useDistWeightedAverageFwd_               = true;
-  useDistWeightedAverageBwd_               = true;
+  gridBasedSegmentation_               = false;
+  voxelDimensionGridBasedSegmentation_ = 2;
+  uncompressedDataPath_                = {};
+  compressedStreamPath_                = {};
+  reconstructedDataPath_               = {};
+  configurationFolder_                 = {};
+  uncompressedDataFolder_              = {};
+  startFrameNumber_                    = 0;
+  frameCount_                          = 300;
+  groupOfFramesSize_                   = 32;
+  colorTransform_                      = COLOR_TRANSFORM_NONE;
+  colorSpaceConversionPath_            = {};
+  colorSpaceConversionConfig_          = {};
+  inverseColorSpaceConversionConfig_   = {};
+  nnNormalEstimation_                  = 16;
+  normalOrientation_                   = 1;
+  gridBasedRefineSegmentation_         = true;
+  maxNNCountRefineSegmentation_        = gridBasedRefineSegmentation_ ? ( gridBasedSegmentation_ ? 384 : 1024 ) : 256;
+  iterationCountRefineSegmentation_    = gridBasedRefineSegmentation_ ? ( gridBasedSegmentation_ ? 5 : 10 ) : 100;
+  voxelDimensionRefineSegmentation_    = gridBasedSegmentation_ ? 2 : 4;
+  searchRadiusRefineSegmentation_      = gridBasedSegmentation_ ? 128 : 192;
+  occupancyResolution_                 = 16;
+  enablePatchSplitting_                = true;
+  maxPatchSize_                        = 1024;
+  log2QuantizerSizeX_                  = 4;
+  log2QuantizerSizeY_                  = 4;
+  minPointCountPerCCPatchSegmentation_ = 16;
+  maxNNCountPatchSegmentation_         = 16;
+  surfaceThickness_                    = 4;
+  minLevel_                            = 64;  // fix value
+  maxAllowedDist2RawPointsDetection_   = 9.0;
+  maxAllowedDist2RawPointsSelection_   = 1.0;
+  lambdaRefineSegmentation_            = 3.0;
+  minimumImageWidth_                   = 1280;
+  minimumImageHeight_                  = 1280;
+  maxCandidateCount_                   = 4;
+  occupancyPrecision_                  = 4;
+  occupancyMapVideoEncoderConfig_      = {};
+  occupancyMapQP_                      = 8;
+  occupancyMapRefinement_              = false;
+  decodedAtlasInformationHash_         = 0;
+  postprocessSmoothingFilter_          = 1;
+  flagGeometrySmoothing_               = true;
+  patchExpansion_                      = false;
+  gridSmoothing_                       = true;
+  gridSize_                            = 8;
+  neighborCountSmoothing_              = 4 * 16;
+  radius2Smoothing_                    = 4.0 * 16;
+  radius2BoundaryDetection_            = 4.0 * 16;
+  thresholdSmoothing_                  = 64.0;
+  bestColorSearchRange_                = 0;
+  numNeighborsColorTransferFwd_        = 1;
+  numNeighborsColorTransferBwd_        = 1;
+  useDistWeightedAverageFwd_           = true;
+  useDistWeightedAverageBwd_           = true;
   skipAvgIfIdenticalSourcePointPresentFwd_ = false;
   skipAvgIfIdenticalSourcePointPresentBwd_ = false;
   distOffsetFwd_                           = 0.0001;
@@ -120,19 +118,19 @@ PCCEncoderParameters::PCCEncoderParameters() {
   byteStreamVideoCoderGeometry_            = true;
   byteStreamVideoCoderAttribute_           = true;
   geometryQP_                              = 28;
-  textureQP_                               = 43;
+  attributeQP_                             = 43;
   geometryConfig_                          = {};
-  geometryD0Config_                        = {};
-  geometryD1Config_                        = {};
-  textureConfig_                           = {};
-  textureT0Config_                         = {};
-  textureT1Config_                         = {};
+  geometry0Config_                         = {};
+  geometry1Config_                         = {};
+  attributeConfig_                         = {};
+  attribute0Config_                        = {};
+  attribute1Config_                        = {};
   rawPointsPatch_                          = false;
   noAttributes_                            = false;
   attributeVideo444_                       = false;
   useRawPointsSeparateVideo_               = false;
   geometryAuxVideoConfig_                  = {};
-  textureAuxVideoConfig_                   = {};
+  attributeAuxVideoConfig_                 = {};
   nbThread_                                = 1;
   keepIntermediateFiles_                   = false;
   absoluteD1_                              = true;
@@ -176,7 +174,7 @@ PCCEncoderParameters::PCCEncoderParameters() {
 
   // Flexible Patch Packing
   packingStrategy_      = 1;
-  textureBGFill_        = 1;
+  attributeBGFill_      = 1;
   safeGuardDistance_    = 0;
   useEightOrientations_ = false;
   lowDelayEncoding_     = false;
@@ -209,8 +207,8 @@ PCCEncoderParameters::PCCEncoderParameters() {
   tileHeightToWidthRatio_       = 1;
 
   // Sort raw points by Morton code
-  mortonOrderSortRawPoints_     = false;
-  textureRawSeparateVideoWidth_ = 128;
+  mortonOrderSortRawPoints_       = false;
+  attributeRawSeparateVideoWidth_ = 128;
 
   // Separate high gradient points
   highGradientSeparation_   = false;
@@ -266,15 +264,17 @@ void PCCEncoderParameters::completePath() {
   }
   if ( !configurationFolder_.empty() ) {
     if ( !geometryConfig_.empty() ) { geometryConfig_ = configurationFolder_ + geometryConfig_; }
-    if ( !geometryD0Config_.empty() ) { geometryD0Config_ = configurationFolder_ + geometryD0Config_; }
-    if ( !geometryD1Config_.empty() ) { geometryD1Config_ = configurationFolder_ + geometryD1Config_; }
-    if ( !textureConfig_.empty() ) { textureConfig_ = configurationFolder_ + textureConfig_; }
-    if ( !textureT0Config_.empty() ) { textureT0Config_ = configurationFolder_ + textureT0Config_; }
-    if ( !textureT1Config_.empty() ) { textureT1Config_ = configurationFolder_ + textureT1Config_; }
+    if ( !geometry0Config_.empty() ) { geometry0Config_ = configurationFolder_ + geometry0Config_; }
+    if ( !geometry1Config_.empty() ) { geometry1Config_ = configurationFolder_ + geometry1Config_; }
+    if ( !attributeConfig_.empty() ) { attributeConfig_ = configurationFolder_ + attributeConfig_; }
+    if ( !attribute0Config_.empty() ) { attribute0Config_ = configurationFolder_ + attribute0Config_; }
+    if ( !attribute1Config_.empty() ) { attribute1Config_ = configurationFolder_ + attribute1Config_; }
     if ( !geometryAuxVideoConfig_.empty() ) {
       geometryAuxVideoConfig_ = configurationFolder_ + geometryAuxVideoConfig_;
     }
-    if ( !textureAuxVideoConfig_.empty() ) { textureAuxVideoConfig_ = configurationFolder_ + textureAuxVideoConfig_; }
+    if ( !attributeAuxVideoConfig_.empty() ) {
+      attributeAuxVideoConfig_ = configurationFolder_ + attributeAuxVideoConfig_;
+    }
 
     if ( !inverseColorSpaceConversionConfig_.empty() ) {
       inverseColorSpaceConversionConfig_ = configurationFolder_ + inverseColorSpaceConversionConfig_;
@@ -289,7 +289,9 @@ void PCCEncoderParameters::completePath() {
       if ( !geometryAuxVideoConfig_.empty() ) {
         geometryAuxVideoConfig_ = configurationFolder_ + geometryAuxVideoConfig_;
       }
-      if ( !textureAuxVideoConfig_.empty() ) { textureAuxVideoConfig_ = configurationFolder_ + textureAuxVideoConfig_; }
+      if ( !attributeAuxVideoConfig_.empty() ) {
+        attributeAuxVideoConfig_ = configurationFolder_ + attributeAuxVideoConfig_;
+      }
     }
   }
 }
@@ -301,7 +303,7 @@ void PCCEncoderParameters::print() {
   std::cout << "\t attribute Colour Plane                     " << ( attributeVideo444_ ? "444" : "420" ) << std::endl;
   std::cout << "\t enhancedOccupancyMapCode                   " << enhancedOccupancyMapCode_ << std::endl;
   std::cout << "\t useRawPointsSeparateVideo                  " << useRawPointsSeparateVideo_ << std::endl;
-  std::cout << "\t textureRawSeparateVideoWidth               " << textureRawSeparateVideoWidth_ << std::endl;
+  std::cout << "\t attributeRawSeparateVideoWidth             " << attributeRawSeparateVideoWidth_ << std::endl;
   std::cout << "\t uncompressedDataPath                       " << uncompressedDataPath_ << std::endl;
   std::cout << "\t compressedStreamPath                       " << compressedStreamPath_ << std::endl;
   std::cout << "\t reconstructedDataPath                      " << reconstructedDataPath_ << std::endl;
@@ -358,18 +360,18 @@ void PCCEncoderParameters::print() {
   std::cout << "\t   safeGuardDistance                        " << safeGuardDistance_ << std::endl;
   std::cout << "\t   globalPatchAllocation                    " << globalPatchAllocation_ << std::endl;
   if ( globalPatchAllocation_ == 2 ) {
-    std::cout << "\t   globalPackingStrategyGOF               " << geometryD0Config_ << std::endl;
-    std::cout << "\t   globalPackingStrategyReset             " << geometryD1Config_ << std::endl;
-    std::cout << "\t   globalPackingStrategyThreshold         " << geometryD1Config_ << std::endl;
+    std::cout << "\t   globalPackingStrategyGOF               " << geometry0Config_ << std::endl;
+    std::cout << "\t   globalPackingStrategyReset             " << geometry1Config_ << std::endl;
+    std::cout << "\t   globalPackingStrategyThreshold         " << geometry1Config_ << std::endl;
   }
   std::cout << "\t   patchPrecedenceOrder                     " << patchPrecedenceOrderFlag_ << std::endl;
   std::cout << "\t   lowDelayEncoding                         " << lowDelayEncoding_ << std::endl;
-  std::cout << "\t   textureBGFill                            " << textureBGFill_ << std::endl;
+  std::cout << "\t   attributeBGFill                          " << attributeBGFill_ << std::endl;
   std::cout << "\t   geometryPadding                          " << geometryPadding_ << std::endl;
   std::cout << "\t Video encoding" << std::endl;
   std::cout << "\t   geometryQP                               " << geometryQP_ << std::endl;
-  std::cout << "\t   textureQP                                " << textureQP_ << std::endl;
-  std::cout << "\t   usePccRDO                                " << usePccRDO_ << std::endl;  
+  std::cout << "\t   attributeQP                              " << attributeQP_ << std::endl;
+  std::cout << "\t   usePccRDO                                " << usePccRDO_ << std::endl;
   std::cout << "\t   colorSpaceConversionPath                 " << colorSpaceConversionPath_ << std::endl;
   std::cout << "\t   videoEncoderOccupancyPath                " << videoEncoderOccupancyPath_ << std::endl;
   std::cout << "\t   videoEncoderGeometryPath                 " << videoEncoderGeometryPath_ << std::endl;
@@ -378,21 +380,21 @@ void PCCEncoderParameters::print() {
   std::cout << "\t   videoEncoderGeometryCodecId              " << videoEncoderGeometryCodecId_ << std::endl;
   std::cout << "\t   videoEncoderAttributeCodecId             " << videoEncoderAttributeCodecId_ << std::endl;
   if ( multipleStreams_ ) {
-    std::cout << "\t   geometryD0Config                         " << geometryD0Config_ << std::endl;
-    std::cout << "\t   geometryD1Config                         " << geometryD1Config_ << std::endl;
+    std::cout << "\t   geometry0Config                          " << geometry0Config_ << std::endl;
+    std::cout << "\t   geometry1Config                          " << geometry1Config_ << std::endl;
   } else {
     std::cout << "\t   geometryConfig                           " << geometryConfig_ << std::endl;
   }
   if ( multipleStreams_ ) {
-    std::cout << "\t   textureT0Config                          " << textureT0Config_ << std::endl;
-    std::cout << "\t   textureT1Config                          " << textureT1Config_ << std::endl;
+    std::cout << "\t   attribute0Config                         " << attribute0Config_ << std::endl;
+    std::cout << "\t   attribute1Config                         " << attribute1Config_ << std::endl;
   } else {
-    std::cout << "\t   textureConfig                            " << textureConfig_ << std::endl;
+    std::cout << "\t   attributeConfig                           " << attributeConfig_ << std::endl;
   }
   if ( useRawPointsSeparateVideo_ ) {
     if ( rawPointsPatch_ ) {
       std::cout << "\t geometryAuxVideoConfig                       " << geometryAuxVideoConfig_ << std::endl;
-      std::cout << "\t textureAuxVideoConfig                        " << textureAuxVideoConfig_ << std::endl;
+      std::cout << "\t attributeAuxVideoConfig                      " << attributeAuxVideoConfig_ << std::endl;
     }
   }
   std::cout << "\t   colorSpaceConversionConfig               " << colorSpaceConversionConfig_ << std::endl;
@@ -491,18 +493,18 @@ void PCCEncoderParameters::print() {
   if ( tileSegmentationType_ > 1 ) {
     std::cout << "\t   numMaxTilePerFrame                       " << numMaxTilePerFrame_ << std::endl;
     if ( numMaxTilePerFrame_ > 1 ) {
-      if(uniformPartitionSpacing_){
-      std::cout << "\t   uniformPartitionSpacing                " << uniformPartitionSpacing_ << std::endl;
-      std::cout << "\t   tilePartitionWidth                     " << tilePartitionWidth_ << std::endl;
-      std::cout << "\t   tilePartitionHeight                    " << tilePartitionHeight_ << std::endl;
+      if ( uniformPartitionSpacing_ ) {
+        std::cout << "\t   uniformPartitionSpacing                " << uniformPartitionSpacing_ << std::endl;
+        std::cout << "\t   tilePartitionWidth                     " << tilePartitionWidth_ << std::endl;
+        std::cout << "\t   tilePartitionHeight                    " << tilePartitionHeight_ << std::endl;
       } else {
         std::cout << "\t   tilePartitionWidthList                   ";
-        for(auto v: tilePartitionWidthList_) std::cout<< v<<"\t";
-        std::cout<<std::endl;
+        for ( auto v : tilePartitionWidthList_ ) std::cout << v << "\t";
+        std::cout << std::endl;
         std::cout << "\t   tilePartitionHeightList                  ";
-        for(auto v: tilePartitionHeightList_) std::cout<< v<<"\t";
-        std::cout<<std::endl;
-        }
+        for ( auto v : tilePartitionHeightList_ ) std::cout << v << "\t";
+        std::cout << std::endl;
+      }
     }
   }
   std::cout << "\t Point cloud partitions and tiles           " << std::endl;
@@ -643,13 +645,13 @@ bool PCCEncoderParameters::check() {
 #endif
 
   if ( multipleStreams_ ) {
-    if ( geometryD0Config_.empty() || geometryD1Config_.empty() ) {
-      geometryD0Config_ = geometryConfig_.substr( 0, geometryConfig_.find_last_of( '.' ) ) + "-D0.cfg";
-      geometryD1Config_ = geometryConfig_.substr( 0, geometryConfig_.find_last_of( '.' ) ) + "-D1.cfg";
+    if ( geometry0Config_.empty() || geometry1Config_.empty() ) {
+      geometry0Config_ = geometryConfig_.substr( 0, geometryConfig_.find_last_of( '.' ) ) + "-D0.cfg";
+      geometry1Config_ = geometryConfig_.substr( 0, geometryConfig_.find_last_of( '.' ) ) + "-D1.cfg";
     }
   } else {
-    geometryD0Config_ = {};
-    geometryD1Config_ = {};
+    geometry0Config_ = {};
+    geometry1Config_ = {};
     if ( geometryConfig_.empty() ) {
       ret = false;
       std::cerr << "When multipleStreams is not true, geometryConfig_ should "
@@ -658,15 +660,15 @@ bool PCCEncoderParameters::check() {
   }
 
   if ( multipleStreams_ ) {
-    if ( textureT0Config_.empty() || textureT1Config_.empty() ) {
-      textureT0Config_ = textureConfig_.substr( 0, textureConfig_.find_last_of( '.' ) ) + "-T0.cfg";
-      textureT1Config_ = textureConfig_.substr( 0, textureConfig_.find_last_of( '.' ) ) + "-T1.cfg";
+    if ( attribute0Config_.empty() || attribute1Config_.empty() ) {
+      attribute0Config_ = attributeConfig_.substr( 0, attributeConfig_.find_last_of( '.' ) ) + "-T0.cfg";
+      attribute1Config_ = attributeConfig_.substr( 0, attributeConfig_.find_last_of( '.' ) ) + "-T1.cfg";
     }
   } else {
-    textureT0Config_ = {};
-    textureT1Config_ = {};
-    if ( textureConfig_.empty() ) {
-      std::cerr << "When multipleStreams is false, textureConfig_ should be "
+    attribute0Config_ = {};
+    attribute1Config_ = {};
+    if ( attributeConfig_.empty() ) {
+      std::cerr << "When multipleStreams is false, attributeConfig_ should be "
                    "non-empty\n";
       ret = false;
     }
@@ -683,8 +685,8 @@ bool PCCEncoderParameters::check() {
     std::cerr << "absoluteT1 should be true when absoluteD1 is true\n";
     absoluteT1_ = 1;
   }
-  if ( rawPointsPatch_ ) {    
-    if ( usePccRDO_ ) { // Note: disabling RDO optimization for lossless configurations
+  if ( rawPointsPatch_ ) {
+    if ( usePccRDO_ ) {  // Note: disabling RDO optimization for lossless configurations
       usePccRDO_ = false;
       std::cerr << "WARNING: usePccRDO_ is only for lossy "
                    "coding mode for now. Force usePccRDO_=FALSE.\n";
@@ -729,7 +731,7 @@ bool PCCEncoderParameters::check() {
       std::cerr << "WARNING: lossyRawPointsPatch_ is only for lossy coding "
                    "mode for now. Force lossyRawPointsPatch_=FALSE.\n";
     }
-  }else {    
+  } else {
     if ( enhancedOccupancyMapCode_ ) {
       enhancedOccupancyMapCode_ = false;
       std::cerr << "WARNING: enhancedOccupancyMapCode_ is only for lossless "
@@ -769,9 +771,9 @@ bool PCCEncoderParameters::check() {
                  "useRawPointsSeparateVideo_=false.\n";
   }
   if ( useRawPointsSeparateVideo_ ) {
-    if ( ( textureRawSeparateVideoWidth_ % 64 ) != 0U ) {
+    if ( ( attributeRawSeparateVideoWidth_ % 64 ) != 0U ) {
       ret = false;
-      std::cerr << "textureRawSeparateVideoWidth_ must be multiple of 64.\n";
+      std::cerr << "attributeRawSeparateVideoWidth_ must be multiple of 64.\n";
     }
     if ( singleMapPixelInterleaving_ ) {
       ret = false;
@@ -789,17 +791,17 @@ bool PCCEncoderParameters::check() {
     } else {
       std::cout << "geometryAuxConfig: " << geometryAuxVideoConfig_ << std::endl;
     }
-    if ( textureAuxVideoConfig_.empty() || !exist( textureAuxVideoConfig_ ) ) {
-      if ( !textureConfig_.empty() ) {
-        std::cerr << "WARNING: textureAuxVideoConfig_ is set as textureConfig_ : " << textureConfig_ << std::endl;
-        textureAuxVideoConfig_ = textureConfig_;
+    if ( attributeAuxVideoConfig_.empty() || !exist( attributeAuxVideoConfig_ ) ) {
+      if ( !attributeConfig_.empty() ) {
+        std::cerr << "WARNING: attributeAuxVideoConfig_ is set as attributeConfig_ : " << attributeConfig_ << std::endl;
+        attributeAuxVideoConfig_ = attributeConfig_;
       } else {
         ret = false;
-        std::cerr << "textureConfig_ and textureAuxVideoConfig_ are empty\n";
+        std::cerr << "attributeConfig_ and attributeAuxVideoConfig_ are empty\n";
       }
 
     } else
-      std::cout << "textureAuxConfig: " << textureAuxVideoConfig_ << std::endl;
+      std::cout << "attributeAuxConfig: " << attributeAuxVideoConfig_ << std::endl;
   }
 
   if ( singleMapPixelInterleaving_ && pointLocalReconstruction_ ) {
@@ -932,7 +934,7 @@ bool PCCEncoderParameters::check() {
     if ( gridSmoothing_ ) {
       gridSmoothing_ = false;
       std::cerr << "gridSmoothing is ignored because profileReconstructionIdc set to 0. \n";
-    }    
+    }
     // Note: Attribute transfer cannot be disabled. one encoder input parameter must be added.
     if ( flagColorPreSmoothing_ ) {
       flagColorPreSmoothing_ = false;
@@ -965,7 +967,7 @@ bool PCCEncoderParameters::check() {
     if ( gridSmoothing_ ) {
       gridSmoothing_ = false;
       std::cerr << "gridSmoothing_ is ignored because profileReconstructionIdc set to 2. \n";
-    }    
+    }
     // Note: Attribute transfer cannot be disabled. one encoder input parameter must be added.
   }
 
@@ -1108,7 +1110,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   context.setOccupancyPrecision( occupancyPrecision_ );
   context.setModelScale( modelScale_ );
   context.setModelOrigin( modelOrigin_ );
-  //context.setAuxVideoWidth( textureRawSeparateVideoWidth_ );
+  // context.setAuxVideoWidth( attributeRawSeparateVideoWidth_ );
   context.setGeometry3dCoordinatesBitdepth( bitdepth3D );
   context.setMaxNumRefAtlasFrame( maxNumRefAtlasFrame_ );
   context.setNumOfRefAtlasFrameList( maxNumRefAtlasList_ );
@@ -1122,8 +1124,8 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
     }
   }
   size_t numPlrm = pointLocalReconstruction_
-                       ? ( std::max )( static_cast<size_t>( 1 ),
-                                       ( std::min )( plrlNumberOfModes_, g_pointLocalReconstructionMode.size() ) )
+                       ? (std::max)( static_cast<size_t>( 1 ),
+                                     (std::min)( plrlNumberOfModes_, g_pointLocalReconstructionMode.size() ) )
                        : 1;
   for ( size_t i = 0; i < numPlrm; i++ ) {
     context.addPointLocalReconstructionMode( g_pointLocalReconstructionMode[i] );
@@ -1169,7 +1171,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   asps.setLongTermRefAtlasFramesFlag( false );
   asps.setUseEightOrientationsFlag( useEightOrientations_ );
   asps.setExtendedProjectionEnabledFlag( additionalProjectionPlaneMode_ > 0 );
-  asps.setMaxNumberProjectionsMinus1( 5 + 4 * ( std::min )( additionalProjectionPlaneMode_, 3 ) );
+  asps.setMaxNumberProjectionsMinus1( 5 + 4 * (std::min)( additionalProjectionPlaneMode_, 3 ) );
   asps.setNormalAxisLimitsQuantizationEnabledFlag( true );
   asps.setNormalAxisMaxDeltaValueEnabledFlag( true );
   asps.setxelDeinterleavingFlag( singleMapPixelInterleaving_ );
@@ -1196,7 +1198,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   auto& afps = context.addAtlasFrameParameterSet( 0 );
   afps.setAtlasSequenceParameterSetId( 0 );
   afps.setNumRefIdxDefaultActiveMinus1( static_cast<uint8_t>(
-      constrainedPack_ ? ( ( std::max )( 0, static_cast<int>( maxNumRefAtlasFrame_ ) - 1 ) ) : 0 ) );
+      constrainedPack_ ? ( (std::max)( 0, static_cast<int>( maxNumRefAtlasFrame_ ) - 1 ) ) : 0 ) );
   afps.setAdditionalLtAfocLsbLen( 4 );
   afps.setRaw3dOffsetBitCountExplicitModeFlag( false );
   afps.setExtensionFlag( true );
@@ -1239,8 +1241,8 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
     ai.setAttributeCodecId( i, getCodecIdIndex( (PCCCodecId)videoEncoderAttributeCodecId_ ) );
   }
 
-  printf("CODEC ID SET = %d %d %d \n", oi.getOccupancyCodecId(), gi.getGeometryCodecId(), ai.getAttributeCodecId( 0 ) ); 
-  
+  printf( "CODEC ID SET = %d %d %d \n", oi.getOccupancyCodecId(), gi.getGeometryCodecId(),
+          ai.getAttributeCodecId( 0 ) );
 
   // atlas video frame allocation
   context.getAtlas( atlasIndex ).allocateVideoFrames( context, 0 );
@@ -1258,9 +1260,9 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
     frame.setMaxDepth( ( 1 << geometryNominal2dBitdepth_ ) - 1 );
     frame.setLog2PatchQuantizerSizeX( context.getLog2PatchQuantizerSizeX() );
     frame.setLog2PatchQuantizerSizeY( context.getLog2PatchQuantizerSizeY() );
-    frame.setAtlasFrmOrderCntLsb( context.calculateAFOCLsb( i ) ); 
+    frame.setAtlasFrmOrderCntLsb( context.calculateAFOCLsb( i ) );
     frame.setAtlasFrmOrderCntVal( i );
-    frame.setNumRefIdxActive( i == 0 ? 0 : ( constrainedPack_ ? ( std::min )( i, maxNumRefAtlasFrame_ ) : 0  ) );
+    frame.setNumRefIdxActive( i == 0 ? 0 : ( constrainedPack_ ? (std::min)( i, maxNumRefAtlasFrame_ ) : 0 ) );
     frame.setRefAfocList( context, 0 );
     if ( tileSegmentationType_ == 1 ) {
       size_t partitionWidthIn64  = ( minimumImageWidth_ / ( 64 * numTilesHor_ ) );
@@ -1269,7 +1271,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
                                        partitionWidthIn64, partitionHeightIn64 );
     } else {
       if ( useRawPointsSeparateVideo_ ) {
-        context[i].setAuxVideoWidth( textureRawSeparateVideoWidth_ );
+        context[i].setAuxVideoWidth( attributeRawSeparateVideoWidth_ );
         context[i].resizeAuxTileHeight( numMaxTilePerFrame_, 0 );
         context[i].resizeAuxTileLeftTopY( numMaxTilePerFrame_, 0 );
       }
@@ -1292,7 +1294,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
         if ( i == 0 ) {
           tile.setNumRefIdxActive( 0 );
         } else {
-          tile.setNumRefIdxActive( constrainedPack_ ? ( std::min )( i, maxNumRefAtlasFrame_ ) : 0 );
+          tile.setNumRefIdxActive( constrainedPack_ ? (std::min)( i, maxNumRefAtlasFrame_ ) : 0 );
         }
         tile.setGeometry2dBitdepth( geometryNominal2dBitdepth_ );
         tile.setMaxDepth( ( 1 << geometryNominal2dBitdepth_ ) - 1 );

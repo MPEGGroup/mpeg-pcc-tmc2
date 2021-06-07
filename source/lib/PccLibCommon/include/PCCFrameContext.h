@@ -70,8 +70,8 @@ class PCCFrameContext {
   std::vector<PCCRawPointsPatch>& getRawPointsPatches() { return rawPointsPatches_; }
   PCCRawPointsPatch&              getRawPointsPatch( size_t index ) { return rawPointsPatches_[index]; }
   std::vector<size_t>&            getNumberOfRawPoints() { return numberOfRawPoints_; };
-  std::vector<PCCColor3B>&        getRawPointsTextures() { return rawTextures_; };
-  std::vector<PCCColor3B>&        getEOMTextures() { return eomTextures_; };
+  std::vector<PCCColor3B>&        getRawPointsAttribute() { return rawAttributes_; };
+  std::vector<PCCColor3B>&        getEOMAttribute() { return eomAttributes_; };
   size_t&                         getWidth() { return width_; }
   size_t&                         getHeight() { return height_; }
   const size_t                    getFrameIndex() { return frameIndex_; }
@@ -191,8 +191,8 @@ class PCCFrameContext {
   std::vector<PCCPatch>                        patches_;
   std::vector<PCCRawPointsPatch>               rawPointsPatches_;
   std::vector<size_t>                          numberOfRawPoints_;
-  std::vector<PCCColor3B>                      rawTextures_;
-  std::vector<PCCColor3B>                      eomTextures_;
+  std::vector<PCCColor3B>                      rawAttributes_;
+  std::vector<PCCColor3B>                      eomAttributes_;
   std::vector<PCCPointSet3>                    srcPointCloudByPatch_;
   std::vector<PCCPointSet3>                    srcPointCloudByBlock_;
   std::vector<PCCPointSet3>                    recPointCloudByBlock_;

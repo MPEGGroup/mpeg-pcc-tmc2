@@ -511,34 +511,34 @@ bool parseParameters( int                   argc,
       encoderParams.geometryQP_,
       encoderParams.geometryQP_,
       "QP for compression of geometry video" )
-    ( "textureQP",
-      encoderParams.textureQP_,
-      encoderParams.textureQP_,
-      "QP for compression of texture video" )
+    ( "attributeQP",
+      encoderParams.attributeQP_,
+      encoderParams.attributeQP_,
+      "QP for compression of attribute video" )
     ( "geometryConfig",
       encoderParams.geometryConfig_,
       encoderParams.geometryConfig_,
       "HM configuration file for geometry compression" )
-    ( "geometryD0Config",
-      encoderParams.geometryD0Config_,
-      encoderParams.geometryD0Config_,
-      "HM configuration file for geometry D0 compression" )
-    ( "geometryD1Config",
-      encoderParams.geometryD1Config_,
-      encoderParams.geometryD1Config_,
-      "HM configuration file for geometry D1 compression" )
-    ( "textureConfig",
-      encoderParams.textureConfig_,
-      encoderParams.textureConfig_,
-      "HM configuration file for texture compression" )
-    ( "textureT0Config",
-      encoderParams.textureT0Config_,
-      encoderParams.textureT0Config_,
-      "HM configuration file for texture D0 compression" )
-    ( "textureT1Config",
-      encoderParams.textureT1Config_,
-      encoderParams.textureT1Config_,
-      "HM configuration file for texture D1 compression" )
+    ( "geometry0Config",
+      encoderParams.geometry0Config_,
+      encoderParams.geometry0Config_,
+      "HM configuration file for geometry 0 compression" )
+    ( "geometry1Config",
+      encoderParams.geometry1Config_,
+      encoderParams.geometry1Config_,
+      "HM configuration file for geometry 1 compression" )
+    ( "attributeConfig",
+      encoderParams.attributeConfig_,
+      encoderParams.attributeConfig_,
+      "HM configuration file for attribute compression" )
+    ( "attribute0Config",
+      encoderParams.attribute0Config_,
+      encoderParams.attribute0Config_,
+      "HM configuration file for attribute 0 compression" )
+    ( "attribute1Config",
+      encoderParams.attribute1Config_,
+      encoderParams.attribute1Config_,
+      "HM configuration file for attribute 1 compression" )
     ( "rawPointsPatch",
       encoderParams.rawPointsPatch_,
       encoderParams.rawPointsPatch_,
@@ -555,18 +555,18 @@ bool parseParameters( int                   argc,
       encoderParams.useRawPointsSeparateVideo_,
       encoderParams.useRawPointsSeparateVideo_,
       "compress raw points with video codec" )
-    ( "textureRawSeparateVideoWidth",
-      encoderParams.textureRawSeparateVideoWidth_,
-      encoderParams.textureRawSeparateVideoWidth_,
-      "Width of the MP's texture in separate video" )
+    ( "attributeRawSeparateVideoWidth",
+      encoderParams.attributeRawSeparateVideoWidth_,
+      encoderParams.attributeRawSeparateVideoWidth_,
+      "Width of the MP's attribute in separate video" )
     ( "geometryMPConfig",
       encoderParams.geometryAuxVideoConfig_,
       encoderParams.geometryAuxVideoConfig_,
       "HM configuration file for raw points geometry compression" )
-    ( "textureMPConfig",
-      encoderParams.textureAuxVideoConfig_,
-      encoderParams.textureAuxVideoConfig_,
-      "HM configuration file for raw points texture compression" )
+    ( "attributeMPConfig",
+      encoderParams.attributeAuxVideoConfig_,
+      encoderParams.attributeAuxVideoConfig_,
+      "HM configuration file for raw points attribute compression" )
 
     // etc
     ( "nbThread",
@@ -712,10 +712,10 @@ bool parseParameters( int                   argc,
       encoderParams.safeGuardDistance_,
       encoderParams.safeGuardDistance_,
       "Number of empty blocks that must exist between the patches (default=1)\n" )
-    ( "textureBGFill",
-      encoderParams.textureBGFill_,
-      encoderParams.textureBGFill_,
-      "Selects the background filling operation for texture only (0: patch-edge extension, "
+    ( "attributeBGFill",
+      encoderParams.attributeBGFill_,
+      encoderParams.attributeBGFill_,
+      "Selects the background filling operation for attribute only (0: patch-edge extension, "
       "1(default): smoothed push-pull algorithm), 2: harmonic background filling " )
 
     // lossy-raw-points patch

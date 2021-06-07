@@ -19,8 +19,8 @@ DECODER="\
 # CWAI
 ./bin/PccAppEncoder \
   $ENCODER \
-  --config=./cfg/common/ctc-common-lossless-geometry-texture.cfg \
-  --config=./cfg/condition/ctc-all-intra-lossless-geometry-texture.cfg \
+  --config=./cfg/common/ctc-common-lossless-geometry-attribute.cfg \
+  --config=./cfg/condition/ctc-all-intra-lossless-geometry-attribute.cfg \
   --config=./cfg/sequence/queen-lossless.cfg \
   --config=./cfg/rate/ctc-r5-lossless.cfg \
   --compressedStreamPath=S22CWAI_queen/S22CWAI_queen.bin \
@@ -35,8 +35,8 @@ DECODER="\
 
 ./bin/PccAppEncoder \
   $ENCODER \
-  --config=./cfg/common/ctc-common-lossless-geometry-texture.cfg \
-  --config=./cfg/condition/ctc-all-intra-lossless-geometry-texture.cfg \
+  --config=./cfg/common/ctc-common-lossless-geometry-attribute.cfg \
+  --config=./cfg/condition/ctc-all-intra-lossless-geometry-attribute.cfg \
   --config=./cfg/sequence/loot_vox10-lossless.cfg \
   --config=./cfg/rate/ctc-r5-lossless.cfg \
   --compressedStreamPath=S23CWAI_loot/S23CWAI_loot.bin \
@@ -51,8 +51,8 @@ DECODER="\
 
 ./bin/PccAppEncoder \
   $ENCODER \
-  --config=./cfg/common/ctc-common-lossless-geometry-texture.cfg \
-  --config=./cfg/condition/ctc-all-intra-lossless-geometry-texture.cfg \
+  --config=./cfg/common/ctc-common-lossless-geometry-attribute.cfg \
+  --config=./cfg/condition/ctc-all-intra-lossless-geometry-attribute.cfg \
   --config=./cfg/sequence/redandblack_vox10-lossless.cfg \
   --config=./cfg/rate/ctc-r5-lossless.cfg \
   --compressedStreamPath=S24CWAI_redandblack/S24CWAI_redandblack.bin \
@@ -67,8 +67,8 @@ DECODER="\
 
 ./bin/PccAppEncoder \
   $ENCODER \
-  --config=./cfg/common/ctc-common-lossless-geometry-texture.cfg \
-  --config=./cfg/condition/ctc-all-intra-lossless-geometry-texture.cfg \
+  --config=./cfg/common/ctc-common-lossless-geometry-attribute.cfg \
+  --config=./cfg/condition/ctc-all-intra-lossless-geometry-attribute.cfg \
   --config=./cfg/sequence/soldier_vox10-lossless.cfg \
   --config=./cfg/rate/ctc-r5-lossless.cfg \
   --compressedStreamPath=S25CWAI_soldier/S25CWAI_soldier.bin \
@@ -83,8 +83,8 @@ DECODER="\
 
 ./bin/PccAppEncoder \
   $ENCODER \
-  --config=./cfg/common/ctc-common-lossless-geometry-texture.cfg \
-  --config=./cfg/condition/ctc-all-intra-lossless-geometry-texture.cfg \
+  --config=./cfg/common/ctc-common-lossless-geometry-attribute.cfg \
+  --config=./cfg/condition/ctc-all-intra-lossless-geometry-attribute.cfg \
   --config=./cfg/sequence/longdress_vox10-lossless.cfg \
   --config=./cfg/rate/ctc-r5-lossless.cfg \
   --compressedStreamPath=S26CWAI_longdress/S26CWAI_longdress.bin \
@@ -99,8 +99,8 @@ DECODER="\
 
 ./bin/PccAppEncoder \
   $ENCODER \
-  --config=./cfg/common/ctc-common-lossless-geometry-texture.cfg \
-  --config=./cfg/condition/ctc-all-intra-lossless-geometry-texture.cfg \
+  --config=./cfg/common/ctc-common-lossless-geometry-attribute.cfg \
+  --config=./cfg/condition/ctc-all-intra-lossless-geometry-attribute.cfg \
   --config=./cfg/sequence/basketball_player_vox11-lossless.cfg \
   --config=./cfg/rate/ctc-r5-lossless.cfg \
   --compressedStreamPath=S27CWAI_basketball/S27CWAI_basketball.bin \
@@ -115,8 +115,8 @@ DECODER="\
 
 ./bin/PccAppEncoder \
   $ENCODER \
-  --config=./cfg/common/ctc-common-lossless-geometry-texture.cfg \
-  --config=./cfg/condition/ctc-all-intra-lossless-geometry-texture.cfg \
+  --config=./cfg/common/ctc-common-lossless-geometry-attribute.cfg \
+  --config=./cfg/condition/ctc-all-intra-lossless-geometry-attribute.cfg \
   --config=./cfg/sequence/dancer_vox11-lossless.cfg \
   --config=./cfg/rate/ctc-r5-lossless.cfg \
   --compressedStreamPath=S28CWAI_dancer/S28CWAI_dancer.bin \
@@ -132,8 +132,8 @@ DECODER="\
 
 ./bin/PccAppEncoder \
   $ENCODER \
-  --config=./cfg/common/ctc-common-lossless-geometry-texture.cfg \
-  --config=./cfg/condition/ctc-low-delay-lossless-geometry-texture.cfg \
+  --config=./cfg/common/ctc-common-lossless-geometry-attribute.cfg \
+  --config=./cfg/condition/ctc-low-delay-lossless-geometry-attribute.cfg \
   --config=./cfg/sequence/queen-lossless.cfg \
   --config=./cfg/rate/ctc-r5-lossless.cfg \
   --compressedStreamPath=S22CWLD_queen/S22CWLD_queen.bin \
@@ -148,8 +148,8 @@ DECODER="\
 
 ./bin/PccAppEncoder \
   $ENCODER \
-  --config=./cfg/common/ctc-common-lossless-geometry-texture.cfg \
-  --config=./cfg/condition/ctc-low-delay-lossless-geometry-texture.cfg \
+  --config=./cfg/common/ctc-common-lossless-geometry-attribute.cfg \
+  --config=./cfg/condition/ctc-low-delay-lossless-geometry-attribute.cfg \
   --config=./cfg/sequence/loot_vox10-lossless.cfg \
   --config=./cfg/rate/ctc-r5-lossless.cfg \
   --compressedStreamPath=S23CWLD_loot/S23CWLD_loot.bin \
@@ -164,8 +164,8 @@ DECODER="\
 
 ./bin/PccAppEncoder \
   $ENCODER \
-  --config=./cfg/common/ctc-common-lossless-geometry-texture.cfg \
-  --config=./cfg/condition/ctc-low-delay-lossless-geometry-texture.cfg \
+  --config=./cfg/common/ctc-common-lossless-geometry-attribute.cfg \
+  --config=./cfg/condition/ctc-low-delay-lossless-geometry-attribute.cfg \
   --config=./cfg/sequence/redandblack_vox10-lossless.cfg \
   --config=./cfg/rate/ctc-r5-lossless.cfg \
   --compressedStreamPath=S24CWLD_redandblack/S24CWLD_redandblack.bin \
@@ -180,8 +180,8 @@ DECODER="\
 
 ./bin/PccAppEncoder \
   $ENCODER \
-  --config=./cfg/common/ctc-common-lossless-geometry-texture.cfg \
-  --config=./cfg/condition/ctc-low-delay-lossless-geometry-texture.cfg \
+  --config=./cfg/common/ctc-common-lossless-geometry-attribute.cfg \
+  --config=./cfg/condition/ctc-low-delay-lossless-geometry-attribute.cfg \
   --config=./cfg/sequence/soldier_vox10-lossless.cfg \
   --config=./cfg/rate/ctc-r5-lossless.cfg \
   --compressedStreamPath=S25CWLD_soldier/S25CWLD_soldier.bin \
@@ -196,8 +196,8 @@ DECODER="\
 
 ./bin/PccAppEncoder \
   $ENCODER \
-  --config=./cfg/common/ctc-common-lossless-geometry-texture.cfg \
-  --config=./cfg/condition/ctc-low-delay-lossless-geometry-texture.cfg \
+  --config=./cfg/common/ctc-common-lossless-geometry-attribute.cfg \
+  --config=./cfg/condition/ctc-low-delay-lossless-geometry-attribute.cfg \
   --config=./cfg/sequence/longdress_vox10-lossless.cfg \
   --config=./cfg/rate/ctc-r5-lossless.cfg \
   --compressedStreamPath=S26CWLD_longdress/S26CWLD_longdress.bin \
@@ -212,8 +212,8 @@ DECODER="\
 
 ./bin/PccAppEncoder \
   $ENCODER \
-  --config=./cfg/common/ctc-common-lossless-geometry-texture.cfg \
-  --config=./cfg/condition/ctc-low-delay-lossless-geometry-texture.cfg \
+  --config=./cfg/common/ctc-common-lossless-geometry-attribute.cfg \
+  --config=./cfg/condition/ctc-low-delay-lossless-geometry-attribute.cfg \
   --config=./cfg/sequence/basketball_player_vox11-lossless.cfg \
   --config=./cfg/rate/ctc-r5-lossless.cfg \
   --compressedStreamPath=S27CWLD_basketball/S27CWLD_basketball.bin \
@@ -228,8 +228,8 @@ DECODER="\
 
 ./bin/PccAppEncoder \
   $ENCODER \
-  --config=./cfg/common/ctc-common-lossless-geometry-texture.cfg \
-  --config=./cfg/condition/ctc-low-delay-lossless-geometry-texture.cfg \
+  --config=./cfg/common/ctc-common-lossless-geometry-attribute.cfg \
+  --config=./cfg/condition/ctc-low-delay-lossless-geometry-attribute.cfg \
   --config=./cfg/sequence/dancer_vox11-lossless.cfg \
   --config=./cfg/rate/ctc-r5-lossless.cfg \
   --compressedStreamPath=S28CWLD_dancer/S28CWLD_dancer.bin \

@@ -59,12 +59,12 @@ void PCCJMLibVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
   std::string       recYuvFileName  = removeFileExtension( params.recYuvFileName_ ) + "_jmlib.bin";
   cmd << "JMEncoder";
   cmd << " -d " << params.encoderConfig_;
-  if ( bitstream.type() == VIDEO_GEOMETRY && bitstream.type() != VIDEO_TEXTURE ) {
+  if ( bitstream.type() == VIDEO_GEOMETRY && bitstream.type() != VIDEO_ATTRIBUTE ) {
     cmd << " -p QPPSlice=" << params.qp_;
     cmd << " -p QPISlice=" << params.qp_;
     cmd << " -p QPBSlice=" << params.qp_;
   }
-  if ( bitstream.type() == VIDEO_TEXTURE && bitstream.type() != VIDEO_GEOMETRY ) {
+  if ( bitstream.type() == VIDEO_ATTRIBUTE && bitstream.type() != VIDEO_GEOMETRY ) {
     cmd << " -p QPPSlice=" << params.qp_;
     cmd << " -p QPISlice=" << params.qp_;
     cmd << " -p QPBSlice=" << params.qp_;

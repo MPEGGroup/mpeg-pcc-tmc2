@@ -45,10 +45,9 @@ namespace pcc {
 class PCCGroupOfFrames;
 class PCCFrameContext;
 class PCCAtlasFrameContext;
-typedef PCCVideo<uint16_t, 3> PCCVideoAttributes;
-typedef PCCVideo<uint16_t, 3> PCCVideoTexture;
-typedef PCCVideo<uint16_t, 3> PCCVideoGeometry;
 typedef PCCVideo<uint8_t, 3>  PCCVideoOccupancyMap;
+typedef PCCVideo<uint16_t, 3> PCCVideoGeometry;
+typedef PCCVideo<uint16_t, 3> PCCVideoAttribute;
 
 class PCCPatch;
 typedef std::map<size_t, PCCPatch>                 unionPatch;     // [TrackIndex, PatchUnion]
@@ -87,13 +86,13 @@ class PCCAtlasContext {
   std::vector<PCCVideoGeometry>& getVideoGeometryMultiple() { return geoFrames_; }
   PCCVideoGeometry&              getVideoGeometryMultiple( size_t index ) { return geoFrames_[index]; }
   PCCVideoGeometry&              getVideoAuxGeometry() { return geoAuxFrames_; }
-  std::vector<PCCVideoTexture>&  getVideoAttributeMultiple( size_t attrIdx, size_t partIdx ) {
+  std::vector<PCCVideoAttribute>&  getVideoAttributeMultiple( size_t attrIdx, size_t partIdx ) {
     return attrFrames_[attrIdx][partIdx];
   }
-  PCCVideoTexture& getVideoAttributeMultiple( size_t attrIdx, size_t partIdx, size_t index ) {
+  PCCVideoAttribute& getVideoAttributeMultiple( size_t attrIdx, size_t partIdx, size_t index ) {
     return attrFrames_[attrIdx][partIdx][index];
   }
-  PCCVideoAttributes& getVideoAuxAttribute( size_t attrIdx, size_t partIdx ) {
+  PCCVideoAttribute& getVideoAuxAttribute( size_t attrIdx, size_t partIdx ) {
     return attrAuxFrames_[attrIdx][partIdx];
   }
 
@@ -115,11 +114,11 @@ class PCCAtlasContext {
   std::vector<std::vector<size_t>>                           geoWidth_;
   std::vector<std::vector<size_t>>                           geoHeight_;
   PCCVideoGeometry                                           geoAuxFrames_;
-  std::vector<std::vector<std::vector<PCCVideoAttributes>>>  attrFrames_;
+  std::vector<std::vector<std::vector<PCCVideoAttribute>>>  attrFrames_;
   std::vector<std::vector<std::vector<std::vector<size_t>>>> attrBitdepth_;
   std::vector<std::vector<std::vector<std::vector<size_t>>>> attrWidth_;
   std::vector<std::vector<std::vector<std::vector<size_t>>>> attrHeight_;
-  std::vector<std::vector<PCCVideoAttributes>>               attrAuxFrames_;
+  std::vector<std::vector<PCCVideoAttribute>>               attrAuxFrames_;
   std::vector<SubContext>                                    subContexts_;
   std::vector<unionPatch>                                    unionPatch_;
 };
@@ -152,19 +151,19 @@ class PCCContext : public PCCHighLevelSyntax {
   PCCVideoGeometry& getVideoRawPointsGeometry( size_t atlId ) { return atlasContexts_[atlId].getVideoAuxGeometry(); }
   PCCVideoGeometry& getVideoRawPointsGeometry() { return atlasContexts_[atlasIndex_].getVideoAuxGeometry(); }
   // attributes
-  std::vector<PCCVideoTexture>& getVideoTextureMultiple( size_t atlId, size_t attrIdx, size_t partIdx ) {
+  std::vector<PCCVideoAttribute>& getVideoAttributesMultiple( size_t atlId, size_t attrIdx, size_t partIdx ) {
     return atlasContexts_[atlId].getVideoAttributeMultiple( attrIdx, partIdx );
   }
-  std::vector<PCCVideoTexture>& getVideoTextureMultiple() {
+  std::vector<PCCVideoAttribute>& getVideoAttributesMultiple() {
     return atlasContexts_[atlasIndex_].getVideoAttributeMultiple( 0, 0 );
   }
-  PCCVideoTexture& getVideoTextureMultiple( size_t index ) {
+  PCCVideoAttribute& getVideoAttributesMultiple( size_t index ) {
     return atlasContexts_[atlasIndex_].getVideoAttributeMultiple( 0, 0, index );
   }
-  PCCVideoTexture& getVideoRawPointsTexture( size_t atlId, size_t attrIdx, size_t partIdx ) {
+  PCCVideoAttribute& getVideoRawPointsAttribute( size_t atlId, size_t attrIdx, size_t partIdx ) {
     return atlasContexts_[atlId].getVideoAuxAttribute( attrIdx, partIdx );
   }
-  PCCVideoTexture& getVideoRawPointsTexture() { return atlasContexts_[atlasIndex_].getVideoAuxAttribute( 0, 0 ); }
+  PCCVideoAttribute& getVideoRawPointsAttribute() { return atlasContexts_[atlasIndex_].getVideoAuxAttribute( 0, 0 ); }
 
   // fame context related functions
   std::vector<PCCAtlasFrameContext>::iterator begin() { return atlasContexts_[atlasIndex_].getFrameContexts().begin(); }

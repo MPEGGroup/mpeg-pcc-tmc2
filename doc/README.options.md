@@ -122,27 +122,27 @@ excludeColorOutlier               &  Exclude color outliers from the NN set     
 thresholdColorOutlierDist         &  Threshold of color distance to exclude             \\ 
                                   &  outliers from the NN set                           \\ \hline									   
 geometryQP                        &  QP for compression of geometry video               \\ \hline
-textureQP                         &  QP for compression of texture video                \\ \hline
+attributeQP                         &  QP for compression of attribute video                \\ \hline
 geometryConfig                    &  HM configuration file for geometry                 \\ 
                                   &  compression                                        \\ \hline
-geometryD0Config                  &  HM configuration file for geometry D0              \\ 
+geometry0Config                  &  HM configuration file for geometry D0              \\ 
                                   &  compression                                        \\ \hline
-geometryD1Config                  &  HM configuration file for geometry D1              \\ 
+geometry1Config                  &  HM configuration file for geometry D1              \\ 
                                   &  compression                                        \\ \hline
-textureConfig                     &  HM configuration file for texture                  \\ 
+attributeConfig                     &  HM configuration file for attribute                  \\ 
                                   &  compression                                        \\ \hline
-textureT0Config                   &  HM configuration file for texture D0               \\ 
+attribute0Config                   &  HM configuration file for attribute D0               \\ 
                                   &  compression                                        \\ \hline
-textureT1Config                   &  HM configuration file for texture D1               \\ 
+attribute1Config                   &  HM configuration file for attribute D1               \\ 
                                   &  compression                                        \\ \hline
 rawPointsPatch                    &  Enable raw points patch                            \\ \hline     
 noAttributes                      &  Disable encoding of attributes                     \\ \hline
 attributeVideo444                 &  Use 444 format for attribute videos                \\ \hline
 useRawPointsSeparateVideo         &  Compress raw points with video codec               \\ \hline
-textureRawSeparateVideoWidth      &  Width of the MP's texture in separate video        \\ \hline
+attributeRawSeparateVideoWidth      &  Width of the MP's attribute in separate video        \\ \hline
 geometryMPConfig                  &  HM configuration file for raw points geometry      \\ 
                                   &  compression                                        \\ \hline
-textureMPConfig                   &  HM configuration file for raw points texture       \\ 
+attributeMPConfig                   &  HM configuration file for raw points attribute       \\ 
                                   &  compression                                        \\ \hline
 absoluteD1                        &  Absolute D1                                        \\ \hline
 absoluteT1                        &  Absolute T1                                        \\ \hline
@@ -183,8 +183,8 @@ useEightOrientations              &  Allow either 2 orientations (0(default): NU
                                   &  AND SWAP), or 8 orientation (1)                    \\ \hline
 safeGuardDistance                 &  Number of empty blocks that must exist between     \\ 
                                   &  the patches (default=1)                            \\ \hline
-textureBGFill                     &  Selects the background filling operation for       \\ 
-                                  &  texture only (0: patch-edge extension,             \\ 
+attributeBGFill                     &  Selects the background filling operation for       \\ 
+                                  &  attribute only (0: patch-edge extension,             \\ 
                                   &  1(default): smoothed push-pull algorithm), 2:      \\ 
                                   &  harmonic background filling                        \\ \hline
 lossyRawPointsPatch               &  Lossy raw points patch(0: no lossy raw points      \\ 

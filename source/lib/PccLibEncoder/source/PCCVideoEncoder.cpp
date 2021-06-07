@@ -183,7 +183,7 @@ bool PCCVideoEncoder::compress( PCCVideo<T, 3>&    video,
                 // do nothing
                 continue;
               } else {
-                // search for the block that contains texture information and
+                // search for the block that contains attribute information and
                 // extend the block edge
                 int              direction;
                 int              searchIndex;

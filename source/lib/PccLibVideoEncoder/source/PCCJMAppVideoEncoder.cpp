@@ -59,11 +59,11 @@ void PCCJMAppVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
   binFileName.insert( binFileName.find_last_of( "." ), "_jmapp" );
   std::stringstream cmd;
   cmd << params.encoderPath_ << " -d " << params.encoderConfig_;
-  if ( bitstream.type() == VIDEO_GEOMETRY && bitstream.type() != VIDEO_TEXTURE ) {
+  if ( bitstream.type() == VIDEO_GEOMETRY && bitstream.type() != VIDEO_ATTRIBUTE ) {
     cmd << " -p QPPSlice=" << params.qp_;
     cmd << " -p QPISlice=" << params.qp_;
   }
-  if ( bitstream.type() == VIDEO_TEXTURE && bitstream.type() != VIDEO_GEOMETRY ) {
+  if ( bitstream.type() == VIDEO_ATTRIBUTE && bitstream.type() != VIDEO_GEOMETRY ) {
     cmd << " -p QPPSlice=" << params.qp_;
     cmd << " -p QPISlice=" << params.qp_;
   }

@@ -85,16 +85,16 @@ else
 fi
 
 case $COND in
-  CWAI) CFGCOMMON="common/ctc-common-lossless-geometry-texture.cfg";;
-  CWLD) CFGCOMMON="common/ctc-common-lossless-geometry-texture.cfg";; 
+  CWAI) CFGCOMMON="common/ctc-common-lossless-geometry-attribute.cfg";;
+  CWLD) CFGCOMMON="common/ctc-common-lossless-geometry-attribute.cfg";; 
   C2AI) CFGCOMMON="common/ctc-common.cfg";;                           
   C2RA) CFGCOMMON="common/ctc-common.cfg";;           
   *) echo "Condition not correct ($COND)";   exit -1;;
 esac
 
 case $COND in
-  CWAI) CFGCONDITION="condition/ctc-all-intra-lossless-geometry-texture.cfg";;
-  CWLD) CFGCONDITION="condition/ctc-low-delay-lossless-geometry-texture.cfg";;
+  CWAI) CFGCONDITION="condition/ctc-all-intra-lossless-geometry-attribute.cfg";;
+  CWLD) CFGCONDITION="condition/ctc-low-delay-lossless-geometry-attribute.cfg";;
   C2AI) CFGCONDITION="condition/ctc-all-intra.cfg";;
   C2RA) CFGCONDITION="condition/ctc-random-access.cfg";;  
   *) echo "Condition not correct ($COND)";   exit -1;;

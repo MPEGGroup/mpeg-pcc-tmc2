@@ -808,7 +808,7 @@ void PCCPointSet3::convertYUVToRGB() {  // BT709
 
 bool PCCPointSet3::transferColors( PCCPointSet3& target,
                                    const int32_t searchRange,
-                                   const bool    losslessTexture,
+                                   const bool    losslessAttribute,
                                    const int     numNeighborsColorTransferFwd,
                                    const int     numNeighborsColorTransferBwd,
                                    const bool    useDistWeightedAverageFwd,
@@ -963,7 +963,7 @@ bool PCCPointSet3::transferColors( PCCPointSet3& target,
     auto&            colorsDists2 = refinedColorsDists2[index];  // set of candidate points
                                                                  // derived in backward
                                                                  // direction
-    if ( colorsDists2.empty() || losslessTexture ) {
+    if ( colorsDists2.empty() || losslessAttribute ) {
       target.setColor( index, color1 );
     } else {
       bool              isDone = false;
@@ -1129,7 +1129,7 @@ bool PCCPointSet3::transferColors( PCCPointSet3& target,
 bool PCCPointSet3::transferColors16bitBP( PCCPointSet3& target,
                                           const int     filterType,
                                           const int32_t searchRange,
-                                          const bool    losslessTexture,
+                                          const bool    losslessAttribute,
                                           const int     numNeighborsColorTransferFwd,
                                           const int     numNeighborsColorTransferBwd,
                                           const bool    useDistWeightedAverageFwd,
@@ -1326,7 +1326,7 @@ bool PCCPointSet3::transferColors16bitBP( PCCPointSet3& target,
     auto&               colorsDists2 = refinedColorsDists2[index];  // set of candidate points
                                                                     // derived in backward
                                                                     // direction
-    if ( colorsDists2.empty() || losslessTexture ) {
+    if ( colorsDists2.empty() || losslessAttribute ) {
       target.setColor16bit( index, color1 );
     } else {
       bool              isDone = false;
@@ -1492,7 +1492,7 @@ bool PCCPointSet3::transferColors16bitBP( PCCPointSet3& target,
 bool PCCPointSet3::transferColorsBackward16bitBP( PCCPointSet3& target,
                                                   const int     filterType,
                                                   const int32_t searchRange,
-                                                  const bool    losslessTexture,
+                                                  const bool    losslessAttribute,
                                                   const int     numNeighborsColorTransferFwd,
                                                   const int     numNeighborsColorTransferBwd,
                                                   const bool    useDistWeightedAverageFwd,
@@ -1784,7 +1784,7 @@ bool PCCPointSet3::transferColorsBackward16bitBP( PCCPointSet3& target,
 }
 bool PCCPointSet3::transferColors16bit( PCCPointSet3& target,
                                         const int32_t searchRange,
-                                        const bool    losslessTexture,
+                                        const bool    losslessAttribute,
                                         const int     numNeighborsColorTransferFwd,
                                         const int     numNeighborsColorTransferBwd,
                                         const bool    useDistWeightedAverageFwd,
@@ -1941,7 +1941,7 @@ bool PCCPointSet3::transferColors16bit( PCCPointSet3& target,
     auto&               colorsDists2 = refinedColorsDists2[index];  // set of candidate points
                                                                     // derived in backward
                                                                     // direction
-    if ( colorsDists2.empty() || losslessTexture ) {
+    if ( colorsDists2.empty() || losslessAttribute ) {
       target.setColor16bit( index, color1 );
     } else {
       bool              isDone = false;
@@ -2105,7 +2105,7 @@ bool PCCPointSet3::transferColors16bit( PCCPointSet3& target,
 }
 bool PCCPointSet3::transferColorsFilter3( PCCPointSet3& target,
                                           const int32_t searchRange,
-                                          const bool    losslessTexture ) const {
+                                          const bool    losslessAttribute ) const {
   printf( "transferColorsFilter3 \n" );
   const auto&  source           = *this;
   const size_t pointCountSource = source.getPointCount();
@@ -2136,7 +2136,7 @@ bool PCCPointSet3::transferColorsFilter3( PCCPointSet3& target,
   for ( size_t index = 0; index < pointCountTarget; ++index ) {
     const PCCColor3B               color1  = refinedColors1[index];
     const std::vector<PCCColor3B>& colors2 = refinedColors2[index];
-    if ( colors2.empty() || losslessTexture ) {
+    if ( colors2.empty() || losslessAttribute ) {
       target.setColor( index, color1 );
     } else {
       const auto        H = double( colors2.size() );

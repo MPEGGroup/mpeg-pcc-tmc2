@@ -1808,8 +1808,8 @@ size_t PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruc
 #ifdef CODEC_TRACE
   printChecksum( reconstruct, "colorPointCloud in" );
 #endif
-  auto&        videoTexture       = context.getVideoTextureMultiple()[0];
-  auto&        videoTextureFrame1 = context.getVideoTextureMultiple()[1];
+  auto&        videoAttribute       = context.getVideoAttributesMultiple()[0];
+  auto&        videoAttributeFrame1 = context.getVideoAttributesMultiple()[1];
   const size_t mapCount           = params.mapCountMinus1_ + 1;
   size_t       numOfRawPointGeos  = 0;
   size_t       numberOfEOMPoints  = 0;
@@ -1860,7 +1860,7 @@ size_t PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruc
       if ( params.singleMapPixelInterleaving_ ) {
         if ( ( static_cast<int>( f == 0 && ( x + y ) % 2 == 0 ) | static_cast<int>( f == 1 && ( x + y ) % 2 == 1 ) ) !=
              0 ) {
-          const auto& image = videoTexture.getFrame( shift );
+          const auto& image = videoAttribute.getFrame( shift );
           for ( size_t c = 0; c < 3; ++c ) { color16bit[i][c] = image.getValue( c, x, y ); }
           int index = source.addPoint( reconstruct[i] );
           source.setColor16bit( index, color16bit[i] );
@@ -1870,13 +1870,13 @@ size_t PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruc
         }
       } else if ( multipleStreams != 0U ) {
         if ( f == 0 ) {
-          const auto& image = videoTexture.getFrame( tile.getFrameIndex() );
+          const auto& image = videoAttribute.getFrame( tile.getFrameIndex() );
           for ( size_t c = 0; c < 3; ++c ) { color16bit[i][c] = image.getValue( c, x, y ); }
           size_t index = source.addPoint( reconstruct[i] );
           source.setColor16bit( index, color16bit[i] );
         } else {
-          const auto& image0   = videoTexture.getFrame( tile.getFrameIndex() );
-          const auto& image1   = videoTextureFrame1.getFrame( tile.getFrameIndex() );
+          const auto& image0   = videoAttribute.getFrame( tile.getFrameIndex() );
+          const auto& image1   = videoAttributeFrame1.getFrame( tile.getFrameIndex() );
           uint8_t     numBits  = image0.getDeprecatedColorFormat() == 0 ? 8 : 16;  // or 8
           double      offset   = ( 1 << ( numBits - 1 ) );
           double      maxValue = ( 1 << numBits ) - 1;
@@ -1906,7 +1906,7 @@ size_t PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruc
         }
       } else {
         if ( f < mapCount ) {
-          const auto& frame = videoTexture.getFrame( shift + f );
+          const auto& frame = videoAttribute.getFrame( shift + f );
           for ( size_t c = 0; c < 3; ++c ) { color16bit[i][c] = frame.getValue( c, x, y ); }
           int index = source.addPoint( reconstruct[i] );
           source.setColor16bit( index, color16bit[i] );
@@ -1924,8 +1924,8 @@ size_t PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruc
     }
 
     if ( useAuxVideo ) {
-      for ( const auto& color : tile.getEOMTextures() ) { color16bit[pointCount++] = color; }
-      for ( const auto& color : tile.getRawPointsTextures() ) { color16bit[pointCount++] = color; }
+      for ( const auto& color : tile.getEOMAttribute() ) { color16bit[pointCount++] = color; }
+      for ( const auto& color : tile.getRawPointsAttribute() ) { color16bit[pointCount++] = color; }
     }
   }  // noAtt
 
@@ -1983,33 +1983,33 @@ void PCCCodec::generateRawPointsGeometryfromVideo( PCCContext& context, PCCFrame
   }
 }
 
-void PCCCodec::generateRawPointsTexturefromVideo( PCCContext& context, size_t frameIndex ) {
-  auto& videoRawPointsTexture = context.getVideoRawPointsTexture();
-  videoRawPointsTexture.resize( context.size() );
-  TRACE_CODEC( "generateRawPointsTexturefromVideo \n" );
+void PCCCodec::generateRawPointsAttributefromVideo( PCCContext& context, size_t frameIndex ) {
+  auto& videoRawPointsAttribute = context.getVideoRawPointsAttribute();
+  videoRawPointsAttribute.resize( context.size() );
+  TRACE_CODEC( "generateRawPointsAttributefromVideo \n" );
   for ( size_t tileIdx = 0; tileIdx < context.getFrame( frameIndex ).getNumTilesInAtlasFrame(); tileIdx++ ) {
     auto& tile = context.getFrame( frameIndex ).getTile( tileIdx );
-    generateRawPointsTexturefromVideo( context, tile, frameIndex );
-    std::cout << "generate raw Points Video (Texture) frame[" << frameIndex << "] tile[" << tileIdx << "] : "
+    generateRawPointsAttributefromVideo( context, tile, frameIndex );
+    std::cout << "generate raw Points Video (Attribute) frame[" << frameIndex << "] tile[" << tileIdx << "] : "
               << " #rawPatches: " << tile.getNumberOfRawPointsPatches()
               << " #rawPoints: " << tile.getTotalNumberOfRawPoints() << " #eomPoints: " << tile.getEomPatches().size()
               << " #eomPoints: " << tile.getTotalNumberOfEOMPoints() << std::endl;
   }
-  std::cout << "RawPoints Texture [done]" << std::endl;
-  TRACE_CODEC( "generateRawPointsTexturefromVideo done \n" );
+  std::cout << "RawPoints Attribute [done]" << std::endl;
+  TRACE_CODEC( "generateRawPointsAttributefromVideo done \n" );
 }
 
-void PCCCodec::generateRawPointsTexturefromVideo( PCCContext& context, PCCFrameContext& tile, size_t frameIndex ) {
-  auto&                    videoRawPointsTexture    = context.getVideoRawPointsTexture();
-  auto&                    image                    = videoRawPointsTexture.getFrame( frameIndex );
+void PCCCodec::generateRawPointsAttributefromVideo( PCCContext& context, PCCFrameContext& tile, size_t frameIndex ) {
+  auto&                    videoRawPointsAttribute    = context.getVideoRawPointsAttribute();
+  auto&                    image                    = videoRawPointsAttribute.getFrame( frameIndex );
   size_t                   width                    = image.getWidth();
   size_t                   numberOfEOMPoints        = tile.getTotalNumberOfEOMPoints();
   size_t                   numberOfRawPoints        = tile.getTotalNumberOfRawPoints();
-  std::vector<PCCColor3B>& rawTextures              = tile.getRawPointsTextures();
-  std::vector<PCCColor3B>& eomTextures              = tile.getEOMTextures();
+  std::vector<PCCColor3B>& rawAttributes              = tile.getRawPointsAttribute();
+  std::vector<PCCColor3B>& eomAttributes              = tile.getEOMAttribute();
   size_t                   numberOfRawPointsPatches = tile.getNumberOfRawPointsPatches();
-  rawTextures.resize( numberOfRawPoints );
-  eomTextures.resize( numberOfEOMPoints );
+  rawAttributes.resize( numberOfRawPoints );
+  eomAttributes.resize( numberOfEOMPoints );
   if ( numberOfRawPoints ) {
     size_t rawPatchOffset = 0;
     for ( int i = 0; i < numberOfRawPointsPatches; i++ ) {
@@ -2018,7 +2018,7 @@ void PCCCodec::generateRawPointsTexturefromVideo( PCCContext& context, PCCFrameC
       size_t numRawColorPoints = rawPointsPatch.getNumberOfRawPoints();
       rawPointsPatch.sizeV_ = rawPointsPatch.sizeV0_ * rawPointsPatch.occupancyResolution_;
       rawPointsPatch.sizeU_ = rawPointsPatch.sizeU0_ * rawPointsPatch.occupancyResolution_;
-      printf( "\tgenerateRawPointsTextureImage:: (u0,v0) %zu,%zu, (sizeU,sizeU) %zux%zu\n", rawPointsPatch.u0_,
+      printf( "\tgenerateRawPointsAttributeImage:: (u0,v0) %zu,%zu, (sizeU,sizeU) %zux%zu\n", rawPointsPatch.u0_,
               rawPointsPatch.v0_, rawPointsPatch.sizeU_, rawPointsPatch.sizeV_ );
       const size_t v0 = rawPointsPatch.v0_ * rawPointsPatch.occupancyResolution_;
       const size_t u0 = rawPointsPatch.u0_ * rawPointsPatch.occupancyResolution_;
@@ -2028,9 +2028,9 @@ void PCCCodec::generateRawPointsTexturefromVideo( PCCContext& context, PCCFrameC
             const size_t x = ( u0 + u );
             const size_t y = ( v0 + v ) + context[frameIndex].getAuxTileLeftTopY( tile.getTileIndex() );
             assert( x < width && y < image.getHeight() );
-            rawTextures[rawPatchOffset + pointIndex].r() = image.getValue( 0, x, y );
-            rawTextures[rawPatchOffset + pointIndex].g() = image.getValue( 1, x, y );
-            rawTextures[rawPatchOffset + pointIndex].b() = image.getValue( 2, x, y );
+            rawAttributes[rawPatchOffset + pointIndex].r() = image.getValue( 0, x, y );
+            rawAttributes[rawPatchOffset + pointIndex].g() = image.getValue( 1, x, y );
+            rawAttributes[rawPatchOffset + pointIndex].b() = image.getValue( 2, x, y );
             pointIndex++;
           } else {
             break;
@@ -2046,7 +2046,7 @@ void PCCCodec::generateRawPointsTexturefromVideo( PCCContext& context, PCCFrameC
     size_t nPixelInCurrentBlockCount = 0;
     size_t xx = 0, yy = 0;
     for ( auto& eomPointsPatch : tile.getEomPatches() ) {
-      std::vector<PCCColor3B>& eomTextures    = tile.getEOMTextures();
+      std::vector<PCCColor3B>& eomAttributes    = tile.getEOMAttribute();
       size_t                   patchStartPosX = eomPointsPatch.u0_ * eomPointsPatch.occupancyResolution_;
       size_t                   patchStartPosY = eomPointsPatch.v0_ * eomPointsPatch.occupancyResolution_;
       for ( size_t k = 0; k < eomPointsPatch.eomCount_; k++ ) {
@@ -2058,9 +2058,9 @@ void PCCCodec::generateRawPointsTexturefromVideo( PCCContext& context, PCCFrameC
         context[frameIndex].getAuxTileLeftTopY( tile.getTileIndex() );
         ++nPixelInCurrentBlockCount;
         if ( nPixelInCurrentBlockCount >= 256 ) { nPixelInCurrentBlockCount = 0; }
-        eomTextures[k + eomPatchOffset].r() = image.getValue( 0, xx, yy );
-        eomTextures[k + eomPatchOffset].g() = image.getValue( 1, xx, yy );
-        eomTextures[k + eomPatchOffset].b() = image.getValue( 2, xx, yy );
+        eomAttributes[k + eomPatchOffset].r() = image.getValue( 0, xx, yy );
+        eomAttributes[k + eomPatchOffset].g() = image.getValue( 1, xx, yy );
+        eomAttributes[k + eomPatchOffset].b() = image.getValue( 2, xx, yy );
       }
       eomPatchOffset += eomPointsPatch.eomCount_;
     }

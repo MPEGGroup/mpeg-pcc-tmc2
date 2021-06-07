@@ -240,7 +240,7 @@ void PCCBitstreamWriter::videoSubStream( PCCHighLevelSyntax& syntax,
     syntax.getBitstreamStat().setVideoBinSize( VIDEO_OCCUPANCY, syntax.getVideoBitstream( VIDEO_OCCUPANCY ).size() );
   } else if ( V3CUnitType == V3C_GVD ) {
     if ( vuh.getAuxiliaryVideoFlag() ) {
-      TRACE_BITSTREAM( "Geometry raw\n" );
+      TRACE_BITSTREAM( "Geometry RAW\n" );
       bitstream.writeVideoStream( syntax.getVideoBitstream( VIDEO_GEOMETRY_RAW ) );
       syntax.getBitstreamStat().setVideoBinSize( VIDEO_GEOMETRY_RAW,
                                                  syntax.getVideoBitstream( VIDEO_GEOMETRY_RAW ).size() );
@@ -259,22 +259,22 @@ void PCCBitstreamWriter::videoSubStream( PCCHighLevelSyntax& syntax,
   } else if ( V3CUnitType == V3C_AVD ) {
     if ( sps.getAttributeInformation( atlasIndex ).getAttributeCount() > 0 ) {
       if ( vuh.getAuxiliaryVideoFlag() ) {
-        auto textureIndex = static_cast<PCCVideoType>( VIDEO_TEXTURE_RAW + vuh.getAttributeDimensionIndex() );
-        TRACE_BITSTREAM( "Texture raw, PARTITION: %d\n", vuh.getAttributeDimensionIndex() );
-        bitstream.writeVideoStream( syntax.getVideoBitstream( textureIndex ) );
-        syntax.getBitstreamStat().setVideoBinSize( textureIndex, syntax.getVideoBitstream( textureIndex ).size() );
+        auto attributeIndex = static_cast<PCCVideoType>( VIDEO_ATTRIBUTE_RAW + vuh.getAttributeDimensionIndex() );
+        TRACE_BITSTREAM( "Attribute RAW, PARTITION: %d\n", vuh.getAttributeDimensionIndex() );
+        bitstream.writeVideoStream( syntax.getVideoBitstream( attributeIndex ) );
+        syntax.getBitstreamStat().setVideoBinSize( attributeIndex, syntax.getVideoBitstream( attributeIndex ).size() );
       } else {
         if ( sps.getMapCountMinus1( atlasIndex ) > 0 && sps.getMultipleMapStreamsPresentFlag( atlasIndex ) ) {
-          auto textureIndex = static_cast<PCCVideoType>(
-              VIDEO_TEXTURE_T0 + vuh.getMapIndex() * MAX_NUM_ATTR_PARTITIONS + vuh.getAttributeDimensionIndex() );
-          TRACE_BITSTREAM( "Texture MAP: %d, PARTITION: %d\n", vuh.getMapIndex(), vuh.getAttributeDimensionIndex() );
-          bitstream.writeVideoStream( syntax.getVideoBitstream( textureIndex ) );
-          syntax.getBitstreamStat().setVideoBinSize( textureIndex, syntax.getVideoBitstream( textureIndex ).size() );
+          auto attributeIndex = static_cast<PCCVideoType>(
+              VIDEO_ATTRIBUTE_T0 + vuh.getMapIndex() * MAX_NUM_ATTR_PARTITIONS + vuh.getAttributeDimensionIndex() );
+          TRACE_BITSTREAM( "Attribute MAP: %d, PARTITION: %d\n", vuh.getMapIndex(), vuh.getAttributeDimensionIndex() );
+          bitstream.writeVideoStream( syntax.getVideoBitstream( attributeIndex ) );
+          syntax.getBitstreamStat().setVideoBinSize( attributeIndex, syntax.getVideoBitstream( attributeIndex ).size() );
         } else {
-          auto textureIndex = static_cast<PCCVideoType>( VIDEO_TEXTURE + vuh.getAttributeDimensionIndex() );
-          TRACE_BITSTREAM( "Texture PARTITION: %d\n", vuh.getAttributeDimensionIndex() );
-          bitstream.writeVideoStream( syntax.getVideoBitstream( textureIndex ) );
-          syntax.getBitstreamStat().setVideoBinSize( textureIndex, syntax.getVideoBitstream( textureIndex ).size() );
+          auto attributeIndex = static_cast<PCCVideoType>( VIDEO_ATTRIBUTE + vuh.getAttributeDimensionIndex() );
+          TRACE_BITSTREAM( "Attribute PARTITION: %d\n", vuh.getAttributeDimensionIndex() );
+          bitstream.writeVideoStream( syntax.getVideoBitstream( attributeIndex ) );
+          syntax.getBitstreamStat().setVideoBinSize( attributeIndex, syntax.getVideoBitstream( attributeIndex ).size() );
         }
       }
     }
