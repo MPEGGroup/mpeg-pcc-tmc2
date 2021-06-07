@@ -405,7 +405,7 @@ std::vector<PCCPoint3D> PCCCodec::generatePoints( const GeneratePointCloudParame
     }
     auto&        blockToPatch      = tile.getBlockToPatch();
     const size_t blockToPatchWidth = tile.getWidth() / params.occupancyResolution_;
-    double       DepthNeighbors[4] = {0};
+    double       depthNeighbors[4] = {0};
     int          count             = 0;
     double       minimumDepth      = point0[patch.getNormalAxis()];
     double       maximumDepth      = point0[patch.getNormalAxis()];
@@ -414,13 +414,13 @@ std::vector<PCCPoint3D> PCCCodec::generatePoints( const GeneratePointCloudParame
       size_t Temp_v0 = ( y ) / patch.getOccupancyResolution();
       if ( blockToPatch[(Temp_v0)*blockToPatchWidth + Temp_u0] == patchIndexPlusOne ) {
         if ( patch.getProjectionMode() == 0 ) {
-          DepthNeighbors[0] = double( frame0.getValue( 0, x - 1, y ) + patch.getD1() );
+          depthNeighbors[0] = double( frame0.getValue( 0, x - 1, y ) + patch.getD1() );
         } else {
-          DepthNeighbors[0] = double( patch.getD1() - frame0.getValue( 0, x - 1, y ) );
+          depthNeighbors[0] = double( patch.getD1() - frame0.getValue( 0, x - 1, y ) );
         }
         count++;
-        if ( DepthNeighbors[0] < minimumDepth ) { minimumDepth = DepthNeighbors[0]; }
-        if ( DepthNeighbors[0] > maximumDepth ) { maximumDepth = DepthNeighbors[0]; }
+        if ( depthNeighbors[0] < minimumDepth ) { minimumDepth = depthNeighbors[0]; }
+        if ( depthNeighbors[0] > maximumDepth ) { maximumDepth = depthNeighbors[0]; }
       }
     }
     if ( occupancyRight ) {
@@ -428,13 +428,13 @@ std::vector<PCCPoint3D> PCCCodec::generatePoints( const GeneratePointCloudParame
       size_t Temp_v0 = ( y ) / patch.getOccupancyResolution();
       if ( blockToPatch[(Temp_v0)*blockToPatchWidth + Temp_u0] == patchIndexPlusOne ) {
         if ( patch.getProjectionMode() == 0 ) {
-          DepthNeighbors[1] = double( frame0.getValue( 0, x + 1, y ) + patch.getD1() );
+          depthNeighbors[1] = double( frame0.getValue( 0, x + 1, y ) + patch.getD1() );
         } else {
-          DepthNeighbors[1] = double( patch.getD1() - frame0.getValue( 0, x + 1, y ) );
+          depthNeighbors[1] = double( patch.getD1() - frame0.getValue( 0, x + 1, y ) );
         }
         count++;
-        if ( DepthNeighbors[1] < minimumDepth ) { minimumDepth = DepthNeighbors[1]; }
-        if ( DepthNeighbors[1] > maximumDepth ) { maximumDepth = DepthNeighbors[1]; }
+        if ( depthNeighbors[1] < minimumDepth ) { minimumDepth = depthNeighbors[1]; }
+        if ( depthNeighbors[1] > maximumDepth ) { maximumDepth = depthNeighbors[1]; }
       }
     }
     if ( occupancyTop ) {
@@ -442,13 +442,13 @@ std::vector<PCCPoint3D> PCCCodec::generatePoints( const GeneratePointCloudParame
       size_t Temp_v0 = ( y - 1 ) / patch.getOccupancyResolution();
       if ( blockToPatch[(Temp_v0)*blockToPatchWidth + Temp_u0] == patchIndexPlusOne ) {
         if ( patch.getProjectionMode() == 0 ) {
-          DepthNeighbors[2] = double( frame0.getValue( 0, x, y - 1 ) + patch.getD1() );
+          depthNeighbors[2] = double( frame0.getValue( 0, x, y - 1 ) + patch.getD1() );
         } else {
-          DepthNeighbors[2] = double( patch.getD1() - frame0.getValue( 0, x, y - 1 ) );
+          depthNeighbors[2] = double( patch.getD1() - frame0.getValue( 0, x, y - 1 ) );
         }
         count++;
-        if ( DepthNeighbors[2] < minimumDepth ) { minimumDepth = DepthNeighbors[2]; }
-        if ( DepthNeighbors[2] > maximumDepth ) { maximumDepth = DepthNeighbors[2]; }
+        if ( depthNeighbors[2] < minimumDepth ) { minimumDepth = depthNeighbors[2]; }
+        if ( depthNeighbors[2] > maximumDepth ) { maximumDepth = depthNeighbors[2]; }
       }
     }
     if ( occupancyBotton ) {
@@ -456,13 +456,13 @@ std::vector<PCCPoint3D> PCCCodec::generatePoints( const GeneratePointCloudParame
       size_t Temp_v0 = ( y + 1 ) / patch.getOccupancyResolution();
       if ( blockToPatch[(Temp_v0)*blockToPatchWidth + Temp_u0] == patchIndexPlusOne ) {
         if ( patch.getProjectionMode() == 0 ) {
-          DepthNeighbors[3] = double( frame0.getValue( 0, x, y + 1 ) + patch.getD1() );
+          depthNeighbors[3] = double( frame0.getValue( 0, x, y + 1 ) + patch.getD1() );
         } else {
-          DepthNeighbors[3] = double( patch.getD1() - frame0.getValue( 0, x, y + 1 ) );
+          depthNeighbors[3] = double( patch.getD1() - frame0.getValue( 0, x, y + 1 ) );
         }
         count++;
-        if ( DepthNeighbors[3] < minimumDepth ) { minimumDepth = DepthNeighbors[3]; }
-        if ( DepthNeighbors[3] > maximumDepth ) { maximumDepth = DepthNeighbors[3]; }
+        if ( depthNeighbors[3] < minimumDepth ) { minimumDepth = depthNeighbors[3]; }
+        if ( depthNeighbors[3] > maximumDepth ) { maximumDepth = depthNeighbors[3]; }
       }
     }
     if ( count == 0 ) { return createdPoints; }
@@ -483,12 +483,12 @@ std::vector<PCCPoint3D> PCCCodec::generatePoints( const GeneratePointCloudParame
       PCCPoint3D interpolateD1( point0 );
       if ( patch.getProjectionMode() == 0 ) {
         interpolateD1[patch.getNormalAxis()] = round( ( std::max )(
-            ( std::min )( ( DepthNeighbors[0] + DepthNeighbors[1] + DepthNeighbors[2] + DepthNeighbors[3] ) / count,
+            ( std::min )( ( depthNeighbors[0] + depthNeighbors[1] + depthNeighbors[2] + depthNeighbors[3] ) / count,
                           depth0 + params.surfaceThickness_ ),
             depth0 ) );
       } else {
         interpolateD1[patch.getNormalAxis()] = round( ( std::min )(
-            ( std::max )( ( DepthNeighbors[0] + DepthNeighbors[1] + DepthNeighbors[2] + DepthNeighbors[3] ) / count,
+            ( std::max )( ( depthNeighbors[0] + depthNeighbors[1] + depthNeighbors[2] + depthNeighbors[3] ) / count,
                           depth0 - params.surfaceThickness_ ),
             depth0 ) );
       }

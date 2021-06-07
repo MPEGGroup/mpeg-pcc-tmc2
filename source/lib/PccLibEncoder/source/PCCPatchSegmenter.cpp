@@ -198,18 +198,18 @@ void PCCPatchSegmenter3::applyVoxelsDataToPoints( size_t pointCount,
     return (uint64_t)point[0] + ((uint64_t)point[1] << geoBits) + ((uint64_t)point[2] << geoBits2); 
   };
 
-  for (size_t i = 0; i < sourceVox.getPointCount(); i++) {
-    const auto &partition = partitions[i];
-    const auto &normal = normals[i];
-    const auto &pos = sourceVox[i];
-    const auto &indices = voxels[subToInd(pos)];
-    for (const auto &index : indices) {
+  for ( size_t i = 0; i < sourceVox.getPointCount(); i++ ) {
+    const auto& partition = partitions[i];
+    const auto& normal    = normals[i];
+    const auto& pos       = sourceVox[i];
+    const auto& indices   = voxels[subToInd( pos )];
+    for ( const auto& index : indices ) {
       partitionsTmp[index] = partition;
-      normalsTmp[index] = normal;
+      normalsTmp[index]    = normal;
     }
   }
-  swap(partitions, partitionsTmp);
-  swap(normalsGen.getNormals(), normalsTmp);
+  swap( partitions, partitionsTmp );
+  swap( normalsGen.getNormals(), normalsTmp );
 }
 
 void PCCPatchSegmenter3::initialSegmentation( const PCCPointSet3&         geometry,
@@ -377,10 +377,10 @@ void PCCPatchSegmenter3::resampledPointcloud( std::vector<size_t>& pointCount,
 
         // add EOM
         PCCVector3D pointEOM( point );
-        if ( useEnhancedOccupancyMapCode && patch.getDepthEnhancedDeltaD()[p] != 0 ) {
+        if ( useEnhancedOccupancyMapCode && patch.getDepthEOM()[p] != 0 ) {
           size_t N = multipleMaps ? surfaceThickness : EOMFixBitCount;
           for ( uint16_t i = 0; i < N; i++ ) {
-            if ( ( patch.getDepthEnhancedDeltaD()[p] & ( 1 << i ) ) != 0 ) {
+            if ( ( patch.getDepthEOM()[p] & ( 1 << i ) ) != 0 ) {
               uint16_t nDeltaDCur             = ( i + 1 );
               pointEOM[patch.getNormalAxis()] = double( depth0 + projectionTypeIndication * ( nDeltaDCur ) );
               if ( pointEOM[patch.getNormalAxis()] != point[patch.getNormalAxis()] ) {
@@ -988,7 +988,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
       patch.setD1( patch.getProjectionMode() == 0 ? g_infiniteDepth : 0 );
       patch.allocDepth( 0, patch.getSizeU() * patch.getSizeV(), g_infiniteDepth );
       patch.allocDepth0PccIdx( patch.getSizeU() * patch.getSizeV(), g_infinitenumber );
-      if ( useEnhancedOccupancyMapCode ) { patch.allocDepthEnhancedDeltaD( patch.getSizeU() * patch.getSizeV(), 0 ); }
+      if ( useEnhancedOccupancyMapCode ) { patch.allocDepthEOM( patch.getSizeU() * patch.getSizeV(), 0 ); }
       patch.setOccupancyResolution( occupancyResolution );
       patch.setSizeU0( 0 );
       patch.setSizeV0( 0 );
@@ -1113,7 +1113,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
             if ( depth0 < g_infiniteDepth && ( projectionDirectionType * ( d - depth0 ) ) > 0 &&
                  diff <= int16_t( eomThickness ) ) {
               uint16_t deltaD = diff;
-              patch.setDepthEnhancedDeltaD( p, patch.getDepthEnhancedDeltaD( p ) | 1 << ( deltaD - 1 ) );
+              patch.setDepthEOM( p, patch.getDepthEOM( p ) | 1 << ( deltaD - 1 ) );
             }
           }
         }
@@ -1148,7 +1148,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
                  bsimilar ) {
               if ( projectionDirectionType * ( d - patch.getDepth( 1 )[p] ) > 0 ) { patch.setDepth( 1, p, d ); }
               if ( useEnhancedOccupancyMapCode ) {
-                patch.setDepthEnhancedDeltaD( p, patch.getDepthEnhancedDeltaD( p ) | 1 << ( deltaD - 1 ) );
+                patch.setDepthEOM( p, patch.getDepthEOM( p ) | 1 << ( deltaD - 1 ) );
               }
             }
             if ( ( patch.getProjectionMode() == 0 && ( patch.getDepth( 1 )[p] < patch.getDepth( 0 )[p] ) ) ||
@@ -1439,12 +1439,10 @@ void PCCPatchSegmenter3::refineSegmentationGridBased( const PCCPointSet3&       
     for (; iter != currentAdjOfI.end(); ++iter) {
       // for the 2nd voxel classification [m56635]
       auto& q = gridCenters[*iter];
-      size_t x_Abs = abs(p[0] - q[0]);
-      size_t y_Abs = abs(p[1] - q[1]);
-      size_t z_Abs = abs(p[2] - q[2]);
-
-      if (x_Abs <= idvSearchRange && y_Abs <= idvSearchRange && z_Abs <= idvSearchRange) { adjDEV[i].push_back(*iter); }
-
+      size_t xAbs = abs(p[0] - q[0]);
+      size_t yAbs = abs(p[1] - q[1]);
+      size_t zAbs = abs(p[2] - q[2]);
+      if (xAbs <= idvSearchRange && yAbs <= idvSearchRange && zAbs <= idvSearchRange) { adjDEV[i].push_back(*iter); }
       nnPointCount += pointIndicesOfVox[*iter]->getPointCount();
       if ( nnPointCount >= maxNNCount ) { break; }
     }
@@ -1468,13 +1466,13 @@ void PCCPatchSegmenter3::refineSegmentationGridBased( const PCCPointSet3&       
       uint8_t edgeOfI = attributeOfVox[i]->getEdge();
       if (edgeOfI == NO_EDGE) { continue; }
 
-      std::fill(scoreSmooth.begin(), scoreSmooth.end(), 0);
+      std::fill( scoreSmooth.begin(), scoreSmooth.end(), 0 );
 
-      auto&  currentAdjOfI = adj[i];
-    for ( const auto& j : currentAdjOfI ) {
+      auto& currentAdjOfI = adj[i];
+      for ( const auto& j : currentAdjOfI ) {
         ScoresVector_t* scoreSmoothOfAdj = attributeOfVox[j]->getScoreSmooth();
-        for (size_t k = 0; k < orientationCount; ++k) { scoreSmooth[k] += (*scoreSmoothOfAdj)[k]; }
-    }
+        for ( size_t k = 0; k < orientationCount; ++k ) { scoreSmooth[k] += ( *scoreSmoothOfAdj )[k]; }
+      }
 
       // 2nd voxel classification (indirect edge-voxel)  [m56635]
       const auto& maxEleOfScoreSmooth = std::max_element(scoreSmooth.begin(), scoreSmooth.end());

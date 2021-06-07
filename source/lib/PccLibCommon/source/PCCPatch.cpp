@@ -88,7 +88,7 @@ PCCPatch::PCCPatch() :
   depth_[0].clear();
   depth_[1].clear();
   occupancy_.clear();
-  depthEnhancedDeltaD_.clear();
+  depthEOM_.clear();
   depth0PCidx_.clear();
   pointLocalReconstructionModeByBlock_.clear();
   occupancyMap_.clear();
@@ -100,7 +100,7 @@ PCCPatch::~PCCPatch() {
   depth_[0].clear();
   depth_[1].clear();
   occupancy_.clear();
-  depthEnhancedDeltaD_.clear();
+  depthEOM_.clear();
   depth0PCidx_.clear();
   pointLocalReconstructionModeByBlock_.clear();
   occupancyMap_.clear();

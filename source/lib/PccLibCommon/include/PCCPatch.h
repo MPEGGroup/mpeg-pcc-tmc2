@@ -116,11 +116,11 @@ class PCCPatch {
   size_t                      getAxisOfAdditionalPlane() const { return axisOfAdditionalPlane_; }
   const std::vector<int16_t>& getDepth( size_t i ) const { return depth_[i]; }
   const std::vector<bool>&    getOccupancy() const { return occupancy_; }
-  const std::vector<int16_t>& getDepthEnhancedDeltaD() const { return depthEnhancedDeltaD_; }
+  const std::vector<int16_t>& getDepthEOM() const { return depthEOM_; }
   const std::vector<int64_t>& getDepth0PccIdx() const { return depth0PCidx_; }
   const int16_t               getDepth( size_t i, size_t j ) const { return depth_[i][j]; }
   const bool                  getOccupancy( size_t i ) const { return occupancy_[i]; }
-  const int16_t               getDepthEnhancedDeltaD( size_t i ) const { return depthEnhancedDeltaD_[i]; }
+  const int16_t               getDepthEOM( size_t i ) const { return depthEOM_[i]; }
   const int64_t               getDepth0PccIdx( size_t i ) const { return depth0PCidx_[i]; }
 
   void setIndex( size_t value ) { index_ = value; }
@@ -146,7 +146,7 @@ class PCCPatch {
   void setDepth( size_t i, size_t j, int16_t value ) { depth_[i][j] = value; }
   void setOccupancy( size_t i, bool value ) { occupancy_[i] = value; }
   void setDepth0PccIdx( size_t i, int64_t value ) { depth0PCidx_[i] = value; }
-  void setDepthEnhancedDeltaD( size_t i, int16_t value ) { depthEnhancedDeltaD_[i] = value; }
+  void setDepthEOM( size_t i, int16_t value ) { depthEOM_[i] = value; }
   void setAxisOfAdditionalPlane( size_t value ) { axisOfAdditionalPlane_ = value; }
   void setIsRoiPatch( bool value ) { isRoiPatch_ = value; }
   void setIsGlobalPatch( bool value ) { isGlobalPatch_ = value; }
@@ -170,7 +170,7 @@ class PCCPatch {
   void allocDepth( size_t i, size_t size, int16_t value ) { depth_[i].resize( size, value ); }
   void allocOccupancy( size_t size, bool value ) { occupancy_.resize( size, value ); }
   void allocDepth0PccIdx( size_t size, int64_t value ) { depth0PCidx_.resize( size, value ); }
-  void allocDepthEnhancedDeltaD( size_t size, int16_t value ) { depthEnhancedDeltaD_.resize( size, value ); }
+  void allocDepthEOM( size_t size, int16_t value ) { depthEOM_.resize( size, value ); }
   void clearOccupancy() { occupancy_.clear(); }
   void clearDepth( size_t i ) { depth_[i].clear(); }
 
@@ -373,7 +373,7 @@ class PCCPatch {
   int32_t                 bestMatchIdx_;   // index of matched patch from pre-frame patch.
   size_t                  refAtlasFrameIdx_;
   size_t                  predType_;
-  std::vector<int16_t>    depthEnhancedDeltaD_;  // Enhanced delta depht
+  std::vector<int16_t>    depthEOM_;  // Enhanced delta depht
   std::vector<int64_t>    depth0PCidx_;          // for Surface separation
   size_t                  patchOrientation_;     // patch orientation in canvas atlas
   uint8_t                 pointLocalReconstructionLevel_;

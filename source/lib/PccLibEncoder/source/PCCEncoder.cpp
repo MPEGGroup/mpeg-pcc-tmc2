@@ -1017,7 +1017,7 @@ void PCCEncoder::modifyOccupancyMapEOM( PCCFrameContext& tile ) {
       for ( size_t u = 0; u < patch.getSizeU(); ++u ) {
         const size_t  p       = v * patch.getSizeU() + u;
         const int16_t d       = patch.getDepth( 0 )[p];
-        const int16_t eomCode = patch.getDepthEnhancedDeltaD()[p];
+        const int16_t eomCode = patch.getDepthEOM()[p];
         size_t        x;
         size_t        y;
         auto          indx = patch.patch2Canvas( u, v, width, height, x, y );
@@ -4321,7 +4321,7 @@ void PCCEncoder::generateEomPatch( const PCCPointSet3& source, PCCFrameContext& 
     for ( size_t v = 0; v < patch.getSizeV(); ++v ) {
       for ( size_t u = 0; u < patch.getSizeU(); ++u ) {
         const size_t p       = v * patch.getSizeU() + u;
-        int16_t      eomCode = patch.getDepthEnhancedDeltaD()[p];
+        int16_t      eomCode = patch.getDepthEOM()[p];
         if ( eomCode != 0 ) {
           uint16_t nbBits = 0;
           for ( uint16_t i = 0; i < 10; i++ ) {
@@ -4384,12 +4384,12 @@ void PCCEncoder::generateRawPointsPatch( const PCCPointSet3& source,
           }
           pointsToBeProjected.addPoint( point0 );
           if ( useEnhancedOccupancyMapCode ) {
-            if ( patch.getDepthEnhancedDeltaD()[p] != 0 ) {
+            if ( patch.getDepthEOM()[p] != 0 ) {
               PCCPoint3D point1;
               point1[patch.getTangentAxis()]   = double( u ) + patch.getU1();
               point1[patch.getBitangentAxis()] = double( v ) + patch.getV1();
               for ( uint16_t i = 0; i < 16; i++ ) {  // surfaceThickness is not necessary here?
-                if ( ( patch.getDepthEnhancedDeltaD()[p] & ( 1 << i ) ) != 0 ) {
+                if ( ( patch.getDepthEOM()[p] & ( 1 << i ) ) != 0 ) {
                   uint16_t nDeltaDCur = ( i + 1 );
                   size_t   depth1     = 0;
                   if ( params_.mapCountMinus1_ == 0 ) {
@@ -4419,7 +4419,7 @@ void PCCEncoder::generateRawPointsPatch( const PCCPointSet3& source,
                   pointsToBeProjected.addPoint( input );
                 }
               }  // for each i
-            }    // if( patch.getDepthEnhancedDeltaD()[p] != 0) )
+            }    // if( patch.getDepthEOM()[p] != 0) )
           } else {
             const size_t depth1 = patch.getDepth( 1 )[p];
             PCCPoint3D   point1;
