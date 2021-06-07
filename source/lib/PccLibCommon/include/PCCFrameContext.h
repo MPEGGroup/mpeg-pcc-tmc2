@@ -115,7 +115,7 @@ class PCCFrameContext {
 
   void                      setEomPatches( PCCEomPatch value, size_t idx ) { eomPatches_[idx] = value; }
   std::vector<PCCEomPatch>& getEomPatches() { return eomPatches_; }
-  PCCEomPatch&              getEomPatches( size_t idx ) { return eomPatches_[idx]; }
+  PCCEomPatch&              getEomPatch( size_t idx ) { return eomPatches_[idx]; }
 
   uint8_t getLog2PatchQuantizerSizeX() { return log2PatchQuantizerSizeX_; }
   uint8_t getLog2PatchQuantizerSizeY() { return log2PatchQuantizerSizeY_; }
