@@ -479,7 +479,6 @@ struct PCCRawPointsPatch {
     z_.resize( size, val );
   }
 
-  const size_t sizeX() { return x_.size(); }
   void         setNumberOfRawPoints( size_t numberOfRawPoints ) { numberOfRawPoints_ = numberOfRawPoints; }
   const size_t getNumberOfRawPoints() { return numberOfRawPoints_; }
   void         resizeColor( const size_t size ) {

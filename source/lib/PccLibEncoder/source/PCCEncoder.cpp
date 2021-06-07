@@ -73,12 +73,13 @@ void PCCEncoder::setParameters( const PCCEncoderParameters& params ) { params_ =
 int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PCCGroupOfFrames& reconstructs ) {
   size_t pointLocalReconstructionOriginal     = static_cast<size_t>( params_.pointLocalReconstruction_ );
   size_t layerCountMinus1Original             = params_.mapCountMinus1_;
-  size_t singleMapPixelInterleavingOriginal = static_cast<size_t>( params_.singleMapPixelInterleaving_ );
+  size_t singleMapPixelInterleavingOriginal   = static_cast<size_t>( params_.singleMapPixelInterleaving_ );
   if ( params_.nbThread_ > 0 ) { tbb::task_scheduler_init init( static_cast<int>( params_.nbThread_ ) ); }
 
   if ( sources.getFrameCount() == 0 ) { return 0; }
   assert( sources.getFrameCount() < 256 );
-  if ( ( params_.rawPointsPatch_ || params_.lossyRawPointsPatch_) && params_.tileSegmentationType_ > 1 && params_.numMaxTilePerFrame_ > 1 ) {
+  if ( ( params_.rawPointsPatch_ || params_.lossyRawPointsPatch_ ) && params_.tileSegmentationType_ > 1 &&
+       params_.numMaxTilePerFrame_ > 1 ) {
     params_.numMaxTilePerFrame_ += 1;
   }
   reconstructs.setFrameCount( sources.getFrameCount() );
@@ -326,7 +327,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
                            false,                                  // useConversion
                            params_.keepIntermediateFiles_ );
     if ( params_.lossyRawPointsPatch_ ) {
-      for ( size_t fi = 0; fi < context.size(); fi++ ) generateRawPointsGeometryfromVideo( context, fi );
+      for ( size_t fi = 0; fi < context.size(); fi++ ) { generateRawPointsGeometryfromVideo( context, fi ); }
     }
   }
 
@@ -342,7 +343,8 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
           fi, ti, tile.getLeftTopXInFrame(), tile.getLeftTopYInFrame(), tile.getWidth(), tile.getHeight(),
           tile.getPatches().size(), tile.getTotalNumberOfRegularPoints(), tile.getRawPointsPatches().size(),
           tile.getRawPointsPatches().size() == 0 ? 0 : tile.getRawPointsPatch( 0 ).getNumberOfRawPoints(),
-          tile.getEomPatches().size(), tile.getEomPatches().size() == 0 ? 0 : tile.getEomPatches( 0 ).eomCount_ );
+          tile.getEomPatches().size(), tile.getEomPatches().size() == 0 ? 0 : tile.getEomPatch( 0 ).eomCount_ );
+
       if ( params_.useRawPointsSeparateVideo_ ) {
         printf( "frame(auxVideo) %zu tile %zu: (0,%zu) (%zux%zu)\n", fi, ti, context[fi].getAuxTileLeftTopY( ti ),
                context[fi].getAuxVideoWidth(), context[fi].getAuxTileHeight( ti ) );
@@ -594,7 +596,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
                              params_.colorSpaceConversionPath_ );         // colorSpaceConversionPath
       if ( params_.lossyRawPointsPatch_ ) {
         printf( "generateRawPointsTexturefromVideo \n" );
-        for ( size_t fi = 0; fi < context.size(); fi++ ) generateRawPointsTexturefromVideo( context, fi );
+        for ( size_t fi = 0; fi < context.size(); fi++ ) { generateRawPointsTexturefromVideo( context, fi ); }
       }
     }
   }
@@ -1291,7 +1293,6 @@ void PCCEncoder::spatialConsistencyPackFlexible( PCCFrameContext& tile,
   auto& width   = tile.getWidth();
   auto& height  = tile.getHeight();
   auto& patches = tile.getPatches();
-
   auto& prevPatches = prevFrame.getPatches();
   if ( patches.empty() ) {
     if ( tile.getNumberOfRawPointsPatches() == 0 ) { return; }
@@ -1302,7 +1303,7 @@ void PCCEncoder::spatialConsistencyPackFlexible( PCCFrameContext& tile,
     if ( presetWidth == 0 || presetHeight == 0 ) {
       auto& rawPointsPatch       = tile.getRawPointsPatch( 0 );
       auto  rawPointsPatchBlocks = static_cast<size_t>(
-          ceil( double( rawPointsPatch.sizeX() ) / ( params_.occupancyResolution_ * params_.occupancyResolution_ ) ) );
+          ceil( double( rawPointsPatch.getNumberOfRawPoints() * 3 ) / ( params_.occupancyResolution_ * params_.occupancyResolution_ ) ) );
       if ( presetWidth == 0 ) occupancySizeU = params_.minimumImageWidth_ / params_.occupancyResolution_;
       if ( presetHeight == 0 )
         occupancySizeV = static_cast<size_t>( ceil( double( rawPointsPatchBlocks ) / occupancySizeU ) );
@@ -2468,7 +2469,7 @@ void PCCEncoder::packFlexible( PCCFrameContext& tile,
     if ( presetWidth == 0 || presetHeight == 0 ) {
       auto& rawPointsPatch       = tile.getRawPointsPatch( 0 );
       auto  rawPointsPatchBlocks = static_cast<size_t>(
-          ceil( double( rawPointsPatch.sizeX() ) / ( params_.occupancyResolution_ * params_.occupancyResolution_ ) ) );
+          ceil( double( rawPointsPatch.getNumberOfRawPoints() * 3 ) / ( params_.occupancyResolution_ * params_.occupancyResolution_ ) ) );
       if ( presetWidth == 0 ) occupancySizeU = params_.minimumImageWidth_ / params_.occupancyResolution_;
       if ( presetHeight == 0 )
         occupancySizeV = static_cast<size_t>( ceil( double( rawPointsPatchBlocks ) / occupancySizeU ) );
@@ -3587,7 +3588,7 @@ size_t PCCEncoder::packRawPointsPatchSimple( PCCFrameContext& tile,
   for ( int i = 0; i < numberOfRawPointsPatches; i++ ) {
     auto& rawPointsPatch       = tile.getRawPointsPatch( i );
     auto  rawPointsPatchBlocks = static_cast<size_t>(
-        ceil( double( rawPointsPatch.sizeX() ) / ( params_.occupancyResolution_ * params_.occupancyResolution_ ) ) );
+        ceil( double( rawPointsPatch.getNumberOfRawPoints() * 3 ) / ( params_.occupancyResolution_ * params_.occupancyResolution_ ) ) );
     auto rawPointsPatchBlocksV0 = static_cast<size_t>( ceil( double( rawPointsPatchBlocks ) / tileWidthInBlock ) );
     auto rawPointsPatchBlocksU0 =
         static_cast<size_t>( ceil( double( rawPointsPatchBlocks ) / rawPointsPatchBlocksV0 ) );
@@ -3616,7 +3617,7 @@ size_t PCCEncoder::packRawPointsPatchSimple( PCCFrameContext& tile,
 
     printf( "packRawPointsPatch[%d/%zu]: posU0V0 %zu,%zu sizeU0V0(%zux%zu) #ofpixels %zu\n", i,
             numberOfRawPointsPatches, rawPointsPatch.u0_, rawPointsPatch.v0_, rawPointsPatch.sizeU0_,
-            rawPointsPatch.sizeV0_, rawPointsPatch.sizeX() );
+            rawPointsPatch.sizeV0_, rawPointsPatch.getNumberOfRawPoints() * 3 );
   }
   return totalHeight;
 }
@@ -3634,7 +3635,7 @@ size_t PCCEncoder::packRawPointsPatch( PCCFrameContext&   tile,
   for ( int i = 0; i < numberOfRawPointsPatches; i++ ) {
     auto& rawPointsPatch       = tile.getRawPointsPatch( i );
     auto  rawPointsPatchBlocks = static_cast<size_t>(
-        ceil( double( rawPointsPatch.sizeX() ) / ( params_.occupancyResolution_ * params_.occupancyResolution_ ) ) );
+        ceil( double( rawPointsPatch.getNumberOfRawPoints() * 3 ) / ( params_.occupancyResolution_ * params_.occupancyResolution_ ) ) );
     auto rawPointsPatchBlocksV0 = static_cast<size_t>( ceil( double( rawPointsPatchBlocks ) / occupancySizeU ) );
     auto rawPointsPatchBlocksU0 =
         static_cast<size_t>( ceil( double( rawPointsPatchBlocks ) / rawPointsPatchBlocksV0 ) );
@@ -3706,7 +3707,7 @@ size_t PCCEncoder::packRawPointsPatch( PCCFrameContext&   tile,
     }
     printf( "packRawPointsPatch[%d/%zu]: posU0V0 %zu,%zu sizeU0V0(%zux%zu) #ofpixels %zu\n", i,
             numberOfRawPointsPatches, rawPointsPatch.u0_, rawPointsPatch.v0_, rawPointsPatch.sizeU0_,
-            rawPointsPatch.sizeV0_, rawPointsPatch.sizeX() );
+            rawPointsPatch.sizeV0_, rawPointsPatch.getNumberOfRawPoints() * 3 );
   }
   return height;
 }
@@ -4173,7 +4174,7 @@ void PCCEncoder::generateIntraImage( PCCAtlasFrameContext& atlasFrame,
         auto&        rawPointsPatch = tile.getRawPointsPatch( i );
         const size_t v0             = rawPointsPatch.v0_ * rawPointsPatch.occupancyResolution_;
         const size_t u0             = rawPointsPatch.u0_ * rawPointsPatch.occupancyResolution_;
-        if ( rawPointsPatch.sizeX() != 0u ) {
+        if ( rawPointsPatch.getNumberOfRawPoints() != 0u ) {
           for ( size_t v = 0; v < rawPointsPatch.sizeV_; ++v ) {
             for ( size_t u = 0; u < rawPointsPatch.sizeU_; ++u ) {
               const size_t p = v * rawPointsPatch.sizeU_ + u;
@@ -4570,8 +4571,8 @@ void PCCEncoder::generateRawPointsPatch( const PCCPointSet3& source,
           }
           mpsPatches.push_back( rawPointsPatch );
           std::cout << "\t::numberOfRawPointsPatches = " << frame.getNumberOfRawPointsPatches()
-                    << " #point : " << rawPointsPatch.getNumberOfRawPoints() << " #pixels: " << rawPointsPatch.sizeX()
-                    << std::endl;
+                    << " #point : " << rawPointsPatch.getNumberOfRawPoints()
+                    << " #pixels: " << rawPointsPatch.getNumberOfRawPoints() * 3 << std::endl;
         }  // not empty
       }
     }
@@ -4743,22 +4744,22 @@ void PCCEncoder::generateRawPointsGeometryVideo( PCCContext& context ) {
   printf("width and height is based on the first frame: context[0]");
   auto& videoRawPointsGeometry = context.getVideoRawPointsGeometry();
   videoRawPointsGeometry.resize( context.size() );
-  size_t maxWidth = context[0].getAuxVideoWidth();
   // context.setAuxVideoWidth( ?? );
-  auto&  framesInAFPS = context.getFramesInAFPS();
-  size_t numInterval  = 1;
-  if ( params_.tileSegmentationType_ == 1 ) numInterval = framesInAFPS.size();
-
+  auto&  framesInAFPS   = context.getFramesInAFPS();
+  size_t numInterval    = 1;
+  size_t maxVideoWidth  = 0;
   size_t maxVideoHeight = 0;
+  if ( params_.tileSegmentationType_ == 1 ) { numInterval = framesInAFPS.size(); }
   for ( size_t fi = 0; fi < context.size(); fi++ ) {
-    size_t maxVideoHeightFrame = 0;
+    size_t maxVideoHeight = 0;
     for ( size_t ti = 0; ti < context[fi].getAuxTileHeightSize(); ti++ ) {
-      maxVideoHeightFrame += context[fi].getAuxTileHeight( ti );
+      maxVideoHeight += context[fi].getAuxTileHeight( ti );
     }
-    maxVideoHeight = std::max(maxVideoHeightFrame, maxVideoHeight);
+    maxVideoWidth  = (std::max)( maxVideoWidth, context[fi].getAuxVideoWidth() );
+    maxVideoHeight = (std::max)( maxVideoHeight, maxVideoHeight );
   }
   for ( size_t fi = 0; fi < context.size(); fi++ ) {
-    videoRawPointsGeometry.getFrame( fi ).resize( maxWidth, maxVideoHeight, PCCCOLORFORMAT::YUV444 );
+    videoRawPointsGeometry.getFrame( fi ).resize( maxVideoWidth, maxVideoHeight, PCCCOLORFORMAT::YUV444 );
   }
 
   for ( size_t segIdx = 0; segIdx < numInterval; segIdx++ ) {
@@ -4767,8 +4768,8 @@ void PCCEncoder::generateRawPointsGeometryVideo( PCCContext& context ) {
     size_t numTilesInSeg = ( params_.tileSegmentationType_ == 0 ) ? 1 : context[firstFrame].getNumTilesInAtlasFrame();
 #if 1
     std::cout << "sequence group[" << segIdx << "] : " << firstFrame << " ~ " << lastFrame
-              << " numTile: " << numTilesInSeg << "size(frame0): "
-              <<videoRawPointsGeometry.getFrame( 0 ).getWidth()<<"x"<<videoRawPointsGeometry.getFrame( 0 ).getHeight()<< std::endl;
+              << " numTile: " << numTilesInSeg << "size(frame0): " << videoRawPointsGeometry.getFrame( 0 ).getWidth()
+              << "x" << videoRawPointsGeometry.getFrame( 0 ).getHeight() << std::endl;
 #endif
     for ( size_t tileIdx = 0; tileIdx < numTilesInSeg; tileIdx++ ) {
       for ( size_t frameIdx = firstFrame; frameIdx < lastFrame; frameIdx++ ) {
@@ -4776,7 +4777,7 @@ void PCCEncoder::generateRawPointsGeometryVideo( PCCContext& context ) {
         generateRawPointsGeometryImage( context, tile, videoRawPointsGeometry.getFrame( frameIdx ) );
         size_t totalNumRawPoints = 0;
         for ( size_t ii = 0; ii < tile.getNumberOfRawPointsPatches(); ii++ )
-          totalNumRawPoints += tile.getRawPointsPatch( ii ).sizeX();
+          totalNumRawPoints += tile.getRawPointsPatch( ii ).getNumberOfRawPoints() * 3;
         std::cout << "generate raw Points Video (Geometry) frame[" << frameIdx << "] tile[" << tileIdx << "] : "
                   << "#rawPatches: " << tile.getNumberOfRawPointsPatches()
                   << "\t#rawPoints(pixels): " << totalNumRawPoints << std::endl;
@@ -4825,7 +4826,7 @@ void PCCEncoder::generateRawPointsGeometryImage( PCCContext& context, PCCFrameCo
     rawPointsPatch.isPatchInAuxVideo_ = true;
     numberOfRawPoints *= 3;
     lastValue = rawPointsPatch.x_[numberOfRawPoints - 1];
-    if ( rawPointsPatch.sizeX() != 0u ) {
+    if ( rawPointsPatch.getNumberOfRawPoints() != 0u ) {
       for ( size_t v = 0; v < rawPointsPatch.sizeV_; ++v ) {
         for ( size_t u = 0; u < rawPointsPatch.sizeU_; ++u ) {
           const size_t p = v * rawPointsPatch.sizeU_ + u;
@@ -4839,7 +4840,7 @@ void PCCEncoder::generateRawPointsGeometryImage( PCCContext& context, PCCFrameCo
               printf( "ERROR: X and y outside the picture: ( %zu, %zu) / ( %zu, %zu) (then) \n", x, y, image.getWidth(),
                       image.getHeight() );
               fflush( stdout );
-              exit(19);
+              exit( 19 );
             } else {
               image.setValue( 0, x, y, uint16_t( rawPointsPatch.x_[p] ) );
             }
@@ -4851,7 +4852,7 @@ void PCCEncoder::generateRawPointsGeometryImage( PCCContext& context, PCCFrameCo
               printf( "ERROR: X and y outside the picture: ( %zu, %zu) / ( %zu, %zu) (else) \n", x, y, image.getWidth(),
                       image.getHeight() );
               fflush( stdout );
-              exit(19);
+              exit( 19 );
             } else {
               image.setValue( 0, x, y, static_cast<uint16_t>( lastValue ) );
             }
@@ -6156,7 +6157,7 @@ void PCCEncoder::markRawPatchLocation( PCCFrameContext& frame, PCCImageOccupancy
       auto&        rawPointsPatch = frame.getRawPointsPatch( i );
       const size_t v0             = rawPointsPatch.v0_ * rawPointsPatch.occupancyResolution_;
       const size_t u0             = rawPointsPatch.u0_ * rawPointsPatch.occupancyResolution_;
-      if ( rawPointsPatch.sizeX() != 0u ) {
+      if ( rawPointsPatch.getNumberOfRawPoints() != 0u ) {
         for ( size_t v = 0; v < rawPointsPatch.sizeV_; ++v ) {
           for ( size_t u = 0; u < rawPointsPatch.sizeU_; ++u ) {
             const size_t p = v * rawPointsPatch.sizeU_ + u;

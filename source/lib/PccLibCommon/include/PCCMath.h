@@ -74,10 +74,21 @@ class PCCVector3 {
   }
   T           getNorm() const { return static_cast<T>( sqrt( getNorm2() ) ); }
   T           getNorm2() const { return data_[0] * data_[0] + data_[1] * data_[1] + data_[2] * data_[2]; }
-  PCCVector3& operator=( const PCCVector3& rhs ) {
-    memcpy( data_, rhs.data_, sizeof( data_ ) );
+
+
+  // PCCVector3& operator=( const PCCVector3& rhs ) {
+  //   memcpy( data_, rhs.data_, sizeof( data_ ) );
+  //   return *this;
+  // }
+  template <typename OutT>
+  PCCVector3& operator=( const PCCVector3<OutT>& rhs ) {
+    //    memcpy( data_, rhs.data_, sizeof( data_ ) );
+    data_[0] = (T)rhs.r();
+    data_[1] = (T)rhs.g();
+    data_[2] = (T)rhs.b();
     return *this;
   }
+
   PCCVector3& operator+=( const PCCVector3& rhs ) {
     data_[0] += rhs.data_[0];
     data_[1] += rhs.data_[1];

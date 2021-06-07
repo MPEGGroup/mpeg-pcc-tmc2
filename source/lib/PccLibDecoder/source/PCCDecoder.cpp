@@ -291,23 +291,13 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
     // All video have been decoded, start reconsctruction processes
     if ( asps.getRawPatchEnabledFlag() && asps.getAuxiliaryVideoEnabledFlag() &&
          sps.getAuxiliaryVideoPresentFlag( atlasIndex ) ) {
-      printf( "generateRawPointsGeometryfromVideo \n" );
-      fflush( stdout );
-      generateRawPointsGeometryfromVideo( context, frameIdx );
-
-      if ( ai.getAttributeCount() > 0 ) {
-        for ( int attrIndex = 0; attrIndex < sps.getAttributeInformation( atlasIndex ).getAttributeCount();
-              attrIndex++ ) {  // right now we only have one attribute, this should be generalized
-          for ( int attrPartitionIndex = 0;
-                attrPartitionIndex <
-                sps.getAttributeInformation( atlasIndex ).getAttributeDimensionPartitionsMinus1( attrIndex ) + 1;
-                attrPartitionIndex++ ) {  // right now we have only one partition,
-                                          // this should be generalized
-            printf( "generateRawPointsTexturefromVideo attrIndex = %d attrPartitionIndex = %d \n", attrIndex,
-                    attrPartitionIndex );
-            fflush( stdout );
-            generateRawPointsTexturefromVideo( context, frameIdx );
-          }
+      for ( int attrIndex = 0; attrIndex < ai.getAttributeCount(); attrIndex++ ) {
+        int attributeDimensionPartitions = ai.getAttributeDimensionPartitionsMinus1( attrIndex ) + 1;
+        for ( int attrPartitionIndex = 0; attrPartitionIndex < attributeDimensionPartitions; attrPartitionIndex++ ) {
+          printf( "generateRawPointsTexturefromVideo attrIndex = %d attrPartitionIndex = %d \n", attrIndex,
+                  attrPartitionIndex );
+          fflush( stdout );
+          generateRawPointsTexturefromVideo( context, frameIdx );
         }
       }
     }  // getAuxiliaryVideoEnabledFlag()
