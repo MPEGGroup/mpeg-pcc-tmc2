@@ -935,120 +935,50 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                       reconstru
   TRACE_CODEC( " totalEOMPointsInFrame = %zu  \n", totalEOMPointsInFrame );
   TRACE_CODEC( " point = %zu  \n", reconstruct.getPointCount() );
   if ( params.useAdditionalPointsPatch_ ) {
-    if ( useRawPointsSeparateVideo && false ) {
-      // PCCColor3B rawPointsColor( uint8_t( 0 ) );
-      // rawPointsColor[0] = 0;
-      // rawPointsColor[1] = 255;
-      // rawPointsColor[2] = 255;
-      // // Add point GPS from rawPointsPatch without inserting to pointToPixel
-      // size_t numberOfRawPointsPatches = tile.getNumberOfRawPointsPatches();
-      
-      // printf( "numberOfRawPointsPatches = %zu \n", numberOfRawPointsPatches );
-      // TRACE_CODEC( "numberOfRawPointsPatches = %zu \n", numberOfRawPointsPatches );
-      // for ( int j = 0; j < numberOfRawPointsPatches; j++ ) {
-      //   auto&  rawPointsPatch = tile.getRawPointsPatch( j );
-      //   size_t numRawPoints   = rawPointsPatch.getNumberOfRawPoints();
-        
-      //   printf( "numRawPoints = %zu \n", numRawPoints );
-      //   TRACE_CODEC( "numRawPoints = %zu \n", numRawPoints );
-      //   printf(" tile.getLeftTopXInFrame() = %zu \n", tile.getLeftTopXInFrame());
-      //   printf(" tile.getLeftTopYInFrame() = %zu \n", tile.getLeftTopYInFrame());
-      //   printf(" rawPointsPatch.sizeU0_    = %zu \n", rawPointsPatch.sizeU0_);
-      //   printf(" rawPointsPatch.sizeV0_    = %zu \n", rawPointsPatch.sizeV0_);
-      //   printf(" rawPointsPatch.u0_        = %zu \n", rawPointsPatch.u0_);
-      //   printf(" rawPointsPatch.v0_        = %zu \n", rawPointsPatch.v0_);
-      //   printf(" rawPointsPatch.u1_        = %zu \n", rawPointsPatch.u1_);
-      //   printf(" rawPointsPatch.v1_        = %zu \n", rawPointsPatch.v1_);
-      //   printf(" rawPointsPatch.d1_        = %zu \n", rawPointsPatch.d1_);        
-      //   for ( int i = 0; i < numRawPoints; i++ ) {
-      //     PCCVector3D point0;
-      //     point0[0] = rawPointsPatch.x_[i] + rawPointsPatch.u1_;
-      //     point0[1] = rawPointsPatch.x_[i + numRawPoints] + rawPointsPatch.v1_;
-      //     point0[2] = rawPointsPatch.x_[i + 2 * numRawPoints] + rawPointsPatch.d1_;
-      //     // printf( "Raw point patch %zu / %zu point  %6d / %9zu : %9f %9f %9f \n", j, numberOfRawPointsPatches, i,
-      //     //        numRawPoints, point0[0], point0[1], point0[2] );
-      //     TRACE_CODEC( "Raw point patch %zu / %zu point  %6d / %9zu : %9f %9f %9f \n", j, numberOfRawPointsPatches, i,
-      //             numRawPoints, point0[0], point0[1], point0[2] );
-      //     const size_t pointIndex = reconstruct.addPoint( point0 );
-      //     reconstruct.setPointPatchIndex( pointIndex, tileIndex, patchIndex );
-      //     reconstruct.setColor( pointIndex, rawPointsColor );
-      //     partition.push_back( uint32_t( patchIndex ) );
-      //   }
-      //   rawPointsPatch.resizeColor( numRawPoints );
-      // }
-    } else {  // else useRawPointsSeparateVideo
-      printf("videoFrameIndex = %zu \n",tile.getFrameIndex()); fflush(stdout);
-      printf("getFrameCount   = %zu \n",context.getVideoRawPointsGeometry().getFrameCount()); fflush(stdout);
-      auto& frameRawPoint = useRawPointsSeparateVideo
-                                ? (const PCCImageGeometry&)context.getVideoRawPointsGeometry()[tile.getFrameIndex()]
-                                : frame0;
-      printf("video size = %zu %zu  \n",context.getVideoRawPointsGeometry().getWidth(), context.getVideoRawPointsGeometry().getHeight()); fflush(stdout);
-      printf("video size = %zu %zu  \n",frameRawPoint.getWidth(), frameRawPoint.getHeight()); fflush(stdout);
-
-      TRACE_CODEC( " Add points from rawPointsPatch \n" );
-      // Add points from rawPointsPatch
-      size_t numberOfRawPointsPatches = tile.getNumberOfRawPointsPatches();
-      for ( int i = 0; i < numberOfRawPointsPatches; i++ ) {
-        auto&      rawPointsPatch = tile.getRawPointsPatch( i );
-        PCCColor3B rawPointsColor( 0, 255, 255 );
-        size_t     numRawPoints = rawPointsPatch.getNumberOfRawPoints();
-        rawPointsPatch.sizeV_   = rawPointsPatch.sizeV0_ * rawPointsPatch.occupancyResolution_;
-        rawPointsPatch.sizeU_   = rawPointsPatch.sizeU0_ * rawPointsPatch.occupancyResolution_;
-
-        printf(" tile.getLeftTopXInFrame() = %zu \n", tile.getLeftTopXInFrame());
-        printf(" tile.getLeftTopYInFrame() = %zu \n", tile.getLeftTopYInFrame());
-        printf(" rawPointsPatch.sizeU0_    = %zu \n", rawPointsPatch.sizeU0_);
-        printf(" rawPointsPatch.sizeV0_    = %zu \n", rawPointsPatch.sizeV0_);
-        printf(" rawPointsPatch.u0_        = %zu \n", rawPointsPatch.u0_);
-        printf(" rawPointsPatch.v0_        = %zu \n", rawPointsPatch.v0_);
-        printf(" rawPointsPatch.u1_        = %zu \n", rawPointsPatch.u1_);
-        printf(" rawPointsPatch.v1_        = %zu \n", rawPointsPatch.v1_);
-        printf(" rawPointsPatch.d1_        = %zu \n", rawPointsPatch.d1_);
-        std::vector<PCCPoint3D> rawPoints;
-        rawPoints.resize( numRawPoints );
-        size_t       numRawPointsAdded{0};
-        const size_t v0 = rawPointsPatch.v0_ * rawPointsPatch.occupancyResolution_;
-        const size_t u0 = rawPointsPatch.u0_ * rawPointsPatch.occupancyResolution_;        
-        for ( size_t v = 0; v < rawPointsPatch.sizeV_; ++v ) {
-          for ( size_t u = 0; u < rawPointsPatch.sizeU_; ++u ) {
-            const size_t u1 = tile.getLeftTopXInFrame() + u0 + u;
-            const size_t v1 = tile.getLeftTopYInFrame() + v0 + v;
-            if ( numRawPointsAdded < numRawPoints ) {
-              rawPoints[numRawPointsAdded][0] = double( frameRawPoint.getValue( 0, u1, v1 ) + rawPointsPatch.u1_ );
-            } else if ( numRawPoints <= numRawPointsAdded && numRawPointsAdded < 2 * numRawPoints ) {
-              rawPoints[numRawPointsAdded - numRawPoints][1] =
-                  double( frameRawPoint.getValue( 0, u1, v1 ) + rawPointsPatch.v1_ );
-            } else if ( 2 * numRawPoints <= numRawPointsAdded && numRawPointsAdded < 3 * numRawPoints ) {
-#if 1
-              if ( u1 >= frameRawPoint.getWidth() || v1 >= frameRawPoint.getHeight() ) {
-                printf( " %4zu x %4zu >  %4zu x %4zu \n", u1, v1, frameRawPoint.getWidth(), frameRawPoint.getHeight() );
-                fflush( stdout );
-              }
-#endif
-              rawPoints[numRawPointsAdded - 2 * numRawPoints][2] =
-                  double( frameRawPoint.getValue( 0, u1, v1 ) + rawPointsPatch.d1_ );
-            }
-            numRawPointsAdded++;
-          }  // u
-        }    // v
-        printf("done \n"); fflush(stdout);
-        size_t counter{0};
-        for ( size_t v = 0; v < rawPointsPatch.sizeV_; ++v ) {
-          for ( size_t u = 0; u < rawPointsPatch.sizeU_; ++u ) {
-            if ( counter < numRawPoints ) {
-#if 1 
-              if ( counter % 1000 == 0 ) {
-                printf( "Raw point patch %d / %zu point  %6zu / %9zu : %9d %9d %9d \n", i, numberOfRawPointsPatches,
-                        counter, numRawPoints, rawPoints[counter][0], rawPoints[counter][1], rawPoints[counter][2] );
-              }
-#endif
-              const size_t pointIndex = reconstruct.addPoint( rawPoints[counter] );
-              reconstruct.setPointPatchIndex( pointIndex, tileIndex, patchIndex );
-              reconstruct.setColor( pointIndex, rawPointsColor );
-              partition.push_back( uint32_t( patchIndex ) );
-              pointToPixel.emplace_back( u0 + u, v0 + v, 0 );
-              counter++;
-            }
+     auto& frameRawPoint = useRawPointsSeparateVideo
+                              ? (const PCCImageGeometry&)context.getVideoRawPointsGeometry()[tile.getFrameIndex()]
+                              : frame0;
+    TRACE_CODEC( " Add points from rawPointsPatch \n" );
+    
+    // Add points from rawPointsPatch
+    size_t numberOfRawPointsPatches = tile.getNumberOfRawPointsPatches();
+    for ( int i = 0; i < numberOfRawPointsPatches; i++ ) {
+      auto&      rawPointsPatch = tile.getRawPointsPatch( i );
+      PCCColor3B rawPointsColor( 0, 255, 255 );
+      size_t     numRawPoints = rawPointsPatch.getNumberOfRawPoints();
+      rawPointsPatch.sizeV_   = rawPointsPatch.sizeV0_ * rawPointsPatch.occupancyResolution_;
+      rawPointsPatch.sizeU_   = rawPointsPatch.sizeU0_ * rawPointsPatch.occupancyResolution_;
+      std::vector<PCCPoint3D> rawPoints;
+      rawPoints.resize( numRawPoints );
+      size_t       numRawPointsAdded{ 0 };
+      const size_t v0 = rawPointsPatch.v0_ * rawPointsPatch.occupancyResolution_;
+      const size_t u0 = rawPointsPatch.u0_ * rawPointsPatch.occupancyResolution_;
+      for ( size_t v = 0; v < rawPointsPatch.sizeV_; ++v ) {
+        for ( size_t u = 0; u < rawPointsPatch.sizeU_; ++u ) {
+          const size_t u1 = tile.getLeftTopXInFrame() + u0 + u;
+          const size_t v1 = tile.getLeftTopYInFrame() + v0 + v;
+          if ( numRawPointsAdded < numRawPoints ) {
+            rawPoints[numRawPointsAdded][0] = double( frameRawPoint.getValue( 0, u1, v1 ) + rawPointsPatch.u1_ );
+          } else if ( numRawPoints <= numRawPointsAdded && numRawPointsAdded < 2 * numRawPoints ) {
+            rawPoints[numRawPointsAdded - numRawPoints][1] =
+                double( frameRawPoint.getValue( 0, u1, v1 ) + rawPointsPatch.v1_ );
+          } else if ( 2 * numRawPoints <= numRawPointsAdded && numRawPointsAdded < 3 * numRawPoints ) {
+            rawPoints[numRawPointsAdded - 2 * numRawPoints][2] =
+                double( frameRawPoint.getValue( 0, u1, v1 ) + rawPointsPatch.d1_ );
+          }
+          numRawPointsAdded++;
+        }  // u
+      }    // v
+      size_t counter{ 0 };
+      for ( size_t v = 0; v < rawPointsPatch.sizeV_; ++v ) {
+        for ( size_t u = 0; u < rawPointsPatch.sizeU_; ++u ) {
+          if ( counter < numRawPoints ) {
+            const size_t pointIndex = reconstruct.addPoint( rawPoints[counter] );
+            reconstruct.setPointPatchIndex( pointIndex, tileIndex, patchIndex );
+            reconstruct.setColor( pointIndex, rawPointsColor );
+            partition.push_back( uint32_t( patchIndex ) );
+            pointToPixel.emplace_back( u0 + u, v0 + v, 0 );
+            counter++;
           }
         }
       }
@@ -2140,7 +2070,6 @@ void PCCCodec::generateAtlasBlockToPatchFromOccupancyMapVideo( PCCContext&  cont
                                                                const size_t occupancyResolution,
                                                                const size_t occupancyPrecision ) {
   generateTileBlockToPatchFromOccupancyMapVideo( context, occupancyResolution, occupancyPrecision );
-
   for ( int fi = 0; fi < context.size(); fi++ ) {
     PCCImageOccupancyMap& occupancyImage = context.getVideoOccupancyMap().getFrame( fi );
     auto&                 atlasFrame     = context.getFrame( fi ).getTitleFrameContext();
@@ -2248,52 +2177,52 @@ void PCCCodec::generateBlockToPatchFromOccupancyMapVideo( PCCContext&           
 
 void PCCCodec::generateAfti( PCCContext&                context,
                              size_t                     frameIndex,
-                             AtlasFrameTileInformation& aftiLocal ) {  // encoder
+                             AtlasFrameTileInformation& afti ) {  // encoder
   auto&partitionInfoPerFrame = context[frameIndex];
-  aftiLocal.setSingleTileInAtlasFrameFlag( partitionInfoPerFrame.getNumTilesInAtlasFrame() == 1 );
+  afti.setSingleTileInAtlasFrameFlag( partitionInfoPerFrame.getNumTilesInAtlasFrame() == 1 );
   if ( partitionInfoPerFrame.getNumTilesInAtlasFrame() == 1 ) {
     if ( partitionInfoPerFrame.getTitleFrameContext().getUseRawPointsSeparateVideo() ) {
-      aftiLocal.setAuxiliaryVideoTileRowWidthMinus1( context[frameIndex].getAuxVideoWidth() / 64 - 1 );
+      afti.setAuxiliaryVideoTileRowWidthMinus1( context[frameIndex].getAuxVideoWidth() / 64 - 1 );
       for ( size_t ti = 0; ti < partitionInfoPerFrame.getNumTilesInAtlasFrame(); ti++ ) {
-        aftiLocal.setAuxiliaryVideoTileRowHeight( ti, context[frameIndex].getAuxTileHeight( ti ) );
+        afti.setAuxiliaryVideoTileRowHeight( ti, context[frameIndex].getAuxTileHeight( ti ) );
       }
     } else {
-      aftiLocal.setAuxiliaryVideoTileRowWidthMinus1( 0 );
+      afti.setAuxiliaryVideoTileRowWidthMinus1( 0 );
       for ( size_t ti = 0; ti < partitionInfoPerFrame.getNumTilesInAtlasFrame(); ti++ ) {
-        aftiLocal.setAuxiliaryVideoTileRowHeight( ti, 0 );
+        afti.setAuxiliaryVideoTileRowHeight( ti, 0 );
       }
     }
     return;
   }
-  aftiLocal.setUniformPartitionSpacingFlag( partitionInfoPerFrame.getUniformPartitionSpacing() );
-  aftiLocal.setNumPartitionColumnsMinus1( partitionInfoPerFrame.getNumPartitionCols() - 1 );
-  aftiLocal.setNumPartitionRowsMinus1( partitionInfoPerFrame.getNumPartitionRows() - 1 );
+  afti.setUniformPartitionSpacingFlag( partitionInfoPerFrame.getUniformPartitionSpacing() );
+  afti.setNumPartitionColumnsMinus1( partitionInfoPerFrame.getNumPartitionCols() - 1 );
+  afti.setNumPartitionRowsMinus1( partitionInfoPerFrame.getNumPartitionRows() - 1 );
   for ( size_t col = 0; col < partitionInfoPerFrame.getNumPartitionCols(); col++ ) {
-    aftiLocal.setPartitionColumnWidthMinus1( col, partitionInfoPerFrame.getPartitionWidth( col ) / 64 - 1 );
+    afti.setPartitionColumnWidthMinus1( col, partitionInfoPerFrame.getPartitionWidth( col ) / 64 - 1 );
   }
   for ( size_t row = 0; row < partitionInfoPerFrame.getNumPartitionRows(); row++ ) {
-    aftiLocal.setPartitionRowHeightMinus1( row, partitionInfoPerFrame.getPartitionHeight( row ) / 64 - 1 );
+    afti.setPartitionRowHeightMinus1( row, partitionInfoPerFrame.getPartitionHeight( row ) / 64 - 1 );
   }
-  aftiLocal.setSinglePartitionPerTileFlag( partitionInfoPerFrame.getSinglePartitionPerTile() );
-  aftiLocal.setNumTilesInAtlasFrameMinus1( partitionInfoPerFrame.getNumTilesInAtlasFrame() - 1 );
+  afti.setSinglePartitionPerTileFlag( partitionInfoPerFrame.getSinglePartitionPerTile() );
+  afti.setNumTilesInAtlasFrameMinus1( partitionInfoPerFrame.getNumTilesInAtlasFrame() - 1 );
   if ( partitionInfoPerFrame.getSignalledTileId() == true ) { exit( 100 ); }
-  aftiLocal.setSignalledTileIdFlag( partitionInfoPerFrame.getSignalledTileId() );
+  afti.setSignalledTileIdFlag( partitionInfoPerFrame.getSignalledTileId() );
   if ( partitionInfoPerFrame.getSignalledTileId() ) {
-    aftiLocal.setSignalledTileIdLengthMinus1( ceil( log2( partitionInfoPerFrame.getNumTilesInAtlasFrame() + 1 ) ) - 1 );
+    afti.setSignalledTileIdLengthMinus1( ceil( log2( partitionInfoPerFrame.getNumTilesInAtlasFrame() + 1 ) ) - 1 );
     for ( size_t ti = 0; ti < partitionInfoPerFrame.getNumTilesInAtlasFrame(); ti++ ) {
-      aftiLocal.setTileId( ti, partitionInfoPerFrame.getTileId()[ti] );
+      afti.setTileId( ti, partitionInfoPerFrame.getTileId()[ti] );
     }
   } else {
-    for ( size_t ti = 0; ti < partitionInfoPerFrame.getNumTilesInAtlasFrame(); ti++ ) { aftiLocal.setTileId( ti, ti ); }
+    for ( size_t ti = 0; ti < partitionInfoPerFrame.getNumTilesInAtlasFrame(); ti++ ) { afti.setTileId( ti, ti ); }
   }
   auto&atlasFrame = context.getFrame( frameIndex );
   for ( size_t ti = 0; ti < partitionInfoPerFrame.getNumTilesInAtlasFrame(); ti++ ) {
     auto& tile = atlasFrame.getTile( ti );
     if ( tile.getPatches().size() == 0 &&
          partitionInfoPerFrame.getTitleFrameContext().getUseRawPointsSeparateVideo() ) {
-      aftiLocal.setTopLeftPartitionIdx( ti, 0 );
-      aftiLocal.setBottomRightPartitionColumnOffset( ti, 0 );
-      aftiLocal.setBottomRightPartitionRowOffset( ti, 0 );
+      afti.setTopLeftPartitionIdx( ti, 0 );
+      afti.setBottomRightPartitionColumnOffset( ti, 0 );
+      afti.setBottomRightPartitionRowOffset( ti, 0 );
       printf( "enc:%zu frame %zu tile:(%zu,%zu), Raw Tile %zux%zu in Auxiliary video\n", frameIndex, ti,
               atlasFrame.getTile( ti ).getLeftTopXInFrame(), atlasFrame.getTile( ti ).getLeftTopYInFrame(),
               atlasFrame.getTile( ti ).getWidth(), atlasFrame.getTile( ti ).getHeight() );
@@ -2313,7 +2242,7 @@ void PCCCodec::generateAfti( PCCContext&                context,
       numPartLeftY += 1;
     }
     size_t topLeftIdx = numPartLeftX + numPartLeftY * partitionInfoPerFrame.getNumPartitionCols();
-    aftiLocal.setTopLeftPartitionIdx( ti, topLeftIdx );
+    afti.setTopLeftPartitionIdx( ti, topLeftIdx );
 
     size_t numPartBottomX = 0, numPartBottomY = 0;
     while ( bottomRightDeltaX > 0 ) {
@@ -2342,33 +2271,32 @@ void PCCCodec::generateAfti( PCCContext&                context,
       exit( 125 );
     }
 
-    aftiLocal.setBottomRightPartitionColumnOffset( ti, numPartBottomX - 1 );
-    aftiLocal.setBottomRightPartitionRowOffset( ti, numPartBottomY - 1 );
-
+    afti.setBottomRightPartitionColumnOffset( ti, numPartBottomX - 1 );
+    afti.setBottomRightPartitionRowOffset( ti, numPartBottomY - 1 );
 #if 1
     printf( "enc:%zu frame %zu tile:(%zu,%zu), %zux%zu -> leftIdx(%zu,%zu), bottom(%zu,%zu) -> %u,%u,%u\n", frameIndex,
             ti, atlasFrame.getTile( ti ).getLeftTopXInFrame(), atlasFrame.getTile( ti ).getLeftTopYInFrame(),
             atlasFrame.getTile( ti ).getWidth(), atlasFrame.getTile( ti ).getHeight(), numPartLeftX, numPartLeftY,
-            numPartBottomX, numPartBottomY, aftiLocal.getTopLeftPartitionIdx( ti ),
-            aftiLocal.getBottomRightPartitionColumnOffset( ti ), aftiLocal.getBottomRightPartitionRowOffset( ti ) );
+            numPartBottomX, numPartBottomY, afti.getTopLeftPartitionIdx( ti ),
+            afti.getBottomRightPartitionColumnOffset( ti ), afti.getBottomRightPartitionRowOffset( ti ) );
 #endif
   }
   if ( partitionInfoPerFrame.getTitleFrameContext().getUseRawPointsSeparateVideo() ) {
-    aftiLocal.setAuxiliaryVideoTileRowWidthMinus1( context[frameIndex].getAuxVideoWidth() / 64 - 1 );
+    afti.setAuxiliaryVideoTileRowWidthMinus1( context[frameIndex].getAuxVideoWidth() / 64 - 1 );
     for ( size_t ti = 0; ti < partitionInfoPerFrame.getNumTilesInAtlasFrame(); ti++ ) {
-      aftiLocal.setAuxiliaryVideoTileRowHeight( ti, context[frameIndex].getAuxTileHeight( ti ) / 64 );
+      afti.setAuxiliaryVideoTileRowHeight( ti, context[frameIndex].getAuxTileHeight( ti ) / 64 );
     }
 #if 1
     printf( "enc:%zu frame auxiliaryVideoTileRowWidthMinus1(): width(64x)%u\t height: ", frameIndex,
-            aftiLocal.getAuxiliaryVideoTileRowWidthMinus1() );
+            afti.getAuxiliaryVideoTileRowWidthMinus1() );
     for ( size_t ti = 0; ti < partitionInfoPerFrame.getNumTilesInAtlasFrame(); ti++ )
-      printf( "%u\t", aftiLocal.getAuxiliaryVideoTileRowHeight( ti ) );
+      printf( "%u\t", afti.getAuxiliaryVideoTileRowHeight( ti ) );
     printf( "\n" );
 #endif
   } else {
-    aftiLocal.setAuxiliaryVideoTileRowWidthMinus1( 0 );
+    afti.setAuxiliaryVideoTileRowWidthMinus1( 0 );
     for ( size_t ti = 0; ti < partitionInfoPerFrame.getNumTilesInAtlasFrame(); ti++ ) {
-      aftiLocal.setAuxiliaryVideoTileRowHeight( ti, 0 );
+      afti.setAuxiliaryVideoTileRowHeight( ti, 0 );
     }
   }
   context[frameIndex].initNumTiles( context[frameIndex].getNumTilesInAtlasFrame() );
@@ -2973,24 +2901,22 @@ void PCCCodec::tileBlockToPatchByteString( std::vector<uint8_t>&                
   }
 }
 
-void PCCCodec::inverseRotatePosition45DegreeOnAxis( size_t Axis, size_t lod, PCCPoint3D input, PCCVector3D& output ) {
+void PCCCodec::inverseRotatePosition45DegreeOnAxis( size_t axis, size_t lod, PCCPoint3D input, PCCVector3D& output ) {
   size_t s   = ( 1u << ( lod - 1 ) ) - 1;
-  output.x() = input.x();
-  output.y() = input.y();
-  output.z() = input.z();
-  if ( Axis == 1 ) {  // projection plane is defined by Y Axis.
+  output = input; 
+  if ( axis == 1 ) {  // projection plane is defined by Y Axis.
     output.x() = input.x() - input.z() + s;
     output.x() /= 2.0;
     output.z() = input.x() + input.z() - s;
     output.z() /= 2.0;
   }
-  if ( Axis == 2 ) {  // projection plane is defined by X Axis.
+  if ( axis == 2 ) {  // projection plane is defined by X Axis.
     output.z() = input.z() - input.y() + s;
     output.z() /= 2.0;
     output.y() = input.z() + input.y() - s;
     output.y() /= 2.0;
   }
-  if ( Axis == 3 ) {  // projection plane is defined by Z Axis.
+  if ( axis == 3 ) {  // projection plane is defined by Z Axis.
     output.y() = input.y() - input.x() + s;
     output.y() /= 2.0;
     output.x() = input.y() + input.x() - s;

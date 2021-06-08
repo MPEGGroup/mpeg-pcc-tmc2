@@ -72,8 +72,8 @@ class PCCVector3 {
       ( *this ) *= invNorm;
     }
   }
-  T           getNorm() const { return static_cast<T>( sqrt( getNorm2() ) ); }
-  T           getNorm2() const { return data_[0] * data_[0] + data_[1] * data_[1] + data_[2] * data_[2]; }
+  T getNorm() const { return static_cast<T>( sqrt( getNorm2() ) ); }
+  T getNorm2() const { return data_[0] * data_[0] + data_[1] * data_[1] + data_[2] * data_[2]; }
 
   template <typename OutT>
   PCCVector3& operator=( const PCCVector3<OutT>& rhs ) {
@@ -209,7 +209,13 @@ class PCCVector3 {
     data_[1] = vec.data_[1];
     data_[2] = vec.data_[2];
   }
-  PCCVector3( const T* vec ) { memcpy( data_, vec, sizeof( data_ ) ); }
+  PCCVector3( const T* vec ) { memcpy( data_, vec, sizeof( data_ ) ); }  
+  template <typename OutT>
+  PCCVector3( const PCCVector3<OutT>& vec ) {
+    data_[0] = (T)vec[0];
+    data_[1] = (T)vec[1];
+    data_[2] = (T)vec[2];
+  }
   PCCVector3()        = default;
   ~PCCVector3( void ) = default;
 

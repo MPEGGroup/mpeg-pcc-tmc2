@@ -431,8 +431,7 @@ int PCCPatch::calculateWastedSpace( std::vector<int>& horizon,
     for ( int idx = 0; idx < sizeU0_; idx++ ) {
       wasted_space_external += v0_ + bottomHorizon[idx] - horizon[u0_ + idx];
       // calculating internal wasted space --> because of new block2patch
-      // restriction, this area only contains
-      // locations for the local patch
+      // restriction, this area only contains locations for the local patch
       for ( int idx2 = bottomHorizon[idx] + 1; idx2 < sizeV0_ - topHorizon[idx]; idx2++ ) {
         if ( !occupancy_[idx2 * sizeU0_ + idx] ) wasted_space_internal++;
       }
@@ -693,7 +692,6 @@ bool PCCPatch::checkFitPatchCanvasForGPA( std::vector<bool> canvas,
 void PCCPatch::allocOneLayerData() {
   pointLocalReconstructionLevel_       = 0;
   pointLocalReconstructionModeByPatch_ = 0;
-  // printf( "sizeU0_ =%d,  sizeV0_ = %d\n", sizeU0_ , sizeV0_ );
   pointLocalReconstructionModeByBlock_.resize( sizeU0_ * sizeV0_, 0 );
   std::fill( pointLocalReconstructionModeByBlock_.begin(), pointLocalReconstructionModeByBlock_.end(), 0 );
 }
@@ -817,7 +815,6 @@ void PCCPatch::setLocalData( const std::vector<uint8_t>&  occupancyMapVideo,
                                                                : 3;
   uint8_t*      ocm                = occupancyMap_.data() + border_ + depthMapWidth_ * border_;
   int16_t*      depth              = depthMap_.data() + border_ + depthMapWidth_ * border_;
-
   for ( int32_t v0 = 0; v0 < sizeV0_; ++v0 ) {
     for ( int32_t u0 = 0; u0 < sizeU0_; ++u0 ) {
       const int32_t blockIndex = patchBlock2CanvasBlock( u0, v0, blockToPatchWidth, blockToPatchHeight );
@@ -938,20 +935,6 @@ void PCCPatch::filtering( const int8_t           passesCount,
     }
   }
   if ( passesCount % 2 == 1 ) { memcpy( occupancyMap_.data(), newOccupancyMap.data(), size * sizeof( uint8_t ) ); }
-  //   int8_t diffMap;
-  //   uint32_t countM1 = 0;
-  //   uint32_t count0 = 0;
-  //   uint32_t countP1 = 0;
-  //   uint32_t sumOMap = 0;
-  //   uint32_t sumNewOMap = 0;
-  // for ( size_t k = 0; k < size; k++ ) {
-  //	diffMap = occupancyMap_[k] - newOccupancyMap[k];
-  //         if ( diffMap == -1 ) countM1++;
-  //         if ( diffMap == 0 ) count0++;
-  //         if ( diffMap == 1 ) countP1++;
-  //         sumOMap += occupancyMap_[k];
-  //         sumNewOMap += newOccupancyMap[k];
-  //}
 }
 
 void PatchBlockFiltering::patchBorderFiltering( size_t imageWidth,

@@ -35,7 +35,6 @@
 #define PCCVideo_h
 
 #include <string>
-
 #include "PCCImage.h"
 
 namespace pcc {

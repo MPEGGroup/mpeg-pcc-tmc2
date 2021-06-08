@@ -227,8 +227,7 @@ void PCCHMLibVideoDecoderImpl<T>::xWriteOutput( pcc_hm::TComList<pcc_hm::TComPic
         xWritePicture( pcPicTop->getPicYuvRec(), video );
         // update POC of display order
         m_iPOCLastDisplay = pcPicBottom->getPOC();
-        // erase non-referenced picture in the reference picture list after
-        // display
+        // erase non-referenced picture in the reference picture list after display
         if ( !pcPicTop->getSlice( 0 )->isReferenced() && pcPicTop->getReconMark() == true ) {
           pcPicTop->setReconMark( false );
           // mark it should be extended later

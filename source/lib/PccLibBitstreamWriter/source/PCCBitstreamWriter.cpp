@@ -787,10 +787,11 @@ void PCCBitstreamWriter::atlasFrameTileInformation( AtlasFrameTileInformation&  
     bitstream.write( afti.getUniformPartitionSpacingFlag(), 1 );  // u(1)
     TRACE_BITSTREAM( "afti: uniformPartition :%zu !singleTile\n", afti.getUniformPartitionSpacingFlag() );
     if ( afti.getUniformPartitionSpacingFlag() ) {
-      bitstream.writeUvlc( afti.getPartitionColsWidthMinus1() );  //  ue(v)
-      bitstream.writeUvlc( afti.getPartitionRowsHeightMinus1() );     //  ue(v)
-      TRACE_BITSTREAM( "afti: aspsWidth :%zu, partitionWidth: %zu, Number of Partitions Hor: %zu\n", asps.getFrameWidth(),
-                       afti.getPartitionColumnWidthMinus1( 0 ) + 1, afti.getNumPartitionColumnsMinus1() + 1 );
+      bitstream.writeUvlc( afti.getPartitionColumnWidthMinus1( 0 ) );  //  ue(v)
+      bitstream.writeUvlc( afti.getPartitionRowHeightMinus1( 0 ) );    //  ue(v)
+      TRACE_BITSTREAM( "afti: aspsWidth :%zu, partitionWidth: %zu, Number of Partitions Hor: %zu\n",
+                       asps.getFrameWidth(), afti.getPartitionColumnWidthMinus1( 0 ) + 1,
+                       afti.getNumPartitionColumnsMinus1() + 1 );
       TRACE_BITSTREAM( "afti: aspsHeight :%zu, partitionHeight: %zu, Number of Partitions Ver: %zu\n",
                        asps.getFrameHeight(), afti.getPartitionRowHeightMinus1( 0 ) + 1,
                        afti.getNumPartitionRowsMinus1() + 1 );

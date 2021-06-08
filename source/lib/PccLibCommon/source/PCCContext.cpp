@@ -72,28 +72,25 @@ size_t PCCContext::calculateAFOCval( std::vector<AtlasTileLayerRbsp>& atglList, 
     atglList[atglOrder].setAtlasFrmOrderCntVal( atglList[atglOrder].getHeader().getAtlasFrmOrderCntLsb() );
     return atglList[atglOrder].getHeader().getAtlasFrmOrderCntLsb();
   }
-
   size_t prevAtlasFrmOrderCntMsb = atglList[atglOrder - 1].getAtlasFrmOrderCntMsb();
   size_t atlasFrmOrderCntMsb     = 0;
   auto&  atgh                    = atglList[atglOrder].getHeader();
   auto&  afps                    = getAtlasFrameParameterSet( atgh.getAtlasFrameParameterSetId() );
   auto&  asps                    = getAtlasSequenceParameterSet( afps.getAtlasSequenceParameterSetId() );
-
   size_t maxAtlasFrmOrderCntLsb  = size_t( 1 ) << ( asps.getLog2MaxAtlasFrameOrderCntLsbMinus4() + 4 );
   size_t afocLsb                 = atgh.getAtlasFrmOrderCntLsb();
   size_t prevAtlasFrmOrderCntLsb = atglList[atglOrder - 1].getHeader().getAtlasFrmOrderCntLsb();
   if ( ( afocLsb < prevAtlasFrmOrderCntLsb ) &&
-       ( ( prevAtlasFrmOrderCntLsb - afocLsb ) >= ( maxAtlasFrmOrderCntLsb / 2 ) ) )
+       ( ( prevAtlasFrmOrderCntLsb - afocLsb ) >= ( maxAtlasFrmOrderCntLsb / 2 ) ) ) {
     atlasFrmOrderCntMsb = prevAtlasFrmOrderCntMsb + maxAtlasFrmOrderCntLsb;
-  else if ( ( afocLsb > prevAtlasFrmOrderCntLsb ) &&
-            ( ( afocLsb - prevAtlasFrmOrderCntLsb ) > ( maxAtlasFrmOrderCntLsb / 2 ) ) )
+  } else if ( ( afocLsb > prevAtlasFrmOrderCntLsb ) &&
+              ( ( afocLsb - prevAtlasFrmOrderCntLsb ) > ( maxAtlasFrmOrderCntLsb / 2 ) ) ) {
     atlasFrmOrderCntMsb = prevAtlasFrmOrderCntMsb - maxAtlasFrmOrderCntLsb;
-  else
+  } else {
     atlasFrmOrderCntMsb = prevAtlasFrmOrderCntMsb;
-
+  }
   atglList[atglOrder].setAtlasFrmOrderCntMsb( atlasFrmOrderCntMsb );
   atglList[atglOrder].setAtlasFrmOrderCntVal( atlasFrmOrderCntMsb + afocLsb );
-
   return atlasFrmOrderCntMsb + afocLsb;
 }
 
@@ -105,8 +102,9 @@ void PCCAtlasContext::allocOneLayerData() {
 
 void PCCAtlasContext::printBlockToPatch( const size_t occupancyResolution ) {
   for ( auto& frameContext : frameContexts_ ) {
-    for ( size_t ti = 0; ti < frameContext.getNumTilesInAtlasFrame(); ti++ )
+    for ( size_t ti = 0; ti < frameContext.getNumTilesInAtlasFrame(); ti++ ) {
       frameContext[ti].printBlockToPatch( occupancyResolution );
+    }
   }
 }
 
@@ -183,7 +181,6 @@ void PCCAtlasContext::clearVideoFrames() {
   occBitdepth_.clear();
   occWidth_.clear();
   occHeight_.clear();
-
   // clearing structures for geometry
   for ( size_t mapIdx = 0; mapIdx < geoFrames_.size(); mapIdx++ ) {
     geoFrames_[mapIdx].clear();

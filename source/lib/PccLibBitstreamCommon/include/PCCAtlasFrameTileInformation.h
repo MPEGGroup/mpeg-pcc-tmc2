@@ -69,39 +69,38 @@ class AtlasFrameTileInformation {
 
   AtlasFrameTileInformation& operator=( const AtlasFrameTileInformation& ) = default;
   bool                       operator==( const AtlasFrameTileInformation& other ) const {
-    if ( singleTileInAtlasFrameFlag_ != other.singleTileInAtlasFrameFlag_ )
+    if ( singleTileInAtlasFrameFlag_ != other.singleTileInAtlasFrameFlag_ ) {
       return false;
-    else if ( !singleTileInAtlasFrameFlag_ ) {
-      if ( uniformPartitionSpacingFlag_ != other.uniformPartitionSpacingFlag_ ) return false;
+    } else if ( !singleTileInAtlasFrameFlag_ ) {
+      if ( uniformPartitionSpacingFlag_ != other.uniformPartitionSpacingFlag_ ) { return false; }
       if ( uniformPartitionSpacingFlag_ ) {
-        if ( partitionColumnWidthMinus1_[0] != other.partitionColumnWidthMinus1_[0] ) return false;
-        if ( partitionRowHeightMinus1_[0] != other.partitionRowHeightMinus1_[0] ) return false;
+        if ( partitionColumnWidthMinus1_[0] != other.partitionColumnWidthMinus1_[0] ) { return false; }
+        if ( partitionRowHeightMinus1_[0] != other.partitionRowHeightMinus1_[0] ) { return false; }
       } else {
-        if ( numPartitionColumnsMinus1_ != other.numPartitionColumnsMinus1_ ) return false;
-        if ( numPartitionRowsMinus1_ != other.numPartitionRowsMinus1_ ) return false;
+        if ( numPartitionColumnsMinus1_ != other.numPartitionColumnsMinus1_ ) { return false; }
+        if ( numPartitionRowsMinus1_ != other.numPartitionRowsMinus1_ ) { return false; }
 
         for ( size_t i = 0; i <= numPartitionColumnsMinus1_; i++ ) {
-          if ( partitionColumnWidthMinus1_[i] != other.partitionColumnWidthMinus1_[i] ) return false;
+          if ( partitionColumnWidthMinus1_[i] != other.partitionColumnWidthMinus1_[i] ) { return false; }
         }
         for ( size_t i = 0; i <= numPartitionRowsMinus1_; i++ ) {
-          if ( partitionRowHeightMinus1_[i] != other.partitionRowHeightMinus1_[i] ) return false;
+          if ( partitionRowHeightMinus1_[i] != other.partitionRowHeightMinus1_[i] ) { return false; }
         }
       }
-      if ( singlePartitionPerTileFlag_ != other.singlePartitionPerTileFlag_ ) return false;
-      if ( numTilesInAtlasFrameMinus1_ != other.numTilesInAtlasFrameMinus1_ ) return false;
+      if ( singlePartitionPerTileFlag_ != other.singlePartitionPerTileFlag_ ) { return false; }
+      if ( numTilesInAtlasFrameMinus1_ != other.numTilesInAtlasFrameMinus1_ ) { return false; }
       if ( !singleTileInAtlasFrameFlag_ ) {
         for ( uint32_t i = 0; i < numTilesInAtlasFrameMinus1_ + 1; i++ ) {
-          if ( topLeftPartitionIdx_[i] != other.topLeftPartitionIdx_[i] ) return false;
-          if ( bottomRightPartitionColumnOffset_[i] != other.bottomRightPartitionColumnOffset_[i] ) return false;
-          if ( bottomRightPartitionRowOffset_[i] != other.bottomRightPartitionRowOffset_[i] ) return false;
+          if ( topLeftPartitionIdx_[i] != other.topLeftPartitionIdx_[i] ) { return false; }
+          if ( bottomRightPartitionColumnOffset_[i] != other.bottomRightPartitionColumnOffset_[i] ) { return false; }
+          if ( bottomRightPartitionRowOffset_[i] != other.bottomRightPartitionRowOffset_[i] ) { return false; }
         }
       }
-
-      if ( auxiliaryVideoTileRowHeight_.size() != other.auxiliaryVideoTileRowHeight_.size() ) return false;
+      if ( auxiliaryVideoTileRowHeight_.size() != other.auxiliaryVideoTileRowHeight_.size() ) { return false; }
       if ( auxiliaryVideoTileRowHeight_.size() != 0 ) {
-        if ( auxiliaryVideoTileRowWidthMinus1_ != other.auxiliaryVideoTileRowWidthMinus1_ ) return false;
+        if ( auxiliaryVideoTileRowWidthMinus1_ != other.auxiliaryVideoTileRowWidthMinus1_ ) { return false; }
         for ( size_t ti = 0; ti < ( numTilesInAtlasFrameMinus1_ + 1 ); ti++ ) {
-          if ( auxiliaryVideoTileRowHeight_[ti] != other.auxiliaryVideoTileRowHeight_[ti] ) return false;
+          if ( auxiliaryVideoTileRowHeight_[ti] != other.auxiliaryVideoTileRowHeight_[ti] ) { return false; }
         }
       }
     }
@@ -115,10 +114,6 @@ class AtlasFrameTileInformation {
   uint32_t getNumTilesInAtlasFrameMinus1() { return numTilesInAtlasFrameMinus1_; }
   bool     getSignalledTileIdFlag() { return signalledTileIdFlag_; }
   uint32_t getSignalledTileIdLengthMinus1() { return signalledTileIdLengthMinus1_; }
-  uint32_t getPartitionColsWidthMinus1() { return partitionColumnWidthMinus1_[0]; }
-  uint32_t getPartitionRowsHeightMinus1() { return partitionRowHeightMinus1_[0]; }
-  std::vector<uint32_t>& getPartitionColumnWidthMinus1() { return partitionColumnWidthMinus1_; }
-  std::vector<uint32_t>& getPartitionRowHeightMinus1()   { return partitionRowHeightMinus1_; }
   uint32_t getPartitionColumnWidthMinus1( size_t index ) { return partitionColumnWidthMinus1_[index]; }
   uint32_t getPartitionRowHeightMinus1( size_t index ) { return partitionRowHeightMinus1_[index]; }
   uint32_t getTopLeftPartitionIdx( size_t index ) { return topLeftPartitionIdx_[index]; }
@@ -132,19 +127,24 @@ class AtlasFrameTileInformation {
 
   void setSingleTileInAtlasFrameFlag( bool value ) { singleTileInAtlasFrameFlag_ = value; }
   void setUniformPartitionSpacingFlag( bool value ) { uniformPartitionSpacingFlag_ = value; }
-  void setNumPartitionColumnsMinus1( uint32_t value ) { numPartitionColumnsMinus1_ = value; partitionColumnWidthMinus1_.resize(std::max((uint32_t)1, value)); }
-  void setNumPartitionRowsMinus1( uint32_t value ) { numPartitionRowsMinus1_ = value; partitionRowHeightMinus1_.resize(std::max((uint32_t)1, value)); }
+  void setNumPartitionColumnsMinus1( uint32_t value ) {
+    numPartitionColumnsMinus1_ = value;
+    partitionColumnWidthMinus1_.resize( std::max( (uint32_t)1, value ) );
+  }
+  void setNumPartitionRowsMinus1( uint32_t value ) {
+    numPartitionRowsMinus1_ = value;
+    partitionRowHeightMinus1_.resize( std::max( (uint32_t)1, value ) );
+  }
   void setSinglePartitionPerTileFlag( uint32_t value ) { singlePartitionPerTileFlag_ = value; }
   void setNumTilesInAtlasFrameMinus1( uint32_t value ) { numTilesInAtlasFrameMinus1_ = value; }
   void setSignalledTileIdFlag( bool value ) { signalledTileIdFlag_ = value; }
   void setSignalledTileIdLengthMinus1( uint32_t value ) { signalledTileIdLengthMinus1_ = value; }
-  void setPartitionColsWidthMinus1( uint32_t value ) { partitionColumnWidthMinus1_[0] = value; }
-  void setPartitionRowsHeightMinus1( uint32_t value ) { partitionRowHeightMinus1_[0] = value; }
   void setPartitionColumnWidthMinus1( size_t index, uint32_t value ) {
-    if ( index == ( partitionColumnWidthMinus1_.size() ) )
+    if ( index == ( partitionColumnWidthMinus1_.size() ) ) {
       partitionColumnWidthMinus1_.resize( partitionColumnWidthMinus1_.size() + 1 );
-    else if ( index > partitionColumnWidthMinus1_.size() )
+    } else if ( index > partitionColumnWidthMinus1_.size() ) {
       assert( 0 );
+    }
     partitionColumnWidthMinus1_[index] = value;
   }
   void setPartitionRowHeightMinus1( size_t index, uint32_t value ) {
