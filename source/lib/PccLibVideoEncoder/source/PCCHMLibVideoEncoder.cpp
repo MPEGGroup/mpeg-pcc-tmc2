@@ -84,7 +84,7 @@ void PCCHMLibVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
   }
 #endif
 #if defined( PCC_RDO_EXT ) && PCC_RDO_EXT
-  if ( params.usePccRDO_ ) {
+  if ( params.usePccRDO_ && !params.inputColourSpaceConvert_) {
     cmd << " --UsePccRDO=1";
     cmd << " --OccupancyMapFile=" << params.occupancyMapFile_;
   }

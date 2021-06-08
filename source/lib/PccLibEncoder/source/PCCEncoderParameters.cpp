@@ -686,11 +686,6 @@ bool PCCEncoderParameters::check() {
     absoluteT1_ = 1;
   }
   if ( rawPointsPatch_ ) {
-    // if ( usePccRDO_ ) {  // Note: disabling RDO optimization for lossless configurations
-    //   usePccRDO_ = false;
-    //   std::cerr << "WARNING: usePccRDO_ is only for lossy "
-    //                "coding mode for now. Force usePccRDO_=FALSE.\n";
-    // }
     if ( pbfEnableFlag_ ) {
       pbfEnableFlag_ = false;
       std::cerr << "WARNING: pbfEnableFlag_ is only for lossy "
