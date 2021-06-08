@@ -82,9 +82,7 @@ bool PCCVideoEncoder::compress( PCCVideo<T, 3>&    video,
   const size_t      width                = frames[0].getWidth();
   const size_t      height               = frames[0].getHeight();
   const size_t      depth                = nbyte == 1 ? 8 : 10;
-  const size_t      frameCount           = video.getFrameCount();
   const std::string type                 = bitstream.getExtension();
-  const std::string format               = use444CodecIo ? "444" : "420";
   const std::string fileName             = path + type;
   const std::string binFileName          = fileName + ".bin";
   const std::string blockToPatchFileName = path + "blockToPatch.txt";
@@ -118,9 +116,7 @@ bool PCCVideoEncoder::compress( PCCVideo<T, 3>&    video,
   if ( yuvVideo ) {
     if ( !use444CodecIo ) {
       printf( "Encoder convert : write420 without conversion: %s \n", srcYuvFileName.c_str() );
-      if ( video.getColorFormat() == PCCCOLORFORMAT::YUV444 ) {         
-        video.convertYUV444ToYUV420();
-      }
+      if ( video.getColorFormat() == PCCCOLORFORMAT::YUV444 ) { video.convertYUV444ToYUV420(); }
     }
   } else {
     if ( keepIntermediateFiles ) { video.write( srcRgbFileName, nbyte ); }
@@ -140,8 +136,8 @@ bool PCCVideoEncoder::compress( PCCVideo<T, 3>&    video,
 
         // iterate the patch information and perform chroma down-sampling on
         // each patch individually
-        std::vector<PCCPatch> patches      = context.getTitleFrameContext().getPatches();
-        std::vector<size_t>   blockToPatch = context.getTitleFrameContext().getBlockToPatch();
+        std::vector<PCCPatch>& patches      = context.getTitleFrameContext().getPatches();
+        std::vector<size_t>&   blockToPatch = context.getTitleFrameContext().getBlockToPatch();
         for ( int patchIdx = 0; patchIdx <= patches.size(); patchIdx++ ) {
           size_t occupancyResolution;
           size_t patch_left;
@@ -177,40 +173,32 @@ bool PCCVideoEncoder::compress( PCCVideo<T, 3>&    video,
           // fill in the blocks by extending the edges
           for ( size_t i = 0; i < patch_height / occupancyResolution; i++ ) {
             for ( size_t j = 0; j < patch_width / occupancyResolution; j++ ) {
-              if ( context.getTitleFrameContext()
-                       .getBlockToPatch()[( i + patch_top / occupancyResolution ) * ( width / occupancyResolution ) +
-                                          j + patch_left / occupancyResolution] == patchIdx ) {
+              if ( blockToPatch[( i + patch_top / occupancyResolution ) * ( width / occupancyResolution ) + j +
+                                patch_left / occupancyResolution] == patchIdx ) {
                 // do nothing
                 continue;
               } else {
-                // search for the block that contains attribute information and
-                // extend the block edge
+                // search for the block that contains attribute information and extend the block edge
                 int              direction;
                 int              searchIndex;
                 std::vector<int> neighborIdx( 4, -1 );
                 std::vector<int> neighborDistance( 4, (std::numeric_limits<int>::max)() );
-                // looking for the neighboring block to the left of the
-                // current block
+                // looking for the neighboring block to the left of the current block
                 searchIndex = (int)j;
                 while ( searchIndex >= 0 ) {
-                  if ( context.getTitleFrameContext()
-                           .getBlockToPatch()[( i + patch_top / occupancyResolution ) *
-                                                  ( width / occupancyResolution ) +
-                                              searchIndex + patch_left / occupancyResolution] == patchIdx ) {
+                  if ( blockToPatch[( i + patch_top / occupancyResolution ) * ( width / occupancyResolution ) +
+                                    searchIndex + patch_left / occupancyResolution] == patchIdx ) {
                     neighborIdx[0]      = searchIndex;
                     neighborDistance[0] = (int)j - searchIndex;
                     searchIndex         = 0;
                   }
                   searchIndex--;
                 }
-                // looking for the neighboring block to the right of the
-                // current block
+                // looking for the neighboring block to the right of the current block
                 searchIndex = (int)j;
                 while ( searchIndex < patch_width / occupancyResolution ) {
-                  if ( context.getTitleFrameContext()
-                           .getBlockToPatch()[( i + patch_top / occupancyResolution ) *
-                                                  ( width / occupancyResolution ) +
-                                              searchIndex + patch_left / occupancyResolution] == patchIdx ) {
+                  if ( blockToPatch[( i + patch_top / occupancyResolution ) * ( width / occupancyResolution ) +
+                                    searchIndex + patch_left / occupancyResolution] == patchIdx ) {
                     neighborIdx[1]      = searchIndex;
                     neighborDistance[1] = searchIndex - (int)j;
                     searchIndex         = (int)patch_width / occupancyResolution;
@@ -220,10 +208,9 @@ bool PCCVideoEncoder::compress( PCCVideo<T, 3>&    video,
                 // looking for the neighboring block above the current block
                 searchIndex = (int)i;
                 while ( searchIndex >= 0 ) {
-                  if ( context.getTitleFrameContext()
-                           .getBlockToPatch()[( searchIndex + patch_top / occupancyResolution ) *
-                                                  ( width / occupancyResolution ) +
-                                              j + patch_left / occupancyResolution] == patchIdx ) {
+                  if ( blockToPatch[( searchIndex + patch_top / occupancyResolution ) *
+                                        ( width / occupancyResolution ) +
+                                    j + patch_left / occupancyResolution] == patchIdx ) {
                     neighborIdx[2]      = searchIndex;
                     neighborDistance[2] = (int)i - searchIndex;
                     searchIndex         = 0;
@@ -233,10 +220,9 @@ bool PCCVideoEncoder::compress( PCCVideo<T, 3>&    video,
                 // looking for the neighboring block below the current block
                 searchIndex = (int)i;
                 while ( searchIndex < patch_height / occupancyResolution ) {
-                  if ( context.getTitleFrameContext()
-                           .getBlockToPatch()[( searchIndex + patch_top / occupancyResolution ) *
-                                                  ( width / occupancyResolution ) +
-                                              j + patch_left / occupancyResolution] == patchIdx ) {
+                  if ( blockToPatch[( searchIndex + patch_top / occupancyResolution ) *
+                                        ( width / occupancyResolution ) +
+                                    j + patch_left / occupancyResolution] == patchIdx ) {
                     neighborIdx[3]      = searchIndex;
                     neighborDistance[3] = searchIndex - (int)i;
                     searchIndex         = (int)patch_height / occupancyResolution;
@@ -245,8 +231,7 @@ bool PCCVideoEncoder::compress( PCCVideo<T, 3>&    video,
                 }
                 // check if the candidate was found
                 assert( *(std::max)( neighborIdx.begin(), neighborIdx.end() ) > 0 );
-                // now fill in the block with the edge value coming from the
-                // nearest neighbor
+                // now fill in the block with the edge value coming from the nearest neighbor
                 direction =
                     std::min_element( neighborDistance.begin(), neighborDistance.end() ) - neighborDistance.begin();
                 if ( direction == 0 ) {
@@ -323,9 +308,6 @@ bool PCCVideoEncoder::compress( PCCVideo<T, 3>&    video,
             }
           }
           // perform downsampling
-          // const std::string rgbFileNameTmp = addVideoFormat( fileName + "_tmp.rgb", patch_width, patch_height );
-          // const std::string yuvFileNameTmp = addVideoFormat( fileName + "_tmp.yuv", patch_width, patch_height, true
-          // );
           PCCVideo<T, 3> tmpVideo;
           tmpVideo.resize( 1 );
           tmpVideo[0] = tmpImage;
@@ -333,10 +315,8 @@ bool PCCVideoEncoder::compress( PCCVideo<T, 3>&    video,
           // substitute the pixels in the output image for compression
           for ( size_t i = 0; i < patch_height; i++ ) {
             for ( size_t j = 0; j < patch_width; j++ ) {
-              if ( context.getTitleFrameContext().getBlockToPatch()[( ( i + patch_top ) / occupancyResolution ) *
-                                                                        ( width / occupancyResolution ) +
-                                                                    ( j + patch_left ) / occupancyResolution] ==
-                   patchIdx ) {
+              if ( blockToPatch[( ( i + patch_top ) / occupancyResolution ) * ( width / occupancyResolution ) +
+                                ( j + patch_left ) / occupancyResolution] == patchIdx ) {
                 // do nothing
                 for ( size_t cc = 0; cc < 3; cc++ ) {
                   destImage.setValue( cc, j + patch_left, i + patch_top, tmpImage.getValue( cc, j, i ) );
@@ -353,7 +333,7 @@ bool PCCVideoEncoder::compress( PCCVideo<T, 3>&    video,
       converter->convert( configColorSpace, video, colorSpaceConversionPath, fileName + "_rec" );
     }
   }
-  
+
   if ( keepIntermediateFiles ) { video.write( srcYuvFileName, nbyte ); }
 
   // Encode video

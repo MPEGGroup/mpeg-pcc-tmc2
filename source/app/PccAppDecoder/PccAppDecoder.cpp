@@ -284,7 +284,6 @@ int decompressVideo( const PCCDecoderParameters&     decoderParams,
 #if defined( BITSTREAM_TRACE ) || defined( CONFORMANCE_TRACE)
   bitstream.setLogger( logger );
   bitstream.setTrace( true );
-  size_t index = 0;
 #endif
   if ( !bitstream.initialize( decoderParams.compressedStreamPath_ ) ) { return -1; }
   bitstream.computeMD5();
@@ -296,8 +295,6 @@ int decompressVideo( const PCCDecoderParameters&     decoderParams,
   PCCConformance conformance;
   metrics.setParameters( metricsParams );
   checksum.setParameters( metricsParams );
-  std::vector<std::vector<uint8_t>> checksumsRec;
-  std::vector<std::vector<uint8_t>> checksumsDec;
   if ( metricsParams.computeChecksum_ ) { checksum.read( decoderParams.compressedStreamPath_ ); }
   PCCDecoder decoder;
   decoder.setLogger( logger );

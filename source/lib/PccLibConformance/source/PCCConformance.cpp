@@ -48,7 +48,6 @@ PCCConformance::~PCCConformance() {}
 
 void PCCConformance::check( const PCCConformanceParameters& params ) {
   PCCErrorMessage errMsg;
-  bool            atlasFlag;
   double          aR = 1. / (double)params.fps_;
   KeyValMaps      key_val_decA, key_val_decB;
   logFilesCount_      = 0;
@@ -153,7 +152,6 @@ void PCCConformance::check( const PCCConformanceParameters& params ) {
   cout << "\n File Check Tests (matched / total): " << logFilesMatchCount_ << " / " << logFilesCount_ << std::endl;
   cout << "\n Level Limits Tests ( passed / total): " << (levelLimitsCount_ - levelLimitsExceedCount_) << " / "
        << levelLimitsCount_ << std::endl;
-
 }
 
 bool PCCConformance::compareLogFiles( std::string&                    fNameEnc,

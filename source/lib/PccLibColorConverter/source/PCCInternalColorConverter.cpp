@@ -352,7 +352,7 @@ void PCCInternalColorConverter<T>::convert( std::string        configuration,
   int32_t     bitdepth = -1;
   int32_t     filter   = -1;
   extractParameters( configuration, config, bitdepth, filter );
-  if ( config.empty() || bitdepth == -1 || bitdepth == -1 ) {
+  if ( config.empty() || bitdepth == -1 ) {
     printf( "ColorConverter configuration is not correct ( %s %d %d ) \n", config.c_str(), bitdepth, filter );
     exit( -1 );
   }
@@ -508,14 +508,12 @@ void PCCInternalColorConverter<T>::convertYUV420ToRGB444( PCCImage<T, 3>& imageS
   size_t             widthChroma  = width / 2;
   size_t             heightChroma = height / 2;
   std::vector<float> YUV444[3], YUV420[3], RGB444[3];
-
   YUVtoFloatYUV( imageSrc[0], YUV420[0], 0, nbyte );
   YUVtoFloatYUV( imageSrc[1], YUV420[1], 1, nbyte );
   YUVtoFloatYUV( imageSrc[2], YUV420[2], 1, nbyte );
   upsampling( YUV420[1], YUV444[1], widthChroma, heightChroma, nbyte == 1 ? 255 : 1023, filter );
   upsampling( YUV420[2], YUV444[2], widthChroma, heightChroma, nbyte == 1 ? 255 : 1023, filter );
   convertYUVToRGB( YUV420[0], YUV444[1], YUV444[2], RGB444[0], RGB444[1], RGB444[2] );
-
   floatRGBToRGB( RGB444[0], imageDst[0], nbyte );
   floatRGBToRGB( RGB444[1], imageDst[1], nbyte );
   floatRGBToRGB( RGB444[2], imageDst[2], nbyte );
@@ -542,15 +540,11 @@ void PCCInternalColorConverter<T>::convertYUV444ToRGB444( PCCImage<T, 3>& imageS
   int width  = (int)imageSrc.getWidth();
   int height = (int)imageSrc.getHeight();
   imageDst.resize( width, height, pcc::PCCCOLORFORMAT::RGB444 );
-  size_t             widthChroma  = width;
-  size_t             heightChroma = height;
   std::vector<float> YUV444[3], RGB444[3];
-
   YUVtoFloatYUV( imageSrc[0], YUV444[0], 0, nbyte );
   YUVtoFloatYUV( imageSrc[1], YUV444[1], 1, nbyte );
   YUVtoFloatYUV( imageSrc[2], YUV444[2], 1, nbyte );
   convertYUVToRGB( YUV444[0], YUV444[1], YUV444[2], RGB444[0], RGB444[1], RGB444[2] );
-
   floatRGBToRGB( RGB444[0], imageDst[0], nbyte );
   floatRGBToRGB( RGB444[1], imageDst[1], nbyte );
   floatRGBToRGB( RGB444[2], imageDst[2], nbyte );
@@ -591,8 +585,6 @@ void PCCInternalColorConverter<T>::floatYUVToYUV( const std::vector<float>& src,
                                                   const size_t              nbyte ) const {
   size_t count = src.size();
   dst.resize( count );
-  // double offset = chroma ? nbyte == 1 ? 128. : 512. : 0;
-  // double scale  = nbyte == 1 ? 255. : 1023.;
   double offset = chroma ? nbyte == 1 ? 128. : 32768. : 0;
   double scale  = nbyte == 1 ? 255. : 65535.;
   for ( size_t i = 0; i < count; i++ ) {

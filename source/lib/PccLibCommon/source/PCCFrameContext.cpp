@@ -97,12 +97,11 @@ void PCCFrameContext::setRefAfocList( PCCContext& context, AtlasTileHeader& ath,
   }
 }
 
-void PCCFrameContext::setRefAfocList( PCCContext& context, size_t refListIdx ) {
-  int    refPOC    = 0;
+void PCCFrameContext::setRefAfocList( PCCContext& context, size_t refListIdx ) {      
   size_t maxRefNum = context.getSizeOfRefAtlasFrameList( refListIdx );
   refAFOCList_.clear();
   for ( size_t j = 0; j < maxRefNum; j++ ) {
-    refPOC = int( frameIndex_ ) - int( context.getRefAtlasFrame( refListIdx, j ) );
+    int refPOC = int( frameIndex_ ) - int( context.getRefAtlasFrame( refListIdx, j ) );
     if ( refPOC >= 0 ) { refAFOCList_.push_back( refPOC ); }
   }
 }
@@ -124,7 +123,7 @@ void PCCFrameContext::constructAtghRefListStruct( PCCContext& context, AtlasTile
         afocDiff = getRefAfoc( i - 1 ) - getRefAfoc( i );
       }
       refList.setAbsDeltaAfocSt( i, std::abs( afocDiff ) );
-      refList.setStrafEntrySignFlag( i, afocDiff < 0 ? false : !false );
+      refList.setStrafEntrySignFlag( i, afocDiff < 0 ? false : true );
       refList.setStRefAtalsFrameFlag( i, true );
     }
     ath.setRefListStruct( refList );

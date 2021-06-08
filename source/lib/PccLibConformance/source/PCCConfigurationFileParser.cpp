@@ -61,17 +61,15 @@ void PCCConfigurationFileParser::scanLine( std::string& line, KeyValMaps& key_va
   size_t start = line.find_first_not_of( " \t\n\r" );
   if ( start == string::npos ) { return; }  // blank line
   line.erase( std::remove( line.begin(), line.end(), ' ' ), line.end() );
-  size_t curPos = 0;
   line += " ";
   while ( line.size() > 1 ) {
     std::string keyName = "Not Set", keyValue = "";
-    curPos = line.find_first_of( "=" );
+    size_t curPos = line.find_first_of( "=" );
     if ( curPos != std::string::npos ) {
       keyName = line.substr( 0, curPos );
     } else {
-      size_t found;
       for ( auto& e : spKey ) {
-        found = line.find( e );
+        size_t found = line.find( e );
         if ( found != std::string::npos ) {
           key_val_map.insert( std::pair<std::string, std::string>( e, "" ) );
           key_val_maps.push_back( key_val_map );
@@ -109,8 +107,7 @@ void PCCConfigurationFileParser::scanStream( std::istream& in, KeyValMaps& key_v
 bool PCCConfigurationFileParser::parseFile( std::string& fileName, KeyValMaps& key_val_maps ) {
   name_    = fileName;
   linenum_ = 0;
-  std::map<std::string, std::string> key_val_map;
-  std::ifstream                      cfrStream( name_.c_str(), std::ifstream::in );
+  std::ifstream cfrStream( name_.c_str(), std::ifstream::in );
   if ( !cfrStream ) {
     error( name_ ) << "Failed to Open : " << name_ << endl;
     return false;

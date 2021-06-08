@@ -353,8 +353,8 @@ void PCCPatchSegmenter3::resampledPointcloud( std::vector<size_t>& pointCount,
         const size_t u0 = u / patch.getOccupancyResolution();
         const size_t v0 = v / patch.getOccupancyResolution();
         const size_t p0 = v0 * patch.getSizeU0() + u0;
-        assert( u0 >= 0 && u0 < patch.getSizeU0() );
-        assert( v0 >= 0 && v0 < patch.getSizeV0() );
+        assert( u0 < patch.getSizeU0() );
+        assert( v0 < patch.getSizeV0() );
         patch.setOccupancy( p0, true );
 
         PCCVector3D point;
@@ -874,7 +874,6 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
       std::sort( connectedComponents.begin(), connectedComponents.end(),
                  []( const std::vector<size_t>& a, const std::vector<size_t>& b ) { return a.size() >= b.size(); } );
     }
-    bool bIsAdditionalProjectionPlane;
     for ( auto& connectedComponent : connectedComponents ) {
       const size_t patchIndex = patches.size();
       patches.resize( patchIndex + 1 );
@@ -887,7 +886,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
       patch.setEOMCount( 0 );
       patch.setPatchType( static_cast<uint8_t>( P_INTRA ) );
       size_t clusterIndex          = partition[connectedComponent[0]];
-      bIsAdditionalProjectionPlane = ( clusterIndex > 5 );  // false;
+      bool bIsAdditionalProjectionPlane = ( clusterIndex > 5 );  // false;
       if ( bIsAdditionalProjectionPlane && ( additionalProjectionAxis == 2 ) ) clusterIndex += 4;
       if ( bIsAdditionalProjectionPlane && ( additionalProjectionAxis == 3 ) ) clusterIndex += 8;
       patch.setViewId( clusterIndex );
@@ -1009,11 +1008,10 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
         const size_t p           = v * patch.getSizeU() + u;
         bool         bValidPoint = ( patch.getProjectionMode() == 0 )
                                ? ( patch.getDepth( 0 )[p] > d )
-                               : ( ( patch.getDepth( 0 )[p] == g_infiniteDepth ) || ( patch.getDepth( 0 )[p] < d ) );
-        int16_t minD0;
-        int16_t maxD0;
+                               : ( ( patch.getDepth( 0 )[p] == g_infiniteDepth ) || ( patch.getDepth( 0 )[p] < d ) );      
         if ( bValidPoint ) {  // min
-          minD0 = maxD0 = patch.getD1();
+          int16_t minD0 = patch.getD1();
+          int16_t maxD0 = patch.getD1();
           patch.setDepth( 0, p, d );
           patch.setDepth0PccIdx( p, i );
           patch.setPatchSize2DXInPixel( (std::max)( patch.getPatchSize2DXInPixel(), u ) );

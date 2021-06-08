@@ -686,11 +686,11 @@ bool PCCEncoderParameters::check() {
     absoluteT1_ = 1;
   }
   if ( rawPointsPatch_ ) {
-    if ( usePccRDO_ ) {  // Note: disabling RDO optimization for lossless configurations
-      usePccRDO_ = false;
-      std::cerr << "WARNING: usePccRDO_ is only for lossy "
-                   "coding mode for now. Force usePccRDO_=FALSE.\n";
-    }
+    // if ( usePccRDO_ ) {  // Note: disabling RDO optimization for lossless configurations
+    //   usePccRDO_ = false;
+    //   std::cerr << "WARNING: usePccRDO_ is only for lossy "
+    //                "coding mode for now. Force usePccRDO_=FALSE.\n";
+    // }
     if ( pbfEnableFlag_ ) {
       pbfEnableFlag_ = false;
       std::cerr << "WARNING: pbfEnableFlag_ is only for lossy "
@@ -1050,7 +1050,7 @@ void PCCEncoderParameters::constructAspsRefListStruct( PCCContext& context, size
       else
         afocDiff = context.getRefAtlasFrame( list, i ) - context.getRefAtlasFrame( list, i - 1 );
       refList.setAbsDeltaAfocSt( i, std::abs( afocDiff ) );
-      refList.setStrafEntrySignFlag( i, afocDiff < 0 ? false : !false );
+      refList.setStrafEntrySignFlag( i, afocDiff < 0 ? false : true );
       refList.setStRefAtalsFrameFlag( i, true );
     }
     asps.addRefListStruct( refList );

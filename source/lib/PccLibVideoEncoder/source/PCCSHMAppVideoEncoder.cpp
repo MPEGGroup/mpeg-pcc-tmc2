@@ -130,7 +130,6 @@ void PCCSHMAppVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
       videoRec.read( recYuvFileName[index], widthLayers[index], heightLayers[index], format,
                      params.outputBitDepth_ == 8 ? 1 : 2 );
       float rateX = (float)widthLayers[numLayers - 1] / (float)widthLayers[index];
-      float rateY = (float)heightLayers[numLayers - 1] / (float)heightLayers[index];
       videoRec.upsample( rateX );
       printf( "Upsample video size = % zu x % zu frame count = % zu \n ", videoRec.getWidth(), videoRec.getHeight(),
               videoRec.getFrameCount() );

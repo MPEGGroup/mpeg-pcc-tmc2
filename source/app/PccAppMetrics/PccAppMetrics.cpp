@@ -92,6 +92,7 @@ bool parseParameters( int argc, char* argv[], PCCMetricsParameters& metricsParam
   po::setDefaults( opts );
   po::ErrorReporter        err;
   const list<const char*>& argv_unhandled = po::scanArgv( opts, argc, (const char**)argv, err );
+  for ( const auto arg : argv_unhandled ) { printf( "Unhandled argument ignored: %s \n", arg ); }
   if ( argc == 1 || print_help ) {
     po::doHelp( std::cout, opts, 78 );
     return false;
@@ -112,8 +113,6 @@ bool parseParameters( int argc, char* argv[], PCCMetricsParameters& metricsParam
 }
 
 int computeMetrics( const PCCMetricsParameters& metricsParams, StopwatchUserTime& clock ) {
-  size_t     frameNumber  = metricsParams.startFrameNumber_;
-  size_t     contextIndex = 0;
   PCCMetrics metrics;
   metrics.setParameters( metricsParams );
   for ( size_t frameIndex = metricsParams.startFrameNumber_;

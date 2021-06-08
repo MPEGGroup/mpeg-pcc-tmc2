@@ -1141,7 +1141,6 @@ void PCCBitstreamWriter::patchDataUnit( PatchDataUnit&      pdu,
   auto&   afps       = syntax.getAtlasFrameParameterSet( afpsId );
   size_t  aspsId     = afps.getAtlasSequenceParameterSetId();
   auto&   asps       = syntax.getAtlasSequenceParameterSet( aspsId );
-  auto&   vps        = syntax.getVps();
   uint8_t bitCountUV = asps.getGeometry3dBitdepthMinus1() + 1;
   uint8_t bitCountD  = asps.getGeometry3dBitdepthMinus1() - ath.getPosMinDQuantizer() + 1;
   bitstream.writeUvlc( pdu.get2dPosX() );             // ue(v)
@@ -1163,7 +1162,6 @@ void PCCBitstreamWriter::patchDataUnit( PatchDataUnit&      pdu,
     bitstream.write( pdu.get3dRangeD(), bitCountForMaxDepth );  // u(v)
     TRACE_BITSTREAM( " Pdu3dPosDeltaMaxZ: %zu ( bitCountForMaxDepth = %u) \n", pdu.get3dRangeD(), bitCountForMaxDepth );
   }
-
   bitstream.write( pdu.getProjectionId(),
                    ceilLog2( asps.getMaxNumberProjectionsMinus1() + 1 ) );  // u(5 or 3)
   TRACE_BITSTREAM( "PduProjectionId = %zu ( MaxNumberProjectionsMinus1 = %d ) \n", pdu.getProjectionId(),
@@ -1715,7 +1713,6 @@ void PCCBitstreamWriter::componentCodecMapping( PCCBitstream& bitstream, SEI& se
 void PCCBitstreamWriter::sceneObjectInformation( PCCBitstream& bitstream, SEI& seiAbstract ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
   auto& sei = static_cast<SEISceneObjectInformation&>( seiAbstract );
-  // const int32_t fixedBitcount = 16;
   bitstream.write( sei.getPersistenceFlag(), 1 );    // u(1)
   bitstream.write( sei.getResetFlag(), 1 );          // u(1)
   bitstream.writeUvlc( sei.getNumObjectUpdates() );  // ue(v)

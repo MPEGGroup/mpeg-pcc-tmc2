@@ -60,9 +60,9 @@ void PCCJMLibVideoDecoderImpl<T>::decode( PCCVideoBitstream& bitstream,
                                           size_t             outputBitDepth,
                                           const std::string& decoderPath,
                                           const std::string& fileName ) {
-  std::string        s( reinterpret_cast<char*>( bitstream.buffer() ), bitstream.size() );
-  std::istringstream iss( s );
-  std::istream&      bitstreamFile = iss;
+  // std::string        s( reinterpret_cast<char*>( bitstream.buffer() ), bitstream.size() );
+  // std::istringstream iss( s );
+  // std::istream&      bitstreamFile = iss;
 
   std::string binName = fileName + ".bin";
   std::string decName = fileName + ".yuv";
@@ -86,7 +86,7 @@ void PCCJMLibVideoDecoderImpl<T>::decode( PCCVideoBitstream& bitstream,
   int             iRet;
   DecodedPicList* pDecPicList;
   int             hFileDecOutput0 = -1, hFileDecOutput1 = -1;
-  int             iFramesOutput = 0, iFramesDecoded = 0;
+  int             iFramesDecoded = 0;
   InputParameters InputParams;
 
   init_time();
@@ -106,7 +106,7 @@ void PCCJMLibVideoDecoderImpl<T>::decode( PCCVideoBitstream& bitstream,
     iRet = DecodeOneFrame( &pDecPicList );
     if ( iRet == DEC_EOS || iRet == DEC_SUCCEED ) {
       // process the decoded picture, output or display;
-      iFramesOutput += WriteOneFrame( pDecPicList, hFileDecOutput0, hFileDecOutput1, 0 );
+      WriteOneFrame( pDecPicList, hFileDecOutput0, hFileDecOutput1, 0 );
       iFramesDecoded++;
     } else {
       // error handling;
@@ -115,8 +115,8 @@ void PCCJMLibVideoDecoderImpl<T>::decode( PCCVideoBitstream& bitstream,
   } while ( ( iRet == DEC_SUCCEED ) &&
             ( ( p_Dec->p_Inp->iDecFrmNum == 0 ) || ( iFramesDecoded < p_Dec->p_Inp->iDecFrmNum ) ) );
 
-  iRet = FinitDecoder( &pDecPicList );
-  iFramesOutput += WriteOneFrame( pDecPicList, hFileDecOutput0, hFileDecOutput1, 1 );
+  FinitDecoder( &pDecPicList );
+  WriteOneFrame( pDecPicList, hFileDecOutput0, hFileDecOutput1, 1 );
 
   int            decWidth  = pDecPicList->iWidth;
   int            decHeight = pDecPicList->iHeight;
@@ -124,9 +124,9 @@ void PCCJMLibVideoDecoderImpl<T>::decode( PCCVideoBitstream& bitstream,
   const size_t   nbyte     = pDecPicList->iBitDepth == 8 ? 1 : 2;
 
   // Close and quit;
-  iRet = CloseDecoder();
-  if ( hFileDecOutput0 >= 0 ) { close( hFileDecOutput0 ); }
-  if ( hFileDecOutput1 >= 0 ) { close( hFileDecOutput1 ); }
+  CloseDecoder();
+  close( hFileDecOutput0 );
+  close( hFileDecOutput1 );
   // end decoding
 
   video.clear();

@@ -1029,7 +1029,6 @@ void PCCBitstreamReader::patchDataUnit( PatchDataUnit&      pdu,
   auto&   afps       = syntax.getAtlasFrameParameterSet( afpsId );
   size_t  aspsId     = afps.getAtlasSequenceParameterSetId();
   auto&   asps       = syntax.getAtlasSequenceParameterSet( aspsId );
-  auto&   vps        = syntax.getVps();
   uint8_t bitCountUV = asps.getGeometry3dBitdepthMinus1() + 1;
   uint8_t bitCountD  = asps.getGeometry3dBitdepthMinus1() - ath.getPosMinDQuantizer() + 1;
   pdu.set2dPosX( bitstream.readUvlc() );             // ue(v)
@@ -1044,7 +1043,6 @@ void PCCBitstreamReader::patchDataUnit( PatchDataUnit&      pdu,
   TRACE_BITSTREAM( " 3dPosXY: %zu,%zu\n", pdu.get3dOffsetU(), pdu.get3dOffsetV() );
   TRACE_BITSTREAM( " Pdu3dPosMinZ: %zu ( bitCountD = %u = %u - %u + %u ) \n", pdu.get3dOffsetD(), bitCountD,
                    asps.getGeometry3dBitdepthMinus1(), ath.getPosMinDQuantizer(), 2 );
-
   if ( asps.getNormalAxisMaxDeltaValueEnabledFlag() ) {
     uint8_t bitCountForMaxDepth = std::min( asps.getGeometry2dBitdepthMinus1(), asps.getGeometry3dBitdepthMinus1() ) +
                                   1 - ath.getPosDeltaMaxDQuantizer();
@@ -1662,7 +1660,6 @@ void PCCBitstreamReader::componentCodecMapping( PCCBitstream& bitstream, SEI& se
 void PCCBitstreamReader::sceneObjectInformation( PCCBitstream& bitstream, SEI& seiAbstract ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
   auto&         sei           = static_cast<SEISceneObjectInformation&>( seiAbstract );
-  const int32_t fixedBitcount = 16;
   sei.setPersistenceFlag( bool( bitstream.read( 1 ) ) );  // u(1)
   sei.setResetFlag( bool( bitstream.read( 1 ) ) );        // u(1)
   sei.setNumObjectUpdates( bitstream.readUvlc() );        // ue(v)

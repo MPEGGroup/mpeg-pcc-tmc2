@@ -190,8 +190,8 @@ bool parseParameters( int                             argc,
   return true;
 }
 
-int generateNormal( const std::string                     uncompressedDataPath,
-                    const std::string                     reconstructedDataPath,
+int generateNormal( const std::string&                    uncompressedDataPath,
+                    const std::string&                    reconstructedDataPath,
                     const size_t                          startFrameNumber,
                     const size_t                          frameCount,
                     const size_t                          nbThread,

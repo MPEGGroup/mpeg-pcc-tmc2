@@ -605,8 +605,7 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                       reconstru
     size_t quantizerSizeX = ( size_t( 1 ) << tile.getLog2PatchQuantizerSizeX() );
     size_t quantizerSizeY = ( size_t( 1 ) << tile.getLog2PatchQuantizerSizeY() );
     for ( size_t patchIndex = 0; patchIndex < totalPatchCount; ++patchIndex ) {
-      auto&  patch             = patches[patchIndex];
-      size_t nonZeroPixel      = 0;
+      auto&  patch             = patches[patchIndex];      
       size_t patchSizeXInPixel = ( patch.getPatchSize2DXInPixel() / quantizerSizeX ) * quantizerSizeX;
       size_t patchSizeYInPixel = ( patch.getPatchSize2DYInPixel() / quantizerSizeY ) * quantizerSizeY;
       if ( tile.getLog2PatchQuantizerSizeX() == 0 ) { assert( patchSizeXInPixel == patch.getPatchSize2DXInPixel() ); }
@@ -614,8 +613,7 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                       reconstru
       for ( size_t v0 = 0; v0 < patch.getSizeV0(); ++v0 ) {
         for ( size_t u0 = 0; u0 < patch.getSizeU0(); ++u0 ) {
           const size_t blockIndex = patch.patchBlock2CanvasBlock( u0, v0, blockToPatchWidth, blockToPatchHeight );
-          if ( blockToPatch[blockIndex] == ( patchIndex + 1 ) ) {
-            nonZeroPixel = 0;
+          if ( blockToPatch[blockIndex] == ( patchIndex + 1 ) ) {            
             for ( size_t v1 = 0; v1 < patch.getOccupancyResolution(); ++v1 ) {
               const size_t v = v0 * patch.getOccupancyResolution() + v1;
               for ( size_t u1 = 0; u1 < patch.getOccupancyResolution(); ++u1 ) {
@@ -1040,7 +1038,7 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                       reconstru
             if ( counter < numRawPoints ) {
 #if 1 
               if ( counter % 1000 == 0 ) {
-                printf( "Raw point patch %zu / %zu point  %6d / %9zu : %9d %9d %9d \n", i, numberOfRawPointsPatches,
+                printf( "Raw point patch %d / %zu point  %6zu / %9zu : %9d %9d %9d \n", i, numberOfRawPointsPatches,
                         counter, numRawPoints, rawPoints[counter][0], rawPoints[counter][1], rawPoints[counter][2] );
               }
 #endif
@@ -1549,7 +1547,6 @@ bool PCCCodec::gridFilteringColor( PCCPoint3D&                         curPos,
     }
   }
   if ( !otherClusterPointCount ) { return otherClusterPointCount; }
-  int         cnt0;
   PCCVector3D colorCentroid3[2][2][2] = {};
   int         gridSize2               = gridSize * 2;
   double      mmThresh                = params.thresholdColorVariation_ * 256.0;
@@ -1561,7 +1558,6 @@ bool PCCCodec::gridFilteringColor( PCCPoint3D&                         curPos,
         double( colorCenter[cellIndex[idx[0][0][0]]][1] ) / double( colorGridCount[cellIndex[idx[0][0][0]]] );
     colorCentroid3[0][0][0][2] =
         double( colorCenter[cellIndex[idx[0][0][0]]][2] ) / double( colorGridCount[cellIndex[idx[0][0][0]]] );
-    cnt0 = colorGridCount[cellIndex[idx[0][0][0]]];
     if ( colorGridCount[cellIndex[idx[0][0][0]]] > 1 ) {
       double meanY =
           mean( colorSmoothingLum_[cellIndex[idx[0][0][0]]], int( colorGridCount[cellIndex[idx[0][0][0]]] ) );
@@ -1575,7 +1571,6 @@ bool PCCCodec::gridFilteringColor( PCCPoint3D&                         curPos,
     }
   } else {
     colorCentroid3[0][0][0] = curPosColor;
-    cnt0                    = 1;
   }
 
   double Y0 = colorCentroid3[0][0][0][0];
@@ -1810,21 +1805,18 @@ size_t PCCCodec::colorPointCloud( PCCPointSet3&                       reconstruc
 #endif
   auto&        videoAttribute       = context.getVideoAttributesMultiple()[0];
   auto&        videoAttributeFrame1 = context.getVideoAttributesMultiple()[1];
-  const size_t mapCount           = params.mapCountMinus1_ + 1;
-  size_t       numOfRawPointGeos  = 0;
-  size_t       numberOfEOMPoints  = 0;
+  const size_t mapCount             = params.mapCountMinus1_ + 1;
   if ( attributeCount == 0 ) {
     for ( auto& color : reconstruct.getColors() ) {
       for ( size_t c = 0; c < 3; ++c ) { color[c] = static_cast<uint8_t>( 127 ); }
     }
   } else {
-    auto& pointToPixel = tile.getPointToPixel();
-    auto& color16bit   = reconstruct.getColors16bit();
-    bool  useAuxVideo  = tile.getUseRawPointsSeparateVideo();
-    numOfRawPointGeos  = tile.getTotalNumberOfRawPoints();
-    numberOfEOMPoints  = tile.getTotalNumberOfEOMPoints();
-    size_t pointCount  = tile.getTotalNumberOfRegularPoints();
-
+    auto&  pointToPixel      = tile.getPointToPixel();
+    auto&  color16bit        = reconstruct.getColors16bit();
+    bool   useAuxVideo       = tile.getUseRawPointsSeparateVideo();
+    size_t numOfRawPointGeos = tile.getTotalNumberOfRawPoints();
+    size_t numberOfEOMPoints = tile.getTotalNumberOfEOMPoints();
+    size_t pointCount        = tile.getTotalNumberOfRegularPoints();
     if ( !useAuxVideo ) { pointCount += numOfRawPointGeos + numberOfEOMPoints; }
     TRACE_CODEC( "plt.getProfileCodecGroupIdc() = %d \n",
                  context.getVps().getProfileTierLevel().getProfileCodecGroupIdc() );
@@ -2692,9 +2684,7 @@ void PCCCodec::afpsCommonByteString( std::vector<uint8_t>& stringByte,
   std::vector<size_t> hashAuxTileHeight;
   auto                asps                = context.getAtlasSequenceParameterSet( afps.getAtlasSequenceParameterSetId() );
   size_t              prevAuxTileOffset   = 0;
-  size_t              hashAuxVideoWidthNF = 0;
-  if ( asps.getAuxiliaryVideoEnabledFlag() ) {
-    hashAuxVideoWidthNF = ( ( afti.getAuxiliaryVideoTileRowWidthMinus1() + 1 ) * 64 );
+  if ( asps.getAuxiliaryVideoEnabledFlag() ) {    
     hashAuxTileHeight.resize( afti.getNumTilesInAtlasFrameMinus1() + 1, 0 );
     for ( size_t ti = 0; ti <= afti.getNumTilesInAtlasFrameMinus1(); ti++ ) {
       hashAuxTileHeight[ti] = afti.getAuxiliaryVideoTileRowHeight( ti ) * 64;

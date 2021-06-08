@@ -1051,18 +1051,15 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
   std::unique_ptr<uint8_t> buffer;
   size_t                   contextIndex = 0;
   PCCEncoder               encoder;
+  PCCMetrics               metrics;
+  PCCChecksum              checksum;
+  PCCBitstreamStat         bitstreamStat;
+  SampleStreamV3CUnit      ssvu;
   encoder.setLogger( logger );
   encoder.setParameters( encoderParams );
-  std::vector<std::vector<uint8_t>> reconstructedChecksums;
-  std::vector<std::vector<uint8_t>> sourceReorderChecksums;
-  std::vector<std::vector<uint8_t>> reconstructedReorderChecksums;
-  PCCMetrics                        metrics;
-  PCCChecksum                       checksum;
   metrics.setParameters( metricsParams );
   checksum.setParameters( metricsParams );
 
-  PCCBitstreamStat    bitstreamStat;
-  SampleStreamV3CUnit ssvu;
   // Place to get/set default values for gof metadata enabled flags (in sequence level).
   while ( startFrameNumber < endFrameNumber0 ) {
     size_t     endFrameNumber = min( startFrameNumber + groupOfFramesSize0, endFrameNumber0 );
@@ -1094,8 +1091,8 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
     clock.stop();
 
     PCCGroupOfFrames normals;
-    bool             bRunMetric = true;
     if ( metricsParams.computeMetrics_ ) {
+      bool bRunMetric = true;
       if ( !metricsParams.normalDataPath_.empty() ) {
         if ( !normals.load( metricsParams.normalDataPath_, startFrameNumber, endFrameNumber, COLOR_TRANSFORM_NONE,
                             true ) ) {

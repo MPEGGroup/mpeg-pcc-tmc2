@@ -65,7 +65,6 @@ int parserPccBin( const std::string& filename ) {
   bitstreamStat.incrHeader( headerSize );
 
   bool    bMoreData = true;
-  int32_t index     = 0;
   while ( bMoreData ) {
     PCCHighLevelSyntax syntax;
     syntax.setBitstreamStat( bitstreamStat );

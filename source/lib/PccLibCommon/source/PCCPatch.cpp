@@ -293,8 +293,6 @@ int PCCPatch::patchBlock2CanvasBlock( const size_t uBlk,
     default: return -1; break;
   }
   // checking the results are within canvasHeightBlk boundary (missing y check)
-  if ( x < 0 ) { return -1; }
-  if ( y < 0 ) { return -1; }
   if ( x >= canvasStrideBlk ) { return -1; }
   if ( y >= canvasHeightBlk ) { return -1; }
   if ( tile.minU != -1 ) {
@@ -660,8 +658,6 @@ int PCCPatch::patchBlock2CanvasBlockForGPA( const size_t uBlk,
     default: return -1; break;
   }
   // checking the results are within canvas boundary (missing y check)
-  if ( x < 0 ) return -1;
-  if ( y < 0 ) return -1;
   if ( x >= canvasStrideBlk ) return -1;
   if ( y >= canvasHeightBlk ) return -1;
   return int( x + canvasStrideBlk * y );

@@ -236,26 +236,23 @@ std::vector<uint8_t> PCCContext::computeMD5( uint8_t* byteString, size_t len ) {
   return tmp_digest;
 }
 
-uint16_t PCCContext::computeCRC( uint8_t* byteString, size_t len ) {
-  uint8_t      crcMsb, bitVal, dataByte;
+uint16_t PCCContext::computeCRC( uint8_t* byteString, size_t len ) {        
   unsigned int crc    = 0xFFFF;
   byteString[len]     = 0;
   byteString[len + 1] = 0;
-
   for ( unsigned int bitIdx = 0; bitIdx < ( len + 2 ) * 8; bitIdx++ ) {
-    dataByte = byteString[bitIdx >> 3];
-    crcMsb   = ( crc >> 15 ) & 1;
-    bitVal   = ( dataByte >> ( 7 - bitIdx ) ) & 1;
-    crc      = ( ( ( crc << 1 ) + bitVal ) & 0xFFFF ) ^ ( crcMsb * 0x1021 );
+    uint8_t dataByte = byteString[bitIdx >> 3];
+    uint8_t crcMsb   = ( crc >> 15 ) & 1;
+    uint8_t bitVal   = ( dataByte >> ( 7 - bitIdx ) ) & 1;
+    crc              = ( ( ( crc << 1 ) + bitVal ) & 0xFFFF ) ^ ( crcMsb * 0x1021 );
   }
   return crc;
 };
 
 uint32_t PCCContext::computeCheckSum( uint8_t* byteString, size_t len ) {
-  uint32_t checkSum = 0;
-  uint8_t  xor_mask;
+  uint32_t checkSum = 0;    
   for ( uint32_t i = 0; i < len; i++ ) {
-    xor_mask = ( i & 0xFF ) ^ ( i >> 8 );
+    uint8_t xor_mask = ( i & 0xFF ) ^ ( i >> 8 );
     checkSum = ( checkSum + ( ( byteString[i] & 0xFF ) ^ xor_mask ) ) & 0xFFFFFFFF;
   }
   return checkSum;

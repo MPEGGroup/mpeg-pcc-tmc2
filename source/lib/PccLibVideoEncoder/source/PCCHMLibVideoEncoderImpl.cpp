@@ -681,7 +681,7 @@ Void PCCHMLibVideoEncoderImpl<T>::xWriteOutput( std::ostream&                bit
     for ( i = 0; i < iNumEncoded; i++ ) { --iterPicYuvRec; }
     for ( i = 0; i < iNumEncoded / 2; i++ ) {
       TComPicYuv* pcPicYuvRecTop    = *( iterPicYuvRec++ );
-      TComPicYuv* pcPicYuvRecBottom = *( iterPicYuvRec++ );
+      iterPicYuvRec++;
       xWritePicture( pcPicYuvRecTop, videoRec );
       const AccessUnit&   auTop    = *( iterBitstream++ );
       const vector<UInt>& statsTop = writeAnnexB( bitstreamFile, auTop );

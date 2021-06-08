@@ -83,9 +83,6 @@ void PCCJMLibVideoEncoderImpl<T>::encode( PCCVideo<T, 3>&    videoSrc,
                                           std::string        arguments,
                                           PCCVideoBitstream& bitstream,
                                           PCCVideo<T, 3>&    videoRec ) {
-  std::ostringstream oss( std::ostringstream::binary | std::ostringstream::out );
-  std::ostream&      bitstreamFile = oss;
-
   std::istringstream iss( arguments );
   std::string        token;
   std::vector<char*> args;
@@ -95,10 +92,8 @@ void PCCJMLibVideoEncoderImpl<T>::encode( PCCVideo<T, 3>&    videoSrc,
     arg[token.size()] = '\0';
     args.push_back( arg );
   }
-
   int    argc = args.size();
   char** argv = &args[0];
-
   std::cout << "[JM Enc args " << argc << "]: " << arguments << std::endl;
   const size_t   srcWidth           = videoSrc.getWidth();
   const size_t   srcHeight          = videoSrc.getHeight();

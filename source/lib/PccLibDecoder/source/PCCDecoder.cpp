@@ -760,20 +760,16 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
   }
 
   // local variable initialization
-  auto&        patches                 = tile.getPatches();
-  auto&        pcmPatches              = tile.getRawPointsPatches();
-  auto&        eomPatches              = tile.getEomPatches();
-  int64_t      prevSizeU0              = 0;
-  int64_t      prevSizeV0              = 0;
-  int64_t      prevPatchSize2DXInPixel = 0;
-  int64_t      prevPatchSize2DYInPixel = 0;
-  int64_t      predIndex               = 0;
-  const size_t minLevel                = pow( 2., ath.getPosMinDQuantizer() );
-  size_t       numRawPatches           = 0;
-  size_t       numNonRawPatch          = 0;
-  size_t       numEomPatch             = 0;
-  PCCTileType  tileType                = ath.getType();
-  size_t       patchCount              = atgdu.getPatchCount();
+  auto&        patches        = tile.getPatches();
+  auto&        pcmPatches     = tile.getRawPointsPatches();
+  auto&        eomPatches     = tile.getEomPatches();
+  int64_t      predIndex      = 0;
+  const size_t minLevel       = pow( 2., ath.getPosMinDQuantizer() );
+  size_t       numRawPatches  = 0;
+  size_t       numNonRawPatch = 0;
+  size_t       numEomPatch    = 0;
+  PCCTileType  tileType       = ath.getType();
+  size_t       patchCount     = atgdu.getPatchCount();
   for ( size_t i = 0; i < patchCount; i++ ) {
     PCCPatchType currPatchType = getPatchType( tileType, atgdu.getPatchMode( i ) );
     if ( currPatchType == RAW_PATCH ) {
@@ -810,7 +806,6 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
       patch.setV0( pdu.get2dPosY() );
       patch.setU1( pdu.get3dOffsetU() );
       patch.setV1( pdu.get3dOffsetV() );
-
       bool lodEnableFlag = pdu.getLodEnableFlag();
       if ( lodEnableFlag ) {
         patch.setLodScaleX( pdu.getLodScaleXMinus1() + 1 );
@@ -840,10 +835,6 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
       } else {
         patch.setD1( max3DCoordinate - static_cast<int32_t>( pdu.get3dOffsetD() ) * minLevel );
       }
-      prevSizeU0              = patch.getSizeU0();
-      prevSizeV0              = patch.getSizeV0();
-      prevPatchSize2DXInPixel = patch.getPatchSize2DXInPixel();
-      prevPatchSize2DYInPixel = patch.getPatchSize2DYInPixel();
       if ( patch.getNormalAxis() == 0 ) {
         patch.setTangentAxis( 2 );
         patch.setBitangentAxis( 1 );
@@ -870,11 +861,9 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
       auto& patch = patches[patchIndex];
       patch.setOccupancyResolution( size_t( 1 ) << asps.getLog2PatchPackingBlockSize() );
       auto& ipdu = pid.getInterPatchDataUnit();
-
       TRACE_PATCH( "patch %zu / %zu: Inter \n", patchIndex, patchCount );
       TRACE_PATCH(
-          "\tIPDU: refAtlasFrame= %d refPatchIdx = %d pos2DXY = %ld %ld pos3DXYZW = %ld %ld %ld %ld size2D = %ld %ld "
-          "\n",
+          "\tIPDU: refAtlasFrame= %d refPatchIdx = %d pos2DXY = %ld %ld pos3DXYZW = %ld %ld %ld %ld size2D = %ld %ld  \n",
           ipdu.getRefIndex(), ipdu.getRefPatchIndex(), ipdu.get2dPosX(), ipdu.get2dPosY(), ipdu.get3dOffsetU(),
           ipdu.get3dOffsetV(), ipdu.get3dOffsetD(), ipdu.get3dRangeD(), ipdu.get2dDeltaSizeX(),
           ipdu.get2dDeltaSizeY() );
@@ -884,8 +873,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
       size_t      refPOC   = (size_t)tile.getRefAfoc( patch.getRefAtlasFrameIndex() );
       const auto& refPatch = context.getFrame( refPOC ).getTile( tileIndex ).getPatches()[patch.getBestMatchIdx()];
       TRACE_PATCH(
-          "\trefPatch: refIndex = %zu, refFrame = %zu, Idx = %zu/%zu UV0 = %zu %zu  UV1 = %zu %zu Size = %zu %zu %zu "
-          " Lod = %u,%u\n",
+          "\trefPatch: refIndex = %zu, refFrame = %zu, Idx = %zu/%zu UV0 = %zu %zu  UV1 = %zu %zu Size = %zu %zu %zu Lod = %u,%u\n",
           patch.getRefAtlasFrameIndex(), refPOC, patch.getBestMatchIdx(),
           context.getFrame( refPOC ).getTile( tileIndex ).getPatches().size(), refPatch.getU0(), refPatch.getV0(),
           refPatch.getU1(), refPatch.getV1(), refPatch.getSizeU0(), refPatch.getSizeV0(), refPatch.getSizeD(),
@@ -918,16 +906,10 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
         patch.setD1( max3DCoordinate -
                      ( ipdu.get3dOffsetD() + ( ( max3DCoordinate - refPatch.getD1() ) / minLevel ) ) * minLevel );
       }
-
       const int64_t delta_DD = ipdu.get3dRangeD() == 0 ? 0 : ( ipdu.get3dRangeD() * minLevel - 1 );
       patch.setSizeD( refPatch.getSizeD() + delta_DD );
       patch.setLodScaleX( refPatch.getLodScaleX() );
       patch.setLodScaleYIdc( refPatch.getLodScaleY() );
-      prevSizeU0              = patch.getSizeU0();
-      prevSizeV0              = patch.getSizeV0();
-      prevPatchSize2DXInPixel = patch.getPatchSize2DXInPixel();
-      prevPatchSize2DYInPixel = patch.getPatchSize2DYInPixel();
-
       TRACE_PATCH(
           "\tpatch(Inter) %zu: UV0 %4zu %4zu UV1 %4zu %4zu D1=%4zu S=%4zu %4zu %4zu from DeltaSize = %4ld %4ld P=%zu "
           "O=%zu A=%u%u%u Lod = %zu,%zu \n",
@@ -947,11 +929,8 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
       auto&        mpdu            = pid.getMergePatchDataUnit();
       bool         overridePlrFlag = false;
       const size_t max3DCoordinate = size_t( 1 ) << geometryBitDepth3D;
-
       TRACE_PATCH( "patch %zu / %zu: Inter \n", patchIndex, patchCount );
-      TRACE_PATCH(
-          "MPDU: refAtlasFrame= %d refPatchIdx = ?? pos2DXY = %ld %ld pos3DXYZW = %ld %ld %ld %ld size2D = %ld %ld "
-          "\n",
+      TRACE_PATCH( "MPDU: refAtlasFrame= %d refPatchIdx = ?? pos2DXY = %ld %ld pos3DXYZW = %ld %ld %ld %ld size2D = %ld %ld \n",
           mpdu.getRefIndex(), mpdu.get2dPosX(), mpdu.get2dPosY(), mpdu.get3dOffsetU(), mpdu.get3dOffsetV(),
           mpdu.get3dOffsetD(), mpdu.get3dRangeD(), mpdu.get2dDeltaSizeX(), mpdu.get2dDeltaSizeY() );
 
@@ -960,16 +939,12 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
       patch.setRefAtlasFrameIndex( mpdu.getRefIndex() );
       size_t      refPOC   = (size_t)tile.getRefAfoc( patch.getRefAtlasFrameIndex() );
       const auto& refPatch = context.getFrame( refPOC ).getTile( tileIndex ).getPatches()[patch.getBestMatchIdx()];
-
       if ( mpdu.getOverride2dParamsFlag() ) {
         patch.setU0( mpdu.get2dPosX() + refPatch.getU0() );
         patch.setV0( mpdu.get2dPosY() + refPatch.getV0() );
         if ( asps.getPatchSizeQuantizerPresentFlag() ) {
-          patch.setPatchSize2DXInPixel( refPatch.getPatchSize2DXInPixel() +
-                                        ( mpdu.get2dDeltaSizeX() ) * quantizerSizeX );
-          patch.setPatchSize2DYInPixel( refPatch.getPatchSize2DYInPixel() +
-                                        ( mpdu.get2dDeltaSizeY() ) * quantizerSizeY );
-
+          patch.setPatchSize2DXInPixel( refPatch.getPatchSize2DXInPixel() + mpdu.get2dDeltaSizeX() * quantizerSizeX );
+          patch.setPatchSize2DYInPixel( refPatch.getPatchSize2DYInPixel() + mpdu.get2dDeltaSizeY() * quantizerSizeY );
           patch.setSizeU0(
               ceil( static_cast<double>( patch.getPatchSize2DXInPixel() ) / static_cast<double>( packingBlockSize ) ) );
           patch.setSizeV0(
@@ -990,10 +965,8 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
             patch.setD1( max3DCoordinate -
                          ( mpdu.get3dOffsetD() + ( ( max3DCoordinate - refPatch.getD1() ) / minLevel ) ) * minLevel );
           }
-
           const int64_t delta_DD = mpdu.get3dRangeD() == 0 ? 0 : ( mpdu.get3dRangeD() * minLevel - 1 );
           patch.setSizeD( refPatch.getSizeD() + delta_DD );
-
           if ( asps.getPLREnabledFlag() ) { overridePlrFlag = ( mpdu.getOverridePlrFlag() != 0 ); }
         }
       }
@@ -1005,11 +978,6 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
       patch.setAxisOfAdditionalPlane( refPatch.getAxisOfAdditionalPlane() );
       patch.setLodScaleX( refPatch.getLodScaleX() );
       patch.setLodScaleYIdc( refPatch.getLodScaleY() );
-      prevSizeU0              = patch.getSizeU0();
-      prevSizeV0              = patch.getSizeV0();
-      prevPatchSize2DXInPixel = patch.getPatchSize2DXInPixel();
-      prevPatchSize2DYInPixel = patch.getPatchSize2DYInPixel();
-
       TRACE_PATCH(
           "patch(Inter) %zu: UV0 %4zu %4zu UV1 %4zu %4zu D1=%4zu S=%4zu %4zu %4zu from DeltaSize = %4ld %4ld P=%zu "
           "O=%zu A=%u%u%u Lod = %zu,%zu \n",
@@ -1037,7 +1005,6 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
                    patch.getBestMatchIdx(), refPatch.getU0(), refPatch.getV0(), refPatch.getU1(), refPatch.getV1(),
                    refPatch.getSizeU0(), refPatch.getSizeV0(), refPatch.getSizeD(), refPatch.getLodScaleX(),
                    refPatch.getLodScaleY() );
-
       patch.setProjectionMode( refPatch.getProjectionMode() );
       patch.setU0( refPatch.getU0() );
       patch.setV0( refPatch.getV0() );
@@ -1058,13 +1025,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
       patch.setSizeD( refPatch.getSizeD() );
       patch.setLodScaleX( refPatch.getLodScaleX() );
       patch.setLodScaleYIdc( refPatch.getLodScaleY() );
-      prevSizeU0              = patch.getSizeU0();
-      prevSizeV0              = patch.getSizeV0();
-      prevPatchSize2DXInPixel = patch.getPatchSize2DXInPixel();
-      prevPatchSize2DYInPixel = patch.getPatchSize2DYInPixel();
-      TRACE_PATCH(
-          "patch(skip) %zu: UV0 %4zu %4zu UV1 %4zu %4zu D1=%4zu S=%4zu %4zu %4zu P=%zu O=%zu A=%u%u%u Lod = %zu,%zu "
-          "\n",
+      TRACE_PATCH( "patch(skip) %zu: UV0 %4zu %4zu UV1 %4zu %4zu D1=%4zu S=%4zu %4zu %4zu P=%zu O=%zu A=%u%u%u Lod = %zu,%zu \n",
           patchIndex, patch.getU0(), patch.getV0(), patch.getU1(), patch.getV1(), patch.getD1(), patch.getSizeU0(),
           patch.getSizeV0(), patch.getSizeD(), patch.getProjectionMode(), patch.getPatchOrientation(),
           patch.getNormalAxis(), patch.getTangentAxis(), patch.getBitangentAxis(), patch.getLodScaleX(),
@@ -1190,7 +1151,6 @@ void PCCDecoder::createHashSEI( PCCContext& context, int frameIndex ) {
     afpsApplicationByteString( highLevelAtlasData, asps, afps );
 
     if ( sei.getHashType() == 0 ) {
-      bool                 equal = false;
       std::vector<uint8_t> encMD5( 16 ), decMD5( 16 );
       encMD5 = context.computeMD5( highLevelAtlasData.data(), highLevelAtlasData.size() );
       //TRACE_SEI( " Derived (MD5) = " );
@@ -1200,21 +1160,19 @@ void PCCDecoder::createHashSEI( PCCContext& context, int frameIndex ) {
       }
       //TRACE_SEI( "\t Derived vs. SEI (MD5) : " );
       TRACE_SEI( "HLS MD5: " );
-      equal = compareHashSEIMD5( encMD5, decMD5 );
+      bool equal = compareHashSEIMD5( encMD5, decMD5 );
       TRACE_SEI( " (%s) \n", equal ? "OK" : "DIFF" );
-    } else if ( sei.getHashType() == 1 ) {
-      bool     equal = true;
+    } else if ( sei.getHashType() == 1 ) {           
       uint16_t crc   = context.computeCRC( highLevelAtlasData.data(), highLevelAtlasData.size() );
       //TRACE_SEI( " Derived (CRC): %d ", crc );
       TRACE_SEI( "HLS CRC: " );
-      equal = compareHashSEICrc( crc, sei.getHighLevelCrc() );
+      bool equal = compareHashSEICrc( crc, sei.getHighLevelCrc() );
       TRACE_SEI( " (%s) \n", equal ? "OK" : "DIFF" );
-    } else if ( sei.getHashType() == 2 ) {
-      bool     equal    = true;
+    } else if ( sei.getHashType() == 2 ) {           
       uint32_t checkSum = context.computeCheckSum( highLevelAtlasData.data(), highLevelAtlasData.size() );
       //TRACE_SEI( " Derived (CheckSum): %d ", checkSum );
       TRACE_SEI( "HLS CheckSum: " );
-      equal = compareHashSEICheckSum( checkSum, sei.getHighLevelCheckSum() );
+      bool equal = compareHashSEICheckSum( checkSum, sei.getHighLevelCheckSum() );
       TRACE_SEI( " (%s) \n", equal ? "OK" : "DIFF" );
     }
     highLevelAtlasData.clear();
@@ -1243,52 +1201,29 @@ void PCCDecoder::createHashSEI( PCCContext& context, int frameIndex ) {
     }
     printf( "AtlasPatchHash: frame(%d) (#patches %zu)\n", frameIndex, patchCount );
 
-    size_t atlIdx               = context[frameIndex].getTile( 0 ).getAtlIndex();
-    auto&  atlu                 = context.getAtlasTileLayer( atlIdx );
-    auto&  ath                  = atlu.getHeader();
-    auto&  afps                 = context.getAtlasFrameParameterSet( ath.getAtlasFrameParameterSetId() );
-    auto&  asps                 = context.getAtlasSequenceParameterSet( afps.getAtlasSequenceParameterSetId() );
-    auto&  vps                  = context.getVps();
-    size_t numTilesInPatchFrame = context[frameIndex].getNumTilesInAtlasFrame();
-    size_t numProjPatches = 0, numRawPatches = 0, numEomPatches = 0;
-    size_t numProjPoints = 0, numRawPoints = 0, numEomPoints = 0;
-    int    atlasFrameOrderCnt = atlu.getAtlasFrmOrderCntVal();
-    for ( size_t tileIdx = 0; tileIdx < numTilesInPatchFrame; tileIdx++ ) {
-      auto& tile = context[frameIndex].getTile( tileIdx );
-      numProjPatches += tile.getPatches().size();
-      numEomPatches += tile.getEomPatches().size();
-      numRawPatches += tile.getRawPointsPatches().size();
-      numProjPoints += tile.getTotalNumberOfRegularPoints();
-      numEomPoints += tile.getTotalNumberOfEOMPoints();
-      numRawPoints += tile.getTotalNumberOfRawPoints();
-    }
-
     if ( sei.getHashType() == 0 ) {
-      bool                 equal = false;
       std::vector<uint8_t> encMD5( 16 ), decMD5( 16 );
       encMD5 = context.computeMD5( atlasData.data(), atlasData.size() );
-      //TRACE_SEI( " Derived Atlas MD5 = " );
+      // TRACE_SEI( " Derived Atlas MD5 = " );
       TRACE_SEI( "Atlas MD5: " );
       for ( int j = 0; j < 16; j++ ) {
         decMD5[j] = sei.getAtlasMd5( j );
-        //TRACE_SEI( "%02x", encMD5[j] );
+        // TRACE_SEI( "%02x", encMD5[j] );
       }
-      //TRACE_SEI( "\n\t**sei** (MD5): " );
-      equal = compareHashSEIMD5( encMD5, decMD5 );
+      // TRACE_SEI( "\n\t**sei** (MD5): " );
+      bool equal = compareHashSEIMD5( encMD5, decMD5 );
       TRACE_SEI( " (%s) \n", equal ? "OK" : "DIFF" );
     } else if ( sei.getHashType() == 1 ) {
-      bool     equal = true;
-      uint16_t crc   = context.computeCRC( atlasData.data(), atlasData.size() );
-      //TRACE_SEI( "\n Derived (CRC): %d", crc );
+      uint16_t crc = context.computeCRC( atlasData.data(), atlasData.size() );
+      // TRACE_SEI( "\n Derived (CRC): %d", crc );
       TRACE_SEI( "Atlas CRC: " );
-      equal = compareHashSEICrc( crc, sei.getAtlasCrc() );
+      bool equal = compareHashSEICrc( crc, sei.getAtlasCrc() );
       TRACE_SEI( " (%s) \n", equal ? "OK" : "DIFF" );
     } else if ( sei.getHashType() == 2 ) {
-      bool     equal    = true;
       uint32_t checkSum = context.computeCheckSum( atlasData.data(), atlasData.size() );
       //TRACE_SEI( "\n Derived (CheckSum): %d", checkSum );
       TRACE_SEI( "Atlas CheckSum: " );
-      equal = compareHashSEICheckSum( checkSum, sei.getAtlasCheckSum() );
+     bool equal = compareHashSEICheckSum( checkSum, sei.getAtlasCheckSum() );
       TRACE_SEI( " (%s) \n", equal ? "OK" : "DIFF" );
     }
     atlasData.clear();
@@ -1310,19 +1245,17 @@ void PCCDecoder::createHashSEI( PCCContext& context, int frameIndex ) {
       }
       equal = compareHashSEIMD5( encMD5, decMD5 );
       TRACE_SEI( " (%s) \n", equal ? "OK" : "DIFF" );
-    } else if ( sei.getHashType() == 1 ) {
-      bool     equal = false;
+    } else if ( sei.getHashType() == 1 ) {           
       uint16_t crc   = context.computeCRC( atlasB2PData.data(), atlasB2PData.size() );
       //TRACE_SEI( "\n Derived (CRC): %d ", crc );
       TRACE_SEI( "Atlas B2P CRC: " );
-      equal = compareHashSEICrc( crc, sei.getAtlasB2pCrc() );
+      bool equal = compareHashSEICrc( crc, sei.getAtlasB2pCrc() );
       TRACE_SEI( " (%s) \n", equal ? "OK" : "DIFF" );
-    } else if ( sei.getHashType() == 2 ) {
-      bool     equal    = false;
+    } else if ( sei.getHashType() == 2 ) {      
       uint32_t checkSum = context.computeCheckSum( atlasB2PData.data(), atlasB2PData.size() );
       // TRACE_SEI( "\n Derived (CheckSum): %d ", checkSum );
       TRACE_SEI( "Atlas B2P CheckSum: " );
-      equal = compareHashSEICheckSum( checkSum, sei.getAtlasB2pCheckSum() );
+      bool equal = compareHashSEICheckSum( checkSum, sei.getAtlasB2pCheckSum() );
       TRACE_SEI( " (%s) \n", equal ? "OK" : "DIFF" );
     }
     atlasB2PData.clear();
@@ -1335,18 +1268,13 @@ void PCCDecoder::createHashSEI( PCCContext& context, int frameIndex ) {
     size_t numTilesInPatchFrame = context[frameIndex].getNumTilesInAtlasFrame();
     printf( "**sei** AtlasTilesHash: frame(%d) (#Tiles %zu)", frameIndex, numTilesInPatchFrame );
     for ( size_t tileIdx = 0; tileIdx < numTilesInPatchFrame; tileIdx++ ) {
-      auto&       tile          = context[frameIndex].getTile( tileIdx );
-      auto&       atlu          = context.getAtlasTileLayer( tile.getAtlIndex() );
-      auto&       ath           = atlu.getHeader();
-      size_t      tileId        = ath.getId();
-      PCCTileType tileType      = ath.getType();
-      auto&       afps          = context.getAtlasFrameParameterSet( ath.getAtlasFrameParameterSetId() );
-      auto&       afti          = afps.getAtlasFrameTileInformation();
-      size_t      topLeftColumn = afti.getTopLeftPartitionIdx( tileIdx ) % ( afti.getNumPartitionColumnsMinus1() + 1 );
-      size_t      topLeftRow    = afti.getTopLeftPartitionIdx( tileIdx ) / ( afti.getNumPartitionColumnsMinus1() + 1 );
-      size_t      tileOffsetX   = context[frameIndex].getPartitionPosX( topLeftColumn );
-      size_t      tileOffsetY   = context[frameIndex].getPartitionPosY( topLeftRow );
-
+      auto&       tile     = context[frameIndex].getTile( tileIdx );
+      auto&       atlu     = context.getAtlasTileLayer( tile.getAtlIndex() );
+      auto&       ath      = atlu.getHeader();
+      size_t      tileId   = ath.getId();
+      PCCTileType tileType = ath.getType();
+      auto&       afps     = context.getAtlasFrameParameterSet( ath.getAtlasFrameParameterSetId() );
+      auto&       afti     = afps.getAtlasFrameTileInformation();
       if ( sei.getDecodedAtlasTilesHashPresentFlag() ) {
         std::vector<uint8_t> atlasTileData;
         for ( size_t patchIdx = 0; patchIdx < atlu.getDataUnit().getPatchCount(); patchIdx++ ) {
@@ -1355,7 +1283,6 @@ void PCCDecoder::createHashSEI( PCCContext& context, int frameIndex ) {
         }
         printf( "**sei** TilesPatchHash: frame(%d), tile(tileIdx %zu, tileId %zu)\n", frameIndex, tileIdx, tileId );
         if ( sei.getHashType() == 0 ) {
-          bool                 equal = true;
           std::vector<uint8_t> encMD5( 16 ), decMD5( 16 );
           encMD5 = context.computeMD5( atlasTileData.data(), atlasTileData.size() );
           //TRACE_SEI( " Derived Tile MD5 = " );
@@ -1364,21 +1291,19 @@ void PCCDecoder::createHashSEI( PCCContext& context, int frameIndex ) {
             decMD5[j] = sei.getAtlasTilesMd5( tileId, j );
             //TRACE_SEI( "%02x", encMD5[j] );
           }
-          equal = compareHashSEIMD5( encMD5, decMD5 );
+          bool equal = compareHashSEIMD5( encMD5, decMD5 );
           TRACE_SEI( " (%s) \n", equal ? "OK" : "DIFF" );
         } else if ( sei.getHashType() == 1 ) {
-          bool     equal = true;
-          uint16_t crc   = context.computeCRC( atlasTileData.data(), atlasTileData.size() );
-          //TRACE_SEI( "\n Derived  (CRC): %d ", crc );
+          uint16_t crc = context.computeCRC( atlasTileData.data(), atlasTileData.size() );
+          // TRACE_SEI( "\n Derived  (CRC): %d ", crc );
           TRACE_SEI( "Tile( id = %d, idx = %d ) CRC: ", tileId, tileIdx );
-          equal = compareHashSEICrc( crc, sei.getAtlasTilesCrc( tileId ) );
+          bool equal = compareHashSEICrc( crc, sei.getAtlasTilesCrc( tileId ) );
           TRACE_SEI( " (%s) \n", equal ? "OK" : "DIFF" );
         } else if ( sei.getHashType() == 2 ) {
-          bool     equal    = false;
           uint32_t checkSum = context.computeCheckSum( atlasTileData.data(), atlasTileData.size() );
-          //TRACE_SEI( "\n Derived CheckSum: %d ", checkSum );
+          // TRACE_SEI( "\n Derived CheckSum: %d ", checkSum );
           TRACE_SEI( "Tile( id = %d, idx = %d ) CheckSum: ", tileId, tileIdx );
-          equal = compareHashSEICheckSum( checkSum, sei.getAtlasTilesCheckSum( tileId ) );
+          bool equal = compareHashSEICheckSum( checkSum, sei.getAtlasTilesCheckSum( tileId ) );
           TRACE_SEI( " (%s) \n", equal ? "OK" : "DIFF" );
         }
         atlasTileData.clear();
@@ -1389,30 +1314,27 @@ void PCCDecoder::createHashSEI( PCCContext& context, int frameIndex ) {
         printf( "\n**sei** TilesBlockToPatchHash: frame(%d), tile(tileIdx %zu, tileId %zu)", frameIndex, tileIdx,
                    tileId );
         if ( sei.getHashType() == 0 ) {
-          bool                 equal = false;
           std::vector<uint8_t> encMD5( 16 ), decMD5( 16 );
           encMD5 = context.computeMD5( tileB2PData.data(), tileB2PData.size() );
-          //TRACE_SEI( " Derived Tile B2P MD5 = " );
+          // TRACE_SEI( " Derived Tile B2P MD5 = " );
           TRACE_SEI( "Tile B2P( id = %d, idx = %d ) MD5: ", tileId, tileIdx );
           for ( int j = 0; j < 16; j++ ) {
             decMD5[j] = sei.getAtlasTilesB2pMd5( tileId, j );
             TRACE_SEI( "%02x", encMD5[j] );
           }
-          equal = compareHashSEIMD5( encMD5, decMD5 );
+          bool equal = compareHashSEIMD5( encMD5, decMD5 );
           TRACE_SEI( " (%s) \n", equal ? "OK" : "DIFF" );
-        } else if ( sei.getHashType() == 1 ) {
-          bool     equal = false;
+        } else if ( sei.getHashType() == 1 ) {          
           uint16_t crc   = context.computeCRC( tileB2PData.data(), tileB2PData.size() );
           //TRACE_SEI( "\n Derived Tile B2P CRC: %d ", crc );
           TRACE_SEI( "Tile B2P( id = %d, idx = %d ) CRC: ", tileId, tileIdx );
-          equal = compareHashSEICrc( crc, sei.getAtlasTilesB2pCrc( tileId ) );
+          bool equal = compareHashSEICrc( crc, sei.getAtlasTilesB2pCrc( tileId ) );
           TRACE_SEI( " (%s) \n", equal ? "OK" : "DIFF" );
         } else if ( sei.getHashType() == 2 ) {
-          bool     equal    = false;
           uint32_t checkSum = context.computeCheckSum( tileB2PData.data(), tileB2PData.size() );
           //TRACE_SEI( "\n Derived Tile B2P CheckSum: %d ", checkSum );
           TRACE_SEI( "Tile( id = %d, idx = %d ) CheckSum: ", tileId, tileIdx );
-          equal = compareHashSEICheckSum( checkSum, sei.getAtlasTilesB2pCheckSum( tileId ) );
+          bool equal = compareHashSEICheckSum( checkSum, sei.getAtlasTilesB2pCheckSum( tileId ) );
           TRACE_SEI( " (%s) \n", equal ? "OK" : "DIFF" );
         }
         tileB2PData.clear();
@@ -1552,16 +1474,17 @@ void PCCDecoder::createHlsAtlasTileLogFiles( PCCContext& context, int frameIndex
     TRACE_TILE( "\n" );
   }  // tileIdx
 
-  if ( atlasPatchParams.size() != 0 ) atlasPatchParams.clear();
+  if ( atlasPatchParams.size() != 0 ) { atlasPatchParams.clear(); }
   if ( tilePatchParams.size() != 0 ) {
-    for ( size_t ti = 0; ti < tilePatchParams.size(); ti++ )
-      if ( tilePatchParams[ti].size() != 0 ) tilePatchParams[ti].clear();
+    for ( size_t ti = 0; ti < tilePatchParams.size(); ti++ ) {
+      if ( tilePatchParams[ti].size() != 0 ) { tilePatchParams[ti].clear(); }
+    }
   }
   tilePatchParams.clear();
-  for ( auto& e : atlasB2PPatchParams ) e.clear();
+  for ( auto& e : atlasB2PPatchParams ) { e.clear(); }
   atlasB2PPatchParams.clear();
   for ( auto& e : tileB2PPatchParams ) {
-    for ( auto d : e ) d.clear();
+    for ( auto d : e ) { d.clear(); }
     e.clear();
   }
   tileB2PPatchParams.clear();

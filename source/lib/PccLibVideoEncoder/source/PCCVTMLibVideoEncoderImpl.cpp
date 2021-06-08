@@ -1239,8 +1239,7 @@ void PCCVTMLibVideoEncoderImpl<T>::xWriteOutput( std::ostream&           bitstre
     // Reinterlace fields
     for ( i = 0; i < iNumEncoded / 2; i++ ) {
       const PelUnitBuf* pcPicYuvRecTop    = *( iterPicYuvRec++ );
-      const PelUnitBuf* pcPicYuvRecBottom = *( iterPicYuvRec++ );
-
+      iterPicYuvRec++; 
       if ( !m_reconFileName.empty() ) { xWritePicture( pcPicYuvRecTop, videoRec ); }
     }
   } else {
@@ -1248,13 +1247,12 @@ void PCCVTMLibVideoEncoderImpl<T>::xWriteOutput( std::ostream&           bitstre
       const PelUnitBuf* pcPicYuvRec = *( iterPicYuvRec++ );
       if ( !m_reconFileName.empty() ) {
         if ( m_cEncLib.isResChangeInClvsEnabled() && m_cEncLib.getUpscaledOutput() ) {
-          const SPS& sps = *m_cEncLib.getSPS( 0 );
-          const PPS& pps =
-              *m_cEncLib.getPPS( ( sps.getMaxPicWidthInLumaSamples() != pcPicYuvRec->get( COMPONENT_Y ).width ||
-                                   sps.getMaxPicHeightInLumaSamples() != pcPicYuvRec->get( COMPONENT_Y ).height )
-                                     ? ENC_PPS_ID_RPR
-                                     : 0 );
-
+          // const SPS& sps = *m_cEncLib.getSPS( 0 );
+          // const PPS& pps =
+          //     *m_cEncLib.getPPS( ( sps.getMaxPicWidthInLumaSamples() != pcPicYuvRec->get( COMPONENT_Y ).width ||
+          //                          sps.getMaxPicHeightInLumaSamples() != pcPicYuvRec->get( COMPONENT_Y ).height )
+          //                            ? ENC_PPS_ID_RPR
+          //                            : 0 );
           xWritePicture( pcPicYuvRec, videoRec );
         } else {
           xWritePicture( pcPicYuvRec, videoRec );
