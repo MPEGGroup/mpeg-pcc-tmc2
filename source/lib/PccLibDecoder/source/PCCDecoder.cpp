@@ -816,8 +816,8 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
       }
       patch.setSizeD( pdu.get3dRangeD() == 0 ? 0 : ( pdu.get3dRangeD() * minLevel - 1 ) );
       if ( asps.getPatchSizeQuantizerPresentFlag() ) {
-        patch.setPatchSize2DXInPixel( pdu.get2dSizeXMinus1() * quantizerSizeX + 1 );
-        patch.setPatchSize2DYInPixel( pdu.get2dSizeYMinus1() * quantizerSizeY + 1 );
+        patch.setPatchSize2DXInPixel( ( pdu.get2dSizeXMinus1() + 1 )* quantizerSizeX );
+        patch.setPatchSize2DYInPixel( ( pdu.get2dSizeYMinus1() + 1 )* quantizerSizeY );
         patch.setSizeU0(
             ceil( static_cast<double>( patch.getPatchSize2DXInPixel() ) / static_cast<double>( packingBlockSize ) ) );
         patch.setSizeV0(
