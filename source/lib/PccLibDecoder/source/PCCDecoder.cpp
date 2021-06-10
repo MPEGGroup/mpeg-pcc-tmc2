@@ -761,7 +761,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
 
   // local variable initialization
   auto&        patches        = tile.getPatches();
-  auto&        pcmPatches     = tile.getRawPointsPatches();
+  auto&        rawPatches     = tile.getRawPointsPatches();
   auto&        eomPatches     = tile.getEomPatches();
   int64_t      predIndex      = 0;
   const size_t minLevel       = pow( 2., ath.getPosMinDQuantizer() );
@@ -778,10 +778,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
       numEomPatch++;
     }
   }
-  numNonRawPatch = patchCount - numRawPatches - numEomPatch;
-  eomPatches.reserve( numEomPatch );
-  patches.resize( numNonRawPatch );
-  pcmPatches.resize( numRawPatches );
+
   TRACE_PATCH( "Patches size                      = %zu \n", patches.size() );
   TRACE_PATCH( "non-regular Patches(raw, eom)     = %zu, %zu \n", numRawPatches, numEomPatch );
   TRACE_PATCH( "Tile Type                         = %zu (0.P_TILE 1.I_TILE 2.SKIP_TILE)\n", (size_t)ath.getType() );
@@ -799,7 +796,8 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
     auto&        pid           = atgdu.getPatchInformationData( patchIndex );
     PCCPatchType currPatchType = getPatchType( tileType, atgdu.getPatchMode( patchIndex ) );
     if ( currPatchType == INTRA_PATCH ) {
-      auto& patch = patches[patchIndex];
+      //auto& patch = patches[patchIndex];
+      PCCPatch patch;
       auto& pdu   = pid.getPatchDataUnit();
       patch.setOccupancyResolution( size_t( 1 ) << asps.getLog2PatchPackingBlockSize() );
       patch.setU0( pdu.get2dPosX() );
@@ -857,8 +855,9 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
       if ( asps.getPLREnabledFlag() ) {
         setPLRData( tile, patch, pdu.getPLRData(), size_t( 1 ) << asps.getLog2PatchPackingBlockSize() );
       }
+      patches.push_back( patch );
     } else if ( currPatchType == INTER_PATCH ) {
-      auto& patch = patches[patchIndex];
+      PCCPatch patch;
       patch.setOccupancyResolution( size_t( 1 ) << asps.getLog2PatchPackingBlockSize() );
       auto& ipdu = pid.getInterPatchDataUnit();
       TRACE_PATCH( "patch %zu / %zu: Inter \n", patchIndex, patchCount );
@@ -922,9 +921,10 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
       if ( asps.getPLREnabledFlag() ) {
         setPLRData( tile, patch, ipdu.getPLRData(), size_t( 1 ) << asps.getLog2PatchPackingBlockSize() );
       }
+      patches.push_back( patch );
     } else if ( currPatchType == MERGE_PATCH ) {
       assert( -2 );
-      auto& patch = patches[patchIndex];
+      PCCPatch patch;
       patch.setOccupancyResolution( size_t( 1 ) << asps.getLog2PatchPackingBlockSize() );
       auto&        mpdu            = pid.getMergePatchDataUnit();
       bool         overridePlrFlag = false;
@@ -990,9 +990,10 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
       if ( asps.getPLREnabledFlag() ) {
         setPLRData( tile, patch, mpdu.getPLRData(), size_t( 1 ) << asps.getLog2PatchPackingBlockSize() );
       }
+      patches.push_back( patch );
     } else if ( currPatchType == SKIP_PATCH ) {
       assert( -1 );
-      auto& patch = patches[patchIndex];
+      PCCPatch patch;
       TRACE_PATCH( "patch %zu / %zu: Inter \n", patchIndex, patchCount );
       TRACE_PATCH( "SDU: refAtlasFrame= 0 refPatchIdx = %d \n", patchIndex );
 
@@ -1031,10 +1032,12 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
           patch.getNormalAxis(), patch.getTangentAxis(), patch.getBitangentAxis(), patch.getLodScaleX(),
           patch.getLodScaleY() );
       patch.allocOneLayerData();
+      patches.push_back( patch );
     } else if ( currPatchType == RAW_PATCH ) {
       TRACE_PATCH( "patch %zu / %zu: raw \n", patchIndex, patchCount );
       auto& rpdu                        = pid.getRawPatchDataUnit();
-      auto& rawPointsPatch              = pcmPatches[patchIndex - numNonRawPatch];
+      //auto& rawPointsPatch              = pcmPatches[patchIndex - numNonRawPatch];
+      PCCRawPointsPatch rawPointsPatch;
       rawPointsPatch.isPatchInAuxVideo_ = rpdu.getPatchInAuxiliaryVideoFlag();
       rawPointsPatch.u0_                = rpdu.get2dPosX();
       rawPointsPatch.v0_                = rpdu.get2dPosY();
@@ -1053,6 +1056,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
       rawPointsPatch.setNumberOfRawPoints( rpdu.getRawPointsMinus1() + 1 );
       rawPointsPatch.occupancyResolution_ = size_t( 1 ) << asps.getLog2PatchPackingBlockSize();
       totalNumberOfRawPoints += rawPointsPatch.getNumberOfRawPoints();
+      rawPatches.push_back( rawPointsPatch);
       TRACE_PATCH( "Raw :UV = %zu %zu  size = %zu %zu  uvd1 = %zu %zu %zu numPoints = %zu ocmRes = %zu \n",
                    rawPointsPatch.u0_, rawPointsPatch.v0_, rawPointsPatch.sizeU0_, rawPointsPatch.sizeV0_,
                    rawPointsPatch.u1_, rawPointsPatch.v1_, rawPointsPatch.d1_, rawPointsPatch.numberOfRawPoints_,

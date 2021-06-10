@@ -8813,7 +8813,6 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&         context,
         rpdu.set3dOffsetV( rawPointsPatch.v1_ / pcmU1V1D1Level );
         rpdu.set3dOffsetD( rawPointsPatch.d1_ / pcmU1V1D1Level );
       }
-      rpdu.setPatchInAuxiliaryVideoFlag( sps.getAuxiliaryVideoPresentFlag( 0 ) );
       rpdu.setRawPointsMinus1( uint32_t( rawPointsPatch.getNumberOfRawPoints() - 1 ) );
       TRACE_PATCH( "Raw :UV = %zu %zu  size = %zu %zu  uvd1 = %zu %zu %zu numPoints = %zu ocmRes = %zu \n",
                    rawPointsPatch.u0_, rawPointsPatch.v0_, rawPointsPatch.sizeU0_, rawPointsPatch.sizeV0_,
