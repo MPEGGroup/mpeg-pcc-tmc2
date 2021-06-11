@@ -135,6 +135,15 @@ void PCCCodec::smoothPointCloudPostprocess( PCCPointSet3&                       
       geoSmoothingCount_.resize( size, 0 );
       for ( int j = 0; j < reconstruct.getPointCount(); j++ ) {
         PCCPoint3D point  = reconstruct[j];
+
+        int        x      = point.x();
+        int        y      = point.y();
+        int        z      = point.z();
+
+        if ( x < disth || y < disth || z < disth || th <= x + disth || th <= y + disth || th <= z + disth ) {
+          continue;
+        }
+
         int        x2     = point.x() / params.gridSize_;
         int        y2     = point.y() / params.gridSize_;
         int        z2     = point.z() / params.gridSize_;
