@@ -68,25 +68,25 @@ static std::istream& operator>>( std::istream& in, PCCCodecId& val ) {
   std::string tmp;
   in >> tmp;
 #ifdef USE_JMAPP_VIDEO_CODEC
-  if ( tmp == "0" || tmp == "JMAPP" || tmp == "jmapp" ) { val = JMAPP; }
+  if ( tmp == "JMAPP" || tmp == "jmapp" ) { val = JMAPP; }
 #endif
 #ifdef USE_HMAPP_VIDEO_CODEC
-  if ( tmp == "1" || tmp == "HMAPP" || tmp == "hmapp" ) { val = HMAPP; }
+  if ( tmp == "HMAPP" || tmp == "hmapp" ) { val = HMAPP; }
 #endif
 #ifdef USE_SHMAPP_VIDEO_CODEC
-  if ( tmp == "2" || tmp == "SHMAPP" || tmp == "shmapp" || tmp == "shm" ) { val = SHMAPP; }
+  if ( tmp == "SHMAPP" || tmp == "shmapp" || tmp == "shm" || tmp == "shm2" || tmp == "shm3" ) { val = SHMAPP; }
 #endif
 #ifdef USE_JMLIB_VIDEO_CODEC
-  if ( tmp == "2" || tmp == "JMLIB" || tmp == "jmlib" || tmp == "jm" || tmp == "avc" ) { val = JMLIB; }
+  if ( tmp == "JMLIB" || tmp == "jmlib" || tmp == "jm" || tmp == "avc" ) { val = JMLIB; }
 #endif
 #ifdef USE_HMLIB_VIDEO_CODEC
-  if ( tmp == "3" || tmp == "HMLIB" || tmp == "hmlib" || tmp == "hm" || tmp == "hevc" ) { val = HMLIB; }
+  if (  tmp == "HMLIB" || tmp == "hmlib" || tmp == "hm" || tmp == "hevc" ) { val = HMLIB; }
 #endif
 #ifdef USE_VTMLIB_VIDEO_CODEC
-  if ( tmp == "4" || tmp == "VTMLIB" || tmp == "vtmlib" || tmp == "vtm" || tmp == "vvc" ) { val = VTMLIB; }
+  if ( tmp == "VTMLIB" || tmp == "vtmlib" || tmp == "vtm" || tmp == "vvc" ) { val = VTMLIB; }
 #endif
 #ifdef USE_FFMPEG_VIDEO_CODEC
-  if ( tmp == "5" || tmp == "FFMPEG" || tmp == "ffmpeg" ) { val = FFMPEG; }
+  if ( tmp == "FFMPEG" || tmp == "ffmpeg" ) { val = FFMPEG; }
 #endif
   if ( val == UNKNOWN_CODEC ) { fprintf( stderr, "PCCCodecId could not be indentified from: \"%s\" \n", tmp.c_str() ); }
   return in;

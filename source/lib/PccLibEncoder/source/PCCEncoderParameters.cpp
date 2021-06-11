@@ -1022,6 +1022,13 @@ bool PCCEncoderParameters::check() {
     case CODEC_GROUP_MP4RA: break;
   }
 
+  if ( ( rawPointsPatch_ ) && ( videoEncoderOccupancyCodecId_ == SHMAPP || videoEncoderGeometryCodecId_ == SHMAPP ||
+                                videoEncoderAttributeCodecId_ == SHMAPP ) ) {
+    videoEncoderOccupancyCodecId_ = HMLIB;
+    videoEncoderGeometryCodecId_  = HMLIB;
+    videoEncoderAttributeCodecId_ = HMLIB;
+    std::cerr << "SHMAPP codec not work for lossless conditions for HMLIB codecs. \n";
+  }
   if ( ( videoEncoderOccupancyCodecId_ == SHMAPP || videoEncoderGeometryCodecId_ == SHMAPP ||
          videoEncoderAttributeCodecId_ == SHMAPP ) &&
        ( ( shvcRateX_ != 2 ) || ( shvcRateY_ != 2 ) ) ) {

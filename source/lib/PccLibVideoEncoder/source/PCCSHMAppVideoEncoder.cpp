@@ -30,6 +30,12 @@ void PCCSHMAppVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
   const size_t width      = videoSrc.getWidth();
   const size_t height     = videoSrc.getHeight();
   const size_t frameCount = videoSrc.getFrameCount();
+  std::string  srcYuvName = params.srcYuvFileName_;
+  std::string  recYuvName = params.recYuvFileName_;
+  std::string  binName    = params.binFileName_;
+  srcYuvName.insert( srcYuvName.find_last_of( "." ), "_shmapp" );
+  recYuvName.insert( recYuvName.find_last_of( "." ), "_shmapp" );
+  binName.insert( binName.find_last_of( "." ), "_shmapp" );
   printf( "numLayers = %d LayerIndex = %d \n", numLayers, params.shvcLayerIndex_ );
   fflush( stdout );
   if ( numLayers >= 1 ) {
@@ -41,15 +47,15 @@ void PCCSHMAppVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
       if ( i + 1 < numLayers ) {
         widthLayers.push_back( width / ( params.shvcRateX_ * ( numLayers - i - 1 ) ) );
         heightLayers.push_back( height / ( params.shvcRateY_ * ( numLayers - i - 1 ) ) );
-        srcYuvFileName.push_back( replace( params.srcYuvFileName_, stringFormat( "_%dx%d_", width, height ),
+        srcYuvFileName.push_back( replace( srcYuvName, stringFormat( "_%dx%d_", width, height ),
                                            stringFormat( "_%dx%d_", widthLayers[i], heightLayers[i] ) ) );
-        recYuvFileName.push_back( replace( params.recYuvFileName_, stringFormat( "_%dx%d_", width, height ),
+        recYuvFileName.push_back( replace( recYuvName, stringFormat( "_%dx%d_", width, height ),
                                            stringFormat( "_%dx%d_", widthLayers[i], heightLayers[i] ) ) );
       } else {
         widthLayers.push_back( width );
         heightLayers.push_back( height );
-        srcYuvFileName.push_back( params.srcYuvFileName_ );
-        recYuvFileName.push_back( params.recYuvFileName_ );
+        srcYuvFileName.push_back( srcYuvName );
+        recYuvFileName.push_back( recYuvName );
       }
     }
 
@@ -96,7 +102,7 @@ void PCCSHMAppVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
     cmd << " --InputChromaFormat=" << ( params.use444CodecIo_ ? "444" : "420" );
     cmd << " --FramesToBeEncoded=" << frameCount;
     cmd << " --FrameSkip=0";
-    cmd << " --BitstreamFile=" << params.binFileName_;
+    cmd << " --BitstreamFile=" << binName;
 
     for ( size_t i = 0; i < numLayers; i++ ) {
       cmd << " --InputFile" << std::to_string( i ) << "=" << srcYuvFileName[i];
@@ -120,10 +126,8 @@ void PCCSHMAppVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
       std::cout << "Error: can't run system command!" << std::endl;
       exit( -1 );
     }
-
     PCCCOLORFORMAT format = getColorFormat( params.recYuvFileName_ );
-    videoRec.clear();
-    
+    videoRec.clear();    
     if ( params.shvcLayerIndex_ < numLayers - 1 ) {
       int32_t index = (std::min)( numLayers - 1, params.shvcLayerIndex_ );
       printf( "Num Layer = %d layerIndex = %d => layer index = %d \n", numLayers, params.shvcLayerIndex_,  index );
@@ -135,14 +139,20 @@ void PCCSHMAppVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
               videoRec.getFrameCount() );
       fflush( stdout );
     } else {
-      videoRec.read( params.recYuvFileName_, width, height, format, params.outputBitDepth_ == 8 ? 1 : 2 );
+      videoRec.read( recYuvName, width, height, format, params.outputBitDepth_ == 8 ? 1 : 2 );
     }
-    bitstream.read( params.binFileName_ );
+    bitstream.read( binName );
+    
+    for ( size_t i = 0; i < numLayers; i++ ) {
+      removeFile( srcYuvFileName[i] );
+      removeFile( recYuvFileName[i] );
+    }
+    removeFile( binName );
   } else {
     std::stringstream cmd;
     cmd << params.encoderPath_;
     cmd << " -c " << params.encoderConfig_;
-    cmd << " --InputFile=" << params.srcYuvFileName_;
+    cmd << " --InputFile=" << srcYuvName;
     cmd << " --InputBitDepth=" << params.inputBitDepth_;
     cmd << " --InputChromaFormat=" << ( params.use444CodecIo_ ? "444" : "420" );
     cmd << " --OutputBitDepth=" << params.outputBitDepth_;
@@ -153,8 +163,8 @@ void PCCSHMAppVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
     cmd << " --SourceHeight=" << height;
     cmd << " --ConformanceWindowMode=1 ";
     cmd << " --FramesToBeEncoded=" << frameCount;
-    cmd << " --BitstreamFile=" << params.binFileName_;
-    cmd << " --ReconFile=" << params.recYuvFileName_;
+    cmd << " --BitstreamFile=" << binName;
+    cmd << " --ReconFile=" << recYuvName;
     cmd << " --QP=" << params.qp_;
     if ( params.transquantBypassEnable_ != 0 ) { cmd << " --TransquantBypassEnable=1"; }
     if ( params.cuTransquantBypassFlagForce_ != 0 ) { cmd << " --CUTransquantBypassFlagForce=1"; }
@@ -171,16 +181,18 @@ void PCCSHMAppVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
     if ( params.inputColourSpaceConvert_ ) { cmd << " --InputColourSpaceConvert=RGBtoGBR"; }
 
     std::cout << cmd.str() << std::endl;
-
-    videoSrc.write( params.srcYuvFileName_, params.inputBitDepth_ == 8 ? 1 : 2 );
+    videoSrc.write( srcYuvName, params.inputBitDepth_ == 8 ? 1 : 2 );
     if ( pcc::system( cmd.str().c_str() ) ) {
       std::cout << "Error: can't run system command!" << std::endl;
       exit( -1 );
     }
     PCCCOLORFORMAT format = getColorFormat( params.recYuvFileName_ );
     videoRec.clear();
-    videoRec.read( params.recYuvFileName_, width, height, format, params.outputBitDepth_ == 8 ? 1 : 2 );
-    bitstream.read( params.binFileName_ );
+    videoRec.read( recYuvName, width, height, format, params.outputBitDepth_ == 8 ? 1 : 2 );
+    bitstream.read( binName );
+    removeFile( srcYuvName );
+    removeFile( recYuvName );
+    removeFile( binName );
   }
 }
 

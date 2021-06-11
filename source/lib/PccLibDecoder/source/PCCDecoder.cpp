@@ -1770,7 +1770,8 @@ PCCCodecId PCCDecoder::getCodedCodecId( PCCContext&        context,
 #endif
         } else if ( codec4cc.compare( "hev1" ) == 0 ) {
 #if defined( USE_JMAPP_VIDEO_CODEC ) && defined( USE_JMLIB_VIDEO_CODEC )
-          return videoDecoderPath.empty() ? HMLIB : HMAPP;
+          // return videoDecoderPath.empty() ? HMLIB : HMAPP;
+          return HMLIB; // TEMP FIX for SHMAPP lossless conditions
 #elif defined( USE_JMLIB_VIDEO_CODEC )
           return HMLIB;
 #elif defined( USE_JMAPP_VIDEO_CODEC )

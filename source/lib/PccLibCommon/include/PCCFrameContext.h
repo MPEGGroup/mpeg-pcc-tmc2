@@ -400,7 +400,6 @@ class PCCAtlasFrameContext {
               partitionPosX_[numPartitionCols_ - 2] + partitionWidth_[numPartitionCols_ - 2];
           partitionWidth_[numPartitionCols_ - 1] = atlasFrameWidth_ - partitionPosX_[numPartitionCols_ - 1];
         }
-
         partitionPosY_[0]   = 0;
         partitionHeight_[0] = partitionHeightIn;
         for ( size_t row = 1; row < numPartitionRows_ - 1; row++ ) {
@@ -413,9 +412,7 @@ class PCCAtlasFrameContext {
           partitionHeight_[numPartitionRows_ - 1] = atlasFrameHeight_ - partitionPosY_[numPartitionRows_ - 1];
         }
       } else {
-        printf( "non uniform tile partitioning\n" );
-//        exit( 130 );
-        
+        printf( "non uniform tile partitioning\n" );        
         partitionPosX_[0]  = 0;
         partitionWidth_[0] = partitionWidthListIn64[0];
         for ( size_t col = 1; col < numPartitionCols_ - 1; col++ ) {
@@ -427,7 +424,6 @@ class PCCAtlasFrameContext {
               partitionPosX_[numPartitionCols_ - 2] + partitionWidth_[numPartitionCols_ - 2];
           partitionWidth_[numPartitionCols_ - 1] = atlasFrameWidth_ - partitionPosX_[numPartitionCols_ - 1];
         }
-
         partitionPosY_[0]   = 0;
         partitionHeight_[0] = partitionHeightListIn64[0];
         for ( size_t row = 1; row < numPartitionRows_ - 1; row++ ) {
@@ -441,7 +437,6 @@ class PCCAtlasFrameContext {
         }
       }
     }  // numTiles!=1
-
     singlePartitionPerTile_ = false;
     signalledTileId_        = false;
   }

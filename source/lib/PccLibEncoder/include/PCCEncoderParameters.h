@@ -43,12 +43,12 @@ class PCCEncoderParameters {
  public:
   PCCEncoderParameters();
   ~PCCEncoderParameters();
-  void              print();
-  bool              check();
-  void              completePath();
-  static void       constructAspsRefListStruct( PCCContext& context, size_t aspsIdx, size_t afpsIdx );
-  void              initializeContext( PCCContext& context );
-  uint8_t           getCodecIdIndex( PCCCodecId codecId );
+  void        print();
+  bool        check();
+  void        completePath();
+  static void constructAspsRefListStruct( PCCContext& context, size_t aspsIdx, size_t afpsIdx );
+  void        initializeContext( PCCContext& context );
+  uint8_t     getCodecIdIndex( PCCCodecId codecId );
 
   size_t            startFrameNumber_;
   std::string       configurationFolder_;

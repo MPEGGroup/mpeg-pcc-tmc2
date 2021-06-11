@@ -129,11 +129,11 @@ class AtlasFrameTileInformation {
   void setUniformPartitionSpacingFlag( bool value ) { uniformPartitionSpacingFlag_ = value; }
   void setNumPartitionColumnsMinus1( uint32_t value ) {
     numPartitionColumnsMinus1_ = value;
-    partitionColumnWidthMinus1_.resize( std::max( (uint32_t)1, value ) );
+    partitionColumnWidthMinus1_.resize( std::max( (uint32_t)1, value ), 0 );
   }
   void setNumPartitionRowsMinus1( uint32_t value ) {
     numPartitionRowsMinus1_ = value;
-    partitionRowHeightMinus1_.resize( std::max( (uint32_t)1, value ) );
+    partitionRowHeightMinus1_.resize( std::max( (uint32_t)1, value ), 0 );
   }
   void setSinglePartitionPerTileFlag( uint32_t value ) { singlePartitionPerTileFlag_ = value; }
   void setNumTilesInAtlasFrameMinus1( uint32_t value ) { numTilesInAtlasFrameMinus1_ = value; }
