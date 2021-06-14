@@ -480,9 +480,9 @@ void PCCDecoder::setPLRData( PCCFrameContext& tile, PCCPatch& patch, PLRData& pl
   TRACE_PATCH( "  LevelFlag = %d \n", plrd.getLevelFlag() );
   if ( plrd.getLevelFlag() ) {
     if ( plrd.getPresentFlag() ) {
-      patch.getPointLocalReconstructionMode() = plrd.getModeMinus1() + 1;
+      patch.setPointLocalReconstructionMode( plrd.getModeMinus1() + 1 );
     } else {
-      patch.getPointLocalReconstructionMode() = 0;
+      patch.setPointLocalReconstructionMode( 0 );
     }
     TRACE_PATCH( "  ModePatch: Present = %d ModeMinus1 = %2d \n", plrd.getPresentFlag(),
                  plrd.getPresentFlag() ? (int32_t)plrd.getModeMinus1() : -1 );
@@ -491,9 +491,9 @@ void PCCDecoder::setPLRData( PCCFrameContext& tile, PCCPatch& patch, PLRData& pl
       for ( size_t u0 = 0; u0 < plrd.getBlockToPatchMapWidth(); ++u0 ) {
         size_t index = v0 * plrd.getBlockToPatchMapWidth() + u0;
         if ( plrd.getBlockPresentFlag( index ) ) {
-          patch.getPointLocalReconstructionMode( u0, v0 ) = plrd.getBlockModeMinus1( index ) + 1;
+          patch.setPointLocalReconstructionMode( u0, v0, plrd.getBlockModeMinus1( index ) + 1 );
         } else {
-          patch.getPointLocalReconstructionMode( u0, v0 ) = 0;
+          patch.setPointLocalReconstructionMode( u0, v0, 0 );
         }
         TRACE_PATCH( "  Mode[%3u]: Present = %d ModeMinus1 = %2d \n", index, plrd.getBlockPresentFlag( index ),
                      plrd.getBlockPresentFlag( index ) ? (int32_t)plrd.getBlockModeMinus1( index ) : -1 );
@@ -1036,7 +1036,6 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
     } else if ( currPatchType == RAW_PATCH ) {
       TRACE_PATCH( "patch %zu / %zu: raw \n", patchIndex, patchCount );
       auto& rpdu                        = pid.getRawPatchDataUnit();
-      //auto& rawPointsPatch              = pcmPatches[patchIndex - numNonRawPatch];
       PCCRawPointsPatch rawPointsPatch;
       rawPointsPatch.isPatchInAuxVideo_ = rpdu.getPatchInAuxiliaryVideoFlag();
       rawPointsPatch.u0_                = rpdu.get2dPosX();

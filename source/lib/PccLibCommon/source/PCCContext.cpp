@@ -256,6 +256,7 @@ uint32_t PCCContext::computeCheckSum( uint8_t* byteString, size_t len ) {
 }
 
 void PCCContext::allocOneLayerData() {
+  printf("Alloc One layer deata \n"); fflush(stdout);
   atlasContexts_[atlasIndex_].allocOneLayerData();
   for ( size_t frameIdx = 0; frameIdx < size(); frameIdx++ ) {
     auto& atlasFrameContext = atlasContexts_[atlasIndex_].getFrameContexts()[frameIdx];

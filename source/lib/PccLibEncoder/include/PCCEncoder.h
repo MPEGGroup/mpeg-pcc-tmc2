@@ -153,7 +153,11 @@ class PCCEncoder : public PCCCodec {
                            const size_t           imageHeight,
                            std::vector<uint32_t>& occupancyMap,
                            PCCImageOccupancyMap&  videoFrameOccupancyMap,
-                           std::ofstream&         ofile );
+                           std::ofstream&         ofile,
+                           uint64_t&              changedPixCnt,
+                           uint64_t&              changedPixCnt0To1,
+                           uint64_t&              changedPixCnt1To0,
+                           uint64_t&              pixCnt );
 
   //**auxPatches**//
   void markRawPatchLocationOccupancyMapVideo( PCCContext& context );
@@ -162,12 +166,12 @@ class PCCEncoder : public PCCCodec {
   void sortRawPointsPatchMorton( PCCFrameContext& titleFrame, size_t index );
 
   //**tile and partitions**//
-  void generateTilesFromSegments( PCCContext& context );
-  void generateTilesFromImage( PCCContext& context );
-  void placeTiles( PCCContext& context, size_t minFrameWidth, size_t minFrameHeight );
-  void replaceFrameContext( PCCContext& context );
+  void   generateTilesFromSegments( PCCContext& context );
+  size_t generateTilesFromImage( PCCContext& context );
+  void   placeTiles( PCCContext& context, size_t minFrameWidth, size_t minFrameHeight );
+  void   replaceFrameContext( PCCContext& context );
+  
   //**patch segmentation**//
-  // bool generateGeometryVideo( const PCCGroupOfFrames& sources, PCCContext& context );
   bool generateSegments( const PCCGroupOfFrames& sources, PCCContext& context );
   bool generateSegments( const PCCPointSet3&                 source,
                          PCCAtlasFrameContext&               frameContext,
@@ -175,10 +179,6 @@ class PCCEncoder : public PCCCodec {
                          size_t                              frameIndex,
                          float&                              distanceSrcRec );
   bool placeSegments( const PCCGroupOfFrames& sources, PCCContext& context );
-  bool placeSegments( const PCCPointSet3&   source,
-                      PCCAtlasFrameContext& frame,
-                      PCCAtlasFrameContext& prevFrame,
-                      size_t                frameIndex );
 
   //**video/image reneration and resizing**//
   bool   resizeGeometryVideo( PCCContext& context, PCCCodecId codecId );
@@ -188,10 +188,7 @@ class PCCEncoder : public PCCCodec {
                                   size_t      frameHeight,
                                   int         firstFrame     = -1,
                                   int         lastFramePlus1 = -1 );
-  size_t segmentSequence( PCCContext& context, std::vector<std::pair<size_t, size_t>>& framesInAFPS );
-  bool   relocateTileGeometryVideo( PCCContext& context, std::vector<std::pair<size_t, size_t>>& framesInAFPS );
-  bool   placeEomPatchInTile( PCCContext& context, std::vector<std::pair<size_t, size_t>>& framesInAFPS );
-  bool   placeRawPatchTile( PCCContext& context, std::vector<std::pair<size_t, size_t>>& framesInAFPS );
+  bool   relocateTileGeometryVideo( PCCContext& context );
   bool   generateGeometryVideo( const PCCGroupOfFrames& sources, PCCContext& context );
   bool   generateAttributeVideo( const PCCGroupOfFrames&     sources,
                                PCCGroupOfFrames&           reconstruct,
@@ -211,7 +208,7 @@ class PCCEncoder : public PCCCodec {
   void        generateRawPointsPatch( const PCCPointSet3& source,
                                       PCCFrameContext&    titleFrame,
                                       bool                useEnhancedOccupancyMapCode );
-  bool        generateScaledGeometry( const PCCPointSet3& source, PCCFrameContext& tile );
+  bool        generateScaledGeometry( PCCFrameContext& tile );
   size_t      generateAttributeVideo( const PCCPointSet3& reconstruct,
                                     PCCContext&         context,
                                     size_t              frameIndex,
@@ -259,7 +256,7 @@ class PCCEncoder : public PCCCodec {
   template <typename T>
   void dilateHarmonicBackgroundFill( PCCFrameContext& frame, PCCImage<T, 3>& image );
   template <typename T>
-  void CreateCoarseLayer( PCCImage<T, 3>&        image,
+  void createCoarseLayer( PCCImage<T, 3>&        image,
                           PCCImage<T, 3>&        mip,
                           std::vector<uint32_t>& occupancyMap,
                           std::vector<uint32_t>& mipOccupancyMap );

@@ -208,6 +208,7 @@ class PCCPatch {
 
   PCCPoint3D canvasTo3D( const size_t x, const size_t y, const uint16_t depth ) const;
 
+  size_t patch2Canvas( const size_t u, const size_t v, size_t canvasStride, size_t canvasHeight );
   size_t patch2Canvas( const size_t u, const size_t v, size_t canvasStride, size_t canvasHeight, size_t& x, size_t& y );
   int    patchBlock2CanvasBlock( const size_t uBlk,
                                  const size_t vBlk,
@@ -231,22 +232,22 @@ class PCCPatch {
                                     : ( lhs.sizeU_ != rhs.sizeU_ ? lhs.sizeU_ > rhs.sizeU_ : lhs.index_ < rhs.index_ );
   }
 
-  void getPatchHorizons( std::vector<int>& top_horizon,
-                         std::vector<int>& bottom_horizon,
-                         std::vector<int>& right_horizon,
-                         std::vector<int>& left_horizon );
+  void getPatchHorizons( std::vector<int>& topHorizon,
+                         std::vector<int>& bottomHorizon,
+                         std::vector<int>& rightHorizon,
+                         std::vector<int>& leftHorizon );
 
   int calculateWastedSpace( std::vector<int>& horizon,
-                            std::vector<int>& top_horizon,
-                            std::vector<int>& bottom_horizon,
-                            std::vector<int>& right_horizon,
-                            std::vector<int>& left_horizon );
+                            std::vector<int>& topHorizon,
+                            std::vector<int>& bottomHorizon,
+                            std::vector<int>& rightHorizon,
+                            std::vector<int>& leftHorizon );
 
   bool isPatchLocationAboveHorizon( std::vector<int>& horizon,
-                                    std::vector<int>& top_horizon,
-                                    std::vector<int>& bottom_horizon,
-                                    std::vector<int>& right_horizon,
-                                    std::vector<int>& left_horizon );
+                                    std::vector<int>& topHorizon,
+                                    std::vector<int>& bottomHorizon,
+                                    std::vector<int>& rightHorizon,
+                                    std::vector<int>& leftHorizon );
 
   bool isPatchDimensionSwitched() {
     return !( ( getPatchOrientation() == PATCH_ORIENTATION_DEFAULT ) ||
@@ -255,10 +256,10 @@ class PCCPatch {
               ( getPatchOrientation() == PATCH_ORIENTATION_MROT180 ) );
   }
   void updateHorizon( std::vector<int>& horizon,
-                      std::vector<int>& top_horizon,
-                      std::vector<int>& bottom_horizon,
-                      std::vector<int>& right_horizon,
-                      std::vector<int>& left_horizon );
+                      std::vector<int>& topHorizon,
+                      std::vector<int>& bottomHorizon,
+                      std::vector<int>& rightHorizon,
+                      std::vector<int>& leftHorizon );
 
   GPAPatchData& getPreGPAPatchData() { return preGPAPatchData_; }
   GPAPatchData  getPreGPAPatchData() const { return preGPAPatchData_; }
@@ -279,13 +280,6 @@ class PCCPatch {
   void     allocOneLayerData();
   uint8_t& getPointLocalReconstructionLevel() { return pointLocalReconstructionLevel_; }
   uint8_t  getPointLocalReconstructionLevel() const { return pointLocalReconstructionLevel_; }
-  uint8_t& getPointLocalReconstructionMode( const size_t u = 0, const size_t v = 0 ) {
-    if ( pointLocalReconstructionLevel_ == 1 ) {
-      return pointLocalReconstructionModeByPatch_;
-    } else {
-      return pointLocalReconstructionModeByBlock_[v * sizeU0_ + u];
-    }
-  }
   uint8_t getPointLocalReconstructionMode( const size_t u = 0, const size_t v = 0 ) const {
     if ( pointLocalReconstructionLevel_ == 1 ) {
       return pointLocalReconstructionModeByPatch_;
@@ -296,7 +290,6 @@ class PCCPatch {
 
   inline void   setIndexCopy( size_t index ) { indexCopy_ = index; }
   inline size_t getIndexCopy() { return indexCopy_; }
-
   void setDepthFromGeometryVideo( const std::vector<uint16_t>& geometryVideo,
                                   const int32_t                u2,
                                   const int32_t                v2,
@@ -312,6 +305,20 @@ class PCCPatch {
                      const int32_t                height,
                      const int32_t                occupancyPrecision,
                      const int32_t                threhold );
+  void setPointLocalReconstructionMode( const size_t u, const size_t v, const uint8_t value ) {
+    if ( pointLocalReconstructionLevel_ == 1 ) {
+      pointLocalReconstructionModeByPatch_ = value;
+    } else {
+      pointLocalReconstructionModeByBlock_[v * sizeU0_ + u] = value;
+    }
+  }
+  void setPointLocalReconstructionMode( const uint8_t value ) {
+    if ( pointLocalReconstructionLevel_ == 1 ) {
+      pointLocalReconstructionModeByPatch_ = value;
+    } else {
+      pointLocalReconstructionModeByBlock_[0] = value;
+    }
+  }
 
   void generateBorderPoints3D();
 

@@ -185,6 +185,11 @@ PCCPoint3D PCCPatch::canvasTo3D( const size_t x, const size_t y, const uint16_t 
   return point0;
 }
 
+size_t PCCPatch::patch2Canvas( const size_t u, const size_t v, size_t canvasStride, size_t canvasHeight ) {
+  size_t x, y;
+  return patch2Canvas( u, v, canvasStride, canvasHeight, x, y );
+}
+
 size_t PCCPatch::patch2Canvas( const size_t u,
                                const size_t v,
                                size_t       canvasStride,
@@ -560,54 +565,54 @@ void PCCPatch::updateHorizon( std::vector<int>& horizon,
                               std::vector<int>& bottomHorizon,
                               std::vector<int>& rightHorizon,
                               std::vector<int>& leftHorizon ) {
-  size_t best_u           = u0_;
-  size_t best_v           = v0_;
-  size_t best_orientation = patchOrientation_;
+  size_t bestU           = u0_;
+  size_t bestV           = v0_;
+  size_t bestOrientation = patchOrientation_;
   int    newVal;
-  if ( best_orientation == PATCH_ORIENTATION_DEFAULT ) {
+  if ( bestOrientation == PATCH_ORIENTATION_DEFAULT ) {
     for ( int idx = 0; idx < sizeU0_; idx++ ) {
-      newVal = int( best_v + sizeV0_ - 1 - topHorizon[idx] );
-      if ( newVal > horizon[best_u + idx] ) horizon[best_u + idx] = newVal;
+      newVal = int( bestV + sizeV0_ - 1 - topHorizon[idx] );
+      if ( newVal > horizon[bestU + idx] ) horizon[bestU + idx] = newVal;
     }
-  } else if ( best_orientation == PATCH_ORIENTATION_ROT90 ) {
+  } else if ( bestOrientation == PATCH_ORIENTATION_ROT90 ) {
     for ( int idx = 0; idx < sizeV0_; idx++ ) {
-      newVal = int( best_v + sizeU0_ - 1 - rightHorizon[sizeV0_ - 1 - idx] );
-      if ( newVal > horizon[best_u + idx] ) horizon[best_u + idx] = newVal;
+      newVal = int( bestV + sizeU0_ - 1 - rightHorizon[sizeV0_ - 1 - idx] );
+      if ( newVal > horizon[bestU + idx] ) horizon[bestU + idx] = newVal;
     }
-  } else if ( best_orientation == PATCH_ORIENTATION_ROT180 ) {
+  } else if ( bestOrientation == PATCH_ORIENTATION_ROT180 ) {
     for ( int idx = 0; idx < sizeU0_; idx++ ) {
-      newVal = int( best_v + sizeV0_ - 1 - bottomHorizon[sizeU0_ - 1 - idx] );
-      if ( newVal > horizon[best_u + idx] ) horizon[best_u + idx] = newVal;
+      newVal = int( bestV + sizeV0_ - 1 - bottomHorizon[sizeU0_ - 1 - idx] );
+      if ( newVal > horizon[bestU + idx] ) horizon[bestU + idx] = newVal;
     }
-  } else if ( best_orientation == PATCH_ORIENTATION_ROT270 ) {
+  } else if ( bestOrientation == PATCH_ORIENTATION_ROT270 ) {
     for ( int idx = 0; idx < sizeV0_; idx++ ) {
-      newVal = int( best_v + sizeU0_ - 1 - leftHorizon[idx] );
-      if ( newVal > horizon[best_u + idx] ) horizon[best_u + idx] = newVal;
+      newVal = int( bestV + sizeU0_ - 1 - leftHorizon[idx] );
+      if ( newVal > horizon[bestU + idx] ) horizon[bestU + idx] = newVal;
     }
-  } else if ( best_orientation == PATCH_ORIENTATION_MIRROR ) {
+  } else if ( bestOrientation == PATCH_ORIENTATION_MIRROR ) {
     for ( int idx = 0; idx < sizeU0_; idx++ ) {
-      newVal = int( best_v + sizeV0_ - 1 - topHorizon[sizeU0_ - 1 - idx] );
-      if ( newVal > horizon[best_u + idx] ) horizon[best_u + idx] = newVal;
+      newVal = int( bestV + sizeV0_ - 1 - topHorizon[sizeU0_ - 1 - idx] );
+      if ( newVal > horizon[bestU + idx] ) horizon[bestU + idx] = newVal;
     }
-  } else if ( best_orientation == PATCH_ORIENTATION_MROT90 ) {
+  } else if ( bestOrientation == PATCH_ORIENTATION_MROT90 ) {
     for ( int idx = 0; idx < sizeV0_; idx++ ) {
-      newVal = int( best_v + sizeU0_ - 1 - leftHorizon[sizeV0_ - 1 - idx] );
-      if ( newVal > horizon[best_u + idx] ) horizon[best_u + idx] = newVal;
+      newVal = int( bestV + sizeU0_ - 1 - leftHorizon[sizeV0_ - 1 - idx] );
+      if ( newVal > horizon[bestU + idx] ) horizon[bestU + idx] = newVal;
     }
-  } else if ( best_orientation == PATCH_ORIENTATION_MROT180 ) {
+  } else if ( bestOrientation == PATCH_ORIENTATION_MROT180 ) {
     for ( int idx = 0; idx < sizeU0_; idx++ ) {
-      newVal = int( best_v + sizeV0_ - 1 - bottomHorizon[idx] );
-      if ( newVal > horizon[best_u + idx] ) horizon[best_u + idx] = newVal;
+      newVal = int( bestV + sizeV0_ - 1 - bottomHorizon[idx] );
+      if ( newVal > horizon[bestU + idx] ) horizon[bestU + idx] = newVal;
     }
-  } else if ( best_orientation == PATCH_ORIENTATION_MROT270 ) {
+  } else if ( bestOrientation == PATCH_ORIENTATION_MROT270 ) {
     for ( int idx = 0; idx < sizeV0_; idx++ ) {
-      newVal = int( best_v + sizeU0_ - 1 - rightHorizon[idx] );
-      if ( newVal > horizon[best_u + idx] ) horizon[best_u + idx] = newVal;
+      newVal = int( bestV + sizeU0_ - 1 - rightHorizon[idx] );
+      if ( newVal > horizon[bestU + idx] ) horizon[bestU + idx] = newVal;
     }
-  } else if ( best_orientation == PATCH_ORIENTATION_SWAP ) {
+  } else if ( bestOrientation == PATCH_ORIENTATION_SWAP ) {
     for ( int idx = 0; idx < sizeV0_; idx++ ) {
-      newVal = int( best_v + sizeU0_ - 1 - rightHorizon[idx] );
-      if ( newVal > horizon[best_u + idx] ) horizon[best_u + idx] = newVal;
+      newVal = int( bestV + sizeU0_ - 1 - rightHorizon[idx] );
+      if ( newVal > horizon[bestU + idx] ) horizon[bestU + idx] = newVal;
     }
   }
 }

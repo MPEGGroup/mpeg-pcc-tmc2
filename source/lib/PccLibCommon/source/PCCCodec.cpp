@@ -628,9 +628,7 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                       reconstru
               for ( size_t u1 = 0; u1 < patch.getOccupancyResolution(); ++u1 ) {
                 const size_t u = u0 * patch.getOccupancyResolution() + u1;
                 if ( u >= patchSizeXInPixel || v >= patchSizeYInPixel ) {
-                  size_t x;
-                  size_t y;
-                  occupancyMap[patch.patch2Canvas( u, v, tile.getWidth(), tile.getHeight(), x, y )] = 0;
+                  occupancyMap[patch.patch2Canvas( u, v, tile.getWidth(), tile.getHeight() )] = 0;
                 }
               }  // u1
             }    // v1
@@ -702,20 +700,16 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                       reconstru
               const size_t u = u0 * patch.getOccupancyResolution() + u1;
               size_t       x;
               size_t       y;
-
               bool   occupancy     = false;
               size_t canvasIndex   = patch.patch2Canvas( u, v, tileWidth, tileHeight, x, y );
               size_t xInVideoFrame = x + tile.getLeftTopXInFrame();
               size_t yInVideoFrame = y + tile.getLeftTopYInFrame();
-
               if ( params.pbfEnableFlag_ ) {
                 occupancy = patch.getOccupancyMap( u, v ) != 0;
               } else {
                 occupancy = occupancyMap[canvasIndex] != 0;
               }
               if ( !occupancy ) { continue; }
-              // TRACE_CODEC( "B %4zu ci %9zu  ocm %1lu xy = %4zu %4zu
-              // \n",blockIndex, canvasIndex, occupancy, x,y );
               if ( params.enhancedOccupancyMapCode_ ) {
                 // D0
                 PCCPoint3D point0 = patch.generatePoint( u, v, frame0.getValue( 0, xInVideoFrame, yInVideoFrame ) );
@@ -796,8 +790,7 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                       reconstru
                         point1[patch.getNormalAxis()] =
                             static_cast<double>( point0[patch.getNormalAxis()] - deltaDCur );
                       }
-                      if ( ( eomCode == 1 || i == d1pos ) && ( params.mapCountMinus1_ > 0 ) ) {  // d1
-                        // pointIndex1 = reconstruct.addPoint( point1 );
+                      if ( ( eomCode == 1 || i == d1pos ) && ( params.mapCountMinus1_ > 0 ) ) {  // d1                        
                         if ( patch.getAxisOfAdditionalPlane() == 0 ) {
                           pointIndex1 = reconstruct.addPoint( point1 );
                         } else {

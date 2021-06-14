@@ -855,6 +855,19 @@ bool PCCEncoderParameters::check() {
       std::cerr << "enablePointCloudPartitioning should be true when tileSegmentationType=0\n";
       enablePointCloudPartitioning_ = true;
     }
+    if ( tilePartitionWidth_ == 0 || tilePartitionHeight_ == 0 ) {
+      std::cerr << " tilePartitionWidth_ and tilePartitionHeight_ are set as 1 (64x64 pixels)\n";
+      if ( tilePartitionWidth_ == 0 ) tilePartitionWidth_ = 1;
+      if ( tilePartitionHeight_ == 0 ) tilePartitionHeight_ = 1;
+    }
+    numMaxTilePerFrame_ = roiBoundingBoxMaxX_.size();
+    std::cerr << "numMaxTilePerFrame_ is set as " << numMaxTilePerFrame_ << "\n";
+    if ( roiBoundingBoxMaxX_.size() != numMaxTilePerFrame_ || roiBoundingBoxMaxY_.size() != numMaxTilePerFrame_ ||
+         roiBoundingBoxMaxZ_.size() != numMaxTilePerFrame_ || roiBoundingBoxMinX_.size() != numMaxTilePerFrame_ ||
+         roiBoundingBoxMinY_.size() != numMaxTilePerFrame_ || roiBoundingBoxMinZ_.size() != numMaxTilePerFrame_ ) {
+      std::cerr << "roiBoundingBox need to have same number of elements\n";
+      exit( -1 );
+    }
   } else if ( tileSegmentationType_ == 2 ) {
     if ( numMaxTilePerFrame_ != 3 ) {
       numMaxTilePerFrame_ = 3;
@@ -1266,45 +1279,35 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
     frame.setAtlasFrmOrderCntVal( i );
     frame.setNumRefIdxActive( i == 0 ? 0 : ( constrainedPack_ ? (std::min)( i, maxNumRefAtlasFrame_ ) : 0 ) );
     frame.setRefAfocList( context, 0 );
-    if ( tileSegmentationType_ == 1 ) {
-      size_t partitionWidthIn64  = ( minimumImageWidth_ / ( 64 * numTilesHor_ ) );
-      size_t partitionHeightIn64 = ( tileHeightToWidthRatio_ * minimumImageWidth_ / ( 64 * numTilesHor_ ) );
-      atlas.initPartitionInfoPerFrame( i, minimumImageWidth_, minimumImageHeight_, 0, uniformPartitionSpacing_,
-                                       partitionWidthIn64, partitionHeightIn64 );
-    } else {
-      if ( useRawPointsSeparateVideo_ ) {
-        context[i].setAuxVideoWidth( attributeRawSeparateVideoWidth_ );
-        context[i].resizeAuxTileHeight( numMaxTilePerFrame_, 0 );
-        context[i].resizeAuxTileLeftTopY( numMaxTilePerFrame_, 0 );
-      }
-      atlas.setNumTilesInAtlasFrame( numMaxTilePerFrame_ );
-      atlas.initNumTiles( numMaxTilePerFrame_ );
-      atlas.initPartitionInfoPerFrame( i, minimumImageWidth_, minimumImageHeight_, numMaxTilePerFrame_,
-                                       uniformPartitionSpacing_, tilePartitionWidth_, tilePartitionHeight_ );
-      for ( size_t ti = 0; ti < numMaxTilePerFrame_; ti++ ) {
-        auto& tile = atlas[ti];
-        tile.setRawPatchEnabledFlag( rawPointsPatch_ || lossyRawPointsPatch_ );
-        tile.setUseRawPointsSeparateVideo( useRawPointsSeparateVideo_ );
-        tile.setGeometry3dCoordinatesBitdepth( bitdepth3D );
-        tile.setGeometry2dBitdepth( geometryNominal2dBitdepth_ );
-        tile.setMaxDepth( ( 1 << geometryNominal2dBitdepth_ ) - 1 );
-        tile.setLog2PatchQuantizerSizeX( context.getLog2PatchQuantizerSizeX() );
-        tile.setLog2PatchQuantizerSizeY( context.getLog2PatchQuantizerSizeY() );
-        tile.setAtlasFrmOrderCntLsb( context.calculateAFOCLsb( i ) );
-        tile.setAtlasFrmOrderCntVal( i );
-        tile.setFrameIndex( i );
-        if ( i == 0 ) {
-          tile.setNumRefIdxActive( 0 );
-        } else {
-          tile.setNumRefIdxActive( constrainedPack_ ? (std::min)( i, maxNumRefAtlasFrame_ ) : 0 );
-        }
-        tile.setGeometry2dBitdepth( geometryNominal2dBitdepth_ );
-        tile.setMaxDepth( ( 1 << geometryNominal2dBitdepth_ ) - 1 );
-        tile.setLog2PatchQuantizerSizeX( context.getLog2PatchQuantizerSizeX() );
-        tile.setLog2PatchQuantizerSizeY( context.getLog2PatchQuantizerSizeY() );
-        tile.setNumRefIdxActive( std::min( i, maxNumRefAtlasFrame_ ) );
-        tile.setRefAfocList( context, 0 );
-      }
+    if ( useRawPointsSeparateVideo_ ) {
+      context[i].setAuxVideoWidth( attributeRawSeparateVideoWidth_ );
+      context[i].resizeAuxTileHeight( numMaxTilePerFrame_, 0 );
+      context[i].resizeAuxTileLeftTopY( numMaxTilePerFrame_, 0 );
+    }
+    atlas.setNumTilesInAtlasFrame( numMaxTilePerFrame_ );
+    atlas.initNumTiles( numMaxTilePerFrame_ );
+    atlas.initPartitionInfoPerFrame( i, minimumImageWidth_, minimumImageHeight_, numMaxTilePerFrame_,
+                                     uniformPartitionSpacing_, tilePartitionWidth_, tilePartitionHeight_ );
+    for ( size_t ti = 0; ti < numMaxTilePerFrame_; ti++ ) {
+      auto& tile = atlas[ti];
+      tile.setRawPatchEnabledFlag( rawPointsPatch_ || lossyRawPointsPatch_ );
+      tile.setUseRawPointsSeparateVideo( useRawPointsSeparateVideo_ );
+      tile.setGeometry3dCoordinatesBitdepth( bitdepth3D );
+      tile.setGeometry2dBitdepth( geometryNominal2dBitdepth_ );
+      tile.setMaxDepth( ( 1 << geometryNominal2dBitdepth_ ) - 1 );
+      tile.setLog2PatchQuantizerSizeX( context.getLog2PatchQuantizerSizeX() );
+      tile.setLog2PatchQuantizerSizeY( context.getLog2PatchQuantizerSizeY() );
+      tile.setAtlasFrmOrderCntLsb( context.calculateAFOCLsb( i ) );
+      tile.setAtlasFrmOrderCntVal( i );
+      tile.setTileIndex( ti );
+      tile.setFrameIndex( i );
+      tile.setNumRefIdxActive( i != 0 && constrainedPack_ ? (std::min)( i, maxNumRefAtlasFrame_ ) : 0 );
+      tile.setGeometry2dBitdepth( geometryNominal2dBitdepth_ );
+      tile.setMaxDepth( ( 1 << geometryNominal2dBitdepth_ ) - 1 );
+      tile.setLog2PatchQuantizerSizeX( context.getLog2PatchQuantizerSizeX() );
+      tile.setLog2PatchQuantizerSizeY( context.getLog2PatchQuantizerSizeY() );
+      tile.setNumRefIdxActive( std::min( i, maxNumRefAtlasFrame_ ) );
+      tile.setRefAfocList( context, 0 );
     }
   }
 }
