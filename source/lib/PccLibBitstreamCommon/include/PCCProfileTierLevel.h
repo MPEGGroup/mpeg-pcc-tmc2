@@ -45,7 +45,7 @@ class ProfileTierLevel {
       tierFlag_( false ),
       profileCodecGroupIdc_( 0 ),
       profileToolsetIdc_( 0 ),
-      profileReconctructionIdc_( 0 ),
+      profileReconstructionIdc_( 0 ),
       levelIdc_( 0 ),
       numSubProfiles_( 0 ),
       extendedSubProfileFlag_( false ),
@@ -58,7 +58,7 @@ class ProfileTierLevel {
   bool                                  getTierFlag() { return tierFlag_; }
   uint8_t                               getProfileCodecGroupIdc() { return profileCodecGroupIdc_; }
   uint8_t                               getProfileToolsetIdc() { return profileToolsetIdc_; }
-  uint8_t                               getProfileReconctructionIdc() { return profileReconctructionIdc_; }
+  uint8_t                               getProfileReconstructionIdc() { return profileReconstructionIdc_; }
   uint8_t                               getLevelIdc() { return levelIdc_; }
   uint8_t                               getNumSubProfiles() { return numSubProfiles_; }
   bool                                  getExtendedSubProfileFlag() { return extendedSubProfileFlag_; }
@@ -71,7 +71,7 @@ class ProfileTierLevel {
   void setTierFlag( bool value ) { tierFlag_ = value; }
   void setProfileCodecGroupIdc( uint8_t value ) { profileCodecGroupIdc_ = value; }
   void setProfileToolsetIdc( uint8_t value ) { profileToolsetIdc_ = value; }
-  void setProfileReconctructionIdc( uint8_t value ) { profileReconctructionIdc_ = value; }
+  void setProfileReconstructionIdc( uint8_t value ) { profileReconstructionIdc_ = value; }
   void setLevelIdc( uint8_t value ) { levelIdc_ = value; }
   void setNumSubProfiles( uint8_t value ) { numSubProfiles_ = value; }
   void setExtendedSubProfileFlag( bool value ) { extendedSubProfileFlag_ = value; }
@@ -82,7 +82,7 @@ class ProfileTierLevel {
   bool                                 tierFlag_;
   uint8_t                              profileCodecGroupIdc_;
   uint8_t                              profileToolsetIdc_;
-  uint8_t                              profileReconctructionIdc_;
+  uint8_t                              profileReconstructionIdc_;
   uint8_t                              levelIdc_;
   uint8_t                              numSubProfiles_;
   bool                                 extendedSubProfileFlag_;

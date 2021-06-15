@@ -43,7 +43,7 @@ class PCCMetricsParameters {
   PCCMetricsParameters();
   ~PCCMetricsParameters();
   void print();
-  bool check( bool checkFiles = false );
+  bool check( bool compareLogFiles = false );
   void completePath();
 
   bool computeMetrics_;
@@ -60,13 +60,10 @@ class PCCMetricsParameters {
 
   size_t nbThread_;
 
-  float resolution_;    //! intrinsic resolution, imported. for geometric
-                        // distortion
-  int dropDuplicates_;  //! 0(detect) 1(drop) 2(average) subsequent points with
-                        // same geo coordinates
-  int neighborsProc_;   //! 0(undefined), 1(average), 2(weighted average),
-                        // 3(min), 4(max) neighbors with same geometric
-                        //! distance
+  float resolution_;      // intrinsic resolution, imported. for geometric distortion
+  int   dropDuplicates_;  // 0(detect) 1(drop) 2(average) subsequent points with same geo coordinates
+  int   neighborsProc_;   // 0(undefined), 1(average), 2(weighted average), 3(min), 4(max) neighbors with same geometric
+                          // distance
 
   bool computeC2c_;
   bool computeC2p_;

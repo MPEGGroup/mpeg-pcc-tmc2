@@ -56,9 +56,10 @@ class AtlasTileHeader {
       posDeltaMaxDQuantizer_( 0 ),
       patchSizeXinfoQuantizer_( 0 ),
       patchSizeYinfoQuantizer_( 0 ),
-      raw3dPosAxisBitCountMinus1_( 0 ),
+      raw3dOffsetAxisBitCountMinus1_( 0 ),
       numRefIdxActiveOverrideFlag_( 0 ),
-      numRefIdxActiveMinus1_( 0 ) {
+      numRefIdxActiveMinus1_( 0 ),
+      tileNaluTypeInfo_( 0 ) {
     additionalAfocLsbPresentFlag_.resize( 1, 0 );
     additionalAfocLsbVal_.resize( 1, 0 );
   };
@@ -77,20 +78,21 @@ class AtlasTileHeader {
   uint32_t              getId() { return id_; }
   PCCTileType           getType() { return type_; }
   bool                  getAtlasOutputFlag() { return atlasOutputFlag_; }
-  uint8_t               getAtlasFrmOrderCntLsb() { return atlasFrmOrderCntLsb_; }
+  size_t                getAtlasFrmOrderCntLsb() { return atlasFrmOrderCntLsb_; }
   bool                  getRefAtlasFrameListSpsFlag() { return refAtlasFrameListSpsFlag_; }
   uint8_t               getRefAtlasFrameListIdx() { return refAtlasFrameListIdx_; }
   uint8_t               getPosMinDQuantizer() { return posMinDQuantizer_; }
   uint8_t               getPosDeltaMaxDQuantizer() { return posDeltaMaxDQuantizer_; }
   uint8_t               getPatchSizeXinfoQuantizer() { return patchSizeXinfoQuantizer_; }
   uint8_t               getPatchSizeYinfoQuantizer() { return patchSizeYinfoQuantizer_; }
-  uint8_t               getRaw3dPosAxisBitCountMinus1() { return raw3dPosAxisBitCountMinus1_; }
+  uint8_t               getRaw3dOffsetAxisBitCountMinus1() { return raw3dOffsetAxisBitCountMinus1_; }
   bool                  getNumRefIdxActiveOverrideFlag() { return numRefIdxActiveOverrideFlag_; }
   uint8_t               getNumRefIdxActiveMinus1() { return numRefIdxActiveMinus1_; }
   std::vector<bool>&    getAdditionalAfocLsbPresentFlag() { return additionalAfocLsbPresentFlag_; }
   std::vector<uint8_t>& getAdditionalAfocLsbVal() { return additionalAfocLsbVal_; }
   bool                  getAdditionalAfocLsbPresentFlag( size_t idx ) { return additionalAfocLsbPresentFlag_[idx]; }
   uint8_t               getAdditionalAfocLsbVal( size_t idx ) { return additionalAfocLsbVal_[idx]; }
+  uint8_t               getTileNaluTypeInfo() { return tileNaluTypeInfo_; }
 
   void setNoOutputOfPriorAtlasFramesFlag( bool value ) { noOutputOfPriorAtlasFramesFlag_ = value; }
   void setAtlasFrameParameterSetId( uint8_t value ) { atlasFrameParameterSetId_ = value; }
@@ -98,20 +100,21 @@ class AtlasTileHeader {
   void setId( uint32_t value ) { id_ = value; }
   void setType( PCCTileType value ) { type_ = value; }
   void setAtlasOutputFlag( bool value ) { atlasOutputFlag_ = value; }
-  void setAtlasFrmOrderCntLsb( uint8_t value ) { atlasFrmOrderCntLsb_ = value; }
+  void setAtlasFrmOrderCntLsb( size_t value ) { atlasFrmOrderCntLsb_ = value; }
   void setRefAtlasFrameListSpsFlag( bool value ) { refAtlasFrameListSpsFlag_ = value; }
   void setRefAtlasFrameListIdx( uint8_t value ) { refAtlasFrameListIdx_ = value; }
   void setPosMinDQuantizer( uint8_t value ) { posMinDQuantizer_ = value; }
   void setPosDeltaMaxDQuantizer( uint8_t value ) { posDeltaMaxDQuantizer_ = value; }
   void setPatchSizeXinfoQuantizer( uint8_t value ) { patchSizeXinfoQuantizer_ = value; }
   void setPatchSizeYinfoQuantizer( uint8_t value ) { patchSizeYinfoQuantizer_ = value; }
-  void setRaw3dPosAxisBitCountMinus1( uint8_t value ) { raw3dPosAxisBitCountMinus1_ = value; }
+  void setRaw3dOffsetAxisBitCountMinus1( uint8_t value ) { raw3dOffsetAxisBitCountMinus1_ = value; }
   void setNumRefIdxActiveOverrideFlag( bool value ) { numRefIdxActiveOverrideFlag_ = value; }
   void setNumRefIdxActiveMinus1( uint8_t value ) { numRefIdxActiveMinus1_ = value; }
   void setAdditionalAfocLsbPresentFlag( std::vector<bool>& value ) { additionalAfocLsbPresentFlag_ = value; }
   void setAdditionalAfocLsbVal( std::vector<uint8_t>& value ) { additionalAfocLsbVal_ = value; }
   void setAdditionalAfocLsbPresentFlag( size_t idx, bool value ) { additionalAfocLsbPresentFlag_[idx] = value; }
   void setAdditionalAfocLsbVal( size_t idx, uint8_t value ) { additionalAfocLsbVal_[idx] = value; }
+  void setTileNaluTypeInfo( uint8_t value ) { tileNaluTypeInfo_ = value; }
 
  private:
   bool                 noOutputOfPriorAtlasFramesFlag_;
@@ -121,7 +124,7 @@ class AtlasTileHeader {
   uint32_t             id_;
   PCCTileType          type_;
   bool                 atlasOutputFlag_;
-  uint8_t              atlasFrmOrderCntLsb_;
+  size_t               atlasFrmOrderCntLsb_;
   bool                 refAtlasFrameListSpsFlag_;
   uint8_t              refAtlasFrameListIdx_;
   std::vector<bool>    additionalAfocLsbPresentFlag_;
@@ -130,10 +133,11 @@ class AtlasTileHeader {
   uint8_t              posDeltaMaxDQuantizer_;
   uint8_t              patchSizeXinfoQuantizer_;
   uint8_t              patchSizeYinfoQuantizer_;
-  uint8_t              raw3dPosAxisBitCountMinus1_;
+  uint8_t              raw3dOffsetAxisBitCountMinus1_;
   bool                 numRefIdxActiveOverrideFlag_;
   uint8_t              numRefIdxActiveMinus1_;
   RefListStruct        refListStruct_;
+  uint8_t              tileNaluTypeInfo_;
 };
 
 };  // namespace pcc

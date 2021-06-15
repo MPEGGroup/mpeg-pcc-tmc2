@@ -86,7 +86,10 @@ void PCCHDRToolsLibColorConverterImpl<T>::convert( std::string     configFile,
   params                         = &ccParams;
   ProjectParameters* inputParams = (ProjectParameters*)( params );
   inputParams->refresh();
-  inputParams->readConfigFile( (char*)configFile.c_str() );
+  if ( !inputParams->readConfigFile( (char*)configFile.c_str() ) ) {
+    printf( "Could not open configuration file: %s.\n", configFile.c_str() );
+    exit( -1 );
+  }
   inputParams->m_source.m_width[0]  = videoSrc.getWidth();
   inputParams->m_source.m_height[0] = videoSrc.getHeight();
   inputParams->m_numberOfFrames     = videoSrc.getFrameCount();

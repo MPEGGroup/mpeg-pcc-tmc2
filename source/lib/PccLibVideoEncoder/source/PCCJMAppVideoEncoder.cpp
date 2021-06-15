@@ -48,35 +48,51 @@ void PCCJMAppVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
                                       PCCVideoEncoderParameters& params,
                                       PCCVideoBitstream&         bitstream,
                                       PCCVideo<T, 3>&            videoRec ) {
-  const size_t width      = videoSrc.getWidth();
-  const size_t height     = videoSrc.getHeight();
-  const size_t frameCount = videoSrc.getFrameCount();
-
+  const size_t width          = videoSrc.getWidth();
+  const size_t height         = videoSrc.getHeight();
+  const size_t frameCount     = videoSrc.getFrameCount();
+  std::string  srcYuvFileName = params.srcYuvFileName_;
+  std::string  recYuvFileName = params.recYuvFileName_;
+  std::string  binFileName    = params.binFileName_;
+  srcYuvFileName.insert( srcYuvFileName.find_last_of( "." ), "_jmapp" );
+  recYuvFileName.insert( recYuvFileName.find_last_of( "." ), "_jmapp" );
+  binFileName.insert( binFileName.find_last_of( "." ), "_jmapp" );
   std::stringstream cmd;
   cmd << params.encoderPath_ << " -d " << params.encoderConfig_;
-  if ( bitstream.type() == VIDEO_GEOMETRY && bitstream.type() != VIDEO_TEXTURE ) {
-    cmd << " -p QPPSlice=" << params.qp_ << " -p QPISlice=" << params.qp_;
+  if ( bitstream.type() == VIDEO_GEOMETRY && bitstream.type() != VIDEO_ATTRIBUTE ) {
+    cmd << " -p QPPSlice=" << params.qp_;
+    cmd << " -p QPISlice=" << params.qp_;
   }
-  if ( bitstream.type() == VIDEO_TEXTURE && bitstream.type() != VIDEO_GEOMETRY ) {
-    cmd << " -p QPPSlice=" << params.qp_ << " -p QPISlice=" << params.qp_;
+  if ( bitstream.type() == VIDEO_ATTRIBUTE && bitstream.type() != VIDEO_GEOMETRY ) {
+    cmd << " -p QPPSlice=" << params.qp_;
+    cmd << " -p QPISlice=" << params.qp_;
   }
-  cmd << " -p InputFile=" << params.srcYuvFileName_ << " -p SourceBitDepthLuma=" << params.inputBitDepth_
-      << " -p YUVFormat=" << ( params.use444CodecIo_ ? "3" : "1" ) << " -p FrameRate=30 "
-      << " -p FrameSkip=0 "
-      << " -p SourceWidth=" << width << " -p SourceHeight=" << height << " -p FramesToBeEncoded=" << frameCount
-      << " -p OutputFile=" << params.binFileName_ << " -p ReconFile=" << params.recYuvFileName_
-      << " -p OutputBitDepthLuma=" << params.outputBitDepth_ << " -p OutputBitDepthChroma=" << params.outputBitDepth_;
+  cmd << " -p InputFile=" << srcYuvFileName;
+  cmd << " -p SourceBitDepthLuma=" << params.inputBitDepth_;
+  cmd << " -p YUVFormat=" << ( params.use444CodecIo_ ? "3" : "1" );
+  cmd << " -p FrameRate=30 ";
+  cmd << " -p FrameSkip=0 ";
+  cmd << " -p SourceWidth=" << width;
+  cmd << " -p SourceHeight=" << height;
+  cmd << " -p FramesToBeEncoded=" << frameCount;
+  cmd << " -p OutputFile=" << binFileName;
+  cmd << " -p ReconFile=" << recYuvFileName;
+  cmd << " -p OutputBitDepthLuma=" << params.outputBitDepth_;
+  cmd << " -p OutputBitDepthChroma=" << params.outputBitDepth_;
 
   std::cout << cmd.str() << std::endl;
-  videoSrc.write( params.srcYuvFileName_, params.inputBitDepth_ == 8 ? 1 : 2 );
+  videoSrc.write( srcYuvFileName, params.inputBitDepth_ == 8 ? 1 : 2 );
   if ( pcc::system( cmd.str().c_str() ) ) {
     std::cout << "Error: can't run system command!" << std::endl;
     exit( -1 );
   }
   PCCCOLORFORMAT format = getColorFormat( params.recYuvFileName_ );
   videoRec.clear();
-  videoRec.read( params.recYuvFileName_, width, height, format, frameCount, params.outputBitDepth_ == 8 ? 1 : 2 );
-  bitstream.read( params.binFileName_ );
+  videoRec.read( recYuvFileName, width, height, format, params.outputBitDepth_ == 8 ? 1 : 2 );
+  bitstream.read( binFileName );
+  removeFile( srcYuvFileName );
+  removeFile( recYuvFileName );
+  removeFile( binFileName );
 }
 
 template <typename T>

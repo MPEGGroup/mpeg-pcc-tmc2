@@ -352,17 +352,23 @@ void PCCInternalColorConverter<T>::convert( std::string        configuration,
   int32_t     bitdepth = -1;
   int32_t     filter   = -1;
   extractParameters( configuration, config, bitdepth, filter );
-  if ( config.empty() || bitdepth == -1 || bitdepth == -1 ) {
+  if ( config.empty() || bitdepth == -1 ) {
     printf( "ColorConverter configuration is not correct ( %s %d %d ) \n", config.c_str(), bitdepth, filter );
     exit( -1 );
   }
-  printf( "ColorConverter configuration : %s %d %d videoSrc %zu frames \n", config.c_str(), bitdepth, filter,
-          videoSrc.getFrameCount() );
+  printf( "ColorConverter configuration : %s bitdepth = %d filter = %d videoSrc %zu frames \n", config.c_str(),
+          bitdepth, filter, videoSrc.getFrameCount() );
   videoDst.clear();
   if ( config == "YUV420ToYUV444" ) {
     convertYUV420ToYUV444( videoSrc, videoDst, bitdepth == 8 ? 1 : 2, filter );
+  } else if ( config == "YUV420ToRGB444" ) {
+    convertYUV420ToRGB444( videoSrc, videoDst, bitdepth == 8 ? 1 : 2, filter );
   } else if ( config == "RGB444ToYUV420" ) {
     convertRGB44ToYUV420( videoSrc, videoDst, bitdepth == 8 ? 1 : 2, filter );
+  } else if ( config == "RGB444ToYUV444" ) {
+    convertRGB44ToYUV444( videoSrc, videoDst, bitdepth == 8 ? 1 : 2, filter );
+  } else if ( config == "YUV444ToRGB444" ) {
+    convertYUV444ToRGB444( videoSrc, videoDst, bitdepth == 8 ? 1 : 2, filter );
   } else {
     printf( "PCCInternalColorConverter convert format not supported: %s \n", config.c_str() );
     exit( -1 );
@@ -418,6 +424,35 @@ void PCCInternalColorConverter<T>::convertRGB44ToYUV420( PCCImage<T, 3>& imageSr
 }
 
 template <typename T>
+void PCCInternalColorConverter<T>::convertRGB44ToYUV444( PCCVideo<T, 3>& videoSrc,
+                                                         PCCVideo<T, 3>& videoDst,
+                                                         size_t          nbyte,
+                                                         size_t          filter ) {
+  videoDst.resize( videoSrc.getFrameCount() );
+  for ( size_t i = 0; i < videoSrc.getFrameCount(); i++ ) {
+    convertRGB44ToYUV444( videoSrc[i], videoDst[i], nbyte, filter );
+  }
+}
+
+template <typename T>
+void PCCInternalColorConverter<T>::convertRGB44ToYUV444( PCCImage<T, 3>& imageSrc,
+                                                         PCCImage<T, 3>& imageDst,
+                                                         size_t          nbyte,
+                                                         size_t          filter ) {
+  int width  = (int)imageSrc.getWidth();
+  int height = (int)imageSrc.getHeight();
+  imageDst.resize( width, height, pcc::PCCCOLORFORMAT::YUV444 );
+  std::vector<float> RGB444[3], YUV444[3];
+  RGBtoFloatRGB( imageSrc[0], RGB444[0], nbyte );
+  RGBtoFloatRGB( imageSrc[1], RGB444[1], nbyte );
+  RGBtoFloatRGB( imageSrc[2], RGB444[2], nbyte );
+  convertRGBToYUV( RGB444[0], RGB444[1], RGB444[2], YUV444[0], YUV444[1], YUV444[2] );
+  floatYUVToYUV( YUV444[0], imageDst[0], 0, nbyte );
+  floatYUVToYUV( YUV444[1], imageDst[1], 1, nbyte );
+  floatYUVToYUV( YUV444[2], imageDst[2], 1, nbyte );
+}
+
+template <typename T>
 void PCCInternalColorConverter<T>::convertYUV420ToYUV444( PCCVideo<T, 3>& videoSrc,
                                                           PCCVideo<T, 3>& videoDst,
                                                           size_t          nbyte,
@@ -447,6 +482,72 @@ void PCCInternalColorConverter<T>::convertYUV420ToYUV444( PCCImage<T, 3>& imageS
   floatYUVToYUV( YUV420[0], imageDst[0], 0, 2 );
   floatYUVToYUV( YUV444[1], imageDst[1], 1, 2 );
   floatYUVToYUV( YUV444[2], imageDst[2], 1, 2 );
+}
+
+template <typename T>
+void PCCInternalColorConverter<T>::convertYUV420ToRGB444( PCCVideo<T, 3>& videoSrc,
+                                                          PCCVideo<T, 3>& videoDst,
+                                                          size_t          nbyte,
+                                                          size_t          filter ) {
+  videoDst.resize( videoSrc.getFrameCount() );
+  for ( size_t i = 0; i < videoSrc.getFrameCount(); i++ ) {
+    convertYUV420ToRGB444( videoSrc[i], videoDst[i], nbyte, filter );
+  }
+}
+
+template <typename T>
+void PCCInternalColorConverter<T>::convertYUV420ToRGB444( PCCImage<T, 3>& imageSrc,
+                                                          PCCImage<T, 3>& imageDst,
+                                                          size_t          nbyte,
+                                                          size_t          filter ) {
+  printf( "convertYUV420ToRGB444 \n" );
+  fflush( stdout );
+  int width  = (int)imageSrc.getWidth();
+  int height = (int)imageSrc.getHeight();
+  imageDst.resize( width, height, pcc::PCCCOLORFORMAT::RGB444 );
+  size_t             widthChroma  = width / 2;
+  size_t             heightChroma = height / 2;
+  std::vector<float> YUV444[3], YUV420[3], RGB444[3];
+  YUVtoFloatYUV( imageSrc[0], YUV420[0], 0, nbyte );
+  YUVtoFloatYUV( imageSrc[1], YUV420[1], 1, nbyte );
+  YUVtoFloatYUV( imageSrc[2], YUV420[2], 1, nbyte );
+  upsampling( YUV420[1], YUV444[1], widthChroma, heightChroma, nbyte == 1 ? 255 : 1023, filter );
+  upsampling( YUV420[2], YUV444[2], widthChroma, heightChroma, nbyte == 1 ? 255 : 1023, filter );
+  convertYUVToRGB( YUV420[0], YUV444[1], YUV444[2], RGB444[0], RGB444[1], RGB444[2] );
+  floatRGBToRGB( RGB444[0], imageDst[0], nbyte );
+  floatRGBToRGB( RGB444[1], imageDst[1], nbyte );
+  floatRGBToRGB( RGB444[2], imageDst[2], nbyte );
+}
+
+template <typename T>
+void PCCInternalColorConverter<T>::convertYUV444ToRGB444( PCCVideo<T, 3>& videoSrc,
+                                                          PCCVideo<T, 3>& videoDst,
+                                                          size_t          nbyte,
+                                                          size_t          filter ) {
+  videoDst.resize( videoSrc.getFrameCount() );
+  for ( size_t i = 0; i < videoSrc.getFrameCount(); i++ ) {
+    convertYUV444ToRGB444( videoSrc[i], videoDst[i], nbyte, filter );
+  }
+}
+
+template <typename T>
+void PCCInternalColorConverter<T>::convertYUV444ToRGB444( PCCImage<T, 3>& imageSrc,
+                                                          PCCImage<T, 3>& imageDst,
+                                                          size_t          nbyte,
+                                                          size_t          filter ) {
+  printf( "convertYUV444ToRGB444 \n" );
+  fflush( stdout );
+  int width  = (int)imageSrc.getWidth();
+  int height = (int)imageSrc.getHeight();
+  imageDst.resize( width, height, pcc::PCCCOLORFORMAT::RGB444 );
+  std::vector<float> YUV444[3], RGB444[3];
+  YUVtoFloatYUV( imageSrc[0], YUV444[0], 0, nbyte );
+  YUVtoFloatYUV( imageSrc[1], YUV444[1], 1, nbyte );
+  YUVtoFloatYUV( imageSrc[2], YUV444[2], 1, nbyte );
+  convertYUVToRGB( YUV444[0], YUV444[1], YUV444[2], RGB444[0], RGB444[1], RGB444[2] );
+  floatRGBToRGB( RGB444[0], imageDst[0], nbyte );
+  floatRGBToRGB( RGB444[1], imageDst[1], nbyte );
+  floatRGBToRGB( RGB444[2], imageDst[2], nbyte );
 }
 
 template <typename T>
@@ -484,8 +585,6 @@ void PCCInternalColorConverter<T>::floatYUVToYUV( const std::vector<float>& src,
                                                   const size_t              nbyte ) const {
   size_t count = src.size();
   dst.resize( count );
-  // double offset = chroma ? nbyte == 1 ? 128. : 512. : 0;
-  // double scale  = nbyte == 1 ? 255. : 1023.;
   double offset = chroma ? nbyte == 1 ? 128. : 32768. : 0;
   double scale  = nbyte == 1 ? 255. : 65535.;
   for ( size_t i = 0; i < count; i++ ) {
@@ -592,6 +691,32 @@ void PCCInternalColorConverter<T>::upsampling( const std::vector<float>& chromaI
       chromaOut[i * widthOut + j * 2 + 1] =
           upsamplingHorizontal1( g_filter420to444[filter], temp, widthIn, heightOut, i, j + 1 );
     }
+  }
+}
+
+template <typename T>
+void PCCInternalColorConverter<T>::upsample( PCCVideo<T, 3>& video, size_t rate, size_t nbyte, size_t filter ) {
+  for ( auto& image : video ) { upsample( image, rate, nbyte, filter ); }
+}
+
+template <typename T>
+void PCCInternalColorConverter<T>::upsample( PCCImage<T, 3>& image, size_t rate, size_t nbyte, size_t filter ) {
+  for ( size_t i = rate; i > 1; i /= 2 ) {
+    int                width        = (int)image.getWidth();
+    int                height       = (int)image.getHeight();
+    int                widthChroma  = image.getColorFormat() == YUV420 ? width / 2 : width;
+    int                heightChroma = image.getColorFormat() == YUV420 ? height / 2 : height;
+    std::vector<float> src[3], up[3];
+    YUVtoFloatYUV( image[0], src[0], 0, nbyte );
+    YUVtoFloatYUV( image[1], src[1], 1, nbyte );
+    YUVtoFloatYUV( image[2], src[2], 1, nbyte );
+    upsampling( src[0], up[0], width, height, nbyte == 1 ? 255 : 1023, filter );
+    upsampling( src[1], up[1], widthChroma, heightChroma, nbyte == 1 ? 255 : 1023, filter );
+    upsampling( src[2], up[2], widthChroma, heightChroma, nbyte == 1 ? 255 : 1023, filter );
+    image.resize( width * 2, height * 2, image.getColorFormat() );
+    floatYUVToYUV( up[0], image[0], 0, nbyte );
+    floatYUVToYUV( up[1], image[1], 1, nbyte );
+    floatYUVToYUV( up[2], image[2], 1, nbyte );
   }
 }
 

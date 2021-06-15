@@ -1,4 +1,4 @@
-CMAKE_MINIMUM_REQUIRED (VERSION 2.8.11)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.2)
 
 GET_FILENAME_COMPONENT(MYNAME ${CMAKE_CURRENT_LIST_DIR} NAME)
 STRING(REPLACE " " "_" MYNAME ${MYNAME})
@@ -11,20 +11,36 @@ FILE(GLOB SRC include/*.h
 SET( LIBS PccLibCommon )
 INCLUDE_DIRECTORIES( include 
                      ${CMAKE_SOURCE_DIR}/source/lib/PccLibCommon/include/
-                     ${CMAKE_SOURCE_DIR}/source/lib/PccLibBitstreamCommon/include/
-                     ${CMAKE_SOURCE_DIR}/source/lib/PccLibVideoEncoder/include/ )
+                     ${CMAKE_SOURCE_DIR}/source/lib/PccLibBitstreamCommon/include/ )
+
 IF( USE_HMLIB_VIDEO_CODEC )
   INCLUDE_DIRECTORIES( ${HM_LIB_SOURCE_DIR}/ )
   SET( LIBS ${LIBS} TLibCommon TLibEncoder )
 ENDIF()
+IF( USE_JMLIB_VIDEO_CODEC )
+    INCLUDE_DIRECTORIES( ${JM_LIB_SOURCE_DIR}/lib/lcommon/
+                         ${JM_LIB_SOURCE_DIR}/app/lencod/ )
+    SET( LIBS ${LIBS} lencod )
+ENDIF()
 IF( USE_FFMPEG_VIDEO_CODEC )
   INCLUDE_DIRECTORIES( ${FFMPEG_INCLUDE} )
+  IF( WIN32 OR MSVC OR MSYS OR MINGW )
+    LINK_DIRECTORIES( ${FFMPEG_DEV_DIR}/lib ) 
+  ENDIF()
   INCLUDE_DIRECTORIES( ${CMAKE_SOURCE_DIR}/source/lib/PccLibVideoDecoder/include/ )
   SET( LIBS ${LIBS} ${AVCODEC_LIBRARY} ${AVUTIL_LIBRARY} ${AVFORMAT_LIBRARY} PccLibVideoDecoder )    
+ENDIF()
+IF( USE_VTMLIB_VIDEO_CODEC )
+    SET( LIBS ${LIBS} CommonLib EncoderLib_vtm DecoderLib_vtm Utilities_vtm )
 ENDIF()
 
 ADD_LIBRARY( ${MYNAME} ${LINKER} ${SRC} )
 
+#TARGET_LINK_LIBRARIES( ${MYNAME} ${LIBS} )
+If( MSVC )
+TARGET_LINK_LIBRARIES( ${MYNAME} ${LIBS} ws2_32)
+ELSE()
 TARGET_LINK_LIBRARIES( ${MYNAME} ${LIBS} )
+ENDIF()
 
 SET_TARGET_PROPERTIES( ${MYNAME} PROPERTIES LINKER_LANGUAGE CXX)

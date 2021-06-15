@@ -48,12 +48,10 @@ class PCCJMAppVideoDecoder : public PCCVirtualVideoDecoder<T> {
   ~PCCJMAppVideoDecoder();
 
   void decode( PCCVideoBitstream& bitstream,
-               size_t             outputBitDepth,
-               bool               RGB2GBR,
                PCCVideo<T, 3>&    video,
-               const std::string& decoderPath = "",
-               const std::string& parameters  = "",
-               const size_t       frameCount  = 0 );
+               size_t             outputBitDepth = 8,
+               const std::string& decoderPath    = "",
+               const std::string& parameters     = "" );
 };
 
 };  // namespace pcc

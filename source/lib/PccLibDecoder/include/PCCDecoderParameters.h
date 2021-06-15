@@ -51,6 +51,9 @@ class PCCDecoderParameters {
   std::string       videoDecoderOccupancyPath_;
   std::string       videoDecoderGeometryPath_;
   std::string       videoDecoderAttributePath_;
+  bool              byteStreamVideoCoderOccupancy_;
+  bool              byteStreamVideoCoderGeometry_;
+  bool              byteStreamVideoCoderAttribute_;
   PCCColorTransform colorTransform_;
   std::string       colorSpaceConversionPath_;
   std::string       inverseColorSpaceConversionConfig_;
@@ -71,6 +74,7 @@ class PCCDecoderParameters {
   double            maxGeometryDist2Bwd_;
   double            maxColorDist2Fwd_;
   double            maxColorDist2Bwd_;
+  size_t            shvcLayerIndex_;
 };
 
 };  // namespace pcc

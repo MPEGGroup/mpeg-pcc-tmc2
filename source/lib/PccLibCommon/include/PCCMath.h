@@ -72,10 +72,14 @@ class PCCVector3 {
       ( *this ) *= invNorm;
     }
   }
-  T           getNorm() const { return static_cast<T>( sqrt( getNorm2() ) ); }
-  T           getNorm2() const { return data_[0] * data_[0] + data_[1] * data_[1] + data_[2] * data_[2]; }
-  PCCVector3& operator=( const PCCVector3& rhs ) {
-    memcpy( data_, rhs.data_, sizeof( data_ ) );
+  T getNorm() const { return static_cast<T>( sqrt( getNorm2() ) ); }
+  T getNorm2() const { return data_[0] * data_[0] + data_[1] * data_[1] + data_[2] * data_[2]; }
+
+  template <typename OutT>
+  PCCVector3& operator=( const PCCVector3<OutT>& rhs ) {
+    data_[0] = (T)rhs.r();
+    data_[1] = (T)rhs.g();
+    data_[2] = (T)rhs.b();
     return *this;
   }
   PCCVector3& operator+=( const PCCVector3& rhs ) {
@@ -206,6 +210,12 @@ class PCCVector3 {
     data_[2] = vec.data_[2];
   }
   PCCVector3( const T* vec ) { memcpy( data_, vec, sizeof( data_ ) ); }
+  template <typename OutT>
+  PCCVector3( const PCCVector3<OutT>& vec ) {
+    data_[0] = (T)vec[0];
+    data_[1] = (T)vec[1];
+    data_[2] = (T)vec[2];
+  }
   PCCVector3()        = default;
   ~PCCVector3( void ) = default;
 
@@ -217,7 +227,21 @@ template <typename T>
 struct PCCBox3 {
   PCCVector3<T> min_;
   PCCVector3<T> max_;
-  bool          contains( const PCCVector3<T> point ) const {
+
+  void init() {
+    min_.x() = ( std::numeric_limits<T>::max )();
+    min_.y() = ( std::numeric_limits<T>::max )();
+    min_.z() = ( std::numeric_limits<T>::max )();
+    max_.x() = ( std::numeric_limits<T>::min )();
+    max_.y() = ( std::numeric_limits<T>::min )();
+    max_.z() = ( std::numeric_limits<T>::min )();
+  }
+  inline uint16_t size( uint8_t index ) const { return max_[index] - min_[index]; }
+  inline uint16_t sizeX() const { return max_.x() - min_.x(); }
+  inline uint16_t sizeY() const { return max_.y() - min_.y(); }
+  inline uint16_t sizeZ() const { return max_.z() - min_.z(); }
+
+  bool contains( const PCCVector3<T> point ) const {
     return !( point.x() < min_.x() || point.x() > max_.x() || point.y() < min_.y() || point.y() > max_.y() ||
               point.z() < min_.z() || point.z() > max_.z() );
   }

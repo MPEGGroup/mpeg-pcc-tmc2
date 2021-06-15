@@ -42,7 +42,12 @@ namespace pcc {
 // 8.3.6.10  Atlas tile layer RBSP syntax
 class AtlasTileLayerRbsp {
  public:
-  AtlasTileLayerRbsp() : atlasFrmOrderCntVal_( 0 ), atlasFrmOrderCntMsb_( 0 ), tileOrder_( 0 ) {}
+  AtlasTileLayerRbsp() :
+      atlasFrmOrderCntVal_( 0 ),
+      atlasFrmOrderCntMsb_( 0 ),
+      tileOrder_( 0 ),
+      encFrameIndex_( -1 ),
+      encTileIndex_( -1 ) {}
   ~AtlasTileLayerRbsp() {}
 
   AtlasTileLayerRbsp& operator=( const AtlasTileLayerRbsp& ) = default;
@@ -50,14 +55,17 @@ class AtlasTileLayerRbsp {
   size_t             getTileOrder() { return tileOrder_; }
   AtlasTileHeader&   getHeader() { return header_; }
   AtlasTileDataUnit& getDataUnit() { return dataUnit_; }
+  size_t             getAtlasFrmOrderCntVal() { return atlasFrmOrderCntVal_; }
+  size_t             getAtlasFrmOrderCntMsb() { return atlasFrmOrderCntMsb_; }
+  int                getEncFrameIndex() { return encFrameIndex_; }
+  int                getEncTileIndex() { return encTileIndex_; }
   void               setTileOrder( size_t value ) { tileOrder_ = value; }
-
-  size_t getAtlasFrmOrderCntVal() { return atlasFrmOrderCntVal_; }
-  size_t getAtlasFrmOrderCntMsb() { return atlasFrmOrderCntMsb_; }
-  void   setAtlasFrmOrderCntVal( size_t value ) { atlasFrmOrderCntVal_ = value; }
-  void   setAtlasFrmOrderCntMsb( size_t value ) { atlasFrmOrderCntMsb_ = value; }
-  void   setHeader( AtlasTileHeader value ) { header_ = value; }
-  void   setDataUnit( AtlasTileDataUnit value ) { dataUnit_ = value; }
+  void               setAtlasFrmOrderCntVal( size_t value ) { atlasFrmOrderCntVal_ = value; }
+  void               setAtlasFrmOrderCntMsb( size_t value ) { atlasFrmOrderCntMsb_ = value; }
+  void               setHeader( AtlasTileHeader value ) { header_ = value; }
+  void               setDataUnit( AtlasTileDataUnit value ) { dataUnit_ = value; }
+  void               setEncFrameIndex( int value ) { encFrameIndex_ = value; }
+  void               setEncTileIndex( int value ) { encTileIndex_ = value; }
 
  private:
   AtlasTileHeader   header_;
@@ -65,6 +73,8 @@ class AtlasTileLayerRbsp {
   size_t            atlasFrmOrderCntVal_;
   size_t            atlasFrmOrderCntMsb_;
   size_t            tileOrder_;
+  int               encFrameIndex_;
+  int               encTileIndex_;
 };
 
 };  // namespace pcc

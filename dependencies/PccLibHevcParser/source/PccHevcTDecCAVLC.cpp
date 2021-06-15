@@ -653,7 +653,7 @@ Void TDecCavlc::parseSPS(TComSPS* pcSPS)
 #if ENC_DEC_TRACE
   xTraceSPSHeader ();
 #endif
-
+ 
   UInt  uiCode;
   READ_CODE( 4,  uiCode, "sps_video_parameter_set_id");             pcSPS->setVPSId        ( uiCode );
   READ_CODE_CHK( 3,  uiCode, "sps_max_sub_layers_minus1", 0, 6 );   pcSPS->setMaxTLayers   ( uiCode+1 );
@@ -684,6 +684,8 @@ Void TDecCavlc::parseSPS(TComSPS* pcSPS)
   READ_UVLC_CHK (    uiCode, "pic_width_in_luma_samples", 1, std::numeric_limits<UInt>::max()  );  pcSPS->setPicWidthInLumaSamples ( uiCode    );
   READ_UVLC_CHK (    uiCode, "pic_height_in_luma_samples", 1, std::numeric_limits<UInt>::max() );  pcSPS->setPicHeightInLumaSamples( uiCode    );
   READ_FLAG(     uiCode, "conformance_window_flag");
+
+  printf("parseSPS => %u %u \n",pcSPS->getPicWidthInLumaSamples(),pcSPS->getPicHeightInLumaSamples());
   if (uiCode != 0)
   {
     Window &conf = pcSPS->getConformanceWindow();
@@ -726,12 +728,13 @@ Void TDecCavlc::parseSPS(TComSPS* pcSPS)
   assert(uiCode <= 8);
 #endif
   pcSPS->setBitDepth(CHANNEL_TYPE_CHROMA, 8 + uiCode);
+
+/*
 #if O0043_BEST_EFFORT_DECODING
   pcSPS->setQpBDOffset(CHANNEL_TYPE_CHROMA,  (Int) (6*(pcSPS->getStreamBitDepth(CHANNEL_TYPE_CHROMA)-8)) );
 #else
   pcSPS->setQpBDOffset(CHANNEL_TYPE_CHROMA,  (Int) (6*uiCode) );
 #endif
-
   READ_UVLC_CHK( uiCode,    "log2_max_pic_order_cnt_lsb_minus4", 0, 12 );   pcSPS->setBitsForPOC( 4 + uiCode );
 
   UInt subLayerOrderingInfoPresentFlag;
@@ -1034,6 +1037,7 @@ Void TDecCavlc::parseSPS(TComSPS* pcSPS)
   }
 
   xReadRbspTrailingBits();
+  */
 }
 
 Void TDecCavlc::parseVPS(TComVPS* pcVPS)

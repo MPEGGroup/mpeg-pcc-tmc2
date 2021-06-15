@@ -55,7 +55,7 @@ TComSlice_avc::TComSlice_avc() :
     //m_localRPS(),
     m_rpsIdx( 0 ),
     //m_RefPicListModification(),
-    m_eNalUnitType( NAL_UNIT_CODED_SLICE_IDR_W_RADL ),
+    m_eNalUnitType( NALU_TYPE_IDR ),
     m_eSliceType( I_SLICE ),
     m_iSliceQp( 0 ),
     m_dependentSliceSegmentFlag( false )
@@ -162,13 +162,12 @@ Void TComSlice_avc::initSlice() {
   m_enableTMVPFlag = true;
 }
 
+/* TCH
 Bool TComSlice_avc::getRapPicFlag() const {
   return getNalUnitType() == NAL_UNIT_CODED_SLICE_IDR_W_RADL || getNalUnitType() == NAL_UNIT_CODED_SLICE_IDR_N_LP ||
          getNalUnitType() == NAL_UNIT_CODED_SLICE_BLA_N_LP || getNalUnitType() == NAL_UNIT_CODED_SLICE_BLA_W_RADL ||
          getNalUnitType() == NAL_UNIT_CODED_SLICE_BLA_W_LP || getNalUnitType() == NAL_UNIT_CODED_SLICE_CRA;
 }
-
-/* TCH
 Void  TComSlice::sortPicList        (TComList<TComPic*>& rcListPic)
 {
   TComPic*    pcPicExtract;

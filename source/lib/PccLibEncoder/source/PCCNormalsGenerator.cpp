@@ -192,16 +192,14 @@ void PCCNormalsGenerator3::orientNormals( const PCCPointSet3&                   
     PCCNNResult  nNResult;
     visited_.resize( pointCount );
     std::fill( visited_.begin(), visited_.end(), 0 );
-    PCCNNQuery3 nNQuery             = {PCCPoint3D( 0.0 ),
+    PCCNNQuery3 nNQuery  = {PCCPoint3D( 0.0 ),
                            static_cast<float>( params.radiusNormalOrientation_ ) * params.radiusNormalOrientation_,
                            params.numberOfNearestNeighborsInNormalOrientation_};
-    PCCNNQuery3 nNQuery2            = {PCCPoint3D( 0.0 ), ( std::numeric_limits<float>::max )(),
+    PCCNNQuery3 nNQuery2 = {PCCPoint3D( 0.0 ), ( std::numeric_limits<float>::max )(),
                             params.numberOfNearestNeighborsInNormalOrientation_};
-    size_t      processedPointCount = 0;
     for ( size_t ptIndex = 0; ptIndex < pointCount; ++ptIndex ) {
       if ( visited_[ptIndex] == 0u ) {
         visited_[ptIndex] = 1;
-        ++processedPointCount;
         size_t      numberOfNormals;
         PCCVector3D accumulatedNormals;
         addNeighbors( uint32_t( ptIndex ), pointCloud, kdtree, nNQuery2, nNResult, accumulatedNormals,
@@ -220,7 +218,6 @@ void PCCNormalsGenerator3::orientNormals( const PCCPointSet3&                   
           uint32_t current = edge.end_;
           if ( visited_[current] == 0u ) {
             visited_[current] = 1;
-            ++processedPointCount;
             if ( normals_[edge.start_] * normals_[current] < 0.0 ) { normals_[current] = -normals_[current]; }
             addNeighbors( current, pointCloud, kdtree, nNQuery, nNResult, accumulatedNormals, numberOfNormals );
           }
@@ -372,9 +369,9 @@ void PCCNormalsGenerator3::orientNormals( const PCCPointSet3&                   
     for ( int j = 0; j < 3; j++ ) {
 #ifdef DEBUG_NORMAL
       char name[1024];
-      sprintf( name, "texture_%d_%dx%d_8bit_p444.rgb", j, planeWidth[j], planeHeight[j] );
+      sprintf( name, "attribute_%d_%dx%d_8bit_p444.rgb", j, planeWidth[j], planeHeight[j] );
       projectionImage[j].write( name, 1 );
-      sprintf( name, "texture_%d_%dx%d_8bit_p444.rgb", j + 3, planeWidth[j], planeHeight[j] );
+      sprintf( name, "attribute_%d_%dx%d_8bit_p444.rgb", j + 3, planeWidth[j], planeHeight[j] );
       projectionImage[j + 3].write( name, 1 );
       sprintf( name, "depth_%d_%dx%d_8bit_p444.rgb", j, planeWidth[j], planeHeight[j] );
       projectionDepth[j].write( name, 1 );
@@ -467,12 +464,9 @@ void PCCNormalsGenerator3::orientNormals( const PCCPointSet3&                   
     }
     saveNormal3.write( "normal_projection_orientation_smoothed.ply" );
 #endif
-
-    size_t processedPointCount = 0;
     for ( size_t ptIndex = 0; ptIndex < pointCount; ++ptIndex ) {
       if ( visited_[ptIndex] == 0u ) {
         visited_[ptIndex] = 1;
-        ++processedPointCount;
         size_t      numberOfNormals;
         PCCVector3D accumulatedNormals;
         addNeighbors( uint32_t( ptIndex ), pointCloud, kdtree, nNQuery2, nNResult, accumulatedNormals,
@@ -491,7 +485,6 @@ void PCCNormalsGenerator3::orientNormals( const PCCPointSet3&                   
           uint32_t current = edge.end_;
           if ( visited_[current] == 0u ) {
             visited_[current] = 1;
-            ++processedPointCount;
             if ( normals_[edge.start_] * normals_[current] < 0.0 ) { normals_[current] = -normals_[current]; }
             addNeighbors( current, pointCloud, kdtree, nNQuery, nNResult, accumulatedNormals, numberOfNormals );
           }
@@ -524,9 +517,8 @@ void PCCNormalsGenerator3::addNeighbors( const uint32_t      current,
     kdtree.searchRadius( pointCloud[current], nNQuery.nearestNeighborCount, nNQuery.radius, nNResult );
   }
   PCCWeightedEdge newEdge;
-  uint32_t        index;
   for ( size_t i = 0; i < nNResult.count(); ++i ) {
-    index = static_cast<uint32_t>( nNResult.indices( i ) );
+    uint32_t index = static_cast<uint32_t>( nNResult.indices( i ) );
     if ( visited_[index] == 0u ) {
       newEdge.weight_ = fabs( normals_[current] * normals_[index] );
       newEdge.end_    = index;

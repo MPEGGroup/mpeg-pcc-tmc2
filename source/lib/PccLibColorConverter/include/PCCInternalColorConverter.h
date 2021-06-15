@@ -75,14 +75,25 @@ class PCCInternalColorConverter : public PCCVirtualColorConverter<T> {
                 const std::string& externalPath = "",
                 const std::string& fileName     = "" );
 
+  void upsample( PCCVideo<T, 3>& video, size_t rate, size_t nbyte, size_t filter );
+  void upsample( PCCImage<T, 3>& image, size_t rate, size_t nbyte, size_t filter );
+
  private:
   void extractParameters( std::string& configuration, std::string& config, int32_t& bitdepth, int32_t& filter );
   void convertRGB44ToYUV420( PCCVideo<T, 3>& videoSrc, PCCVideo<T, 3>& videoDst, size_t nbyte, size_t filter );
-
   void convertRGB44ToYUV420( PCCImage<T, 3>& imageSrc, PCCImage<T, 3>& imageDst, size_t nbyte, size_t filter );
+
+  void convertRGB44ToYUV444( PCCVideo<T, 3>& videoSrc, PCCVideo<T, 3>& videoDst, size_t nbyte, size_t filter );
+  void convertRGB44ToYUV444( PCCImage<T, 3>& imageSrc, PCCImage<T, 3>& imageDst, size_t nbyte, size_t filter );
 
   void convertYUV420ToYUV444( PCCVideo<T, 3>& videoSrc, PCCVideo<T, 3>& videoDst, size_t nbyte, size_t filter );
   void convertYUV420ToYUV444( PCCImage<T, 3>& imageSrc, PCCImage<T, 3>& imageDst, size_t nbyte, size_t filter );
+
+  void convertYUV420ToRGB444( PCCVideo<T, 3>& videoSrc, PCCVideo<T, 3>& videoDst, size_t nbyte, size_t filter );
+  void convertYUV420ToRGB444( PCCImage<T, 3>& imageSrc, PCCImage<T, 3>& imageDst, size_t nbyte, size_t filter );
+
+  void convertYUV444ToRGB444( PCCVideo<T, 3>& videoSrc, PCCVideo<T, 3>& videoDst, size_t nbyte, size_t filter );
+  void convertYUV444ToRGB444( PCCImage<T, 3>& imageSrc, PCCImage<T, 3>& imageDst, size_t nbyte, size_t filter );
 
   void RGBtoFloatRGB( const std::vector<T>& src, std::vector<float>& dst, const size_t nbyte ) const;
 

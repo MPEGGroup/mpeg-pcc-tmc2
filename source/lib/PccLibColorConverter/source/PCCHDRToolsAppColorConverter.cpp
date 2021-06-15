@@ -91,7 +91,7 @@ void PCCHDRToolsAppColorConverter<T>::convert( std::string        configFile,
                               ? PCCCOLORFORMAT::YUV420
                               : outputColorSpace == 0 ? PCCCOLORFORMAT::YUV444 : PCCCOLORFORMAT::RGB444;
   videoDst.clear();
-  videoDst.read( outputFile, width, height, format, frameCount, outputBitDepth == 8 ? 1 : 2 );
+  videoDst.read( outputFile, width, height, format, outputBitDepth == 8 ? 1 : 2 );
   removeFile( sourceFile );
   removeFile( outputFile );
 }

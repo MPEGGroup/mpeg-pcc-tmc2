@@ -125,6 +125,9 @@ class PCCPointSet3 {
       colors_[k][2] = uint8_t( colors16bit_[k][2] );
     }
   }
+  void fillColor( PCCColor3B color = {0, 0, 0} ) {
+    for ( size_t k = 0; k < getPointCount(); k++ ) { colors_[k] = color; }
+  }
 
   /// convert yuv444 (16bit) to normalized yuv444 (format double)
   void convertYUV16ToRGB8() {
@@ -266,9 +269,25 @@ class PCCPointSet3 {
     normals_[idx] = value;
   }
 
+  void trace() {
+    size_t pointCount = getPointCount();
+    printf( "Point cloud of %zu points : \n", pointCount );
+    for ( size_t i = 0; i < 16; i++ ) {
+      printf( "%9zu: ( %4u, %4u, %4u ) [ %4u, %4u, %4u ] [ %4u, %4u, %4u ] \n", i, positions_[i][0], positions_[i][1],
+              positions_[i][2], colors_[i][0], colors_[i][1], colors_[i][2], colors16bit_[i][0], colors16bit_[i][1],
+              colors16bit_[i][2] );
+    }
+    for ( size_t i = 50000; i < pointCount; i += 50000 ) {
+      printf( "%9zu: ( %4u, %4u, %4u ) [ %4u, %4u, %4u ] [ %4u, %4u, %4u ] \n", i, positions_[i][0], positions_[i][1],
+              positions_[i][2], colors_[i][0], colors_[i][1], colors_[i][2], colors16bit_[i][0], colors16bit_[i][1],
+              colors16bit_[i][2] );
+    }
+    fflush( stdout );
+  }
+
   bool transferColors( PCCPointSet3& target,
                        const int32_t searchRange,
-                       const bool    losslessTexture                         = false,
+                       const bool    losslessAttribute                       = false,
                        const int     numNeighborsColorTransferFwd            = 1,
                        const int     numNeighborsColorTransferBwd            = 1,
                        const bool    useDistWeightedAverageFwd               = true,
@@ -287,7 +306,7 @@ class PCCPointSet3 {
   bool transferColors16bitBP( PCCPointSet3& target,
                               const int     filterType,
                               const int32_t searchRange,
-                              const bool    losslessTexture                         = false,
+                              const bool    losslessAttribute                       = false,
                               const int     numNeighborsColorTransferFwd            = 1,
                               const int     numNeighborsColorTransferBwd            = 1,
                               const bool    useDistWeightedAverageFwd               = true,
@@ -305,7 +324,7 @@ class PCCPointSet3 {
   bool transferColorsBackward16bitBP( PCCPointSet3& target,
                                       const int     filterType,
                                       const int32_t searchRange,
-                                      const bool    losslessTexture,
+                                      const bool    losslessAttribute,
                                       const int     numNeighborsColorTransferFwd,
                                       const int     numNeighborsColorTransferBwd,
                                       const bool    useDistWeightedAverageFwd,
@@ -323,7 +342,7 @@ class PCCPointSet3 {
 
   bool transferColors16bit( PCCPointSet3& target,
                             const int32_t searchRange,
-                            const bool    losslessTexture                         = false,
+                            const bool    losslessAttribute                       = false,
                             const int     numNeighborsColorTransferFwd            = 1,
                             const int     numNeighborsColorTransferBwd            = 1,
                             const bool    useDistWeightedAverageFwd               = true,
@@ -339,7 +358,7 @@ class PCCPointSet3 {
                             const bool    excludeColorOutlier                     = false,
                             const double  thresholdColorOutlierDist               = 10.0 ) const;
 
-  bool transferColorsFilter3( PCCPointSet3& target, const int32_t searchRange, const bool losslessTexture ) const;
+  bool transferColorsFilter3( PCCPointSet3& target, const int32_t searchRange, const bool losslessAttribute ) const;
 
   bool transferColorSimple( PCCPointSet3& target, const double bestColorSearchStep = 0.1 );
 

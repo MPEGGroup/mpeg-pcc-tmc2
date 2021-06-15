@@ -36,29 +36,25 @@
 using namespace pcc;
 
 PCCMetricsParameters::PCCMetricsParameters() {
-  computeMetrics_  = true;
-  computeChecksum_ = true;
-
-  startFrameNumber_  = 0;
-  frameCount_        = 0;
-  groupOfFramesSize_ = 32;
-
+  computeMetrics_         = true;
+  computeChecksum_        = true;
+  startFrameNumber_       = 0;
+  frameCount_             = 0;
+  groupOfFramesSize_      = 32;
   uncompressedDataFolder_ = {};
   uncompressedDataPath_   = {};
   reconstructedDataPath_  = {};
   normalDataPath_         = {};
   nbThread_               = 0;
-
-  resolution_     = 1023;
-  dropDuplicates_ = 2;
-  neighborsProc_  = 1;
-
-  computeC2c_         = true;
-  computeC2p_         = true;
-  computeColor_       = true;
-  computeLidar_       = false;
-  computeReflectance_ = false;
-  computeHausdorff_   = false;
+  resolution_             = 1023;
+  dropDuplicates_         = 2;
+  neighborsProc_          = 1;
+  computeC2c_             = true;
+  computeC2p_             = true;
+  computeColor_           = true;
+  computeLidar_           = false;
+  computeReflectance_     = false;
+  computeHausdorff_       = false;
 }
 
 PCCMetricsParameters::~PCCMetricsParameters() = default;
@@ -111,6 +107,7 @@ bool PCCMetricsParameters::check( bool checkFiles ) {
                      "compute metric. \n";
       }
     }
+    if ( normalDataPath_.empty() ) { computeC2p_ = false; }
     if ( computeC2p_ && normalDataPath_.empty() ) {
       std::cout << "normalDataPath_ not set if computeC2p_ == true \n";
       std::cout << "WARNING: Normal ply not correctly set: disable compute "

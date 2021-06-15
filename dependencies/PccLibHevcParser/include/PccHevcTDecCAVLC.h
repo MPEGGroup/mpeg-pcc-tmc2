@@ -265,7 +265,7 @@ public:
   Void  parseQtCbf          ( class TComTU &rTu, const ComponentID compID, const Bool lowestLevel );
   Void  parseQtRootCbf      ( UInt uiAbsPartIdx, UInt& uiQtRootCbf );
   Void  parseVPS            ( TComVPS* pcVPS );
-  Void  parseSPS            ( TComSPS* pcSPS );
+  Void  parseSPS            ( TComSPS* pcSPS );  
   Void  parsePPS            ( TComPPS* pcPPS );
   Void  parseVUI            ( TComVUI* pcVUI, TComSPS* pcSPS );
   Void  parseSEI            ( SEIMessages& );
