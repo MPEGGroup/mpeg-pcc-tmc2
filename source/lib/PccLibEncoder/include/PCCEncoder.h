@@ -54,14 +54,14 @@ struct PatchParams;
 
 template <typename T, size_t N>
 class PCCVideo;
-typedef pcc::PCCVideo<uint16_t, 3> PCCVideoTexture;
-typedef pcc::PCCVideo<uint16_t, 3> PCCVideoGeometry;
 typedef pcc::PCCVideo<uint8_t, 3>  PCCVideoOccupancyMap;
+typedef pcc::PCCVideo<uint16_t, 3> PCCVideoGeometry;
+typedef pcc::PCCVideo<uint16_t, 3> PCCVideoAttribute;
 template <typename T, size_t N>
 class PCCImage;
-typedef pcc::PCCImage<uint16_t, 3> PCCImageTexture;
-typedef pcc::PCCImage<uint16_t, 3> PCCImageGeometry;
 typedef pcc::PCCImage<uint8_t, 3>  PCCImageOccupancyMap;
+typedef pcc::PCCImage<uint16_t, 3> PCCImageGeometry;
+typedef pcc::PCCImage<uint16_t, 3> PCCImageAttribute;
 struct PCCPatchSegmenter3Parameters;
 class PCCPatch;
 struct PCCBistreamPosition;
@@ -127,7 +127,9 @@ class PCCEncoder : public PCCCodec {
                                       AtlasTileLayerRbsp& atglu,
                                       size_t              frameIndex,
                                       size_t              tileIndex = 0 );
-  void createHashInformation( PCCContext& context, int frameIndex, size_t hashType );
+
+  void createHlsAtlasTileLogFiles( PCCContext& context, int frameIndex, int afpsId );
+  void createHashSEI( PCCContext& context, int frameIndex, size_t hashType );
 
  private:
   template <typename T>
@@ -151,7 +153,11 @@ class PCCEncoder : public PCCCodec {
                            const size_t           imageHeight,
                            std::vector<uint32_t>& occupancyMap,
                            PCCImageOccupancyMap&  videoFrameOccupancyMap,
-                           std::ofstream&         ofile );
+                           std::ofstream&         ofile,
+                           uint64_t&              changedPixCnt,
+                           uint64_t&              changedPixCnt0To1,
+                           uint64_t&              changedPixCnt1To0,
+                           uint64_t&              pixCnt );
 
   //**auxPatches**//
   void markRawPatchLocationOccupancyMapVideo( PCCContext& context );
@@ -160,12 +166,12 @@ class PCCEncoder : public PCCCodec {
   void sortRawPointsPatchMorton( PCCFrameContext& titleFrame, size_t index );
 
   //**tile and partitions**//
-  void generateTilesFromSegments( PCCContext& context );
-  void generateTilesFromImage( PCCContext& context );
-  void placeTiles( PCCContext& context, size_t minFrameWidth, size_t minFrameHeight );
-  void replaceFrameContext( PCCContext& context );
+  void   generateTilesFromSegments( PCCContext& context );
+  size_t generateTilesFromImage( PCCContext& context );
+  void   placeTiles( PCCContext& context, size_t minFrameWidth, size_t minFrameHeight );
+  void   replaceFrameContext( PCCContext& context );
+
   //**patch segmentation**//
-  // bool generateGeometryVideo( const PCCGroupOfFrames& sources, PCCContext& context );
   bool generateSegments( const PCCGroupOfFrames& sources, PCCContext& context );
   bool generateSegments( const PCCPointSet3&                 source,
                          PCCAtlasFrameContext&               frameContext,
@@ -173,51 +179,44 @@ class PCCEncoder : public PCCCodec {
                          size_t                              frameIndex,
                          float&                              distanceSrcRec );
   bool placeSegments( const PCCGroupOfFrames& sources, PCCContext& context );
-  bool placeSegments( const PCCPointSet3&   source,
-                      PCCAtlasFrameContext& frame,
-                      PCCAtlasFrameContext& prevFrame,
-                      size_t                frameIndex );
 
   //**video/image reneration and resizing**//
-  bool   resizeGeometryVideo( PCCContext& context, PCCCodecId codecId );
-  bool   resizeTileGeometryVideo( PCCContext& context,
-                                  size_t      tileIndex,
-                                  size_t      frameWidth,
-                                  size_t      frameHeight,
-                                  int         firstFrame     = -1,
-                                  int         lastFramePlus1 = -1 );
-  size_t segmentSequence( PCCContext& context, std::vector<std::pair<size_t, size_t>>& framesInAFPS );
-  bool   relocateTileGeometryVideo( PCCContext& context, std::vector<std::pair<size_t, size_t>>& framesInAFPS );
-  bool   placeEomPatchInTile( PCCContext& context, std::vector<std::pair<size_t, size_t>>& framesInAFPS );
-  bool   placeRawPatchTile( PCCContext& context, std::vector<std::pair<size_t, size_t>>& framesInAFPS );
-  bool   generateGeometryVideo( const PCCGroupOfFrames& sources, PCCContext& context );
-  bool   generateTextureVideo( const PCCGroupOfFrames&     sources,
+  bool resizeGeometryVideo( PCCContext& context, PCCCodecId codecId );
+  bool resizeTileGeometryVideo( PCCContext& context,
+                                size_t      tileIndex,
+                                size_t      frameWidth,
+                                size_t      frameHeight,
+                                int         firstFrame     = -1,
+                                int         lastFramePlus1 = -1 );
+  bool relocateTileGeometryVideo( PCCContext& context );
+  bool generateGeometryVideo( const PCCGroupOfFrames& sources, PCCContext& context );
+  bool generateAttributeVideo( const PCCGroupOfFrames&     sources,
                                PCCGroupOfFrames&           reconstruct,
                                PCCContext&                 context,
                                const PCCEncoderParameters& params );
-  void   placeAuxiliaryPointsTiles( PCCContext& context );
-  void   generateRawPointsGeometryVideo( PCCContext& context );
-  void   generateRawPointsTextureVideo( PCCContext& context );
-  void   generateRawPointsGeometryImage( PCCContext& context, PCCFrameContext& tile, PCCImageGeometry& image );
-  void   generateRawPointsTextureImage( PCCContext& context, PCCFrameContext& tile, PCCImageTexture& image );
-  void   generateIntraImage( PCCAtlasFrameContext& frameContext, const size_t mapIndex, PCCImageGeometry& image );
+  void placeAuxiliaryPointsTiles( PCCContext& context );
+  void generateRawPointsGeometryVideo( PCCContext& context );
+  void generateRawPointsAttributeVideo( PCCContext& context );
+  void generateRawPointsGeometryImage( PCCContext& context, PCCFrameContext& tile, PCCImageGeometry& image );
+  void generateRawPointsAttributeImage( PCCContext& context, PCCFrameContext& tile, PCCImageAttribute& image );
+  void generateIntraImage( PCCAtlasFrameContext& frameContext, const size_t mapIndex, PCCImageGeometry& image );
   bool predictGeometryFrame( PCCFrameContext& titleFrame, const PCCImageGeometry& reference, PCCImageGeometry& image );
-  static bool predictTextureFrame( PCCFrameContext&       titleFrame,
-                                   const PCCImageTexture& reference,
-                                   PCCImageTexture&       image );
+  static bool predictAttributeFrame( PCCFrameContext&         titleFrame,
+                                     const PCCImageAttribute& reference,
+                                     PCCImageAttribute&       image );
   void        generateEomPatch( const PCCPointSet3& source, PCCFrameContext& titleFrame );
   void        generateRawPointsPatch( const PCCPointSet3& source,
                                       PCCFrameContext&    titleFrame,
                                       bool                useEnhancedOccupancyMapCode );
-  bool        generateScaledGeometry( const PCCPointSet3& source, PCCFrameContext& tile );
-  size_t      generateTextureVideo( const PCCPointSet3& reconstruct,
-                                    PCCContext&         context,
-                                    size_t              frameIndex,
-                                    size_t              tileIndex,
-                                    PCCVideoTexture&    video,
-                                    PCCVideoTexture&    videoT1,
-                                    const size_t        mapCount,
-                                    size_t              accTilePointCount );
+  bool        generateScaledGeometry( PCCFrameContext& tile );
+  size_t      generateAttributeVideo( const PCCPointSet3& reconstruct,
+                                      PCCContext&         context,
+                                      size_t              frameIndex,
+                                      size_t              tileIndex,
+                                      PCCVideoAttribute&  video,
+                                      PCCVideoAttribute&  videoT1,
+                                      const size_t        mapCount,
+                                      size_t              accTilePointCount );
 
   void dilateGroupGeometryVideo( PCCContext& context, PCCFrameContext& titleFrame, size_t frameIdx );
 
@@ -257,7 +256,7 @@ class PCCEncoder : public PCCCodec {
   template <typename T>
   void dilateHarmonicBackgroundFill( PCCFrameContext& frame, PCCImage<T, 3>& image );
   template <typename T>
-  void CreateCoarseLayer( PCCImage<T, 3>&        image,
+  void createCoarseLayer( PCCImage<T, 3>&        image,
                           PCCImage<T, 3>&        mip,
                           std::vector<uint32_t>& occupancyMap,
                           std::vector<uint32_t>& mipOccupancyMap );
@@ -290,13 +289,13 @@ class PCCEncoder : public PCCCodec {
                              size_t             occupancySizeU,
                              size_t             occupancySizeV,
                              size_t             maxOccupancyRow );
-  void   packEOMTexturePointsPatch( PCCFrameContext&   frame,
-                                    std::vector<bool>& occupancyMap,
-                                    size_t             width,
-                                    size_t&            height,
-                                    size_t             occupancySizeU,
-                                    size_t             occupancySizeV,
-                                    size_t             maxOccupancyRow );
+  void   packEOMAttributePointsPatch( PCCFrameContext&   frame,
+                                      std::vector<bool>& occupancyMap,
+                                      size_t             width,
+                                      size_t&            height,
+                                      size_t             occupancySizeU,
+                                      size_t             occupancySizeV,
+                                      size_t             maxOccupancyRow );
   void   adjustReferenceAtlasFrames( PCCContext& context, size_t tileIndex );
   double adjustReferenceAtlasFrame( PCCContext&            context,
                                     PCCFrameContext&       tile,

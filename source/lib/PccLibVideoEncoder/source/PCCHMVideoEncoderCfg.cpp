@@ -761,17 +761,17 @@ Bool PCCHMLibVideoEncoderCfg::parseCfg( Int argc, TChar* argv[] ) {
   ("InputPathPrefix,-ipp",                            inputPathPrefix,                             string(""), "pathname to prepend to input filename")
   ("BitstreamFile,b",                                 m_bitstreamFileName,                         string(""), "Bitstream output file name")
   ("ReconFile,o",                                     m_reconFileName,                             string(""), "Reconstructed YUV output file name")
-#if PATCH_BASED_MVP || PCC_ME_EXT
+#if PATCH_BASED_MVP || ( defined( PCC_ME_EXT ) && PCC_ME_EXT )
   ("UsePccMotionEstimation",                          m_usePCCExt,                                      false, "Use modified motion estimation for PCC content")
-	  ("BlockToPatchFile",                            m_blockToPatchFileName,                      string(""), "Input block to patch file name")
-	  ("OccupancyMapFile",                            m_occupancyMapFileName,                      string(""), "Input occupancy map file name")
-	  ("PatchInfoFile",                               m_patchInfoFileName,                         string(""), "Input patch info file name")
+	("BlockToPatchFile",                            m_blockToPatchFileName,                      string(""), "Input block to patch file name")
+	("OccupancyMapFile",                            m_occupancyMapFileName,                      string(""), "Input occupancy map file name")
+	("PatchInfoFile",                               m_patchInfoFileName,                         string(""), "Input patch info file name")
 #endif
-#if PCC_RDO_EXT
-  ("UsePccRDO",                                       m_usePCCRDO,                                      false, "Use modified RDO for PCC content")
-#endif
-#if PCC_RDO_EXT && !PCC_ME_EXT
+#if ( defined( PCC_RDO_EXT ) && PCC_RDO_EXT ) || ( PATCH_BASED_MVP || ( defined( PCC_ME_EXT ) && PCC_ME_EXT ) )
   ("OccupancyMapFile",                                m_occupancyMapFileName,                      string(""), "Input occupancy map file name")
+#endif
+#if defined( PCC_RDO_EXT ) && PCC_RDO_EXT
+  ("UsePccRDO",                                       m_usePCCRDO,                                      false, "Use modified RDO for PCC content")
 #endif
 
   ("SourceWidth,-wdt",                                m_iSourceWidth,                                       0, "Source picture width")

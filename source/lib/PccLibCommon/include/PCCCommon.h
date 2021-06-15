@@ -90,7 +90,6 @@ enum PCCColorTransform { COLOR_TRANSFORM_NONE = 0, COLOR_TRANSFORM_RGB_TO_YCBCR 
 enum PCCPointType { POINT_UNSET = 0, POINT_D0, POINT_D1, POINT_DF, POINT_SMOOTH, POINT_EOM, POINT_RAW };
 enum { COLOURFORMAT420 = 0, COLOURFORMAT444 = 1 };
 enum PCCCOLORFORMAT { UNKNOWN = 0, RGB444, YUV444, YUV420 };
-
 enum PCCCodecId {
 #ifdef USE_JMAPP_VIDEO_CODEC
   JMAPP = 0,
@@ -98,53 +97,58 @@ enum PCCCodecId {
 #ifdef USE_HMAPP_VIDEO_CODEC
   HMAPP = 1,
 #endif
+#ifdef USE_SHMAPP_VIDEO_CODEC
+  SHMAPP = 2,
+#endif
 #ifdef USE_JMLIB_VIDEO_CODEC
-  JMLIB = 2,
+  JMLIB = 3,
 #endif
 #ifdef USE_HMLIB_VIDEO_CODEC
-  HMLIB = 3,
+  HMLIB = 4,
 #endif
 #ifdef USE_VTMLIB_VIDEO_CODEC
-  VTMLIB = 4,
+  VTMLIB = 5,
 #endif
 #ifdef USE_FFMPEG_VIDEO_CODEC
-  FFMPEG = 5,
+  FFMPEG = 6,
 #endif
   UNKNOWN_CODEC = 255
 };
 
-const int16_t infiniteDepth          = ( std::numeric_limits<int16_t>::max )();
-const int64_t infinitenumber         = ( std::numeric_limits<int64_t>::max )();
-const int32_t InvalidPatchIndex      = -1;
-const size_t  IntermediateLayerIndex = 100;
-const size_t  eomLayerIndex          = 10;
-const size_t  NeighborThreshold      = 4;
-const size_t  NumPatchOrientations   = 8;
-const size_t  gbitCountSize[]        = {
-    0, 0, 1, 0, 2, 0, 0, 0,  // 0-7
-    3, 0, 0, 0, 0, 0, 0, 0,  // 8-
-    4, 0, 0, 0, 0, 0, 0, 0,  // 16-
-    0, 0, 0, 0, 0, 0, 0, 0,  // 24-
-    5, 0, 0, 0, 0, 0, 0, 0,  // 32-
-    0, 0, 0, 0, 0, 0, 0, 0,  // 40
-    0, 0, 0, 0, 0, 0, 0, 0,  // 48
-    0, 0, 0, 0, 0, 0, 0, 0,  // 56
-    6                        // 64
+// ******************************************************************* //
+// Global variables
+// ******************************************************************* //
+const int16_t          g_infiniteDepth          = ( std::numeric_limits<int16_t>::max )();
+const int64_t          g_infinitenumber         = ( std::numeric_limits<int64_t>::max )();
+const int32_t          g_invalidPatchIndex      = -1;
+const uint32_t         g_undefined_index        = -1;
+const bool             g_printDetailedInfo      = false;
+const size_t           g_intermediateLayerIndex = 100;
+const size_t           g_neighborThreshold      = 4;
+const std::vector<int> g_orientationVertical    = {
+    PATCH_ORIENTATION_DEFAULT,  // Vertical orientation default
+    PATCH_ORIENTATION_SWAP,     // Vertical orientation swap
+    PATCH_ORIENTATION_ROT180,   // Vertical orientation rot180
+    PATCH_ORIENTATION_MIRROR,   // Vertical orientation mirror
+    PATCH_ORIENTATION_MROT180,  // Vertical orientation mrot180
+    PATCH_ORIENTATION_ROT270,   // Vertical orientation rot270
+    PATCH_ORIENTATION_MROT90,   // Vertical orientation mrot90
+    PATCH_ORIENTATION_ROT90     // Vertical orientation rot90
+};
+const std::vector<int> g_orientationHorizontal = {
+    PATCH_ORIENTATION_SWAP,     // Horizontal orientation swap
+    PATCH_ORIENTATION_DEFAULT,  // Horizontal orientation default
+    PATCH_ORIENTATION_ROT270,   // Horizontal orientation rot270
+    PATCH_ORIENTATION_MROT90,   // Horizontal orientation mrot90
+    PATCH_ORIENTATION_ROT90,    // Horizontal orientation rot90
+    PATCH_ORIENTATION_ROT180,   // Horizontal orientation rot180
+    PATCH_ORIENTATION_MIRROR,   // Horizontal orientation mirror
+    PATCH_ORIENTATION_MROT180   // Horizontal orientation mrot180
 };
 
-const std::vector<int> orientation_vertical = {
-    PATCH_ORIENTATION_DEFAULT, PATCH_ORIENTATION_SWAP,    PATCH_ORIENTATION_ROT180,
-    PATCH_ORIENTATION_MIRROR,  PATCH_ORIENTATION_MROT180, PATCH_ORIENTATION_ROT270,
-    PATCH_ORIENTATION_MROT90,  PATCH_ORIENTATION_ROT90};  // favoring vertical orientation
-const std::vector<int> orientation_horizontal = {PATCH_ORIENTATION_SWAP,   PATCH_ORIENTATION_DEFAULT,
-                                                 PATCH_ORIENTATION_ROT270, PATCH_ORIENTATION_MROT90,
-                                                 PATCH_ORIENTATION_ROT90,  PATCH_ORIENTATION_ROT180,
-                                                 PATCH_ORIENTATION_MIRROR, PATCH_ORIENTATION_MROT180};  // favoring
-                                                                                                        // horizontal
-                                                                                                        // orientations
-                                                                                                        // (that should
-                                                                                                        // be rotated)
-
+// ******************************************************************* //
+// Static functions
+// ******************************************************************* //
 static inline PCCEndianness PCCSystemEndianness() {
   uint32_t num = 1;
   return ( *( reinterpret_cast<char*>( &num ) ) == 1 ) ? PCC_LITTLE_ENDIAN : PCC_BIG_ENDIAN;
@@ -209,6 +213,27 @@ static inline std::string getParameter( const std::string& config, const std::st
   }
   pos += param.length();
   return config.substr( pos, config.find( " ", pos ) - pos );
+}
+
+static inline std::string getParameterFromConfigurationFile( const std::string& filename, const std::string& param ) {
+  std::string ret = "0";
+  std::cout << "getParameterFromConfigurationFile filename = " << filename << '\n';
+  std::ifstream file( filename.c_str(), std::ifstream::in );
+  if ( file.is_open() ) {
+    do {
+      std::string line;
+      std::getline( file, line );
+      // std::cout << "getline = " << line << '\n';
+      if ( std::string::npos != line.find( param ) ) {
+        if ( std::string::npos != line.find( ":" ) ) {
+          ret = line.substr( line.find( ":" ) + 1 );
+          std::cout << "Match = " << line << " => ret = " << ret << "\n";
+          return ret;
+        }
+      }
+    } while ( !file.eof() );
+  }
+  return ret;
 }
 
 using Range = std::pair<int, int>;

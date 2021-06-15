@@ -46,27 +46,28 @@ class PccHevcParser {
  public:
   PccHevcParser();
   ~PccHevcParser();
-  void getVideoSize( const std::vector<uint8_t>& buffer, size_t& width, size_t& height );
+  void getVideoSize( const std::vector<uint8_t>& buffer, size_t& width, size_t& height, size_t& bitDepth, bool& is444 );
+
+  void getVideoSize( const std::vector<uint8_t>& buffer,
+                     std::vector<size_t>&        width,
+                     std::vector<size_t>&        height,
+                     std::vector<size_t>&        bitDepth,
+                     std::vector<uint8_t>&       is444 );
   void display();
 
-  std::vector<PccHevcNalu>&  getVps ()  { return vps_; }
-  std::vector<PccHevcNalu>&  getSps ()  { return sps_; }
-  std::vector<PccHevcNalu>&  getPps ()  { return pps_; }
-  std::vector<PccHevcFrame>& getFrames ()  { return frames_; }
+  std::vector<PccHevcNalu>&  getVps() { return vps_; }
+  std::vector<PccHevcNalu>&  getSps() { return sps_; }
+  std::vector<PccHevcNalu>&  getPps() { return pps_; }
+  std::vector<PccHevcFrame>& getFrames() { return frames_; }
 
  private:
-  void setBuffer( const std::vector<uint8_t>& buffer, size_t& width, size_t& height );
   void createNalu( const std::vector<uint8_t>& buffer, const size_t pos, const size_t size );
-  void createNalu( const size_t frameIndex,
-                   const std::vector<uint8_t>& buffer,
-                   const size_t pos,
-                   const size_t size );
+  void createNalu( const size_t frameIndex, const std::vector<uint8_t>& buffer, const size_t pos, const size_t size );
 
   std::vector<PccHevcNalu>  vps_;
   std::vector<PccHevcNalu>  sps_;
   std::vector<PccHevcNalu>  pps_;
   std::vector<PccHevcFrame> frames_;
-
 };
 
  }; // namespace pcc_hevc

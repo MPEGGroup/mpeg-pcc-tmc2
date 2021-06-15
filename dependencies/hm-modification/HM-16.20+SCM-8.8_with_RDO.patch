@@ -1,5 +1,5 @@
 diff --git a/source/App/TAppDecoder/TAppDecCfg.cpp b/source/App/TAppDecoder/TAppDecCfg.cpp
-index a17a9bb..edd9112 100644
+index a17a9bb8..edd9112e 100644
 --- a/source/App/TAppDecoder/TAppDecCfg.cpp
 +++ b/source/App/TAppDecoder/TAppDecCfg.cpp
 @@ -41,6 +41,7 @@
@@ -10,17 +10,17 @@ index a17a9bb..edd9112 100644
  #ifdef WIN32
  #define strdup _strdup
  #endif
-@@ -89,6 +90,10 @@ Bool TAppDecCfg::parseCfg( Int argc, TChar* argv[] )
+@@ -88,6 +89,10 @@ Bool TAppDecCfg::parseCfg( Int argc, TChar* argv[] )
+   ("SEIColourRemappingInfoFilename",  m_colourRemapSEIFileName,        string(""), "Colour Remapping YUV output file name. If empty, no remapping is applied (ignore SEI message)\n")
  #if O0043_BEST_EFFORT_DECODING
    ("ForceDecodeBitDepth",       m_forceDecodeBitDepth,                 0U,         "Force the decoder to operate at a particular bit-depth (best effort decoding)")
- #endif
++#endif
 +#if SAMPLE_STREAM
 +  //  ("sampleStreamPrecisionByte",           m_SampleStreamUnitSizePrecisionBytes,          4,       "unit_size_precision_bytes")
 +  ("fileformatSampleStream",              m_SampleStream,          false,       "Indicate the file format is sample stream")
-+#endif
+ #endif
    ("OutputDecodedSEIMessagesFilename",  m_outputDecodedSEIMessagesFilename,    string(""), "When non empty, output decoded SEI messages to the indicated file. If file is '-', then output to stdout\n")
    ("ClipOutputVideoToRec709Range",      m_bClipOutputVideoToRec709Range,  false, "If true then clip output video to the Rec. 709 Range on saving")
- #if MCTS_ENC_CHECK
 @@ -182,3 +187,6 @@ Bool TAppDecCfg::parseCfg( Int argc, TChar* argv[] )
  }
  
@@ -29,7 +29,7 @@ index a17a9bb..edd9112 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/App/TAppDecoder/TAppDecCfg.h b/source/App/TAppDecoder/TAppDecCfg.h
-index c3087c3..4156581 100644
+index c3087c3d..4156581d 100644
 --- a/source/App/TAppDecoder/TAppDecCfg.h
 +++ b/source/App/TAppDecoder/TAppDecCfg.h
 @@ -44,6 +44,7 @@
@@ -51,17 +51,17 @@ index c3087c3..4156581 100644
    std::string   m_outputDecodedSEIMessagesFilename;   ///< filename to output decoded SEI messages to. If '-', then use stdout. If empty, do not output details.
    Bool          m_bClipOutputVideoToRec709Range;      ///< If true, clip the output video to the Rec 709 range on saving.
  #if MCTS_ENC_CHECK
-@@ -93,6 +98,10 @@ public:
+@@ -92,6 +97,10 @@ public:
+   , m_respectDefDispWindow(0)
  #if O0043_BEST_EFFORT_DECODING
    , m_forceDecodeBitDepth(0)
- #endif
++#endif
 +#if SAMPLE_STREAM
 +  , m_SampleStream(false)
 +  , m_SampleStreamUnitSizePrecisionBytes(4)
-+#endif
+ #endif
    , m_outputDecodedSEIMessagesFilename()
    , m_bClipOutputVideoToRec709Range(false)
- #if MCTS_ENC_CHECK
 @@ -112,6 +121,8 @@ public:
  
  //! \}
@@ -72,7 +72,7 @@ index c3087c3..4156581 100644
  
 +
 diff --git a/source/App/TAppDecoder/TAppDecTop.cpp b/source/App/TAppDecoder/TAppDecTop.cpp
-index bd89003..a095c0b 100644
+index bd890032..a095c0b0 100644
 --- a/source/App/TAppDecoder/TAppDecTop.cpp
 +++ b/source/App/TAppDecoder/TAppDecTop.cpp
 @@ -47,6 +47,7 @@
@@ -115,7 +115,7 @@ index bd89003..a095c0b 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/App/TAppDecoder/TAppDecTop.h b/source/App/TAppDecoder/TAppDecTop.h
-index 2e89b88..22f285d 100644
+index 2e89b88b..22f285d0 100644
 --- a/source/App/TAppDecoder/TAppDecTop.h
 +++ b/source/App/TAppDecoder/TAppDecTop.h
 @@ -47,6 +47,7 @@
@@ -135,7 +135,7 @@ index 2e89b88..22f285d 100644
  
 +
 diff --git a/source/App/TAppDecoder/decmain.cpp b/source/App/TAppDecoder/decmain.cpp
-index 97d684a..f970aa9 100644
+index 97d684aa..f970aa97 100644
 --- a/source/App/TAppDecoder/decmain.cpp
 +++ b/source/App/TAppDecoder/decmain.cpp
 @@ -39,6 +39,7 @@
@@ -154,7 +154,7 @@ index 97d684a..f970aa9 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/App/TAppEncoder/TAppEncCfg.cpp b/source/App/TAppEncoder/TAppEncCfg.cpp
-index ae64335..876aca5 100644
+index ae643351..876aca5e 100644
 --- a/source/App/TAppEncoder/TAppEncCfg.cpp
 +++ b/source/App/TAppEncoder/TAppEncCfg.cpp
 @@ -45,6 +45,7 @@
@@ -239,7 +239,7 @@ index ae64335..876aca5 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/App/TAppEncoder/TAppEncCfg.h b/source/App/TAppEncoder/TAppEncCfg.h
-index 5f6c8fe..239d016 100644
+index 5f6c8fe0..239d016f 100644
 --- a/source/App/TAppEncoder/TAppEncCfg.h
 +++ b/source/App/TAppEncoder/TAppEncCfg.h
 @@ -46,6 +46,7 @@
@@ -279,7 +279,7 @@ index 5f6c8fe..239d016 100644
  
 +
 diff --git a/source/App/TAppEncoder/TAppEncTop.cpp b/source/App/TAppEncoder/TAppEncTop.cpp
-index 71ef375..8020463 100644
+index 71ef375d..80204632 100644
 --- a/source/App/TAppEncoder/TAppEncTop.cpp
 +++ b/source/App/TAppEncoder/TAppEncTop.cpp
 @@ -49,6 +49,7 @@
@@ -390,7 +390,7 @@ index 71ef375..8020463 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/App/TAppEncoder/TAppEncTop.h b/source/App/TAppEncoder/TAppEncTop.h
-index 1749826..2112ea0 100644
+index 17498261..2112ea08 100644
 --- a/source/App/TAppEncoder/TAppEncTop.h
 +++ b/source/App/TAppEncoder/TAppEncTop.h
 @@ -45,6 +45,7 @@
@@ -410,7 +410,7 @@ index 1749826..2112ea0 100644
  
 +
 diff --git a/source/App/TAppEncoder/encmain.cpp b/source/App/TAppEncoder/encmain.cpp
-index 6ac8a80..895347b 100644
+index 6ac8a806..895347b5 100644
 --- a/source/App/TAppEncoder/encmain.cpp
 +++ b/source/App/TAppEncoder/encmain.cpp
 @@ -44,6 +44,7 @@
@@ -429,7 +429,7 @@ index 6ac8a80..895347b 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/App/utils/BitrateTargeting/ExtractBitrates.cpp b/source/App/utils/BitrateTargeting/ExtractBitrates.cpp
-index 4929cfb..792fe37 100644
+index 4929cfb4..792fe376 100644
 --- a/source/App/utils/BitrateTargeting/ExtractBitrates.cpp
 +++ b/source/App/utils/BitrateTargeting/ExtractBitrates.cpp
 @@ -37,6 +37,7 @@
@@ -448,7 +448,7 @@ index 4929cfb..792fe37 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/App/utils/BitrateTargeting/ExtractBitrates.h b/source/App/utils/BitrateTargeting/ExtractBitrates.h
-index 6ef6b21..9c76819 100644
+index 6ef6b210..9c768195 100644
 --- a/source/App/utils/BitrateTargeting/ExtractBitrates.h
 +++ b/source/App/utils/BitrateTargeting/ExtractBitrates.h
 @@ -36,6 +36,7 @@
@@ -467,7 +467,7 @@ index 6ef6b21..9c76819 100644
  #endif
 +
 diff --git a/source/App/utils/BitrateTargeting/ExtractBitratesMain.cpp b/source/App/utils/BitrateTargeting/ExtractBitratesMain.cpp
-index adfd71f..b120e95 100644
+index adfd71fe..b120e958 100644
 --- a/source/App/utils/BitrateTargeting/ExtractBitratesMain.cpp
 +++ b/source/App/utils/BitrateTargeting/ExtractBitratesMain.cpp
 @@ -34,6 +34,7 @@
@@ -486,7 +486,7 @@ index adfd71f..b120e95 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/App/utils/BitrateTargeting/GuessLambdaModifiers.cpp b/source/App/utils/BitrateTargeting/GuessLambdaModifiers.cpp
-index 6844c74..2e494e2 100644
+index 6844c74d..2e494e29 100644
 --- a/source/App/utils/BitrateTargeting/GuessLambdaModifiers.cpp
 +++ b/source/App/utils/BitrateTargeting/GuessLambdaModifiers.cpp
 @@ -35,6 +35,7 @@
@@ -505,7 +505,7 @@ index 6844c74..2e494e2 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/App/utils/BitrateTargeting/GuessLambdaModifiers.h b/source/App/utils/BitrateTargeting/GuessLambdaModifiers.h
-index 6722250..88637b8 100644
+index 6722250b..88637b84 100644
 --- a/source/App/utils/BitrateTargeting/GuessLambdaModifiers.h
 +++ b/source/App/utils/BitrateTargeting/GuessLambdaModifiers.h
 @@ -40,6 +40,7 @@
@@ -524,7 +524,7 @@ index 6722250..88637b8 100644
  #endif
 +
 diff --git a/source/App/utils/BitrateTargeting/GuessLambdaModifiersMain.cpp b/source/App/utils/BitrateTargeting/GuessLambdaModifiersMain.cpp
-index 410438a..a99e340 100644
+index 410438aa..a99e340c 100644
 --- a/source/App/utils/BitrateTargeting/GuessLambdaModifiersMain.cpp
 +++ b/source/App/utils/BitrateTargeting/GuessLambdaModifiersMain.cpp
 @@ -35,6 +35,7 @@
@@ -543,7 +543,7 @@ index 410438a..a99e340 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/App/utils/BitrateTargeting/RuntimeError.h b/source/App/utils/BitrateTargeting/RuntimeError.h
-index d68888e..18c8aa9 100644
+index d68888e6..18c8aa9c 100644
 --- a/source/App/utils/BitrateTargeting/RuntimeError.h
 +++ b/source/App/utils/BitrateTargeting/RuntimeError.h
 @@ -36,6 +36,7 @@
@@ -562,7 +562,7 @@ index d68888e..18c8aa9 100644
  #endif
 +
 diff --git a/source/App/utils/annexBbytecount.cpp b/source/App/utils/annexBbytecount.cpp
-index 27c2826..5e4db60 100644
+index 27c28268..5e4db600 100644
 --- a/source/App/utils/annexBbytecount.cpp
 +++ b/source/App/utils/annexBbytecount.cpp
 @@ -39,6 +39,7 @@
@@ -581,7 +581,7 @@ index 27c2826..5e4db60 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/App/utils/convert_NtoMbit_YCbCr.cpp b/source/App/utils/convert_NtoMbit_YCbCr.cpp
-index 6d9454a..4ca5038 100644
+index 6d9454aa..4ca50381 100644
 --- a/source/App/utils/convert_NtoMbit_YCbCr.cpp
 +++ b/source/App/utils/convert_NtoMbit_YCbCr.cpp
 @@ -36,6 +36,7 @@
@@ -600,7 +600,7 @@ index 6d9454a..4ca5038 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TAppCommon/program_options_lite.cpp b/source/Lib/TAppCommon/program_options_lite.cpp
-index 009dbdf..260b14c 100644
+index 009dbdf8..260b14c6 100644
 --- a/source/Lib/TAppCommon/program_options_lite.cpp
 +++ b/source/Lib/TAppCommon/program_options_lite.cpp
 @@ -39,6 +39,7 @@
@@ -619,7 +619,7 @@ index 009dbdf..260b14c 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TAppCommon/program_options_lite.h b/source/Lib/TAppCommon/program_options_lite.h
-index 0a71a23..9e95202 100644
+index 0a71a233..9e95202f 100644
 --- a/source/Lib/TAppCommon/program_options_lite.h
 +++ b/source/Lib/TAppCommon/program_options_lite.h
 @@ -36,6 +36,8 @@
@@ -639,7 +639,7 @@ index 0a71a23..9e95202 100644
  #endif
 +
 diff --git a/source/Lib/TLibCommon/AccessUnit.h b/source/Lib/TLibCommon/AccessUnit.h
-index 64dd0e7..c27d68d 100644
+index 64dd0e7e..c27d68dc 100644
 --- a/source/Lib/TLibCommon/AccessUnit.h
 +++ b/source/Lib/TLibCommon/AccessUnit.h
 @@ -43,6 +43,7 @@
@@ -658,7 +658,7 @@ index 64dd0e7..c27d68d 100644
  #endif
 +
 diff --git a/source/Lib/TLibCommon/CommonDef.h b/source/Lib/TLibCommon/CommonDef.h
-index aeec735..d255644 100644
+index aeec7351..d2556442 100644
 --- a/source/Lib/TLibCommon/CommonDef.h
 +++ b/source/Lib/TLibCommon/CommonDef.h
 @@ -43,6 +43,8 @@
@@ -687,7 +687,7 @@ index aeec735..d255644 100644
  
 +
 diff --git a/source/Lib/TLibCommon/ContextModel.cpp b/source/Lib/TLibCommon/ContextModel.cpp
-index d6ea087..58feff1 100644
+index d6ea087e..58feff11 100644
 --- a/source/Lib/TLibCommon/ContextModel.cpp
 +++ b/source/Lib/TLibCommon/ContextModel.cpp
 @@ -38,6 +38,7 @@
@@ -706,7 +706,7 @@ index d6ea087..58feff1 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibCommon/ContextModel.h b/source/Lib/TLibCommon/ContextModel.h
-index 7a3942d..6fef4b6 100644
+index 7a3942d9..6fef4b69 100644
 --- a/source/Lib/TLibCommon/ContextModel.h
 +++ b/source/Lib/TLibCommon/ContextModel.h
 @@ -45,6 +45,7 @@
@@ -726,7 +726,7 @@ index 7a3942d..6fef4b6 100644
  
 +
 diff --git a/source/Lib/TLibCommon/ContextModel3DBuffer.cpp b/source/Lib/TLibCommon/ContextModel3DBuffer.cpp
-index 1e308d9..c63bd11 100644
+index 1e308d9c..c63bd110 100644
 --- a/source/Lib/TLibCommon/ContextModel3DBuffer.cpp
 +++ b/source/Lib/TLibCommon/ContextModel3DBuffer.cpp
 @@ -36,6 +36,7 @@
@@ -745,7 +745,7 @@ index 1e308d9..c63bd11 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibCommon/ContextModel3DBuffer.h b/source/Lib/TLibCommon/ContextModel3DBuffer.h
-index 0e33a3e..8cbb89e 100644
+index 0e33a3e3..8cbb89ef 100644
 --- a/source/Lib/TLibCommon/ContextModel3DBuffer.h
 +++ b/source/Lib/TLibCommon/ContextModel3DBuffer.h
 @@ -43,6 +43,7 @@
@@ -764,7 +764,7 @@ index 0e33a3e..8cbb89e 100644
  #endif // _HM_CONTEXT_MODEL_3DBUFFER_H_
 +
 diff --git a/source/Lib/TLibCommon/ContextTables.h b/source/Lib/TLibCommon/ContextTables.h
-index 538b2f9..51ac534 100644
+index 538b2f90..51ac534a 100644
 --- a/source/Lib/TLibCommon/ContextTables.h
 +++ b/source/Lib/TLibCommon/ContextTables.h
 @@ -39,6 +39,7 @@
@@ -783,7 +783,7 @@ index 538b2f9..51ac534 100644
  #endif
 +
 diff --git a/source/Lib/TLibCommon/Debug.cpp b/source/Lib/TLibCommon/Debug.cpp
-index d06f964..545339c 100644
+index d06f9640..545339c3 100644
 --- a/source/Lib/TLibCommon/Debug.cpp
 +++ b/source/Lib/TLibCommon/Debug.cpp
 @@ -41,6 +41,7 @@
@@ -810,7 +810,7 @@ index d06f964..545339c 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibCommon/Debug.h b/source/Lib/TLibCommon/Debug.h
-index 5c6f3f2..3faba7f 100644
+index 5c6f3f2c..3faba7f6 100644
 --- a/source/Lib/TLibCommon/Debug.h
 +++ b/source/Lib/TLibCommon/Debug.h
 @@ -45,6 +45,7 @@
@@ -829,7 +829,7 @@ index 5c6f3f2..3faba7f 100644
  #endif /* __DEBUG__ */
 +
 diff --git a/source/Lib/TLibCommon/NAL.h b/source/Lib/TLibCommon/NAL.h
-index 2fa4d19..45d40d4 100644
+index 2fa4d19b..45d40d42 100644
 --- a/source/Lib/TLibCommon/NAL.h
 +++ b/source/Lib/TLibCommon/NAL.h
 @@ -38,6 +38,7 @@
@@ -848,7 +848,7 @@ index 2fa4d19..45d40d4 100644
  #endif
 +
 diff --git a/source/Lib/TLibCommon/SEI.cpp b/source/Lib/TLibCommon/SEI.cpp
-index 5dfad04..9c34cfd 100644
+index 5dfad04b..9c34cfd1 100644
 --- a/source/Lib/TLibCommon/SEI.cpp
 +++ b/source/Lib/TLibCommon/SEI.cpp
 @@ -38,6 +38,7 @@
@@ -867,7 +867,7 @@ index 5dfad04..9c34cfd 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibCommon/SEI.h b/source/Lib/TLibCommon/SEI.h
-index 45d4aad..f979a59 100644
+index 45d4aad1..f979a595 100644
 --- a/source/Lib/TLibCommon/SEI.h
 +++ b/source/Lib/TLibCommon/SEI.h
 @@ -41,6 +41,7 @@
@@ -887,7 +887,7 @@ index 45d4aad..f979a59 100644
  //! \}
 +
 diff --git a/source/Lib/TLibCommon/TComBitCounter.h b/source/Lib/TLibCommon/TComBitCounter.h
-index dc85033..5e6810c 100644
+index dc850336..5e6810ca 100644
 --- a/source/Lib/TLibCommon/TComBitCounter.h
 +++ b/source/Lib/TLibCommon/TComBitCounter.h
 @@ -43,6 +43,7 @@
@@ -906,7 +906,7 @@ index dc85033..5e6810c 100644
  #endif
 +
 diff --git a/source/Lib/TLibCommon/TComBitStream.cpp b/source/Lib/TLibCommon/TComBitStream.cpp
-index 81360d7..3cd93b3 100644
+index 81360d74..3cd93b3d 100644
 --- a/source/Lib/TLibCommon/TComBitStream.cpp
 +++ b/source/Lib/TLibCommon/TComBitStream.cpp
 @@ -40,6 +40,7 @@
@@ -925,7 +925,7 @@ index 81360d7..3cd93b3 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibCommon/TComBitStream.h b/source/Lib/TLibCommon/TComBitStream.h
-index dcd8c09..d968305 100644
+index dcd8c09f..d9683059 100644
 --- a/source/Lib/TLibCommon/TComBitStream.h
 +++ b/source/Lib/TLibCommon/TComBitStream.h
 @@ -46,6 +46,7 @@
@@ -944,7 +944,7 @@ index dcd8c09..d968305 100644
  #endif
 +
 diff --git a/source/Lib/TLibCommon/TComCABACTables.cpp b/source/Lib/TLibCommon/TComCABACTables.cpp
-index d7c964a..34934a7 100644
+index d7c964ac..34934a75 100644
 --- a/source/Lib/TLibCommon/TComCABACTables.cpp
 +++ b/source/Lib/TLibCommon/TComCABACTables.cpp
 @@ -36,6 +36,7 @@
@@ -963,7 +963,7 @@ index d7c964a..34934a7 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibCommon/TComCABACTables.h b/source/Lib/TLibCommon/TComCABACTables.h
-index 706c06c..812c7e5 100644
+index 706c06c2..812c7e53 100644
 --- a/source/Lib/TLibCommon/TComCABACTables.h
 +++ b/source/Lib/TLibCommon/TComCABACTables.h
 @@ -40,6 +40,7 @@
@@ -982,7 +982,7 @@ index 706c06c..812c7e5 100644
  #endif
 +
 diff --git a/source/Lib/TLibCommon/TComChromaFormat.cpp b/source/Lib/TLibCommon/TComChromaFormat.cpp
-index bc49f09..690bf14 100644
+index bc49f09a..690bf140 100644
 --- a/source/Lib/TLibCommon/TComChromaFormat.cpp
 +++ b/source/Lib/TLibCommon/TComChromaFormat.cpp
 @@ -37,6 +37,7 @@
@@ -1001,7 +1001,7 @@ index bc49f09..690bf14 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibCommon/TComChromaFormat.h b/source/Lib/TLibCommon/TComChromaFormat.h
-index 08e73d3..5598ec5 100644
+index 08e73d3f..5598ec58 100644
 --- a/source/Lib/TLibCommon/TComChromaFormat.h
 +++ b/source/Lib/TLibCommon/TComChromaFormat.h
 @@ -42,6 +42,7 @@
@@ -1020,7 +1020,7 @@ index 08e73d3..5598ec5 100644
  #endif
 +
 diff --git a/source/Lib/TLibCommon/TComCodingStatistics.h b/source/Lib/TLibCommon/TComCodingStatistics.h
-index 440eef8..02279c4 100644
+index 440eef8a..02279c4a 100644
 --- a/source/Lib/TLibCommon/TComCodingStatistics.h
 +++ b/source/Lib/TLibCommon/TComCodingStatistics.h
 @@ -40,6 +40,7 @@
@@ -1039,7 +1039,7 @@ index 440eef8..02279c4 100644
  #endif
 +
 diff --git a/source/Lib/TLibCommon/TComDataCU.cpp b/source/Lib/TLibCommon/TComDataCU.cpp
-index f9fe0e2..5d23629 100644
+index f9fe0e2c..5d236290 100644
 --- a/source/Lib/TLibCommon/TComDataCU.cpp
 +++ b/source/Lib/TLibCommon/TComDataCU.cpp
 @@ -39,6 +39,7 @@
@@ -1058,7 +1058,7 @@ index f9fe0e2..5d23629 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibCommon/TComDataCU.h b/source/Lib/TLibCommon/TComDataCU.h
-index 04acd9c..5fa0297 100644
+index 04acd9ca..5fa02972 100644
 --- a/source/Lib/TLibCommon/TComDataCU.h
 +++ b/source/Lib/TLibCommon/TComDataCU.h
 @@ -48,6 +48,7 @@
@@ -1077,7 +1077,7 @@ index 04acd9c..5fa0297 100644
  #endif
 +
 diff --git a/source/Lib/TLibCommon/TComHash.cpp b/source/Lib/TLibCommon/TComHash.cpp
-index 701e17d..be22546 100644
+index 701e17d1..be225461 100644
 --- a/source/Lib/TLibCommon/TComHash.cpp
 +++ b/source/Lib/TLibCommon/TComHash.cpp
 @@ -37,6 +37,7 @@
@@ -1096,7 +1096,7 @@ index 701e17d..be22546 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibCommon/TComHash.h b/source/Lib/TLibCommon/TComHash.h
-index 1840bb7..6ddced6 100644
+index 1840bb71..6ddced64 100644
 --- a/source/Lib/TLibCommon/TComHash.h
 +++ b/source/Lib/TLibCommon/TComHash.h
 @@ -43,6 +43,7 @@
@@ -1115,7 +1115,7 @@ index 1840bb7..6ddced6 100644
  #endif // __TCOMHASH__
 +
 diff --git a/source/Lib/TLibCommon/TComInterpolationFilter.cpp b/source/Lib/TLibCommon/TComInterpolationFilter.cpp
-index 30a5b79..83e7599 100644
+index 30a5b79e..83e75996 100644
 --- a/source/Lib/TLibCommon/TComInterpolationFilter.cpp
 +++ b/source/Lib/TLibCommon/TComInterpolationFilter.cpp
 @@ -49,6 +49,7 @@
@@ -1134,7 +1134,7 @@ index 30a5b79..83e7599 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibCommon/TComInterpolationFilter.h b/source/Lib/TLibCommon/TComInterpolationFilter.h
-index bcbd6e4..5950f14 100644
+index bcbd6e4d..5950f14d 100644
 --- a/source/Lib/TLibCommon/TComInterpolationFilter.h
 +++ b/source/Lib/TLibCommon/TComInterpolationFilter.h
 @@ -40,6 +40,7 @@
@@ -1153,7 +1153,7 @@ index bcbd6e4..5950f14 100644
  #endif
 +
 diff --git a/source/Lib/TLibCommon/TComList.h b/source/Lib/TLibCommon/TComList.h
-index a2bcc68..98271d0 100644
+index a2bcc684..98271d0c 100644
 --- a/source/Lib/TLibCommon/TComList.h
 +++ b/source/Lib/TLibCommon/TComList.h
 @@ -47,6 +47,7 @@
@@ -1172,7 +1172,7 @@ index a2bcc68..98271d0 100644
  #endif
 +
 diff --git a/source/Lib/TLibCommon/TComLoopFilter.cpp b/source/Lib/TLibCommon/TComLoopFilter.cpp
-index 40bd1c1..a945cd5 100644
+index 40bd1c19..a945cd54 100644
 --- a/source/Lib/TLibCommon/TComLoopFilter.cpp
 +++ b/source/Lib/TLibCommon/TComLoopFilter.cpp
 @@ -39,6 +39,7 @@
@@ -1191,7 +1191,7 @@ index 40bd1c1..a945cd5 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibCommon/TComLoopFilter.h b/source/Lib/TLibCommon/TComLoopFilter.h
-index ed69a93..dbb6c43 100644
+index ed69a93b..dbb6c430 100644
 --- a/source/Lib/TLibCommon/TComLoopFilter.h
 +++ b/source/Lib/TLibCommon/TComLoopFilter.h
 @@ -40,6 +40,7 @@
@@ -1210,7 +1210,7 @@ index ed69a93..dbb6c43 100644
  #endif
 +
 diff --git a/source/Lib/TLibCommon/TComMotionInfo.cpp b/source/Lib/TLibCommon/TComMotionInfo.cpp
-index 16bc52b..f1ea6f2 100644
+index 16bc52bf..f1ea6f21 100644
 --- a/source/Lib/TLibCommon/TComMotionInfo.cpp
 +++ b/source/Lib/TLibCommon/TComMotionInfo.cpp
 @@ -39,6 +39,7 @@
@@ -1229,7 +1229,7 @@ index 16bc52b..f1ea6f2 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibCommon/TComMotionInfo.h b/source/Lib/TLibCommon/TComMotionInfo.h
-index 5b5f87f..4dfa40f 100644
+index 5b5f87ff..4dfa40f9 100644
 --- a/source/Lib/TLibCommon/TComMotionInfo.h
 +++ b/source/Lib/TLibCommon/TComMotionInfo.h
 @@ -42,6 +42,7 @@
@@ -1248,7 +1248,7 @@ index 5b5f87f..4dfa40f 100644
  #endif // __TCOMMOTIONINFO__
 +
 diff --git a/source/Lib/TLibCommon/TComMv.h b/source/Lib/TLibCommon/TComMv.h
-index 226f743..a968833 100644
+index 226f743e..a9688333 100644
 --- a/source/Lib/TLibCommon/TComMv.h
 +++ b/source/Lib/TLibCommon/TComMv.h
 @@ -39,6 +39,7 @@
@@ -1267,7 +1267,7 @@ index 226f743..a968833 100644
  #endif // __TCOMMV__
 +
 diff --git a/source/Lib/TLibCommon/TComPattern.cpp b/source/Lib/TLibCommon/TComPattern.cpp
-index cc7abb6..5d0ba70 100644
+index cc7abb67..5d0ba70d 100644
 --- a/source/Lib/TLibCommon/TComPattern.cpp
 +++ b/source/Lib/TLibCommon/TComPattern.cpp
 @@ -41,6 +41,7 @@
@@ -1311,7 +1311,7 @@ index cc7abb6..5d0ba70 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibCommon/TComPattern.h b/source/Lib/TLibCommon/TComPattern.h
-index df7417b..433a51e 100644
+index df7417bd..433a51e4 100644
 --- a/source/Lib/TLibCommon/TComPattern.h
 +++ b/source/Lib/TLibCommon/TComPattern.h
 @@ -40,6 +40,7 @@
@@ -1378,7 +1378,7 @@ index df7417b..433a51e 100644
  #endif // __TCOMPATTERN__
 +
 diff --git a/source/Lib/TLibCommon/TComPic.cpp b/source/Lib/TLibCommon/TComPic.cpp
-index fa1c085..2a0a806 100644
+index fa1c0854..2a0a8064 100644
 --- a/source/Lib/TLibCommon/TComPic.cpp
 +++ b/source/Lib/TLibCommon/TComPic.cpp
 @@ -37,6 +37,7 @@
@@ -1453,7 +1453,7 @@ index fa1c085..2a0a806 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibCommon/TComPic.h b/source/Lib/TLibCommon/TComPic.h
-index fd78acf..9b3f156 100644
+index fd78acfb..9b3f1560 100644
 --- a/source/Lib/TLibCommon/TComPic.h
 +++ b/source/Lib/TLibCommon/TComPic.h
 @@ -44,6 +44,7 @@
@@ -1500,7 +1500,7 @@ index fd78acf..9b3f156 100644
  #endif // __TCOMPIC__
 +
 diff --git a/source/Lib/TLibCommon/TComPicSym.cpp b/source/Lib/TLibCommon/TComPicSym.cpp
-index cd50da5..939dff1 100644
+index cd50da57..939dff13 100644
 --- a/source/Lib/TLibCommon/TComPicSym.cpp
 +++ b/source/Lib/TLibCommon/TComPicSym.cpp
 @@ -38,6 +38,7 @@
@@ -1519,7 +1519,7 @@ index cd50da5..939dff1 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibCommon/TComPicSym.h b/source/Lib/TLibCommon/TComPicSym.h
-index 091cf01..ba91253 100644
+index 091cf010..ba912534 100644
 --- a/source/Lib/TLibCommon/TComPicSym.h
 +++ b/source/Lib/TLibCommon/TComPicSym.h
 @@ -44,6 +44,7 @@
@@ -1539,7 +1539,7 @@ index 091cf01..ba91253 100644
  
 +
 diff --git a/source/Lib/TLibCommon/TComPicYuv.cpp b/source/Lib/TLibCommon/TComPicYuv.cpp
-index c2a0634..6a5a1b2 100644
+index c2a0634a..6a5a1b2b 100644
 --- a/source/Lib/TLibCommon/TComPicYuv.cpp
 +++ b/source/Lib/TLibCommon/TComPicYuv.cpp
 @@ -47,6 +47,7 @@
@@ -1558,7 +1558,7 @@ index c2a0634..6a5a1b2 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibCommon/TComPicYuv.h b/source/Lib/TLibCommon/TComPicYuv.h
-index 5340f0d..f6a1def 100644
+index 5340f0d0..f6a1defe 100644
 --- a/source/Lib/TLibCommon/TComPicYuv.h
 +++ b/source/Lib/TLibCommon/TComPicYuv.h
 @@ -43,6 +43,7 @@
@@ -1602,7 +1602,7 @@ index 5340f0d..f6a1def 100644
  #endif // __TCOMPICYUV__
 +
 diff --git a/source/Lib/TLibCommon/TComPicYuvMD5.cpp b/source/Lib/TLibCommon/TComPicYuvMD5.cpp
-index c64fc0b..ae0d287 100644
+index c64fc0bd..ae0d287a 100644
 --- a/source/Lib/TLibCommon/TComPicYuvMD5.cpp
 +++ b/source/Lib/TLibCommon/TComPicYuvMD5.cpp
 @@ -33,6 +33,7 @@
@@ -1621,7 +1621,7 @@ index c64fc0b..ae0d287 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibCommon/TComPrediction.cpp b/source/Lib/TLibCommon/TComPrediction.cpp
-index 33208a2..c0a5e81 100644
+index 33208a2e..c0a5e814 100644
 --- a/source/Lib/TLibCommon/TComPrediction.cpp
 +++ b/source/Lib/TLibCommon/TComPrediction.cpp
 @@ -39,6 +39,7 @@
@@ -1640,7 +1640,7 @@ index 33208a2..c0a5e81 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibCommon/TComPrediction.h b/source/Lib/TLibCommon/TComPrediction.h
-index 3033221..a3028f1 100644
+index 30332216..a3028f10 100644
 --- a/source/Lib/TLibCommon/TComPrediction.h
 +++ b/source/Lib/TLibCommon/TComPrediction.h
 @@ -43,6 +43,7 @@
@@ -1659,7 +1659,7 @@ index 3033221..a3028f1 100644
  #endif // __TCOMPREDICTION__
 +
 diff --git a/source/Lib/TLibCommon/TComRdCost.cpp b/source/Lib/TLibCommon/TComRdCost.cpp
-index 8faa9f0..598f024 100644
+index 8faa9f06..598f0240 100644
 --- a/source/Lib/TLibCommon/TComRdCost.cpp
 +++ b/source/Lib/TLibCommon/TComRdCost.cpp
 @@ -45,6 +45,7 @@
@@ -2328,7 +2328,7 @@ index 8faa9f0..598f024 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibCommon/TComRdCost.h b/source/Lib/TLibCommon/TComRdCost.h
-index ce52715..001b4ff 100644
+index ce527150..001b4ffc 100644
 --- a/source/Lib/TLibCommon/TComRdCost.h
 +++ b/source/Lib/TLibCommon/TComRdCost.h
 @@ -45,6 +45,7 @@
@@ -2399,7 +2399,7 @@ index ce52715..001b4ff 100644
  #endif // __TCOMRDCOST__
 +
 diff --git a/source/Lib/TLibCommon/TComRdCostWeightPrediction.cpp b/source/Lib/TLibCommon/TComRdCostWeightPrediction.cpp
-index 99eb37d..c0acfc8 100644
+index 99eb37d2..c0acfc8e 100644
 --- a/source/Lib/TLibCommon/TComRdCostWeightPrediction.cpp
 +++ b/source/Lib/TLibCommon/TComRdCostWeightPrediction.cpp
 @@ -39,6 +39,7 @@
@@ -2418,7 +2418,7 @@ index 99eb37d..c0acfc8 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibCommon/TComRdCostWeightPrediction.h b/source/Lib/TLibCommon/TComRdCostWeightPrediction.h
-index 287495e..03c2740 100644
+index 287495e6..03c27407 100644
 --- a/source/Lib/TLibCommon/TComRdCostWeightPrediction.h
 +++ b/source/Lib/TLibCommon/TComRdCostWeightPrediction.h
 @@ -40,6 +40,7 @@
@@ -2438,7 +2438,7 @@ index 287495e..03c2740 100644
  
 +
 diff --git a/source/Lib/TLibCommon/TComRectangle.h b/source/Lib/TLibCommon/TComRectangle.h
-index ba52016..a55399f 100644
+index ba520164..a55399fc 100644
 --- a/source/Lib/TLibCommon/TComRectangle.h
 +++ b/source/Lib/TLibCommon/TComRectangle.h
 @@ -34,6 +34,7 @@
@@ -2457,7 +2457,7 @@ index ba52016..a55399f 100644
  #endif
 +
 diff --git a/source/Lib/TLibCommon/TComRom.cpp b/source/Lib/TLibCommon/TComRom.cpp
-index 8c552fe..9681fa1 100644
+index 8c552fed..9681fa16 100644
 --- a/source/Lib/TLibCommon/TComRom.cpp
 +++ b/source/Lib/TLibCommon/TComRom.cpp
 @@ -43,6 +43,7 @@
@@ -2486,7 +2486,7 @@ index 8c552fe..9681fa1 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibCommon/TComRom.h b/source/Lib/TLibCommon/TComRom.h
-index 879f417..74be8cb 100644
+index 879f4175..74be8cba 100644
 --- a/source/Lib/TLibCommon/TComRom.h
 +++ b/source/Lib/TLibCommon/TComRom.h
 @@ -42,6 +42,7 @@
@@ -2517,7 +2517,7 @@ index 879f417..74be8cb 100644
  
 +
 diff --git a/source/Lib/TLibCommon/TComSampleAdaptiveOffset.cpp b/source/Lib/TLibCommon/TComSampleAdaptiveOffset.cpp
-index a694c91..c6059e5 100644
+index a694c91d..c6059e5e 100644
 --- a/source/Lib/TLibCommon/TComSampleAdaptiveOffset.cpp
 +++ b/source/Lib/TLibCommon/TComSampleAdaptiveOffset.cpp
 @@ -40,6 +40,7 @@
@@ -2536,7 +2536,7 @@ index a694c91..c6059e5 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibCommon/TComSampleAdaptiveOffset.h b/source/Lib/TLibCommon/TComSampleAdaptiveOffset.h
-index e2d7627..61d37a6 100644
+index e2d76271..61d37a6c 100644
 --- a/source/Lib/TLibCommon/TComSampleAdaptiveOffset.h
 +++ b/source/Lib/TLibCommon/TComSampleAdaptiveOffset.h
 @@ -40,6 +40,7 @@
@@ -2556,7 +2556,7 @@ index e2d7627..61d37a6 100644
  
 +
 diff --git a/source/Lib/TLibCommon/TComSlice.cpp b/source/Lib/TLibCommon/TComSlice.cpp
-index a8ea65a..23419b6 100644
+index a8ea65ad..23419b6e 100644
 --- a/source/Lib/TLibCommon/TComSlice.cpp
 +++ b/source/Lib/TLibCommon/TComSlice.cpp
 @@ -40,6 +40,7 @@
@@ -2575,7 +2575,7 @@ index a8ea65a..23419b6 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibCommon/TComSlice.h b/source/Lib/TLibCommon/TComSlice.h
-index d5bd55e..f68919e 100644
+index d5bd55e7..f68919eb 100644
 --- a/source/Lib/TLibCommon/TComSlice.h
 +++ b/source/Lib/TLibCommon/TComSlice.h
 @@ -45,6 +45,7 @@
@@ -2594,7 +2594,7 @@ index d5bd55e..f68919e 100644
  #endif // __TCOMSLICE__
 +
 diff --git a/source/Lib/TLibCommon/TComTU.cpp b/source/Lib/TLibCommon/TComTU.cpp
-index c54fa2c..2d8323e 100644
+index c54fa2c8..2d8323e2 100644
 --- a/source/Lib/TLibCommon/TComTU.cpp
 +++ b/source/Lib/TLibCommon/TComTU.cpp
 @@ -36,6 +36,7 @@
@@ -2613,7 +2613,7 @@ index c54fa2c..2d8323e 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibCommon/TComTU.h b/source/Lib/TLibCommon/TComTU.h
-index 624e1e8..a5c941a 100644
+index 624e1e88..a5c941af 100644
 --- a/source/Lib/TLibCommon/TComTU.h
 +++ b/source/Lib/TLibCommon/TComTU.h
 @@ -39,6 +39,7 @@ class TComTU; // forward declaration
@@ -2632,7 +2632,7 @@ index 624e1e8..a5c941a 100644
  #endif
 +
 diff --git a/source/Lib/TLibCommon/TComTrQuant.cpp b/source/Lib/TLibCommon/TComTrQuant.cpp
-index 6e084ad..18abca0 100644
+index 6e084ad8..18abca0b 100644
 --- a/source/Lib/TLibCommon/TComTrQuant.cpp
 +++ b/source/Lib/TLibCommon/TComTrQuant.cpp
 @@ -44,6 +44,7 @@
@@ -2651,7 +2651,7 @@ index 6e084ad..18abca0 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibCommon/TComTrQuant.h b/source/Lib/TLibCommon/TComTrQuant.h
-index fefaf28..99154d9 100644
+index fefaf28b..99154d99 100644
 --- a/source/Lib/TLibCommon/TComTrQuant.h
 +++ b/source/Lib/TLibCommon/TComTrQuant.h
 @@ -43,6 +43,7 @@
@@ -2670,7 +2670,7 @@ index fefaf28..99154d9 100644
  #endif // __TCOMTRQUANT__
 +
 diff --git a/source/Lib/TLibCommon/TComWeightPrediction.cpp b/source/Lib/TLibCommon/TComWeightPrediction.cpp
-index 957add6..0169d7c 100644
+index 957add61..0169d7c5 100644
 --- a/source/Lib/TLibCommon/TComWeightPrediction.cpp
 +++ b/source/Lib/TLibCommon/TComWeightPrediction.cpp
 @@ -41,6 +41,7 @@
@@ -2689,7 +2689,7 @@ index 957add6..0169d7c 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibCommon/TComWeightPrediction.h b/source/Lib/TLibCommon/TComWeightPrediction.h
-index e30290c..b47eea5 100644
+index e30290c1..b47eea5a 100644
 --- a/source/Lib/TLibCommon/TComWeightPrediction.h
 +++ b/source/Lib/TLibCommon/TComWeightPrediction.h
 @@ -39,6 +39,7 @@
@@ -2708,7 +2708,7 @@ index e30290c..b47eea5 100644
  #endif
 +
 diff --git a/source/Lib/TLibCommon/TComYuv.cpp b/source/Lib/TLibCommon/TComYuv.cpp
-index a549862..796f69f 100644
+index a549862c..796f69f9 100644
 --- a/source/Lib/TLibCommon/TComYuv.cpp
 +++ b/source/Lib/TLibCommon/TComYuv.cpp
 @@ -44,6 +44,7 @@
@@ -2727,7 +2727,7 @@ index a549862..796f69f 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibCommon/TComYuv.h b/source/Lib/TLibCommon/TComYuv.h
-index b9173c8..e9eb293 100644
+index b9173c80..e9eb2932 100644
 --- a/source/Lib/TLibCommon/TComYuv.h
 +++ b/source/Lib/TLibCommon/TComYuv.h
 @@ -42,6 +42,7 @@
@@ -2758,7 +2758,7 @@ index b9173c8..e9eb293 100644
  #endif // __TCOMYUV__
 +
 diff --git a/source/Lib/TLibCommon/TypeDef.h b/source/Lib/TLibCommon/TypeDef.h
-index f9e16de..a4d9344 100644
+index f9e16de7..a4d93449 100644
 --- a/source/Lib/TLibCommon/TypeDef.h
 +++ b/source/Lib/TLibCommon/TypeDef.h
 @@ -46,9 +46,21 @@
@@ -2802,7 +2802,7 @@ index f9e16de..a4d9344 100644
  
 +
 diff --git a/source/Lib/TLibDecoder/AnnexBread.cpp b/source/Lib/TLibDecoder/AnnexBread.cpp
-index d9396e0..e58a1cf 100644
+index d9396e0a..e58a1cfd 100644
 --- a/source/Lib/TLibDecoder/AnnexBread.cpp
 +++ b/source/Lib/TLibDecoder/AnnexBread.cpp
 @@ -44,6 +44,7 @@
@@ -2877,7 +2877,7 @@ index d9396e0..e58a1cf 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibDecoder/AnnexBread.h b/source/Lib/TLibDecoder/AnnexBread.h
-index b7a4877..d455789 100644
+index b7a48771..d4557894 100644
 --- a/source/Lib/TLibDecoder/AnnexBread.h
 +++ b/source/Lib/TLibDecoder/AnnexBread.h
 @@ -46,6 +46,7 @@
@@ -2902,7 +2902,7 @@ index b7a4877..d455789 100644
  #endif
 +
 diff --git a/source/Lib/TLibDecoder/NALread.cpp b/source/Lib/TLibDecoder/NALread.cpp
-index ecc0e0c..7a5c438 100644
+index ecc0e0cf..7a5c4384 100644
 --- a/source/Lib/TLibDecoder/NALread.cpp
 +++ b/source/Lib/TLibDecoder/NALread.cpp
 @@ -50,6 +50,7 @@
@@ -2921,7 +2921,7 @@ index ecc0e0c..7a5c438 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibDecoder/NALread.h b/source/Lib/TLibDecoder/NALread.h
-index 290978b..b5ca951 100644
+index 290978b0..b5ca9510 100644
 --- a/source/Lib/TLibDecoder/NALread.h
 +++ b/source/Lib/TLibDecoder/NALread.h
 @@ -44,6 +44,7 @@
@@ -2940,7 +2940,7 @@ index 290978b..b5ca951 100644
  #endif
 +
 diff --git a/source/Lib/TLibDecoder/SEIread.cpp b/source/Lib/TLibDecoder/SEIread.cpp
-index eaff161..83e00c7 100644
+index eaff1615..83e00c73 100644
 --- a/source/Lib/TLibDecoder/SEIread.cpp
 +++ b/source/Lib/TLibDecoder/SEIread.cpp
 @@ -44,6 +44,7 @@
@@ -2959,7 +2959,7 @@ index eaff161..83e00c7 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibDecoder/SEIread.h b/source/Lib/TLibDecoder/SEIread.h
-index e5bf3a0..56e1e32 100644
+index e5bf3a00..56e1e321 100644
 --- a/source/Lib/TLibDecoder/SEIread.h
 +++ b/source/Lib/TLibDecoder/SEIread.h
 @@ -47,6 +47,7 @@
@@ -2978,7 +2978,7 @@ index e5bf3a0..56e1e32 100644
  #endif
 +
 diff --git a/source/Lib/TLibDecoder/SyntaxElementParser.cpp b/source/Lib/TLibDecoder/SyntaxElementParser.cpp
-index e97eddb..0426588 100644
+index e97eddb5..04265887 100644
 --- a/source/Lib/TLibDecoder/SyntaxElementParser.cpp
 +++ b/source/Lib/TLibDecoder/SyntaxElementParser.cpp
 @@ -45,6 +45,7 @@
@@ -2997,7 +2997,7 @@ index e97eddb..0426588 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibDecoder/SyntaxElementParser.h b/source/Lib/TLibDecoder/SyntaxElementParser.h
-index 2caf6ba..1da8b18 100644
+index 2caf6ba0..1da8b18a 100644
 --- a/source/Lib/TLibDecoder/SyntaxElementParser.h
 +++ b/source/Lib/TLibDecoder/SyntaxElementParser.h
 @@ -44,6 +44,7 @@
@@ -3017,7 +3017,7 @@ index 2caf6ba..1da8b18 100644
  
 +
 diff --git a/source/Lib/TLibDecoder/TDecBinCoder.h b/source/Lib/TLibDecoder/TDecBinCoder.h
-index 84e8cd6..78b70c8 100644
+index 84e8cd62..78b70c89 100644
 --- a/source/Lib/TLibDecoder/TDecBinCoder.h
 +++ b/source/Lib/TLibDecoder/TDecBinCoder.h
 @@ -40,6 +40,7 @@
@@ -3036,7 +3036,7 @@ index 84e8cd6..78b70c8 100644
  #endif
 +
 diff --git a/source/Lib/TLibDecoder/TDecBinCoderCABAC.cpp b/source/Lib/TLibDecoder/TDecBinCoderCABAC.cpp
-index 3b0ed0c..c12702b 100644
+index 3b0ed0ca..c12702b3 100644
 --- a/source/Lib/TLibDecoder/TDecBinCoderCABAC.cpp
 +++ b/source/Lib/TLibDecoder/TDecBinCoderCABAC.cpp
 @@ -40,6 +40,7 @@
@@ -3055,7 +3055,7 @@ index 3b0ed0c..c12702b 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibDecoder/TDecBinCoderCABAC.h b/source/Lib/TLibDecoder/TDecBinCoderCABAC.h
-index 98a78b0..ba0badc 100644
+index 98a78b0b..ba0badc3 100644
 --- a/source/Lib/TLibDecoder/TDecBinCoderCABAC.h
 +++ b/source/Lib/TLibDecoder/TDecBinCoderCABAC.h
 @@ -40,6 +40,7 @@
@@ -3075,7 +3075,7 @@ index 98a78b0..ba0badc 100644
  
 +
 diff --git a/source/Lib/TLibDecoder/TDecCAVLC.cpp b/source/Lib/TLibDecoder/TDecCAVLC.cpp
-index 1324589..95b0051 100644
+index 13245894..95b0051a 100644
 --- a/source/Lib/TLibDecoder/TDecCAVLC.cpp
 +++ b/source/Lib/TLibDecoder/TDecCAVLC.cpp
 @@ -43,6 +43,7 @@
@@ -3094,7 +3094,7 @@ index 1324589..95b0051 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibDecoder/TDecCAVLC.h b/source/Lib/TLibDecoder/TDecCAVLC.h
-index 180c657..ab66125 100644
+index 180c6572..ab66125d 100644
 --- a/source/Lib/TLibDecoder/TDecCAVLC.h
 +++ b/source/Lib/TLibDecoder/TDecCAVLC.h
 @@ -44,6 +44,7 @@
@@ -3113,7 +3113,7 @@ index 180c657..ab66125 100644
  #endif // !defined(AFX_TDECCAVLC_H__9732DD64_59B0_4A41_B29E_1A5B18821EAD__INCLUDED_)
 +
 diff --git a/source/Lib/TLibDecoder/TDecConformance.cpp b/source/Lib/TLibDecoder/TDecConformance.cpp
-index b1af809..c8138cf 100644
+index b1af8093..c8138cff 100644
 --- a/source/Lib/TLibDecoder/TDecConformance.cpp
 +++ b/source/Lib/TLibDecoder/TDecConformance.cpp
 @@ -41,6 +41,7 @@
@@ -3132,7 +3132,7 @@ index b1af809..c8138cf 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibDecoder/TDecConformance.h b/source/Lib/TLibDecoder/TDecConformance.h
-index a9771d4..e1d0100 100644
+index a9771d47..e1d0100b 100644
 --- a/source/Lib/TLibDecoder/TDecConformance.h
 +++ b/source/Lib/TLibDecoder/TDecConformance.h
 @@ -55,6 +55,7 @@
@@ -3151,7 +3151,7 @@ index a9771d4..e1d0100 100644
  #endif
 +
 diff --git a/source/Lib/TLibDecoder/TDecCu.cpp b/source/Lib/TLibDecoder/TDecCu.cpp
-index 4b78457..ca0ec0c 100644
+index 4b78457e..ca0ec0cd 100644
 --- a/source/Lib/TLibDecoder/TDecCu.cpp
 +++ b/source/Lib/TLibDecoder/TDecCu.cpp
 @@ -38,6 +38,7 @@
@@ -3179,7 +3179,7 @@ index 4b78457..ca0ec0c 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibDecoder/TDecCu.h b/source/Lib/TLibDecoder/TDecCu.h
-index d1097c7..b3968e0 100644
+index d1097c7e..b3968e07 100644
 --- a/source/Lib/TLibDecoder/TDecCu.h
 +++ b/source/Lib/TLibDecoder/TDecCu.h
 @@ -45,6 +45,7 @@
@@ -3199,7 +3199,7 @@ index d1097c7..b3968e0 100644
  
 +
 diff --git a/source/Lib/TLibDecoder/TDecEntropy.cpp b/source/Lib/TLibDecoder/TDecEntropy.cpp
-index f858792..8fd8a86 100644
+index f8587923..8fd8a863 100644
 --- a/source/Lib/TLibDecoder/TDecEntropy.cpp
 +++ b/source/Lib/TLibDecoder/TDecEntropy.cpp
 @@ -39,6 +39,8 @@
@@ -3219,7 +3219,7 @@ index f858792..8fd8a86 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibDecoder/TDecEntropy.h b/source/Lib/TLibDecoder/TDecEntropy.h
-index 997b483..326f571 100644
+index 997b4838..326f571f 100644
 --- a/source/Lib/TLibDecoder/TDecEntropy.h
 +++ b/source/Lib/TLibDecoder/TDecEntropy.h
 @@ -45,6 +45,7 @@
@@ -3239,7 +3239,7 @@ index 997b483..326f571 100644
  
 +
 diff --git a/source/Lib/TLibDecoder/TDecGop.cpp b/source/Lib/TLibDecoder/TDecGop.cpp
-index c002c16..64b43c2 100644
+index c002c16a..64b43c22 100644
 --- a/source/Lib/TLibDecoder/TDecGop.cpp
 +++ b/source/Lib/TLibDecoder/TDecGop.cpp
 @@ -44,6 +44,7 @@
@@ -3258,7 +3258,7 @@ index c002c16..64b43c2 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibDecoder/TDecGop.h b/source/Lib/TLibDecoder/TDecGop.h
-index a664580..04b9d02 100644
+index a6645800..04b9d023 100644
 --- a/source/Lib/TLibDecoder/TDecGop.h
 +++ b/source/Lib/TLibDecoder/TDecGop.h
 @@ -54,6 +54,7 @@
@@ -3278,7 +3278,7 @@ index a664580..04b9d02 100644
  
 +
 diff --git a/source/Lib/TLibDecoder/TDecSbac.cpp b/source/Lib/TLibDecoder/TDecSbac.cpp
-index 5979083..e72eb59 100644
+index 59790834..e72eb59d 100644
 --- a/source/Lib/TLibDecoder/TDecSbac.cpp
 +++ b/source/Lib/TLibDecoder/TDecSbac.cpp
 @@ -53,6 +53,7 @@
@@ -3297,7 +3297,7 @@ index 5979083..e72eb59 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibDecoder/TDecSbac.h b/source/Lib/TLibDecoder/TDecSbac.h
-index 0122ce4..f9f4da3 100644
+index 0122ce43..f9f4da35 100644
 --- a/source/Lib/TLibDecoder/TDecSbac.h
 +++ b/source/Lib/TLibDecoder/TDecSbac.h
 @@ -49,6 +49,7 @@
@@ -3316,7 +3316,7 @@ index 0122ce4..f9f4da3 100644
  #endif // !defined(AFX_TDECSBAC_H__CFCAAA19_8110_47F4_9A16_810C4B5499D5__INCLUDED_)
 +
 diff --git a/source/Lib/TLibDecoder/TDecSlice.cpp b/source/Lib/TLibDecoder/TDecSlice.cpp
-index d4865e4..c83cec2 100644
+index d4865e47..c83cec2e 100644
 --- a/source/Lib/TLibDecoder/TDecSlice.cpp
 +++ b/source/Lib/TLibDecoder/TDecSlice.cpp
 @@ -37,6 +37,7 @@
@@ -3335,7 +3335,7 @@ index d4865e4..c83cec2 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibDecoder/TDecSlice.h b/source/Lib/TLibDecoder/TDecSlice.h
-index 8e42903..7773f7f 100644
+index 8e42903c..7773f7f8 100644
 --- a/source/Lib/TLibDecoder/TDecSlice.h
 +++ b/source/Lib/TLibDecoder/TDecSlice.h
 @@ -49,6 +49,7 @@
@@ -3355,7 +3355,7 @@ index 8e42903..7773f7f 100644
  
 +
 diff --git a/source/Lib/TLibDecoder/TDecTop.cpp b/source/Lib/TLibDecoder/TDecTop.cpp
-index 17beb04..4cccce8 100644
+index 17beb046..4cccce8b 100644
 --- a/source/Lib/TLibDecoder/TDecTop.cpp
 +++ b/source/Lib/TLibDecoder/TDecTop.cpp
 @@ -38,6 +38,7 @@
@@ -3374,7 +3374,7 @@ index 17beb04..4cccce8 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibDecoder/TDecTop.h b/source/Lib/TLibDecoder/TDecTop.h
-index 087e072..a81ea9b 100644
+index 087e0722..a81ea9b0 100644
 --- a/source/Lib/TLibDecoder/TDecTop.h
 +++ b/source/Lib/TLibDecoder/TDecTop.h
 @@ -52,6 +52,7 @@
@@ -3394,7 +3394,7 @@ index 087e072..a81ea9b 100644
  
 +
 diff --git a/source/Lib/TLibEncoder/AnnexBwrite.h b/source/Lib/TLibEncoder/AnnexBwrite.h
-index e7b9414..4d9bf8f 100644
+index e7b94147..4d9bf8f3 100644
 --- a/source/Lib/TLibEncoder/AnnexBwrite.h
 +++ b/source/Lib/TLibEncoder/AnnexBwrite.h
 @@ -39,6 +39,7 @@
@@ -3438,7 +3438,7 @@ index e7b9414..4d9bf8f 100644
  #endif
 +
 diff --git a/source/Lib/TLibEncoder/NALwrite.cpp b/source/Lib/TLibEncoder/NALwrite.cpp
-index 31b1653..5a9b26a 100644
+index 31b16531..5a9b26ad 100644
 --- a/source/Lib/TLibEncoder/NALwrite.cpp
 +++ b/source/Lib/TLibEncoder/NALwrite.cpp
 @@ -38,6 +38,7 @@
@@ -3457,7 +3457,7 @@ index 31b1653..5a9b26a 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibEncoder/NALwrite.h b/source/Lib/TLibEncoder/NALwrite.h
-index 698a532..6ffc8a5 100644
+index 698a5322..6ffc8a5e 100644
 --- a/source/Lib/TLibEncoder/NALwrite.h
 +++ b/source/Lib/TLibEncoder/NALwrite.h
 @@ -41,6 +41,7 @@
@@ -3476,7 +3476,7 @@ index 698a532..6ffc8a5 100644
  #endif
 +
 diff --git a/source/Lib/TLibEncoder/SEIEncoder.cpp b/source/Lib/TLibEncoder/SEIEncoder.cpp
-index 939b406..4ef8ad9 100644
+index 939b406b..4ef8ad93 100644
 --- a/source/Lib/TLibEncoder/SEIEncoder.cpp
 +++ b/source/Lib/TLibEncoder/SEIEncoder.cpp
 @@ -35,6 +35,7 @@
@@ -3495,7 +3495,7 @@ index 939b406..4ef8ad9 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibEncoder/SEIEncoder.h b/source/Lib/TLibEncoder/SEIEncoder.h
-index 21265cc..826de45 100644
+index 21265cc8..826de455 100644
 --- a/source/Lib/TLibEncoder/SEIEncoder.h
 +++ b/source/Lib/TLibEncoder/SEIEncoder.h
 @@ -37,6 +37,7 @@
@@ -3514,7 +3514,7 @@ index 21265cc..826de45 100644
  #endif // __SEIENCODER__
 +
 diff --git a/source/Lib/TLibEncoder/SEIwrite.cpp b/source/Lib/TLibEncoder/SEIwrite.cpp
-index fa6132b..530ff85 100644
+index fa6132b9..530ff85e 100644
 --- a/source/Lib/TLibEncoder/SEIwrite.cpp
 +++ b/source/Lib/TLibEncoder/SEIwrite.cpp
 @@ -37,6 +37,7 @@
@@ -3533,7 +3533,7 @@ index fa6132b..530ff85 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibEncoder/SEIwrite.h b/source/Lib/TLibEncoder/SEIwrite.h
-index 1227c3b..626b1b7 100644
+index 1227c3b0..626b1b75 100644
 --- a/source/Lib/TLibEncoder/SEIwrite.h
 +++ b/source/Lib/TLibEncoder/SEIwrite.h
 @@ -38,6 +38,7 @@
@@ -3552,7 +3552,7 @@ index 1227c3b..626b1b7 100644
  #endif
 +
 diff --git a/source/Lib/TLibEncoder/SyntaxElementWriter.cpp b/source/Lib/TLibEncoder/SyntaxElementWriter.cpp
-index 897f55f..6e43581 100644
+index 897f55f4..6e435815 100644
 --- a/source/Lib/TLibEncoder/SyntaxElementWriter.cpp
 +++ b/source/Lib/TLibEncoder/SyntaxElementWriter.cpp
 @@ -37,6 +37,7 @@
@@ -3571,7 +3571,7 @@ index 897f55f..6e43581 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibEncoder/SyntaxElementWriter.h b/source/Lib/TLibEncoder/SyntaxElementWriter.h
-index fe2e297..cb1b013 100644
+index fe2e297f..cb1b0138 100644
 --- a/source/Lib/TLibEncoder/SyntaxElementWriter.h
 +++ b/source/Lib/TLibEncoder/SyntaxElementWriter.h
 @@ -45,6 +45,7 @@
@@ -3591,7 +3591,7 @@ index fe2e297..cb1b013 100644
  
 +
 diff --git a/source/Lib/TLibEncoder/TEncAnalyze.h b/source/Lib/TLibEncoder/TEncAnalyze.h
-index 61456e2..e7932bb 100644
+index 61456e21..e7932bb7 100644
 --- a/source/Lib/TLibEncoder/TEncAnalyze.h
 +++ b/source/Lib/TLibEncoder/TEncAnalyze.h
 @@ -51,6 +51,7 @@
@@ -3610,7 +3610,7 @@ index 61456e2..e7932bb 100644
  #endif // !defined(AFX_TENCANALYZE_H__C79BCAA2_6AC8_4175_A0FE_CF02F5829233__INCLUDED_)
 +
 diff --git a/source/Lib/TLibEncoder/TEncBinCoder.h b/source/Lib/TLibEncoder/TEncBinCoder.h
-index 891385a..3708672 100644
+index 891385ae..3708672d 100644
 --- a/source/Lib/TLibEncoder/TEncBinCoder.h
 +++ b/source/Lib/TLibEncoder/TEncBinCoder.h
 @@ -40,6 +40,7 @@
@@ -3630,7 +3630,7 @@ index 891385a..3708672 100644
  
 +
 diff --git a/source/Lib/TLibEncoder/TEncBinCoderCABAC.cpp b/source/Lib/TLibEncoder/TEncBinCoderCABAC.cpp
-index 827503f..5ccdaf5 100644
+index 827503f1..5ccdaf5a 100644
 --- a/source/Lib/TLibEncoder/TEncBinCoderCABAC.cpp
 +++ b/source/Lib/TLibEncoder/TEncBinCoderCABAC.cpp
 @@ -38,6 +38,7 @@
@@ -3649,7 +3649,7 @@ index 827503f..5ccdaf5 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibEncoder/TEncBinCoderCABAC.h b/source/Lib/TLibEncoder/TEncBinCoderCABAC.h
-index 2e9dd44..e15bd4d 100644
+index 2e9dd445..e15bd4d0 100644
 --- a/source/Lib/TLibEncoder/TEncBinCoderCABAC.h
 +++ b/source/Lib/TLibEncoder/TEncBinCoderCABAC.h
 @@ -40,6 +40,7 @@
@@ -3669,7 +3669,7 @@ index 2e9dd44..e15bd4d 100644
  
 +
 diff --git a/source/Lib/TLibEncoder/TEncBinCoderCABACCounter.cpp b/source/Lib/TLibEncoder/TEncBinCoderCABACCounter.cpp
-index c742f9c..99cc17a 100644
+index c742f9c8..99cc17a3 100644
 --- a/source/Lib/TLibEncoder/TEncBinCoderCABACCounter.cpp
 +++ b/source/Lib/TLibEncoder/TEncBinCoderCABACCounter.cpp
 @@ -38,6 +38,7 @@
@@ -3688,7 +3688,7 @@ index c742f9c..99cc17a 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibEncoder/TEncBinCoderCABACCounter.h b/source/Lib/TLibEncoder/TEncBinCoderCABACCounter.h
-index 780852a..1cf7fa6 100644
+index 780852a9..1cf7fa64 100644
 --- a/source/Lib/TLibEncoder/TEncBinCoderCABACCounter.h
 +++ b/source/Lib/TLibEncoder/TEncBinCoderCABACCounter.h
 @@ -40,6 +40,7 @@
@@ -3708,7 +3708,7 @@ index 780852a..1cf7fa6 100644
  
 +
 diff --git a/source/Lib/TLibEncoder/TEncCavlc.cpp b/source/Lib/TLibEncoder/TEncCavlc.cpp
-index bbeb6f1..b26e506 100644
+index bbeb6f15..b26e506f 100644
 --- a/source/Lib/TLibEncoder/TEncCavlc.cpp
 +++ b/source/Lib/TLibEncoder/TEncCavlc.cpp
 @@ -38,6 +38,7 @@
@@ -3727,7 +3727,7 @@ index bbeb6f1..b26e506 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibEncoder/TEncCavlc.h b/source/Lib/TLibEncoder/TEncCavlc.h
-index e41c8e3..145af18 100644
+index e41c8e38..145af18c 100644
 --- a/source/Lib/TLibEncoder/TEncCavlc.h
 +++ b/source/Lib/TLibEncoder/TEncCavlc.h
 @@ -47,6 +47,7 @@
@@ -3747,7 +3747,7 @@ index e41c8e3..145af18 100644
  
 +
 diff --git a/source/Lib/TLibEncoder/TEncCfg.h b/source/Lib/TLibEncoder/TEncCfg.h
-index f8ec9ec..58b59d1 100644
+index f8ec9ecf..58b59d18 100644
 --- a/source/Lib/TLibEncoder/TEncCfg.h
 +++ b/source/Lib/TLibEncoder/TEncCfg.h
 @@ -45,6 +45,7 @@
@@ -3813,7 +3813,7 @@ index f8ec9ec..58b59d1 100644
  #endif // !defined(AFX_TENCCFG_H__6B99B797_F4DA_4E46_8E78_7656339A6C41__INCLUDED_)
 +
 diff --git a/source/Lib/TLibEncoder/TEncCu.cpp b/source/Lib/TLibEncoder/TEncCu.cpp
-index efbfb38..178f9cf 100644
+index efbfb38d..90ef0b2d 100644
 --- a/source/Lib/TLibEncoder/TEncCu.cpp
 +++ b/source/Lib/TLibEncoder/TEncCu.cpp
 @@ -43,6 +43,7 @@
@@ -3881,7 +3881,33 @@ index efbfb38..178f9cf 100644
  
    // variable for Cbf fast mode PU decision
    Bool    doNotBlockPu = true;
-@@ -1922,7 +1945,12 @@ Void TEncCu::xCheckRDCostMerge2Nx2N( TComDataCU*& rpcBestCU, TComDataCU*& rpcTem
+@@ -1895,7 +1918,11 @@ Void TEncCu::xCheckRDCostMerge2Nx2N( TComDataCU*& rpcBestCU, TComDataCU*& rpcTem
+                                                          (uiNoResidual != 0),
+                                                          m_ppcNoCorrYuv  [uhDepth],
+                                                          (bColourTrans? ACT_TRAN_CLR: ACT_ORG_CLR)
+-                                                         DEBUG_STRING_PASS_INTO(tmpStr) );
++                                                         DEBUG_STRING_PASS_INTO(tmpStr)
++#if PCC_RDO_EXT
++                                                       , m_ppcOccupancyYuv[uhDepth]
++#endif
++                                                        );
+             }
+             else
+             {
+@@ -1908,7 +1935,11 @@ Void TEncCu::xCheckRDCostMerge2Nx2N( TComDataCU*& rpcBestCU, TComDataCU*& rpcTem
+                                                          (uiNoResidual != 0),
+                                                          m_ppcNoCorrYuv  [uhDepth],
+                                                          ACT_TWO_CLR
+-                                                         DEBUG_STRING_PASS_INTO(tmpStr) );
++                                                         DEBUG_STRING_PASS_INTO(tmpStr)
++#if PCC_RDO_EXT
++                                                       , m_ppcOccupancyYuv[uhDepth]
++#endif
++                                                        );
+             }
+           }
+           else
+@@ -1922,7 +1953,12 @@ Void TEncCu::xCheckRDCostMerge2Nx2N( TComDataCU*& rpcBestCU, TComDataCU*& rpcTem
                                                         (uiNoResidual != 0),
                                                         m_ppcNoCorrYuv  [uhDepth],
                                                         ACT_ORG_CLR
@@ -3894,7 +3920,39 @@ index efbfb38..178f9cf 100644
            }
            rpcTempCU->setSkipFlagSubParts( rpcTempCU->getQtRootCbf(0) == 0, 0, uhDepth );
  
-@@ -2128,7 +2156,11 @@ Void TEncCu::xCheckRDCostInter( TComDataCU*& rpcBestCU, TComDataCU*& rpcTempCU,
+@@ -1981,7 +2017,11 @@ Void TEncCu::xCheckRDCostMerge2Nx2N( TComDataCU*& rpcBestCU, TComDataCU*& rpcTem
+                                                        (uiNoResidual != 0),
+                                                        m_ppcNoCorrYuv  [uhDepth],
+                                                        (bColourTrans? ACT_TRAN_CLR: ACT_ORG_CLR)
+-                                                       DEBUG_STRING_PASS_INTO(tmpStr) );
++                                                       DEBUG_STRING_PASS_INTO(tmpStr)
++#if PCC_RDO_EXT
++                                                     , m_ppcOccupancyYuv[uhDepth]
++#endif
++                                                      );
+             rpcTempCU->setSkipFlagSubParts( rpcTempCU->getQtRootCbf(0) == 0, 0, uhDepth );
+             Double rdCost = rpcTempCU->getTotalCost();
+             if(rdCost < m_ppcBestCU[uhDepth]->getTmpInterRDCost() )
+@@ -2119,16 +2159,28 @@ Void TEncCu::xCheckRDCostInter( TComDataCU*& rpcBestCU, TComDataCU*& rpcTempCU,
+       {
+         if ( !getEnableInterTUACT() )
+         {
+-          m_pcPredSearch->encodeResAndCalcRdInterCU( rpcTempCU, m_ppcOrigYuv[uhDepth], pcTmpPredYuv, m_ppcResiYuvTemp[uhDepth], m_ppcResiYuvBest[uhDepth], m_ppcRecoYuvTemp[uhDepth], false, m_ppcNoCorrYuv[uhDepth], (colourTransform? ACT_TRAN_CLR: ACT_ORG_CLR) DEBUG_STRING_PASS_INTO(sTest) );
++          m_pcPredSearch->encodeResAndCalcRdInterCU( rpcTempCU, m_ppcOrigYuv[uhDepth], pcTmpPredYuv, m_ppcResiYuvTemp[uhDepth], m_ppcResiYuvBest[uhDepth], m_ppcRecoYuvTemp[uhDepth], false, m_ppcNoCorrYuv[uhDepth], (colourTransform? ACT_TRAN_CLR: ACT_ORG_CLR) DEBUG_STRING_PASS_INTO(sTest)
++#if PCC_RDO_EXT
++                                                       , m_ppcOccupancyYuv[uhDepth]
++#endif
++                                                    );
+         }
+         else
+         {
+-          m_pcPredSearch->encodeResAndCalcRdInterCU( rpcTempCU, m_ppcOrigYuv[uhDepth], pcTmpPredYuv, m_ppcResiYuvTemp[uhDepth], m_ppcResiYuvBest[uhDepth], m_ppcRecoYuvTemp[uhDepth], false, m_ppcNoCorrYuv[uhDepth], ACT_TWO_CLR DEBUG_STRING_PASS_INTO(sTest) );
++          m_pcPredSearch->encodeResAndCalcRdInterCU( rpcTempCU, m_ppcOrigYuv[uhDepth], pcTmpPredYuv, m_ppcResiYuvTemp[uhDepth], m_ppcResiYuvBest[uhDepth], m_ppcRecoYuvTemp[uhDepth], false, m_ppcNoCorrYuv[uhDepth], ACT_TWO_CLR DEBUG_STRING_PASS_INTO(sTest)
++#if PCC_RDO_EXT
++                                                       , m_ppcOccupancyYuv[uhDepth]
++#endif
++                                                    );
+         }
        }
        else
        {
@@ -3907,7 +3965,59 @@ index efbfb38..178f9cf 100644
        }
      }
      else
-@@ -2257,7 +2289,11 @@ Void TEncCu::xCheckRDCostIntra( TComDataCU *&rpcBestCU,
+@@ -2137,22 +2189,38 @@ Void TEncCu::xCheckRDCostInter( TComDataCU*& rpcBestCU, TComDataCU*& rpcTempCU,
+       {
+         if ( !getEnableInterTUACT() )
+         {
+-          m_pcPredSearch->encodeResAndCalcRdInterCU( rpcTempCU, m_ppcOrigYuv[uhDepth], pcTmpPredYuv, m_ppcResiYuvTemp[uhDepth], m_ppcResiYuvBest[uhDepth], m_ppcRecoYuvTemp[uhDepth], false, m_ppcNoCorrYuv[uhDepth], ACT_ORG_CLR DEBUG_STRING_PASS_INTO(sTest) );
++          m_pcPredSearch->encodeResAndCalcRdInterCU( rpcTempCU, m_ppcOrigYuv[uhDepth], pcTmpPredYuv, m_ppcResiYuvTemp[uhDepth], m_ppcResiYuvBest[uhDepth], m_ppcRecoYuvTemp[uhDepth], false, m_ppcNoCorrYuv[uhDepth], ACT_ORG_CLR DEBUG_STRING_PASS_INTO(sTest)
++#if PCC_RDO_EXT
++                                                       , m_ppcOccupancyYuv[uhDepth]
++#endif
++                                                    );
+         }
+         else
+         {
+-          m_pcPredSearch->encodeResAndCalcRdInterCU( rpcTempCU, m_ppcOrigYuv[uhDepth], pcTmpPredYuv, m_ppcResiYuvTemp[uhDepth], m_ppcResiYuvBest[uhDepth], m_ppcRecoYuvTemp[uhDepth], false, m_ppcNoCorrYuv[uhDepth], ACT_TRAN_CLR DEBUG_STRING_PASS_INTO(sTest) );
++          m_pcPredSearch->encodeResAndCalcRdInterCU( rpcTempCU, m_ppcOrigYuv[uhDepth], pcTmpPredYuv, m_ppcResiYuvTemp[uhDepth], m_ppcResiYuvBest[uhDepth], m_ppcRecoYuvTemp[uhDepth], false, m_ppcNoCorrYuv[uhDepth], ACT_TRAN_CLR DEBUG_STRING_PASS_INTO(sTest)
++#if PCC_RDO_EXT
++                                                       , m_ppcOccupancyYuv[uhDepth]
++#endif
++                                                    );
+         }
+       }
+       else
+       {
+         if ( !getEnableInterTUACT() )
+         {
+-          m_pcPredSearch->encodeResAndCalcRdInterCU( rpcTempCU, m_ppcOrigYuv[uhDepth], pcTmpPredYuv, m_ppcResiYuvTemp[uhDepth], m_ppcResiYuvBest[uhDepth], m_ppcRecoYuvTemp[uhDepth], false, m_ppcNoCorrYuv[uhDepth], ACT_TRAN_CLR DEBUG_STRING_PASS_INTO(sTest) );
++          m_pcPredSearch->encodeResAndCalcRdInterCU( rpcTempCU, m_ppcOrigYuv[uhDepth], pcTmpPredYuv, m_ppcResiYuvTemp[uhDepth], m_ppcResiYuvBest[uhDepth], m_ppcRecoYuvTemp[uhDepth], false, m_ppcNoCorrYuv[uhDepth], ACT_TRAN_CLR DEBUG_STRING_PASS_INTO(sTest)
++#if PCC_RDO_EXT
++                                                       , m_ppcOccupancyYuv[uhDepth]
++#endif
++                                                    );
+         }
+         else
+         {
+-          m_pcPredSearch->encodeResAndCalcRdInterCU( rpcTempCU, m_ppcOrigYuv[uhDepth], pcTmpPredYuv, m_ppcResiYuvTemp[uhDepth], m_ppcResiYuvBest[uhDepth], m_ppcRecoYuvTemp[uhDepth], false, m_ppcNoCorrYuv[uhDepth], ACT_ORG_CLR DEBUG_STRING_PASS_INTO(sTest) );
++          m_pcPredSearch->encodeResAndCalcRdInterCU( rpcTempCU, m_ppcOrigYuv[uhDepth], pcTmpPredYuv, m_ppcResiYuvTemp[uhDepth], m_ppcResiYuvBest[uhDepth], m_ppcRecoYuvTemp[uhDepth], false, m_ppcNoCorrYuv[uhDepth], ACT_ORG_CLR DEBUG_STRING_PASS_INTO(sTest)
++#if PCC_RDO_EXT
++                                                       , m_ppcOccupancyYuv[uhDepth]
++#endif
++                                                    );
+         }
+       }
+     }
+@@ -2253,11 +2321,19 @@ Void TEncCu::xCheckRDCostIntra( TComDataCU *&rpcBestCU,
+ 
+   if( bRGBIntraModeReuse )
+   {
+-    m_pcPredSearch->estIntraPredLumaQTWithModeReuse( rpcTempCU, m_ppcOrigYuv[uiDepth], m_ppcPredYuvTemp[uiDepth], m_ppcResiYuvTemp[uiDepth], m_ppcRecoYuvTemp[uiDepth], resiLuma );
++    m_pcPredSearch->estIntraPredLumaQTWithModeReuse( rpcTempCU, m_ppcOrigYuv[uiDepth], m_ppcPredYuvTemp[uiDepth], m_ppcResiYuvTemp[uiDepth], m_ppcRecoYuvTemp[uiDepth], resiLuma
++#if PCC_RDO_EXT
++                                                    , m_ppcOccupancyYuv[uiDepth]
++#endif
++                                                    );
    }
    else
    {
@@ -3920,7 +4030,16 @@ index efbfb38..178f9cf 100644
    }
  
    m_ppcRecoYuvTemp[uiDepth]->copyToPicComponent(COMPONENT_Y, rpcTempCU->getPic()->getPicYuvRec(), rpcTempCU->getCtuRsAddr(), rpcTempCU->getZorderIdxInCtu() );
-@@ -2270,7 +2306,11 @@ Void TEncCu::xCheckRDCostIntra( TComDataCU *&rpcBestCU,
+@@ -2266,11 +2342,19 @@ Void TEncCu::xCheckRDCostIntra( TComDataCU *&rpcBestCU,
+   {
+     if( bRGBIntraModeReuse )
+     {
+-      m_pcPredSearch->estIntraPredChromaQTWithModeReuse( rpcTempCU, m_ppcOrigYuv[uiDepth], m_ppcPredYuvTemp[uiDepth], m_ppcResiYuvTemp[uiDepth], m_ppcRecoYuvTemp[uiDepth], resiLuma );
++      m_pcPredSearch->estIntraPredChromaQTWithModeReuse( rpcTempCU, m_ppcOrigYuv[uiDepth], m_ppcPredYuvTemp[uiDepth], m_ppcResiYuvTemp[uiDepth], m_ppcRecoYuvTemp[uiDepth], resiLuma
++#if PCC_RDO_EXT
++                                                        , m_ppcOccupancyYuv[uiDepth]
++#endif
++                                                        );
      }
      else
      {
@@ -3933,7 +4052,322 @@ index efbfb38..178f9cf 100644
      }
    }
  
-@@ -3464,3 +3504,6 @@ UInt TEncCu::xCheckPaletteMode(TComDataCU *&rpcBestCU, TComDataCU *&rpcTempCU, B
+@@ -2792,7 +2876,11 @@ Void TEncCu::xCheckRDCostIntraBCMerge2Nx2N( TComDataCU*& rpcBestCU, TComDataCU*&
+                                                          (noResidual != 0),
+                                                          m_ppcNoCorrYuv  [depth],
+                                                          (bColourTrans? ACT_TRAN_CLR: ACT_ORG_CLR)
+-                                                         DEBUG_STRING_PASS_INTO(tmpStr) );
++                                                         DEBUG_STRING_PASS_INTO(tmpStr)
++#if PCC_RDO_EXT
++                                                       , m_ppcOccupancyYuv[depth]
++#endif
++                                                        );
+             }
+             else
+             {
+@@ -2805,11 +2893,28 @@ Void TEncCu::xCheckRDCostIntraBCMerge2Nx2N( TComDataCU*& rpcBestCU, TComDataCU*&
+                                                          (noResidual != 0),
+                                                          m_ppcNoCorrYuv  [depth],
+                                                          ACT_TWO_CLR
+-                                                         DEBUG_STRING_PASS_INTO(tmpStr) );
++                                                         DEBUG_STRING_PASS_INTO(tmpStr)
++#if PCC_RDO_EXT
++                                                       , m_ppcOccupancyYuv[depth]
++#endif
++                                                        );
+             }
+           }
+           else
+           {
++#if PCC_RDO_EXT
++            m_pcPredSearch->encodeResAndCalcRdInterCU( rpcTempCU,
++                                                       m_ppcOrigYuv    [depth],
++                                                       pcTmpPredYuv           ,
++                                                       m_ppcResiYuvTemp[depth],
++                                                       m_ppcResiYuvBest[depth],
++                                                       m_ppcRecoYuvTemp[depth],
++                                                       (noResidual != 0),
++                                                       m_ppcNoCorrYuv  [depth],
++                                                       ACT_ORG_CLR
++                                                       DEBUG_STRING_PASS_INTO(tmpStr),
++                                                       m_ppcOccupancyYuv[depth]);
++#else
+             m_pcPredSearch->encodeResAndCalcRdInterCU( rpcTempCU,
+                                                        m_ppcOrigYuv    [depth],
+                                                        pcTmpPredYuv           ,
+@@ -2820,6 +2925,7 @@ Void TEncCu::xCheckRDCostIntraBCMerge2Nx2N( TComDataCU*& rpcBestCU, TComDataCU*&
+                                                        m_ppcNoCorrYuv  [depth],
+                                                        ACT_ORG_CLR
+                                                        DEBUG_STRING_PASS_INTO(tmpStr) );
++#endif
+           }
+ 
+           if ((noResidual == 0) && (rpcTempCU->getQtRootCbf(0) == 0))
+@@ -2858,7 +2964,11 @@ Void TEncCu::xCheckRDCostIntraBCMerge2Nx2N( TComDataCU*& rpcBestCU, TComDataCU*&
+                                                        (noResidual != 0),
+                                                        m_ppcNoCorrYuv  [depth],
+                                                        (bColourTrans? ACT_TRAN_CLR: ACT_ORG_CLR)
+-                                                       DEBUG_STRING_PASS_INTO(tmpStr) );
++                                                       DEBUG_STRING_PASS_INTO(tmpStr)
++#if PCC_RDO_EXT
++                                                       , m_ppcOccupancyYuv[depth]
++#endif
++                                                      );
+             rpcTempCU->setSkipFlagSubParts( rpcTempCU->getQtRootCbf(0) == 0, 0, depth );
+             //Double rdCost = rpcTempCU->getTotalCost();
+ 
+@@ -2897,7 +3007,11 @@ Void TEncCu::xCheckRDCostIntraCSC( TComDataCU     *&rpcBestCU,
+   rpcTempCU->setPredModeSubParts( MODE_INTRA, 0, depth );
+   rpcTempCU->setChromaQpAdjSubParts( rpcTempCU->getCUTransquantBypass(0) ? 0 : m_cuChromaQpOffsetIdxPlus1, 0, depth );
+ 
+-  m_pcPredSearch->estIntraPredQTCT( rpcTempCU, m_ppcOrigYuv[depth], m_ppcPredYuvTemp[depth], m_ppcResiYuvTemp[depth], m_ppcRecoYuvTemp[depth], eACTRDTestType, bReuseIntraMode DEBUG_STRING_PASS_INTO(sTest) );
++  m_pcPredSearch->estIntraPredQTCT( rpcTempCU, m_ppcOrigYuv[depth], m_ppcPredYuvTemp[depth], m_ppcResiYuvTemp[depth], m_ppcRecoYuvTemp[depth], eACTRDTestType, bReuseIntraMode DEBUG_STRING_PASS_INTO(sTest)
++#if PCC_RDO_EXT
++                              , m_ppcOccupancyYuv[depth]
++#endif
++                                   );
+ 
+   m_pcRDGoOnSbacCoder->load(m_pppcRDSbacCoder[depth][CI_CURR_BEST]);
+   m_pcEntropyCoder->resetBits();
+@@ -3031,16 +3145,28 @@ Void TEncCu::xCheckRDCostIntraBC( TComDataCU *&rpcBestCU,
+         {
+           if ( !getEnableIBCTUACT() )
+           {
+-            m_pcPredSearch->encodeResAndCalcRdInterCU( rpcTempCU, m_ppcOrigYuv[depth], pcTmpPredYuv, m_ppcResiYuvTemp[depth], m_ppcResiYuvBest[depth], m_ppcRecoYuvTemp[depth], false, m_ppcNoCorrYuv[depth], (colourTransform? ACT_TRAN_CLR: ACT_ORG_CLR) DEBUG_STRING_PASS_INTO(sTest) );
++            m_pcPredSearch->encodeResAndCalcRdInterCU( rpcTempCU, m_ppcOrigYuv[depth], pcTmpPredYuv, m_ppcResiYuvTemp[depth], m_ppcResiYuvBest[depth], m_ppcRecoYuvTemp[depth], false, m_ppcNoCorrYuv[depth], (colourTransform? ACT_TRAN_CLR: ACT_ORG_CLR) DEBUG_STRING_PASS_INTO(sTest)
++#if PCC_RDO_EXT
++                                                      , m_ppcOccupancyYuv[depth]
++#endif
++                                                      );
+           }
+           else
+           {
+-            m_pcPredSearch->encodeResAndCalcRdInterCU( rpcTempCU, m_ppcOrigYuv[depth], pcTmpPredYuv, m_ppcResiYuvTemp[depth], m_ppcResiYuvBest[depth], m_ppcRecoYuvTemp[depth], false, m_ppcNoCorrYuv[depth], ACT_TWO_CLR DEBUG_STRING_PASS_INTO(sTest) );
++            m_pcPredSearch->encodeResAndCalcRdInterCU( rpcTempCU, m_ppcOrigYuv[depth], pcTmpPredYuv, m_ppcResiYuvTemp[depth], m_ppcResiYuvBest[depth], m_ppcRecoYuvTemp[depth], false, m_ppcNoCorrYuv[depth], ACT_TWO_CLR DEBUG_STRING_PASS_INTO(sTest)
++#if PCC_RDO_EXT
++                                                      , m_ppcOccupancyYuv[depth]
++#endif
++                                                      );
+           }
+         }
+         else
+         {
++#if PCC_RDO_EXT
++          m_pcPredSearch->encodeResAndCalcRdInterCU( rpcTempCU, m_ppcOrigYuv[depth], pcTmpPredYuv, m_ppcResiYuvTemp[depth], m_ppcResiYuvBest[depth], m_ppcRecoYuvTemp[depth], false, m_ppcNoCorrYuv[depth], ACT_ORG_CLR DEBUG_STRING_PASS_INTO(sTest), m_ppcOccupancyYuv[depth] );
++#else
+           m_pcPredSearch->encodeResAndCalcRdInterCU( rpcTempCU, m_ppcOrigYuv[depth], pcTmpPredYuv, m_ppcResiYuvTemp[depth], m_ppcResiYuvBest[depth], m_ppcRecoYuvTemp[depth], false, m_ppcNoCorrYuv[depth], ACT_ORG_CLR DEBUG_STRING_PASS_INTO(sTest) );
++#endif
+         }
+       }
+       else
+@@ -3049,22 +3175,38 @@ Void TEncCu::xCheckRDCostIntraBC( TComDataCU *&rpcBestCU,
+         {
+           if ( !getEnableIBCTUACT() )
+           {
+-            m_pcPredSearch->encodeResAndCalcRdInterCU( rpcTempCU, m_ppcOrigYuv[depth], pcTmpPredYuv, m_ppcResiYuvTemp[depth], m_ppcResiYuvBest[depth], m_ppcRecoYuvTemp[depth], false, m_ppcNoCorrYuv[depth], ACT_ORG_CLR DEBUG_STRING_PASS_INTO(sTest) );
++            m_pcPredSearch->encodeResAndCalcRdInterCU( rpcTempCU, m_ppcOrigYuv[depth], pcTmpPredYuv, m_ppcResiYuvTemp[depth], m_ppcResiYuvBest[depth], m_ppcRecoYuvTemp[depth], false, m_ppcNoCorrYuv[depth], ACT_ORG_CLR DEBUG_STRING_PASS_INTO(sTest)
++#if PCC_RDO_EXT
++                                                       , m_ppcOccupancyYuv[depth]
++#endif
++                                                      );
+           }
+           else
+           {
+-            m_pcPredSearch->encodeResAndCalcRdInterCU( rpcTempCU, m_ppcOrigYuv[depth], pcTmpPredYuv, m_ppcResiYuvTemp[depth], m_ppcResiYuvBest[depth], m_ppcRecoYuvTemp[depth], false, m_ppcNoCorrYuv[depth], ACT_TRAN_CLR DEBUG_STRING_PASS_INTO(sTest) );
++            m_pcPredSearch->encodeResAndCalcRdInterCU( rpcTempCU, m_ppcOrigYuv[depth], pcTmpPredYuv, m_ppcResiYuvTemp[depth], m_ppcResiYuvBest[depth], m_ppcRecoYuvTemp[depth], false, m_ppcNoCorrYuv[depth], ACT_TRAN_CLR DEBUG_STRING_PASS_INTO(sTest)
++#if PCC_RDO_EXT
++                                                       , m_ppcOccupancyYuv[depth]
++#endif
++                                                      );
+           }
+         }
+         else
+         {
+           if ( !getEnableIBCTUACT() )
+           {
+-            m_pcPredSearch->encodeResAndCalcRdInterCU( rpcTempCU, m_ppcOrigYuv[depth], pcTmpPredYuv, m_ppcResiYuvTemp[depth], m_ppcResiYuvBest[depth], m_ppcRecoYuvTemp[depth], false, m_ppcNoCorrYuv[depth], ACT_TRAN_CLR DEBUG_STRING_PASS_INTO(sTest) );
++            m_pcPredSearch->encodeResAndCalcRdInterCU( rpcTempCU, m_ppcOrigYuv[depth], pcTmpPredYuv, m_ppcResiYuvTemp[depth], m_ppcResiYuvBest[depth], m_ppcRecoYuvTemp[depth], false, m_ppcNoCorrYuv[depth], ACT_TRAN_CLR DEBUG_STRING_PASS_INTO(sTest)
++#if PCC_RDO_EXT
++                                                       , m_ppcOccupancyYuv[depth]
++#endif
++                                                      );
+           }
+           else
+           {
+-            m_pcPredSearch->encodeResAndCalcRdInterCU( rpcTempCU, m_ppcOrigYuv[depth], pcTmpPredYuv, m_ppcResiYuvTemp[depth], m_ppcResiYuvBest[depth], m_ppcRecoYuvTemp[depth], false, m_ppcNoCorrYuv[depth], ACT_ORG_CLR DEBUG_STRING_PASS_INTO(sTest) );
++            m_pcPredSearch->encodeResAndCalcRdInterCU( rpcTempCU, m_ppcOrigYuv[depth], pcTmpPredYuv, m_ppcResiYuvTemp[depth], m_ppcResiYuvBest[depth], m_ppcRecoYuvTemp[depth], false, m_ppcNoCorrYuv[depth], ACT_ORG_CLR DEBUG_STRING_PASS_INTO(sTest)
++#if PCC_RDO_EXT
++                                                       , m_ppcOccupancyYuv[depth]
++#endif
++                                                      );
+           }
+         }
+       }
+@@ -3204,16 +3346,28 @@ Void TEncCu::xCheckRDCostIntraBCMixed( TComDataCU *&rpcBestCU,
+         {
+           if ( !getEnableInterTUACT() )
+           {
+-            m_pcPredSearch->encodeResAndCalcRdInterCU( rpcTempCU, m_ppcOrigYuv[depth], pcTmpPredYuv, m_ppcResiYuvTemp[depth], m_ppcResiYuvBest[depth], m_ppcRecoYuvTemp[depth], false, m_ppcNoCorrYuv[depth], (colourTransform? ACT_TRAN_CLR: ACT_ORG_CLR) DEBUG_STRING_PASS_INTO(sTest) );
++            m_pcPredSearch->encodeResAndCalcRdInterCU( rpcTempCU, m_ppcOrigYuv[depth], pcTmpPredYuv, m_ppcResiYuvTemp[depth], m_ppcResiYuvBest[depth], m_ppcRecoYuvTemp[depth], false, m_ppcNoCorrYuv[depth], (colourTransform? ACT_TRAN_CLR: ACT_ORG_CLR) DEBUG_STRING_PASS_INTO(sTest)
++#if PCC_RDO_EXT
++                                                       , m_ppcOccupancyYuv[depth]
++#endif
++                                                      );
+           }
+           else
+           {
+-            m_pcPredSearch->encodeResAndCalcRdInterCU( rpcTempCU, m_ppcOrigYuv[depth], pcTmpPredYuv, m_ppcResiYuvTemp[depth], m_ppcResiYuvBest[depth], m_ppcRecoYuvTemp[depth], false, m_ppcNoCorrYuv[depth], ACT_TWO_CLR DEBUG_STRING_PASS_INTO(sTest) );
++            m_pcPredSearch->encodeResAndCalcRdInterCU( rpcTempCU, m_ppcOrigYuv[depth], pcTmpPredYuv, m_ppcResiYuvTemp[depth], m_ppcResiYuvBest[depth], m_ppcRecoYuvTemp[depth], false, m_ppcNoCorrYuv[depth], ACT_TWO_CLR DEBUG_STRING_PASS_INTO(sTest)
++#if PCC_RDO_EXT
++                                                       , m_ppcOccupancyYuv[depth]
++#endif
++                                                      );
+           }
+         }
+         else
+         {
+-          m_pcPredSearch->encodeResAndCalcRdInterCU( rpcTempCU, m_ppcOrigYuv[depth], pcTmpPredYuv, m_ppcResiYuvTemp[depth], m_ppcResiYuvBest[depth], m_ppcRecoYuvTemp[depth], false, m_ppcNoCorrYuv[depth], ACT_ORG_CLR DEBUG_STRING_PASS_INTO(sTest) );
++          m_pcPredSearch->encodeResAndCalcRdInterCU( rpcTempCU, m_ppcOrigYuv[depth], pcTmpPredYuv, m_ppcResiYuvTemp[depth], m_ppcResiYuvBest[depth], m_ppcRecoYuvTemp[depth], false, m_ppcNoCorrYuv[depth], ACT_ORG_CLR DEBUG_STRING_PASS_INTO(sTest)
++#if PCC_RDO_EXT
++              , m_ppcOccupancyYuv[depth]
++#endif
++              );
+         }
+       }
+       else
+@@ -3222,22 +3376,38 @@ Void TEncCu::xCheckRDCostIntraBCMixed( TComDataCU *&rpcBestCU,
+         {
+           if ( !getEnableInterTUACT() )
+           {
+-            m_pcPredSearch->encodeResAndCalcRdInterCU( rpcTempCU, m_ppcOrigYuv[depth], pcTmpPredYuv, m_ppcResiYuvTemp[depth], m_ppcResiYuvBest[depth], m_ppcRecoYuvTemp[depth], false, m_ppcNoCorrYuv[depth], ACT_ORG_CLR DEBUG_STRING_PASS_INTO(sTest) );
++            m_pcPredSearch->encodeResAndCalcRdInterCU( rpcTempCU, m_ppcOrigYuv[depth], pcTmpPredYuv, m_ppcResiYuvTemp[depth], m_ppcResiYuvBest[depth], m_ppcRecoYuvTemp[depth], false, m_ppcNoCorrYuv[depth], ACT_ORG_CLR DEBUG_STRING_PASS_INTO(sTest)
++#if PCC_RDO_EXT
++                                                       , m_ppcOccupancyYuv[depth]
++#endif
++                                                      );
+           }
+           else
+           {
+-            m_pcPredSearch->encodeResAndCalcRdInterCU( rpcTempCU, m_ppcOrigYuv[depth], pcTmpPredYuv, m_ppcResiYuvTemp[depth], m_ppcResiYuvBest[depth], m_ppcRecoYuvTemp[depth], false, m_ppcNoCorrYuv[depth], ACT_TRAN_CLR DEBUG_STRING_PASS_INTO(sTest) );
++            m_pcPredSearch->encodeResAndCalcRdInterCU( rpcTempCU, m_ppcOrigYuv[depth], pcTmpPredYuv, m_ppcResiYuvTemp[depth], m_ppcResiYuvBest[depth], m_ppcRecoYuvTemp[depth], false, m_ppcNoCorrYuv[depth], ACT_TRAN_CLR DEBUG_STRING_PASS_INTO(sTest)
++#if PCC_RDO_EXT
++                                                       , m_ppcOccupancyYuv[depth]
++#endif
++                                                      );
+           }
+         }
+         else
+         {
+           if ( !getEnableInterTUACT() )
+           {
+-            m_pcPredSearch->encodeResAndCalcRdInterCU( rpcTempCU, m_ppcOrigYuv[depth], pcTmpPredYuv, m_ppcResiYuvTemp[depth], m_ppcResiYuvBest[depth], m_ppcRecoYuvTemp[depth], false, m_ppcNoCorrYuv[depth], ACT_TRAN_CLR DEBUG_STRING_PASS_INTO(sTest) );
++            m_pcPredSearch->encodeResAndCalcRdInterCU( rpcTempCU, m_ppcOrigYuv[depth], pcTmpPredYuv, m_ppcResiYuvTemp[depth], m_ppcResiYuvBest[depth], m_ppcRecoYuvTemp[depth], false, m_ppcNoCorrYuv[depth], ACT_TRAN_CLR DEBUG_STRING_PASS_INTO(sTest)
++#if PCC_RDO_EXT
++                                                       , m_ppcOccupancyYuv[depth]
++#endif
++                                                      );
+           }
+           else
+           {
+-            m_pcPredSearch->encodeResAndCalcRdInterCU( rpcTempCU, m_ppcOrigYuv[depth], pcTmpPredYuv, m_ppcResiYuvTemp[depth], m_ppcResiYuvBest[depth], m_ppcRecoYuvTemp[depth], false, m_ppcNoCorrYuv[depth], ACT_ORG_CLR DEBUG_STRING_PASS_INTO(sTest) );
++            m_pcPredSearch->encodeResAndCalcRdInterCU( rpcTempCU, m_ppcOrigYuv[depth], pcTmpPredYuv, m_ppcResiYuvTemp[depth], m_ppcResiYuvBest[depth], m_ppcRecoYuvTemp[depth], false, m_ppcNoCorrYuv[depth], ACT_ORG_CLR DEBUG_STRING_PASS_INTO(sTest)
++#if PCC_RDO_EXT
++                                                       , m_ppcOccupancyYuv[depth]
++#endif
++                                                      );
+           }
+         }
+       }
+@@ -3345,16 +3515,28 @@ Void TEncCu::xCheckRDCostHashInter( TComDataCU*& rpcBestCU, TComDataCU*& rpcTemp
+         {
+           if ( !getEnableInterTUACT() )
+           {
+-            m_pcPredSearch->encodeResAndCalcRdInterCU( rpcTempCU, m_ppcOrigYuv[depth], pcTmpPredYuv, m_ppcResiYuvTemp[depth], m_ppcResiYuvBest[depth], m_ppcRecoYuvTemp[depth], false, m_ppcNoCorrYuv[depth], (colourTransform? ACT_TRAN_CLR: ACT_ORG_CLR) DEBUG_STRING_PASS_INTO(sTest) );
++            m_pcPredSearch->encodeResAndCalcRdInterCU( rpcTempCU, m_ppcOrigYuv[depth], pcTmpPredYuv, m_ppcResiYuvTemp[depth], m_ppcResiYuvBest[depth], m_ppcRecoYuvTemp[depth], false, m_ppcNoCorrYuv[depth], (colourTransform? ACT_TRAN_CLR: ACT_ORG_CLR) DEBUG_STRING_PASS_INTO(sTest)
++#if PCC_RDO_EXT
++                                                       , m_ppcOccupancyYuv[depth]
++#endif
++                                                      );
+           }
+           else
+           {
+-            m_pcPredSearch->encodeResAndCalcRdInterCU( rpcTempCU, m_ppcOrigYuv[depth], pcTmpPredYuv, m_ppcResiYuvTemp[depth], m_ppcResiYuvBest[depth], m_ppcRecoYuvTemp[depth], false, m_ppcNoCorrYuv[depth], ACT_TWO_CLR DEBUG_STRING_PASS_INTO(sTest) );
++            m_pcPredSearch->encodeResAndCalcRdInterCU( rpcTempCU, m_ppcOrigYuv[depth], pcTmpPredYuv, m_ppcResiYuvTemp[depth], m_ppcResiYuvBest[depth], m_ppcRecoYuvTemp[depth], false, m_ppcNoCorrYuv[depth], ACT_TWO_CLR DEBUG_STRING_PASS_INTO(sTest)
++#if PCC_RDO_EXT
++                                                       , m_ppcOccupancyYuv[depth]
++#endif
++                                                      );
+           }
+         }
+         else
+         {
+-          m_pcPredSearch->encodeResAndCalcRdInterCU( rpcTempCU, m_ppcOrigYuv[depth], pcTmpPredYuv, m_ppcResiYuvTemp[depth], m_ppcResiYuvBest[depth], m_ppcRecoYuvTemp[depth], false, m_ppcNoCorrYuv[depth], ACT_ORG_CLR DEBUG_STRING_PASS_INTO(sTest) );
++          m_pcPredSearch->encodeResAndCalcRdInterCU( rpcTempCU, m_ppcOrigYuv[depth], pcTmpPredYuv, m_ppcResiYuvTemp[depth], m_ppcResiYuvBest[depth], m_ppcRecoYuvTemp[depth], false, m_ppcNoCorrYuv[depth], ACT_ORG_CLR DEBUG_STRING_PASS_INTO(sTest)
++#if PCC_RDO_EXT
++                                                       , m_ppcOccupancyYuv[depth]
++#endif
++                                                    );
+         }
+       }
+       else
+@@ -3363,22 +3545,38 @@ Void TEncCu::xCheckRDCostHashInter( TComDataCU*& rpcBestCU, TComDataCU*& rpcTemp
+         {
+           if ( !getEnableInterTUACT() )
+           {
+-            m_pcPredSearch->encodeResAndCalcRdInterCU( rpcTempCU, m_ppcOrigYuv[depth], pcTmpPredYuv, m_ppcResiYuvTemp[depth], m_ppcResiYuvBest[depth], m_ppcRecoYuvTemp[depth], false, m_ppcNoCorrYuv[depth], ACT_ORG_CLR DEBUG_STRING_PASS_INTO(sTest) );
++            m_pcPredSearch->encodeResAndCalcRdInterCU( rpcTempCU, m_ppcOrigYuv[depth], pcTmpPredYuv, m_ppcResiYuvTemp[depth], m_ppcResiYuvBest[depth], m_ppcRecoYuvTemp[depth], false, m_ppcNoCorrYuv[depth], ACT_ORG_CLR DEBUG_STRING_PASS_INTO(sTest)
++#if PCC_RDO_EXT
++                                                       , m_ppcOccupancyYuv[depth]
++#endif
++                                                      );
+           }
+           else
+           {
+-            m_pcPredSearch->encodeResAndCalcRdInterCU( rpcTempCU, m_ppcOrigYuv[depth], pcTmpPredYuv, m_ppcResiYuvTemp[depth], m_ppcResiYuvBest[depth], m_ppcRecoYuvTemp[depth], false, m_ppcNoCorrYuv[depth], ACT_TRAN_CLR DEBUG_STRING_PASS_INTO(sTest) );
++            m_pcPredSearch->encodeResAndCalcRdInterCU( rpcTempCU, m_ppcOrigYuv[depth], pcTmpPredYuv, m_ppcResiYuvTemp[depth], m_ppcResiYuvBest[depth], m_ppcRecoYuvTemp[depth], false, m_ppcNoCorrYuv[depth], ACT_TRAN_CLR DEBUG_STRING_PASS_INTO(sTest)
++#if PCC_RDO_EXT
++                                                       , m_ppcOccupancyYuv[depth]
++#endif
++                                                      );
+           }
+         }
+         else
+         {
+           if ( !getEnableInterTUACT() )
+           {
+-            m_pcPredSearch->encodeResAndCalcRdInterCU( rpcTempCU, m_ppcOrigYuv[depth], pcTmpPredYuv, m_ppcResiYuvTemp[depth], m_ppcResiYuvBest[depth], m_ppcRecoYuvTemp[depth], false, m_ppcNoCorrYuv[depth], ACT_TRAN_CLR DEBUG_STRING_PASS_INTO(sTest) );
++            m_pcPredSearch->encodeResAndCalcRdInterCU( rpcTempCU, m_ppcOrigYuv[depth], pcTmpPredYuv, m_ppcResiYuvTemp[depth], m_ppcResiYuvBest[depth], m_ppcRecoYuvTemp[depth], false, m_ppcNoCorrYuv[depth], ACT_TRAN_CLR DEBUG_STRING_PASS_INTO(sTest)
++#if PCC_RDO_EXT
++                                                       , m_ppcOccupancyYuv[depth]
++#endif
++                                                      );
+           }
+           else
+           {
+-            m_pcPredSearch->encodeResAndCalcRdInterCU( rpcTempCU, m_ppcOrigYuv[depth], pcTmpPredYuv, m_ppcResiYuvTemp[depth], m_ppcResiYuvBest[depth], m_ppcRecoYuvTemp[depth], false, m_ppcNoCorrYuv[depth], ACT_ORG_CLR DEBUG_STRING_PASS_INTO(sTest) );
++            m_pcPredSearch->encodeResAndCalcRdInterCU( rpcTempCU, m_ppcOrigYuv[depth], pcTmpPredYuv, m_ppcResiYuvTemp[depth], m_ppcResiYuvBest[depth], m_ppcRecoYuvTemp[depth], false, m_ppcNoCorrYuv[depth], ACT_ORG_CLR DEBUG_STRING_PASS_INTO(sTest)
++#if PCC_RDO_EXT
++                                                       , m_ppcOccupancyYuv[depth]
++#endif
++                                                      );
+           }
+         }
+       }
+@@ -3452,8 +3650,13 @@ UInt TEncCu::xCheckPaletteMode(TComDataCU *&rpcBestCU, TComDataCU *&rpcTempCU, B
+   rpcTempCU->setPaletteModeFlagSubParts(true, 0, rpcTempCU->getDepth(0));
+   rpcTempCU->setChromaQpAdjSubParts( rpcTempCU->getCUTransquantBypass(0) ? 0 : m_cuChromaQpOffsetIdxPlus1, 0, depth );
+ 
++#if PCC_RDO_EXT
++  UInt testedModes=m_pcPredSearch->paletteSearch(rpcTempCU, m_ppcOrigYuv[depth], m_ppcPredYuvTemp[depth], m_ppcResiYuvTemp[depth],
++                                                 m_ppcRecoYuvTemp[depth], forcePalettePrediction, iterNumber, paletteSize, m_ppcOccupancyYuv[depth]);
++#else
+   UInt testedModes=m_pcPredSearch->paletteSearch(rpcTempCU, m_ppcOrigYuv[depth], m_ppcPredYuvTemp[depth], m_ppcResiYuvTemp[depth],
+                                                  m_ppcRecoYuvTemp[depth], forcePalettePrediction, iterNumber, paletteSize);
++#endif
+ 
+   xCheckDQP( rpcTempCU );
+   DEBUG_STRING_NEW(a)
+@@ -3464,3 +3667,6 @@ UInt TEncCu::xCheckPaletteMode(TComDataCU *&rpcBestCU, TComDataCU *&rpcTempCU, B
  }
  
  //! \}
@@ -3941,7 +4375,7 @@ index efbfb38..178f9cf 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibEncoder/TEncCu.h b/source/Lib/TLibEncoder/TEncCu.h
-index a23d828..caa019e 100644
+index a23d828a..caa019e9 100644
 --- a/source/Lib/TLibEncoder/TEncCu.h
 +++ b/source/Lib/TLibEncoder/TEncCu.h
 @@ -49,6 +49,7 @@
@@ -3971,7 +4405,7 @@ index a23d828..caa019e 100644
  #endif // __TENCMB__
 +
 diff --git a/source/Lib/TLibEncoder/TEncEntropy.cpp b/source/Lib/TLibEncoder/TEncEntropy.cpp
-index e03bc44..2fc3720 100644
+index e03bc447..2fc37208 100644
 --- a/source/Lib/TLibEncoder/TEncEntropy.cpp
 +++ b/source/Lib/TLibEncoder/TEncEntropy.cpp
 @@ -40,6 +40,8 @@
@@ -3991,7 +4425,7 @@ index e03bc44..2fc3720 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibEncoder/TEncEntropy.h b/source/Lib/TLibEncoder/TEncEntropy.h
-index 3ddc83b..0ee29e2 100644
+index 3ddc83b7..0ee29e28 100644
 --- a/source/Lib/TLibEncoder/TEncEntropy.h
 +++ b/source/Lib/TLibEncoder/TEncEntropy.h
 @@ -46,6 +46,7 @@
@@ -4011,7 +4445,7 @@ index 3ddc83b..0ee29e2 100644
  
 +
 diff --git a/source/Lib/TLibEncoder/TEncGOP.cpp b/source/Lib/TLibEncoder/TEncGOP.cpp
-index 5b7e887..99fdb20 100644
+index 5b7e8877..99fdb202 100644
 --- a/source/Lib/TLibEncoder/TEncGOP.cpp
 +++ b/source/Lib/TLibEncoder/TEncGOP.cpp
 @@ -51,6 +51,7 @@
@@ -4190,7 +4624,7 @@ index 5b7e887..99fdb20 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibEncoder/TEncGOP.h b/source/Lib/TLibEncoder/TEncGOP.h
-index ee7cc18..430ce9d 100644
+index ee7cc186..430ce9d9 100644
 --- a/source/Lib/TLibEncoder/TEncGOP.h
 +++ b/source/Lib/TLibEncoder/TEncGOP.h
 @@ -61,6 +61,7 @@
@@ -4231,7 +4665,7 @@ index ee7cc18..430ce9d 100644
  
 +
 diff --git a/source/Lib/TLibEncoder/TEncPic.cpp b/source/Lib/TLibEncoder/TEncPic.cpp
-index 83ce0e0..3bf1103 100644
+index 83ce0e02..3bf11036 100644
 --- a/source/Lib/TLibEncoder/TEncPic.cpp
 +++ b/source/Lib/TLibEncoder/TEncPic.cpp
 @@ -36,6 +36,7 @@
@@ -4250,7 +4684,7 @@ index 83ce0e0..3bf1103 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibEncoder/TEncPic.h b/source/Lib/TLibEncoder/TEncPic.h
-index 7829114..44cd30f 100644
+index 78291144..44cd30fc 100644
 --- a/source/Lib/TLibEncoder/TEncPic.h
 +++ b/source/Lib/TLibEncoder/TEncPic.h
 @@ -40,6 +40,7 @@
@@ -4269,7 +4703,7 @@ index 7829114..44cd30f 100644
  #endif // __TENCPIC__
 +
 diff --git a/source/Lib/TLibEncoder/TEncPreanalyzer.cpp b/source/Lib/TLibEncoder/TEncPreanalyzer.cpp
-index 043ccc6..62537df 100644
+index 043ccc6a..62537df0 100644
 --- a/source/Lib/TLibEncoder/TEncPreanalyzer.cpp
 +++ b/source/Lib/TLibEncoder/TEncPreanalyzer.cpp
 @@ -39,6 +39,7 @@
@@ -4288,7 +4722,7 @@ index 043ccc6..62537df 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibEncoder/TEncPreanalyzer.h b/source/Lib/TLibEncoder/TEncPreanalyzer.h
-index 0663bee..62e8430 100644
+index 0663beec..62e84304 100644
 --- a/source/Lib/TLibEncoder/TEncPreanalyzer.h
 +++ b/source/Lib/TLibEncoder/TEncPreanalyzer.h
 @@ -39,6 +39,7 @@
@@ -4307,7 +4741,7 @@ index 0663bee..62e8430 100644
  #endif // __TENCPREANALYZER__
 +
 diff --git a/source/Lib/TLibEncoder/TEncRateCtrl.cpp b/source/Lib/TLibEncoder/TEncRateCtrl.cpp
-index 40686d7..60456fa 100644
+index 40686d77..60456fa2 100644
 --- a/source/Lib/TLibEncoder/TEncRateCtrl.cpp
 +++ b/source/Lib/TLibEncoder/TEncRateCtrl.cpp
 @@ -39,6 +39,7 @@
@@ -4326,7 +4760,7 @@ index 40686d7..60456fa 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibEncoder/TEncRateCtrl.h b/source/Lib/TLibEncoder/TEncRateCtrl.h
-index 94ccce0..4fd18fd 100644
+index 94ccce05..4fd18fd1 100644
 --- a/source/Lib/TLibEncoder/TEncRateCtrl.h
 +++ b/source/Lib/TLibEncoder/TEncRateCtrl.h
 @@ -57,6 +57,7 @@ using namespace std;
@@ -4347,7 +4781,7 @@ index 94ccce0..4fd18fd 100644
  
 +
 diff --git a/source/Lib/TLibEncoder/TEncSampleAdaptiveOffset.cpp b/source/Lib/TLibEncoder/TEncSampleAdaptiveOffset.cpp
-index 79a1249..e985358 100644
+index 79a12496..e985358a 100644
 --- a/source/Lib/TLibEncoder/TEncSampleAdaptiveOffset.cpp
 +++ b/source/Lib/TLibEncoder/TEncSampleAdaptiveOffset.cpp
 @@ -40,6 +40,7 @@
@@ -4768,7 +5202,7 @@ index 79a1249..e985358 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibEncoder/TEncSampleAdaptiveOffset.h b/source/Lib/TLibEncoder/TEncSampleAdaptiveOffset.h
-index e5d433d..fa15ab1 100644
+index e5d433d6..fa15ab1c 100644
 --- a/source/Lib/TLibEncoder/TEncSampleAdaptiveOffset.h
 +++ b/source/Lib/TLibEncoder/TEncSampleAdaptiveOffset.h
 @@ -45,6 +45,7 @@
@@ -4812,7 +5246,7 @@ index e5d433d..fa15ab1 100644
  #endif
 +
 diff --git a/source/Lib/TLibEncoder/TEncSbac.cpp b/source/Lib/TLibEncoder/TEncSbac.cpp
-index 35c7cb3..ace030f 100644
+index 35c7cb35..ace030f7 100644
 --- a/source/Lib/TLibEncoder/TEncSbac.cpp
 +++ b/source/Lib/TLibEncoder/TEncSbac.cpp
 @@ -45,6 +45,7 @@
@@ -4831,7 +5265,7 @@ index 35c7cb3..ace030f 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibEncoder/TEncSbac.h b/source/Lib/TLibEncoder/TEncSbac.h
-index 40437d8..5042bdb 100644
+index 40437d8d..5042bdb3 100644
 --- a/source/Lib/TLibEncoder/TEncSbac.h
 +++ b/source/Lib/TLibEncoder/TEncSbac.h
 @@ -52,6 +52,7 @@
@@ -4850,7 +5284,7 @@ index 40437d8..5042bdb 100644
  #endif // !defined(AFX_TENCSBAC_H__DDA7CDC4_EDE3_4015_9D32_2156249C82AA__INCLUDED_)
 +
 diff --git a/source/Lib/TLibEncoder/TEncSearch.cpp b/source/Lib/TLibEncoder/TEncSearch.cpp
-index c307cb2..c37cd0e 100644
+index c307cb2e..bf7ee8d0 100644
 --- a/source/Lib/TLibEncoder/TEncSearch.cpp
 +++ b/source/Lib/TLibEncoder/TEncSearch.cpp
 @@ -43,6 +43,7 @@
@@ -4887,7 +5321,7 @@ index c307cb2..c37cd0e 100644
    const UInt           uiStride         = pcOrgYuv ->getStride (compID);
          Pel           *piOrg            = pcOrgYuv ->getAddr( compID, uiAbsPartIdx );
 +#if PCC_RDO_EXT
-+        Pel           *piOccupancy = pcOccupancyYuv->getAddr(compID, uiAbsPartIdx);
++        Pel           *piOccupancy      = pcOccupancyYuv->getAddr(compID, uiAbsPartIdx);
 +#endif
          Pel           *piPred           = pcPredYuv->getAddr( compID, uiAbsPartIdx );
          Pel           *piResi           = pcResiYuv->getAddr( compID, uiAbsPartIdx );
@@ -5213,7 +5647,66 @@ index c307cb2..c37cd0e 100644
      }
  
      m_pcRDGoOnSbacCoder->load(m_pppcRDSbacCoder[pcCU->getDepth(0)][CI_CURR_BEST]);
-@@ -5072,7 +5240,11 @@ Void TEncSearch::encodeResAndCalcRdInterCU( TComDataCU* pcCU, TComYuv* pcYuvOrg,
+@@ -5034,11 +5202,23 @@ Void TEncSearch::encodeResAndCalcRdInterCU( TComDataCU* pcCU, TComYuv* pcYuvOrg,
+     {
+       const UInt uiNumSamplesLuma = cuWidthPixels*cuHeightPixels;
+       ::memset( m_pTempPel, 0, sizeof( Pel ) * uiNumSamplesLuma );
+-      zeroDistortion = m_pcRdCost->getDistPart(pcCU->getSlice()->getSPS()->getBitDepth( CHANNEL_TYPE_LUMA ), m_pTempPel, cuWidthPixels, pcYuvResi->getAddr( COMPONENT_Y, 0 ), pcYuvResi->getStride(COMPONENT_Y), cuWidthPixels, cuHeightPixels, COMPONENT_Y ); // initialized with zero residual destortion
++      zeroDistortion = m_pcRdCost->getDistPart(pcCU->getSlice()->getSPS()->getBitDepth( CHANNEL_TYPE_LUMA ), m_pTempPel, cuWidthPixels, pcYuvResi->getAddr( COMPONENT_Y, 0 ), pcYuvResi->getStride(COMPONENT_Y), cuWidthPixels, cuHeightPixels, COMPONENT_Y
++#if PCC_RDO_EXT
++                                               , DF_SSE, pcYuvOccupancy->getAddr(COMPONENT_Y), pcYuvOccupancy->getStride(COMPONENT_Y)
++#endif
++                                               ); // initialized with zero residual destortion
+       const UInt csx=pcYuvOrg->getComponentScaleX(COMPONENT_Cb);
+       const UInt csy=pcYuvOrg->getComponentScaleY(COMPONENT_Cb);
+-      zeroDistortion += m_pcRdCost->getDistPart(pcCU->getSlice()->getSPS()->getBitDepth( CHANNEL_TYPE_CHROMA ), m_pTempPel, cuWidthPixels >> csx, pcYuvResi->getAddr( COMPONENT_Cb, 0 ), pcYuvResi->getStride(COMPONENT_Cb), cuWidthPixels >> csx, cuHeightPixels >> csy, COMPONENT_Cb ); // initialized with zero residual destortion
+-      zeroDistortion += m_pcRdCost->getDistPart(pcCU->getSlice()->getSPS()->getBitDepth( CHANNEL_TYPE_CHROMA ), m_pTempPel, cuWidthPixels >> csx, pcYuvResi->getAddr( COMPONENT_Cr, 0 ), pcYuvResi->getStride(COMPONENT_Cr), cuWidthPixels >> csx, cuHeightPixels >> csy, COMPONENT_Cr ); // initialized with zero residual destortion
++      zeroDistortion += m_pcRdCost->getDistPart(pcCU->getSlice()->getSPS()->getBitDepth( CHANNEL_TYPE_CHROMA ), m_pTempPel, cuWidthPixels >> csx, pcYuvResi->getAddr( COMPONENT_Cb, 0 ), pcYuvResi->getStride(COMPONENT_Cb), cuWidthPixels >> csx, cuHeightPixels >> csy, COMPONENT_Cb
++#if PCC_RDO_EXT
++                                               , DF_SSE, pcYuvOccupancy->getAddr(COMPONENT_Cb), pcYuvOccupancy->getStride(COMPONENT_Cb)
++#endif
++                                                ); // initialized with zero residual destortion
++      zeroDistortion += m_pcRdCost->getDistPart(pcCU->getSlice()->getSPS()->getBitDepth( CHANNEL_TYPE_CHROMA ), m_pTempPel, cuWidthPixels >> csx, pcYuvResi->getAddr( COMPONENT_Cr, 0 ), pcYuvResi->getStride(COMPONENT_Cr), cuWidthPixels >> csx, cuHeightPixels >> csy, COMPONENT_Cr
++#if PCC_RDO_EXT
++                                               , DF_SSE, pcYuvOccupancy->getAddr(COMPONENT_Cr), pcYuvOccupancy->getStride(COMPONENT_Cr)
++#endif
++                                                ); // initialized with zero residual destortion
+     }
+     if(eACTRDTestType == ACT_TRAN_CLR)
+     {
+@@ -5056,23 +5236,40 @@ Void TEncSearch::encodeResAndCalcRdInterCU( TComDataCU* pcCU, TComYuv* pcYuvOrg,
+   {
+     if(eACTRDTestType == ACT_TWO_CLR)
+     {
+-      xEstimateInterResidualQTTUCSC( pcYuvNoCorrResi, nonZeroCost, nonZeroBits, nonZeroDistortion, tuLevel0, pcYuvResi, eACTRDTestType DEBUG_STRING_PASS_INTO(sDebug) );
++      xEstimateInterResidualQTTUCSC( pcYuvNoCorrResi, nonZeroCost, nonZeroBits, nonZeroDistortion, tuLevel0, pcYuvResi, eACTRDTestType DEBUG_STRING_PASS_INTO(sDebug)
++#if PCC_RDO_EXT
++                                    , pcYuvOccupancy
++#endif
++                                    );
+     }
+     else if(eACTRDTestType == ACT_TRAN_CLR)
+     {
+       pcCU->setColourTransformSubParts(true, 0 , pcCU->getDepth(0));
+-      xEstimateInterResidualQT( pcYuvNoCorrResi, nonZeroCost, nonZeroBits, nonZeroDistortion, NULL, tuLevel0 DEBUG_STRING_PASS_INTO(sDebug), pcYuvResi );
++      xEstimateInterResidualQT( pcYuvNoCorrResi, nonZeroCost, nonZeroBits, nonZeroDistortion, NULL, tuLevel0 DEBUG_STRING_PASS_INTO(sDebug), pcYuvResi
++#if PCC_RDO_EXT
++                                    , pcYuvOccupancy
++#endif
++      );
+     }
+     else
+     {
+       pcCU->setColourTransformSubParts(false, 0, pcCU->getDepth(0));
+-      xEstimateInterResidualQT( pcYuvResi,  nonZeroCost, nonZeroBits, nonZeroDistortion, &zeroDistortion, tuLevel0 DEBUG_STRING_PASS_INTO(sDebug) );
++      xEstimateInterResidualQT( pcYuvResi,  nonZeroCost, nonZeroBits, nonZeroDistortion, &zeroDistortion, tuLevel0 DEBUG_STRING_PASS_INTO(sDebug)
++#if PCC_RDO_EXT
++                                    , NULL
++                                    , pcYuvOccupancy
++#endif
++      );
+     }
+   }
    else
    {
      pcCU->setColourTransformSubParts(false, 0, pcCU->getDepth(0));
@@ -5226,7 +5719,7 @@ index c307cb2..c37cd0e 100644
    }
  
    // -------------------------------------------------------
-@@ -5141,7 +5313,11 @@ Void TEncSearch::encodeResAndCalcRdInterCU( TComDataCU* pcCU, TComYuv* pcYuvOrg,
+@@ -5141,7 +5338,11 @@ Void TEncSearch::encodeResAndCalcRdInterCU( TComDataCU* pcCU, TComYuv* pcYuvOrg,
    for(Int comp=0; comp<numValidComponents; comp++)
    {
      const ComponentID compID=ComponentID(comp);
@@ -5239,7 +5732,7 @@ index c307cb2..c37cd0e 100644
    }
  
    pcCU->getTotalBits()       = finalBits;
-@@ -5159,6 +5335,9 @@ Void TEncSearch::xEstimateInterResidualQT( TComYuv    *pcResi,
+@@ -5159,6 +5360,9 @@ Void TEncSearch::xEstimateInterResidualQT( TComYuv    *pcResi,
                                             TComTU     &rTu
                                             DEBUG_STRING_FN_DECLARE(sDebug),
                                             TComYuv* pcOrgResi
@@ -5249,7 +5742,16 @@ index c307cb2..c37cd0e 100644
                                            )
  {
    TComDataCU *pcCU        = rTu.getCU();
-@@ -5415,8 +5594,13 @@ Void TEncSearch::xEstimateInterResidualQT( TComYuv    *pcResi,
+@@ -5411,12 +5615,21 @@ Void TEncSearch::xEstimateInterResidualQT( TComYuv    *pcResi,
+ 
+                   nonCoeffDist = m_pcRdCost->getDistPart( channelBitDepth, m_pcQTTempTComYuv[uiQTTempAccessLayer].getAddrPix( compID, tuCompRect.x0, tuCompRect.y0 ),
+                                                           m_pcQTTempTComYuv[uiQTTempAccessLayer].getStride( compID ), pcResi->getAddrPix( compID, tuCompRect.x0, tuCompRect.y0 ),
+-                                                          pcResi->getStride(compID), tuCompRect.width, tuCompRect.height, compID); // initialized with zero residual distortion
++                                                          pcResi->getStride(compID), tuCompRect.width, tuCompRect.height, compID
++#if PCC_RDO_EXT
++                                               , DF_SSE, pcOccupancyYuv->getAddr(compID), pcOccupancyYuv->getStride(compID)
++#endif
++                                                         ); // initialized with zero residual distortion
                  }
                  else
                  {
@@ -5265,7 +5767,7 @@ index c307cb2..c37cd0e 100644
                  }
  
                  m_pcEntropyCoder->encodeQtCbfZero( TUIterator, toChannelType(compID) );
-@@ -5474,11 +5658,19 @@ Void TEncSearch::xEstimateInterResidualQT( TComYuv    *pcResi,
+@@ -5474,11 +5687,19 @@ Void TEncSearch::xEstimateInterResidualQT( TComYuv    *pcResi,
                                                          true);
                  }
  
@@ -5290,7 +5792,37 @@ index c307cb2..c37cd0e 100644
  
                  currCompCost = m_pcRdCost->calcRdCost(currCompBits, currCompDist);
                    
-@@ -5720,7 +5912,11 @@ Void TEncSearch::xEstimateInterResidualQT( TComYuv    *pcResi,
+@@ -5606,14 +5827,26 @@ Void TEncSearch::xEstimateInterResidualQT( TComYuv    *pcResi,
+         m_tmpYuvPred.convert( extendedPrecision, rTu.getRect(COMPONENT_Y).x0, rTu.getRect(COMPONENT_Y).y0, rTu.getRect(COMPONENT_Y).width, false, pcCU->getSlice()->getSPS()->getBitDepths(), pcCU->isLosslessCoded(uiAbsPartIdx) );
+ 
+         uiSingleDistComp[COMPONENT_Y ][0] = m_pcRdCost->getDistPart(pcCU->getSlice()->getSPS()->getBitDepth( CHANNEL_TYPE_LUMA ), m_tmpYuvPred.getAddrPix( COMPONENT_Y, tuCompRect.x0, tuCompRect.y0 ), m_tmpYuvPred.getStride(COMPONENT_Y),
+-          pcOrgResi->getAddrPix( COMPONENT_Y, tuCompRect.x0, tuCompRect.y0 ), pcOrgResi->getStride(COMPONENT_Y), tuCompRect.width, tuCompRect.height, COMPONENT_Y );
++          pcOrgResi->getAddrPix( COMPONENT_Y, tuCompRect.x0, tuCompRect.y0 ), pcOrgResi->getStride(COMPONENT_Y), tuCompRect.width, tuCompRect.height, COMPONENT_Y
++#if PCC_RDO_EXT
++                                               , DF_SSE, pcOccupancyYuv->getAddr(COMPONENT_Y), pcOccupancyYuv->getStride(COMPONENT_Y)
++#endif
++                                                                    );
+ 
+         const TComRectangle &tuCompRectC=rTu.getRect(COMPONENT_Cb);
+         uiSingleDistComp[COMPONENT_Cb][0] = m_pcRdCost->getDistPart(pcCU->getSlice()->getSPS()->getBitDepth( CHANNEL_TYPE_CHROMA ), m_tmpYuvPred.getAddrPix( COMPONENT_Cb, tuCompRectC.x0, tuCompRectC.y0 ), m_tmpYuvPred.getStride(COMPONENT_Cb),
+-          pcOrgResi->getAddrPix( COMPONENT_Cb, tuCompRectC.x0, tuCompRectC.y0 ), pcOrgResi->getStride(COMPONENT_Cb), tuCompRectC.width, tuCompRectC.height, COMPONENT_Cb );
++          pcOrgResi->getAddrPix( COMPONENT_Cb, tuCompRectC.x0, tuCompRectC.y0 ), pcOrgResi->getStride(COMPONENT_Cb), tuCompRectC.width, tuCompRectC.height, COMPONENT_Cb
++#if PCC_RDO_EXT
++                                               , DF_SSE, pcOccupancyYuv->getAddr(COMPONENT_Cb), pcOccupancyYuv->getStride(COMPONENT_Cb)
++#endif
++                                                                    );
+ 
+         uiSingleDistComp[COMPONENT_Cr][0] = m_pcRdCost->getDistPart(pcCU->getSlice()->getSPS()->getBitDepth( CHANNEL_TYPE_CHROMA ), m_tmpYuvPred.getAddrPix( COMPONENT_Cr, tuCompRectC.x0, tuCompRectC.y0 ), m_tmpYuvPred.getStride(COMPONENT_Cr),
+-          pcOrgResi->getAddrPix( COMPONENT_Cr, tuCompRectC.x0, tuCompRectC.y0 ), pcOrgResi->getStride(COMPONENT_Cr), tuCompRectC.width, tuCompRectC.height, COMPONENT_Cr );
++          pcOrgResi->getAddrPix( COMPONENT_Cr, tuCompRectC.x0, tuCompRectC.y0 ), pcOrgResi->getStride(COMPONENT_Cr), tuCompRectC.width, tuCompRectC.height, COMPONENT_Cr
++#if PCC_RDO_EXT
++                                               , DF_SSE, pcOccupancyYuv->getAddr(COMPONENT_Cr), pcOccupancyYuv->getStride(COMPONENT_Cr)
++#endif
++                                                                    );
+ 
+         uiSingleDistComp[COMPONENT_Y][1] = uiSingleDistComp[COMPONENT_Cb][1] = uiSingleDistComp[COMPONENT_Cr][1] = 0;
+       }
+@@ -5720,7 +5953,11 @@ Void TEncSearch::xEstimateInterResidualQT( TComYuv    *pcResi,
      do
      {
        DEBUG_STRING_NEW(childString)
@@ -5303,7 +5835,385 @@ index c307cb2..c37cd0e 100644
  #if DEBUG_STRING
        // split the string by component and append to the relevant output (because decoder decodes in channel order, whereas this search searches by TU-order)
        std::size_t lastPos=0;
-@@ -15001,3 +15197,6 @@ Void TEncSearch::xInitTBCTable()
+@@ -6559,7 +6796,11 @@ TEncSearch::xIntraCodingTUBlockCSC(       TComYuv*    pcResiYuv,
+ 
+ 
+ Void
+-TEncSearch::xRecurIntraCodingQTTUCSC( TComYuv* pcOrgYuv, TComYuv* pcPredYuv, TComYuv* pcResiYuv, Distortion& PUDistY, Distortion& PUDistC, Double& dPUCost, TComTU& rTu, Bool bTestMaxTUSize, ACTRDTestTypes eACTRDTestType DEBUG_STRING_FN_DECLARE(sDebug) )
++TEncSearch::xRecurIntraCodingQTTUCSC( TComYuv* pcOrgYuv, TComYuv* pcPredYuv, TComYuv* pcResiYuv, Distortion& PUDistY, Distortion& PUDistC, Double& dPUCost, TComTU& rTu, Bool bTestMaxTUSize, ACTRDTestTypes eACTRDTestType DEBUG_STRING_FN_DECLARE(sDebug)
++#if PCC_RDO_EXT
++                    , TComYuv* pcYuvOccupancy
++#endif
++                                     )
+ {
+   TComDataCU          *pcCU                 = rTu.getCU();
+   const UInt          trDepth               = rTu.GetTransformDepthRel();
+@@ -6812,7 +7053,13 @@ TEncSearch::xRecurIntraCodingQTTUCSC( TComYuv* pcOrgYuv, TComYuv* pcPredYuv, TCo
+                                                         pcResiYuv->getStride(compID),
+                                                         rTu.getRect(compID).width,
+                                                         rTu.getRect(compID).height,
+-                                                        compID);
++                                                        compID
++#if PCC_RDO_EXT
++                                                        , DF_SSE
++                                                        , pcYuvOccupancy->getAddr(compID)
++                                                        , pcYuvOccupancy->getStride(compID)
++#endif
++                                                      );
+               dSingleCostTmp = m_pcRdCost->calcRdCost( singleBitsTmp, singleDistTmp );
+             }
+ 
+@@ -6894,7 +7141,13 @@ TEncSearch::xRecurIntraCodingQTTUCSC( TComYuv* pcOrgYuv, TComYuv* pcPredYuv, TCo
+                                                                                        pcOrgYuv->getStride(COMPONENT_Y),
+                                                                                        rTu.getRect(COMPONENT_Y).width,
+                                                                                        rTu.getRect(COMPONENT_Y).height,
+-                                                                                       COMPONENT_Y);
++                                                                                       COMPONENT_Y
++#if PCC_RDO_EXT
++                                                                                     , DF_SSE
++                                                                                     , pcYuvOccupancy->getAddr(COMPONENT_Y)
++                                                                                     , pcYuvOccupancy->getStride(COMPONENT_Y)
++#endif
++                                                                                      );
+       singleColorSpaceDist[colorSpaceId][CHANNEL_TYPE_CHROMA] = 0;
+       for(UInt ch = COMPONENT_Cb; ch < numberValidComponents; ch++)
+       {
+@@ -6906,7 +7159,13 @@ TEncSearch::xRecurIntraCodingQTTUCSC( TComYuv* pcOrgYuv, TComYuv* pcPredYuv, TCo
+                                                                                             pcOrgYuv->getStride(compID),
+                                                                                             rTu.getRect(compID).width,
+                                                                                             rTu.getRect(compID).height,
+-                                                                                            compID);
++                                                                                            compID
++#if PCC_RDO_EXT
++                                                                                          , DF_SSE
++                                                                                          , pcYuvOccupancy->getAddr(compID)
++                                                                                          , pcYuvOccupancy->getStride(compID)
++#endif
++                                                                                           );
+       }
+ 
+       dSingleColorSpaceCost[colorSpaceId] = m_pcRdCost->calcRdCost( singleColorSpaceBits[colorSpaceId], singleColorSpaceDist[colorSpaceId][CHANNEL_TYPE_LUMA] + singleColorSpaceDist[colorSpaceId][CHANNEL_TYPE_CHROMA] );
+@@ -7025,7 +7284,11 @@ TEncSearch::xRecurIntraCodingQTTUCSC( TComYuv* pcOrgYuv, TComYuv* pcPredYuv, TCo
+     TComTURecurse tuRecurseChild(rTu, false);
+     do
+     {
+-      xRecurIntraCodingQTTUCSC( pcOrgYuv, pcPredYuv, pcResiYuv, splitDist[CHANNEL_TYPE_LUMA], splitDist[CHANNEL_TYPE_CHROMA], dSplitCost, tuRecurseChild, bTestMaxTUSize, eACTRDTestType DEBUG_STRING_PASS_INTO(sDebug) );
++      xRecurIntraCodingQTTUCSC( pcOrgYuv, pcPredYuv, pcResiYuv, splitDist[CHANNEL_TYPE_LUMA], splitDist[CHANNEL_TYPE_CHROMA], dSplitCost, tuRecurseChild, bTestMaxTUSize, eACTRDTestType DEBUG_STRING_PASS_INTO(sDebug)
++#if PCC_RDO_EXT
++                                , pcYuvOccupancy
++#endif
++                               );
+ 
+       for(UInt ch = 0; ch < numberValidComponents; ch++)
+       {
+@@ -7104,7 +7367,11 @@ TEncSearch::xRecurIntraCodingQTTUCSC( TComYuv* pcOrgYuv, TComYuv* pcPredYuv, TCo
+ }
+ 
+ Void
+-TEncSearch::xRecurIntraCodingQTCSC( TComYuv* pcOrgYuv, TComYuv* pcPredYuv, TComYuv* pcResiYuv, Distortion& PUDistY, Distortion& PUDistC, Double& dPUCost, TComTU& rTu, Bool bTestMaxTUSize DEBUG_STRING_FN_DECLARE(sDebug) )
++TEncSearch::xRecurIntraCodingQTCSC( TComYuv* pcOrgYuv, TComYuv* pcPredYuv, TComYuv* pcResiYuv, Distortion& PUDistY, Distortion& PUDistC, Double& dPUCost, TComTU& rTu, Bool bTestMaxTUSize DEBUG_STRING_FN_DECLARE(sDebug)
++#if PCC_RDO_EXT
++                  , TComYuv* pcYuvOccupancy
++#endif
++                  )
+ {
+   TComDataCU          *pcCU                 = rTu.getCU();
+   const UInt          trDepth               = rTu.GetTransformDepthRel();
+@@ -7316,7 +7583,13 @@ TEncSearch::xRecurIntraCodingQTCSC( TComYuv* pcOrgYuv, TComYuv* pcPredYuv, TComY
+                                                      pcResiYuv->getStride( compID ),
+                                                      rTu.getRect( compID ).width,
+                                                      rTu.getRect( compID ).height,
+-                                                     compID );
++                                                     compID
++#if PCC_RDO_EXT
++                                                    , DF_SSE
++                                                    , pcYuvOccupancy->getAddr(compID)
++                                                    , pcYuvOccupancy->getStride(compID)
++#endif
++                                                    );
+             dSingleCostTmp = m_pcRdCost->calcRdCost( singleBitsTmp, singleDistTmp );
+           }
+ 
+@@ -7401,7 +7674,13 @@ TEncSearch::xRecurIntraCodingQTCSC( TComYuv* pcOrgYuv, TComYuv* pcPredYuv, TComY
+                                                              pcOrgYuv->getStride(COMPONENT_Y),
+                                                              rTu.getRect(COMPONENT_Y).width,
+                                                              rTu.getRect(COMPONENT_Y).height,
+-                                                             COMPONENT_Y);
++                                                             COMPONENT_Y
++#if PCC_RDO_EXT
++                                                           , DF_SSE
++                                                           , pcYuvOccupancy->getAddr(COMPONENT_Y)
++                                                           , pcYuvOccupancy->getStride(COMPONENT_Y)
++#endif
++                                                            );
+     singleDist[CHANNEL_TYPE_CHROMA] = 0;
+     for(UInt ch = COMPONENT_Cb; ch < numberValidComponents; ch++)
+     {
+@@ -7413,7 +7692,13 @@ TEncSearch::xRecurIntraCodingQTCSC( TComYuv* pcOrgYuv, TComYuv* pcPredYuv, TComY
+                                                                   pcOrgYuv->getStride(compID),
+                                                                   rTu.getRect(compID).width,
+                                                                   rTu.getRect(compID).height,
+-                                                                  compID);
++                                                                  compID
++#if PCC_RDO_EXT
++                                                                , DF_SSE
++                                                                , pcYuvOccupancy->getAddr(compID)
++                                                                , pcYuvOccupancy->getStride(compID)
++#endif
++                                                                 );
+     }
+ 
+     dSingleCost = m_pcRdCost->calcRdCost( singleBits, singleDist[CHANNEL_TYPE_LUMA] + singleDist[CHANNEL_TYPE_CHROMA] );
+@@ -7439,7 +7724,11 @@ TEncSearch::xRecurIntraCodingQTCSC( TComYuv* pcOrgYuv, TComYuv* pcPredYuv, TComY
+     TComTURecurse tuRecurseChild(rTu, false);
+     do
+     {
+-      xRecurIntraCodingQTCSC( pcOrgYuv, pcPredYuv, pcResiYuv, splitDist[CHANNEL_TYPE_LUMA], splitDist[CHANNEL_TYPE_CHROMA], dSplitCost, tuRecurseChild, bTestMaxTUSize DEBUG_STRING_PASS_INTO(sDebug) );
++      xRecurIntraCodingQTCSC( pcOrgYuv, pcPredYuv, pcResiYuv, splitDist[CHANNEL_TYPE_LUMA], splitDist[CHANNEL_TYPE_CHROMA], dSplitCost, tuRecurseChild, bTestMaxTUSize DEBUG_STRING_PASS_INTO(sDebug)
++#if PCC_RDO_EXT
++                                                    , pcYuvOccupancy
++#endif
++                             );
+ 
+       for(UInt ch = 0; ch < numberValidComponents; ch++)
+       {
+@@ -7524,6 +7813,9 @@ TEncSearch::estIntraPredQTCT( TComDataCU*    pcCU,
+                               ACTRDTestTypes eACTRDTestType,
+                               Bool           bReuseIntraMode
+                               DEBUG_STRING_FN_DECLARE(sDebug)
++#if PCC_RDO_EXT
++                              ,TComYuv*      pcYuvOccupancy
++#endif
+                              )
+ {
+   const UInt         depth                 = pcCU->getDepth(0);
+@@ -7659,16 +7951,28 @@ TEncSearch::estIntraPredQTCT( TComDataCU*    pcCU,
+ 
+       if(eACTRDTestType == ACT_TWO_CLR)
+       {
+-        xRecurIntraCodingQTTUCSC( pcOrgYuv, pcPredYuv, pcResiYuv, PUDistY, PUDistC, dPUCost, tuRecurseWithPU, true, eACTRDTestType DEBUG_STRING_PASS_INTO(sMode)  );
++        xRecurIntraCodingQTTUCSC( pcOrgYuv, pcPredYuv, pcResiYuv, PUDistY, PUDistC, dPUCost, tuRecurseWithPU, true, eACTRDTestType DEBUG_STRING_PASS_INTO(sMode)
++#if PCC_RDO_EXT
++                                , pcYuvOccupancy
++#endif
++                                 );
+       }
+       else if(eACTRDTestType == ACT_TRAN_CLR)
+       {
+         pcCU->setColourTransformSubParts(true, 0, depth);
+-        xRecurIntraCodingQTCSC( pcOrgYuv, pcPredYuv, pcResiYuv, PUDistY, PUDistC, dPUCost, tuRecurseWithPU, true DEBUG_STRING_PASS_INTO(sMode)  );
++        xRecurIntraCodingQTCSC( pcOrgYuv, pcPredYuv, pcResiYuv, PUDistY, PUDistC, dPUCost, tuRecurseWithPU, true DEBUG_STRING_PASS_INTO(sMode)
++#if PCC_RDO_EXT
++                          , pcYuvOccupancy
++#endif
++                               );
+       }
+       else if(eACTRDTestType == ACT_ORG_CLR)
+       {
+-        xRecurIntraCodingQTTUCSC( pcOrgYuv, pcPredYuv, pcResiYuv, PUDistY, PUDistC, dPUCost, tuRecurseWithPU, true, eACTRDTestType DEBUG_STRING_PASS_INTO(sMode)  );
++        xRecurIntraCodingQTTUCSC( pcOrgYuv, pcPredYuv, pcResiYuv, PUDistY, PUDistC, dPUCost, tuRecurseWithPU, true, eACTRDTestType DEBUG_STRING_PASS_INTO(sMode)
++#if PCC_RDO_EXT
++                                , pcYuvOccupancy
++#endif
++                                 );
+       }
+       else
+       {
+@@ -7711,16 +8015,28 @@ TEncSearch::estIntraPredQTCT( TComDataCU*    pcCU,
+       m_pcRDGoOnSbacCoder->load( m_pppcRDSbacCoder[depth][CI_CURR_BEST] );
+       if(eACTRDTestType == ACT_TWO_CLR)
+       {
+-        xRecurIntraCodingQTTUCSC( pcOrgYuv, pcPredYuv, pcResiYuv, PUDistY, PUDistC, dPUCost, tuRecurseWithPU, false, eACTRDTestType DEBUG_STRING_PASS_INTO(sMode) );
++        xRecurIntraCodingQTTUCSC( pcOrgYuv, pcPredYuv, pcResiYuv, PUDistY, PUDistC, dPUCost, tuRecurseWithPU, false, eACTRDTestType DEBUG_STRING_PASS_INTO(sMode)
++#if PCC_RDO_EXT
++                                , pcYuvOccupancy
++#endif
++                                 );
+       }
+       else if(eACTRDTestType == ACT_TRAN_CLR)
+       {
+         pcCU->setColourTransformSubParts(true, 0, depth);
+-        xRecurIntraCodingQTCSC( pcOrgYuv, pcPredYuv, pcResiYuv, PUDistY, PUDistC, dPUCost, tuRecurseWithPU, false DEBUG_STRING_PASS_INTO(sMode) );
++        xRecurIntraCodingQTCSC( pcOrgYuv, pcPredYuv, pcResiYuv, PUDistY, PUDistC, dPUCost, tuRecurseWithPU, false DEBUG_STRING_PASS_INTO(sMode)
++#if PCC_RDO_EXT
++                                                    , pcYuvOccupancy
++#endif
++                               );
+       }
+       else if(eACTRDTestType == ACT_ORG_CLR)
+       {
+-        xRecurIntraCodingQTTUCSC( pcOrgYuv, pcPredYuv, pcResiYuv, PUDistY, PUDistC, dPUCost, tuRecurseWithPU, false, eACTRDTestType DEBUG_STRING_PASS_INTO(sMode) );
++        xRecurIntraCodingQTTUCSC( pcOrgYuv, pcPredYuv, pcResiYuv, PUDistY, PUDistC, dPUCost, tuRecurseWithPU, false, eACTRDTestType DEBUG_STRING_PASS_INTO(sMode)
++#if PCC_RDO_EXT
++                                , pcYuvOccupancy
++#endif
++                                 );
+       }
+       else
+       {
+@@ -7827,6 +8143,9 @@ TEncSearch::estIntraPredLumaQTWithModeReuse(TComDataCU* pcCU,
+                                             TComYuv*    pcResiYuv,
+                                             TComYuv*    pcRecoYuv,
+                                             Pel         resiLuma[NUMBER_OF_STORED_RESIDUAL_TYPES][MAX_CU_SIZE * MAX_CU_SIZE]
++#if PCC_RDO_EXT
++                                          , TComYuv* pcOccupancyYuv
++#endif
+                                            )
+ {
+   const UInt         depth               = pcCU->getDepth(0);
+@@ -7869,7 +8188,11 @@ TEncSearch::estIntraPredLumaQTWithModeReuse(TComDataCU* pcCU,
+     // set context models
+     m_pcRDGoOnSbacCoder->load( m_pppcRDSbacCoder[depth][CI_CURR_BEST] );
+ 
+-    xRecurIntraCodingLumaQT( pcOrgYuv, pcPredYuv, pcResiYuv, resiLumaPU, bestPUDistY, true, dBestPUCost, tuRecurseWithPU DEBUG_STRING_PASS_INTO(sMode) );
++    xRecurIntraCodingLumaQT( pcOrgYuv, pcPredYuv, pcResiYuv, resiLumaPU, bestPUDistY, true, dBestPUCost, tuRecurseWithPU DEBUG_STRING_PASS_INTO(sMode)
++#if PCC_RDO_EXT
++                              , pcOccupancyYuv
++#endif
++                            );
+     xSetIntraResultLumaQT( pcRecoYuv, tuRecurseWithPU );
+ 
+     if (pcCU->getSlice()->getPPS()->getPpsRangeExtension().getCrossComponentPredictionEnabledFlag())
+@@ -7952,6 +8275,9 @@ TEncSearch::estIntraPredChromaQTWithModeReuse(TComDataCU* pcCU,
+                                               TComYuv*    pcResiYuv,
+                                               TComYuv*    pcRecoYuv,
+                                               Pel         resiLuma[NUMBER_OF_STORED_RESIDUAL_TYPES][MAX_CU_SIZE * MAX_CU_SIZE]
++#if PCC_RDO_EXT
++                                             ,TComYuv*      pcYuvOccupancy
++#endif
+                                              )
+ {
+   const UInt    initTrDepth  = pcCU->getPartitionSize(0) != SIZE_2Nx2N && enable4ChromaPUsInIntraNxNCU(pcOrgYuv->getChromaFormat()) ? 1 : 0;
+@@ -7977,7 +8303,11 @@ TEncSearch::estIntraPredChromaQTWithModeReuse(TComDataCU* pcCU,
+       DEBUG_STRING_NEW(sMode)
+       //----- chroma coding -----
+       Distortion dist = 0;
+-      xRecurIntraChromaCodingQT( pcOrgYuv, pcPredYuv, pcResiYuv, resiLuma, dist, tuRecurseWithPU DEBUG_STRING_PASS_INTO(sMode) );
++      xRecurIntraChromaCodingQT( pcOrgYuv, pcPredYuv, pcResiYuv, resiLuma, dist, tuRecurseWithPU DEBUG_STRING_PASS_INTO(sMode)
++#if PCC_RDO_EXT
++                                  , pcYuvOccupancy
++#endif
++                                );
+ 
+       xSetIntraResultChromaQT( pcRecoYuv, tuRecurseWithPU );
+ 
+@@ -8032,7 +8362,11 @@ TEncSearch::estIntraPredChromaQTWithModeReuse(TComDataCU* pcCU,
+   m_pcRDGoOnSbacCoder->load( m_pppcRDSbacCoder[depthCU][CI_CURR_BEST] );
+ }
+ 
+-UInt TEncSearch::paletteSearch(TComDataCU* pcCU, TComYuv* pcOrgYuv, TComYuv*& rpcPredYuv, TComYuv*& rpcResiYuv, TComYuv*& rpcRecoYuv, Bool forcePalettePrediction, UInt iterNumber, UInt *paletteSizeCurrIter)
++UInt TEncSearch::paletteSearch(TComDataCU* pcCU, TComYuv* pcOrgYuv, TComYuv*& rpcPredYuv, TComYuv*& rpcResiYuv, TComYuv*& rpcRecoYuv, Bool forcePalettePrediction, UInt iterNumber, UInt *paletteSizeCurrIter
++#if PCC_RDO_EXT
++    , TComYuv* pcYuvOccupancy
++#endif
++                               )
+ {
+   UInt  depth      = pcCU->getDepth(0);
+   Distortion  distortion = 0;
+@@ -8316,7 +8650,11 @@ UInt TEncSearch::paletteSearch(TComDataCU* pcCU, TComYuv* pcOrgYuv, TComYuv*& rp
+ 
+     Pel *pOrig = pcOrgYuv->getAddr(compID, 0);
+     Pel *pReco = rpcRecoYuv->getAddr(compID, 0);
++#if PCC_RDO_EXT
++    distortion += m_pcRdCost->getDistPart( pcCU->getSlice()->getSPS()->getBitDepth(chType), pReco, stride, pOrig, stride, width, height, compID , DF_SSE, pcYuvOccupancy->getAddr(compID), pcYuvOccupancy->getStride(compID));
++#else
+     distortion += m_pcRdCost->getDistPart( pcCU->getSlice()->getSPS()->getBitDepth(chType), pReco, stride, pOrig, stride, width, height, compID );
++#endif
+   }
+ 
+   Double dCost = m_pcRdCost->calcRdCost( bits, distortion );
+@@ -12186,7 +12524,11 @@ Void TEncSearch::xEstimateInterResidualQTTUCSC( TComYuv        *pcResi,
+                                                 TComTU         &rTu,
+                                                 TComYuv*       pcOrgResi,
+                                                 ACTRDTestTypes eACTRDType
+-                                                DEBUG_STRING_FN_DECLARE(sDebug) )
++                                                DEBUG_STRING_FN_DECLARE(sDebug)
++#if PCC_RDO_EXT
++                                               ,TComYuv*    pcOccupancyYuv
++#endif
++                                               )
+ {
+   TComDataCU *pcCU          = rTu.getCU();
+   const UInt absPartIdx     = rTu.GetAbsPartIdxTU();
+@@ -12460,12 +12802,20 @@ Void TEncSearch::xEstimateInterResidualQTTUCSC( TComYuv        *pcResi,
+ 
+                   nonCoeffDist = m_pcRdCost->getDistPart( channelBitDepth, m_pcQTTempTComYuv[QTTempAccessLayer].getAddrPix( compID, tuCompRect.x0, tuCompRect.y0 ),
+                                                           m_pcQTTempTComYuv[QTTempAccessLayer].getStride( compID ), pcResi->getAddrPix( compID, tuCompRect.x0, tuCompRect.y0 ),
+-                                                          pcResi->getStride(compID), tuCompRect.width, tuCompRect.height, compID); // initialized with zero residual distortion
++                                                          pcResi->getStride(compID), tuCompRect.width, tuCompRect.height, compID
++#if PCC_RDO_EXT
++                                                         , DF_SSE, pcOccupancyYuv->getAddr(COMPONENT_Cr), pcOccupancyYuv->getStride(COMPONENT_Cr)
++#endif
++                                                      ); // initialized with zero residual distortion
+                 }
+                 else
+                 {
+                   nonCoeffDist = m_pcRdCost->getDistPart( channelBitDepth, m_pTempPel, tuCompRect.width, pcResi->getAddrPix( compID, tuCompRect.x0, tuCompRect.y0 ),
+-                                                          pcResi->getStride(compID), tuCompRect.width, tuCompRect.height, compID); // initialized with zero residual distortion
++                                                          pcResi->getStride(compID), tuCompRect.width, tuCompRect.height, compID
++#if PCC_RDO_EXT
++                                               , DF_SSE, pcOccupancyYuv->getAddr(COMPONENT_Cr), pcOccupancyYuv->getStride(COMPONENT_Cr)
++#endif
++                                                         ); // initialized with zero residual distortion
+                 }
+ 
+                 m_pcEntropyCoder->encodeQtCbfZero( rTu, toChannelType(compID) );
+@@ -12520,7 +12870,11 @@ Void TEncSearch::xEstimateInterResidualQTTUCSC( TComYuv        *pcResi,
+                                                           m_pcQTTempTComYuv[QTTempAccessLayer].getStride(compID),
+                                                           pcResi->getAddrPix( compID, tuCompRect.x0, tuCompRect.y0 ),
+                                                           pcResi->getStride(compID),
+-                                                          tuCompRect.width, tuCompRect.height, compID);
++                                                          tuCompRect.width, tuCompRect.height, compID
++#if PCC_RDO_EXT
++                                               , DF_SSE, pcOccupancyYuv->getAddr(COMPONENT_Cr), pcOccupancyYuv->getStride(COMPONENT_Cr)
++#endif
++                                                         );
+ 
+                   currCompCost = m_pcRdCost->calcRdCost(currCompBits, currCompDist);
+ 
+@@ -12628,13 +12982,25 @@ Void TEncSearch::xEstimateInterResidualQTTUCSC( TComYuv        *pcResi,
+ 
+         const TComRectangle &tuCompRect = rTu.getRect(COMPONENT_Y);
+         singleDistComp[colorSpaceId][COMPONENT_Y ] = m_pcRdCost->getDistPart(pcCU->getSlice()->getSPS()->getBitDepth( CHANNEL_TYPE_LUMA ), m_pcQTTempTComYuv[QTTempAccessLayer].getAddrPix( COMPONENT_Y, tuCompRect.x0, tuCompRect.y0 ), m_pcQTTempTComYuv[QTTempAccessLayer].getStride(COMPONENT_Y),
+-                                                                               pcOrgResi->getAddrPix( COMPONENT_Y, tuCompRect.x0, tuCompRect.y0 ), pcOrgResi->getStride(COMPONENT_Y), tuCompRect.width, tuCompRect.height, COMPONENT_Y );
++                                                                               pcOrgResi->getAddrPix( COMPONENT_Y, tuCompRect.x0, tuCompRect.y0 ), pcOrgResi->getStride(COMPONENT_Y), tuCompRect.width, tuCompRect.height, COMPONENT_Y
++#if PCC_RDO_EXT
++                                               , DF_SSE, pcOccupancyYuv->getAddr(COMPONENT_Y), pcOccupancyYuv->getStride(COMPONENT_Y)
++#endif
++                                                                             );
+ 
+         const TComRectangle &tuCompRectC = rTu.getRect(COMPONENT_Cb);
+         singleDistComp[colorSpaceId][COMPONENT_Cb] = m_pcRdCost->getDistPart(pcCU->getSlice()->getSPS()->getBitDepth( CHANNEL_TYPE_CHROMA ), m_pcQTTempTComYuv[QTTempAccessLayer].getAddrPix( COMPONENT_Cb, tuCompRectC.x0, tuCompRectC.y0 ), m_pcQTTempTComYuv[QTTempAccessLayer].getStride(COMPONENT_Cb),
+-                                                                               pcOrgResi->getAddrPix( COMPONENT_Cb, tuCompRectC.x0, tuCompRectC.y0 ), pcOrgResi->getStride(COMPONENT_Cb), tuCompRectC.width, tuCompRectC.height, COMPONENT_Cb );
++                                                                               pcOrgResi->getAddrPix( COMPONENT_Cb, tuCompRectC.x0, tuCompRectC.y0 ), pcOrgResi->getStride(COMPONENT_Cb), tuCompRectC.width, tuCompRectC.height, COMPONENT_Cb
++#if PCC_RDO_EXT
++                                               , DF_SSE, pcOccupancyYuv->getAddr(COMPONENT_Cb), pcOccupancyYuv->getStride(COMPONENT_Cb)
++#endif
++                                                                             );
+         singleDistComp[colorSpaceId][COMPONENT_Cr] = m_pcRdCost->getDistPart(pcCU->getSlice()->getSPS()->getBitDepth( CHANNEL_TYPE_CHROMA ), m_pcQTTempTComYuv[QTTempAccessLayer].getAddrPix( COMPONENT_Cr, tuCompRectC.x0, tuCompRectC.y0 ), m_pcQTTempTComYuv[QTTempAccessLayer].getStride(COMPONENT_Cr),
+-                                                                               pcOrgResi->getAddrPix( COMPONENT_Cr, tuCompRectC.x0, tuCompRectC.y0 ), pcOrgResi->getStride(COMPONENT_Cr), tuCompRectC.width, tuCompRectC.height, COMPONENT_Cr );
++                                                                               pcOrgResi->getAddrPix( COMPONENT_Cr, tuCompRectC.x0, tuCompRectC.y0 ), pcOrgResi->getStride(COMPONENT_Cr), tuCompRectC.width, tuCompRectC.height, COMPONENT_Cr
++#if PCC_RDO_EXT
++                                               , DF_SSE, pcOccupancyYuv->getAddr(COMPONENT_Cr), pcOccupancyYuv->getStride(COMPONENT_Cr)
++#endif
++                                                                             );
+       }
+ 
+       m_pcRDGoOnSbacCoder->load( m_pppcRDSbacCoder[ depth ][ CI_QT_TRAFO_ROOT ] );
+@@ -12773,7 +13139,11 @@ Void TEncSearch::xEstimateInterResidualQTTUCSC( TComYuv        *pcResi,
+ 
+       do
+       {
+-        xEstimateInterResidualQTTUCSC( pcResi, dSubdivCost, uiSubdivBits, uiSubdivDist, tuRecurseChild, pcOrgResi, eACTRDType DEBUG_STRING_PASS_INTO(sSplitString));
++        xEstimateInterResidualQTTUCSC( pcResi, dSubdivCost, uiSubdivBits, uiSubdivDist, tuRecurseChild, pcOrgResi, eACTRDType DEBUG_STRING_PASS_INTO(sSplitString)
++#if PCC_RDO_EXT
++                                    , pcOccupancyYuv
++#endif
++                                      );
+       }
+       while ( tuRecurseChild.nextSection(rTu) ) ;
+ 
+@@ -15001,3 +15371,6 @@ Void TEncSearch::xInitTBCTable()
  }
  
  //! \}
@@ -5311,7 +6221,7 @@ index c307cb2..c37cd0e 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibEncoder/TEncSearch.h b/source/Lib/TLibEncoder/TEncSearch.h
-index bd9e088..63edbcd 100644
+index bd9e0888..8009fe3c 100644
 --- a/source/Lib/TLibEncoder/TEncSearch.h
 +++ b/source/Lib/TLibEncoder/TEncSearch.h
 @@ -50,6 +50,7 @@
@@ -5355,7 +6265,50 @@ index bd9e088..63edbcd 100644
  
    /// set ME search range
    Void setAdaptiveSearchRange   ( Int iDir, Int iRefIdx, Int iSearchRange) { assert(iDir < MAX_NUM_REF_LIST_ADAPT_SR && iRefIdx<Int(MAX_IDX_ADAPT_SR)); m_aaiAdaptSR[iDir][iRefIdx] = iSearchRange; }
-@@ -541,6 +553,9 @@ protected:
+@@ -297,6 +309,9 @@ public:
+                                   ACTRDTestTypes eACTRDTestType,
+                                   Bool           bReuseIntraMode
+                                   DEBUG_STRING_FN_DECLARE(sDebug)
++#if PCC_RDO_EXT
++                                 ,TComYuv*      pcYuvOccupancy
++#endif
+                                  );
+ 
+   Void  estIntraPredLumaQTWithModeReuse ( TComDataCU* pcCU,
+@@ -305,6 +320,9 @@ public:
+                                           TComYuv*    pcResiYuv,
+                                           TComYuv*    pcRecoYuv,
+                                           Pel         resiLuma[NUMBER_OF_STORED_RESIDUAL_TYPES][MAX_CU_SIZE * MAX_CU_SIZE]
++#if PCC_RDO_EXT
++                                         ,TComYuv*      pcYuvOccupancy
++#endif
+                                     );
+ 
+   Void  estIntraPredChromaQTWithModeReuse ( TComDataCU* pcCU,
+@@ -313,6 +331,9 @@ public:
+                                             TComYuv*    pcResiYuv,
+                                             TComYuv*    pcRecoYuv,
+                                             Pel         resiLuma[NUMBER_OF_STORED_RESIDUAL_TYPES][MAX_CU_SIZE * MAX_CU_SIZE]
++#if PCC_RDO_EXT
++                                           ,TComYuv*      pcYuvOccupancy
++#endif
+                                           );
+ 
+   Bool isBlockVectorValid( Int xPos, Int yPos, Int width, Int height, TComDataCU *pcCU,
+@@ -479,7 +500,11 @@ public:
+ 
+   Void updateBVMergeCandLists(int roiWidth, int roiHeight, TComMv* mvCand);
+ 
+-  UInt paletteSearch  (TComDataCU* pcCU, TComYuv* pcOrgYuv, TComYuv*& rpcPredYuv, TComYuv*& rpcResiYuv, TComYuv*& rpcRecoYuv, Bool forcePalettePrediction, UInt iterNumber, UInt *paletteSize);
++  UInt paletteSearch  (TComDataCU* pcCU, TComYuv* pcOrgYuv, TComYuv*& rpcPredYuv, TComYuv*& rpcResiYuv, TComYuv*& rpcRecoYuv, Bool forcePalettePrediction, UInt iterNumber, UInt *paletteSize
++#if PCC_RDO_EXT
++    , TComYuv* pcYuvOccupancy
++#endif
++    );
+ 
+   Void deriveRunAndCalcBits( TComDataCU* pcCU, TComYuv* pcOrgYuv, TComYuv* pcRecoYuv, UInt& minBits, Bool bReset, PaletteScanMode paletteScanMode);
+ 
+@@ -541,6 +566,9 @@ protected:
                                     Bool          bRealCoeff );
  
    Void  xIntraCodingTUBlock       (       TComYuv*      pcOrgYuv,
@@ -5365,7 +6318,7 @@ index bd9e088..63edbcd 100644
                                            TComYuv*      pcPredYuv,
                                            TComYuv*      pcResiYuv,
                                            Pel           resiLuma[NUMBER_OF_STORED_RESIDUAL_TYPES][MAX_CU_SIZE * MAX_CU_SIZE],
-@@ -562,7 +577,12 @@ protected:
+@@ -562,7 +590,12 @@ protected:
  #endif
                                      Double&      dRDCost,
                                      TComTU      &rTu
@@ -5378,7 +6331,7 @@ index bd9e088..63edbcd 100644
  
    Void  xSetIntraResultLumaQT     ( TComYuv*     pcRecoYuv,
                                      TComTU &rTu);
-@@ -590,7 +610,12 @@ protected:
+@@ -590,7 +623,12 @@ protected:
                                      Pel         resiLuma[NUMBER_OF_STORED_RESIDUAL_TYPES][MAX_CU_SIZE * MAX_CU_SIZE],
                                      Distortion& ruiDist,
                                      TComTU      &rTu
@@ -5391,7 +6344,7 @@ index bd9e088..63edbcd 100644
  
    Void  xSetIntraResultChromaQT   ( TComYuv*    pcRecoYuv, TComTU &rTu);
  
-@@ -751,7 +776,11 @@ protected:
+@@ -751,7 +789,11 @@ protected:
  
  
    Void xEncodeInterResidualQT( const ComponentID compID, TComTU &rTu );
@@ -5404,7 +6357,35 @@ index bd9e088..63edbcd 100644
    Void xSetInterResidualQTData( TComYuv* pcResi, Bool bSpatial, TComTU &rTu  );
  
    UInt  xModeBitsIntra ( TComDataCU* pcCU, UInt uiMode, UInt uiPartOffset, UInt uiDepth, const ChannelType compID );
-@@ -841,4 +870,6 @@ protected:
+@@ -789,6 +831,9 @@ protected:
+                                     Bool           bTestMaxTUSize,
+                                     ACTRDTestTypes eACTRDTestType
+                                     DEBUG_STRING_FN_DECLARE(sDebug)
++#if PCC_RDO_EXT
++                                  , TComYuv* pcOccupancyYuv
++#endif
+                                    );
+ 
+   Void  xRecurIntraCodingQTCSC    ( TComYuv*     pcOrgYuv,
+@@ -800,9 +845,16 @@ protected:
+                                     TComTU&      rTu,
+                                     Bool         bTestMaxTUSize
+                                     DEBUG_STRING_FN_DECLARE(sDebug)
++#if PCC_RDO_EXT
++                                   ,TComYuv*    pcOccupancyYuv
++#endif
+                                   );
+ 
+-  Void xEstimateInterResidualQTTUCSC( TComYuv* pcResi, Double &rdCost, UInt &bits, Distortion &dist, TComTU &rTu, TComYuv* pcOrgResi, ACTRDTestTypes eACTRDtype DEBUG_STRING_FN_DECLARE(sDebug) );
++  Void xEstimateInterResidualQTTUCSC( TComYuv* pcResi, Double &rdCost, UInt &bits, Distortion &dist, TComTU &rTu, TComYuv* pcOrgResi, ACTRDTestTypes eACTRDtype DEBUG_STRING_FN_DECLARE(sDebug)
++#if PCC_RDO_EXT
++                                   ,TComYuv*    pcOccupancyYuv
++#endif
++  );
+ 
+   // Palette related functions
+   Void  xInitTBCTable();
+@@ -841,4 +893,6 @@ protected:
  
  //! \}
  
@@ -5412,7 +6393,7 @@ index bd9e088..63edbcd 100644
  #endif // __TENCSEARCH__
 +
 diff --git a/source/Lib/TLibEncoder/TEncSlice.cpp b/source/Lib/TLibEncoder/TEncSlice.cpp
-index db9f08a..3f4d77a 100644
+index db9f08ad..3f4d77a7 100644
 --- a/source/Lib/TLibEncoder/TEncSlice.cpp
 +++ b/source/Lib/TLibEncoder/TEncSlice.cpp
 @@ -38,6 +38,7 @@
@@ -5431,7 +6412,7 @@ index db9f08a..3f4d77a 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibEncoder/TEncSlice.h b/source/Lib/TLibEncoder/TEncSlice.h
-index 554f7ca..3c21748 100644
+index 554f7ca6..3c21748d 100644
 --- a/source/Lib/TLibEncoder/TEncSlice.h
 +++ b/source/Lib/TLibEncoder/TEncSlice.h
 @@ -46,6 +46,7 @@
@@ -5450,7 +6431,7 @@ index 554f7ca..3c21748 100644
  #endif // __TENCSLICE__
 +
 diff --git a/source/Lib/TLibEncoder/TEncTop.cpp b/source/Lib/TLibEncoder/TEncTop.cpp
-index aef0104..8f85683 100644
+index aef01047..8f856836 100644
 --- a/source/Lib/TLibEncoder/TEncTop.cpp
 +++ b/source/Lib/TLibEncoder/TEncTop.cpp
 @@ -42,6 +42,7 @@
@@ -5513,7 +6494,7 @@ index aef0104..8f85683 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibEncoder/TEncTop.h b/source/Lib/TLibEncoder/TEncTop.h
-index 0e1048e..6a190f5 100644
+index 0e1048e7..6a190f57 100644
 --- a/source/Lib/TLibEncoder/TEncTop.h
 +++ b/source/Lib/TLibEncoder/TEncTop.h
 @@ -57,6 +57,7 @@
@@ -5533,7 +6514,7 @@ index 0e1048e..6a190f5 100644
  
 +
 diff --git a/source/Lib/TLibEncoder/WeightPredAnalysis.cpp b/source/Lib/TLibEncoder/WeightPredAnalysis.cpp
-index 333fe23..d8a9693 100644
+index 333fe230..d8a96938 100644
 --- a/source/Lib/TLibEncoder/WeightPredAnalysis.cpp
 +++ b/source/Lib/TLibEncoder/WeightPredAnalysis.cpp
 @@ -41,6 +41,7 @@
@@ -5552,7 +6533,7 @@ index 333fe23..d8a9693 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibEncoder/WeightPredAnalysis.h b/source/Lib/TLibEncoder/WeightPredAnalysis.h
-index b59c3ca..d986793 100644
+index b59c3ca7..d986793d 100644
 --- a/source/Lib/TLibEncoder/WeightPredAnalysis.h
 +++ b/source/Lib/TLibEncoder/WeightPredAnalysis.h
 @@ -40,6 +40,7 @@
@@ -5571,7 +6552,7 @@ index b59c3ca..d986793 100644
  #endif // __WEIGHTPREDANALYSIS__
 +
 diff --git a/source/Lib/TLibVideoIO/TVideoIOYuv.cpp b/source/Lib/TLibVideoIO/TVideoIOYuv.cpp
-index dbb743a..170e862 100644
+index dbb743a7..170e862c 100644
 --- a/source/Lib/TLibVideoIO/TVideoIOYuv.cpp
 +++ b/source/Lib/TLibVideoIO/TVideoIOYuv.cpp
 @@ -45,6 +45,7 @@
@@ -5590,7 +6571,7 @@ index dbb743a..170e862 100644
 +
 +} // namespace pcc_hm
 diff --git a/source/Lib/TLibVideoIO/TVideoIOYuv.h b/source/Lib/TLibVideoIO/TVideoIOYuv.h
-index fff7455..e3a59ec 100644
+index fff74555..e3a59ec9 100644
 --- a/source/Lib/TLibVideoIO/TVideoIOYuv.h
 +++ b/source/Lib/TLibVideoIO/TVideoIOYuv.h
 @@ -43,6 +43,7 @@
@@ -5610,7 +6591,7 @@ index fff7455..e3a59ec 100644
  
 +
 diff --git a/source/Lib/libmd5/MD5.h b/source/Lib/libmd5/MD5.h
-index 98c01cd..161cd36 100644
+index 98c01cda..161cd360 100644
 --- a/source/Lib/libmd5/MD5.h
 +++ b/source/Lib/libmd5/MD5.h
 @@ -33,11 +33,12 @@
@@ -5635,7 +6616,7 @@ index 98c01cd..161cd36 100644
 +}
 \ No newline at end of file
 diff --git a/source/Lib/libmd5/libmd5.h b/source/Lib/libmd5/libmd5.h
-index 40ade55..2d712ed 100644
+index 40ade559..2d712ed7 100644
 --- a/source/Lib/libmd5/libmd5.h
 +++ b/source/Lib/libmd5/libmd5.h
 @@ -56,3 +56,4 @@ void MD5Final(unsigned char digest[16], context_md5_t *ctx);

@@ -49,14 +49,12 @@ PCCVTMLibVideoDecoderImpl<T>::~PCCVTMLibVideoDecoderImpl() {}
 template <typename T>
 uint32_t PCCVTMLibVideoDecoderImpl<T>::decode( PCCVideoBitstream& bitstream,
                                                size_t             outputBitDepth,
-                                               bool               RGB2GBR,
                                                PCCVideo<T, 3>&    video ) {
   std::string        s( reinterpret_cast<char*>( bitstream.buffer() ), bitstream.size() );
   std::istringstream iss( s );
   std::istream&      bitstreamFile = iss;
   int                poc;
   PicList*           pcListPic = NULL;
-  m_bRGB2GBR                   = RGB2GBR;
 
   InputByteStream bytestream( bitstreamFile );
   if ( outputBitDepth ) {
@@ -66,6 +64,7 @@ uint32_t PCCVTMLibVideoDecoderImpl<T>::decode( PCCVideoBitstream& bitstream,
   video.clear();
 
   // create & initialize internal classes
+  m_targetSubPicIdx = 0;
   xCreateDecLib();
 
   m_iPOCLastDisplay += m_iSkipFrame;  // set the last displayed POC correctly for skip forward.
@@ -430,6 +429,7 @@ void PCCVTMLibVideoDecoderImpl<T>::setVideoSize( const SPS* sps ) {
   m_outputWidth       = width - window.getWindowLeftOffset() - window.getWindowRightOffset();
   m_outputHeight      = height - window.getWindowTopOffset() - window.getWindowBottomOffset();
   m_internalBitDepths = sps->getBitDepths().recon[CHANNEL_TYPE_LUMA];
+  m_bRGB2GBR          = sps->getChromaFormatIdc() == CHROMA_444;
 }
 
 template <typename T>
@@ -573,7 +573,6 @@ void PCCVTMLibVideoDecoderImpl<T>::xFlushOutput( PicList* pcListPic, PCCVideo<T,
         if ( !pcPicBottom->referenced && pcPicBottom->reconstructed ) { pcPicBottom->reconstructed = false; }
         pcPicTop->neededForOutput    = false;
         pcPicBottom->neededForOutput = false;
-
         if ( pcPicTop ) {
           pcPicTop->destroy();
           delete pcPicTop;
@@ -622,7 +621,6 @@ void PCCVTMLibVideoDecoderImpl<T>::xFlushOutput( PicList* pcListPic, PCCVideo<T,
       iterPic++;
     }
   }
-
   if ( layerId != NOT_VALID ) {
     pcListPic->remove_if( []( Picture* p ) { return p == nullptr; } );
   } else {

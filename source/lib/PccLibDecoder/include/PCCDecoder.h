@@ -68,15 +68,22 @@ class PCCDecoder : public PCCCodec {
   void createPatchFrameDataStructure( PCCContext& context, size_t atglOrder );
 
  private:
-  void setPointLocalReconstruction( PCCContext& context );
-  void setPLRData( PCCFrameContext& tile, PCCPatch& patch, PLRData& plrd, size_t occupancyPackingBlockSize );
+  void       setPointLocalReconstruction( PCCContext& context );
+  void       setPLRData( PCCFrameContext& tile, PCCPatch& patch, PLRData& plrd, size_t occupancyPackingBlockSize );
+  void       setTilePartitionSizeAfti( PCCContext& context );
+  size_t     setTileSizeAndLocation( PCCContext& context, size_t frameIndex, AtlasTileHeader& atgh );
+  bool       compareHashSEIMD5( std::vector<uint8_t>& encMD5, std::vector<uint8_t>& decMD5 );
+  bool       compareHashSEICrc( uint16_t encCrc, uint16_t decCrc );
+  bool       compareHashSEICheckSum( uint32_t encCheckSum, uint32_t decCheckSum );
+  void       createHashSEI( PCCContext& context, int frameIndex );
+  void       createHlsAtlasTileLogFiles( PCCContext& context, int frameIndex );
+  void       setConsitantFourCCCode( PCCContext& context );
+  PCCCodecId getCodedCodecId( PCCContext& context, const uint8_t codecCodecId, const std::string& videoDecoderPath );
 
-  bool                 compareHashSEIMD5( std::vector<uint8_t>& encMD5, std::vector<uint8_t>& decMD5 );
-  bool                 compareHashSEICrc( uint16_t encCrc, uint16_t decCrc );
-  bool                 compareHashSEICheckSum( uint32_t encCheckSum, uint32_t decCheckSum );
-  void                 createHashInformation( PCCContext& context, int frameIndex );
-  PCCDecoderParameters params_;
+  PCCDecoderParameters     params_;
+  std::vector<std::string> consitantFourCCCode_;
 };
+
 };  // namespace pcc
 
 #endif /* PCCDecoder_h */

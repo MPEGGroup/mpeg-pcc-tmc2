@@ -54,19 +54,22 @@ void PCCJMLibVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
   const size_t frameCount = videoSrc.getFrameCount();
 
   std::stringstream cmd;
+  std::string       srcYuvFileName_ = removeFileExtension( params.srcYuvFileName_ ) + "_jmlib.bin";
+  std::string       binFileName     = removeFileExtension( params.binFileName_ ) + "_jmlib.bin";
+  std::string       recYuvFileName  = removeFileExtension( params.recYuvFileName_ ) + "_jmlib.bin";
   cmd << "JMEncoder";
   cmd << " -d " << params.encoderConfig_;
-  if ( bitstream.type() == VIDEO_GEOMETRY && bitstream.type() != VIDEO_TEXTURE ) {
+  if ( bitstream.type() == VIDEO_GEOMETRY && bitstream.type() != VIDEO_ATTRIBUTE ) {
     cmd << " -p QPPSlice=" << params.qp_;
     cmd << " -p QPISlice=" << params.qp_;
     cmd << " -p QPBSlice=" << params.qp_;
   }
-  if ( bitstream.type() == VIDEO_TEXTURE && bitstream.type() != VIDEO_GEOMETRY ) {
+  if ( bitstream.type() == VIDEO_ATTRIBUTE && bitstream.type() != VIDEO_GEOMETRY ) {
     cmd << " -p QPPSlice=" << params.qp_;
     cmd << " -p QPISlice=" << params.qp_;
     cmd << " -p QPBSlice=" << params.qp_;
   }
-  cmd << " -p InputFile=" << params.srcYuvFileName_;
+  cmd << " -p InputFile=" << srcYuvFileName_;
   cmd << " -p SourceBitDepthLuma=" << params.inputBitDepth_;
   cmd << " -p YUVFormat=" << ( params.use444CodecIo_ ? "3" : "1" );
   cmd << " -p FrameRate=30 ";
@@ -74,8 +77,8 @@ void PCCJMLibVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
   cmd << " -p SourceWidth=" << width;
   cmd << " -p SourceHeight=" << height;
   cmd << " -p FramesToBeEncoded=" << frameCount;
-  cmd << " -p OutputFile=" << params.binFileName_;
-  cmd << " -p ReconFile=" << params.recYuvFileName_;
+  cmd << " -p OutputFile=" << binFileName;
+  cmd << " -p ReconFile=" << recYuvFileName;
   cmd << " -p OutputBitDepthLuma=" << params.outputBitDepth_;
   cmd << " -p OutputBitDepthChroma=" << params.outputBitDepth_;
 

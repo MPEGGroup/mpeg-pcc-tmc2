@@ -39,7 +39,7 @@ PCCDecoderParameters::PCCDecoderParameters() {
   compressedStreamPath_              = {};
   reconstructedDataPath_             = {};
   startFrameNumber_                  = 0;
-  colorTransform_                    = COLOR_TRANSFORM_RGB_TO_YCBCR;
+  colorTransform_                    = COLOR_TRANSFORM_NONE;
   colorSpaceConversionPath_          = {};
   inverseColorSpaceConversionConfig_ = {};
   videoDecoderOccupancyPath_         = {};
@@ -51,6 +51,8 @@ PCCDecoderParameters::PCCDecoderParameters() {
   nbThread_                          = 1;
   keepIntermediateFiles_             = false;
   postprocessSmoothingFilter_        = 1;
+  patchColorSubsampling_             = false;
+  shvcLayerIndex_                    = 8;
 }
 
 PCCDecoderParameters::~PCCDecoderParameters() = default;
@@ -69,6 +71,7 @@ void PCCDecoderParameters::print() {
   std::cout << "\t   videoDecoderAttributePath         " << videoDecoderAttributePath_ << std::endl;
   std::cout << "\t   inverseColorSpaceConversionConfig " << inverseColorSpaceConversionConfig_ << std::endl;
   std::cout << "\t   patchColorSubsampling             " << patchColorSubsampling_ << std::endl;
+  std::cout << "\t   shvcLayerIndex                    " << shvcLayerIndex_ << std::endl;
 }
 
 void PCCDecoderParameters::completePath() {}

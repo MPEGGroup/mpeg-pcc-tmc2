@@ -30,11 +30,12 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
-
+#ifndef _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
+#endif
 #include "PCCCommon.h"
 #include "PCCConformance.h"
 #include "PCCConformanceParameters.h"
-
 #include <program_options_lite.h>
 
 using namespace pcc;
@@ -56,6 +57,7 @@ bool parseParameters( int argc, char* argv[], PCCConformanceParameters& params )
   po::setDefaults( opts );
   po::ErrorReporter        err;
   const list<const char*>& argv_unhandled = po::scanArgv( opts, argc, (const char**)argv, err );
+  for ( const auto arg : argv_unhandled ) { printf( "Unhandled argument ignored: %s \n", arg ); }
 
   params.print();
   if ( !params.check() ) {

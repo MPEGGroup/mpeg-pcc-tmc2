@@ -38,93 +38,146 @@ using namespace std;
 using namespace pcc;
 
 PCCConformance::PCCConformance() :
-    conformanceCount_( 0 ),
-    checkFileCount_( 0 ),
-    checkFileTestsMatch_( true ),
-    conformanceTestsMatch_( true ) {}
+    levelLimitsCount_( 0 ),
+    levelLimitsExceedCount_( 0 ),
+    logFilesCount_( 0 ),
+    logFilesMatchCount_( 0 ),
+    logFileTestsMatch_( true ),
+    levelLimitTestsMatch_( true ) {}
 PCCConformance::~PCCConformance() {}
 
 void PCCConformance::check( const PCCConformanceParameters& params ) {
   PCCErrorMessage errMsg;
-  bool            atlasFlag;
   double          aR = 1. / (double)params.fps_;
   KeyValMaps      key_val_decA, key_val_decB;
-  checkFileCount_      = 0;
-  checkFileTestsMatch_ = true;
+  logFilesCount_      = 0;
+  logFilesMatchCount_ = 0;
+  levelLimitsCount_   = 0;
   cout << "\n MPEG PCC Conformance v" << TMC2_VERSION_MAJOR << "." << TMC2_VERSION_MINOR << endl;
-  std::string fileDecA = params.path_ + "enc_hls_log.txt";
-  std::string fileDecB = params.path_ + "dec_hls_log.txt";
-  cout << "\n ^^^^^^Checking High Level Syntax Log Files^^^^^^\n\n";
-  if ( !checkFiles( fileDecA, fileDecB, hlsKeys, key_val_decA, key_val_decB ) ) {
-    std::string tmp = fileDecA + "  " + fileDecB;
-    cout << "\n ******* Files Do Not Have Equal Lines  ******* \n";
-    errMsg.warn( "\n ******* Files Do Not Have Equal Lines  ******* \n", tmp );
+
+  std::string fileDecA = params.path_ + "enc_bitstream_md5.txt";
+  std::string fileDecB = params.path_ + "dec_bitstream_md5.txt";
+  cout << "\n ^^^^^^Checking Bitstream MD5^^^^^^ \n";
+  logFileTestsMatch_ = true;
+  if ( !compareLogFiles( fileDecA, fileDecB, bitStrMD5Keys, key_val_decA, key_val_decB ) ) {
+    std::string tmp = fileDecA + " with " + fileDecB;
+    errMsg.warn( "\n ******* Could Not Check ******* \n", tmp );
   }
+  cout << "^^^^^^ BitStream MD5 : " << ( logFileTestsMatch_ ? "MATCH" : "DIFF" ) << std::endl;
+
+  fileDecA = params.path_ + "enc_hls_md5.txt";
+  fileDecB = params.path_ + "dec_hls_md5.txt";
+  key_val_decA.clear();
+  key_val_decB.clear();
+
+  cout << "\n ^^^^^^Checking High Level Syntax MD5^^^^^^ \n";
+  logFileTestsMatch_ = true;
+  if ( !compareLogFiles( fileDecA, fileDecB, hlsKeys, key_val_decA, key_val_decB ) ) {
+    std::string tmp = fileDecA + " with " + fileDecB;
+    errMsg.warn( "\n ******* Could Not Check ******* \n", tmp );
+  }
+  cout << "^^^^^^ High Level Syntax MD5 : " << ( logFileTestsMatch_ ? "MATCH" : "DIFF" ) << std::endl;
+
   fileDecA = params.path_ + "enc_atlas_log.txt";
   fileDecB = params.path_ + "dec_atlas_log.txt";
-  cout << "\n ^^^^^^Checking Atlas Log Files^^^^^^\n\n";
-  if ( !checkFiles( fileDecA, fileDecB, atlasKeys, key_val_decA, key_val_decB ) ) {
-    std::string tmp = fileDecA + "  " + fileDecB;
-    cout << "\n ******* Files Do Not Have Equal Lines  ******* \n";
-    errMsg.warn( "\n ******* Files Do Not Have Equal Lines  ******* \n", tmp );
-  }
-  conformanceCount_      = 0;
-  conformanceTestsMatch_ = true;
-  checkConformance( params.levelIdc_, aR, key_val_decB, true );
   key_val_decA.clear();
   key_val_decB.clear();
-  cout << "\n ^^^^^^Checking Tile Log Files ^^^^^^\n\n";
-  fileDecA = params.path_ + "enc_tile_log.txt";
-  fileDecB = params.path_ + "dec_tile_log.txt";
-  if ( !checkFiles( fileDecA, fileDecB, tileKeys, key_val_decA, key_val_decB ) ) {
-    std::string tmp = fileDecA + "  " + fileDecB;
-    cout << "\n ******* Files Do Not Have Equal Lines  ******* \n";
-    errMsg.warn( "\n ******* Files Do Not Have Equal Lines ******* \n", tmp );
+  cout << "\n ^^^^^^ Atlas Log Files Check ^^^^^^ \n";
+  logFileTestsMatch_ = true;
+  if ( !compareLogFiles( fileDecA, fileDecB, atlasKeys, key_val_decA, key_val_decB ) ) {
+    std::string tmp = fileDecA + " with " + fileDecB;
+    errMsg.warn( "\n ******* Could Not Check ******* \n", tmp );
   }
+  cout << "^^^^^^ Atlas Log Files " << ( logFileTestsMatch_ ? "MATCH" : "DIFF" ) << std::endl;
+
+  cout << "\n ^^^^^^ Atlas Level Limits Test  ^^^^^^ \n";
+  levelLimitTestsMatch_ = true;
+  checkLevelLimits( params.levelIdc_, aR, key_val_decB, true );
+  cout << "^^^^^^ Atlas Level Limits: " << ( levelLimitTestsMatch_ ? "MATCH" : "DIFF" ) << std::endl;
+
   key_val_decA.clear();
   key_val_decB.clear();
-  cout << "\n ^^^^^^Checking Point Cloud Frame Log Files ^^^^^^\n\n";
-  fileDecA = params.path_ + "enc_pcframe_log.txt";
-  fileDecB = params.path_ + "dec_pcframe_log.txt";
-  if ( !checkFiles( fileDecA, fileDecB, pcframeKeys, key_val_decA, key_val_decB ) ) {
-    std::string tmp = fileDecA + "  " + fileDecB;
-    cout << "\n ******* Files Do Not Have Equal Lines  ******* \n";
-    errMsg.warn( "\n ******* Files Do Not Have Equal Lines  ******* \n", tmp );
+  cout << "\n ^^^^^^ Tile Log Files Check ^^^^^^\n";
+  logFileTestsMatch_ = true;
+  fileDecA           = params.path_ + "enc_tile_log.txt";
+  fileDecB           = params.path_ + "dec_tile_log.txt";
+  if ( !compareLogFiles( fileDecA, fileDecB, tileKeys, key_val_decA, key_val_decB ) ) {
+    std::string tmp = fileDecA + " with " + fileDecB;
+    errMsg.warn( "\n ******* Could Not Check ******* \n", tmp );
   }
-  checkConformance( params.levelIdc_, aR, key_val_decB, false );
+  cout << "^^^^^^ Tile Logs: " << ( logFileTestsMatch_ ? "MATCH" : "DIFF" ) << std::endl;
+
   key_val_decA.clear();
   key_val_decB.clear();
-  cout << "\n ^^^^^^Checking Picture Log Files ^^^^^^\n\n";
+  cout << "\n ^^^^^^ Point Cloud Frame Log Files Check ^^^^^^ \n";
+  logFileTestsMatch_ = true;
+  fileDecA           = params.path_ + "enc_pcframe_log.txt";
+  fileDecB           = params.path_ + "dec_pcframe_log.txt";
+  logFileTestsMatch_ = true;
+  if ( !compareLogFiles( fileDecA, fileDecB, pcframeKeys, key_val_decA, key_val_decB ) ) {
+    std::string tmp = fileDecA + " with " + fileDecB;
+    errMsg.warn( "\n ******* Could Not Check  ******* \n", tmp );
+  }
+  cout << "^^^^^^ Point Cloud Frame Log Files : " << ( logFileTestsMatch_ ? "MATCH" : "DIFF" ) << std::endl;
+
+  cout << "\n ^^^^^^ Point Cloud Frame Level Limits Test  ^^^^^^\n";
+  levelLimitTestsMatch_ = true;
+  checkLevelLimits( params.levelIdc_, aR, key_val_decB, false );
+  cout << "^^^^^^ Point Cloud Frame Level Limits: " << ( levelLimitTestsMatch_ ? "MATCH" : "DIFF" ) << std::endl;
+
+  key_val_decA.clear();
+  key_val_decB.clear();
+  logFileTestsMatch_ = true;
+  cout << "\n ^^^^^^ Post Reconstruction Point Cloud Frame Log Files Check ^^^^^^ \n";
+  fileDecA = params.path_ + "enc_rec_pcframe_log.txt";
+  fileDecB = params.path_ + "dec_rec_pcframe_log.txt";
+  if ( !compareLogFiles( fileDecA, fileDecB, recPcframeKeys, key_val_decA, key_val_decB ) ) {
+    std::string tmp = fileDecA + " with " + fileDecB;
+    errMsg.warn( "\n ******* Could Not Check ******* \n", tmp );
+  }
+  cout << "^^^^^^ Post Reconstruction Point Cloud Frame Log Files: " << ( logFileTestsMatch_ ? "MATCH" : "DIFF" )
+       << std::endl;
+
+  key_val_decA.clear();
+  key_val_decB.clear();
+  logFileTestsMatch_ = true;
+  cout << "\n ^^^^^^ Picture Log Files Check ^^^^^^";
   fileDecA = params.path_ + "enc_picture_log.txt";
   fileDecB = params.path_ + "dec_picture_log.txt";
-  if ( !checkFiles( fileDecA, fileDecB, pictureKeys, key_val_decA, key_val_decB ) ) {
-    std::string tmp = fileDecA + "  " + fileDecB;
-    cout << "\n ******* Files Do Not Have Equal Lines  ******* \n";
-    errMsg.warn( "\n ******* Files Do Not Have Equal Lines  ******* \n", tmp );
+  if ( !compareLogFiles( fileDecA, fileDecB, pictureKeys, key_val_decA, key_val_decB ) ) {
+    std::string tmp = fileDecA + " with " + fileDecB;
+    errMsg.warn( "\n ******* Could Not Check ******* \n", tmp );
   }
-  cout << "\n ^^^^^^Matched Check File Tests " << ( checkFileTestsMatch_ ? "MATCH" : "DIFF" ) << " : "
-       << checkFileCount_ << " tests^^^^^^\n\n";
-  cout << "\n ^^^^^^Matched Dynamic Conformance Tests " << ( conformanceTestsMatch_ ? "MATCH" : "DIFF" ) << " : "
-       << conformanceCount_ << " tests^^^^^^\n\n";
+  cout << "^^^^^^  Picture Log Files: " << ( logFileTestsMatch_ ? "MATCH" : "DIFF" ) << std::endl;
+
+  cout << "\n File Check Tests (matched / total): " << logFilesMatchCount_ << " / " << logFilesCount_ << std::endl;
+  cout << "\n Level Limits Tests ( passed / total): " << ( levelLimitsCount_ - levelLimitsExceedCount_ ) << " / "
+       << levelLimitsCount_ << std::endl;
 }
 
-bool PCCConformance::checkFiles( std::string&                    fNameEnc,
-                                 std::string&                    fNameDec,
-                                 const std::vector<std::string>& keyList,
-                                 KeyValMaps&                     key_val_enc,
-                                 KeyValMaps&                     key_val_dec ) {
+bool PCCConformance::compareLogFiles( std::string&                    fNameEnc,
+                                      std::string&                    fNameDec,
+                                      const std::vector<std::string>& keyList,
+                                      KeyValMaps&                     key_val_enc,
+                                      KeyValMaps&                     key_val_dec ) {
   PCCConfigurationFileParser cfr( keyList );
   if ( !cfr.parseFile( fNameEnc, key_val_enc ) ) {
-    cerr << " Encoder File " << fNameEnc << " not exist \n";
+    cout << " Encoder File " << fNameEnc << " not exist \n";
+    logFileTestsMatch_ = false;
+    logFilesCount_++;
     return false;
   }
   if ( !cfr.parseFile( fNameDec, key_val_dec ) ) {
-    cerr << " Decoder File " << fNameDec << " not exist \n";
+    cout << " Decoder File " << fNameDec << " not exist \n";
+    logFileTestsMatch_ = false;
+    logFilesCount_++;
     return false;
   }
   if ( key_val_enc.size() != key_val_dec.size() ) {
-    cerr << " Encoder File Has " << key_val_enc.size() << " Lines \n";
-    cerr << " Decoder File Has " << key_val_dec.size() << " Lines \n";
+    cout << " Encoder File Has " << key_val_enc.size() << " Lines \n";
+    cout << " Decoder File Has " << key_val_dec.size() << " Lines \n";
+    logFileTestsMatch_ = false;
+    logFilesCount_++;
     return false;
   }
   size_t index = 0;
@@ -141,20 +194,22 @@ bool PCCConformance::checkFiles( std::string&                    fNameEnc,
         cout << "(Enc: " << left << setw( 30 ) << it->first << ", " << setw( 32 ) << it->second << " )"
              << " **MATCH** ";
         cout << "(Dec: " << left << setw( 30 ) << it->first << ", " << setw( 32 ) << dec[it->first] << " )" << endl;
+        logFilesMatchCount_++;
       } else {
-        cerr << "(Enc: " << left << setw( 30 ) << it->first << ", " << setw( 32 ) << it->second << " )"
+        cout << "(Enc: " << left << setw( 30 ) << it->first << ", " << setw( 32 ) << it->second << " )"
              << " **DIFF**  ";
-        cerr << "(Dec: " << left << setw( 30 ) << it->first << ", " << setw( 32 ) << dec[it->first] << " )" << endl;
-        checkFileTestsMatch_ = false;
+        cout << "(Dec: " << left << setw( 30 ) << it->first << ", " << setw( 32 ) << dec[it->first] << " )" << endl;
+        logFileTestsMatch_ = false;
       }
-      checkFileCount_++;
+      logFilesCount_++;
     }
   }
   return true;
 }
 
-void PCCConformance::checkConformance( uint8_t levelIdc, double aR, KeyValMaps& key_val_map, bool atlasFlag ) {
+void PCCConformance::checkLevelLimits( uint8_t levelIdc, double aR, KeyValMaps& key_val_map, bool atlasFlag ) {
   std::map<std::string, size_t> maxLevelLimit;
+  std::map<std::string, size_t> maxLevelLimitPerSecond;
   std::deque<PCCDynamicData>    dataWindow;
   std::vector<std::string>      agrData;
   PCCErrorMessage               error_rep;
@@ -167,6 +222,8 @@ void PCCConformance::checkConformance( uint8_t levelIdc, double aR, KeyValMaps& 
     error_rep.error(
         " Dynamic Conformance Check Cannot Be Done: level indicator should be in multiples of 30 i.e. 30 - 105 for "
         "levels 1 to 3.5 \n" );
+    levelLimitTestsMatch_ = false;
+    levelLimitsCount_++;
     return;
   }
 
@@ -179,6 +236,9 @@ void PCCConformance::checkConformance( uint8_t levelIdc, double aR, KeyValMaps& 
     maxLevelLimit.emplace( "AtlasTotalNumProjPatches", ASPSLevelTable[levelIdx][MaxNumProjPatches] );
     maxLevelLimit.emplace( "AtlasTotalNumRawPatches", ASPSLevelTable[levelIdx][MaxNumRawPatches] );
     maxLevelLimit.emplace( "AtlasTotalNumEomPatches", ASPSLevelTable[levelIdx][MaxNumEomPatches] );
+    maxLevelLimitPerSecond.emplace( "AtlasTotalNumProjPatches", ASPSLevelTable[levelIdx][MaxProjPatchesPerSec] );
+    maxLevelLimitPerSecond.emplace( "AtlasTotalNumRawPatches", ASPSLevelTable[levelIdx][MaxRawPatchesPerSec] );
+    maxLevelLimitPerSecond.emplace( "AtlasTotalNumEomPatches", ASPSLevelTable[levelIdx][MaxEomPatchesPerSec] );
     agrData[0] = "AtlasTotalNumProjPatches";
     agrData[1] = "AtlasTotalNumRawPatches";
     agrData[2] = "AtlasTotalNumEomPatches";
@@ -186,6 +246,9 @@ void PCCConformance::checkConformance( uint8_t levelIdc, double aR, KeyValMaps& 
     maxLevelLimit.emplace( "NumProjPoints", V3CLevelTable[levelIdx][MaxNumProjPoints] );
     maxLevelLimit.emplace( "NumEomPoints", V3CLevelTable[levelIdx][MaxNumEomPoints] );
     maxLevelLimit.emplace( "NumRawPoints", V3CLevelTable[levelIdx][MaxNumRawPoints] );
+    maxLevelLimitPerSecond.emplace( "NumProjPoints", V3CLevelTable[levelIdx][MaxNumProjPointsPerSec] );
+    maxLevelLimitPerSecond.emplace( "NumEomPoints", V3CLevelTable[levelIdx][MaxNumEomPointsPerSec] );
+    maxLevelLimitPerSecond.emplace( "NumRawPoints", V3CLevelTable[levelIdx][MaxNumRawPointsPerSec] );
     agrData[0] = "NumProjPoints";
     agrData[1] = "NumRawPoints";
     agrData[2] = "NumEomPoints";
@@ -205,8 +268,10 @@ void PCCConformance::checkConformance( uint8_t levelIdc, double aR, KeyValMaps& 
       }
       if ( !maxLevelLimit.count( kvp.first ) ) continue;
       if ( !checkLimit( kvp.second, maxLevelLimit[kvp.first], value ) ) {
-        cerr << "\n" << kvp.first << " Value : " << value << " Exceeds Max. Limit " << maxLevelLimit[kvp.first] << endl;
-        conformanceTestsMatch_ = false;
+        cout << "\n" << kvp.first << " Value : " << value << " Exceeds Max. Limit " << maxLevelLimit[kvp.first] << endl;
+        levelLimitsExceedCount_++;
+        levelLimitsCount_++;
+        levelLimitTestsMatch_ = false;
       }
       if ( kvp.first == agrData[0] || kvp.first == agrData[1] || kvp.first == agrData[2] ) {
         for ( int n = 0; n < 3; n++ ) {
@@ -224,11 +289,11 @@ void PCCConformance::checkConformance( uint8_t levelIdc, double aR, KeyValMaps& 
         // cout << " \nAggregate Data @ clockTick = " << clockTick << "\n";
         for ( int n = 0; n < 3; n++ ) {
           // cout << totalPerSec.data_[n] << ", " << endl;
-          maxValue = maxLevelLimit[agrData[n]];
+          maxValue = maxLevelLimitPerSecond[agrData[n]];
           if ( totalPerSec.data_[n] > maxValue ) {
             printf( " %s MaxPerSec %zu Exceeds Table A-6 Specified Limit %zu \n", agrData[n].c_str(),
                     totalPerSec.data_[n], maxValue );
-            conformanceTestsMatch_ = false;
+            levelLimitTestsMatch_ = false;
           }
         }
         totalPerSec -= dataWindow.front();
@@ -236,7 +301,7 @@ void PCCConformance::checkConformance( uint8_t levelIdc, double aR, KeyValMaps& 
       }
     }
   }
-  conformanceCount_++;
+  levelLimitsCount_++;
 }
 
 template <typename T>

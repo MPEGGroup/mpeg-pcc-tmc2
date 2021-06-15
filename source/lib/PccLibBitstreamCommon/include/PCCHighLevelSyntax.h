@@ -130,24 +130,8 @@ class PCCAtlasHighLevelSyntax {
 
   // AFPS related functions
   AtlasFrameParameterSetRbsp& getAtlasFrameParameterSet( size_t setId ) { return atlasFrameParameterSet_[setId]; }
-  std::vector<AtlasFrameParameterSetRbsp>& getAtlasFrameParameterSetList() {
-#if 0
-    printf("\t-------(inPCCAtlasHighLevelSyntax)------------\n");
-    printf("\t-- size of videoBitstream_               : %zu\n", videoBitstream_.size());
-    printf("\t-- size of atlasSequenceParameterSet_    : %zu\n", atlasSequenceParameterSet_.size());
-    printf("\t-- size of refAtlasFrameList_            : %zu\n", refAtlasFrameList_.size());
-    printf("\t-- maxNumRefAtlasFrame_                  : %zu\n", maxNumRefAtlasFrame_);
-    printf("\t-- size of pointLocalReconstructionMode_ : %zu\n", pointLocalReconstructionMode_.size());
-    printf("\t-- size of atlasFrameParameterSet_       : %zu\n", atlasFrameParameterSet_.size());
-    printf("\t-- size of atlasTileLayer_               : %zu\n", atlasTileLayer_.size());
-    printf("\t-- size of seiPrefix_                    : %zu\n", seiPrefix_.size());
-    printf("\t-- size of seiSuffix_                    : %zu\n", seiSuffix_.size());
-    printf("\t----------------------------------------------\n");
-
-#endif
-    return atlasFrameParameterSet_;
-  }
-  AtlasFrameParameterSetRbsp& addAtlasFrameParameterSet() {
+  std::vector<AtlasFrameParameterSetRbsp>& getAtlasFrameParameterSetList() { return atlasFrameParameterSet_; }
+  AtlasFrameParameterSetRbsp&              addAtlasFrameParameterSet() {
     AtlasFrameParameterSetRbsp afps;
     afps.setAtlasFrameParameterSetId( atlasFrameParameterSet_.size() );
     atlasFrameParameterSet_.push_back( afps );
@@ -181,12 +165,23 @@ class PCCAtlasHighLevelSyntax {
       size_t frameIdx,
       size_t tileIdx ) {  // ajt::how is tileIdx is used, should it also do setTileOrder(tileIdx)?
     AtlasTileLayerRbsp atgl;
+    atgl.setEncFrameIndex( frameIdx );
+    atgl.setEncTileIndex( tileIdx );
     atgl.setAtlasFrmOrderCntVal( frameIdx );
     atlasTileLayer_.push_back( atgl );
     return atlasTileLayer_.back();
   }
   std::vector<AtlasTileLayerRbsp>& getAtlasTileLayerList() { return atlasTileLayer_; }
   AtlasTileLayerRbsp&              getAtlasTileLayer( size_t atglOrder ) { return atlasTileLayer_[atglOrder]; }
+  AtlasTileLayerRbsp&              getAtlasTileLayer( size_t frameIndex, size_t tileIndex ) {
+    for ( size_t atglOrder = 0; atglOrder < atlasTileLayer_.size(); atglOrder++ ) {
+      if ( atlasTileLayer_[atglOrder].getEncFrameIndex() == frameIndex &&
+           atlasTileLayer_[atglOrder].getEncTileIndex() == tileIndex )
+        return atlasTileLayer_[atglOrder];
+    }
+    assert( 0 );
+    return atlasTileLayer_[0];
+  }
 
   // SEI related functions
   SEI& addSei( NalUnitType nalUnitType, SeiPayloadType payloadType ) {
@@ -424,6 +419,9 @@ class PCCHighLevelSyntax {
   AtlasTileLayerRbsp&              getAtlasTileLayer( size_t atglOrder ) {
     return atlasHLS_[atlasIndex_].getAtlasTileLayer( atglOrder );
   }
+  AtlasTileLayerRbsp& getAtlasTileLayer( size_t frameIdx, size_t tileIdx ) {
+    return atlasHLS_[atlasIndex_].getAtlasTileLayer( frameIdx, tileIdx );
+  }
 
   // SEI related functions
   SEI& addSei( NalUnitType nalUnitType, SeiPayloadType payloadType ) {
@@ -466,30 +464,18 @@ class PCCHighLevelSyntax {
   uint8_t getLog2PatchQuantizerSizeX() { return log2PatchQuantizerSizeX_; }
   uint8_t getLog2PatchQuantizerSizeY() { return log2PatchQuantizerSizeY_; }
   bool    getEnablePatchSizeQuantization() { return enablePatchSizeQuantization_; }
-  size_t  getAuxVideoWidth() { return auxVideWidth_; }
-  size_t  getAuxVideoHeight() {
-    size_t videoHeight = 0;
-    for ( auto& height : auxTileHeight_ ) { videoHeight += height; }
-    return videoHeight;
-  }
-  size_t               getAuxTileHeight( size_t index ) { return auxTileHeight_[index]; }
-  std::vector<size_t>& getAuxTileHeight() { return auxTileHeight_; }
-  size_t               getAuxTileLeftTopY( size_t index ) { return auxTileLeftTopY_[index]; }
-  std::vector<size_t>& getAuxTileLeftTopY() { return auxTileLeftTopY_; }
-  bool&                getPrefilterLossyOM() { return prefilterLossyOM_; }
-  size_t&              getOffsetLossyOM() { return offsetLossyOM_; }
-  size_t               getGeometry3dCoordinatesBitdepth() { return geometry3dCoordinatesBitdepth_; }
-  void                 setOccupancyPrecision( uint8_t value ) { occupancyPrecision_ = value; }
-  void                 setLog2PatchQuantizerSizeX( uint8_t value ) { log2PatchQuantizerSizeX_ = value; }
-  void                 setLog2PatchQuantizerSizeY( uint8_t value ) { log2PatchQuantizerSizeY_ = value; }
-  void                 setEnablePatchSizeQuantization( bool value ) { enablePatchSizeQuantization_ = value; }
-  void                 setAuxVideoWidth( size_t value ) { auxVideWidth_ = value; }
-  void                 setAuxTileHeight( size_t index, size_t value ) { auxTileHeight_[index] = value; }
-  void                 setAuxTileLeftTopY( size_t index, size_t value ) { auxTileLeftTopY_[index] = value; }
-  void                 setPrefilterLossyOM( bool value ) { prefilterLossyOM_ = value; }
-  void                 setOffsetLossyOM( size_t value ) { offsetLossyOM_ = value; }
-  void                 setGeometry3dCoordinatesBitdepth( size_t value ) { geometry3dCoordinatesBitdepth_ = value; }
-  bool&                getSingleLayerMode() { return singleLayerMode_; }
+
+  bool&   getPrefilterLossyOM() { return prefilterLossyOM_; }
+  size_t& getOffsetLossyOM() { return offsetLossyOM_; }
+  size_t  getGeometry3dCoordinatesBitdepth() { return geometry3dCoordinatesBitdepth_; }
+  void    setOccupancyPrecision( uint8_t value ) { occupancyPrecision_ = value; }
+  void    setLog2PatchQuantizerSizeX( uint8_t value ) { log2PatchQuantizerSizeX_ = value; }
+  void    setLog2PatchQuantizerSizeY( uint8_t value ) { log2PatchQuantizerSizeY_ = value; }
+  void    setEnablePatchSizeQuantization( bool value ) { enablePatchSizeQuantization_ = value; }
+  void    setPrefilterLossyOM( bool value ) { prefilterLossyOM_ = value; }
+  void    setOffsetLossyOM( size_t value ) { offsetLossyOM_ = value; }
+  void    setGeometry3dCoordinatesBitdepth( size_t value ) { geometry3dCoordinatesBitdepth_ = value; }
+  bool&   getSingleLayerMode() { return singleLayerMode_; }
 
  private:
   std::vector<PCCVideoBitstream>              videoBitstream_;
@@ -507,9 +493,6 @@ class PCCHighLevelSyntax {
   PCCBitstreamStat*                           bitstreamStat_;
   std::vector<PCCAtlasHighLevelSyntax>        atlasHLS_;
   size_t                                      atlasIndex_;
-  size_t                                      auxVideWidth_;
-  std::vector<size_t>                         auxTileHeight_;
-  std::vector<size_t>                         auxTileLeftTopY_;
   std::vector<SEIDecodedAtlasInformationHash> seiHash_;
 };
 };  // namespace pcc

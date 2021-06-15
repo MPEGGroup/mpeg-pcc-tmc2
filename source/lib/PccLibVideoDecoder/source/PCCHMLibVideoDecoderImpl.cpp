@@ -57,17 +57,13 @@ PCCHMLibVideoDecoderImpl<T>::~PCCHMLibVideoDecoderImpl() {
 }
 
 template <typename T>
-void PCCHMLibVideoDecoderImpl<T>::decode( PCCVideoBitstream& bitstream,
-                                          size_t             outputBitDepth,
-                                          bool               RGB2GBR,
-                                          PCCVideo<T, 3>&    video ) {
+void PCCHMLibVideoDecoderImpl<T>::decode( PCCVideoBitstream& bitstream, size_t outputBitDepth, PCCVideo<T, 3>& video ) {
   std::string                         s( reinterpret_cast<char*>( bitstream.buffer() ), bitstream.size() );
   std::istringstream                  iss( s );
   std::istream&                       bitstreamFile = iss;
   Int                                 poc;
   pcc_hm::TComList<pcc_hm::TComPic*>* pcListPic = NULL;
-  m_bRGB2GBR                                    = RGB2GBR;
-  pcc_hm::InputByteStream bytestream( bitstreamFile );
+  pcc_hm::InputByteStream             bytestream( bitstreamFile );
   if ( outputBitDepth ) {
     m_outputBitDepth[CHANNEL_TYPE_LUMA]   = outputBitDepth;
     m_outputBitDepth[CHANNEL_TYPE_CHROMA] = outputBitDepth;
@@ -181,6 +177,7 @@ void PCCHMLibVideoDecoderImpl<T>::setVideoSize( const pcc_hm::TComSPS* sps ) {
   m_outputWidth       = width - window.getWindowLeftOffset() - window.getWindowRightOffset();
   m_outputHeight      = height - window.getWindowTopOffset() - window.getWindowBottomOffset();
   m_internalBitDepths = sps->getBitDepths().recon[CHANNEL_TYPE_LUMA];
+  m_bRGB2GBR          = sps->getChromaFormatIdc() == CHROMA_444;
 }
 
 template <typename T>
@@ -228,8 +225,7 @@ void PCCHMLibVideoDecoderImpl<T>::xWriteOutput( pcc_hm::TComList<pcc_hm::TComPic
         xWritePicture( pcPicTop->getPicYuvRec(), video );
         // update POC of display order
         m_iPOCLastDisplay = pcPicBottom->getPOC();
-        // erase non-referenced picture in the reference picture list after
-        // display
+        // erase non-referenced picture in the reference picture list after display
         if ( !pcPicTop->getSlice( 0 )->isReferenced() && pcPicTop->getReconMark() == true ) {
           pcPicTop->setReconMark( false );
           // mark it should be extended later

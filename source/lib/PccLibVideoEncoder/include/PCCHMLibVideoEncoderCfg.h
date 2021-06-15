@@ -71,17 +71,17 @@ class PCCHMLibVideoEncoderCfg {
   std::string m_bitstreamFileName;  ///< output bitstream file
   std::string m_reconFileName;      ///< output reconstruction file
 
-#if PCC_ME_EXT
+#if defined( PCC_ME_EXT ) && PCC_ME_EXT
   Bool        m_usePCCExt;
   std::string m_blockToPatchFileName;
   std::string m_occupancyMapFileName;
   std::string m_patchInfoFileName;
 #endif
-#if PCC_RDO_EXT
+#if defined( PCC_RDO_EXT ) && PCC_RDO_EXT
   Bool m_usePCCRDO;
-#endif
-#if PCC_RDO_EXT && !PCC_ME_EXT
+#if !PCC_ME_EXT
   std::string m_occupancyMapFileName;
+#endif
 #endif
   // Lambda modifiers
   Double m_adLambdaModifier[MAX_TLAYER];        ///< Lambda modifier array for each

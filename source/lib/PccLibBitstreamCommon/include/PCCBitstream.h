@@ -75,12 +75,12 @@ class PCCBitstreamGofStat {
     for ( int i = VIDEO_GEOMETRY; i <= VIDEO_GEOMETRY_RAW; i++ ) retVal += videoBinSize_[i];
     return retVal;
   }
-  size_t getTotalTexture() {
+  size_t getTotalAttribute() {
     size_t retVal = 0;
-    for ( int i = VIDEO_TEXTURE; i < VIDEO_TEXTURE_RAW + MAX_NUM_ATTR_PARTITIONS; i++ ) retVal += videoBinSize_[i];
+    for ( int i = VIDEO_ATTRIBUTE; i < VIDEO_ATTRIBUTE_RAW + MAX_NUM_ATTR_PARTITIONS; i++ ) retVal += videoBinSize_[i];
     return retVal;
   }
-  size_t getTotalMetadata() { return getTotal() - getTotalGeometry() - getTotalTexture(); }
+  size_t getTotalMetadata() { return getTotal() - getTotalGeometry() - getTotalAttribute(); }
 
   void trace() {
     printf( "    V3CUnitSize[ V3C_VPS ]: %9zu B %9zu b\n", v3cUnitSize_[V3C_VPS], v3cUnitSize_[V3C_VPS] * 8 );
@@ -95,8 +95,8 @@ class PCCBitstreamGofStat {
     printf(
         "    V3CUnitSize[ V3C_AVD ]: %9zu B %9zu b ( Tex video = %9zu B + "
         "(%9zu B + %9zu B) + %9zu B )\n",
-        v3cUnitSize_[V3C_AVD], v3cUnitSize_[V3C_AVD] * 8, videoBinSize_[VIDEO_TEXTURE], videoBinSize_[VIDEO_TEXTURE_T0],
-        videoBinSize_[VIDEO_TEXTURE_T1], videoBinSize_[VIDEO_TEXTURE_RAW] );
+        v3cUnitSize_[V3C_AVD], v3cUnitSize_[V3C_AVD] * 8, videoBinSize_[VIDEO_ATTRIBUTE],
+        videoBinSize_[VIDEO_ATTRIBUTE_T0], videoBinSize_[VIDEO_ATTRIBUTE_T1], videoBinSize_[VIDEO_ATTRIBUTE_RAW] );
   }
 
  private:
@@ -122,7 +122,7 @@ class PCCBitstreamStat {
   size_t getV3CUnitSize( V3CUnitType type ) { return bitstreamGofStat_.back().getV3CUnitSize( type ); }
   size_t getVideoBinSize( PCCVideoType type ) { return bitstreamGofStat_.back().getVideoBinSize( type ); }
   size_t getTotalGeometry() { return bitstreamGofStat_.back().getTotalGeometry(); }
-  size_t getTotalTexture() { return bitstreamGofStat_.back().getTotalTexture(); }
+  size_t getTotalAttribute() { return bitstreamGofStat_.back().getTotalAttribute(); }
   size_t getTotalMetadata() { return bitstreamGofStat_.back().getTotalMetadata(); }
 
   void trace( bool byGOF = false ) {
@@ -138,13 +138,13 @@ class PCCBitstreamStat {
     PCCBitstreamGofStat totalBitstreamStat;
     for ( auto& element : bitstreamGofStat_ ) { totalBitstreamStat += element; }
     totalBitstreamStat.trace();
-    size_t totalMetadata = totalBitstreamStat.getTotalMetadata() + header_;
-    size_t totalGeometry = totalBitstreamStat.getTotalGeometry();
-    size_t totalTexture  = totalBitstreamStat.getTotalTexture();
-    size_t total         = totalMetadata + totalGeometry + totalTexture;
+    size_t totalMetadata  = totalBitstreamStat.getTotalMetadata() + header_;
+    size_t totalGeometry  = totalBitstreamStat.getTotalGeometry();
+    size_t totalAttribute = totalBitstreamStat.getTotalAttribute();
+    size_t total          = totalMetadata + totalGeometry + totalAttribute;
     printf( "  TotalMetadata:              %9zu B %9zu b \n", totalMetadata, totalMetadata * 8 );
     printf( "  TotalGeometry:              %9zu B %9zu b \n", totalGeometry, totalGeometry * 8 );
-    printf( "  TotalTexture:               %9zu B %9zu b \n", totalTexture, totalTexture * 8 );
+    printf( "  TotalAttribute:               %9zu B %9zu b \n", totalAttribute, totalAttribute * 8 );
     printf( "  Total:                      %9zu B %9zu b \n", total, total * 8 );
   }
 
@@ -188,6 +188,7 @@ class PCCBitstream {
   void readVideoStream( PCCVideoBitstream& videoBitstream, size_t videoStreamSize );
   bool byteAligned() { return ( position_.bits_ == 0 ); }
   bool moreData() { return position_.bytes_ < data_.size(); }
+  void computeMD5();
 
   inline std::string readString() {
     while ( !byteAligned() ) { read( 1 ); }
@@ -201,8 +202,9 @@ class PCCBitstream {
   }
 
   inline void writeString( std::string str ) {
-    while ( !byteAligned() ) { write( 0 ); }
+    while ( !byteAligned() ) { write( 0, 1 ); }
     for ( auto& element : str ) { write( element, 8 ); }
+    write( 0, 8 );
   }
 
   inline uint32_t peekByteAt( uint64_t peekPos ) { return data_[peekPos]; }

@@ -12,15 +12,20 @@ CHECK_SYMBOL_EXISTS( getrusage sys/resource.h HAVE_GETRUSAGE )
 CONFIGURE_FILE( ${CMAKE_CURRENT_SOURCE_DIR}/include/PCCConfig.h.in
                 ${CMAKE_CURRENT_SOURCE_DIR}/include/PCCConfig.h )
 
-FILE(GLOB PROJECT_INC_FILES include/*.h )
-FILE(GLOB PROJECT_CPP_FILES source/*.cpp  )
-FILE(GLOB PROJECT_IN_FILES  *.in )
+FILE(GLOB PROJECT_INC_FILES include/*.h 
+                ${CMAKE_SOURCE_DIR}/dependencies/libmd5/*.h )
+    
+FILE(GLOB PROJECT_CPP_FILES source/*.cpp
+                ${CMAKE_SOURCE_DIR}/dependencies/libmd5/*.c )
+
+FILE(GLOB PROJECT_IN_FILES  *.in)
 
 SOURCE_GROUP( inc   FILES ${PROJECT_INC_FILES} )
 SOURCE_GROUP( cpp   FILES ${PROJECT_CPP_FILES} )
 SOURCE_GROUP( input FILES ${PROJECT_IN_FILES}  )
 
-INCLUDE_DIRECTORIES( include )
+INCLUDE_DIRECTORIES( include
+                ${CMAKE_SOURCE_DIR}/dependencies/libmd5)
  
 ADD_LIBRARY( ${MYNAME} ${LINKER} ${SRC} ${PROJECT_INC_FILES} ${PROJECT_CPP_FILES} ${PROJECT_IN_FILES} )
 

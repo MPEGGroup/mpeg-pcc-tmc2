@@ -189,18 +189,16 @@ Void PCCHMLibVideoEncoderImpl<T>::xInitLibCfg() {
     vps.setMaxDecPicBuffering( m_maxDecPicBuffering[i], i );
   }
   m_cTEncTop.setVPS( &vps );
-#if PCC_ME_EXT
+#if defined( PCC_ME_EXT ) & PCC_ME_EXT
   m_cTEncTop.setUsePCCExt( m_usePCCExt );
   if ( m_usePCCExt ) {
     m_cTEncTop.setBlockToPatchFileName( m_blockToPatchFileName );
     m_cTEncTop.setOccupancyMapFileName( m_occupancyMapFileName );
   }
 #endif
-#if PCC_RDO_EXT
+#if defined( PCC_ME_EXT ) & PCC_RDO_EXT
   m_cTEncTop.setUsePCCRDOExt( m_usePCCRDO );
-#endif
-#if PCC_RDO_EXT && !PCC_ME_EXT
-  m_cTEncTop.setOccupancyMapFileName( m_occupancyMapFileName );
+  if ( m_usePCCRDO ) { m_cTEncTop.setOccupancyMapFileName( m_occupancyMapFileName ); }
 #endif
 
   m_cTEncTop.setProfile( m_profile );
@@ -680,8 +678,8 @@ Void PCCHMLibVideoEncoderImpl<T>::xWriteOutput( std::ostream&                bit
     list<AccessUnit>::const_iterator iterBitstream = accessUnits.begin();
     for ( i = 0; i < iNumEncoded; i++ ) { --iterPicYuvRec; }
     for ( i = 0; i < iNumEncoded / 2; i++ ) {
-      TComPicYuv* pcPicYuvRecTop    = *( iterPicYuvRec++ );
-      TComPicYuv* pcPicYuvRecBottom = *( iterPicYuvRec++ );
+      TComPicYuv* pcPicYuvRecTop = *( iterPicYuvRec++ );
+      iterPicYuvRec++;
       xWritePicture( pcPicYuvRecTop, videoRec );
       const AccessUnit&   auTop    = *( iterBitstream++ );
       const vector<UInt>& statsTop = writeAnnexB( bitstreamFile, auTop );
@@ -768,50 +766,6 @@ Void PCCHMLibVideoEncoderImpl<T>::printChromaFormat() {
   }
   std::cout << "\n" << std::endl;
 }
-
-#if 0
-  
-template <typename T>
-  Void PCCHMLibVideoEncoderImpl<T>:: trace( TComPicYuv* pic ) {
-    int   maxWidth  = 16;
-    int   maxHeight = 16;
-    auto* Y         = pic->getAddr( COMPONENT_Y );
-    auto* U         = pic->getAddr( COMPONENT_Cb );
-    auto* V         = pic->getAddr( COMPONENT_Cr );
-    bool  yuv444    = pic->getHeight( COMPONENT_Y ) == pic->getHeight( COMPONENT_Cr );
-    printf( "PïctureL = %4d x %4d C = %4d x %4d\n", pic->getWidth( COMPONENT_Y ), pic->getHeight( COMPONENT_Y ),
-            pic->getWidth( COMPONENT_Cr ), pic->getHeight( COMPONENT_Cr ) );
-    for ( int j = 0; j < std::min( maxHeight, pic->getHeight( COMPONENT_Y ) ); j++ ) {
-      printf( "Y %4d: ", j );
-      for ( int i = 0; i < std::min( maxWidth, pic->getWidth( COMPONENT_Y ) ); i++ ) {
-        printf( "%2x ", Y[j * pic->getStride( COMPONENT_Y ) + i] );
-      }
-      if ( !yuv444 ) {
-        if ( j < pic->getHeight( COMPONENT_Cr ) ) {
-          printf( "  -  U %4d: ", j );
-          for ( int i = 0; i < std::min( maxWidth, pic->getWidth( COMPONENT_Cr ) ); i++ ) {
-            printf( "%2x ", U[j * pic->getStride( COMPONENT_Cr ) + i] );
-          }
-        } else {
-          printf( "  -  V %4d: ", j - pic->getHeight( COMPONENT_Cr ) );
-          for ( int i = 0; i < std::min( maxWidth, pic->getWidth( COMPONENT_Cr ) ); i++ ) {
-            printf( "%2x ", V[( j - pic->getHeight( COMPONENT_Cb ) ) * pic->getStride( COMPONENT_Cb ) + i] );
-          }
-        }
-      } else {
-        printf( "  -  U %4d: ", j );
-        for ( int i = 0; i < std::min( maxWidth, pic->getWidth( COMPONENT_Cr ) ); i++ ) {
-          printf( "%2x ", U[j * pic->getStride( COMPONENT_Cr ) + i] );
-        }
-        printf( "  -  V %4d: ", j );
-        for ( int i = 0; i < std::min( maxWidth, pic->getWidth( COMPONENT_Cb ) ); i++ ) {
-          printf( "%2x ", V[(j)*pic->getStride( COMPONENT_Cb ) + i] );
-        }
-      }
-      printf( "\n" );
-    }
-  }
-#endif
 
 template <typename T>
 Void PCCHMLibVideoEncoderImpl<T>::xWritePicture( const TComPicYuv* pic, PCCVideo<T, 3>& video ) {

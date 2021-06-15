@@ -7,7 +7,7 @@ MESSAGE("Clone and build HM libraries: ${HM_LIB_SOURCE_DIR}")
 
 IF( NOT EXISTS "${HM_DIR}/README" )
   MESSAGE("HM clone: ${HM_DIR}")
-  EXECUTE_PROCESS( COMMAND git clone --branch ${HM_VERSION} https://vcgit.hhi.fraunhofer.de/jvet/HM.git ${HM_DIR} RESULT_VARIABLE ret)
+  EXECUTE_PROCESS( COMMAND git clone --depth 1 --branch ${HM_VERSION} https://vcgit.hhi.fraunhofer.de/jvet/HM.git ${HM_DIR} RESULT_VARIABLE ret)
   IF( NOT ${ret} EQUAL "0")
     MESSAGE( FATAL_ERROR "Error during the HM git clone process. Check that git is well installed on your system.")
   ENDIF()  

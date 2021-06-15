@@ -65,14 +65,6 @@ void PCCKdTree::search( const PCCPoint3D& point, const size_t num_results, PCCNN
   assert( retSize == results.size() );
 }
 
-#if 0
-void PCCKdTree::searchRadius( const PCCPoint3D& point, const size_t num_results, const double radius, PCCNNResult& results ) const {
-  search( point, num_results, results );
-  while( results.count() > 0 && results.dist( results.count()-1) > radius ) {
-    results.count()--;
-  }
-}
-#else
 void PCCKdTree::searchRadius( const PCCPoint3D& point,
                               const size_t      num_results,
                               const double      radius,
@@ -80,10 +72,8 @@ void PCCKdTree::searchRadius( const PCCPoint3D& point,
   std::vector<std::pair<size_t, double> > ret;
   nanoflann::SearchParams                 params;
   size_t retSize = ( static_cast<KdTreeAdaptor*>( kdtree_ ) )->index->radiusSearch( &point[0], radius, ret, params );
-
   if ( retSize > num_results ) { retSize = num_results; }
   ret.resize( retSize );
   results.reserve( retSize );
   for ( const auto& result : ret ) { results.pushBack( result ); }
 }
-#endif

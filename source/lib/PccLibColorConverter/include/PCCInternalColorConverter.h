@@ -75,6 +75,9 @@ class PCCInternalColorConverter : public PCCVirtualColorConverter<T> {
                 const std::string& externalPath = "",
                 const std::string& fileName     = "" );
 
+  void upsample( PCCVideo<T, 3>& video, size_t rate, size_t nbyte, size_t filter );
+  void upsample( PCCImage<T, 3>& image, size_t rate, size_t nbyte, size_t filter );
+
  private:
   void extractParameters( std::string& configuration, std::string& config, int32_t& bitdepth, int32_t& filter );
   void convertRGB44ToYUV420( PCCVideo<T, 3>& videoSrc, PCCVideo<T, 3>& videoDst, size_t nbyte, size_t filter );

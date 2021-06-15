@@ -74,6 +74,7 @@ class PCCDecoderParameters {
   double            maxGeometryDist2Bwd_;
   double            maxColorDist2Fwd_;
   double            maxColorDist2Bwd_;
+  size_t            shvcLayerIndex_;
 };
 
 };  // namespace pcc
