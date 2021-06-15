@@ -130,24 +130,8 @@ class PCCAtlasHighLevelSyntax {
 
   // AFPS related functions
   AtlasFrameParameterSetRbsp& getAtlasFrameParameterSet( size_t setId ) { return atlasFrameParameterSet_[setId]; }
-  std::vector<AtlasFrameParameterSetRbsp>& getAtlasFrameParameterSetList() {
-#if 0
-    printf("\t-------(inPCCAtlasHighLevelSyntax)------------\n");
-    printf("\t-- size of videoBitstream_               : %zu\n", videoBitstream_.size());
-    printf("\t-- size of atlasSequenceParameterSet_    : %zu\n", atlasSequenceParameterSet_.size());
-    printf("\t-- size of refAtlasFrameList_            : %zu\n", refAtlasFrameList_.size());
-    printf("\t-- maxNumRefAtlasFrame_                  : %zu\n", maxNumRefAtlasFrame_);
-    printf("\t-- size of pointLocalReconstructionMode_ : %zu\n", pointLocalReconstructionMode_.size());
-    printf("\t-- size of atlasFrameParameterSet_       : %zu\n", atlasFrameParameterSet_.size());
-    printf("\t-- size of atlasTileLayer_               : %zu\n", atlasTileLayer_.size());
-    printf("\t-- size of seiPrefix_                    : %zu\n", seiPrefix_.size());
-    printf("\t-- size of seiSuffix_                    : %zu\n", seiSuffix_.size());
-    printf("\t----------------------------------------------\n");
-
-#endif
-    return atlasFrameParameterSet_;
-  }
-  AtlasFrameParameterSetRbsp& addAtlasFrameParameterSet() {
+  std::vector<AtlasFrameParameterSetRbsp>& getAtlasFrameParameterSetList() { return atlasFrameParameterSet_; }
+  AtlasFrameParameterSetRbsp&              addAtlasFrameParameterSet() {
     AtlasFrameParameterSetRbsp afps;
     afps.setAtlasFrameParameterSetId( atlasFrameParameterSet_.size() );
     atlasFrameParameterSet_.push_back( afps );

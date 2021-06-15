@@ -1247,12 +1247,6 @@ void PCCVTMLibVideoEncoderImpl<T>::xWriteOutput( std::ostream&           bitstre
       const PelUnitBuf* pcPicYuvRec = *( iterPicYuvRec++ );
       if ( !m_reconFileName.empty() ) {
         if ( m_cEncLib.isResChangeInClvsEnabled() && m_cEncLib.getUpscaledOutput() ) {
-          // const SPS& sps = *m_cEncLib.getSPS( 0 );
-          // const PPS& pps =
-          //     *m_cEncLib.getPPS( ( sps.getMaxPicWidthInLumaSamples() != pcPicYuvRec->get( COMPONENT_Y ).width ||
-          //                          sps.getMaxPicHeightInLumaSamples() != pcPicYuvRec->get( COMPONENT_Y ).height )
-          //                            ? ENC_PPS_ID_RPR
-          //                            : 0 );
           xWritePicture( pcPicYuvRec, videoRec );
         } else {
           xWritePicture( pcPicYuvRec, videoRec );
@@ -1262,49 +1256,6 @@ void PCCVTMLibVideoEncoderImpl<T>::xWriteOutput( std::ostream&           bitstre
   }
 }
 
-#if 0
-  
-template <typename T>
-  Void PCCVTMLibVideoEncoderImpl<T>::trace( Picture* pic ) {
-    int   maxWidth  = 16;
-    int   maxHeight = 16;
-    auto* Y         = pic->getAddr( COMPONENT_Y );
-    auto* U         = pic->getAddr( COMPONENT_Cb );
-    auto* V         = pic->getAddr( COMPONENT_Cr );
-    bool  yuv444    = pic->getHeight( COMPONENT_Y ) == pic->getHeight( COMPONENT_Cr );
-    printf( "PïctureL = %4d x %4d C = %4d x %4d\n", pic->getWidth( COMPONENT_Y ), pic->getHeight( COMPONENT_Y ),
-            pic->getWidth( COMPONENT_Cr ), pic->getHeight( COMPONENT_Cr ) );
-    for ( int j = 0; j < std::min( maxHeight, pic->getHeight( COMPONENT_Y ) ); j++ ) {
-      printf( "Y %4d: ", j );
-      for ( int i = 0; i < std::min( maxWidth, pic->getWidth( COMPONENT_Y ) ); i++ ) {
-        printf( "%2x ", Y[j * pic->getStride( COMPONENT_Y ) + i] );
-      }
-      if ( !yuv444 ) {
-        if ( j < pic->getHeight( COMPONENT_Cr ) ) {
-          printf( "  -  U %4d: ", j );
-          for ( int i = 0; i < std::min( maxWidth, pic->getWidth( COMPONENT_Cr ) ); i++ ) {
-            printf( "%2x ", U[j * pic->getStride( COMPONENT_Cr ) + i] );
-          }
-        } else {
-          printf( "  -  V %4d: ", j - pic->getHeight( COMPONENT_Cr ) );
-          for ( int i = 0; i < std::min( maxWidth, pic->getWidth( COMPONENT_Cr ) ); i++ ) {
-            printf( "%2x ", V[( j - pic->getHeight( COMPONENT_Cb ) ) * pic->getStride( COMPONENT_Cb ) + i] );
-          }
-        }
-      } else {
-        printf( "  -  U %4d: ", j );
-        for ( int i = 0; i < std::min( maxWidth, pic->getWidth( COMPONENT_Cr ) ); i++ ) {
-          printf( "%2x ", U[j * pic->getStride( COMPONENT_Cr ) + i] );
-        }
-        printf( "  -  V %4d: ", j );
-        for ( int i = 0; i < std::min( maxWidth, pic->getWidth( COMPONENT_Cb ) ); i++ ) {
-          printf( "%2x ", V[(j)*pic->getStride( COMPONENT_Cb ) + i] );
-        }
-      }
-      printf( "\n" );
-    }
-  }
-#endif
 
 template <typename T>
 void PCCVTMLibVideoEncoderImpl<T>::destroyLib() {
@@ -1319,11 +1270,6 @@ void PCCVTMLibVideoEncoderImpl<T>::destroyLib() {
   m_recBufList.clear();
 
   xDestroyLib();
-
-  //  if( m_bitstream.is_open() )
-  //  {
-  //    m_bitstream.close();
-  //  }
 
   m_orgPic->destroy();
   m_trueOrgPic->destroy();

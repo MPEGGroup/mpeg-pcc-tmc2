@@ -769,8 +769,7 @@ Void PCCHMLibVideoEncoderImpl<T>::printChromaFormat() {
   std::cout << "\n" << std::endl;
 }
 
-#if 0
-  
+#if 0  
 template <typename T>
   Void PCCHMLibVideoEncoderImpl<T>:: trace( TComPicYuv* pic ) {
     int   maxWidth  = 16;

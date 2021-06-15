@@ -288,8 +288,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
       for ( size_t fi = 0; fi < context.size(); fi++ ) { generateRawPointsGeometryfromVideo( context, fi ); }
     }
   }
-
-#if 1
+  // Tile summary  
   printf( "****TileInfo***Summary******************\n" );
   fflush( stdout );
   for ( size_t fi = 0; fi < context.size(); fi++ ) {
@@ -311,7 +310,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   }
   printf( "*********************************************\n" );
   fflush( stdout );
-#endif
+
   // RECONSTRUCT POINT CLOUD GEOMETRY
   GeneratePointCloudParameters gpcParams;
   setGeneratePointCloudParameters( gpcParams, context );
@@ -4069,13 +4068,6 @@ void PCCEncoder::generateEomPatch( const PCCPointSet3& source, PCCFrameContext& 
   }
   eomPatches[0].eomCount_ = totalEOMCount;
   std::cout << "\t::numbereOfEomPatch = 1 #point : " << totalEOMCount << std::endl;
-#if 0
-  for(size_t ii=0; ii<eomPatches[0].memberPatches_.size(); ii++){
-    std::cout<<"\t\t"<<eomPatches[0].memberPatches_[ii]<<"th patch\t"<<
-    frame.getPatches()[eomPatches[0].memberPatches_[ii]].getTileIndex()<<"\t"<<
-    eomPatches[0].eomCountPerPatch[ii]<<std::endl;
-  }
-#endif
 }
 
 void PCCEncoder::generateRawPointsPatch( const PCCPointSet3& source,
@@ -4361,10 +4353,8 @@ void PCCEncoder::placeAuxiliaryPointsTiles( PCCContext& context ) {
     size_t firstFrame         = ( params_.tileSegmentationType_ == 1 ) ? framesInAFPS[segIdx].first : 0;
     size_t lastFrame = ( params_.tileSegmentationType_ == 1 ) ? ( framesInAFPS[segIdx].second + 1 ) : context.size();
     size_t numTilesInSeg = ( params_.tileSegmentationType_ == 0 ) ? 1 : context[firstFrame].getNumTilesInAtlasFrame();
-#if 1
     std::cout << "sequence group[" << segIdx << "] : " << firstFrame << " ~ " << lastFrame
               << " numTile: " << numTilesInSeg << std::endl;
-#endif
     // set height
     for ( size_t tileIdx = 0; tileIdx < numTilesInSeg; tileIdx++ ) {
       for ( size_t frameIdx = firstFrame; frameIdx < lastFrame; frameIdx++ ) {
@@ -4405,7 +4395,6 @@ void PCCEncoder::placeAuxiliaryPointsTiles( PCCContext& context ) {
       }
     }
   }
-#if 1
   std::cout << "placeAuxTileInAuxVideo tile info: frame[0] ";
   for ( size_t ti = 0; ti < context[0].getAuxTileHeightSize(); ti++ )
     std::cout << "tile[" << ti << "] LeftTopY: " << context[0].getAuxTileLeftTopY( ti )
@@ -4427,7 +4416,6 @@ void PCCEncoder::placeAuxiliaryPointsTiles( PCCContext& context ) {
       }
     }
   }
-#endif
 }
 
 void PCCEncoder::generateRawPointsGeometryVideo( PCCContext& context ) {
@@ -4453,11 +4441,9 @@ void PCCEncoder::generateRawPointsGeometryVideo( PCCContext& context ) {
     size_t firstFrame = ( params_.tileSegmentationType_ == 1 ) ? framesInAFPS[segIdx].first : 0;
     size_t lastFrame  = ( params_.tileSegmentationType_ == 1 ) ? ( framesInAFPS[segIdx].second + 1 ) : context.size();
     size_t numTilesInSeg = ( params_.tileSegmentationType_ == 0 ) ? 1 : context[firstFrame].getNumTilesInAtlasFrame();
-#if 1
     std::cout << "sequence group[" << segIdx << "] : " << firstFrame << " ~ " << lastFrame
               << " numTile: " << numTilesInSeg << "size(frame0): " << videoRawPointsGeometry.getFrame( 0 ).getWidth()
               << "x" << videoRawPointsGeometry.getFrame( 0 ).getHeight() << std::endl;
-#endif
     for ( size_t tileIdx = 0; tileIdx < numTilesInSeg; tileIdx++ ) {
       for ( size_t frameIdx = firstFrame; frameIdx < lastFrame; frameIdx++ ) {
         auto& tile = context[frameIdx].getTile( tileIdx );
@@ -5115,7 +5101,6 @@ void PCCEncoder::generateTilesFromSegments( PCCContext& context ) {
       } // rawPatch
       tile3.setTotalNumberOfRawPoints( patchSegmentationFrame.getTotalNumberOfRawPoints() );
     }
-#if 1
     printf( "generateTilesFromSegments: tile[0] : %zux%zu, %zu patches\n", tile0.getWidth(), tile0.getHeight(),
             tile0.getPatches().size() );
     printf( "generateTilesFromSegments: tile[1] : %zux%zu, %zu patches\n", tile1.getWidth(), tile1.getHeight(),
@@ -5131,7 +5116,6 @@ void PCCEncoder::generateTilesFromSegments( PCCContext& context ) {
       printf( "ERROR: tiles sizes in not correct. \n" );
       exit( 254 );
     }
-#endif
   }  // fi
 }
 
@@ -5211,7 +5195,6 @@ void PCCEncoder::placeTiles( PCCContext& context, size_t minFrameWidth, size_t m
       context[frameIdx].updatePartitionInfoPerFrame(
           frameIdx, frameWidth, frameHeight, params_.numMaxTilePerFrame_, true, params_.tilePartitionWidth_,
           params_.tilePartitionHeight_, params_.tilePartitionWidthList_, params_.tilePartitionHeightList_ );
-#if 1
       for ( size_t ti = 0; ti < context[frameIdx].getNumTilesInAtlasFrame(); ti++ ) {
         auto& tile = context[frameIdx].getTile( ti );
         if ( tile.getPatches().size() != 0 )
@@ -5223,7 +5206,6 @@ void PCCEncoder::placeTiles( PCCContext& context, size_t minFrameWidth, size_t m
                   tile.getWidth(), tile.getHeight() );
         }
       }
-#endif
     }  
     resizeGeometryVideo( context, params_.videoEncoderOccupancyCodecId_ );  // setAtalsWidth, Height
   }
@@ -5851,14 +5833,12 @@ void PCCEncoder::dilate3DPadding( const PCCPointSet3&     source,
             }
           }
         }
-#if 1
         if ( count == 0 ) {
           printf( "dilate3DPadding %zu frame- %zux%zu, %zux%zu frame : (%zu,%zu) in OM (%zu,%zu)\n",
                   frame.getFrameIndex(), frame.getWidth(), frame.getHeight(), image.getWidth(), image.getHeight(), x_OM,
                   y_OM, x_OM * params_.occupancyPrecision_, y_OM * params_.occupancyPrecision_ );
           exit( 123 );
         }
-#endif
         assert( count > 0 );
         mean_val /= count;
         // now fill in the missing positions with depth values searched in 3D space
@@ -6820,10 +6800,7 @@ void PCCEncoder::performDataAdaptiveGPAMethod( PCCContext& context,
         break;
       }
     }
-  }
-#if 1
-  printf( "out of the GPA loop\n" );
-#endif
+  }  
 }
 
 void PCCEncoder::initializeSubContext( PCCFrameContext& tile,
@@ -7094,14 +7071,10 @@ void PCCEncoder::packingFirstFrame( PCCContext& context,
   PCCFrameContext& tile           = context[frameIndex].getTile( tileIndex );
   auto&            patches        = tile.getPatches();
   size_t           occupancySizeU = frameWidth / params_.occupancyResolution_;
-#if 1
   size_t           occupancySizeV = 0;
   for(auto& p : patches){
     occupancySizeV = std::max (occupancySizeV,  std::max( p.getSizeU0(), p.getSizeV0() ) );
   }
-#else
-  size_t           occupancySizeV = ( std::max )( patches[0].getSizeU0(), patches[0].getSizeV0() );
-#endif
   for ( auto& patch : patches ) { occupancySizeU = (std::max)( occupancySizeU, patch.getSizeU0() + 1 ); }
   auto& widthGPA                    = tile.getCurPCCGPAFrameSize().widthGPA_;
   auto& heithGPA                    = tile.getCurPCCGPAFrameSize().heightGPA_;
@@ -7926,14 +7899,11 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
       }
     }
     for ( size_t ti = 0; ti < context[i].getNumTilesInAtlasFrame(); ti++ ) {
+      printf( "createPatchFrameDataStructure tile %zu\n", ti );
       auto& atl = context.addAtlasTileLayer( i, ti );
       auto& ath = atl.getHeader();
       ath.setAtlasFrameParameterSetId( atlasFrameParameterSetId );  
-#if 1
-      printf( "createPatchFrameDataStructure tile %zu\n", ti );
-#endif
       auto& afps = context.getAtlasFrameParameterSet( atlasFrameParameterSetId );
-      // tile header
       ath.setPosMinDQuantizer( uint8_t( std::log2( params_.minLevel_ ) ) );
       ath.setPosDeltaMaxDQuantizer( uint8_t( std::log2( params_.minLevel_ ) ) );
       ath.setPatchSizeXinfoQuantizer( params_.log2QuantizerSizeX_ );
@@ -7969,12 +7939,14 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
       auto& tile = context[fi].getTile( ti );
       if ( ( fi != 0 ) && ( params_.constrainedPack_ ) ) { ath.setTileNaluTypeInfo(1); }
       if ( !tile.getReferredTile() ) { ath.setTileNaluTypeInfo(2);  }
-    } // tileIdx
+    }
   }
 
   if ( params_.decodedAtlasInformationHash_ > 0 ) {
-    printf( "Create  Hash SEI Information \n");
-    for ( size_t fi = 0; fi < frameCount; fi++ ) createHashSEI( context, fi, params_.decodedAtlasInformationHash_ - 1 );
+    printf( "Create  Hash SEI Information \n" );
+    for ( size_t fi = 0; fi < frameCount; fi++ ) {
+      createHashSEI( context, fi, params_.decodedAtlasInformationHash_ - 1 );
+    }
   }
 
   if ( params_.flagGeometrySmoothing_ ) {
@@ -8010,6 +7982,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
       }
     }
   }
+
   if ( params_.flagColorSmoothing_ ) {
     auto& sei = static_cast<SEIAttributeSmoothing&>( context.addSeiPrefix( ATTRIBUTE_SMOOTHING, true ) );
     if ( params_.flagColorSmoothing_ ) {
@@ -8083,10 +8056,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
       sei.setCodecId( index++, params_.vvcCodecIdIndex_ );
       sei.setCodec4cc( params_.vvcCodecIdIndex_, "vvi1" );
     }
-  }
-#if 1
-  printf( "createPatchFrameDataStructure done\n" );
-#endif
+  }  
 }
 
 void PCCEncoder::createPatchFrameDataStructure( PCCContext&         context,

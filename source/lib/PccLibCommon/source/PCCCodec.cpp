@@ -883,9 +883,7 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                       reconstru
     }
   }
   tile.setTotalNumberOfRegularPoints( reconstruct.getPointCount() );
-#if 1
   printf( "frame %zu, tile %zu: regularPoints %zu\n", frameIndex, tileIndex, reconstruct.getPointCount() );
-#endif
   patchIndex                         = index;
   size_t       totalEOMPointsInFrame = 0;
   PCCPointSet3 eomSavedPoints;
@@ -930,9 +928,7 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                       reconstru
                    eomPatch.eomCount_ );
     }
     tile.setTotalNumberOfEOMPoints( totalEOMPointsInFrame );
-#if 1
     printf( "frame %zu, tile %zu: regularPoints+eomPoints %zu\n", frameIndex, tileIndex, reconstruct.getPointCount() );
-#endif
   }
   TRACE_CODEC( " totalEOMPointsInFrame = %zu  \n", totalEOMPointsInFrame );
   TRACE_CODEC( " point = %zu  \n", reconstruct.getPointCount() );
@@ -985,10 +981,8 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                       reconstru
         }
       }
     }
-#if 1
     printf( "frame %zu, tile %zu: regularPoints+eomPoints+rawPoints %zu\n", frameIndex, tileIndex,
             reconstruct.getPointCount() );
-#endif
   }
 
   if ( params.flagGeometrySmoothing_ && !params.pbfEnableFlag_ ) {
@@ -2275,26 +2269,22 @@ void PCCCodec::generateAfti( PCCContext&                context,
 
     afti.setBottomRightPartitionColumnOffset( ti, numPartBottomX - 1 );
     afti.setBottomRightPartitionRowOffset( ti, numPartBottomY - 1 );
-#if 1
     printf( "enc:%zu frame %zu tile:(%zu,%zu), %zux%zu -> leftIdx(%zu,%zu), bottom(%zu,%zu) -> %u,%u,%u\n", frameIndex,
             ti, atlasFrame.getTile( ti ).getLeftTopXInFrame(), atlasFrame.getTile( ti ).getLeftTopYInFrame(),
             atlasFrame.getTile( ti ).getWidth(), atlasFrame.getTile( ti ).getHeight(), numPartLeftX, numPartLeftY,
             numPartBottomX, numPartBottomY, afti.getTopLeftPartitionIdx( ti ),
             afti.getBottomRightPartitionColumnOffset( ti ), afti.getBottomRightPartitionRowOffset( ti ) );
-#endif
   }
   if ( partitionInfoPerFrame.getTitleFrameContext().getUseRawPointsSeparateVideo() ) {
     afti.setAuxiliaryVideoTileRowWidthMinus1( context[frameIndex].getAuxVideoWidth() / 64 - 1 );
     for ( size_t ti = 0; ti < partitionInfoPerFrame.getNumTilesInAtlasFrame(); ti++ ) {
       afti.setAuxiliaryVideoTileRowHeight( ti, context[frameIndex].getAuxTileHeight( ti ) / 64 );
     }
-#if 1
     printf( "enc:%zu frame auxiliaryVideoTileRowWidthMinus1(): width(64x)%u\t height: ", frameIndex,
             afti.getAuxiliaryVideoTileRowWidthMinus1() );
     for ( size_t ti = 0; ti < partitionInfoPerFrame.getNumTilesInAtlasFrame(); ti++ )
       printf( "%u\t", afti.getAuxiliaryVideoTileRowHeight( ti ) );
     printf( "\n" );
-#endif
   } else {
     afti.setAuxiliaryVideoTileRowWidthMinus1( 0 );
     for ( size_t ti = 0; ti < partitionInfoPerFrame.getNumTilesInAtlasFrame(); ti++ ) {

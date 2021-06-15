@@ -1540,19 +1540,6 @@ void PCCDecoder::setTilePartitionSizeAfti( PCCContext& context ) {  // decoder
     } else {
       partitionPosX[0]  = 0;
       partitionWidth[0] = 64 * ( afti.getPartitionColumnWidthMinus1( 0 ) + 1 );
-
-#if 0
-      printf("getPartitionColumnWidthMinus1\n");
-      for(size_t col=0; col<afti.getPartitionColumnWidthMinus1().size(); col++){
-        printf("%u, ", afti.getPartitionColumnWidthMinus1(col));
-      }
-      printf("\ngetPartitionRowHeightMinus1\n");
-      for(size_t row=0; row<afti.getPartitionRowHeightMinus1().size(); row++){
-        printf("%u, ", afti.getPartitionRowHeightMinus1(row));
-      }
-      printf("\n");
-#endif
-
       for ( size_t col = 1; col < numPartitionCols - 1; col++ ) {
         partitionPosX[col]  = partitionPosX[col - 1] + partitionWidth[col - 1];
         partitionWidth[col] = 64 * ( afti.getPartitionColumnWidthMinus1( col ) + 1 );
@@ -1574,19 +1561,6 @@ void PCCDecoder::setTilePartitionSizeAfti( PCCContext& context ) {  // decoder
             partitionPosY[numPartitionRows - 2] + partitionHeight[numPartitionRows - 2];
         partitionHeight[numPartitionRows - 1] = frameHeight - partitionPosY[numPartitionRows - 1];
       }
-
-#if 0
-      printf("partition width:");
-      for(size_t col=0; col<partitionWidth.size(); col++){
-        printf("%zu, ", partitionWidth[col]);
-      }
-      printf("\n");
-      printf("partition height:");
-      for(size_t row=0; row<partitionHeight.size(); row++){
-        printf("%zu, ", partitionHeight[row]);
-      }
-      printf("\n");
-#endif
     }
   }  // afpsIdx
 }
@@ -1666,7 +1640,6 @@ size_t PCCDecoder::setTileSizeAndLocation( PCCContext& context, size_t frameInde
       assert( tile.getLeftTopXInFrame() < asps.getFrameWidth() );
       assert( tile.getLeftTopYInFrame() < asps.getFrameHeight() );
 
-#if 1
       auto& atlasFrame = context[frameIndex];
       printf( "dec:%zu frame %zu tile:(%zu,%zu), %zux%zu -> leftIdx(%zu,%zu), bottom(%zu,%zu) -> %u,%u,%u\n",
               frameIndex, tileIndex, atlasFrame.getTile( tileIndex ).getLeftTopXInFrame(),
@@ -1675,7 +1648,6 @@ size_t PCCDecoder::setTileSizeAndLocation( PCCContext& context, size_t frameInde
               BottomRightPartitionColumn, BottomRightPartitionRow, afti.getTopLeftPartitionIdx( tileIndex ),
               afti.getBottomRightPartitionColumnOffset( tileIndex ),
               afti.getBottomRightPartitionRowOffset( tileIndex ) );
-#endif
     }
   }
 
@@ -1689,14 +1661,12 @@ size_t PCCDecoder::setTileSizeAndLocation( PCCContext& context, size_t frameInde
         context[frameIndex].setAuxTileLeftTopY(
             ti + 1, context[frameIndex].getAuxTileLeftTopY( ti ) + context[frameIndex].getAuxTileHeight( ti ) );
     }
-#if 1
     for ( size_t ti = 0; ti <= afti.getNumTilesInAtlasFrameMinus1(); ti++ ) {
       auto& atlasFrame = context[frameIndex];
       printf( "decAux:%zu frame %zu tile:(%zu,%zu), %zux%zu\n",
               frameIndex, ti, size_t(0), atlasFrame.getAuxTileLeftTopY(ti),
              atlasFrame.getAuxVideoWidth(), atlasFrame.getAuxTileHeight(ti));
     }
-#endif
   }
   return tileIndex;
 }

@@ -597,10 +597,9 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
       cutRangesPerAxis.resize( numROIs );
       for ( auto& cutRng : cutRangesPerAxis ) { cutRng.resize( 3 ); }
 
-      std::vector<std::vector<Range>> chunks;  // chunks[c][x]: range of x-th axis of c-th chunk
-      // cut each ROI into chunks
-      // for each ROI, sort axes according to their length and cut w.r.t to
-      // numCutsAlong[1st,2nd,3rd]LongestAxis
+      std::vector<std::vector<Range>> chunks;
+      // chunks[c][x]: range of x-th axis of c-th chunk cut each ROI into chunks for each ROI, sort axes according to
+      // their length and cut w.r.t to numCutsAlong[1st,2nd,3rd]LongestAxis
       for ( int roiIndex = 0; roiIndex < numROIs; ++roiIndex ) {
         // derive tight ROI bounding box
         int x_min;
@@ -1283,9 +1282,6 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
     if ( useEnhancedOccupancyMapCode ) { std::cout << " # EOM points " << numberOfEOM << std::endl; }
   }
   distanceSrcRec = meanYAB + meanUAB + meanVAB + meanYBA + meanUBA + meanVBA;
-#if 0
-      std::cout<<"frame"<<frameIndex <<" D0: "<<numD0Points<<" D1: "<<numD1Points<<" EOM: "<<numEOMonlyPoints<<std::endl;
-#endif
 }
 
 void PCCPatchSegmenter3::refineSegmentation( const PCCPointSet3&         pointCloud,
