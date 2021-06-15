@@ -75,8 +75,8 @@ void PCCImage<T, N>::convertYUV420ToYUV444() {
 template <typename T, size_t N>
 void PCCImage<T, N>::convertYUV444ToYUV420() {
   PCCImage<T, 3> image;
-  image.convertYUV444ToYUV420( *this );    
-  swap( image );  
+  image.convertYUV444ToYUV420( *this );
+  swap( image );
 }
 
 template <typename T, size_t N>
@@ -96,7 +96,7 @@ void PCCImage<T, N>::convertYUV444ToYUV420( const PCCImage<T, 3>& src ) {
   resize( src.getWidth(), src.getHeight(), PCCCOLORFORMAT::YUV420 );
   std::copy( src.channels_[0].begin(), src.channels_[0].end(), channels_[0].begin() );
   for ( size_t c = 1; c < N; ++c ) {
-    for ( size_t y = 0, y2 = 0 ; y < height_; y += 2, y2 += 1 ) {
+    for ( size_t y = 0, y2 = 0; y < height_; y += 2, y2 += 1 ) {
       const T* const buffer1 = src.channels_[c].data() + y * width_;
       const T* const buffer2 = buffer1 + width_;
       for ( size_t x = 0, x2 = y2 * ( width_ >> 1 ); x < width_; x += 2, x2 += 1 ) {
@@ -227,13 +227,13 @@ bool PCCImage<T, N>::setBlock( size_t top, size_t left, PCCImage& block ) {
 }
 template <typename T, size_t N>
 void PCCImage<T, N>::copyFrom( PCCImage& image ) {
-  size_t       width         = (std::min)( width_, image.width_ );
-  size_t       height        = (std::min)( height_, image.height_ );
+  size_t       width         = ( std::min )( width_, image.width_ );
+  size_t       height        = ( std::min )( height_, image.height_ );
   size_t       subsample     = format_ == YUV420 ? 2 : 1;
-  const size_t strideSrc[3]  = { image.width_, image.width_ / subsample, image.width_ / subsample };
-  const size_t strideDst[3]  = { width_, width_ / subsample, width_ / subsample };
-  const size_t widthComp[3]  = { width, width / subsample, width / subsample };
-  const size_t heightComp[3] = { height, height / subsample, height / subsample };
+  const size_t strideSrc[3]  = {image.width_, image.width_ / subsample, image.width_ / subsample};
+  const size_t strideDst[3]  = {width_, width_ / subsample, width_ / subsample};
+  const size_t widthComp[3]  = {width, width / subsample, width / subsample};
+  const size_t heightComp[3] = {height, height / subsample, height / subsample};
   for ( size_t c = 0; c < N; c++ ) {
     T* src = image.channels_[c].data();
     T* dst = channels_[c].data();
@@ -244,11 +244,11 @@ void PCCImage<T, N>::copyFrom( PCCImage& image ) {
 }
 template <typename T, size_t N>
 void PCCImage<T, N>::copyRawData( PCCImage& image ) {
-  size_t       width         = (std::min)( width_, image.width_ );
-  size_t       height        = (std::min)( height_, image.height_ );
+  size_t       width         = ( std::min )( width_, image.width_ );
+  size_t       height        = ( std::min )( height_, image.height_ );
   size_t       subsample     = format_ == YUV420 ? 2 : 1;
-  const size_t widthComp[3]  = { width, width / subsample, width / subsample };
-  const size_t heightComp[3] = { height, height / subsample, height / subsample };
+  const size_t widthComp[3]  = {width, width / subsample, width / subsample};
+  const size_t heightComp[3] = {height, height / subsample, height / subsample};
   for ( size_t c = 0; c < N; c++ ) {
     size_t size = widthComp[c] * heightComp[c];
     T*     src  = image.channels_[c].data();
@@ -279,7 +279,7 @@ void PCCImage<T, N>::convertBitdepth( uint8_t bitdepthInput, uint8_t bitdepthOut
       for ( size_t cc = 0; cc < N; cc++ ) {
         for ( size_t h = 0; h < height_; h++ ) {
           for ( size_t w = 0; w < width_; w++ ) {
-            setValue( cc, w, h, tMin( getValue( cc, w, h ), (T)( ( 1 << bitdepthOutput ) - 1 ) ) );
+            setValue( cc, w, h, tMin( getValue( cc, w, h ), ( T )( ( 1 << bitdepthOutput ) - 1 ) ) );
           }
         }
       }

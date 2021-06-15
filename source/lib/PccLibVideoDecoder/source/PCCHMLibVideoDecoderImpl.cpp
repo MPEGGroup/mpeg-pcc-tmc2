@@ -57,15 +57,13 @@ PCCHMLibVideoDecoderImpl<T>::~PCCHMLibVideoDecoderImpl() {
 }
 
 template <typename T>
-void PCCHMLibVideoDecoderImpl<T>::decode( PCCVideoBitstream& bitstream,
-                                          size_t             outputBitDepth,
-                                          PCCVideo<T, 3>&    video ) {
+void PCCHMLibVideoDecoderImpl<T>::decode( PCCVideoBitstream& bitstream, size_t outputBitDepth, PCCVideo<T, 3>& video ) {
   std::string                         s( reinterpret_cast<char*>( bitstream.buffer() ), bitstream.size() );
   std::istringstream                  iss( s );
   std::istream&                       bitstreamFile = iss;
   Int                                 poc;
-  pcc_hm::TComList<pcc_hm::TComPic*>* pcListPic = NULL;  
-  pcc_hm::InputByteStream bytestream( bitstreamFile );
+  pcc_hm::TComList<pcc_hm::TComPic*>* pcListPic = NULL;
+  pcc_hm::InputByteStream             bytestream( bitstreamFile );
   if ( outputBitDepth ) {
     m_outputBitDepth[CHANNEL_TYPE_LUMA]   = outputBitDepth;
     m_outputBitDepth[CHANNEL_TYPE_CHROMA] = outputBitDepth;

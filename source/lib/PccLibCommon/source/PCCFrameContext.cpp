@@ -57,7 +57,7 @@ PCCFrameContext::PCCFrameContext() :
   leftTopXInFrame_         = 0;
   leftTopYInFrame_         = 0;
   refAFOCList_.resize( 0 );
-  tileIndex_ = 0;
+  tileIndex_    = 0;
   referredTile_ = false;
 }
 
@@ -97,7 +97,7 @@ void PCCFrameContext::setRefAfocList( PCCContext& context, AtlasTileHeader& ath,
   }
 }
 
-void PCCFrameContext::setRefAfocList( PCCContext& context, size_t refListIdx ) {      
+void PCCFrameContext::setRefAfocList( PCCContext& context, size_t refListIdx ) {
   size_t maxRefNum = context.getSizeOfRefAtlasFrameList( refListIdx );
   refAFOCList_.clear();
   for ( size_t j = 0; j < maxRefNum; j++ ) {

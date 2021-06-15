@@ -182,7 +182,7 @@ bool PCCVideoEncoder::compress( PCCVideo<T, 3>&    video,
                 int              direction;
                 int              searchIndex;
                 std::vector<int> neighborIdx( 4, -1 );
-                std::vector<int> neighborDistance( 4, (std::numeric_limits<int>::max)() );
+                std::vector<int> neighborDistance( 4, ( std::numeric_limits<int>::max )() );
                 // looking for the neighboring block to the left of the current block
                 searchIndex = (int)j;
                 while ( searchIndex >= 0 ) {
@@ -230,7 +230,7 @@ bool PCCVideoEncoder::compress( PCCVideo<T, 3>&    video,
                   searchIndex++;
                 }
                 // check if the candidate was found
-                assert( *(std::max)( neighborIdx.begin(), neighborIdx.end() ) > 0 );
+                assert( *( std::max )( neighborIdx.begin(), neighborIdx.end() ) > 0 );
                 // now fill in the block with the edge value coming from the nearest neighbor
                 direction =
                     std::min_element( neighborDistance.begin(), neighborDistance.end() ) - neighborDistance.begin();
@@ -343,7 +343,7 @@ bool PCCVideoEncoder::compress( PCCVideo<T, 3>&    video,
   params.binFileName_                 = binFileName;
   params.recYuvFileName_              = recYuvFileName;
   params.encoderConfig_               = encoderConfig;
-  params.qp_                          = (std::min)( (std::max)( qp, -12 ), 51 );
+  params.qp_                          = ( std::min )( ( std::max )( qp, -12 ), 51 );
   params.inputBitDepth_               = depth;
   params.internalBitDepth_            = internalBitDepth;
   params.outputBitDepth_              = depth;

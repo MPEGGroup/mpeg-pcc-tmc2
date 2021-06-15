@@ -273,15 +273,15 @@ bool parseParameters( int                       argc,
   return !err.is_errored;
 }
 
-int decompressVideo( const PCCDecoderParameters&     decoderParams,
-                     const PCCMetricsParameters&     metricsParams,
-                     PCCConformanceParameters& conformanceParams,
-                     StopwatchUserTime&              clock ) {
+int decompressVideo( const PCCDecoderParameters& decoderParams,
+                     const PCCMetricsParameters& metricsParams,
+                     PCCConformanceParameters&   conformanceParams,
+                     StopwatchUserTime&          clock ) {
   PCCBitstream     bitstream;
   PCCBitstreamStat bitstreamStat;
   PCCLogger        logger;
   logger.initilalize( removeFileExtension( decoderParams.compressedStreamPath_ ), false );
-#if defined( BITSTREAM_TRACE ) || defined( CONFORMANCE_TRACE)
+#if defined( BITSTREAM_TRACE ) || defined( CONFORMANCE_TRACE )
   bitstream.setLogger( logger );
   bitstream.setTrace( true );
 #endif
@@ -344,10 +344,10 @@ int decompressVideo( const PCCDecoderParameters&     decoderParams,
         normals.clear();
       }
 
-#ifdef CONFORMANCE_TRACE  
-      if ( conformanceParams.checkConformance_ ) { 
-          conformanceParams.levelIdc_ = context.getVps().getProfileTierLevel().getLevelIdc();
-          conformance.check( conformanceParams ); 
+#ifdef CONFORMANCE_TRACE
+      if ( conformanceParams.checkConformance_ ) {
+        conformanceParams.levelIdc_ = context.getVps().getProfileTierLevel().getLevelIdc();
+        conformance.check( conformanceParams );
       }
 #endif
 
@@ -361,7 +361,7 @@ int decompressVideo( const PCCDecoderParameters&     decoderParams,
   }
   bitstreamStat.trace();
   if ( metricsParams.computeMetrics_ ) { metrics.display(); }
-  bool validChecksum = true; 
+  bool validChecksum = true;
   if ( metricsParams.computeChecksum_ ) { validChecksum &= checksum.compareRecDec(); }
   return !validChecksum;
 }

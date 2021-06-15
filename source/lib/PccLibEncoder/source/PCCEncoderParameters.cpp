@@ -38,8 +38,8 @@
 using namespace pcc;
 
 const std::vector<PointLocalReconstructionMode> g_pointLocalReconstructionMode = {
-    { false, false, 0, 1 }, { true, false, 0, 1 }, { true, true, 0, 1 }, { true, false, 0, 2 }, { true, true, 0, 2 },
-    { false, false, 1, 1 }, { true, false, 1, 1 }, { true, true, 1, 1 }, { true, false, 1, 2 }, { true, true, 1, 2 },
+    {false, false, 0, 1}, {true, false, 0, 1}, {true, true, 0, 1}, {true, false, 0, 2}, {true, true, 0, 2},
+    {false, false, 1, 1}, {true, false, 1, 1}, {true, true, 1, 1}, {true, false, 1, 2}, {true, true, 1, 2},
 };
 
 PCCEncoderParameters::PCCEncoderParameters() {
@@ -534,9 +534,8 @@ void PCCEncoderParameters::print() {
     std::cout << "\t   numCutsAlong1stLongestAxis               " << numCutsAlong1stLongestAxis_ << std::endl;
     std::cout << "\t   numCutsAlong2ndLongestAxis               " << numCutsAlong2ndLongestAxis_ << std::endl;
     std::cout << "\t   numCutsAlong3rdLongestAxis               " << numCutsAlong3rdLongestAxis_ << std::endl;
-    std::vector<size_t> vecSizes = { roiBoundingBoxMinX_.size(), roiBoundingBoxMaxX_.size(),
-                                     roiBoundingBoxMinY_.size(), roiBoundingBoxMaxY_.size(),
-                                     roiBoundingBoxMinZ_.size(), roiBoundingBoxMaxZ_.size() };
+    std::vector<size_t> vecSizes = {roiBoundingBoxMinX_.size(), roiBoundingBoxMaxX_.size(), roiBoundingBoxMinY_.size(),
+                                    roiBoundingBoxMaxY_.size(), roiBoundingBoxMinZ_.size(), roiBoundingBoxMaxZ_.size()};
     for ( int i = 0; i < vecSizes.size(); ++i ) {
       if ( vecSizes[i] != vecSizes[0] ) {
         std::cerr << "All the 6 arrays roiBoundingBox[Min-Max][X-Y-Z] must "
@@ -588,6 +587,32 @@ void PCCEncoderParameters::print() {
 
 bool PCCEncoderParameters::check() {
   bool ret = true;
+  if ( ( levelOfDetailX_ == 0 || levelOfDetailY_ == 0 ) ) {
+    if ( levelOfDetailX_ == 0 ) { levelOfDetailX_ = 1; }
+    if ( levelOfDetailY_ == 0 ) { levelOfDetailY_ = 1; }
+    std::cerr << "levelOfDetailX and levelOfDetailY should be greater than 1, increase in these values." << std::endl;
+  }
+  if ( rawPointsPatch_ && ( levelOfDetailX_ > 1 || levelOfDetailY_ > 1 ) ) {
+    levelOfDetailX_ = 1;
+    levelOfDetailY_ = 1;
+    std::cerr << "scaling is not allowed in lossless case\n";
+  }
+  if ( enablePointCloudPartitioning_ && patchExpansion_ ) {
+    std::cerr << "Point cloud partitioning does not currently support patch expansion. \n";
+  }
+  if ( tileSegmentationType_ == 1 ) {
+    if ( enablePointCloudPartitioning_ != 1 ) {
+      enablePointCloudPartitioning_ = 1;
+      std::cerr << "enablePointCloudPartitioning should be 1 when tileSegmentationType is 1.\n";
+    }
+  }
+  if ( tileSegmentationType_ != 1 && enablePointCloudPartitioning_ && ( globalPatchAllocation_ != 0 ) ) {
+    std::cerr << "Point cloud partitioning does not currently support global patch allocation. \n";
+  }
+  if ( static_cast<int>( patchPrecedenceOrderFlag_ ) == 0 && lowDelayEncoding_ ) {
+    lowDelayEncoding_ = false;
+    std::cerr << "Low delay encoding can be used only when patchPrecendenceOrder is enabled. \n";
+  }
   if ( !inverseColorSpaceConversionConfig_.empty() && !colorSpaceConversionConfig_.empty() ) {
     std::cout << "Info: Using external color space conversion" << std::endl;
     if ( colorTransform_ != COLOR_TRANSFORM_NONE ) {
@@ -1139,8 +1164,8 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
     }
   }
   size_t numPlrm = pointLocalReconstruction_
-                       ? (std::max)( static_cast<size_t>( 1 ),
-                                     (std::min)( plrlNumberOfModes_, g_pointLocalReconstructionMode.size() ) )
+                       ? ( std::max )( static_cast<size_t>( 1 ),
+                                       ( std::min )( plrlNumberOfModes_, g_pointLocalReconstructionMode.size() ) )
                        : 1;
   for ( size_t i = 0; i < numPlrm; i++ ) {
     context.addPointLocalReconstructionMode( g_pointLocalReconstructionMode[i] );
@@ -1186,7 +1211,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   asps.setLongTermRefAtlasFramesFlag( false );
   asps.setUseEightOrientationsFlag( useEightOrientations_ );
   asps.setExtendedProjectionEnabledFlag( additionalProjectionPlaneMode_ > 0 );
-  asps.setMaxNumberProjectionsMinus1( 5 + 4 * (std::min)( additionalProjectionPlaneMode_, 3 ) );
+  asps.setMaxNumberProjectionsMinus1( 5 + 4 * ( std::min )( additionalProjectionPlaneMode_, 3 ) );
   asps.setNormalAxisLimitsQuantizationEnabledFlag( true );
   asps.setNormalAxisMaxDeltaValueEnabledFlag( true );
   asps.setxelDeinterleavingFlag( singleMapPixelInterleaving_ );
@@ -1213,7 +1238,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   auto& afps = context.addAtlasFrameParameterSet( 0 );
   afps.setAtlasSequenceParameterSetId( 0 );
   afps.setNumRefIdxDefaultActiveMinus1( static_cast<uint8_t>(
-      constrainedPack_ ? ( (std::max)( 0, static_cast<int>( maxNumRefAtlasFrame_ ) - 1 ) ) : 0 ) );
+      constrainedPack_ ? ( ( std::max )( 0, static_cast<int>( maxNumRefAtlasFrame_ ) - 1 ) ) : 0 ) );
   afps.setAdditionalLtAfocLsbLen( 4 );
   afps.setRaw3dOffsetBitCountExplicitModeFlag( false );
   afps.setExtensionFlag( true );
@@ -1277,7 +1302,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
     frame.setLog2PatchQuantizerSizeY( context.getLog2PatchQuantizerSizeY() );
     frame.setAtlasFrmOrderCntLsb( context.calculateAFOCLsb( i ) );
     frame.setAtlasFrmOrderCntVal( i );
-    frame.setNumRefIdxActive( i == 0 ? 0 : ( constrainedPack_ ? (std::min)( i, maxNumRefAtlasFrame_ ) : 0 ) );
+    frame.setNumRefIdxActive( i == 0 ? 0 : ( constrainedPack_ ? ( std::min )( i, maxNumRefAtlasFrame_ ) : 0 ) );
     frame.setRefAfocList( context, 0 );
     if ( useRawPointsSeparateVideo_ ) {
       context[i].setAuxVideoWidth( attributeRawSeparateVideoWidth_ );
@@ -1301,7 +1326,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
       tile.setAtlasFrmOrderCntVal( i );
       tile.setTileIndex( ti );
       tile.setFrameIndex( i );
-      tile.setNumRefIdxActive( i != 0 && constrainedPack_ ? (std::min)( i, maxNumRefAtlasFrame_ ) : 0 );
+      tile.setNumRefIdxActive( i != 0 && constrainedPack_ ? ( std::min )( i, maxNumRefAtlasFrame_ ) : 0 );
       tile.setGeometry2dBitdepth( geometryNominal2dBitdepth_ );
       tile.setMaxDepth( ( 1 << geometryNominal2dBitdepth_ ) - 1 );
       tile.setLog2PatchQuantizerSizeX( context.getLog2PatchQuantizerSizeX() );

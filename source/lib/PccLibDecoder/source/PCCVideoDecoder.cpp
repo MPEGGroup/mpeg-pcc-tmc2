@@ -49,7 +49,7 @@
 #include "PCCHDRToolsAppColorConverter.h"
 #endif
 
-    #include "PCCSHMAppVideoDecoder.h"
+#include "PCCSHMAppVideoDecoder.h"
 
 using namespace pcc;
 
@@ -75,8 +75,8 @@ bool PCCVideoDecoder::decompress( PCCVideo<T, 3>&    video,
   const std::string fileName    = path + type;
   const std::string binFileName = fileName + ".bin";
 
-  printf("byteStreamVideoCoder = %d codecId = %d \n",byteStreamVideoCoder,codecId);
-  fflush(stdout);
+  printf( "byteStreamVideoCoder = %d codecId = %d \n", byteStreamVideoCoder, codecId );
+  fflush( stdout );
   if ( byteStreamVideoCoder ) {
     bitstream.sampleStreamToByteStream(
 #if defined( USE_JMAPP_VIDEO_CODEC ) || defined( USE_JMLIB_VIDEO_CODEC )
@@ -195,8 +195,8 @@ bool PCCVideoDecoder::decompress( PCCVideo<T, 3>&    video,
           // fill in the blocks by extending the edges
           for ( size_t i = 0; i < patch_height / occupancyResolution; i++ ) {
             for ( size_t j = 0; j < patch_width / occupancyResolution; j++ ) {
-              if ( blockToPatch[( i + patch_top / occupancyResolution ) * ( width / occupancyResolution ) +
-                                          j + patch_left / occupancyResolution] == patchIdx ) {
+              if ( blockToPatch[( i + patch_top / occupancyResolution ) * ( width / occupancyResolution ) + j +
+                                patch_left / occupancyResolution] == patchIdx ) {
                 // do nothing
                 continue;
               } else {
@@ -205,14 +205,13 @@ bool PCCVideoDecoder::decompress( PCCVideo<T, 3>&    video,
                 int              direction;
                 int              searchIndex;
                 std::vector<int> neighborIdx( 4, -1 );
-                std::vector<int> neighborDistance( 4, (std::numeric_limits<int>::max)() );
+                std::vector<int> neighborDistance( 4, ( std::numeric_limits<int>::max )() );
                 // looking for the neighboring block to the left of the
                 // current block
                 searchIndex = j;
                 while ( searchIndex >= 0 ) {
-                  if ( blockToPatch[( i + patch_top / occupancyResolution ) *
-                                                  ( width / occupancyResolution ) +
-                                              searchIndex + patch_left / occupancyResolution] == patchIdx ) {
+                  if ( blockToPatch[( i + patch_top / occupancyResolution ) * ( width / occupancyResolution ) +
+                                    searchIndex + patch_left / occupancyResolution] == patchIdx ) {
                     neighborIdx[0]      = searchIndex;
                     neighborDistance[0] = j - searchIndex;
                     searchIndex         = 0;
@@ -223,9 +222,8 @@ bool PCCVideoDecoder::decompress( PCCVideo<T, 3>&    video,
                 // current block
                 searchIndex = j;
                 while ( searchIndex < patch_width / occupancyResolution ) {
-                  if ( blockToPatch[( i + patch_top / occupancyResolution ) *
-                                                  ( width / occupancyResolution ) +
-                                              searchIndex + patch_left / occupancyResolution] == patchIdx ) {
+                  if ( blockToPatch[( i + patch_top / occupancyResolution ) * ( width / occupancyResolution ) +
+                                    searchIndex + patch_left / occupancyResolution] == patchIdx ) {
                     neighborIdx[1]      = searchIndex;
                     neighborDistance[1] = searchIndex - j;
                     searchIndex         = patch_width / occupancyResolution;
@@ -236,8 +234,8 @@ bool PCCVideoDecoder::decompress( PCCVideo<T, 3>&    video,
                 searchIndex = i;
                 while ( searchIndex >= 0 ) {
                   if ( blockToPatch[( searchIndex + patch_top / occupancyResolution ) *
-                                                  ( width / occupancyResolution ) +
-                                              j + patch_left / occupancyResolution] == patchIdx ) {
+                                        ( width / occupancyResolution ) +
+                                    j + patch_left / occupancyResolution] == patchIdx ) {
                     neighborIdx[2]      = searchIndex;
                     neighborDistance[2] = i - searchIndex;
                     searchIndex         = 0;
@@ -248,8 +246,8 @@ bool PCCVideoDecoder::decompress( PCCVideo<T, 3>&    video,
                 searchIndex = i;
                 while ( searchIndex < patch_height / occupancyResolution ) {
                   if ( blockToPatch[( searchIndex + patch_top / occupancyResolution ) *
-                                                  ( width / occupancyResolution ) +
-                                              j + patch_left / occupancyResolution] == patchIdx ) {
+                                        ( width / occupancyResolution ) +
+                                    j + patch_left / occupancyResolution] == patchIdx ) {
                     neighborIdx[3]      = searchIndex;
                     neighborDistance[3] = searchIndex - i;
                     searchIndex         = patch_height / occupancyResolution;
@@ -257,11 +255,11 @@ bool PCCVideoDecoder::decompress( PCCVideo<T, 3>&    video,
                   searchIndex++;
                 }
                 // check if the candidate was found
-                assert( *(std::max)( neighborIdx.begin(), neighborIdx.end() ) > 0 );
+                assert( *( std::max )( neighborIdx.begin(), neighborIdx.end() ) > 0 );
                 // now fill in the block with the edge value coming from the
                 // nearest neighbor
                 direction =
-                    (std::min_element)( neighborDistance.begin(), neighborDistance.end() ) - neighborDistance.begin();
+                    ( std::min_element )( neighborDistance.begin(), neighborDistance.end() ) - neighborDistance.begin();
                 if ( direction == 0 ) {
                   // copying from left neighboring block
                   for ( size_t iBlk = 0; iBlk < occupancyResolution; iBlk++ ) {

@@ -61,7 +61,8 @@ class QualityMetrics {
   QualityMetrics operator+( const QualityMetrics& metric ) const;
 
   void print( char code );
-private: 
+
+ private:
   // point-2-point ( cloud 2 cloud ), benchmark metric
   float c2cMse_;
   float c2cHausdorff_;

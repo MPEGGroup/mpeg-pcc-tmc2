@@ -66,7 +66,7 @@ void PCCSHMAppVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
       for ( size_t i = 0; i < numLayers; i++ ) {
         if ( i + 1 < numLayers ) {
           int32_t        scaleX = params.shvcRateX_ * ( numLayers - i - 1 );
-          int32_t        scaleY = params.shvcRateY_ * ( numLayers - i - 1 ) ;
+          int32_t        scaleY = params.shvcRateY_ * ( numLayers - i - 1 );
           PCCVideo<T, 3> videoDst;
           videoDst.resize( frameCount );
           for ( size_t j = 0; j < videoDst.getFrameCount(); j++ ) {
@@ -91,9 +91,9 @@ void PCCSHMAppVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
     }
 
     for ( size_t i = 0; i < numLayers; i++ ) {
-      printf( "Layer %zu : %4zux%-4zu %4zux%-4zu %s \n", i, widthLayers[i], heightLayers[i], videoSrcLayers[i].getWidth(),
-              videoSrcLayers[i].getHeight(), srcYuvFileName[i].c_str());
-              fflush(stdout);
+      printf( "Layer %zu : %4zux%-4zu %4zux%-4zu %s \n", i, widthLayers[i], heightLayers[i],
+              videoSrcLayers[i].getWidth(), videoSrcLayers[i].getHeight(), srcYuvFileName[i].c_str() );
+      fflush( stdout );
     }
 
     std::stringstream cmd;
@@ -127,10 +127,10 @@ void PCCSHMAppVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
       exit( -1 );
     }
     PCCCOLORFORMAT format = getColorFormat( params.recYuvFileName_ );
-    videoRec.clear();    
+    videoRec.clear();
     if ( params.shvcLayerIndex_ < numLayers - 1 ) {
-      int32_t index = (std::min)( numLayers - 1, params.shvcLayerIndex_ );
-      printf( "Num Layer = %d layerIndex = %d => layer index = %d \n", numLayers, params.shvcLayerIndex_,  index );
+      int32_t index = ( std::min )( numLayers - 1, params.shvcLayerIndex_ );
+      printf( "Num Layer = %d layerIndex = %d => layer index = %d \n", numLayers, params.shvcLayerIndex_, index );
       videoRec.read( recYuvFileName[index], widthLayers[index], heightLayers[index], format,
                      params.outputBitDepth_ == 8 ? 1 : 2 );
       float rateX = (float)widthLayers[numLayers - 1] / (float)widthLayers[index];
@@ -142,7 +142,7 @@ void PCCSHMAppVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
       videoRec.read( recYuvName, width, height, format, params.outputBitDepth_ == 8 ? 1 : 2 );
     }
     bitstream.read( binName );
-    
+
     for ( size_t i = 0; i < numLayers; i++ ) {
       removeFile( srcYuvFileName[i] );
       removeFile( recYuvFileName[i] );

@@ -588,11 +588,14 @@ bool PCCPointSet3::read( const std::string& fileName, const bool readNormals ) {
   const size_t attributeCount   = attributesInfo.size();
   for ( size_t a = 0; a < attributeCount; ++a ) {
     const auto& attributeInfo = attributesInfo[a];
-    if ( attributeInfo.name == "x" && ( attributeInfo.byteCount == 8 || attributeInfo.byteCount == 4 || attributeInfo.byteCount == 2 ) ) {
+    if ( attributeInfo.name == "x" &&
+         ( attributeInfo.byteCount == 8 || attributeInfo.byteCount == 4 || attributeInfo.byteCount == 2 ) ) {
       indexX = a;
-    } else if ( attributeInfo.name == "y" && ( attributeInfo.byteCount == 8 || attributeInfo.byteCount == 4 || attributeInfo.byteCount == 2 ) ) {
+    } else if ( attributeInfo.name == "y" &&
+                ( attributeInfo.byteCount == 8 || attributeInfo.byteCount == 4 || attributeInfo.byteCount == 2 ) ) {
       indexY = a;
-    } else if ( attributeInfo.name == "z" && ( attributeInfo.byteCount == 8 || attributeInfo.byteCount == 4 || attributeInfo.byteCount == 2 ) ) {
+    } else if ( attributeInfo.name == "z" &&
+                ( attributeInfo.byteCount == 8 || attributeInfo.byteCount == 4 || attributeInfo.byteCount == 2 ) ) {
       indexZ = a;
     } else if ( attributeInfo.name == "red" && attributeInfo.byteCount == 1 ) {
       indexR = a;
@@ -617,7 +620,7 @@ bool PCCPointSet3::read( const std::string& fileName, const bool readNormals ) {
   }
   withColors_       = indexR != g_undefined_index && indexG != g_undefined_index && indexB != g_undefined_index;
   withReflectances_ = indexReflectance != g_undefined_index;
-  withNormals_ = indexNX != g_undefined_index && indexNY != g_undefined_index && indexNZ != g_undefined_index;
+  withNormals_      = indexNX != g_undefined_index && indexNY != g_undefined_index && indexNZ != g_undefined_index;
   resize( pointCount );
   if ( isAscii ) {
     size_t pointCounter = 0;
@@ -672,7 +675,7 @@ bool PCCPointSet3::read( const std::string& fileName, const bool readNormals ) {
             uint16_t y;
             ifs.read( reinterpret_cast<char*>( &y ), sizeof( uint16_t ) );
             position[1] = y;
-          } else  if ( attributeInfo.byteCount == 4 ) {
+          } else if ( attributeInfo.byteCount == 4 ) {
             float y;
             ifs.read( reinterpret_cast<char*>( &y ), sizeof( float ) );
             position[1] = y;
@@ -1014,7 +1017,7 @@ bool PCCPointSet3::transferColors( PCCPointSet3& target,
                   sumWeights               = 0.0;
                   for ( auto& i : colorsDists2 ) {
                     PCCVector3D sourceColor( i.color[0], i.color[1], i.color[2] );
-                    double dist = ( sourceColor - centroid2 ).getNorm2();
+                    double      dist = ( sourceColor - centroid2 ).getNorm2();
                     if ( dist > thresholdColorOutlierDist * thresholdColorOutlierDist ) {
                       excludeCount += 1;
                       continue;
@@ -1226,7 +1229,7 @@ bool PCCPointSet3::transferColors16bitBP( PCCPointSet3& target,
                   for ( int i = 0; i < nNN; ++i ) {
                     PCCColor16bit tmpColor = source.getColor16bit( result.indices( i ) );
                     PCCVector3D   sourceColor( tmpColor[0], tmpColor[1], tmpColor[2] );
-                    double dist = ( sourceColor - refinedColor ).getNorm2();
+                    double        dist = ( sourceColor - refinedColor ).getNorm2();
                     if ( dist > thresholdColorOutlierDist * thresholdColorOutlierDist * 256.0 * 256.0 ) {
                       excludeCount += 1;
                       continue;
@@ -1375,7 +1378,7 @@ bool PCCPointSet3::transferColors16bitBP( PCCPointSet3& target,
                   sumWeights               = 0.0;
                   for ( auto& i : colorsDists2 ) {
                     PCCVector3D sourceColor( i.color[0], i.color[1], i.color[2] );
-                    double dist = ( sourceColor - centroid2 ).getNorm2();
+                    double      dist = ( sourceColor - centroid2 ).getNorm2();
                     if ( dist > thresholdColorOutlierDist * thresholdColorOutlierDist * 256.0 * 256.0 ) {
                       excludeCount += 1;
                       continue;
@@ -1731,7 +1734,7 @@ bool PCCPointSet3::transferColorsBackward16bitBP( PCCPointSet3& target,
                   for ( int i = 0; i < nNN; ++i ) {
                     PCCColor16bit tmpColor = source.getColor16bit( result.indices( i ) );
                     PCCVector3D   sourceColor( tmpColor[0], tmpColor[1], tmpColor[2] );
-                    double dist = ( sourceColor - refinedColor ).getNorm2();
+                    double        dist = ( sourceColor - refinedColor ).getNorm2();
                     if ( dist > thresholdColorOutlierDist * thresholdColorOutlierDist * 256.0 * 256.0 ) {
                       excludeCount += 1;
                       continue;
@@ -1865,7 +1868,7 @@ bool PCCPointSet3::transferColors16bit( PCCPointSet3& target,
                 for ( int i = 0; i < nNN; ++i ) {
                   PCCColor16bit tmpColor = source.getColor16bit( result.indices( i ) );
                   PCCVector3D   sourceColor( tmpColor[0], tmpColor[1], tmpColor[2] );
-                  double dist = ( sourceColor - refinedColor ).getNorm2();
+                  double        dist = ( sourceColor - refinedColor ).getNorm2();
                   if ( dist > thresholdColorOutlierDist * thresholdColorOutlierDist * 256.0 * 256.0 ) {
                     excludeCount += 1;
                     continue;
@@ -1986,7 +1989,7 @@ bool PCCPointSet3::transferColors16bit( PCCPointSet3& target,
                   sumWeights               = 0.0;
                   for ( auto& i : colorsDists2 ) {
                     PCCVector3D sourceColor( i.color[0], i.color[1], i.color[2] );
-                    double dist = ( sourceColor - centroid2 ).getNorm2();
+                    double      dist = ( sourceColor - centroid2 ).getNorm2();
                     if ( dist > thresholdColorOutlierDist * thresholdColorOutlierDist * 256.0 * 256.0 ) {
                       excludeCount += 1;
                       continue;
@@ -2254,13 +2257,13 @@ bool PCCPointSet3::transferColorWeight( PCCPointSet3& target, const double bestC
   PCCNNResult  result;
   const size_t num_results = 5;
   for ( size_t index = 0; index < pointCountTarget; ++index ) {
-    kdtreeSource.search( target[index], num_results, result );    
-    PCCVector3D color16bit ( 0.0 );
+    kdtreeSource.search( target[index], num_results, result );
+    PCCVector3D color16bit( 0.0 );
     if ( result.size() > 1 && result.dist( 0 ) > 0.0001 ) {
       double sum = 0;
       for ( size_t i = 0; i < result.size(); ++i ) {
-        const double w      = 1.0 / pow( result.dist( i ), 2.0 );
-        auto         found  = source.getColor16bit( result.indices( i ) );
+        const double w     = 1.0 / pow( result.dist( i ), 2.0 );
+        auto         found = source.getColor16bit( result.indices( i ) );
         PCCVector3D  scaled;
         scaled = found;
         color16bit += scaled * w;
@@ -2269,9 +2272,9 @@ bool PCCPointSet3::transferColorWeight( PCCPointSet3& target, const double bestC
       color16bit /= sum;
     } else {
       const auto& found = source.getColor16bit( result.indices( 0 ) );
-      color16bit = found;
+      color16bit        = found;
     }
-    target.getColor16bit( index ) = color16bit; 
+    target.getColor16bit( index ) = color16bit;
   }
   return true;
 }

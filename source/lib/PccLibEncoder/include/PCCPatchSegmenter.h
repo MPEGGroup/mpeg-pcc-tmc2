@@ -113,19 +113,19 @@ class PCCPatchSegmenter3 {
                 std::vector<PCCPointSet3>&          subPointCloud,
                 float&                              distanceSrcRec );
 
-  void convertPointsToVoxels( const PCCPointSet3 &source,
-                              size_t geoBits,
-                              size_t voxDim,
-                              PCCPointSet3 &sourceVox,
-                              Voxels &voxels );
+  void convertPointsToVoxels( const PCCPointSet3& source,
+                              size_t              geoBits,
+                              size_t              voxDim,
+                              PCCPointSet3&       sourceVox,
+                              Voxels&             voxels );
 
-  void applyVoxelsDataToPoints( size_t pointCount, 
-                                size_t geoBits, 
-                                size_t voxDim,
-                                Voxels &voxels,   // const
-                                const PCCPointSet3 &source, 
-                                PCCNormalsGenerator3  &normalsGen, 
-                                std::vector<size_t> &partitions );
+  void applyVoxelsDataToPoints( size_t                pointCount,
+                                size_t                geoBits,
+                                size_t                voxDim,
+                                Voxels&               voxels,  // const
+                                const PCCPointSet3&   source,
+                                PCCNormalsGenerator3& normalsGen,
+                                std::vector<size_t>&  partitions );
 
   void initialSegmentation( const PCCPointSet3&         geometry,
                             const PCCNormalsGenerator3& normalsGen,
@@ -149,11 +149,11 @@ class PCCPatchSegmenter3 {
                                  std::vector<std::vector<double>>& adjDist,
                                  const size_t                      maxNNCount );
 
-  void computeAdjacencyInfoInRadius( const PCCPointSet3&               pointCloud,
-                                     const PCCKdTree&                  kdtree,
+  void computeAdjacencyInfoInRadius( const PCCPointSet3&                 pointCloud,
+                                     const PCCKdTree&                    kdtree,
                                      std::vector<std::vector<uint32_t>>& adj,
-                                     const size_t                      maxNNCount,
-                                     const size_t                      radius );
+                                     const size_t                        maxNNCount,
+                                     const size_t                        radius );
 
   bool colorSimilarity( PCCColor3B& colorD1candidate, PCCColor3B& colorD0, uint8_t threshold ) {
     bool bSimilarity = ( std::abs( colorD0[0] - colorD1candidate[0] ) < threshold ) &&
@@ -423,32 +423,31 @@ class Rect {
   int y_;
 };
 
-
-typedef std::vector<uint32_t> PointIndicesVector_t; // 
+typedef std::vector<uint32_t> PointIndicesVector_t;
 typedef std::vector<uint16_t> ScoresVector_t;
 
 typedef enum {
-	NO_EDGE = 0x00,			  // one ppi-vaue in a voxel 
-	INDIRECT_EDGE = 0x01,	// adjcent voxels of M_DIRECT_EDGE, S_DIRECT_EDGE
-	M_DIRECT_EDGE = 0x10,	// multiple points && more than two ppi-values in a voxel
-	S_DIRECT_EDGE = 0x11	// single-point in a voxel, considered as a direct edge-voxel 
+  NO_EDGE       = 0x00,  // one ppi-vaue in a voxel
+  INDIRECT_EDGE = 0x01,  // adjcent voxels of M_DIRECT_EDGE, S_DIRECT_EDGE
+  M_DIRECT_EDGE = 0x10,  // multiple points && more than two ppi-values in a voxel
+  S_DIRECT_EDGE = 0x11   // single-point in a voxel, considered as a direct edge-voxel
 } VoxEdge;
 
 // holds the point indices of every point in a given grid cell
 class PointIndicesOfGridCell {
  public:
-	PointIndicesOfGridCell() = default;
-	PointIndicesOfGridCell(const uint32_t uiMaxNumPoints) :
-		m_pPointIndices(std::make_unique<PointIndicesVector_t>()) {
-		m_pPointIndices->reserve(uiMaxNumPoints);
-	}
+  PointIndicesOfGridCell() = default;
+  PointIndicesOfGridCell( const uint32_t uiMaxNumPoints ) :
+      m_pPointIndices( std::make_unique<PointIndicesVector_t>() ) {
+    m_pPointIndices->reserve( uiMaxNumPoints );
+  }
 
-	inline PointIndicesVector_t* getPointIndices() { return m_pPointIndices.get(); }
-  inline void                 addPointIndex(uint32_t uiPointIdx) { m_pPointIndices->push_back(uiPointIdx); }
-	inline uint8_t              getPointCount() { return (uint8_t)m_pPointIndices->size(); }
+  inline PointIndicesVector_t* getPointIndices() { return m_pPointIndices.get(); }
+  inline void                  addPointIndex( uint32_t uiPointIdx ) { m_pPointIndices->push_back( uiPointIdx ); }
+  inline uint8_t               getPointCount() { return (uint8_t)m_pPointIndices->size(); }
 
-protected:
-	std::unique_ptr<PointIndicesVector_t> m_pPointIndices;
+ protected:
+  std::unique_ptr<PointIndicesVector_t> m_pPointIndices;
 };
 
 // holds the scoreSmooths of the points in a cell

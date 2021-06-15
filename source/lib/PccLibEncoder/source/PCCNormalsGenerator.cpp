@@ -192,10 +192,10 @@ void PCCNormalsGenerator3::orientNormals( const PCCPointSet3&                   
     PCCNNResult  nNResult;
     visited_.resize( pointCount );
     std::fill( visited_.begin(), visited_.end(), 0 );
-    PCCNNQuery3 nNQuery             = {PCCPoint3D( 0.0 ),
+    PCCNNQuery3 nNQuery  = {PCCPoint3D( 0.0 ),
                            static_cast<float>( params.radiusNormalOrientation_ ) * params.radiusNormalOrientation_,
                            params.numberOfNearestNeighborsInNormalOrientation_};
-    PCCNNQuery3 nNQuery2            = {PCCPoint3D( 0.0 ), ( std::numeric_limits<float>::max )(),
+    PCCNNQuery3 nNQuery2 = {PCCPoint3D( 0.0 ), ( std::numeric_limits<float>::max )(),
                             params.numberOfNearestNeighborsInNormalOrientation_};
     for ( size_t ptIndex = 0; ptIndex < pointCount; ++ptIndex ) {
       if ( visited_[ptIndex] == 0u ) {

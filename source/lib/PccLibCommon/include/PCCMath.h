@@ -209,7 +209,7 @@ class PCCVector3 {
     data_[1] = vec.data_[1];
     data_[2] = vec.data_[2];
   }
-  PCCVector3( const T* vec ) { memcpy( data_, vec, sizeof( data_ ) ); }  
+  PCCVector3( const T* vec ) { memcpy( data_, vec, sizeof( data_ ) ); }
   template <typename OutT>
   PCCVector3( const PCCVector3<OutT>& vec ) {
     data_[0] = (T)vec[0];

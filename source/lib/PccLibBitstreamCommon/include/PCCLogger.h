@@ -47,9 +47,9 @@ enum PCCLoggerType {
   LOG_TILES,      // *_tile_log.txt	output tile group log	(mandatory)  ajt: within atlas file we could also interleave
                   // tiles?
   LOG_PCFRAME,    // *_pcframe_log.txt	output point cloud frame log	(mandatory)
-  LOG_RECFRAME,    // *_rec_pcframe_log.txt	output reconstructed point cloud frame log	(mandatory)
+  LOG_RECFRAME,   // *_rec_pcframe_log.txt	output reconstructed point cloud frame log	(mandatory)
   LOG_PICTURE,    // *_picture_log.txt	output point cloud frame log	(mandatory)
-  LOG_BITSTRMD5,    // *_bistream_md5.txt	bitstream md5	(mandatory)
+  LOG_BITSTRMD5,  // *_bistream_md5.txt	bitstream md5	(mandatory)
 #ifdef BITSTREAM_TRACE
   LOG_STREAM,
 #endif
@@ -243,7 +243,7 @@ class PCCLogger {
 #endif
 
 #ifdef CONFORMANCE_TRACE
-#define TRACE_HLS( fmt, ... ) logger_->traceHLS( fmt, ##__VA_ARGS__ ); 
+#define TRACE_HLS( fmt, ... ) logger_->traceHLS( fmt, ##__VA_ARGS__ );
 #define TRACE_ATLAS( fmt, ... ) logger_->traceAtlas( fmt, ##__VA_ARGS__ );
 #define TRACE_TILE( fmt, ... ) logger_->traceTiles( fmt, ##__VA_ARGS__ );
 #define TRACE_PCFRAME( fmt, ... ) logger_->tracePCFrame( fmt, ##__VA_ARGS__ );

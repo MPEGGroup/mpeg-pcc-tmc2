@@ -118,8 +118,8 @@ enum PCCCodecId {
 // ******************************************************************* //
 // Global variables
 // ******************************************************************* //
-const int16_t          g_infiniteDepth          = (std::numeric_limits<int16_t>::max)();
-const int64_t          g_infinitenumber         = (std::numeric_limits<int64_t>::max)();
+const int16_t          g_infiniteDepth          = ( std::numeric_limits<int16_t>::max )();
+const int64_t          g_infinitenumber         = ( std::numeric_limits<int64_t>::max )();
 const int32_t          g_invalidPatchIndex      = -1;
 const uint32_t         g_undefined_index        = -1;
 const bool             g_printDetailedInfo      = false;
@@ -219,14 +219,14 @@ static inline std::string getParameterFromConfigurationFile( const std::string& 
   std::string ret = "0";
   std::cout << "getParameterFromConfigurationFile filename = " << filename << '\n';
   std::ifstream file( filename.c_str(), std::ifstream::in );
-  if ( file.is_open() ) {    
+  if ( file.is_open() ) {
     do {
       std::string line;
       std::getline( file, line );
       // std::cout << "getline = " << line << '\n';
-      if ( std::string::npos != line.find(param) ) { 
-        if(  std::string::npos !=  line.find(":") ) {
-          ret = line.substr( line.find(":") + 1); 
+      if ( std::string::npos != line.find( param ) ) {
+        if ( std::string::npos != line.find( ":" ) ) {
+          ret = line.substr( line.find( ":" ) + 1 );
           std::cout << "Match = " << line << " => ret = " << ret << "\n";
           return ret;
         }

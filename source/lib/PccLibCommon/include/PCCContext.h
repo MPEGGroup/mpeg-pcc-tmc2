@@ -80,21 +80,19 @@ class PCCAtlasContext {
   size_t getLog2MaxAtlasFrameOrderCntLsb() { return log2MaxAtlasFrameOrderCntLsb_; }
 
   // video related functions
-  void                           allocateVideoFrames( PCCHighLevelSyntax& syntax, size_t numFrames );
-  void                           clearVideoFrames();
-  PCCVideoOccupancyMap&          getVideoOccupancyMap() { return occFrames_; }
-  std::vector<PCCVideoGeometry>& getVideoGeometryMultiple() { return geoFrames_; }
-  PCCVideoGeometry&              getVideoGeometryMultiple( size_t index ) { return geoFrames_[index]; }
-  PCCVideoGeometry&              getVideoAuxGeometry() { return geoAuxFrames_; }
-  std::vector<PCCVideoAttribute>&  getVideoAttributeMultiple( size_t attrIdx, size_t partIdx ) {
+  void                            allocateVideoFrames( PCCHighLevelSyntax& syntax, size_t numFrames );
+  void                            clearVideoFrames();
+  PCCVideoOccupancyMap&           getVideoOccupancyMap() { return occFrames_; }
+  std::vector<PCCVideoGeometry>&  getVideoGeometryMultiple() { return geoFrames_; }
+  PCCVideoGeometry&               getVideoGeometryMultiple( size_t index ) { return geoFrames_[index]; }
+  PCCVideoGeometry&               getVideoAuxGeometry() { return geoAuxFrames_; }
+  std::vector<PCCVideoAttribute>& getVideoAttributeMultiple( size_t attrIdx, size_t partIdx ) {
     return attrFrames_[attrIdx][partIdx];
   }
   PCCVideoAttribute& getVideoAttributeMultiple( size_t attrIdx, size_t partIdx, size_t index ) {
     return attrFrames_[attrIdx][partIdx][index];
   }
-  PCCVideoAttribute& getVideoAuxAttribute( size_t attrIdx, size_t partIdx ) {
-    return attrAuxFrames_[attrIdx][partIdx];
-  }
+  PCCVideoAttribute& getVideoAuxAttribute( size_t attrIdx, size_t partIdx ) { return attrAuxFrames_[attrIdx][partIdx]; }
 
   // GPA related functions
   std::vector<SubContext>& getSubContexts() { return subContexts_; }
@@ -114,11 +112,11 @@ class PCCAtlasContext {
   std::vector<std::vector<size_t>>                           geoWidth_;
   std::vector<std::vector<size_t>>                           geoHeight_;
   PCCVideoGeometry                                           geoAuxFrames_;
-  std::vector<std::vector<std::vector<PCCVideoAttribute>>>  attrFrames_;
+  std::vector<std::vector<std::vector<PCCVideoAttribute>>>   attrFrames_;
   std::vector<std::vector<std::vector<std::vector<size_t>>>> attrBitdepth_;
   std::vector<std::vector<std::vector<std::vector<size_t>>>> attrWidth_;
   std::vector<std::vector<std::vector<std::vector<size_t>>>> attrHeight_;
-  std::vector<std::vector<PCCVideoAttribute>>               attrAuxFrames_;
+  std::vector<std::vector<PCCVideoAttribute>>                attrAuxFrames_;
   std::vector<SubContext>                                    subContexts_;
   std::vector<unionPatch>                                    unionPatch_;
 };

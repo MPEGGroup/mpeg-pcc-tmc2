@@ -287,7 +287,7 @@ class PCCPointSet3 {
 
   bool transferColors( PCCPointSet3& target,
                        const int32_t searchRange,
-                       const bool    losslessAttribute                         = false,
+                       const bool    losslessAttribute                       = false,
                        const int     numNeighborsColorTransferFwd            = 1,
                        const int     numNeighborsColorTransferBwd            = 1,
                        const bool    useDistWeightedAverageFwd               = true,
@@ -306,7 +306,7 @@ class PCCPointSet3 {
   bool transferColors16bitBP( PCCPointSet3& target,
                               const int     filterType,
                               const int32_t searchRange,
-                              const bool    losslessAttribute                         = false,
+                              const bool    losslessAttribute                       = false,
                               const int     numNeighborsColorTransferFwd            = 1,
                               const int     numNeighborsColorTransferBwd            = 1,
                               const bool    useDistWeightedAverageFwd               = true,
@@ -342,7 +342,7 @@ class PCCPointSet3 {
 
   bool transferColors16bit( PCCPointSet3& target,
                             const int32_t searchRange,
-                            const bool    losslessAttribute                         = false,
+                            const bool    losslessAttribute                       = false,
                             const int     numNeighborsColorTransferFwd            = 1,
                             const int     numNeighborsColorTransferBwd            = 1,
                             const bool    useDistWeightedAverageFwd               = true,

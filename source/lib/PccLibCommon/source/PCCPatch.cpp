@@ -44,9 +44,8 @@ static const std::vector<uint8_t> g_orientation = {
     5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 7, 7, 0, 0, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 7, 0, 0, 0, 0, 0, 0,
-    0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 3, 3, 0, 3, 0, 0, 0, 4, 1, 0, 0, 0, 1, 0, 1, 0, 2, 3, 0, 0, 1, 2, 0, 0 };
-static const int8_t g_dilate[8][2] = { { 1, 0 },  { 1, 1 },   { 0, 1 },  { -1, 1 },
-                                       { -1, 0 }, { -1, -1 }, { 0, -1 }, { 1, -1 } };
+    0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 3, 3, 0, 3, 0, 0, 0, 4, 1, 0, 0, 0, 1, 0, 1, 0, 2, 3, 0, 0, 1, 2, 0, 0};
+static const int8_t g_dilate[8][2] = {{1, 0}, {1, 1}, {0, 1}, {-1, 1}, {-1, 0}, {-1, -1}, {0, -1}, {1, -1}};
 
 #define OCC( tl, t, tr, l, v, r, bl, b, br ) \
   ( ( tl << 7 ) | ( t << 6 ) | ( tr << 5 ) | ( l << 4 ) | ( r << 3 ) | ( bl << 2 ) | ( b << 1 ) | ( br ) )
@@ -240,9 +239,8 @@ size_t PCCPatch::patch2Canvas( const size_t u,
     printf(
         "patch2Canvas (x,y) is out of boundary : frame %zu, tile %zu canvassize %zux%zu : uvstart(%zu,%zu) "
         "size(%zu,%zu), uv(%zu,%zu), xy(%zu,%zu), orientation(%zu)\n",
-        frameIndex_, tileIndex_, canvasStride, canvasHeight, u0_ * occupancyResolution_,
-        v0_ * occupancyResolution_, sizeU0_ * occupancyResolution_, sizeV0_ * occupancyResolution_, u, v, x, y,
-        patchOrientation_ );
+        frameIndex_, tileIndex_, canvasStride, canvasHeight, u0_ * occupancyResolution_, v0_ * occupancyResolution_,
+        sizeU0_ * occupancyResolution_, sizeV0_ * occupancyResolution_, u, v, x, y, patchOrientation_ );
     exit( 180 );
   }
   assert( x >= 0 );
@@ -368,9 +366,8 @@ bool PCCPatch::gt( const PCCPatch& rhs ) {
     rhsMinDim = rhs.sizeU0_;
   }
   // if the dimensions are the same, decide by the index
-  return maxDim != rhsMaxDim       ? ( maxDim > rhsMaxDim )
-         : ( minDim != rhsMinDim ) ? ( minDim > rhsMinDim )
-                                   : ( index_ < rhs.index_ );
+  return maxDim != rhsMaxDim ? ( maxDim > rhsMaxDim )
+                             : ( minDim != rhsMinDim ) ? ( minDim > rhsMinDim ) : ( index_ < rhs.index_ );
 }
 
 void PCCPatch::print() const {
@@ -708,8 +705,8 @@ void PCCPatch::setDepthFromGeometryVideo( const std::vector<uint16_t>& geometryV
                                           int32_t                      height,
                                           int32_t                      occupancyPrecision,
                                           int16_t*                     depth ) {
-  const int32_t x0 = (int32_t)( u0_ * occupancyResolution_ );
-  const int32_t y0 = (int32_t)( v0_ * occupancyResolution_ );
+  const int32_t x0 = ( int32_t )( u0_ * occupancyResolution_ );
+  const int32_t y0 = ( int32_t )( v0_ * occupancyResolution_ );
   depth += v2 * depthMapWidth_;
   switch ( patchOrientation_ ) {
     case PATCH_ORIENTATION_DEFAULT:
@@ -737,9 +734,9 @@ void PCCPatch::setDepthFromGeometryVideo( const std::vector<uint16_t>& geometryV
       break;
     case PATCH_ORIENTATION_ROT180:
       for ( int32_t j = 0, v = v2; j < occupancyPrecision; j++, v++, depth += depthMapWidth_ ) {
-        int32_t y = (int32_t)( ( sizeV0_ * occupancyResolution_ - 1 - v ) + y0 );
+        int32_t y = ( int32_t )( ( sizeV0_ * occupancyResolution_ - 1 - v ) + y0 );
         for ( int32_t i = 0, u = u2; i < occupancyPrecision; i++, u++ ) {
-          int32_t x = (int32_t)( ( sizeU0_ * occupancyResolution_ - 1 - u ) + x0 );
+          int32_t x = ( int32_t )( ( sizeU0_ * occupancyResolution_ - 1 - u ) + x0 );
           depth[u]  = geometryVideo[x + width * y];
         }
       }
@@ -814,12 +811,10 @@ void PCCPatch::setLocalData( const std::vector<uint8_t>&  occupancyMapVideo,
   const int32_t blockToPatchWidth  = width / occupancyResolution_;
   const int32_t blockToPatchHeight = height / occupancyResolution_;
   const int32_t occupancyResByPres = int32_t( occupancyResolution_ / occupancyPrecision );
-  const int32_t shiftPrecision     = occupancyPrecision == 1   ? 0
-                                     : occupancyPrecision == 2 ? 1
-                                     : occupancyPrecision == 4 ? 2
-                                                               : 3;
-  uint8_t*      ocm                = occupancyMap_.data() + border_ + depthMapWidth_ * border_;
-  int16_t*      depth              = depthMap_.data() + border_ + depthMapWidth_ * border_;
+  const int32_t shiftPrecision =
+      occupancyPrecision == 1 ? 0 : occupancyPrecision == 2 ? 1 : occupancyPrecision == 4 ? 2 : 3;
+  uint8_t* ocm   = occupancyMap_.data() + border_ + depthMapWidth_ * border_;
+  int16_t* depth = depthMap_.data() + border_ + depthMapWidth_ * border_;
   for ( int32_t v0 = 0; v0 < sizeV0_; ++v0 ) {
     for ( int32_t u0 = 0; u0 < sizeU0_; ++u0 ) {
       const int32_t blockIndex = patchBlock2CanvasBlock( u0, v0, blockToPatchWidth, blockToPatchHeight );
@@ -845,8 +840,8 @@ void PCCPatch::setLocalData( const std::vector<uint8_t>&  occupancyMapVideo,
 
 void PCCPatch::generateBorderPoints3D() {
   const int32_t w   = depthMapWidth_;
-  boundingBox_.min_ = PCCPoint3D( (std::numeric_limits<int16_t>::max)() );
-  boundingBox_.max_ = PCCPoint3D( (std::numeric_limits<int16_t>::min)() );
+  boundingBox_.min_ = PCCPoint3D( ( std::numeric_limits<int16_t>::max )() );
+  boundingBox_.max_ = PCCPoint3D( ( std::numeric_limits<int16_t>::min )() );
   int32_t c         = border_ + border_ * w;
   for ( int32_t v = 0; v < sizeV0_ * occupancyResolution_; v++, c += border_ << 1 ) {
     for ( int32_t u = 0; u < sizeU0_ * occupancyResolution_; u++, c++ ) {
@@ -874,12 +869,12 @@ void PCCPatch::filtering( const int8_t           passesCount,
   const int16_t        sizeY            = sizeV0_ * occupancyResolution_;
   const int16_t        threshold        = log2Threshold * log2Threshold;
   const int32_t        size             = depthMapWidth_ * depthMapHeight_;
-  const int16_t        undefined        = (std::numeric_limits<int16_t>::max)();
+  const int16_t        undefined        = ( std::numeric_limits<int16_t>::max )();
   std::vector<int16_t> neighborDepth;
   neighborDepth.resize( size, undefined );
   boundingBox.min_ -= PCCPoint3D( 8 );
   boundingBox.max_ += PCCPoint3D( 8 );
-  const int32_t shift = (int32_t)( ( -(int32_t)v1_ + border_ ) * depthMapWidth_ - (int32_t)u1_ + border_ );
+  const int32_t shift = ( int32_t )( ( -(int32_t)v1_ + border_ ) * depthMapWidth_ - (int32_t)u1_ + border_ );
   for ( auto& i : neighboringPatches_ ) {
     for ( auto& point : patches[i].borderPoints_ ) {
       if ( boundingBox.contains( point ) ) {

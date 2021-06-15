@@ -49,7 +49,7 @@ std::string PCCVideoBitstream::getExtension() {
   } else if ( typeIndex == (size_t)VIDEO_ATTRIBUTE ) {
     return std::string( "attribute" );
   } else if ( typeIndex >= (size_t)VIDEO_ATTRIBUTE_T0 && typeIndex <= (size_t)VIDEO_ATTRIBUTE_T15 ) {
-    return std::string( "attributeT" ) + std::to_string( typeIndex - (size_t)( VIDEO_ATTRIBUTE_T0 ) );
+    return std::string( "attributeT" ) + std::to_string( typeIndex - ( size_t )( VIDEO_ATTRIBUTE_T0 ) );
   } else if ( typeIndex == (size_t)VIDEO_ATTRIBUTE_RAW ) {
     return std::string( "attributeRaw" );
   } else {

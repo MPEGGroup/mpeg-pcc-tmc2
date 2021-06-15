@@ -66,15 +66,15 @@ namespace pcc {
 // ******************************************************************* //
 // Trace modes to validate new syntax
 // ******************************************************************* //
- #define BITSTREAM_TRACE
- #define CODEC_TRACE
+#define BITSTREAM_TRACE
+#define CODEC_TRACE
 #define SEI_TRACE
 #define CONFORMANCE_TRACE
 
 // ******************************************************************* //
 // Common constants
 // ******************************************************************* //
-#define MAX_NUM_ATTR_PARTITIONS   64
+#define MAX_NUM_ATTR_PARTITIONS 64
 
 enum PCCVideoType {
   VIDEO_OCCUPANCY = 0,
@@ -119,12 +119,12 @@ enum PCCVideoType {
 enum PCCMetadataType { METADATA_GOF = 0, METADATA_FRAME, METADATA_PATCH };
 enum PCCPatchOrientation {
   PATCH_ORIENTATION_DEFAULT = 0,  // 0: default
-  PATCH_ORIENTATION_SWAP    = 1,  // 1: swap   
-  PATCH_ORIENTATION_ROT90   = 2,  // 2: rotation 90  
-  PATCH_ORIENTATION_ROT180  = 3,  // 3: rotation 180 
-  PATCH_ORIENTATION_ROT270  = 4,  // 4: rotation 270 
-  PATCH_ORIENTATION_MIRROR  = 5,  // 5: mirror 
-  PATCH_ORIENTATION_MROT90  = 6,  // 6: mirror + rotation 90 
+  PATCH_ORIENTATION_SWAP    = 1,  // 1: swap
+  PATCH_ORIENTATION_ROT90   = 2,  // 2: rotation 90
+  PATCH_ORIENTATION_ROT180  = 3,  // 3: rotation 180
+  PATCH_ORIENTATION_ROT270  = 4,  // 4: rotation 270
+  PATCH_ORIENTATION_MIRROR  = 5,  // 5: mirror
+  PATCH_ORIENTATION_MROT90  = 6,  // 6: mirror + rotation 90
   PATCH_ORIENTATION_MROT180 = 7,  // 7: mirror + rotation 180
   PATCH_ORIENTATION_MROT270 = 8   // 8: similar to SWAP, not used switched SWAP with ROT90 positions
 };
@@ -170,7 +170,7 @@ enum PCCCodecGroup {
   CODEC_GROUP_HEVC_MAIN10          = 1,
   CODEC_GROUP_HEVC444              = 2,
   CODEC_GROUP_VVC_MAIN10           = 3,
-  CODEC_GROUP_MP4RA                = 127 // => CCM SEI + oi/gi/ai codec id
+  CODEC_GROUP_MP4RA                = 127  // => CCM SEI + oi/gi/ai codec id
 };
 
 enum PCCTileType {
@@ -218,13 +218,13 @@ enum PCCPatchModePTile {
 
 enum PCCPatchType {
   INTRA_PATCH = 0,  // 0: intra patch
-  INTER_PATCH,      // 1: inter patch    
-  MERGE_PATCH,      // 2: merge patch    
-  SKIP_PATCH,       // 3: skip patch     
-  RAW_PATCH,        // 4: raw patch      
-  EOM_PATCH,        // 5: eom patch      
-  END_PATCH,        // 6: end patch      
-  ERROR_PATCH       // 7: error patch     
+  INTER_PATCH,      // 1: inter patch
+  MERGE_PATCH,      // 2: merge patch
+  SKIP_PATCH,       // 3: skip patch
+  RAW_PATCH,        // 4: raw patch
+  EOM_PATCH,        // 5: eom patch
+  END_PATCH,        // 6: end patch
+  ERROR_PATCH       // 7: error patch
 };
 
 enum PCCHashPatchType {  // Note JR: must be check with Ali. It is fine (Ali)

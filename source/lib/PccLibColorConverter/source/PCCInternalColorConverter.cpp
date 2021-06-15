@@ -706,7 +706,7 @@ void PCCInternalColorConverter<T>::upsample( PCCImage<T, 3>& image, size_t rate,
     int                height       = (int)image.getHeight();
     int                widthChroma  = image.getColorFormat() == YUV420 ? width / 2 : width;
     int                heightChroma = image.getColorFormat() == YUV420 ? height / 2 : height;
-    std::vector<float> src[3], up[3] ;
+    std::vector<float> src[3], up[3];
     YUVtoFloatYUV( image[0], src[0], 0, nbyte );
     YUVtoFloatYUV( image[1], src[1], 1, nbyte );
     YUVtoFloatYUV( image[2], src[2], 1, nbyte );

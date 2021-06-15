@@ -64,7 +64,7 @@ void PCCConfigurationFileParser::scanLine( std::string& line, KeyValMaps& key_va
   line += " ";
   while ( line.size() > 1 ) {
     std::string keyName = "Not Set", keyValue = "";
-    size_t curPos = line.find_first_of( "=" );
+    size_t      curPos = line.find_first_of( "=" );
     if ( curPos != std::string::npos ) {
       keyName = line.substr( 0, curPos );
     } else {

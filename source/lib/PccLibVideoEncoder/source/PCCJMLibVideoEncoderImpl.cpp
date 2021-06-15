@@ -130,11 +130,11 @@ void PCCJMLibVideoEncoderImpl<T>::encode( PCCVideo<T, 3>&    videoSrc,
   videoRec.clear();
   videoRec.read( recName, srcWidth, srcHeight, format, nbyte );
   bitstream.read( binName );
-  
+
   // Remove temp files
   removeFile( srcName );
   removeFile( recName );
-  removeFile( binName );  
+  removeFile( binName );
   return;
 }
 

@@ -132,8 +132,8 @@ void PCCJMLibVideoDecoderImpl<T>::decode( PCCVideoBitstream& bitstream,
   video.clear();
   video.read( decName, decWidth, decHeight, format, nbyte );
 
-  removeFile( binName ); 
-  removeFile( decName ); 
+  removeFile( binName );
+  removeFile( decName );
   printf( "[ JM Dec ] %d frames are decoded: %dx%d.\n", iFramesDecoded, decWidth, decHeight );
   return;
 }

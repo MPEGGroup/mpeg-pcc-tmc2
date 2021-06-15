@@ -194,10 +194,10 @@ class AtlasFrameTileInformation {
   std::vector<size_t>& getPartitionHeight() { return rowHeight_; }
   std::vector<size_t>& getPartitionPosX() { return partitionPosX_; }
   std::vector<size_t>& getPartitionPosY() { return partitionPosY_; }
-  size_t getPartitionPosX( size_t index ) { return partitionPosX_[index]; }
-  size_t getPartitionPosY( size_t index ) { return partitionPosY_[index]; }
-  size_t getPartitionWidth( size_t index ) { return colWidth_[index]; }
-  size_t getPartitionHeight( size_t index ) { return rowHeight_[index]; }
+  size_t               getPartitionPosX( size_t index ) { return partitionPosX_[index]; }
+  size_t               getPartitionPosY( size_t index ) { return partitionPosY_[index]; }
+  size_t               getPartitionWidth( size_t index ) { return colWidth_[index]; }
+  size_t               getPartitionHeight( size_t index ) { return rowHeight_[index]; }
 
  private:
   bool                  singleTileInAtlasFrameFlag_;

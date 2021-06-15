@@ -180,7 +180,6 @@ class PCCEncoderParameters {
   bool rawPointsPatch_;
   bool attributeVideo444_;
 
-
   // raw points video
   bool        useRawPointsSeparateVideo_;
   std::string geometryAuxVideoConfig_;
@@ -191,12 +190,12 @@ class PCCEncoderParameters {
   PCCVector3<float> modelOrigin_;
 
   // patch sampling resolution
-  size_t      levelOfDetailX_;
-  size_t      levelOfDetailY_;
-  bool        keepIntermediateFiles_;
-  bool        absoluteD1_;
-  bool        absoluteT1_;
-  bool        constrainedPack_;
+  size_t levelOfDetailX_;
+  size_t levelOfDetailY_;
+  bool   keepIntermediateFiles_;
+  bool   absoluteD1_;
+  bool   absoluteT1_;
+  bool   constrainedPack_;
 
   // dilation
   bool groupDilation_;
@@ -287,12 +286,12 @@ class PCCEncoderParameters {
   size_t maxNumRefAtlasList_;
   size_t maxNumRefAtlasFrame_;
 
-  size_t log2MaxAtlasFrameOrderCntLsb_;
-  size_t tileSegmentationType_;
-  size_t numMaxTilePerFrame_;
-  bool   uniformPartitionSpacing_;
-  size_t tilePartitionWidth_;
-  size_t tilePartitionHeight_;
+  size_t               log2MaxAtlasFrameOrderCntLsb_;
+  size_t               tileSegmentationType_;
+  size_t               numMaxTilePerFrame_;
+  bool                 uniformPartitionSpacing_;
+  size_t               tilePartitionWidth_;
+  size_t               tilePartitionHeight_;
   std::vector<int32_t> tilePartitionWidthList_;
   std::vector<int32_t> tilePartitionHeightList_;
 
@@ -308,10 +307,10 @@ class PCCEncoderParameters {
   size_t vvcCodecIdIndex_;
 
   // Profile toolset constraints information
-  bool    oneV3CFrameOnlyFlag_;
-  bool    noEightOrientationsConstraintFlag_;
-  bool    no45DegreeProjectionPatchConstraintFlag_;
-  
+  bool oneV3CFrameOnlyFlag_;
+  bool noEightOrientationsConstraintFlag_;
+  bool no45DegreeProjectionPatchConstraintFlag_;
+
   // SHVC
   size_t shvcLayerIndex_;
   size_t shvcRateX_;

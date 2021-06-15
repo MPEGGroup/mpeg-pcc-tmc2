@@ -1238,8 +1238,8 @@ void PCCVTMLibVideoEncoderImpl<T>::xWriteOutput( std::ostream&           bitstre
   if ( m_isField ) {
     // Reinterlace fields
     for ( i = 0; i < iNumEncoded / 2; i++ ) {
-      const PelUnitBuf* pcPicYuvRecTop    = *( iterPicYuvRec++ );
-      iterPicYuvRec++; 
+      const PelUnitBuf* pcPicYuvRecTop = *( iterPicYuvRec++ );
+      iterPicYuvRec++;
       if ( !m_reconFileName.empty() ) { xWritePicture( pcPicYuvRecTop, videoRec ); }
     }
   } else {
@@ -1255,7 +1255,6 @@ void PCCVTMLibVideoEncoderImpl<T>::xWriteOutput( std::ostream&           bitstre
     }
   }
 }
-
 
 template <typename T>
 void PCCVTMLibVideoEncoderImpl<T>::destroyLib() {

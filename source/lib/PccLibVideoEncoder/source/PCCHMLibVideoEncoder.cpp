@@ -84,7 +84,7 @@ void PCCHMLibVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
   }
 #endif
 #if defined( PCC_RDO_EXT ) && PCC_RDO_EXT
-  if ( params.usePccRDO_ && !params.inputColourSpaceConvert_) {
+  if ( params.usePccRDO_ && !params.inputColourSpaceConvert_ ) {
     cmd << " --UsePccRDO=1";
     cmd << " --OccupancyMapFile=" << params.occupancyMapFile_;
   }
@@ -94,9 +94,6 @@ void PCCHMLibVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
   std::cout << cmd.str() << std::endl;
 
   PCCHMLibVideoEncoderImpl<T> encoder;
-  // #if PCC_CF_EXT
-  // encoder.setLogger(*logger_);
-  // #endif
   encoder.encode( videoSrc, cmd.str(), bitstream, videoRec );
 }
 

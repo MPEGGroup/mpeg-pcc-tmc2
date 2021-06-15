@@ -99,8 +99,8 @@ void PCCConformance::check( const PCCConformanceParameters& params ) {
   key_val_decB.clear();
   cout << "\n ^^^^^^ Tile Log Files Check ^^^^^^\n";
   logFileTestsMatch_ = true;
-  fileDecA = params.path_ + "enc_tile_log.txt";
-  fileDecB = params.path_ + "dec_tile_log.txt";
+  fileDecA           = params.path_ + "enc_tile_log.txt";
+  fileDecB           = params.path_ + "dec_tile_log.txt";
   if ( !compareLogFiles( fileDecA, fileDecB, tileKeys, key_val_decA, key_val_decB ) ) {
     std::string tmp = fileDecA + " with " + fileDecB;
     errMsg.warn( "\n ******* Could Not Check ******* \n", tmp );
@@ -111,8 +111,8 @@ void PCCConformance::check( const PCCConformanceParameters& params ) {
   key_val_decB.clear();
   cout << "\n ^^^^^^ Point Cloud Frame Log Files Check ^^^^^^ \n";
   logFileTestsMatch_ = true;
-  fileDecA = params.path_ + "enc_pcframe_log.txt";
-  fileDecB = params.path_ + "dec_pcframe_log.txt";
+  fileDecA           = params.path_ + "enc_pcframe_log.txt";
+  fileDecB           = params.path_ + "dec_pcframe_log.txt";
   logFileTestsMatch_ = true;
   if ( !compareLogFiles( fileDecA, fileDecB, pcframeKeys, key_val_decA, key_val_decB ) ) {
     std::string tmp = fileDecA + " with " + fileDecB;
@@ -135,7 +135,8 @@ void PCCConformance::check( const PCCConformanceParameters& params ) {
     std::string tmp = fileDecA + " with " + fileDecB;
     errMsg.warn( "\n ******* Could Not Check ******* \n", tmp );
   }
-  cout << "^^^^^^ Post Reconstruction Point Cloud Frame Log Files: " << ( logFileTestsMatch_ ? "MATCH" : "DIFF" ) << std::endl;
+  cout << "^^^^^^ Post Reconstruction Point Cloud Frame Log Files: " << ( logFileTestsMatch_ ? "MATCH" : "DIFF" )
+       << std::endl;
 
   key_val_decA.clear();
   key_val_decB.clear();
@@ -150,15 +151,15 @@ void PCCConformance::check( const PCCConformanceParameters& params ) {
   cout << "^^^^^^  Picture Log Files: " << ( logFileTestsMatch_ ? "MATCH" : "DIFF" ) << std::endl;
 
   cout << "\n File Check Tests (matched / total): " << logFilesMatchCount_ << " / " << logFilesCount_ << std::endl;
-  cout << "\n Level Limits Tests ( passed / total): " << (levelLimitsCount_ - levelLimitsExceedCount_) << " / "
+  cout << "\n Level Limits Tests ( passed / total): " << ( levelLimitsCount_ - levelLimitsExceedCount_ ) << " / "
        << levelLimitsCount_ << std::endl;
 }
 
 bool PCCConformance::compareLogFiles( std::string&                    fNameEnc,
-                                 std::string&                    fNameDec,
-                                 const std::vector<std::string>& keyList,
-                                 KeyValMaps&                     key_val_enc,
-                                 KeyValMaps&                     key_val_dec ) {
+                                      std::string&                    fNameDec,
+                                      const std::vector<std::string>& keyList,
+                                      KeyValMaps&                     key_val_enc,
+                                      KeyValMaps&                     key_val_dec ) {
   PCCConfigurationFileParser cfr( keyList );
   if ( !cfr.parseFile( fNameEnc, key_val_enc ) ) {
     cout << " Encoder File " << fNameEnc << " not exist \n";

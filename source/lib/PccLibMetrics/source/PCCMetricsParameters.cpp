@@ -107,9 +107,7 @@ bool PCCMetricsParameters::check( bool checkFiles ) {
                      "compute metric. \n";
       }
     }
-    if( normalDataPath_.empty() ){
-      computeC2p_ = false;
-    }
+    if ( normalDataPath_.empty() ) { computeC2p_ = false; }
     if ( computeC2p_ && normalDataPath_.empty() ) {
       std::cout << "normalDataPath_ not set if computeC2p_ == true \n";
       std::cout << "WARNING: Normal ply not correctly set: disable compute "

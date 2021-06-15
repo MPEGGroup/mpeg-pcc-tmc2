@@ -233,7 +233,7 @@ std::vector<uint8_t> PCCContext::computeMD5( uint8_t* byteString, size_t len ) {
   return tmp_digest;
 }
 
-uint16_t PCCContext::computeCRC( uint8_t* byteString, size_t len ) {        
+uint16_t PCCContext::computeCRC( uint8_t* byteString, size_t len ) {
   unsigned int crc    = 0xFFFF;
   byteString[len]     = 0;
   byteString[len + 1] = 0;
@@ -247,16 +247,17 @@ uint16_t PCCContext::computeCRC( uint8_t* byteString, size_t len ) {
 };
 
 uint32_t PCCContext::computeCheckSum( uint8_t* byteString, size_t len ) {
-  uint32_t checkSum = 0;    
+  uint32_t checkSum = 0;
   for ( uint32_t i = 0; i < len; i++ ) {
     uint8_t xor_mask = ( i & 0xFF ) ^ ( i >> 8 );
-    checkSum = ( checkSum + ( ( byteString[i] & 0xFF ) ^ xor_mask ) ) & 0xFFFFFFFF;
+    checkSum         = ( checkSum + ( ( byteString[i] & 0xFF ) ^ xor_mask ) ) & 0xFFFFFFFF;
   }
   return checkSum;
 }
 
 void PCCContext::allocOneLayerData() {
-  printf("Alloc One layer deata \n"); fflush(stdout);
+  printf( "Alloc One layer deata \n" );
+  fflush( stdout );
   atlasContexts_[atlasIndex_].allocOneLayerData();
   for ( size_t frameIdx = 0; frameIdx < size(); frameIdx++ ) {
     auto& atlasFrameContext = atlasContexts_[atlasIndex_].getFrameContexts()[frameIdx];

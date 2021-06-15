@@ -46,10 +46,10 @@ PCCVTMLibVideoDecoder<T>::~PCCVTMLibVideoDecoder() {}
 
 template <typename T>
 void PCCVTMLibVideoDecoder<T>::decode( PCCVideoBitstream& bitstream,
-                                      PCCVideo<T, 3>&    video,
-                                      size_t             outputBitDepth,
-                                      const std::string& decoderPath,
-                                      const std::string& fileName ) {
+                                       PCCVideo<T, 3>&    video,
+                                       size_t             outputBitDepth,
+                                       const std::string& decoderPath,
+                                       const std::string& fileName ) {
   // print information
   fprintf( stdout, "\n" );
   fprintf( stdout, "VVCSoftware: VTM Decoder Version %s ", VTM_VERSION );

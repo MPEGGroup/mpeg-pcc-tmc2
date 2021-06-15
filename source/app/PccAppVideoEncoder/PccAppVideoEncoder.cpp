@@ -104,9 +104,7 @@ int main( int argc, char* argv[] ) {
   std::string srcVideo, encoderParameters;
   size_t      width = 0, height = 0, nbyte = 0;
   PCCCodecId  codecId = PCCCodecId::UNKNOWN_CODEC;
-  if ( !parseParameters( argc, argv, srcVideo, encoderParameters, width, height, nbyte, codecId ) ) {
-    return -1;
-  }
+  if ( !parseParameters( argc, argv, srcVideo, encoderParameters, width, height, nbyte, codecId ) ) { return -1; }
   PCCVideoBitstream bitstream( VIDEO_OCCUPANCY );
 
   PCCVideo<uint8_t, 3> videoSrc, videoRec;

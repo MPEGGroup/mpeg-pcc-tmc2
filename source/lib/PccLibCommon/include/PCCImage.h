@@ -61,7 +61,7 @@ class PCCImage {
   }
 
   void resize( const size_t sizeU0, const size_t sizeV0, PCCCOLORFORMAT format );
-  
+
   void clear() {
     for ( auto& channel : channels_ ) { channel.clear(); }
   }
@@ -78,8 +78,7 @@ class PCCImage {
       for ( auto& p : channel ) { p = value; }
     }
   }
-  void swap( PCCImage<T, N>& image ) ;
-
+  void swap( PCCImage<T, N>& image );
   void convertRGB2BGR();
   void convertYUV420ToYUV444();
   void convertYUV444ToYUV420();
@@ -101,26 +100,25 @@ class PCCImage {
             PCCCOLORFORMAT format,
             bool           rgb2bgr ) {
     resize( widthY, heightY, format );
-    const Pel*   ptr[2][3] = { { Y, U, V }, { V, Y, U } };
-    const size_t width[3]  = { widthY, widthC, widthC };
-    const size_t height[3] = { heightY, heightC, heightC };
-    const size_t stride[3] = { strideY, strideC, strideC };
+    const Pel*   ptr[2][3] = {{Y, U, V}, {V, Y, U}};
+    const size_t width[3]  = {widthY, widthC, widthC};
+    const size_t height[3] = {heightY, heightC, heightC};
+    const size_t stride[3] = {strideY, strideC, strideC};
     int16_t      rounding  = 1 << ( shiftbits - 1 );
     // printf(
     //     "copy image PCC: Shift=%d Round=%d (%4zux%4zu S=%4zu C:%4zux%4zu => "
     //     "%4zux%4zu) stride = %4zu %4zu bgr=%d sizeof(Pel) = %zu sizeof(T) = %zu \n",
     //     shiftbits, rounding, widthY, heightY, strideY, widthC, heightC, width_, height_,
-    //     strideY, strideC,
-    //     rgb2bgr, sizeof(Pel), sizeof(T) );
+    //     strideY, strideC, rgb2bgr, sizeof(Pel), sizeof(T) );
     for ( size_t c = 0; c < 3; c++ ) {
       auto* src = ptr[rgb2bgr][c];
       auto* dst = channels_[c].data();
       if ( shiftbits > 0 ) {
         T minval = 0;
-        T maxval = (T)( ( 1 << ( 10 - (int)shiftbits ) ) - 1 );
+        T maxval = ( T )( ( 1 << ( 10 - (int)shiftbits ) ) - 1 );
         for ( size_t v = 0; v < height[c]; ++v, src += stride[c], dst += width[c] ) {
           for ( size_t u = 0; u < width[c]; ++u ) {
-            dst[u] = clamp( (T)( ( src[u] + rounding ) >> shiftbits ), minval, maxval );
+            dst[u] = clamp( ( T )( ( src[u] + rounding ) >> shiftbits ), minval, maxval );
           }
         }
       } else {
@@ -152,11 +150,11 @@ class PCCImage {
     }
     size_t       widthChroma  = width_ / chromaSubsample;
     size_t       heightChroma = height_ / chromaSubsample;
-    Pel*         ptr[2][3]    = { { Y, U, V }, { V, Y, U } };
-    const size_t width[3]     = { width_, widthChroma, widthChroma };
-    const size_t heightSrc[3] = { height_, heightChroma, heightChroma };
-    const size_t heightDst[3] = { heightY, heightC, heightC };
-    const size_t stride[3]    = { strideY, strideC, strideC };
+    Pel*         ptr[2][3]    = {{Y, U, V}, {V, Y, U}};
+    const size_t width[3]     = {width_, widthChroma, widthChroma};
+    const size_t heightSrc[3] = {height_, heightChroma, heightChroma};
+    const size_t heightDst[3] = {heightY, heightC, heightC};
+    const size_t stride[3]    = {strideY, strideC, strideC};
     printf( "copy image from PCC: Shift = %d (%4zux%4zu => %4zux%4zu S=%4zu C: %4zux%4zu ) \n", shiftbits, width_,
             height_, widthY, heightY, strideY, widthC, heightC );
     for ( size_t c = 0; c < 3; c++ ) {
@@ -164,7 +162,7 @@ class PCCImage {
       auto* dst = ptr[rgb2bgr][c];
       if ( shiftbits > 0 ) {
         for ( size_t v = 0; v < heightSrc[c]; ++v, src += width[c], dst += stride[c] ) {
-          for ( size_t u = 0; u < width[c]; ++u ) { dst[u] = (Pel)( src[u] ) << shiftbits; }
+          for ( size_t u = 0; u < width[c]; ++u ) { dst[u] = ( Pel )( src[u] ) << shiftbits; }
         }
       } else {
         for ( size_t v = 0; v < heightSrc[c]; ++v, src += width[c], dst += stride[c] ) {
@@ -195,7 +193,7 @@ class PCCImage {
   void setValue( const size_t channelIndex, const size_t u, const size_t v, const T value ) {
     assert( channelIndex < N && u < width_ && v < height_ );
     if ( format_ == YUV420 && channelIndex != 0 ) {
-      channels_[channelIndex][( v >> 1 ) * ( width_ >> 1 ) + ( u >> 1 )] = value; 
+      channels_[channelIndex][( v >> 1 ) * ( width_ >> 1 ) + ( u >> 1 )] = value;
     } else {
       channels_[channelIndex][v * width_ + u] = value;
     }

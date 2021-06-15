@@ -73,13 +73,13 @@ QualityMetrics::QualityMetrics() :
 void QualityMetrics::setParameters( const PCCMetricsParameters& params ) { params_ = params; }
 
 void QualityMetrics::compute( const PCCPointSet3& pointcloudA, const PCCPointSet3& pointcloudB ) {
-  double maxC2c         = (std::numeric_limits<double>::min)();
-  double maxC2p         = (std::numeric_limits<double>::min)();
+  double maxC2c         = ( std::numeric_limits<double>::min )();
+  double maxC2p         = ( std::numeric_limits<double>::min )();
   double sseC2p         = 0;
   double sseC2c         = 0;
   double sseReflectance = 0;
   size_t num            = 0;
-  double sseColor[3]    = { 0.0, 0.0, 0.0 };
+  double sseColor[3]    = {0.0, 0.0, 0.0};
 
   psnr_ = params_.resolution_;
 
@@ -327,7 +327,7 @@ void PCCMetrics::compute( const PCCGroupOfFrames& sources,
                           const PCCGroupOfFrames& reconstructs,
                           const PCCGroupOfFrames& normals ) {
   PCCPointSet3 normalEmpty;
-  if( normals.getFrameCount() != 0 && sources.getFrameCount() != normals.getFrameCount() ){
+  if ( normals.getFrameCount() != 0 && sources.getFrameCount() != normals.getFrameCount() ) {
     params_.computeC2p_ = false;
   }
   if ( ( sources.getFrameCount() != reconstructs.getFrameCount() ) ) {

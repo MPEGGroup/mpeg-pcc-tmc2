@@ -64,7 +64,7 @@ int parserPccBin( const std::string& filename ) {
   size_t              headerSize = pcc::PCCBitstreamReader::read( bitstream, ssvu );
   bitstreamStat.incrHeader( headerSize );
 
-  bool    bMoreData = true;
+  bool bMoreData = true;
   while ( bMoreData ) {
     PCCHighLevelSyntax syntax;
     syntax.setBitstreamStat( bitstreamStat );

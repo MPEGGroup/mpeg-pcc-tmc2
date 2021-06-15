@@ -80,7 +80,7 @@ static std::istream& operator>>( std::istream& in, PCCCodecId& val ) {
   if ( tmp == "JMLIB" || tmp == "jmlib" || tmp == "jm" || tmp == "avc" ) { val = JMLIB; }
 #endif
 #ifdef USE_HMLIB_VIDEO_CODEC
-  if (  tmp == "HMLIB" || tmp == "hmlib" || tmp == "hm" || tmp == "hevc" ) { val = HMLIB; }
+  if ( tmp == "HMLIB" || tmp == "hmlib" || tmp == "hm" || tmp == "hevc" ) { val = HMLIB; }
 #endif
 #ifdef USE_VTMLIB_VIDEO_CODEC
   if ( tmp == "VTMLIB" || tmp == "vtmlib" || tmp == "vtm" || tmp == "vvc" ) { val = VTMLIB; }
@@ -985,43 +985,6 @@ bool parseParameters( int                   argc,
     po::doHelp( std::cout, opts, 78 );
     return false;
   }
-
-  if ( ( encoderParams.levelOfDetailX_ == 0 || encoderParams.levelOfDetailY_ == 0 ) ) { //ajt0526::this refers to pdu_lod_scale_x_minus1/pdu_lod_scale_y_minus1 which is 0 by default!
-    if ( encoderParams.levelOfDetailX_ == 0 ) { encoderParams.levelOfDetailX_ = 1; }
-    if ( encoderParams.levelOfDetailY_ == 0 ) { encoderParams.levelOfDetailY_ = 1; }
-    std::cerr << "levelOfDetailX and levelOfDetailY should be greater than "
-                 "1. levelOfDetailX=" //ajt0526:: 0?
-              << encoderParams.levelOfDetailX_ << "., levelOfDetailY=" << encoderParams.levelOfDetailY_ << std::endl;
-  }
-
-  if ( encoderParams.rawPointsPatch_ && ( encoderParams.levelOfDetailX_ > 1 || encoderParams.levelOfDetailY_ > 1 ) ) {//ajt0526::rawPointsPatch does it imply lossless?
-    encoderParams.levelOfDetailX_ = 1;
-    encoderParams.levelOfDetailY_ = 1;
-    std::cerr << "scaling is not allowed in lossless case\n";
-  }
-
-  if ( encoderParams.enablePointCloudPartitioning_ && encoderParams.patchExpansion_ ) { //ajt0526::check as well as segmentation type?
-    std::cerr << "Point cloud partitioning does not currently support patch "
-                 "expansion. \n";
-  }
-  if ( encoderParams.tileSegmentationType_ == 1 ) {
-    if ( encoderParams.enablePointCloudPartitioning_ != 1 ) {
-      encoderParams.enablePointCloudPartitioning_ = 1;
-      std::cerr << "enablePointCloudPartitioning should be 1 when tileSegmentationType is 1.\n";
-    }
-  }
-  if ( encoderParams.tileSegmentationType_ != 1 && encoderParams.enablePointCloudPartitioning_ &&
-       ( encoderParams.globalPatchAllocation_ != 0 ) ) {
-    std::cerr << "Point cloud partitioning does not currently support global "
-                 "patch allocation. \n";
-  }
-
-  if ( static_cast<int>( encoderParams.patchPrecedenceOrderFlag_ ) == 0 && encoderParams.lowDelayEncoding_ ) {
-    encoderParams.lowDelayEncoding_ = false;
-    std::cerr << "Low Delay Encoding can be used only when "
-                 "patchPrecendenceOrder is enabled. lowDelayEncoding_ is set "
-                 "0\n";
-  }
   encoderParams.completePath();
   metricsParams.completePath();
   if ( !encoderParams.check() ) { std::cerr << "Input encoder parameters not correct \n"; }
@@ -1042,7 +1005,7 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
                    StopwatchUserTime&          clock ) {
   const size_t startFrameNumber0        = encoderParams.startFrameNumber_;
   size_t       endFrameNumber0          = encoderParams.startFrameNumber_ + encoderParams.frameCount_;
-  const size_t groupOfFramesSize0       = (std::max)( size_t( 1 ), encoderParams.groupOfFramesSize_ );
+  const size_t groupOfFramesSize0       = ( std::max )( size_t( 1 ), encoderParams.groupOfFramesSize_ );
   size_t       startFrameNumber         = startFrameNumber0;
   size_t       reconstructedFrameNumber = encoderParams.startFrameNumber_;
 
@@ -1111,26 +1074,6 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
     if ( ret != 0 ) { return ret; }
     if ( !encoderParams.reconstructedDataPath_.empty() ) {
       reconstructs.write( encoderParams.reconstructedDataPath_, reconstructedFrameNumber );
-     
-// // TODO JR: must be remove: 
-//        std::cout << encoderParams.reconstructedDataPath_.substr( 0, encoderParams.reconstructedDataPath_.size() - 4 ) +
-//                        "_LID" + std::to_string( 0 ) + ".ply"
-//                 << std::endl;
-// 	  // SHVC khu H
-//     // SHVC reconstruct ply generate this location
-//       if ( encoderParams.SHVCLayer_ >= 1 && encoderParams.SHVCRateX_ >= 2 && encoderParams.SHVCRateY_ >= 2 ) {
-//         for ( size_t i = 0; i < encoderParams.SHVCLayer_; i++ ) {
-//           reconstructs.clear();
-//           size_t second_reconstructedFrameNumber = reconstructedFrameNumber - context.size();
-//           encoder.reconstructSHVCPointCloud( i, sources, context, reconstructs );
-//           string reconstructedSHVCDataPath =
-//               encoderParams.reconstructedDataPath_.substr( 0, encoderParams.reconstructedDataPath_.size() - 4 ) +
-//               "_LID" + std::to_string( i ) + ".ply";
-		  
-//           reconstructs.write( reconstructedSHVCDataPath, second_reconstructedFrameNumber );
-//         }
-//       }
-// //~TODO JR: must be remove: 
     }
     normals.clear();
     sources.clear();
@@ -1141,10 +1084,10 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
 
   PCCBitstream bitstream;
 
- #if defined( BITSTREAM_TRACE ) || defined( CONFORMANCE_TRACE )
+#if defined( BITSTREAM_TRACE ) || defined( CONFORMANCE_TRACE )
   bitstream.setLogger( logger );
   bitstream.setTrace( true );
- #endif
+#endif
 
   bitstreamStat.setHeader( bitstream.size() );
   PCCBitstreamWriter bitstreamWriter;
@@ -1153,7 +1096,7 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
   bitstream.write( encoderParams.compressedStreamPath_ );
   bitstreamStat.trace();
   std::cout << "Total bitstream size " << bitstream.size() << " B" << std::endl;
-  
+
   bitstream.computeMD5();
 
   if ( metricsParams.computeMetrics_ ) { metrics.display(); }
@@ -1182,16 +1125,13 @@ int main( int argc, char* argv[] ) {
   clockWall.stop();
 
   using namespace std::chrono;
-  using ms       = milliseconds;
-  auto totalWall = duration_cast<ms>( clockWall.count() ).count();
-  std::cout << "Processing time (wall): " << ( ret == 0 ? totalWall / 1000.0 : -1 ) << " s\n";
-
-  auto totalUserSelf = duration_cast<ms>( clockUser.self.count() ).count();
-  std::cout << "Processing time (user.self): " << ( ret == 0 ? totalUserSelf / 1000.0 : -1 ) << " s\n";
-
+  using ms            = milliseconds;
+  auto totalWall      = duration_cast<ms>( clockWall.count() ).count();
+  auto totalUserSelf  = duration_cast<ms>( clockUser.self.count() ).count();
   auto totalUserChild = duration_cast<ms>( clockUser.children.count() ).count();
+  std::cout << "Processing time (wall): " << ( ret == 0 ? totalWall / 1000.0 : -1 ) << " s\n";
+  std::cout << "Processing time (user.self): " << ( ret == 0 ? totalUserSelf / 1000.0 : -1 ) << " s\n";
   std::cout << "Processing time (user.children): " << ( ret == 0 ? totalUserChild / 1000.0 : -1 ) << " s\n";
-
   std::cout << "Peak memory: " << getPeakMemory() << " KB\n";
   return ret;
 }

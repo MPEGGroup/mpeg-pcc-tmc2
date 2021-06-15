@@ -81,10 +81,10 @@ bool PCCVideo<T, N>::write( std::ofstream& outfile, const size_t nbyte ) {
 #if defined( WIN32 )
 template <typename T, size_t N>
 bool PCCVideo<T, N>::_read( const std::string    fileName,
-                             const size_t         sizeU0,
-                             const size_t         sizeV0,
-                             const PCCCOLORFORMAT format,
-                             const size_t         nbyte ) {
+                            const size_t         sizeU0,
+                            const size_t         sizeV0,
+                            const PCCCOLORFORMAT format,
+                            const size_t         nbyte ) {
   return read( fileName, sizeU0, sizeV0, format, nbyte );
 }
 
@@ -93,7 +93,6 @@ bool PCCVideo<T, N>::_write( const std::string fileName, const size_t nbyte ) {
   return write( fileName, nbyte );
 }
 #endif
-
 
 template <typename T, size_t N>
 void PCCVideo<T, N>::convertBitdepth( uint8_t bitdepthInput, uint8_t bitdepthOutput, bool msbAlignFlag ) {

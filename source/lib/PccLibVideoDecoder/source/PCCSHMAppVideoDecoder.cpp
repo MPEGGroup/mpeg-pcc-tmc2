@@ -23,13 +23,13 @@ void PCCSHMAppVideoDecoder<T>::decode( PCCVideoBitstream& bitstream,
     std::cerr << "decoderPath not set\n";
     exit( 1 );
   }
-  printf("layerIndex_ = %zu \n",layerIndex_); 
+  printf( "layerIndex_ = %zu \n", layerIndex_ );
 
   std::vector<size_t>     width, height, bitDepth;
   std::vector<uint8_t>    isRGB;
   pcc_shvc::PccShvcParser shvcParser;
   shvcParser.getVideoSize( bitstream.vector(), width, height, bitDepth, isRGB );
-  layerIndex_ = (std::min)( width.size() - 1, layerIndex_ ); 
+  layerIndex_ = ( std::min )( width.size() - 1, layerIndex_ );
 
   printf( "Num Layer = %zu layerIndex = %zu \n", width.size(), layerIndex_ );
   for ( size_t i = 0; i < width.size(); i++ ) {
@@ -42,17 +42,17 @@ void PCCSHMAppVideoDecoder<T>::decode( PCCVideoBitstream& bitstream,
                       !isRGB[layerIndex_], outputBitDepth == 10 ? "10" : "8" );
   bitstream.write( binFileName );
   std::stringstream cmd;
-  cmd << decoderPath; 
+  cmd << decoderPath;
   cmd << " --BitstreamFile=" << binFileName;
   cmd << " --ReconFile" << layerIndex_ << "=" << reconFile;
   cmd << " --LayerNum=" << layerIndex_ + 1;
-  cmd << " --OutpuLayerSetIdx=" <<  layerIndex_;
+  cmd << " --OutpuLayerSetIdx=" << layerIndex_;
   if ( isRGB[layerIndex_] ) {
     cmd << " --OutputColourSpaceConvert=GBRtoRGB";
   } else {
     if ( outputBitDepth == 8 ) {
       cmd << " --OutputBitDepth" << layerIndex_ << "=8";
-      cmd << " --OutputBitDepthC" << layerIndex_ <<  "=8";
+      cmd << " --OutputBitDepthC" << layerIndex_ << "=8";
     }
   }
   std::cout << cmd.str() << '\n';
@@ -69,15 +69,16 @@ void PCCSHMAppVideoDecoder<T>::decode( PCCVideoBitstream& bitstream,
   if ( layerIndex_ < width.size() - 1 ) {
     float rateX = (float)width[width.size() - 1] / (float)width[layerIndex_];
     float rateY = (float)height[width.size() - 1] / (float)height[layerIndex_];
-    if( rateX != rateY ){
-      printf( "Error: SHVC upsampler only works with same rate for X and Y. ( %f and %f not supported \n", rateX, rateY );
+    if ( rateX != rateY ) {
+      printf( "Error: SHVC upsampler only works with same rate for X and Y. ( %f and %f not supported \n", rateX,
+              rateY );
       exit( -1 );
     }
     if ( rateX != 1.f && rateX != 2.f && rateX != 4.f ) {
       printf( "Error: SHVC upsampler only works with rate = 1 , 2, or 4. ( %f not supported \n", rateX );
       exit( -1 );
     }
-    video.upsample( rateX );    
+    video.upsample( rateX );
     printf( "Upsample video size = % zu x % zu frame count = % zu \n ", video.getWidth(), video.getHeight(),
             video.getFrameCount() );
     fflush( stdout );

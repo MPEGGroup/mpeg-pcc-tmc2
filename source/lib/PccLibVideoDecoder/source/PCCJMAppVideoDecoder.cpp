@@ -46,7 +46,7 @@ template <typename T>
 PCCJMAppVideoDecoder<T>::~PCCJMAppVideoDecoder() {}
 
 template <typename T>
-void PCCJMAppVideoDecoder<T>::decode(  PCCVideoBitstream& bitstream,
+void PCCJMAppVideoDecoder<T>::decode( PCCVideoBitstream& bitstream,
                                       PCCVideo<T, 3>&    video,
                                       size_t             outputBitDepth,
                                       const std::string& decoderPath,
@@ -59,7 +59,7 @@ void PCCJMAppVideoDecoder<T>::decode(  PCCVideoBitstream& bitstream,
   bool         isRGB = false;
   PccAvcParser avcParser;
   avcParser.getVideoSize( bitstream.vector(), width, height, true, bitDepth, isRGB );
-  printf("avcParser => %zu x %zu %zu bits isRGB = %d \n", width, height, bitDepth, isRGB ); 
+  printf( "avcParser => %zu x %zu %zu bits isRGB = %d \n", width, height, bitDepth, isRGB );
 
   const std::string binFileName = fileName + ".bin";
   const std::string reconFile =

@@ -69,9 +69,10 @@ size_t PCCBitstreamReader::read( PCCBitstream& bitstream, SampleStreamV3CUnit& s
 }
 
 int32_t PCCBitstreamReader::decode( SampleStreamV3CUnit& ssvu, PCCHighLevelSyntax& syntax ) {
-  bool endOfGop = false;
-  int  numVPS   = 0;  // counter for the atlas information
-  syntax.getBitstreamStat().newGOF();
+  bool  endOfGop     = false;
+  int   numVPS       = 0;  // counter for the atlas information
+  auto& bistreamStat = syntax.getBitstreamStat();
+  bistreamStat.newGOF();
   while ( !endOfGop && ssvu.getV3CUnitCount() > 0 ) {
     auto&       unit        = ssvu.front();
     V3CUnitType v3cUnitType = V3C_VPS;
@@ -81,8 +82,8 @@ int32_t PCCBitstreamReader::decode( SampleStreamV3CUnit& ssvu, PCCHighLevelSynta
       if ( numVPS > 1 ) {
         // remove the bits counted for the last VPS
         int32_t v3cUnitSize = (int32_t)unit.getBitstream().capacity();
-        int32_t statSize    = syntax.getBitstreamStat().getV3CUnitSize( V3C_VPS ) - v3cUnitSize;
-        syntax.getBitstreamStat().overwriteV3CUnitSize( V3C_VPS, statSize );
+        int32_t statSize    = bistreamStat.getV3CUnitSize( V3C_VPS ) - v3cUnitSize;
+        bistreamStat.overwriteV3CUnitSize( V3C_VPS, statSize );
         endOfGop = true;
       } else {
         ssvu.popFront();  // remove element
@@ -99,29 +100,29 @@ void PCCBitstreamReader::videoSubStream( PCCHighLevelSyntax& syntax,
                                          V3CUnitType&        V3CUnitType,
                                          size_t              V3CPayloadSize ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
-  size_t atlasIndex = 0;
+  size_t atlasIndex   = 0;
+  auto&  bistreamStat = syntax.getBitstreamStat();
   if ( V3CUnitType == V3C_OVD ) {
     TRACE_BITSTREAM( "OccupancyMap \n" );
     bitstream.readVideoStream( syntax.createVideoBitstream( VIDEO_OCCUPANCY ), V3CPayloadSize );
-    syntax.getBitstreamStat().setVideoBinSize( VIDEO_OCCUPANCY, syntax.getVideoBitstream( VIDEO_OCCUPANCY ).size() );
+    bistreamStat.setVideoBinSize( VIDEO_OCCUPANCY, syntax.getVideoBitstream( VIDEO_OCCUPANCY ).size() );
   } else if ( V3CUnitType == V3C_GVD ) {
     auto& vuh = syntax.getV3CUnitHeader( static_cast<size_t>( V3C_GVD ) - 1 );
     if ( vuh.getAuxiliaryVideoFlag() ) {
       TRACE_BITSTREAM( "Geometry RAW\n" );
       bitstream.readVideoStream( syntax.createVideoBitstream( VIDEO_GEOMETRY_RAW ), V3CPayloadSize );
-      syntax.getBitstreamStat().setVideoBinSize( VIDEO_GEOMETRY_RAW,
-                                                 syntax.getVideoBitstream( VIDEO_GEOMETRY_RAW ).size() );
+      bistreamStat.setVideoBinSize( VIDEO_GEOMETRY_RAW, syntax.getVideoBitstream( VIDEO_GEOMETRY_RAW ).size() );
     } else {
       auto& vps = syntax.getVps();
       if ( vps.getMapCountMinus1( atlasIndex ) > 0 && vps.getMultipleMapStreamsPresentFlag( atlasIndex ) ) {
         auto geometryIndex = static_cast<PCCVideoType>( VIDEO_GEOMETRY_D0 + vuh.getMapIndex() );
         TRACE_BITSTREAM( "Geometry MAP: %d\n", vuh.getMapIndex() );
         bitstream.readVideoStream( syntax.createVideoBitstream( geometryIndex ), V3CPayloadSize );
-        syntax.getBitstreamStat().setVideoBinSize( geometryIndex, syntax.getVideoBitstream( geometryIndex ).size() );
+        bistreamStat.setVideoBinSize( geometryIndex, syntax.getVideoBitstream( geometryIndex ).size() );
       } else {
         TRACE_BITSTREAM( "Geometry \n" );
         bitstream.readVideoStream( syntax.createVideoBitstream( VIDEO_GEOMETRY ), V3CPayloadSize );
-        syntax.getBitstreamStat().setVideoBinSize( VIDEO_GEOMETRY, syntax.getVideoBitstream( VIDEO_GEOMETRY ).size() );
+        bistreamStat.setVideoBinSize( VIDEO_GEOMETRY, syntax.getVideoBitstream( VIDEO_GEOMETRY ).size() );
       }
     }
   } else if ( V3CUnitType == V3C_AVD ) {
@@ -132,19 +133,19 @@ void PCCBitstreamReader::videoSubStream( PCCHighLevelSyntax& syntax,
         auto attributeIndex = static_cast<PCCVideoType>( VIDEO_ATTRIBUTE_RAW + vuh.getAttributeDimensionIndex() );
         TRACE_BITSTREAM( "Attribute RAW, PARTITION: %d\n", vuh.getAttributeDimensionIndex() );
         bitstream.readVideoStream( syntax.createVideoBitstream( attributeIndex ), V3CPayloadSize );
-        syntax.getBitstreamStat().setVideoBinSize( attributeIndex, syntax.getVideoBitstream( attributeIndex ).size() );
+        bistreamStat.setVideoBinSize( attributeIndex, syntax.getVideoBitstream( attributeIndex ).size() );
       } else {
         if ( vps.getMapCountMinus1( atlasIndex ) > 0 && vps.getMultipleMapStreamsPresentFlag( atlasIndex ) ) {
           auto attributeIndex = static_cast<PCCVideoType>(
               VIDEO_ATTRIBUTE_T0 + vuh.getMapIndex() * MAX_NUM_ATTR_PARTITIONS + vuh.getAttributeDimensionIndex() );
           TRACE_BITSTREAM( "Attribute MAP: %d, PARTITION: %d\n", vuh.getMapIndex(), vuh.getAttributeDimensionIndex() );
           bitstream.readVideoStream( syntax.createVideoBitstream( attributeIndex ), V3CPayloadSize );
-          syntax.getBitstreamStat().setVideoBinSize( attributeIndex, syntax.getVideoBitstream( attributeIndex ).size() );
+          bistreamStat.setVideoBinSize( attributeIndex, syntax.getVideoBitstream( attributeIndex ).size() );
         } else {
           auto attributeIndex = static_cast<PCCVideoType>( VIDEO_ATTRIBUTE + vuh.getAttributeDimensionIndex() );
           TRACE_BITSTREAM( "Attribute PARTITION: %d\n", vuh.getAttributeDimensionIndex() );
           bitstream.readVideoStream( syntax.createVideoBitstream( attributeIndex ), V3CPayloadSize );
-          syntax.getBitstreamStat().setVideoBinSize( attributeIndex, syntax.getVideoBitstream( attributeIndex ).size() );
+          bistreamStat.setVideoBinSize( attributeIndex, syntax.getVideoBitstream( attributeIndex ).size() );
         }
       }
     }  // if(!noAttribute)
@@ -632,8 +633,9 @@ void PCCBitstreamReader::atlasFrameTileInformation( AtlasFrameTileInformation&  
           ceil( asps.getFrameWidth() / ( ( afti.getPartitionColumnWidthMinus1( 0 ) + 1 ) * 64.0 ) ) - 1 );
       afti.setNumPartitionRowsMinus1(
           ceil( asps.getFrameHeight() / ( ( afti.getPartitionRowHeightMinus1( 0 ) + 1 ) * 64.0 ) ) - 1 );
-      TRACE_BITSTREAM( "afti: aspsWidth :%zu, partitionWidth: %zu, Number of Partitions Hor: %zu\n", asps.getFrameWidth(),
-                       afti.getPartitionColumnWidthMinus1( 0 ) + 1, afti.getNumPartitionColumnsMinus1() + 1 );
+      TRACE_BITSTREAM( "afti: aspsWidth :%zu, partitionWidth: %zu, Number of Partitions Hor: %zu\n",
+                       asps.getFrameWidth(), afti.getPartitionColumnWidthMinus1( 0 ) + 1,
+                       afti.getNumPartitionColumnsMinus1() + 1 );
       TRACE_BITSTREAM( "afti: aspsHeight :%zu, partitionHeight: %zu, Number of Partitions Ver: %zu\n",
                        asps.getFrameHeight(), afti.getPartitionRowHeightMinus1( 0 ) + 1,
                        afti.getNumPartitionRowsMinus1() + 1 );
@@ -647,16 +649,16 @@ void PCCBitstreamReader::atlasFrameTileInformation( AtlasFrameTileInformation&  
       for ( size_t i = 0; i < afti.getNumPartitionRowsMinus1(); i++ ) {
         afti.setPartitionRowHeightMinus1( i, bitstream.readUvlc() );  //  ue(v)
       }
-      
+
       TRACE_BITSTREAM( "afti: aspsWidth :%zu, partitionWidth: ", asps.getFrameWidth() );
       for ( size_t i = 0; i < afti.getNumPartitionColumnsMinus1(); i++ ) {
-        TRACE_BITSTREAM( "%d, ",afti.getPartitionColumnWidthMinus1( i ) );
-    }
+        TRACE_BITSTREAM( "%d, ", afti.getPartitionColumnWidthMinus1( i ) );
+      }
       TRACE_BITSTREAM( "Number of Partitions Hor: %zu\n", afti.getNumPartitionColumnsMinus1() + 1 );
 
       TRACE_BITSTREAM( "afti: aspsHeight :%zu, partitionWidth: ", asps.getFrameHeight() );
       for ( size_t i = 0; i < afti.getNumPartitionRowsMinus1(); i++ ) {
-        TRACE_BITSTREAM( "%d, ",afti.getPartitionRowHeightMinus1( i ) );
+        TRACE_BITSTREAM( "%d, ", afti.getPartitionRowHeightMinus1( i ) );
       }
       TRACE_BITSTREAM( "Number of Partitions Ver: %zu\n", afti.getNumPartitionRowsMinus1() + 1 );
     }
@@ -690,7 +692,7 @@ void PCCBitstreamReader::atlasFrameTileInformation( AtlasFrameTileInformation&  
   }
   TRACE_BITSTREAM( "afti: singleTile :%zu\n", afti.getSingleTileInAtlasFrameFlag() );
   TRACE_BITSTREAM( "afti: uniformPartition :%zu\n", afti.getUniformPartitionSpacingFlag() );
-  TRACE_BITSTREAM( "afti: numTilesInAtlasFrameMinus1 :%zu\n", afti.getNumTilesInAtlasFrameMinus1() );  
+  TRACE_BITSTREAM( "afti: numTilesInAtlasFrameMinus1 :%zu\n", afti.getNumTilesInAtlasFrameMinus1() );
   TRACE_BITSTREAM( "asps: getAuxiliaryVideoEnabledFlag :%zu\n", asps.getAuxiliaryVideoEnabledFlag() );
   if ( asps.getAuxiliaryVideoEnabledFlag() ) {
     afti.setAuxiliaryVideoTileRowWidthMinus1( bitstream.readUvlc() );  // ue(v)
@@ -1659,7 +1661,7 @@ void PCCBitstreamReader::componentCodecMapping( PCCBitstream& bitstream, SEI& se
 // F.2.12.1 Scene object information SEI message syntax
 void PCCBitstreamReader::sceneObjectInformation( PCCBitstream& bitstream, SEI& seiAbstract ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
-  auto&         sei           = static_cast<SEISceneObjectInformation&>( seiAbstract );
+  auto& sei = static_cast<SEISceneObjectInformation&>( seiAbstract );
   sei.setPersistenceFlag( bool( bitstream.read( 1 ) ) );  // u(1)
   sei.setResetFlag( bool( bitstream.read( 1 ) ) );        // u(1)
   sei.setNumObjectUpdates( bitstream.readUvlc() );        // ue(v)
@@ -1838,7 +1840,7 @@ void PCCBitstreamReader::patchInformation( PCCBitstream& bitstream, SEI& seiAbst
 // F.2.12.4 Volumetric rectangle information SEI message syntax
 void PCCBitstreamReader::volumetricRectangleInformation( PCCBitstream& bitstream, SEI& seiAbstract ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
-  auto&         sei           = static_cast<SEIVolumetricRectangleInformation&>( seiAbstract );  
+  auto& sei = static_cast<SEIVolumetricRectangleInformation&>( seiAbstract );
   sei.setPersistenceFlag( bitstream.read( 1 ) != 0U );  // u(1)
   sei.setResetFlag( bitstream.read( 1 ) != 0U );        // u(1)
   sei.setNumRectanglesUpdates( bitstream.readUvlc() );  // ue(v)

@@ -92,7 +92,7 @@ class AtlasTileHeader {
   std::vector<uint8_t>& getAdditionalAfocLsbVal() { return additionalAfocLsbVal_; }
   bool                  getAdditionalAfocLsbPresentFlag( size_t idx ) { return additionalAfocLsbPresentFlag_[idx]; }
   uint8_t               getAdditionalAfocLsbVal( size_t idx ) { return additionalAfocLsbVal_[idx]; }
-  uint8_t               getTileNaluTypeInfo() { return tileNaluTypeInfo_;}
+  uint8_t               getTileNaluTypeInfo() { return tileNaluTypeInfo_; }
 
   void setNoOutputOfPriorAtlasFramesFlag( bool value ) { noOutputOfPriorAtlasFramesFlag_ = value; }
   void setAtlasFrameParameterSetId( uint8_t value ) { atlasFrameParameterSetId_ = value; }
@@ -114,8 +114,8 @@ class AtlasTileHeader {
   void setAdditionalAfocLsbVal( std::vector<uint8_t>& value ) { additionalAfocLsbVal_ = value; }
   void setAdditionalAfocLsbPresentFlag( size_t idx, bool value ) { additionalAfocLsbPresentFlag_[idx] = value; }
   void setAdditionalAfocLsbVal( size_t idx, uint8_t value ) { additionalAfocLsbVal_[idx] = value; }
-  void setTileNaluTypeInfo( uint8_t value ) { tileNaluTypeInfo_=value; }
-  
+  void setTileNaluTypeInfo( uint8_t value ) { tileNaluTypeInfo_ = value; }
+
  private:
   bool                 noOutputOfPriorAtlasFramesFlag_;
   uint8_t              frameIndex_;
@@ -137,7 +137,6 @@ class AtlasTileHeader {
   bool                 numRefIdxActiveOverrideFlag_;
   uint8_t              numRefIdxActiveMinus1_;
   RefListStruct        refListStruct_;
-  
   uint8_t              tileNaluTypeInfo_;
 };
 

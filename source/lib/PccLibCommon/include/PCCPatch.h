@@ -280,7 +280,7 @@ class PCCPatch {
   void     allocOneLayerData();
   uint8_t& getPointLocalReconstructionLevel() { return pointLocalReconstructionLevel_; }
   uint8_t  getPointLocalReconstructionLevel() const { return pointLocalReconstructionLevel_; }
-  uint8_t getPointLocalReconstructionMode( const size_t u = 0, const size_t v = 0 ) const {
+  uint8_t  getPointLocalReconstructionMode( const size_t u = 0, const size_t v = 0 ) const {
     if ( pointLocalReconstructionLevel_ == 1 ) {
       return pointLocalReconstructionModeByPatch_;
     } else {
@@ -290,13 +290,13 @@ class PCCPatch {
 
   inline void   setIndexCopy( size_t index ) { indexCopy_ = index; }
   inline size_t getIndexCopy() { return indexCopy_; }
-  void setDepthFromGeometryVideo( const std::vector<uint16_t>& geometryVideo,
-                                  const int32_t                u2,
-                                  const int32_t                v2,
-                                  int32_t                      width,
-                                  int32_t                      height,
-                                  int32_t                      occupancyPrecision,
-                                  int16_t*                     depth );
+  void          setDepthFromGeometryVideo( const std::vector<uint16_t>& geometryVideo,
+                                           const int32_t                u2,
+                                           const int32_t                v2,
+                                           int32_t                      width,
+                                           int32_t                      height,
+                                           int32_t                      occupancyPrecision,
+                                           int16_t*                     depth );
 
   void setLocalData( const std::vector<uint8_t>&  occupancyMapVideo,
                      const std::vector<uint16_t>& geometryVideo,
@@ -380,9 +380,9 @@ class PCCPatch {
   int32_t                 bestMatchIdx_;   // index of matched patch from pre-frame patch.
   size_t                  refAtlasFrameIdx_;
   size_t                  predType_;
-  std::vector<int16_t>    depthEOM_;  // Enhanced delta depht
-  std::vector<int64_t>    depth0PCidx_;          // for Surface separation
-  size_t                  patchOrientation_;     // patch orientation in canvas atlas
+  std::vector<int16_t>    depthEOM_;          // Enhanced delta depht
+  std::vector<int64_t>    depth0PCidx_;       // for Surface separation
+  size_t                  patchOrientation_;  // patch orientation in canvas atlas
   uint8_t                 pointLocalReconstructionLevel_;
   uint8_t                 pointLocalReconstructionModeByPatch_;
   std::vector<uint8_t>    pointLocalReconstructionModeByBlock_;
@@ -443,7 +443,7 @@ struct PCCEomPatch {
   bool                isPatchInAuxVideo_;
   size_t              tileIndex_;
   size_t              frameIndex_;
-  size_t              eomCount_;  
+  size_t              eomCount_;
   size_t              occupancyResolution_;
   std::vector<size_t> memberPatches_;
   std::vector<size_t> eomCountPerPatch_;

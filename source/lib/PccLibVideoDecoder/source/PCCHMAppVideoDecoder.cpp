@@ -59,7 +59,7 @@ void PCCHMAppVideoDecoder<T>::decode( PCCVideoBitstream& bitstream,
   bool                    isRGB = false;
   pcc_hevc::PccHevcParser hevcParser;
   hevcParser.getVideoSize( bitstream.vector(), width, height, bitDepth, isRGB );
-  printf("hevcParser= %zu x %zu %zu bits isRGB = %d \n", width, height, bitDepth, isRGB ); 
+  printf( "hevcParser= %zu x %zu %zu bits isRGB = %d \n", width, height, bitDepth, isRGB );
   const std::string binFileName = fileName + ".bin";
   const std::string reconFile =
       addVideoFormat( fileName + "_rec", width, height, !isRGB, !isRGB, outputBitDepth == 10 ? "10" : "8" );

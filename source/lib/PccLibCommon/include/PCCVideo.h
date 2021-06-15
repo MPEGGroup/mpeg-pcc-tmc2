@@ -87,15 +87,15 @@ class PCCVideo {
              const size_t         sizeU0,
              const size_t         sizeV0,
              const PCCCOLORFORMAT format,
-             const size_t         nbyte );  
-             
+             const size_t         nbyte );
+
 #if defined( WIN32 )
   bool _write( const std::string fileName, const size_t nbyte );
   bool _read( const std::string    fileName,
-             const size_t         sizeU0,
-             const size_t         sizeV0,
-             const PCCCOLORFORMAT format,
-             const size_t         nbyte );
+              const size_t         sizeU0,
+              const size_t         sizeV0,
+              const PCCCOLORFORMAT format,
+              const size_t         nbyte );
 #endif
 
   void        convertBitdepth( uint8_t bitdepthInput, uint8_t bitdepthOutput, bool msbAlignFlag );
@@ -107,6 +107,7 @@ class PCCVideo {
   }
 
   void upsample( size_t rate );
+
  private:
   bool write( std::ofstream& outfile, const size_t nbyte );
   bool read( std::ifstream&       infile,

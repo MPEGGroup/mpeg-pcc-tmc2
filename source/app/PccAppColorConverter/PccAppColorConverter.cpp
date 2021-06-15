@@ -88,8 +88,8 @@ bool parseParameters( int          argc,
   printf( "  outputNumBytes = %zu \n", outputNumBytes );
 
   if ( argc == 1 || print_help || srcVideoPath.empty() || dstVideoPath.empty() || configFile.empty() ||
-       colorFormat.empty() || width == 0 || height == 0 || inputNumBytes == 0 ||
-       outputNumBytes == 0 || ( colorFormat != "RGB444" && colorFormat != "YUV444" && colorFormat != "YUV420" ) ) {
+       colorFormat.empty() || width == 0 || height == 0 || inputNumBytes == 0 || outputNumBytes == 0 ||
+       ( colorFormat != "RGB444" && colorFormat != "YUV444" && colorFormat != "YUV420" ) ) {
     printf( "Error parameters not correct \n" );
     po::doHelp( std::cout, opts, 78 );
     return false;
@@ -105,8 +105,8 @@ int main( int argc, char* argv[] ) {
   std::cout << "PccAppVideoConverter v" << TMC2_VERSION_MAJOR << "." << TMC2_VERSION_MINOR << std::endl << std::endl;
   std::string srcVideoPath, dstVideoPath, configFile, colorFormat;
   size_t      width = 0, height = 0, inputNumBytes = 0, outputNumBytes = 0;
-  if ( !parseParameters( argc, argv, srcVideoPath, dstVideoPath, configFile, width, height, colorFormat,
-                         inputNumBytes, outputNumBytes ) ) {
+  if ( !parseParameters( argc, argv, srcVideoPath, dstVideoPath, configFile, width, height, colorFormat, inputNumBytes,
+                         outputNumBytes ) ) {
     return -1;
   }
   typedef uint16_t T;

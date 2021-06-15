@@ -117,11 +117,11 @@ struct PatchParams {
       patchLoDScaleY_( 1 ),
       patchRawPoints_( 0 ),
       epduAssociatedPatchCount_( 0 ) {
-    aspsMapCountMinus1_ = mapCntMinus1;
+    aspsMapCountMinus1_    = mapCntMinus1;
     patchPackingBlockSize_ = 64;
     plriMapPresentFlag_.resize( aspsMapCountMinus1_ + 1 );
   }
-  ~PatchParams() { 
+  ~PatchParams() {
     epduAssociatedPoints_.clear();
     plriMapPresentFlag_.clear();
   };
@@ -325,7 +325,7 @@ class PCCCodec {
                                    std::vector<std::vector<std::vector<int64_t>>>& tileB2PPatchParams,
                                    std::vector<std::vector<int64_t>>&              atlasB2PPatchParams );
 
-  void inverseRotatePosition45DegreeOnAxis( size_t Axis, size_t lod, PCCPoint3D input, PCCVector3D& output );
+  void       inverseRotatePosition45DegreeOnAxis( size_t Axis, size_t lod, PCCPoint3D input, PCCVector3D& output );
   PCCLogger* logger_ = nullptr;
 
  private:
