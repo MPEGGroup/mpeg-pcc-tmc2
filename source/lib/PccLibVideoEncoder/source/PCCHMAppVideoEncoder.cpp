@@ -48,13 +48,19 @@ void PCCHMAppVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
                                       PCCVideoEncoderParameters& params,
                                       PCCVideoBitstream&         bitstream,
                                       PCCVideo<T, 3>&            videoRec ) {
-  const size_t      width      = videoSrc.getWidth();
-  const size_t      height     = videoSrc.getHeight();
-  const size_t      frameCount = videoSrc.getFrameCount();
+  const size_t width          = videoSrc.getWidth();
+  const size_t height         = videoSrc.getHeight();
+  const size_t frameCount     = videoSrc.getFrameCount();
+  std::string  srcYuvFileName = params.srcYuvFileName_;
+  std::string  recYuvFileName = params.recYuvFileName_;
+  std::string  binFileName    = params.binFileName_;
+  srcYuvFileName.insert( srcYuvFileName.find_last_of( "." ), "_hmapp" );
+  recYuvFileName.insert( recYuvFileName.find_last_of( "." ), "_hmapp" );
+  binFileName.insert( binFileName.find_last_of( "." ), "_hmapp" );
   std::stringstream cmd;
   cmd << params.encoderPath_;
   cmd << " -c " << params.encoderConfig_;
-  cmd << " --InputFile=" << params.srcYuvFileName_;
+  cmd << " --InputFile=" << srcYuvFileName;
   cmd << " --InputBitDepth=" << params.inputBitDepth_;
   cmd << " --InputChromaFormat=" << ( params.use444CodecIo_ ? "444" : "420" );
   cmd << " --OutputBitDepth=" << params.outputBitDepth_;
@@ -65,8 +71,8 @@ void PCCHMAppVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
   cmd << " --SourceHeight=" << height;
   cmd << " --ConformanceWindowMode=1 ";
   cmd << " --FramesToBeEncoded=" << frameCount;
-  cmd << " --BitstreamFile=" << params.binFileName_;
-  cmd << " --ReconFile=" << params.recYuvFileName_;
+  cmd << " --BitstreamFile=" << binFileName;
+  cmd << " --ReconFile=" << recYuvFileName;
   cmd << " --QP=" << params.qp_;
   if ( params.transquantBypassEnable_ != 0 ) { cmd << " --TransquantBypassEnable=1"; }
   if ( params.cuTransquantBypassFlagForce_ != 0 ) { cmd << " --CUTransquantBypassFlagForce=1"; }
@@ -84,15 +90,18 @@ void PCCHMAppVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
 
   std::cout << cmd.str() << std::endl;
 
-  videoSrc.write( params.srcYuvFileName_, params.inputBitDepth_ == 8 ? 1 : 2 );
+  videoSrc.write( srcYuvFileName, params.inputBitDepth_ == 8 ? 1 : 2 );
   if ( pcc::system( cmd.str().c_str() ) ) {
     std::cout << "Error: can't run system command!" << std::endl;
     exit( -1 );
   }
   PCCCOLORFORMAT format = getColorFormat( params.recYuvFileName_ );
   videoRec.clear();
-  videoRec.read( params.recYuvFileName_, width, height, format, frameCount, params.outputBitDepth_ == 8 ? 1 : 2 );
-  bitstream.read( params.binFileName_ );
+  videoRec.read( recYuvFileName, width, height, format, params.outputBitDepth_ == 8 ? 1 : 2 );
+  bitstream.read( binFileName );
+  removeFile( srcYuvFileName );
+  removeFile( recYuvFileName );
+  removeFile( binFileName );
 }
 
 template <typename T>

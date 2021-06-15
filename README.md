@@ -35,6 +35,7 @@ According to the CMake options defined in the CMakeLists.txt, the TMC2 required 
   - USE_HMLIB_VIDEO_CODEC: use HM library to encoder and decoder videos (codecId parameter must be set equal to 3)
   - USE_VTMLIB_VIDEO_CODEC: use VTM library to encoder and decoder videos (codecId parameter must be set equal to 4)
   - USE_FFMPEG_VIDEO_CODEC: use FFMPEG library to encoder and decoder videos (codecId parameter must be set equal to 5). This mode is only available in the FFMPEG branch. 
+  - USE_SHMAPP_VIDEO_CODEC: use SHM software to encoder and decoder videos (codecId parametesr must be set equal to 6, the videoEncoderGeometryPath and videoEncoderAttributePath using the SHM application, and the videoEncoderOccupancyPath using the HM application)
   - USE_HDRTOOLS: use HDRTools to convert the raw video files.
 
 The video encoder softwares and libraries can be found in the corresponding repositories: 
@@ -42,6 +43,7 @@ The video encoder softwares and libraries can be found in the corresponding repo
   - JM: https://vcgit.hhi.fraunhofer.de/jct-vc/JM.git
   - HM: https://vcgit.hhi.fraunhofer.de/jvet/HM.git
   - VTM: https://vcgit.hhi.fraunhofer.de/jvet/VVCSoftware_VTM.git
+  - SHM: https://vcgit.hhi.fraunhofer.de/jvet/SHM.git
 
 Some changes have been made on these libraries to allow to use the three libraries at the same time and to increase the codec efficiencies for the V3C contents. the three codecs must be patch with the files:
 
@@ -135,7 +137,57 @@ These examples can be start based on your system with the following scripts:
 
 The V3C common test condition (CTC) command lines could be found in ./test/ctc_command_line.sh. 
 
+## SHVC Information
+
+The SHVC software used in the program can be obtained from the link below.
+	https://hevc.hhi.fraunhofer.de/svn/svn_SHVCSoftware/tags/SHM-12.4/
+
+The additional Enhanced Layer will be used by SHVC codec according to the number of entries entered in the SHVCLayer in the encoder.
+SHVCRateX and SHVCRateY refer to the width and height resolution reduction rate of 2D images of additional layers.
+The decoder uses the video corresponding to the layer entered into the SHVCLayerID. LID 0 has the lowest density, and if 3 layers are used, LID 2 has the same density as V-PCC TMC2 output.
+Occupancy Map video encode/decode using same version of HM encooder/decoder.
+
+
+### SHVC Running 3layer PccAppEncoder
+
+```
+./bin/PccAppEncoder \
+	--configurationFolder=cfg/ \
+	--config=cfg/common/ctc-common.cfg \
+	--config=cfg/condition/ctc-random-access-svc-3L.cfg \
+	--config=cfg/sequence/longdress_vox10.cfg \
+	--config=cfg/rate/ctc-r3.cfg \
+	--uncompressedDataFolder=~/mpeg_datasets/CfP/datasets/Dynamic_Objects/People/ \
+	--frameCount=1 \
+	--videoEncoderGeometryPath=..\bin\win\TAppEncoder.exe \
+	--videoEncoderAttributePath=..\bin\win\TAppEncoder.exe \
+ 	--videoEncoderOccupancyPath=..\bin\win\occupancy\TAppEncoder.exe \
+	--colorSpaceConversionPath=../external/HDRTools/bin/HDRConvert \
+	--reconstructedDataPath=S26C03R03_rec_%04d.ply \
+	--compressedStreamPath=S26C03R03.bin \
+	--SHVCLayer=2 \
+	--SHVCRateX=2 \
+	--SHVCRateY=2
+```
+
+### SHVC Running 3layer PccAppDecoder
+
+```
+./bin/PccAppDecoder \
+	--compressedStreamPath=S26C03R03.bin \
+	--videoDecoderGeometryPath=..\bin\win\TAppDecoder.exe \
+	--videoDecoderAttributePath=..\bin\win\TAppDecoder.exe \
+	--videoDecoderOccupancyPath=..\bin\win\occupancy\TAppDecoder.exe \
+	--colorSpaceConversionPath=../external/HDRTools/bin/HDRConvert \ 
+	--inverseColorSpaceConversionConfig=cfg/hdrconvert/yuv420torgb444.cfg \
+	--reconstructedDataPath=S26C03R03_dec_%04d.ply \
+	--SHVCLayerID=2 
+```
+
 ### Contact
 
 Don't hesitate to contact me for any information: 
 - Julien Ricard - MPEG-3DG-VPCC software coordinator (julien.ricard@interdigital.com). 
+
+
+###

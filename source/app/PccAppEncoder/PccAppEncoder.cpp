@@ -30,42 +30,28 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
-#include "PccAppEncoder.h"
+#ifndef _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+#include "PCCCommon.h"
+#include "PCCChrono.h"
+#include "PCCMemory.h"
+#include "PCCEncoder.h"
+#include "PCCMetrics.h"
+#include "PCCChecksum.h"
+#include "PCCContext.h"
+#include "PCCFrameContext.h"
+#include "PCCBitstream.h"
+#include "PCCGroupOfFrames.h"
+#include "PCCEncoderParameters.h"
+#include "PCCBitstreamWriter.h"
+#include "PCCMetricsParameters.h"
+#include <program_options_lite.h>
+#include <tbb/tbb.h>
 
 using namespace std;
 using namespace pcc;
 using pcc::chrono::StopwatchUserTime;
-
-int main( int argc, char* argv[] ) {
-  std::cout << "PccAppEncoder v" << TMC2_VERSION_MAJOR << "." << TMC2_VERSION_MINOR << std::endl << std::endl;
-
-  PCCEncoderParameters encoderParams;
-  PCCMetricsParameters metricsParams;
-  if ( !parseParameters( argc, argv, encoderParams, metricsParams ) ) { return -1; }
-  if ( encoderParams.nbThread_ > 0 ) { tbb::task_scheduler_init init( static_cast<int>( encoderParams.nbThread_ ) ); }
-
-  // Timers to count elapsed wall/user time
-  pcc::chrono::Stopwatch<std::chrono::steady_clock> clockWall;
-  pcc::chrono::StopwatchUserTime                    clockUser;
-
-  clockWall.start();
-  int ret = compressVideo( encoderParams, metricsParams, clockUser );
-  clockWall.stop();
-
-  using namespace std::chrono;
-  using ms       = milliseconds;
-  auto totalWall = duration_cast<ms>( clockWall.count() ).count();
-  std::cout << "Processing time (wall): " << ( ret == 0 ? totalWall / 1000.0 : -1 ) << " s\n";
-
-  auto totalUserSelf = duration_cast<ms>( clockUser.self.count() ).count();
-  std::cout << "Processing time (user.self): " << ( ret == 0 ? totalUserSelf / 1000.0 : -1 ) << " s\n";
-
-  auto totalUserChild = duration_cast<ms>( clockUser.children.count() ).count();
-  std::cout << "Processing time (user.children): " << ( ret == 0 ? totalUserChild / 1000.0 : -1 ) << " s\n";
-
-  std::cout << "Peak memory: " << getPeakMemory() << " KB\n";
-  return ret;
-}
 
 //---------------------------------------------------------------------------
 // :: Command line / config parsing helpers
@@ -78,11 +64,34 @@ static std::istream& operator>>( std::istream& in, PCCColorTransform& val ) {
   return in;
 }
 static std::istream& operator>>( std::istream& in, PCCCodecId& val ) {
-  unsigned int tmp;
+  val = UNKNOWN_CODEC;
+  std::string tmp;
   in >> tmp;
-  val = PCCCodecId( tmp );
+#ifdef USE_JMAPP_VIDEO_CODEC
+  if ( tmp == "JMAPP" || tmp == "jmapp" ) { val = JMAPP; }
+#endif
+#ifdef USE_HMAPP_VIDEO_CODEC
+  if ( tmp == "HMAPP" || tmp == "hmapp" ) { val = HMAPP; }
+#endif
+#ifdef USE_SHMAPP_VIDEO_CODEC
+  if ( tmp == "SHMAPP" || tmp == "shmapp" || tmp == "shm" || tmp == "shm2" || tmp == "shm3" ) { val = SHMAPP; }
+#endif
+#ifdef USE_JMLIB_VIDEO_CODEC
+  if ( tmp == "JMLIB" || tmp == "jmlib" || tmp == "jm" || tmp == "avc" ) { val = JMLIB; }
+#endif
+#ifdef USE_HMLIB_VIDEO_CODEC
+  if ( tmp == "HMLIB" || tmp == "hmlib" || tmp == "hm" || tmp == "hevc" ) { val = HMLIB; }
+#endif
+#ifdef USE_VTMLIB_VIDEO_CODEC
+  if ( tmp == "VTMLIB" || tmp == "vtmlib" || tmp == "vtm" || tmp == "vvc" ) { val = VTMLIB; }
+#endif
+#ifdef USE_FFMPEG_VIDEO_CODEC
+  if ( tmp == "FFMPEG" || tmp == "ffmpeg" ) { val = FFMPEG; }
+#endif
+  if ( val == UNKNOWN_CODEC ) { fprintf( stderr, "PCCCodecId could not be indentified from: \"%s\" \n", tmp.c_str() ); }
   return in;
 }
+
 static std::istream& operator>>( std::istream& in, std::vector<int>& vector ) {
   std::string str;
   in >> str;
@@ -178,6 +187,14 @@ bool parseParameters( int                   argc,
       "HDRConvert configuration file used for YUV420 to RGB444 conversion" )
 
     // segmentation
+    ( "gridBasedSegmentation",    // If enabled, change refineSegmentationGridBased() parameters according to m56857"
+      encoderParams.gridBasedSegmentation_,
+      encoderParams.gridBasedSegmentation_,
+      "Voxel dimension for grid-based segmentation (GBS)" )
+    ( "voxelDimensionGridBasedSegmentation",
+      encoderParams.voxelDimensionGridBasedSegmentation_,
+      encoderParams.voxelDimensionGridBasedSegmentation_,
+      "Voxel dimension for grid-based segmentation (GBS)" )
     ( "nnNormalEstimation",
       encoderParams.nnNormalEstimation_,
       encoderParams.nnNormalEstimation_,
@@ -494,63 +511,62 @@ bool parseParameters( int                   argc,
       encoderParams.geometryQP_,
       encoderParams.geometryQP_,
       "QP for compression of geometry video" )
-    ( "textureQP",
-      encoderParams.textureQP_,
-      encoderParams.textureQP_,
-      "QP for compression of texture video" )
+    ( "attributeQP",
+      encoderParams.attributeQP_,
+      encoderParams.attributeQP_,
+      "QP for compression of attribute video" )
     ( "geometryConfig",
       encoderParams.geometryConfig_,
       encoderParams.geometryConfig_,
       "HM configuration file for geometry compression" )
-    ( "geometryD0Config",
-      encoderParams.geometryD0Config_,
-      encoderParams.geometryD0Config_,
-      "HM configuration file for geometry D0 compression" )
-    ( "geometryD1Config",
-      encoderParams.geometryD1Config_,
-      encoderParams.geometryD1Config_,
-      "HM configuration file for geometry D1 compression" )
-    ( "textureConfig",
-      encoderParams.textureConfig_,
-      encoderParams.textureConfig_,
-      "HM configuration file for texture compression" )
-    ( "textureT0Config",
-      encoderParams.textureT0Config_,
-      encoderParams.textureT0Config_,
-      "HM configuration file for texture D0 compression" )
-    ( "textureT1Config",
-      encoderParams.textureT1Config_,
-      encoderParams.textureT1Config_,
-      "HM configuration file for texture D1 compression" )
-    // lossless parameters
-    ( "losslessGeo",
-      encoderParams.losslessGeo_,
-      encoderParams.losslessGeo_,
-      "Enable lossless encoding of geometry\n" )
+    ( "geometry0Config",
+      encoderParams.geometry0Config_,
+      encoderParams.geometry0Config_,
+      "HM configuration file for geometry 0 compression" )
+    ( "geometry1Config",
+      encoderParams.geometry1Config_,
+      encoderParams.geometry1Config_,
+      "HM configuration file for geometry 1 compression" )
+    ( "attributeConfig",
+      encoderParams.attributeConfig_,
+      encoderParams.attributeConfig_,
+      "HM configuration file for attribute compression" )
+    ( "attribute0Config",
+      encoderParams.attribute0Config_,
+      encoderParams.attribute0Config_,
+      "HM configuration file for attribute 0 compression" )
+    ( "attribute1Config",
+      encoderParams.attribute1Config_,
+      encoderParams.attribute1Config_,
+      "HM configuration file for attribute 1 compression" )
+    ( "rawPointsPatch",
+      encoderParams.rawPointsPatch_,
+      encoderParams.rawPointsPatch_,
+      "Enable raw points patch\n" )    
     ( "noAttributes",
       encoderParams.noAttributes_,
       encoderParams.noAttributes_, 
       "Disable encoding of attributes" )
-    ( "losslessGeo444",
-      encoderParams.losslessGeo444_,
-      encoderParams.losslessGeo444_,
-      "Use 4444 format for lossless geometry" )
+    ( "attributeVideo444",
+      encoderParams.attributeVideo444_,
+      encoderParams.attributeVideo444_,
+      "Use 444 format for attribute video" )
     ( "useRawPointsSeparateVideo",
       encoderParams.useRawPointsSeparateVideo_,
       encoderParams.useRawPointsSeparateVideo_,
       "compress raw points with video codec" )
-    ( "textureRawSeparateVideoWidth",
-      encoderParams.textureRawSeparateVideoWidth_,
-      encoderParams.textureRawSeparateVideoWidth_,
-      "Width of the MP's texture in separate video" )
+    ( "attributeRawSeparateVideoWidth",
+      encoderParams.attributeRawSeparateVideoWidth_,
+      encoderParams.attributeRawSeparateVideoWidth_,
+      "Width of the MP's attribute in separate video" )
     ( "geometryMPConfig",
       encoderParams.geometryAuxVideoConfig_,
       encoderParams.geometryAuxVideoConfig_,
       "HM configuration file for raw points geometry compression" )
-    ( "textureMPConfig",
-      encoderParams.textureAuxVideoConfig_,
-      encoderParams.textureAuxVideoConfig_,
-      "HM configuration file for raw points texture compression" )
+    ( "attributeMPConfig",
+      encoderParams.attributeAuxVideoConfig_,
+      encoderParams.attributeAuxVideoConfig_,
+      "HM configuration file for raw points attribute compression" )
 
     // etc
     ( "nbThread",
@@ -574,15 +590,23 @@ bool parseParameters( int                   argc,
     // 0. absolute 1 delta
       encoderParams.multipleStreams_,
       "number of video(geometry and attribute) streams" )
-    ( "qpT1",
-      encoderParams.qpAdjT1_,
-    // 0. absolute 1 delta
-      encoderParams.qpAdjT1_, 
-      "qp adjustment for T1 0, +3, -3..." )
-    ( "qpD1",
-      encoderParams.qpAdjD1_,
-      encoderParams.qpAdjD1_,
-      "qp adjustment for D1 : 0, +3, -3..." )
+    ( "deltaQPD0",
+      encoderParams.deltaQPD0_,
+      encoderParams.deltaQPD0_, 
+      "qp adjustment for geometry0 video: 0, +3, -3..." )
+    ( "deltaQPD1",
+      encoderParams.deltaQPD1_,
+      encoderParams.deltaQPD1_,
+      "qp adjustment for geometry1 video: 0, +3, -3..." )
+    ( "deltaQPT0",
+      encoderParams.deltaQPT0_,
+      encoderParams.deltaQPT0_, 
+      "qp adjustment for attribute0 video: 0, +3, -3..." )
+    ( "deltaQPT1",
+      encoderParams.deltaQPT1_,
+      encoderParams.deltaQPT1_, 
+      "qp adjustment for attribute1 video: 0, +3, -3..." )
+      
     ( "constrainedPack",
       encoderParams.constrainedPack_,
       encoderParams.constrainedPack_,
@@ -599,10 +623,6 @@ bool parseParameters( int                   argc,
       encoderParams.groupDilation_,
       encoderParams.groupDilation_, 
       "Group Dilation" )
-    ( "textureDilationOffLossless",
-      encoderParams.textureDilationOffLossless_,
-      encoderParams.textureDilationOffLossless_, 
-      "Group Dilation" )
 
     // Lossy occupancy map coding
     ( "offsetLossyOM",
@@ -617,6 +637,20 @@ bool parseParameters( int                   argc,
       encoderParams.prefilterLossyOM_,
       encoderParams.prefilterLossyOM_,
       "Selects whether the occupany map is prefiltered before lossy compression (default=false)\n" )
+
+    // SHVC 
+    ( "shvcLayerIndex",
+      encoderParams.shvcLayerIndex_,
+      encoderParams.shvcLayerIndex_,
+     "Decode Layer ID number using SHVC codec")
+    ( "shvcRateX",
+      encoderParams.shvcRateX_,
+      encoderParams.shvcRateX_,
+      "SHVCRateX : reduce rate of each SHVC layer X axis in 2D space (should be greater than 1)")
+    ( "shvcRateY",
+      encoderParams.shvcRateY_,
+      encoderParams.shvcRateY_,
+      "SHVCRateY : reduce rate of each SHVC layer Y axis in 2D space (should be greater than 1)")
 
     // visual quality
     ( "patchColorSubsampling",
@@ -638,7 +672,7 @@ bool parseParameters( int                   argc,
       encoderParams.mapCountMinus1_,
       encoderParams.mapCountMinus1_, 
       "Numbers of layers (rename to maps?)" )
-    ( "singleLayerPixelInterleaving",
+    ( "singleMapPixelInterleaving",
       encoderParams.singleMapPixelInterleaving_,
       encoderParams.singleMapPixelInterleaving_,
       "Use single layer pixel interleaving" )
@@ -678,10 +712,10 @@ bool parseParameters( int                   argc,
       encoderParams.safeGuardDistance_,
       encoderParams.safeGuardDistance_,
       "Number of empty blocks that must exist between the patches (default=1)\n" )
-    ( "textureBGFill",
-      encoderParams.textureBGFill_,
-      encoderParams.textureBGFill_,
-      "Selects the background filling operation for texture only (0: patch-edge extension, "
+    ( "attributeBGFill",
+      encoderParams.attributeBGFill_,
+      encoderParams.attributeBGFill_,
+      "Selects the background filling operation for attribute only (0: patch-edge extension, "
       "1(default): smoothed push-pull algorithm), 2: harmonic background filling " )
 
     // lossy-raw-points patch
@@ -729,12 +763,10 @@ bool parseParameters( int                   argc,
       encoderParams.use3dmc_,
       encoderParams.use3dmc_,
       "Use auxilliary information for 3d motion compensation.(0: conventional video coding, 1: 3D motion compensated)" )
-#ifdef USE_HM_PCC_RDO
     ( "usePccRDO",
       encoderParams.usePccRDO_,
       encoderParams.usePccRDO_,
       "Use HEVC PCC RDO optimization" )
-#endif
     ( "geometry3dCoordinatesBitdepth",
       encoderParams.geometry3dCoordinatesBitdepth_,
       encoderParams.geometry3dCoordinatesBitdepth_,
@@ -770,12 +802,21 @@ bool parseParameters( int                   argc,
   ("numMaxTilePerFrame",
    encoderParams.numMaxTilePerFrame_,
    encoderParams.numMaxTilePerFrame_,"number of maximum tiles in a frame")
+  ("uniformPartitionSpacing",
+   encoderParams.uniformPartitionSpacing_,
+   encoderParams.uniformPartitionSpacing_, "indictation of uniform partitioning")
   ("tilePartitionWidth",
    encoderParams.tilePartitionWidth_,
    encoderParams.tilePartitionWidth_,"uniform partition width in the unit of 64 pixels")
   ("tilePartitionHeight",
    encoderParams.tilePartitionHeight_,
    encoderParams.tilePartitionHeight_,"uniform partition height in the unit of 64 pixels")
+  ("tilePartitionWidthList",
+   encoderParams.tilePartitionWidthList_,
+   encoderParams.tilePartitionWidthList_,"non uniform partition width in the unit of 64 pixels")
+  ("tilePartitionHeightList",
+   encoderParams.tilePartitionHeightList_,
+   encoderParams.tilePartitionHeightList_,"non uniform partition height in the unit of 64 pixels")
   ( "tileSegmentationType",
       encoderParams.tileSegmentationType_,
       encoderParams.tileSegmentationType_,
@@ -879,60 +920,77 @@ bool parseParameters( int                   argc,
       metricsParams.neighborsProc_,
       metricsParams.neighborsProc_,
       "0(undefined), 1(average), 2(weighted average), 3(min), 4(max) neighbors with same geometric distance" );
+
+    //8.3.4.2	Profile, tier and level syntax
+    opts.addOptions()
+    ( "tierFlag", 
+      encoderParams.tierFlag_,
+      encoderParams.tierFlag_, 
+      "Tier Flag" )
+    ( "profileCodecGroupIdc", 
+      encoderParams.profileCodecGroupIdc_,
+      encoderParams.profileCodecGroupIdc_, 
+      "Profile Codec Group Idc" )
+    ( "profileToolsetIdc", 
+      encoderParams.profileToolsetIdc_,
+      encoderParams.profileToolsetIdc_, 
+    "Profile Toolset Idc" )
+    ( "profileReconstructionIdc", 
+      encoderParams.profileReconstructionIdc_,
+      encoderParams.profileReconstructionIdc_, 
+      "Profile Reconstruction Idc" )
+    ( "levelIdc", 
+      encoderParams.levelIdc_,
+      encoderParams.levelIdc_, 
+      "Level Idc" )    
+    ( "avcCodecIdIndex",
+      encoderParams.avcCodecIdIndex_,
+      encoderParams.avcCodecIdIndex_, 
+      "index for avc codec " ) //ajt0526: avcCodecIdIndex/hevcCodecIdIndex/vvcCodecIdIndex when using CCM SEI and profileCodecGroupIdc beeds to correspond to mp4RA?
+    ( "hevcCodecIdIndex",
+      encoderParams.hevcCodecIdIndex_,
+      encoderParams.hevcCodecIdIndex_, 
+      "index for hevc codec " )
+    ( "shvcCodecIdIndex",
+      encoderParams.shvcCodecIdIndex_,
+      encoderParams.shvcCodecIdIndex_, 
+      "index for shvc codec " )
+    ( "vvcCodecIdIndex",
+      encoderParams.vvcCodecIdIndex_,
+      encoderParams.vvcCodecIdIndex_, 
+      "index for vvc codec " );
+
+    //8.3.4.6	Profile toolset constraints information syntax
+    opts.addOptions()
+    ( "oneV3CFrameOnlyFlag", 
+      encoderParams.oneV3CFrameOnlyFlag_,
+      encoderParams.oneV3CFrameOnlyFlag_, 
+      "One V3C Frame Only Flag" )
+    ( "noEightOrientationsConstraintFlag", 
+      encoderParams.noEightOrientationsConstraintFlag_,
+      encoderParams.noEightOrientationsConstraintFlag_, 
+      "No Eight Orientations Constraint Flag" )
+    ( "no45DegreeProjectionPatchConstraintFlag", 
+      encoderParams.no45DegreeProjectionPatchConstraintFlag_,
+      encoderParams.no45DegreeProjectionPatchConstraintFlag_, 
+      "No 45 Degree Projection Patch Constraint Flag" );
+
   // clang-format on
   po::setDefaults( opts );
   po::ErrorReporter        err;
   const list<const char*>& argv_unhandled = po::scanArgv( opts, argc, (const char**)argv, err );
-
   for ( const auto arg : argv_unhandled ) { printf( "Unhandled argument ignored: %s \n", arg ); }
 
   if ( argc == 1 || print_help ) {
     po::doHelp( std::cout, opts, 78 );
     return false;
   }
-
-  if ( ( encoderParams.levelOfDetailX_ == 0 || encoderParams.levelOfDetailY_ == 0 ) ) {
-    if ( encoderParams.levelOfDetailX_ == 0 ) { encoderParams.levelOfDetailX_ = 1; }
-    if ( encoderParams.levelOfDetailY_ == 0 ) { encoderParams.levelOfDetailY_ = 1; }
-    std::cerr << "levelOfDetailX and levelOfDetailY should be greater than "
-                 "1. levelOfDetailX="
-              << encoderParams.levelOfDetailX_ << "., levelOfDetailY=" << encoderParams.levelOfDetailY_ << std::endl;
-  }
-
-  if ( encoderParams.losslessGeo_ && ( encoderParams.levelOfDetailX_ > 1 || encoderParams.levelOfDetailY_ > 1 ) ) {
-    encoderParams.levelOfDetailX_ = 1;
-    encoderParams.levelOfDetailY_ = 1;
-    std::cerr << "scaling is not allowed in lossless case\n";
-  }
-
-  if ( encoderParams.enablePointCloudPartitioning_ && encoderParams.patchExpansion_ ) {
-    std::cerr << "Point cloud partitioning does not currently support patch "
-                 "expansion. \n";
-  }
-  if ( encoderParams.tileSegmentationType_ == 1 ) {
-    if ( encoderParams.enablePointCloudPartitioning_ != 1 ) {
-      encoderParams.enablePointCloudPartitioning_ = 1;
-      std::cerr << "enablePointCloudPartitioning should be 1 when tileSegmentationType is 1.\n";
-    }
-  }
-  if ( encoderParams.tileSegmentationType_ != 1 && encoderParams.enablePointCloudPartitioning_ &&
-       ( encoderParams.globalPatchAllocation_ != 0 ) ) {
-    std::cerr << "Point cloud partitioning does not currently support global "
-                 "patch allocation. \n";
-  }
-
-  if ( static_cast<int>( encoderParams.patchPrecedenceOrderFlag_ ) == 0 && encoderParams.lowDelayEncoding_ ) {
-    encoderParams.lowDelayEncoding_ = false;
-    std::cerr << "Low Delay Encoding can be used only when "
-                 "patchPrecendenceOrder is enabled. lowDelayEncoding_ is set "
-                 "0\n";
-  }
   encoderParams.completePath();
-  encoderParams.print();
-  if ( !encoderParams.check() ) { std::cerr << "Input encoder parameters not correct \n"; }
   metricsParams.completePath();
-  metricsParams.print();
+  if ( !encoderParams.check() ) { std::cerr << "Input encoder parameters not correct \n"; }
   if ( !metricsParams.check() ) { std::cerr << "Input metrics parameters not correct \n"; }
+  encoderParams.print();
+  metricsParams.print();
   metricsParams.startFrameNumber_ = encoderParams.startFrameNumber_;
 
   // report the current configuration (only in the absence of errors so
@@ -956,18 +1014,15 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
   std::unique_ptr<uint8_t> buffer;
   size_t                   contextIndex = 0;
   PCCEncoder               encoder;
+  PCCMetrics               metrics;
+  PCCChecksum              checksum;
+  PCCBitstreamStat         bitstreamStat;
+  SampleStreamV3CUnit      ssvu;
   encoder.setLogger( logger );
   encoder.setParameters( encoderParams );
-  std::vector<std::vector<uint8_t>> reconstructedChecksums;
-  std::vector<std::vector<uint8_t>> sourceReorderChecksums;
-  std::vector<std::vector<uint8_t>> reconstructedReorderChecksums;
-  PCCMetrics                        metrics;
-  PCCChecksum                       checksum;
   metrics.setParameters( metricsParams );
   checksum.setParameters( metricsParams );
 
-  PCCBitstreamStat    bitstreamStat;
-  SampleStreamV3CUnit ssvu;
   // Place to get/set default values for gof metadata enabled flags (in sequence level).
   while ( startFrameNumber < endFrameNumber0 ) {
     size_t     endFrameNumber = min( startFrameNumber + groupOfFramesSize0, endFrameNumber0 );
@@ -999,8 +1054,8 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
     clock.stop();
 
     PCCGroupOfFrames normals;
-    bool             bRunMetric = true;
     if ( metricsParams.computeMetrics_ ) {
+      bool bRunMetric = true;
       if ( !metricsParams.normalDataPath_.empty() ) {
         if ( !normals.load( metricsParams.normalDataPath_, startFrameNumber, endFrameNumber, COLOR_TRANSFORM_NONE,
                             true ) ) {
@@ -1010,7 +1065,7 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
       if ( bRunMetric ) { metrics.compute( sources, reconstructs, normals ); }
     }
     if ( metricsParams.computeChecksum_ ) {
-      if ( encoderParams.losslessGeo_ ) {
+      if ( encoderParams.rawPointsPatch_ ) {
         checksum.computeSource( sources );
         checksum.computeReordered( reconstructs );
       }
@@ -1028,10 +1083,12 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
   }
 
   PCCBitstream bitstream;
-#ifdef BITSTREAM_TRACE
+
+#if defined( BITSTREAM_TRACE ) || defined( CONFORMANCE_TRACE )
   bitstream.setLogger( logger );
   bitstream.setTrace( true );
 #endif
+
   bitstreamStat.setHeader( bitstream.size() );
   PCCBitstreamWriter bitstreamWriter;
   size_t             headerSize = bitstreamWriter.write( ssvu, bitstream );
@@ -1040,11 +1097,41 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
   bitstreamStat.trace();
   std::cout << "Total bitstream size " << bitstream.size() << " B" << std::endl;
 
+  bitstream.computeMD5();
+
   if ( metricsParams.computeMetrics_ ) { metrics.display(); }
   bool checksumEqual = true;
   if ( metricsParams.computeChecksum_ ) {
-    if ( encoderParams.losslessGeo_ ) { checksumEqual = checksum.compareSrcRec(); }
+    if ( encoderParams.rawPointsPatch_ ) { checksumEqual = checksum.compareSrcRec(); }
     checksum.write( encoderParams.compressedStreamPath_ );
   }
   return checksumEqual ? 0 : -1;
+}
+
+int main( int argc, char* argv[] ) {
+  std::cout << "PccAppEncoder v" << TMC2_VERSION_MAJOR << "." << TMC2_VERSION_MINOR << std::endl << std::endl;
+
+  PCCEncoderParameters encoderParams;
+  PCCMetricsParameters metricsParams;
+  if ( !parseParameters( argc, argv, encoderParams, metricsParams ) ) { return -1; }
+  if ( encoderParams.nbThread_ > 0 ) { tbb::task_scheduler_init init( static_cast<int>( encoderParams.nbThread_ ) ); }
+
+  // Timers to count elapsed wall/user time
+  pcc::chrono::Stopwatch<std::chrono::steady_clock> clockWall;
+  pcc::chrono::StopwatchUserTime                    clockUser;
+
+  clockWall.start();
+  int ret = compressVideo( encoderParams, metricsParams, clockUser );
+  clockWall.stop();
+
+  using namespace std::chrono;
+  using ms            = milliseconds;
+  auto totalWall      = duration_cast<ms>( clockWall.count() ).count();
+  auto totalUserSelf  = duration_cast<ms>( clockUser.self.count() ).count();
+  auto totalUserChild = duration_cast<ms>( clockUser.children.count() ).count();
+  std::cout << "Processing time (wall): " << ( ret == 0 ? totalWall / 1000.0 : -1 ) << " s\n";
+  std::cout << "Processing time (user.self): " << ( ret == 0 ? totalUserSelf / 1000.0 : -1 ) << " s\n";
+  std::cout << "Processing time (user.children): " << ( ret == 0 ? totalUserChild / 1000.0 : -1 ) << " s\n";
+  std::cout << "Peak memory: " << getPeakMemory() << " KB\n";
+  return ret;
 }

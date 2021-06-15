@@ -30,24 +30,16 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
-#include "PccAppParser.h"
+#ifndef _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+#include "PCCBitstreamCommon.h"
+#include "PCCHighLevelSyntax.h"
+#include "PCCBitstream.h"
+#include "PCCBitstreamReader.h"
 
 using namespace std;
 using namespace pcc;
-
-int main( int argc, char* argv[] ) {
-  std::cout << "PccAppParser v" << TMC2_VERSION_MAJOR << "." << TMC2_VERSION_MINOR << std::endl << std::endl;
-
-  if ( argc != 2 ) { usage(); }
-  if ( !exist( argv[1] ) ) {
-    printf( "File %s not exist \n", argv[1] );
-    usage();
-  }
-  std::string filename = argv[1];
-  int         ret      = parserPccBin( filename );
-
-  return ret;
-}
 
 void usage() {
   printf( "Usage: ./PccAppParser <filename> \n" );
@@ -72,8 +64,7 @@ int parserPccBin( const std::string& filename ) {
   size_t              headerSize = pcc::PCCBitstreamReader::read( bitstream, ssvu );
   bitstreamStat.incrHeader( headerSize );
 
-  bool    bMoreData = true;
-  int32_t index     = 0;
+  bool bMoreData = true;
   while ( bMoreData ) {
     PCCHighLevelSyntax syntax;
     syntax.setBitstreamStat( bitstreamStat );
@@ -84,4 +75,18 @@ int parserPccBin( const std::string& filename ) {
   }
   bitstreamStat.trace();
   return 0;
+}
+
+int main( int argc, char* argv[] ) {
+  std::cout << "PccAppParser v" << TMC2_VERSION_MAJOR << "." << TMC2_VERSION_MINOR << std::endl << std::endl;
+
+  if ( argc != 2 ) { usage(); }
+  if ( !exist( argv[1] ) ) {
+    printf( "File %s not exist \n", argv[1] );
+    usage();
+  }
+  std::string filename = argv[1];
+  int         ret      = parserPccBin( filename );
+
+  return ret;
 }

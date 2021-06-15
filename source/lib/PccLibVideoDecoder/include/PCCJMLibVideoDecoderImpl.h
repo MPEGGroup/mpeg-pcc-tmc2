@@ -40,12 +40,6 @@
 #include "PCCVideo.h"
 #include "PCCVideoBitstream.h"
 
-//#include <TLibCommon/TComList.h>
-//#include <TLibCommon/TComPicYuv.h>
-//#include <TLibDecoder/AnnexBread.h>
-//#include <TLibDecoder/NALread.h>
-//#include <TLibDecoder/TDecTop.h>
-
 namespace pcc {
 
 template <class T>
@@ -56,25 +50,10 @@ class PCCJMLibVideoDecoderImpl {
   ~PCCJMLibVideoDecoderImpl();
 
   void decode( PCCVideoBitstream& bitstream,
-               size_t             outputBitDepth,
-               bool               RGB2GBR,
                PCCVideo<T, 3>&    video,
+               size_t             outputBitDepth,
                const std::string& decoderPath,
-               const std::string& fileName,
-               const size_t       frameCount );
-
-  // private:
-  // void                                  setVideoSize( const TComSPS& sps );
-  // Void                                  xWriteOutput( TComList<TComPic*>* pcListPic, UInt tId, PCCVideo<T, 3>& video
-  // ); Void                                  xFlushOutput( TComList<TComPic*>* pcListPic, PCCVideo<T, 3>& video ); void
-  // xWritePicture( const TComPicYuv* pic, PCCVideo<T, 3>& video ); TDecTop                               m_cTDecTop{};
-  // int                                   m_iPOCLastDisplay = -MAX_INT;
-  // int                                   m_iSkipFrame{};
-  // std::array<int, MAX_NUM_CHANNEL_TYPE> m_outputBitDepth{};
-  // int                                   m_internalBitDepths;
-  // int                                   m_outputWidth;
-  // int                                   m_outputHeight;
-  // bool                                  m_bRGB2GBR;
+               const std::string& fileName );
 };
 
 };  // namespace pcc

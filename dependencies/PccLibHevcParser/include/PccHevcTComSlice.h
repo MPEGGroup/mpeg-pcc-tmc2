@@ -833,29 +833,34 @@ class TComSPS
 {  
   public:
   UInt getOutputWidth () { 
-    printf("getOutputWidth = %d - %d - %d  = %d \n",
-        (int)m_picWidthInLumaSamples,
-        m_conformanceWindow.getWindowLeftOffset(),
-        m_conformanceWindow.getWindowRightOffset(),
-        (int)m_picWidthInLumaSamples 
-            - m_conformanceWindow.getWindowLeftOffset()
-            - m_conformanceWindow.getWindowRightOffset()); 
-    
+    // printf("getOutputWidth = %d - %d - %d  = %d \n",
+    //     (int)m_picWidthInLumaSamples,
+    //     m_conformanceWindow.getWindowLeftOffset(),
+    //     m_conformanceWindow.getWindowRightOffset(),
+    //     (int)m_picWidthInLumaSamples 
+    //         - m_conformanceWindow.getWindowLeftOffset()
+    //         - m_conformanceWindow.getWindowRightOffset());     
     return  (int)m_picWidthInLumaSamples 
     - m_conformanceWindow.getWindowLeftOffset()
     - m_conformanceWindow.getWindowRightOffset(); 
   }
   UInt getOutputHeight () { 
-    printf("getOutputHeight = %d - %d - %d  = %d \n",
-        (int)m_picHeightInLumaSamples,
-        m_conformanceWindow.getWindowTopOffset(),
-        m_conformanceWindow.getWindowBottomOffset(),
-        (int)m_picHeightInLumaSamples 
-            - m_conformanceWindow.getWindowTopOffset() 
-            - m_conformanceWindow.getWindowBottomOffset()); 
+    // printf("getOutputHeight = %d - %d - %d  = %d \n",
+    //     (int)m_picHeightInLumaSamples,
+    //     m_conformanceWindow.getWindowTopOffset(),
+    //     m_conformanceWindow.getWindowBottomOffset(),
+    //     (int)m_picHeightInLumaSamples 
+    //         - m_conformanceWindow.getWindowTopOffset() 
+    //         - m_conformanceWindow.getWindowBottomOffset()); 
     return  m_picHeightInLumaSamples 
     - m_conformanceWindow.getWindowTopOffset()
     - m_conformanceWindow.getWindowBottomOffset(); 
+  }
+  UInt getBitDepth(){
+    return m_bitDepths.recon[0];
+  }
+  UInt getIs444(){
+    return ( m_chromaFormatIdc == ChromaFormat::CHROMA_444 );
   }
 private:
   Int              m_SPSId;

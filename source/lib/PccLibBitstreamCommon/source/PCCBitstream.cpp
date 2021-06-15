@@ -33,6 +33,7 @@
 #include "PCCBitstreamCommon.h"
 #include "PCCBitstream.h"
 #include "PCCVideoBitstream.h"
+#include "MD5.h"
 
 using namespace pcc;
 
@@ -127,4 +128,16 @@ void PCCBitstream::copyTo( PCCBitstream& dataBitstream, uint64_t startByte, uint
   memcpy( data_.data() + startByte, dataBitstream.buffer(), outputSize );
   pos.bytes_ += outputSize;
   dataBitstream.setPosition( pos );
+}
+
+void PCCBitstream::computeMD5() {
+  MD5                  md5Hash;
+  std::vector<uint8_t> tmp_digest;
+  tmp_digest.resize( 16 );
+  TRACE_BITSTRMD5( " BITSTRMD5 = " )
+  md5Hash.update( data_.data(), data_.size() );
+  md5Hash.finalize( tmp_digest.data() );
+  for ( auto& bitStr : tmp_digest ) TRACE_BITSTRMD5( "%02x", bitStr );
+  std::cout << std::endl;
+  return;
 }

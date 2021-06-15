@@ -62,6 +62,7 @@ class QualityMetrics {
 
   void print( char code );
 
+ private:
   // point-2-point ( cloud 2 cloud ), benchmark metric
   float c2cMse_;
   float c2cHausdorff_;
@@ -100,14 +101,13 @@ class PCCMetrics {
   void display();
 
  private:
-  std::vector<size_t> sourcePoints_;
-  std::vector<size_t> sourceDuplicates_;
-  std::vector<size_t> reconstructPoints_;
-  std::vector<size_t> reconstructDuplicates_;
-
-  std::vector<QualityMetrics> quality1;
-  std::vector<QualityMetrics> quality2;
-  std::vector<QualityMetrics> qualityF;
+  std::vector<size_t>         sourcePoints_;
+  std::vector<size_t>         sourceDuplicates_;
+  std::vector<size_t>         reconstructPoints_;
+  std::vector<size_t>         reconstructDuplicates_;
+  std::vector<QualityMetrics> quality1_;
+  std::vector<QualityMetrics> quality2_;
+  std::vector<QualityMetrics> qualityF_;
   PCCMetricsParameters        params_;
 };
 

@@ -31,13 +31,14 @@ class PccAvcNalu {
 
 class PccAvcFrame {
  public:
-  PccAvcFrame(){  nalu_.clear(); }
-  ~PccAvcFrame(){ nalu_.clear(); }
-  void add( PccAvcNalu& nalu ) {  nalu_.push_back( nalu ); }
+  PccAvcFrame() { nalu_.clear(); }
+  ~PccAvcFrame() { nalu_.clear(); }
+  void                           add( PccAvcNalu& nalu ) { nalu_.push_back( nalu ); }
   const std::vector<PccAvcNalu>& getNalu() const { return nalu_; }
   const PccAvcNalu&              getNalu( size_t frameIndex ) const { return nalu_[frameIndex]; }
-  const size_t                    getFrameCount() { return nalu_.size(); }
-private:
+  const size_t                   getFrameCount() { return nalu_.size(); }
+
+ private:
   std::vector<PccAvcNalu> nalu_;
 };
 
@@ -45,16 +46,23 @@ class PccAvcParser {
  public:
   PccAvcParser();
   ~PccAvcParser();
-  void getVideoSize( const std::vector<uint8_t>& buffer, size_t& width, size_t& height, int isAnnexB );
-  void display();
+  void        getVideoSize( const std::vector<uint8_t>& buffer,
+                            size_t&                     width,
+                            size_t&                     height,
+                            int                         isAnnexB,
+                            size_t&                     bitDepth,
+                            bool&                       is444 );
+  void        display();
   const char* getNaluType( int iNaluType );
 
  private:
-  void setBuffer( const std::vector<uint8_t>& buffer, size_t& width, size_t& height, int isAnnexB );
-  void createNalu( const size_t frameIndex,
-                   const std::vector<uint8_t>& buffer,
-                   const size_t pos,
-                   const size_t size );
+  void setBuffer( const std::vector<uint8_t>& buffer,
+                  size_t&                     width,
+                  size_t&                     height,
+                  int                         isAnnexB,
+                  size_t&                     bitDepth,
+                  bool&                       is444 );
+  void createNalu( const size_t frameIndex, const std::vector<uint8_t>& buffer, const size_t pos, const size_t size );
 
   const std::vector<PccAvcNalu>& getVps () const { return vps_; }
   const std::vector<PccAvcNalu>& getSps () const { return sps_; }

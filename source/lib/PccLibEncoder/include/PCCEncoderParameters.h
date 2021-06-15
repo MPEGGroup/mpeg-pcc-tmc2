@@ -43,11 +43,13 @@ class PCCEncoderParameters {
  public:
   PCCEncoderParameters();
   ~PCCEncoderParameters();
-  void              print();
-  bool              check();
-  void              completePath();
-  static void       constructAspsRefListStruct( PCCContext& context, size_t aspsIdx, size_t afpsIdx );
-  void              initializeContext( PCCContext& context );
+  void        print();
+  bool        check();
+  void        completePath();
+  static void constructAspsRefListStruct( PCCContext& context, size_t aspsIdx, size_t afpsIdx );
+  void        initializeContext( PCCContext& context );
+  uint8_t     getCodecIdIndex( PCCCodecId codecId );
+
   size_t            startFrameNumber_;
   std::string       configurationFolder_;
   std::string       uncompressedDataFolder_;
@@ -65,25 +67,36 @@ class PCCEncoderParameters {
   bool              byteStreamVideoCoderGeometry_;
   bool              byteStreamVideoCoderAttribute_;
   bool              use3dmc_;
-#ifdef USE_HM_PCC_RDO
-  bool usePccRDO_;
-#endif
-  std::string colorSpaceConversionConfig_;
-  std::string inverseColorSpaceConversionConfig_;
-  size_t      nbThread_;
-  size_t      frameCount_;
-  size_t      groupOfFramesSize_;
-  std::string uncompressedDataPath_;
+  bool              usePccRDO_;
+  std::string       colorSpaceConversionConfig_;
+  std::string       inverseColorSpaceConversionConfig_;
+  size_t            nbThread_;
+  size_t            frameCount_;
+  size_t            groupOfFramesSize_;
+  std::string       uncompressedDataPath_;
 
   // packing
   size_t minimumImageWidth_;
   size_t minimumImageHeight_;
 
   // video encoding
-  int geometryQP_;
-  int textureQP_;
+  int         geometryQP_;
+  int         attributeQP_;
+  int         deltaQPD0_;
+  int         deltaQPD1_;
+  int         deltaQPT0_;
+  int         deltaQPT1_;
+  std::string geometryConfig_;
+  std::string geometry0Config_;
+  std::string geometry1Config_;
+  std::string attributeConfig_;
+  std::string attribute0Config_;
+  std::string attribute1Config_;
+  bool        multipleStreams_;
 
   // segmentation
+  bool   gridBasedSegmentation_;
+  size_t voxelDimensionGridBasedSegmentation_;
   size_t nnNormalEstimation_;
   size_t normalOrientation_;
   bool   gridBasedRefineSegmentation_;
@@ -164,38 +177,28 @@ class PCCEncoderParameters {
 
   // lossless
   bool noAttributes_;
-  bool losslessGeo_;
-  bool losslessGeo444_;
+  bool rawPointsPatch_;
+  bool attributeVideo444_;
 
   // raw points video
   bool        useRawPointsSeparateVideo_;
   std::string geometryAuxVideoConfig_;
-  std::string textureAuxVideoConfig_;
+  std::string attributeAuxVideoConfig_;
 
   // scale and bias
   float             modelScale_;
   PCCVector3<float> modelOrigin_;
 
   // patch sampling resolution
-  size_t      levelOfDetailX_;
-  size_t      levelOfDetailY_;
-  std::string geometryConfig_;
-  std::string geometryD0Config_;
-  std::string geometryD1Config_;
-  std::string textureConfig_;
-  std::string textureT0Config_;
-  std::string textureT1Config_;
-  bool        keepIntermediateFiles_;
-  bool        absoluteD1_;
-  int         qpAdjD1_;
-  bool        absoluteT1_;
-  int         qpAdjT1_;
-  bool        multipleStreams_;
-  bool        constrainedPack_;
+  size_t levelOfDetailX_;
+  size_t levelOfDetailY_;
+  bool   keepIntermediateFiles_;
+  bool   absoluteD1_;
+  bool   absoluteT1_;
+  bool   constrainedPack_;
 
   // dilation
   bool groupDilation_;
-  bool textureDilationOffLossless_;
 
   // EOM
   bool enhancedOccupancyMapCode_;
@@ -221,7 +224,7 @@ class PCCEncoderParameters {
 
   // Flexible Patch Packing
   size_t packingStrategy_;
-  size_t textureBGFill_;
+  size_t attributeBGFill_;
   size_t safeGuardDistance_;
   bool   useEightOrientations_;
 
@@ -270,7 +273,7 @@ class PCCEncoderParameters {
 
   // Sort raw points by Morton code
   bool   mortonOrderSortRawPoints_;
-  size_t textureRawSeparateVideoWidth_;
+  size_t attributeRawSeparateVideoWidth_;
 
   // Patch block filtering
   bool    pbfEnableFlag_;
@@ -283,12 +286,35 @@ class PCCEncoderParameters {
   size_t maxNumRefAtlasList_;
   size_t maxNumRefAtlasFrame_;
 
-  size_t log2MaxAtlasFrameOrderCntLsb_;
-  size_t tileSegmentationType_;
-  size_t numMaxTilePerFrame_;
-  bool   uniformPartitionSpacing_;
-  size_t tilePartitionWidth_;
-  size_t tilePartitionHeight_;
+  size_t               log2MaxAtlasFrameOrderCntLsb_;
+  size_t               tileSegmentationType_;
+  size_t               numMaxTilePerFrame_;
+  bool                 uniformPartitionSpacing_;
+  size_t               tilePartitionWidth_;
+  size_t               tilePartitionHeight_;
+  std::vector<int32_t> tilePartitionWidthList_;
+  std::vector<int32_t> tilePartitionHeightList_;
+
+  // Profile tier level
+  bool   tierFlag_;
+  size_t profileCodecGroupIdc_;
+  size_t profileToolsetIdc_;
+  size_t profileReconstructionIdc_;
+  size_t levelIdc_;
+  size_t avcCodecIdIndex_;
+  size_t hevcCodecIdIndex_;
+  size_t shvcCodecIdIndex_;
+  size_t vvcCodecIdIndex_;
+
+  // Profile toolset constraints information
+  bool oneV3CFrameOnlyFlag_;
+  bool noEightOrientationsConstraintFlag_;
+  bool no45DegreeProjectionPatchConstraintFlag_;
+
+  // SHVC
+  size_t shvcLayerIndex_;
+  size_t shvcRateX_;
+  size_t shvcRateY_;
 };
 
 };  // namespace pcc

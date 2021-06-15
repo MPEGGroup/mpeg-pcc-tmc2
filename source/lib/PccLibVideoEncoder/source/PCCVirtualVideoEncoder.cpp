@@ -38,6 +38,7 @@
 #include "PCCJMLibVideoEncoder.h"
 #include "PCCHMLibVideoEncoder.h"
 #include "PCCVTMLibVideoEncoder.h"
+#include "PCCSHMAppVideoEncoder.h"
 #ifdef USE_FFMPEG_VIDEO_CODEC
 #include "PCCFFMPEGLibVideoEncoder.h"
 #endif
@@ -64,6 +65,9 @@ PCCCodecId PCCVirtualVideoEncoder<T>::getDefaultCodecId() {
 #ifdef USE_JMAPP_VIDEO_CODEC
   return JMAPP;
 #endif
+#ifdef USE_SHMAPP_VIDEO_CODEC
+  return SHMAPP;
+#endif
 }
 
 template <typename T>
@@ -74,6 +78,9 @@ bool PCCVirtualVideoEncoder<T>::checkCodecId( PCCCodecId codecId ) {
 #endif
 #ifdef USE_JMAPP_VIDEO_CODEC
     case JMAPP: break;
+#endif
+#ifdef USE_SHMAPP_VIDEO_CODEC
+    case SHMAPP: break;
 #endif
 #ifdef USE_JMLIB_VIDEO_CODEC
     case JMLIB: break;
@@ -103,6 +110,9 @@ std::shared_ptr<PCCVirtualVideoEncoder<T>> PCCVirtualVideoEncoder<T>::create( PC
 #endif
 #ifdef USE_HMAPP_VIDEO_CODEC
     case HMAPP: return std::make_shared<PCCHMAppVideoEncoder<T>>(); break;
+#endif
+#ifdef USE_SHMAPP_VIDEO_CODEC
+    case SHMAPP: return std::make_shared<PCCSHMAppVideoEncoder<T>>(); break;
 #endif
 #ifdef USE_JMLIB_VIDEO_CODEC
     case JMLIB: return std::make_shared<PCCJMLibVideoEncoder<T>>(); break;

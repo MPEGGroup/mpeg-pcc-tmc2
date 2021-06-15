@@ -37,7 +37,6 @@
 #include "PCCJMLibVideoDecoderImpl.h"
 
 extern "C" {
-//#include "win32.h"
 #include "global.h"
 #include "h264decoder.h"
 
@@ -57,21 +56,17 @@ PCCJMLibVideoDecoderImpl<T>::~PCCJMLibVideoDecoderImpl() {}
 
 template <typename T>
 void PCCJMLibVideoDecoderImpl<T>::decode( PCCVideoBitstream& bitstream,
-                                          size_t             outputBitDepth,
-                                          bool               RGB2GBR,
                                           PCCVideo<T, 3>&    video,
+                                          size_t             outputBitDepth,
                                           const std::string& decoderPath,
-                                          const std::string& fileName,
-                                          const size_t       frameCount ) {
-  std::string        s( reinterpret_cast<char*>( bitstream.buffer() ), bitstream.size() );
-  std::istringstream iss( s );
-  std::istream&      bitstreamFile = iss;
+                                          const std::string& fileName ) {
+  // std::string        s( reinterpret_cast<char*>( bitstream.buffer() ), bitstream.size() );
+  // std::istringstream iss( s );
+  // std::istream&      bitstreamFile = iss;
 
   std::string binName = fileName + ".bin";
   std::string decName = fileName + ".yuv";
-  // std::cout << "[ JM Dec bin ]: " << binName << std::endl;
-  bitstream.write_JM( binName );
-
+  bitstream.write( binName );
   std::string        arguments = "JMDEC -i " + binName + " -o " + decName;
   std::istringstream aiss( arguments );
   std::string        token;
@@ -86,12 +81,12 @@ void PCCJMLibVideoDecoderImpl<T>::decode( PCCVideoBitstream& bitstream,
   char** argv = &args[0];
   std::cout << "[JM Dec args " << argc << "]: " << arguments << std::endl;
 
-  // === from decoder_test.c
+  // === from decoder_test.ce
   // jmdecmain(argc, argv);
   int             iRet;
   DecodedPicList* pDecPicList;
   int             hFileDecOutput0 = -1, hFileDecOutput1 = -1;
-  int             iFramesOutput = 0, iFramesDecoded = 0;
+  int             iFramesDecoded = 0;
   InputParameters InputParams;
 
   init_time();
@@ -111,7 +106,7 @@ void PCCJMLibVideoDecoderImpl<T>::decode( PCCVideoBitstream& bitstream,
     iRet = DecodeOneFrame( &pDecPicList );
     if ( iRet == DEC_EOS || iRet == DEC_SUCCEED ) {
       // process the decoded picture, output or display;
-      iFramesOutput += WriteOneFrame( pDecPicList, hFileDecOutput0, hFileDecOutput1, 0 );
+      WriteOneFrame( pDecPicList, hFileDecOutput0, hFileDecOutput1, 0 );
       iFramesDecoded++;
     } else {
       // error handling;
@@ -120,24 +115,25 @@ void PCCJMLibVideoDecoderImpl<T>::decode( PCCVideoBitstream& bitstream,
   } while ( ( iRet == DEC_SUCCEED ) &&
             ( ( p_Dec->p_Inp->iDecFrmNum == 0 ) || ( iFramesDecoded < p_Dec->p_Inp->iDecFrmNum ) ) );
 
-  iRet = FinitDecoder( &pDecPicList );
-  iFramesOutput += WriteOneFrame( pDecPicList, hFileDecOutput0, hFileDecOutput1, 1 );
-  iRet = CloseDecoder();
-
-  // quit;
-  if ( hFileDecOutput0 >= 0 ) { close( hFileDecOutput0 ); }
-  if ( hFileDecOutput1 >= 0 ) { close( hFileDecOutput1 ); }
-  // end decoding
+  FinitDecoder( &pDecPicList );
+  WriteOneFrame( pDecPicList, hFileDecOutput0, hFileDecOutput1, 1 );
 
   int            decWidth  = pDecPicList->iWidth;
   int            decHeight = pDecPicList->iHeight;
-  int            YUVFormat = pDecPicList->iYUVFormat;
-  PCCCOLORFORMAT format    = RGB2GBR ? PCCCOLORFORMAT::YUV444 : PCCCOLORFORMAT::YUV420;
-  const size_t   nbyte     = outputBitDepth == 8 ? 1 : 2;
+  PCCCOLORFORMAT format    = pDecPicList->iYUVFormat == 3 ? PCCCOLORFORMAT::RGB444 : PCCCOLORFORMAT::YUV420;
+  const size_t   nbyte     = pDecPicList->iBitDepth == 8 ? 1 : 2;
+
+  // Close and quit;
+  CloseDecoder();
+  close( hFileDecOutput0 );
+  close( hFileDecOutput1 );
+  // end decoding
 
   video.clear();
-  video.read_JM( decName, decWidth, decHeight, format, iFramesDecoded, nbyte );
+  video.read( decName, decWidth, decHeight, format, nbyte );
 
+  removeFile( binName );
+  removeFile( decName );
   printf( "[ JM Dec ] %d frames are decoded: %dx%d.\n", iFramesDecoded, decWidth, decHeight );
   return;
 }

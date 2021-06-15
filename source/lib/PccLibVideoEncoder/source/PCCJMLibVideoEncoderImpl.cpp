@@ -83,9 +83,6 @@ void PCCJMLibVideoEncoderImpl<T>::encode( PCCVideo<T, 3>&    videoSrc,
                                           std::string        arguments,
                                           PCCVideoBitstream& bitstream,
                                           PCCVideo<T, 3>&    videoRec ) {
-  std::ostringstream oss( std::ostringstream::binary | std::ostringstream::out );
-  std::ostream&      bitstreamFile = oss;
-
   std::istringstream iss( arguments );
   std::string        token;
   std::vector<char*> args;
@@ -95,20 +92,17 @@ void PCCJMLibVideoEncoderImpl<T>::encode( PCCVideo<T, 3>&    videoSrc,
     arg[token.size()] = '\0';
     args.push_back( arg );
   }
-
   int    argc = args.size();
   char** argv = &args[0];
-
   std::cout << "[JM Enc args " << argc << "]: " << arguments << std::endl;
   const size_t   srcWidth           = videoSrc.getWidth();
   const size_t   srcHeight          = videoSrc.getHeight();
-  const size_t   frameCount         = videoSrc.getFrameCount();
   int32_t        sourceBitDepthLuma = std::stoi( getParameter( arguments, "SourceBitDepthLuma=" ) );
   PCCCOLORFORMAT format             = videoSrc.getColorFormat();
   const size_t   nbyte              = sourceBitDepthLuma == 10 ? 2 : 1;
 
   init_time();
-  std::cout << "[ JM Enc ]: frames " << frameCount << std::endl;
+  std::cout << "[ JM Enc ]: frames " << videoSrc.getFrameCount() << std::endl;
 
   // copy from lencod.c main()
   alloc_encoder( &p_Enc );
@@ -119,8 +113,7 @@ void PCCJMLibVideoEncoderImpl<T>::encode( PCCVideo<T, 3>&    videoSrc,
   std::string srcName = p_Enc->p_Inp->input_file1.fname;
   std::string binName = p_Enc->p_Inp->outfile;
   std::string recName = p_Enc->p_Inp->ReconFile;
-
-  videoSrc.write_JM( srcName, nbyte );
+  videoSrc.write( srcName, nbyte );
 
   // init encoder
   init_encoder( p_Enc->p_Vid, p_Enc->p_Inp );
@@ -135,8 +128,13 @@ void PCCJMLibVideoEncoderImpl<T>::encode( PCCVideo<T, 3>&    videoSrc,
 
   // === need to fill buffer
   videoRec.clear();
-  videoRec.read_JM( recName, srcWidth, srcHeight, format, frameCount, nbyte );
-  bitstream.read_JM( binName );
+  videoRec.read( recName, srcWidth, srcHeight, format, nbyte );
+  bitstream.read( binName );
+
+  // Remove temp files
+  removeFile( srcName );
+  removeFile( recName );
+  removeFile( binName );
   return;
 }
 

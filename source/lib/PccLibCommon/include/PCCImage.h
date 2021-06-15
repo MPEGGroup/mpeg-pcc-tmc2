@@ -47,13 +47,6 @@ class PCCImage {
   ~PCCImage()                                = default;
   std::vector<T>& operator[]( int index ) { return channels_[index]; }
 
-  void swap( PCCImage<T, N>& image ) {
-    std::swap( width_, image.width_ );
-    std::swap( height_, image.height_ );
-    std::swap( format_, image.format_ );
-    std::swap( deprecatedColorFormat_, image.deprecatedColorFormat_ );
-    for ( size_t c = 0; c < N; c++ ) { channels_[c].swap( image.channels_[c] ); }
-  }
   template <typename FromT>
   PCCImage<T, 3>& operator=( const PCCImage<FromT, 3>& image ) {
     resize( image.getWidth(), image.getHeight(), image.getColorFormat() );
@@ -67,66 +60,8 @@ class PCCImage {
     return *this;
   }
 
-  void convertYUV444ToYUV420( const PCCImage<T, 3>& image ) {
-    if ( image.getColorFormat() != PCCCOLORFORMAT::YUV444 ) {
-      printf(
-          "Error: convertYUV44ToYUV420 not possible from image of format = %d "
-          "!= YUV444 \n",
-          (int32_t)image.getColorFormat() );
-      exit( -1 );
-    }
-    resize( image.getWidth(), image.getHeight(), PCCCOLORFORMAT::YUV420 );
-    std::copy( image.channels_[0].begin(), image.channels_[0].end(), channels_[0].begin() );
-    for ( size_t c = 1; c < N; ++c ) {
-      const auto& channel = image.channels_[c];
-      for ( size_t y = 0; y < height_; y += 2 ) {
-        const T* const buffer1 = channel.data() + y * width_;
-        const T* const buffer2 = buffer1 + width_;
-        for ( size_t x = 0; x < width_; x += 2 ) {
-          const size_t   x2  = x / 2;
-          const uint64_t sum = buffer1[x] + buffer1[x + 1] + buffer2[x] + buffer2[x + 1];
-          channels_[c][x2]   = T( ( sum + 2 ) / 4 );
-        }
-      }
-    }
-  }
+  void resize( const size_t sizeU0, const size_t sizeV0, PCCCOLORFORMAT format );
 
-  void convertYUV420ToYUV444( const PCCImage<T, 3>& image ) {
-    if ( image.getColorFormat() != PCCCOLORFORMAT::YUV420 ) {
-      printf(
-          "Error: convertYUV44ToYUV420 not possible from image of format = %d "
-          "!= YUV420 \n",
-          (int32_t)image.getColorFormat() );
-      exit( -1 );
-    }
-    resize( image.getWidth(), image.getHeight(), PCCCOLORFORMAT::YUV444 );
-    std::copy( image.channels_[0].begin(), image.channels_[0].end(), channels_[0].begin() );
-    const size_t width2 = width_ / 2;
-    for ( size_t c = 1; c < N; ++c ) {
-      auto&    dst = channels_[c];
-      const T* src = image.channels_[c].data();
-      for ( size_t y = 0; y < height_; y += 2 ) {
-        T* const buffer = dst.data() + y * width_;
-        for ( size_t x2 = 0; x2 < width2; ++x2, src++ ) {
-          const size_t x = x2 * 2;
-          buffer[x]      = *src;
-          buffer[x + 1]  = *src;
-        }
-        memcpy( (char*)( buffer + width_ ), (char*)buffer, width_ * sizeof( T ) );
-      }
-    }
-  }
-
-  void convertYUV420ToYUV444() {
-    PCCImage<T, 3> image;
-    image.convertYUV420ToYUV444( *this );
-    this->swap( image );
-  }
-  void convertYUV444ToYUV420() {
-    PCCImage<T, 3> image;
-    image.convertYUV444ToYUV420( *this );
-    this->swap( image );
-  }
   void clear() {
     for ( auto& channel : channels_ ) { channel.clear(); }
   }
@@ -143,30 +78,13 @@ class PCCImage {
       for ( auto& p : channel ) { p = value; }
     }
   }
-  void resize( const size_t sizeU0, const size_t sizeV0, PCCCOLORFORMAT format ) {
-    if ( format == PCCCOLORFORMAT::UNKNOWN ) {
-      printf( "ERROR: can't allocated image of unknown format \n" );
-      exit( -1 );
-    }
-    width_  = sizeU0;
-    height_ = sizeV0;
-    format_ = format;
-    // printf( "Image resize: %zu x %zu format = %d sizeof( T ) = %zu \n", width_, height_, format_, sizeof( T ) );
-    // fflush(stdout);
-    const size_t size = width_ * height_;
-    if ( format_ == PCCCOLORFORMAT::YUV420 ) {
-      channels_[0].resize( size, 0 );
-      channels_[1].resize( size >> 2, 0 );
-      channels_[2].resize( size >> 2, 0 );
-    } else {
-      for ( auto& channel : channels_ ) { channel.resize( size, 0 ); }
-    }
-  }
-
-  void convertRGB2BGR() {
-    channels_[0].swap( channels_[1] );
-    channels_[1].swap( channels_[2] );
-  }
+  void swap( PCCImage<T, N>& image );
+  void convertRGB2BGR();
+  void convertYUV420ToYUV444();
+  void convertYUV444ToYUV420();
+  void convertYUV444ToYUV420( const PCCImage<T, 3>& image );
+  void convertYUV420ToYUV444( const PCCImage<T, 3>& image );
+  void upsample( size_t rate );
 
   template <typename Pel>
   void set( const Pel*     Y,
@@ -191,8 +109,7 @@ class PCCImage {
     //     "copy image PCC: Shift=%d Round=%d (%4zux%4zu S=%4zu C:%4zux%4zu => "
     //     "%4zux%4zu) stride = %4zu %4zu bgr=%d sizeof(Pel) = %zu sizeof(T) = %zu \n",
     //     shiftbits, rounding, widthY, heightY, strideY, widthC, heightC, width_, height_,
-    //     strideY, strideC,
-    //     rgb2bgr, sizeof(Pel), sizeof(T) );
+    //     strideY, strideC, rgb2bgr, sizeof(Pel), sizeof(T) );
     for ( size_t c = 0; c < 3; c++ ) {
       auto* src = ptr[rgb2bgr][c];
       auto* dst = channels_[c].data();
@@ -258,75 +175,28 @@ class PCCImage {
     }
   }
 
-  bool write( std::ofstream& outfile, const size_t nbyte ) {
-    printf( "Image write %zux%zu T = %zu nbyte = %zu color format = %d channel size = %zu %zu %zu \n", width_, height_,
-            sizeof( T ), nbyte, format_, channels_[0].size(), channels_[1].size(), channels_[2].size() );
-    fflush( stdout );
-    if ( nbyte == sizeof( T ) ) {
-      if ( !outfile.good() ) { return false; }
-      for ( const auto& channel : channels_ ) {
-        outfile.write( (const char*)( channel.data() ), channel.size() * sizeof( T ) );
-      }
-    } else {
-      assert( nbyte < sizeof( T ) );
-      PCCImage<uint8_t, 3> image;
-      image = *this;
-      image.write( outfile, nbyte );
-    }
-    return true;
-  }
+  bool write( std::ofstream& outfile, const size_t nbyte );
 
-  bool write( const std::string fileName, const size_t nbyte ) {
-    std::ofstream outfile( fileName, std::ios::binary );
-    if ( write( outfile, nbyte ) ) {
-      outfile.close();
-      return true;
-    }
-    return false;
-  }
+  bool write( const std::string fileName, const size_t nbyte );
 
   bool read( std::ifstream&       infile,
              const size_t         sizeU0,
              const size_t         sizeV0,
              const PCCCOLORFORMAT format,
-             const size_t         nbyte ) {
-    // printf( " read image %zu x %zu x %zu / %zu format = %d infile.eof() = %d \n", sizeU0, sizeV0, nbyte, sizeof( T ),
-    // format, infile.eof() );
-    if ( infile.eof() ) {
-      printf( "Read image eof found return false \n" );
-      return false;
-    }
-    if ( nbyte == sizeof( T ) ) {
-      resize( sizeU0, sizeV0, format );
-      for ( auto& channel : channels_ ) { infile.read( (char*)( channel.data() ), channel.size() * sizeof( T ) ); }
-    } else {
-      assert( nbyte < sizeof( T ) );
-      PCCImage<uint8_t, 3> image;
-      image.read( infile, sizeU0, sizeV0, format, nbyte );
-      *this = image;
-    }
-    return true;
-  }
-
+             const size_t         nbyte );
   bool read( const std::string    fileName,
              const size_t         sizeU0,
              const size_t         sizeV0,
              const PCCCOLORFORMAT format,
-             const size_t         nbyte ) {
-    std::ifstream infile( fileName, std::ios::binary );
-    if ( read( infile, sizeU0, sizeV0, format, nbyte ) ) {
-      infile.close();
-      return true;
-    }
-    return false;
-  }
+             const size_t         nbyte );
 
   void setValue( const size_t channelIndex, const size_t u, const size_t v, const T value ) {
     assert( channelIndex < N && u < width_ && v < height_ );
-    if ( format_ == YUV420 && channelIndex != 0 )
-      channels_[channelIndex][( v * width_ >> 1 ) + u] = value;
-    else
+    if ( format_ == YUV420 && channelIndex != 0 ) {
+      channels_[channelIndex][( v >> 1 ) * ( width_ >> 1 ) + ( u >> 1 )] = value;
+    } else {
       channels_[channelIndex][v * width_ + u] = value;
+    }
   }
   void setValueYuvChroma( const size_t channelIndex, const size_t u, const size_t v, const T value ) {
     channels_[channelIndex][v * ( width_ >> 1 ) + u] = value;
@@ -334,160 +204,31 @@ class PCCImage {
 
   T getValue( const size_t channelIndex, const size_t u, const size_t v ) const {
     assert( channelIndex < N && u < width_ && v < height_ );
-    return channels_[channelIndex][v * width_ + u];
+    if ( format_ == YUV420 && channelIndex != 0 ) {
+      return channels_[channelIndex][( v >> 1 ) * ( width_ >> 1 ) + ( u >> 1 )];
+    } else {
+      return channels_[channelIndex][v * width_ + u];
+    }
   }
   T& getValue( const size_t channelIndex, const size_t u, const size_t v ) {
     assert( channelIndex < N && u < width_ && v < height_ );
-    if ( format_ == YUV420 && channelIndex != 0 )
-      return channels_[channelIndex][( v * width_ >> 1 ) + u];
-    else
+    if ( format_ == YUV420 && channelIndex != 0 ) {
+      return channels_[channelIndex][( v >> 1 ) * ( width_ >> 1 ) + ( u >> 1 )];
+    } else {
       return channels_[channelIndex][v * width_ + u];
+    }
   }
 
-  bool copyBlock( size_t top, size_t left, size_t width, size_t height, PCCImage& block ) {
-    assert( top >= 0 && left >= 0 && ( width + left ) <= width_ && ( height + top ) <= height_ );
-    for ( size_t cc = 0; cc < N; cc++ ) {
-      for ( size_t i = top; i < top + height; i++ ) {
-        for ( size_t j = left; j < left + width; j++ ) {
-          block.setValue( cc, ( j - left ), ( i - top ), getValue( cc, j, i ) );
-        }
-      }
-    }
-    return true;
-  }
-  bool setBlock( size_t top, size_t left, PCCImage& block ) {
-    assert( top >= 0 && left >= 0 && ( block.getWidth() + left ) < width_ && ( block.getHeight() + top ) < height_ );
-    for ( size_t cc = 0; cc < N; cc++ ) {
-      for ( size_t i = top; i < top + block.getHeight(); i++ ) {
-        for ( size_t j = left; j < left + block.getWidth(); j++ ) {
-          setValue( cc, j, i, block.getValue( cc, ( j - left ), ( i - top ) ) );
-        }
-      }
-    }
-    return true;
-  }
-  void copyFrom( PCCImage& image ) {
-    size_t       width         = ( std::min )( width_, image.width_ );
-    size_t       height        = ( std::min )( height_, image.height_ );
-    size_t       subsample     = format_ == YUV420 ? 2 : 1;
-    const size_t strideSrc[3]  = {image.width_, image.width_ / subsample, image.width_ / subsample};
-    const size_t strideDst[3]  = {width_, width_ / subsample, width_ / subsample};
-    const size_t widthComp[3]  = {width, width / subsample, width / subsample};
-    const size_t heightComp[3] = {height, height / subsample, height / subsample};
-    for ( size_t c = 0; c < N; c++ ) {
-      T* src = image.channels_[c].data();
-      T* dst = channels_[c].data();
-      for ( size_t v = 0; v < heightComp[c]; ++v, src += strideSrc[c], dst += strideDst[c] ) {
-        for ( size_t u = 0; u < widthComp[c]; ++u ) { dst[u] = src[u]; }
-      }
-    }
-  }
-  void copyRawData( PCCImage& image ) {
-    size_t       width         = ( std::min )( width_, image.width_ );
-    size_t       height        = ( std::min )( height_, image.height_ );
-    size_t       subsample     = format_ == YUV420 ? 2 : 1;
-    const size_t widthComp[3]  = {width, width / subsample, width / subsample};
-    const size_t heightComp[3] = {height, height / subsample, height / subsample};
-    for ( size_t c = 0; c < N; c++ ) {
-      size_t size = widthComp[c] * heightComp[c];
-      T*     src  = image.channels_[c].data();
-      T*     dst  = channels_[c].data();
-      for ( size_t v = 0; v < size; ++v ) { *( dst++ ) = *( src++ ); }
-    }
-  }
+  bool copyBlock( size_t top, size_t left, size_t width, size_t height, PCCImage& block );
+  bool setBlock( size_t top, size_t left, PCCImage& block );
+  void copyFrom( PCCImage& image );
+  void copyRawData( PCCImage& image );
 
   static inline T tMin( T a, T b ) { return ( ( a ) < ( b ) ) ? ( a ) : ( b ); }
-  // static inline float fMin( float a, float b ) { return ( ( a ) < ( b ) ) ? (
-  // a ) : ( b ); }
-  // static inline float fMax( float a, float b ) { return ( ( a ) > ( b ) ) ? (
-  // a ) : ( b ); }
-  // static inline float fClip( float x, float low, float high ) { return fMin(
-  // fMax( x, low ), high ); }
-
-  void convertBitdepth( uint8_t bitdepthInput, uint8_t bitdepthOutput, bool msbAlignFlag ) {
-    if ( bitdepthInput > sizeof( T ) * 8 ) {
-      std::cout << "Wrong bitdepth input parameter (" << bitdepthInput << " > " << sizeof( T ) * 8 << ")" << std::endl;
-      exit( -1 );
-    }
-    if ( bitdepthOutput > sizeof( T ) * 8 ) {
-      std::cout << "Wrong bitdepth output parameter (" << bitdepthOutput << " > " << sizeof( T ) * 8 << ")"
-                << std::endl;
-      exit( -1 );
-    }
-    int bitDiff = (int)bitdepthInput - (int)bitdepthOutput;
-    if ( bitDiff >= 0 ) {
-      if ( msbAlignFlag ) {
-        for ( size_t cc = 0; cc < N; cc++ ) {
-          for ( size_t h = 0; h < height_; h++ ) {
-            for ( size_t w = 0; w < width_; w++ ) { setValue( cc, w, h, ( getValue( cc, w, h ) >> bitDiff ) ); }
-          }
-        }
-      } else {
-        for ( size_t cc = 0; cc < N; cc++ ) {
-          for ( size_t h = 0; h < height_; h++ ) {
-            for ( size_t w = 0; w < width_; w++ ) {
-              setValue( cc, w, h, tMin( getValue( cc, w, h ), ( T )( ( 1 << bitdepthOutput ) - 1 ) ) );
-            }
-          }
-        }
-      }
-    } else {
-      if ( msbAlignFlag ) {
-        for ( size_t cc = 0; cc < N; cc++ ) {
-          for ( size_t h = 0; h < height_; h++ ) {
-            for ( size_t w = 0; w < width_; w++ ) { setValue( cc, w, h, ( getValue( cc, w, h ) << ( -bitDiff ) ) ); }
-          }
-        }
-      } else {
-        // do nothing, the vaue is correct
-      }
-    }
-  }
-
-  void trace() {
-    size_t maxWidth  = 16;
-    size_t maxHeight = 16;
-    auto*  Y         = channels_[0].data();
-    auto*  U         = channels_[1].data();
-    auto*  V         = channels_[2].data();
-    bool   yuv444    = format_ != PCCCOLORFORMAT::YUV420;
-    size_t widthC    = yuv444 ? width_ : width_ / 2;
-    size_t heightC   = yuv444 ? height_ : height_ / 2;
-
-    printf( "PïctureL = %4zu x %4zud C = %4zu x %4zu\n", width_, height_, widthC, heightC );
-    for ( size_t j = 0; j < std::min( maxHeight, height_ ); j++ ) {
-      printf( "Y %4zu: ", j );
-      for ( size_t i = 0; i < std::min( maxWidth, width_ ); i++ ) { printf( "%2x ", Y[j * width_ + i] ); }
-      if ( !yuv444 ) {
-        if ( j < heightC ) {
-          printf( "  -  U %4zu: ", j );
-          for ( size_t i = 0; i < std::min( maxWidth, widthC ); i++ ) { printf( "%2x ", U[j * widthC + i] ); }
-        } else {
-          printf( "  -  V %4zu: ", j - heightC );
-          for ( size_t i = 0; i < std::min( maxWidth, widthC ); i++ ) {
-            printf( "%2x ", V[( j - heightC ) * widthC + i] );
-          }
-        }
-      } else {
-        printf( "  -  U %4zu: ", j );
-        for ( size_t i = 0; i < std::min( maxWidth, widthC ); i++ ) { printf( "%2x ", U[j * widthC + i] ); }
-        printf( "  -  V %4zu: ", j );
-        for ( size_t i = 0; i < std::min( maxWidth, widthC ); i++ ) { printf( "%2x ", V[(j)*widthC + i] ); }
-      }
-      printf( "\n" );
-    }
-  }
-
-  bool allPixelsEqualToZero() {
-    for ( auto& channel : channels_ ) {
-      for ( auto& e : channel ) {
-        if ( e != 0 ) { return false; }
-      }
-    }
-    return true;
-  }
-
-  std::string computeMD5( size_t channel );
+  void            convertBitdepth( uint8_t bitdepthInput, uint8_t bitdepthOutput, bool msbAlignFlag );
+  void            trace();
+  bool            allPixelsEqualToZero();
+  std::string     computeMD5( size_t channel );
 
  private:
   T      clamp( T v, T a, T b ) const { return ( ( v < a ) ? a : ( ( v > b ) ? b : v ) ); }
