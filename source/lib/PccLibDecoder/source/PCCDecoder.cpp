@@ -1679,7 +1679,7 @@ void PCCDecoder::setConsitantFourCCCode( PCCContext& context ) {
     for ( size_t i = 0; i <= sei->getCodecMappingsCountMinus1(); i++ ) {
       auto codecId                  = sei->getCodecId( i );
       consitantFourCCCode_[codecId] = sei->getCodec4cc( codecId );
-      printf( "setConsitantFourCCCode: codecId = %3zu  fourCCCode = %s \n", codecId,
+      printf( "setConsitantFourCCCode: codecId = %3u  fourCCCode = %s \n", codecId,
               consitantFourCCCode_[codecId].c_str() );
     }
   }

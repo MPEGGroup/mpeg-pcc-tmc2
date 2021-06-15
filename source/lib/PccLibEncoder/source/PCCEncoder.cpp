@@ -8048,7 +8048,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
                    // codec. The intention was to use the new codec for geometry component, only?
     sei.setComponentCodecCancelFlag( false );
     sei.setCodecMappingsCountMinus1( useAvc + useHevc + useShvc + useVvc - 1 );
-    printf( "sei.getCodecMappingsCountMinus1() = %zu \n", sei.getCodecMappingsCountMinus1() );
+    printf( "sei.getCodecMappingsCountMinus1() = %u \n", sei.getCodecMappingsCountMinus1() );
     sei.allocate();
     uint8_t index = 0;
     if ( useAvc ) {
