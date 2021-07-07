@@ -968,11 +968,6 @@ bool PCCEncoderParameters::check() {
       gridSmoothing_ = false;
       std::cerr << "gridSmoothing is ignored because profileReconstructionIdc set to 0. \n";
     }
-    // Note: Attribute transfer cannot be disabled. one encoder input parameter must be added.
-    if ( flagColorPreSmoothing_ ) {
-      flagColorPreSmoothing_ = false;
-      std::cerr << "flagColorPreSmoothing is ignored because profileReconstructionIdc set to 0. \n";
-    }
     if ( flagColorSmoothing_ ) {
       flagColorSmoothing_ = false;
       std::cerr << "flagColorSmoothing is ignored because profileReconstructionIdc set to 0. \n";
