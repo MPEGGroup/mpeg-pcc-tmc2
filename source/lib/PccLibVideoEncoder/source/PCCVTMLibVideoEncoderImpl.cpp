@@ -164,8 +164,8 @@ void PCCVTMLibVideoEncoderImpl<T>::rateStatsAccum( const AccessUnit& au, const s
 
 template <typename T>
 void PCCVTMLibVideoEncoderImpl<T>::createLib( const int layerIdx ) {
-  const int sourceHeight = m_isField ? m_iSourceHeightOrg : m_iSourceHeight;
-  UnitArea  unitArea( m_chromaFormatIDC, Area( 0, 0, m_iSourceWidth, sourceHeight ) );
+  const int sourceHeight = m_isField ? m_sourceHeightOrg : m_sourceHeight;
+  UnitArea  unitArea( m_chromaFormatIDC, Area( 0, 0, m_sourceWidth, sourceHeight ) );
 
   m_orgPic     = new PelStorage;
   m_trueOrgPic = new PelStorage;
@@ -182,7 +182,7 @@ void PCCVTMLibVideoEncoderImpl<T>::createLib( const int layerIdx ) {
   m_cEncLib.create( layerId );
   // create the output buffer
   for ( int i = 0; i < ( m_iGOPSize + 1 + ( m_isField ? 1 : 0 ) ); i++ ) { m_recBufList.push_back( new PelUnitBuf ); }
-  xInitLib( m_isField );
+  xInitLib();
 
 #if PCC_ME_EXT
   if ( m_usePCCExt ) {
@@ -213,8 +213,8 @@ void PCCVTMLibVideoEncoderImpl<T>::createLib( const int layerIdx ) {
 #endif
 
   if ( m_gopBasedTemporalFilterEnabled ) {
-    m_temporalFilter.init( m_FrameSkip, m_inputBitDepth, m_MSBExtendedBitDepth, m_internalBitDepth, m_iSourceWidth,
-                           sourceHeight, m_aiPad, m_bClipInputVideoToRec709Range, m_inputFileName, m_chromaFormatIDC,
+    m_temporalFilter.init( m_FrameSkip, m_inputBitDepth, m_MSBExtendedBitDepth, m_internalBitDepth, m_sourceWidth,
+                           sourceHeight, m_sourcePadding, m_bClipInputVideoToRec709Range, m_inputFileName, m_chromaFormatIDC,
                            m_inputColourSpaceConvert, m_iQP, m_gopBasedTemporalFilterStrengths,
                            m_gopBasedTemporalFilterFutureReference );
   }
@@ -355,13 +355,14 @@ void PCCVTMLibVideoEncoderImpl<T>::xInitLibCfg() {
   m_cEncLib.setPrintHexPsnr( m_printHexPsnr );
   m_cEncLib.setPrintSequenceMSE( m_printSequenceMSE );
   m_cEncLib.setPrintMSSSIM( m_printMSSSIM );
+  m_cEncLib.setPrintWPSNR( m_printWPSNR );
   m_cEncLib.setCabacZeroWordPaddingEnabled( m_cabacZeroWordPaddingEnabled );
 
   m_cEncLib.setFrameRate( m_iFrameRate );
   m_cEncLib.setFrameSkip( m_FrameSkip );
   m_cEncLib.setTemporalSubsampleRatio( m_temporalSubsampleRatio );
-  m_cEncLib.setSourceWidth( m_iSourceWidth );
-  m_cEncLib.setSourceHeight( m_iSourceHeight );
+  m_cEncLib.setSourceWidth( m_sourceWidth );
+  m_cEncLib.setSourceHeight( m_sourceHeight );
   m_cEncLib.setConformanceWindow( m_confWinLeft / SPS::getWinUnitX( m_InputChromaFormatIDC ),
                                   m_confWinRight / SPS::getWinUnitX( m_InputChromaFormatIDC ),
                                   m_confWinTop / SPS::getWinUnitY( m_InputChromaFormatIDC ),
@@ -667,6 +668,13 @@ void PCCVTMLibVideoEncoderImpl<T>::xInitLibCfg() {
 
   //====== Coding Structure ========
   m_cEncLib.setIntraPeriod( m_iIntraPeriod );
+#if GDR_ENABLED
+  m_cEncLib.setGdrEnabled( m_gdrEnabled );
+  m_cEncLib.setGdrPeriod( m_gdrPeriod );
+  m_cEncLib.setGdrPocStart( m_gdrPocStart );
+  m_cEncLib.setGdrInterval( m_gdrInterval );
+  m_cEncLib.setGdrNoHash( m_gdrNoHash );
+#endif
   m_cEncLib.setDecodingRefreshType( m_iDecodingRefreshType );
   m_cEncLib.setGOPSize( m_iGOPSize );
   m_cEncLib.setDrapPeriod( m_drapPeriod );
@@ -694,7 +702,7 @@ void PCCVTMLibVideoEncoderImpl<T>::xInitLibCfg() {
 #endif
   m_cEncLib.setChromaQpMappingTableParams( m_chromaQpMappingTableParams );
 
-  m_cEncLib.setPad( m_aiPad );
+  m_cEncLib.setSourcePadding( m_sourcePadding );
 
   m_cEncLib.setAccessUnitDelimiter( m_AccessUnitDelimiter );
   m_cEncLib.setEnablePictureHeaderInSliceHeader( m_enablePictureHeaderInSliceHeader );
@@ -704,14 +712,14 @@ void PCCVTMLibVideoEncoderImpl<T>::xInitLibCfg() {
   //===== Slice ========
 
   //====== Loop/Deblock Filter ========
-  m_cEncLib.setLoopFilterDisable( m_bLoopFilterDisable );
-  m_cEncLib.setLoopFilterOffsetInPPS( m_loopFilterOffsetInPPS );
-  m_cEncLib.setLoopFilterBetaOffset( m_loopFilterBetaOffsetDiv2 );
-  m_cEncLib.setLoopFilterTcOffset( m_loopFilterTcOffsetDiv2 );
-  m_cEncLib.setLoopFilterCbBetaOffset( m_loopFilterCbBetaOffsetDiv2 );
-  m_cEncLib.setLoopFilterCbTcOffset( m_loopFilterCbTcOffsetDiv2 );
-  m_cEncLib.setLoopFilterCrBetaOffset( m_loopFilterCrBetaOffsetDiv2 );
-  m_cEncLib.setLoopFilterCrTcOffset( m_loopFilterCrTcOffsetDiv2 );
+  m_cEncLib.setDeblockingFilterDisable( m_deblockingFilterDisable );
+  m_cEncLib.setDeblockingFilterOffsetInPPS( m_deblockingFilterOffsetInPPS );
+  m_cEncLib.setDeblockingFilterBetaOffset( m_deblockingFilterBetaOffsetDiv2 );
+  m_cEncLib.setDeblockingFilterTcOffset( m_deblockingFilterTcOffsetDiv2 );
+  m_cEncLib.setDeblockingFilterCbBetaOffset( m_deblockingFilterCbBetaOffsetDiv2 );
+  m_cEncLib.setDeblockingFilterCbTcOffset( m_deblockingFilterCbTcOffsetDiv2 );
+  m_cEncLib.setDeblockingFilterCrBetaOffset( m_deblockingFilterCrBetaOffsetDiv2 );
+  m_cEncLib.setDeblockingFilterCrTcOffset( m_deblockingFilterCrTcOffsetDiv2 );
 #if W0038_DB_OPT
   m_cEncLib.setDeblockingFilterMetric( m_deblockingFilterMetric );
 #else
@@ -732,6 +740,8 @@ void PCCVTMLibVideoEncoderImpl<T>::xInitLibCfg() {
   m_cEncLib.setMaxDeltaQP( m_iMaxDeltaQP );
   m_cEncLib.setCuQpDeltaSubdiv( m_cuQpDeltaSubdiv );
   m_cEncLib.setCuChromaQpOffsetSubdiv( m_cuChromaQpOffsetSubdiv );
+  m_cEncLib.setCuChromaQpOffsetList( m_cuChromaQpOffsetList );
+  m_cEncLib.setCuChromaQpOffsetEnabled( m_cuChromaQpOffsetEnabled );
   m_cEncLib.setChromaCbQpOffset( m_cbQpOffset );
   m_cEncLib.setChromaCrQpOffset( m_crQpOffset );
   m_cEncLib.setChromaCbQpOffsetDualTree( m_cbQpOffsetDualTree );
@@ -753,6 +763,12 @@ void PCCVTMLibVideoEncoderImpl<T>::xInitLibCfg() {
   m_cEncLib.setUseWPSNR( m_bUseWPSNR );
 #endif
   m_cEncLib.setExtendedPrecisionProcessingFlag( m_extendedPrecisionProcessingFlag );
+#if JVET_V0106_RRC_RICE
+  m_cEncLib.setRrcRiceExtensionEnableFlag( m_rrcRiceExtensionEnableFlag );
+#endif
+#if JVET_V0054_TSRC_RICE
+  m_cEncLib.setTSRCRicePresentFlag( m_tsrcRicePresentFlag );
+#endif
   m_cEncLib.setHighPrecisionOffsetsEnabledFlag( m_highPrecisionOffsetsEnabledFlag );
 
   m_cEncLib.setWeightedPredictionMethod( m_weightedPredictionMethod );
@@ -760,6 +776,14 @@ void PCCVTMLibVideoEncoderImpl<T>::xInitLibCfg() {
   //====== Tool list ========
 #if SHARP_LUMA_DELTA_QP
   m_cEncLib.setLumaLevelToDeltaQPControls( m_lumaLevelToDeltaQPMapping );
+#endif
+#if JVET_V0078
+  m_cEncLib.setSmoothQPReductionEnable( m_smoothQPReductionEnable );
+  m_cEncLib.setSmoothQPReductionThreshold( m_smoothQPReductionThreshold );
+  m_cEncLib.setSmoothQPReductionModelScale( m_smoothQPReductionModelScale );
+  m_cEncLib.setSmoothQPReductionModelOffset( m_smoothQPReductionModelOffset );
+  m_cEncLib.setSmoothQPReductionPeriodicity( m_smoothQPReductionPeriodicity );
+  m_cEncLib.setSmoothQPReductionLimit( m_smoothQPReductionLimit );
 #endif
 #if X0038_LAMBDA_FROM_QP_CAPABILITY
   m_cEncLib.setDeltaQpRD( ( m_costMode == COST_LOSSLESS_CODING ) ? 0 : m_uiDeltaQpRD );
@@ -904,6 +928,9 @@ void PCCVTMLibVideoEncoderImpl<T>::xInitLibCfg() {
   m_cEncLib.setUseBDPCM( m_useBDPCM );
   m_cEncLib.setTransformSkipRotationEnabledFlag( m_transformSkipRotationEnabledFlag );
   m_cEncLib.setTransformSkipContextEnabledFlag( m_transformSkipContextEnabledFlag );
+#if JVET_V0106_RRC_RICE
+  m_cEncLib.setRrcRiceExtensionEnableFlag( m_rrcRiceExtensionEnableFlag );
+#endif
   m_cEncLib.setPersistentRiceAdaptationEnabledFlag( m_persistentRiceAdaptationEnabledFlag );
   m_cEncLib.setCabacBypassAlignmentEnabledFlag( m_cabacBypassAlignmentEnabledFlag );
   m_cEncLib.setLog2MaxTransformSkipBlockSize( m_log2MaxTransformSkipBlockSize );
@@ -1152,8 +1179,9 @@ void PCCVTMLibVideoEncoderImpl<T>::xInitLibCfg() {
   m_cEncLib.setOverscanInfoPresentFlag( m_overscanInfoPresentFlag );
   m_cEncLib.setOverscanAppropriateFlag( m_overscanAppropriateFlag );
   m_cEncLib.setVideoFullRangeFlag( m_videoFullRangeFlag );
-  m_cEncLib.setEfficientFieldIRAPEnabled( m_bEfficientFieldIRAPEnabled );
-  m_cEncLib.setHarmonizeGopFirstFieldCoupleEnabled( m_bHarmonizeGopFirstFieldCoupleEnabled );
+  m_cEncLib.setFieldSeqFlag( m_isField );
+  m_cEncLib.setEfficientFieldIRAPEnabled( m_efficientFieldIRAPEnabled );
+  m_cEncLib.setHarmonizeGopFirstFieldCoupleEnabled( m_harmonizeGopFirstFieldCoupleEnabled );
   m_cEncLib.setSummaryOutFilename( m_summaryOutFilename );
   m_cEncLib.setSummaryPicFilenameBase( m_summaryPicFilenameBase );
   m_cEncLib.setSummaryVerboseness( m_summaryVerboseness );
@@ -1168,14 +1196,17 @@ void PCCVTMLibVideoEncoderImpl<T>::xInitLibCfg() {
   m_cEncLib.setStopAfterFFtoPOC( m_stopAfterFFtoPOC );
   m_cEncLib.setBs2ModPOCAndType( m_bs2ModPOCAndType );
   m_cEncLib.setDebugCTU( m_debugCTU );
-#if ENABLE_SPLIT_PARALLELISM
-  m_cEncLib.setNumSplitThreads( m_numSplitThreads );
-  m_cEncLib.setForceSingleSplitThread( m_forceSplitSequential );
-#endif
   m_cEncLib.setUseALF( m_alf );
-  m_cEncLib.setALFStrength( m_alfStrength );
+#if JVET_V0095_ALF_SAO_TRUE_ORG
+  m_cEncLib.setAlfSaoTrueOrg( m_alfSaoTrueOrg );
+#endif
+  m_cEncLib.setALFStrengthLuma( m_alfStrengthLuma );
   m_cEncLib.setCCALFStrength( m_ccalfStrength );
   m_cEncLib.setALFAllowPredefinedFilters( m_alfAllowPredefinedFilters );
+  m_cEncLib.setALFStrengthChroma( m_alfStrengthChroma );
+  m_cEncLib.setALFStrengthTargetLuma( m_alfStrengthTargetLuma );
+  m_cEncLib.setALFStrengthTargetChroma( m_alfStrengthTargetChroma );
+  m_cEncLib.setCCALFStrengthTarget( m_ccalfStrengthTarget );
   m_cEncLib.setUseCCALF( m_ccalf );
   m_cEncLib.setCCALFQpThreshold( m_ccalfQpThreshold );
   m_cEncLib.setLmcs( m_lmcsEnabled );
@@ -1212,8 +1243,8 @@ void PCCVTMLibVideoEncoderImpl<T>::xInitLibCfg() {
 }
 
 template <typename T>
-void PCCVTMLibVideoEncoderImpl<T>::xInitLib( bool isFieldCoding ) {
-  m_cEncLib.init( isFieldCoding, this );
+void PCCVTMLibVideoEncoderImpl<T>::xInitLib() {
+  m_cEncLib.init( this );
 }
 
 /**
@@ -1331,8 +1362,8 @@ void PCCVTMLibVideoEncoderImpl<T>::xWritePicture( const PelUnitBuf* pic, PCCVide
   video.resize( video.getFrameCount() + 1 );
   auto&          image           = video.getFrames().back();
   int            chromaSubsample = pic->get( COMPONENT_Y ).width / pic->get( COMPONENT_Cb ).width;
-  int            width           = m_iSourceWidth - m_confWinLeft - m_confWinRight;
-  int            height          = m_iSourceHeight - m_confWinTop - m_confWinBottom;
+  int            width           = m_sourceWidth - m_confWinLeft - m_confWinRight;
+  int            height          = m_sourceHeight - m_confWinTop - m_confWinBottom;
   PCCCOLORFORMAT format          = m_cEncLib.getChromaFormatIdc() == CHROMA_420
                               ? PCCCOLORFORMAT::YUV420
                               : m_rgbFormat ? PCCCOLORFORMAT::RGB444 : PCCCOLORFORMAT::YUV444;

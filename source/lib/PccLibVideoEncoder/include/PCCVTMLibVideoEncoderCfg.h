@@ -106,28 +106,28 @@ class PCCVTMLibVideoEncoderCfg {
   int      m_iFrameRate;              ///< source frame-rates (Hz)
   uint32_t m_FrameSkip;               ///< number of skipped frames from the beginning
   uint32_t m_temporalSubsampleRatio;  ///< temporal subsample ratio, 2 means code every two frames
-  int      m_iSourceWidth;            ///< source width in pixel
-  int      m_iSourceHeight;           ///< source height in pixel (when interlaced = field height)
+  int      m_sourceWidth;             ///< source width in pixel
+  int      m_sourceHeight;            ///< source height in pixel (when interlaced = field height)
 #if EXTENSION_360_VIDEO
   int m_inputFileWidth;   ///< width of image in input file  (this is equivalent to sourceWidth,  if sourceWidth  is not
                           ///< subsequently altered due to padding)
   int m_inputFileHeight;  ///< height of image in input file (this is equivalent to sourceHeight, if sourceHeight is not
                           ///< subsequently altered due to padding)
 #endif
-  int m_iSourceHeightOrg;  ///< original source height in pixel (when interlaced = frame height)
+  int m_sourceHeightOrg;  ///< original source height in pixel (when interlaced = frame height)
 
   bool m_isField;  ///< enable field coding
   bool m_isTopFieldFirst;
-  bool m_bEfficientFieldIRAPEnabled;  ///< enable an efficient field IRAP structure.
-  bool m_bHarmonizeGopFirstFieldCoupleEnabled;
+  bool m_efficientFieldIRAPEnabled;  ///< enable an efficient field IRAP structure.
+  bool m_harmonizeGopFirstFieldCoupleEnabled;
 
   int                        m_conformanceWindowMode;
   int                        m_confWinLeft;
   int                        m_confWinRight;
   int                        m_confWinTop;
   int                        m_confWinBottom;
+  int                        m_sourcePadding[2];                  ///< number of padded pixels for width and height
   int                        m_framesToBeEncoded;                 ///< number of encoded frames
-  int                        m_aiPad[2];                          ///< number of padded pixels for width and height
   bool                       m_AccessUnitDelimiter;               ///< add Access Unit Delimiter NAL units
   bool                       m_enablePictureHeaderInSliceHeader;  ///< Enable Picture Header in Slice Header
   InputColourSpaceConversion m_inputColourSpaceConvert;           ///< colour space conversion to apply to input video
@@ -142,6 +142,7 @@ class PCCVTMLibVideoEncoderCfg {
   bool m_printFrameMSE;
   bool m_printSequenceMSE;
   bool m_printMSSSIM;
+  bool m_printWPSNR;
   bool m_cabacZeroWordPaddingEnabled;
   bool m_bClipInputVideoToRec709Range;
   bool m_bClipOutputVideoToRec709Range;
@@ -231,6 +232,13 @@ class PCCVTMLibVideoEncoderCfg {
   bool         m_noSubpicInfoConstraintFlag;
   // coding structure
   int      m_iIntraPeriod;          ///< period of I-slice (random access period)
+#if GDR_ENABLED
+  bool m_gdrEnabled;
+  int  m_gdrPocStart;
+  int  m_gdrPeriod;
+  int  m_gdrInterval;
+  bool m_gdrNoHash;
+#endif
   int      m_iDecodingRefreshType;  ///< random access type
   int      m_iGOPSize;              ///< GOP size of hierarchical structure
   int      m_drapPeriod;            ///< period of dependent RAP pictures
@@ -251,6 +259,10 @@ class PCCVTMLibVideoEncoderCfg {
   bool     m_transformSkipRotationEnabledFlag;  ///< control flag for transform-skip/transquant-bypass residual rotation
   bool m_transformSkipContextEnabledFlag;  ///< control flag for transform-skip/transquant-bypass single significance
                                            ///< map context
+#if JVET_V0106_RRC_RICE
+  bool m_rrcRiceExtensionEnableFlag;  ///< control flag for enabling extension of the Golomb-Rice parameter derivation
+                                      ///< for RRC
+#endif
   bool m_persistentRiceAdaptationEnabledFlag;  ///< control flag for Golomb-Rice parameter adaptation over each slice
   bool m_cabacBypassAlignmentEnabledFlag;
   bool m_ISP;
@@ -276,6 +288,8 @@ class PCCVTMLibVideoEncoderCfg {
   uint32_t    m_uiDeltaQpRD;             ///< dQP range for multi-pass slice QP optimization
   int         m_cuQpDeltaSubdiv;         ///< Maximum subdiv for CU luma Qp adjustment (0:default)
   int         m_cuChromaQpOffsetSubdiv;  ///< If negative, then do not apply chroma qp offsets.
+  std::vector<ChromaQpAdj> m_cuChromaQpOffsetList;     ///< Local chroma QP offsets list (to be signalled in PPS)
+  bool                     m_cuChromaQpOffsetEnabled;  ///< Enable local chroma QP offsets (slice level flag)
   bool        m_bFastDeltaQP;            ///< Fast Delta QP (false:default)
 
   int m_cbQpOffset;            ///< Chroma Cb QP Offset (0:default)
@@ -298,6 +312,14 @@ class PCCVTMLibVideoEncoderCfg {
   LumaLevelToDeltaQPMapping m_lumaLevelToDeltaQPMapping;  ///< mapping from luma level to Delta QP.
 #endif
   SEIMasteringDisplay m_masteringDisplay;
+#if JVET_V0078
+  bool   m_smoothQPReductionEnable;
+  double m_smoothQPReductionThreshold;
+  double m_smoothQPReductionModelScale;
+  double m_smoothQPReductionModelOffset;
+  int    m_smoothQPReductionLimit;
+  int    m_smoothQPReductionPeriodicity;
+#endif
 
   bool m_bUseAdaptiveQP;      ///< Flag for enabling QP adaptation based on a psycho-visual model
   int  m_iQPAdaptationRange;  ///< dQP range by QP adaptation
@@ -416,12 +438,6 @@ class PCCVTMLibVideoEncoderCfg {
   bool     m_useFastMIP;
   int      m_fastLocalDualTreeMode;
 
-  int  m_numSplitThreads;
-  bool m_forceSplitSequential;
-  int  m_numWppThreads;
-  int  m_numWppExtraLines;
-  bool m_ensureWppBitEqual;
-
   int m_log2MaxTbSize;
   // coding tools (bit-depth)
   int m_inputBitDepth[MAX_NUM_CHANNEL_TYPE];        ///< bit-depth of input file
@@ -429,6 +445,9 @@ class PCCVTMLibVideoEncoderCfg {
   int m_MSBExtendedBitDepth[MAX_NUM_CHANNEL_TYPE];  ///< bit-depth of input samples after MSB extension
   int m_internalBitDepth[MAX_NUM_CHANNEL_TYPE];  ///< bit-depth codec operates at (input/output files will be converted)
   bool m_extendedPrecisionProcessingFlag;
+#if JVET_V0054_TSRC_RICE
+  bool m_tsrcRicePresentFlag;
+#endif
   bool m_highPrecisionOffsetsEnabledFlag;
 
   // coding tools (chroma format)
@@ -445,14 +464,14 @@ class PCCVTMLibVideoEncoderCfg {
                              ///< areas
   bool m_saoGreedyMergeEnc;  ///< SAO greedy merge encoding algorithm
   // coding tools (loop filter)
-  bool m_bLoopFilterDisable;          ///< flag for using deblocking filter
-  bool m_loopFilterOffsetInPPS;       ///< offset for deblocking filter in 0 = slice header, 1 = PPS
-  int  m_loopFilterBetaOffsetDiv2;    ///< beta offset for deblocking filter
-  int  m_loopFilterTcOffsetDiv2;      ///< tc offset for deblocking filter
-  int  m_loopFilterCbBetaOffsetDiv2;  ///< beta offset for Cb deblocking filter
-  int  m_loopFilterCbTcOffsetDiv2;    ///< tc offset for Cb deblocking filter
-  int  m_loopFilterCrBetaOffsetDiv2;  ///< beta offset for Cr deblocking filter
-  int  m_loopFilterCrTcOffsetDiv2;    ///< tc offset for Cr deblocking filter
+  bool m_deblockingFilterDisable;           ///< flag for using deblocking filter
+  bool m_deblockingFilterOffsetInPPS;       ///< offset for deblocking filter in 0 = slice header, 1 = PPS
+  int  m_deblockingFilterBetaOffsetDiv2;    ///< beta offset for deblocking filter
+  int  m_deblockingFilterTcOffsetDiv2;      ///< tc offset for deblocking filter
+  int  m_deblockingFilterCbBetaOffsetDiv2;  ///< beta offset for Cb deblocking filter
+  int  m_deblockingFilterCbTcOffsetDiv2;    ///< tc offset for Cb deblocking filter
+  int  m_deblockingFilterCrBetaOffsetDiv2;  ///< beta offset for Cr deblocking filter
+  int  m_deblockingFilterCrTcOffsetDiv2;    ///< tc offset for Cr deblocking filter
 #if W0038_DB_OPT
   int m_deblockingFilterMetric;  ///< blockiness metric in encoder
 #else
@@ -736,9 +755,16 @@ class PCCVTMLibVideoEncoderCfg {
   bool m_forceDecodeBitstream1;
 
   bool   m_alf;  ///< Adaptive Loop Filter
-  double m_alfStrength;
+#if JVET_V0095_ALF_SAO_TRUE_ORG
+  bool m_alfSaoTrueOrg;
+#endif
+  double m_alfStrengthLuma;
   bool   m_alfAllowPredefinedFilters;
   double m_ccalfStrength;
+  double m_alfStrengthChroma;
+  double m_alfStrengthTargetLuma;
+  double m_alfStrengthTargetChroma;
+  double m_ccalfStrengthTarget;
   bool   m_ccalf;
   int    m_ccalfQpThreshold;
 

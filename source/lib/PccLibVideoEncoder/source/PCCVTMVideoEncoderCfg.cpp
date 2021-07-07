@@ -275,6 +275,8 @@ static inline istream& operator>>( istream& in, ScalingListMode& mode ) {
 
 template <class T>
 struct SMultiValueInput {
+  static_assert( !std::is_same<T, uint8_t>::value, "SMultiValueInput<uint8_t> is not supported" );
+  static_assert( !std::is_same<T, int8_t>::value, "SMultiValueInput<int8_t> is not supported" );
   const T           minValIncl;
   const T           maxValIncl;
   const std::size_t minNumValuesIncl;
@@ -282,11 +284,7 @@ struct SMultiValueInput {
   std::vector<T>    values;
   SMultiValueInput() : minValIncl( 0 ), maxValIncl( 0 ), minNumValuesIncl( 0 ), maxNumValuesIncl( 0 ), values() {}
   SMultiValueInput( std::vector<T>& defaults ) :
-      minValIncl( 0 ),
-      maxValIncl( 0 ),
-      minNumValuesIncl( 0 ),
-      maxNumValuesIncl( 0 ),
-      values( defaults ) {}
+      minValIncl( 0 ), maxValIncl( 0 ), minNumValuesIncl( 0 ), maxNumValuesIncl( 0 ), values( defaults ) {}
   SMultiValueInput( const T&    minValue,
                     const T&    maxValue,
                     std::size_t minNumberValues = 0,
@@ -535,6 +533,11 @@ bool PCCVTMLibVideoEncoderCfg::parseCfg( int argc, char* argv[] ) {
   SMultiValueInput<int>      cfg_qpOutValCr( MIN_QP_VALUE_FOR_16_BIT, MAX_QP, 0, MAX_NUM_QP_VALUES, zeroVector, 1 );
   SMultiValueInput<int>      cfg_qpInValCbCr( MIN_QP_VALUE_FOR_16_BIT, MAX_QP, 0, MAX_NUM_QP_VALUES, zeroVector, 1 );
   SMultiValueInput<int>      cfg_qpOutValCbCr( MIN_QP_VALUE_FOR_16_BIT, MAX_QP, 0, MAX_NUM_QP_VALUES, zeroVector, 1 );
+  const int             cQpOffsets[] = { 6 };
+  SMultiValueInput<int> cfg_cbQpOffsetList( -12, 12, 0, 6, cQpOffsets, 0 );
+  SMultiValueInput<int> cfg_crQpOffsetList( -12, 12, 0, 6, cQpOffsets, 0 );
+  SMultiValueInput<int> cfg_cbCrQpOffsetList( -12, 12, 0, 6, cQpOffsets, 0 );
+
   const uint32_t             defaultInputKneeCodes[3]  = {600, 800, 900};
   const uint32_t             defaultOutputKneeCodes[3] = {100, 250, 450};
   SMultiValueInput<uint32_t> cfg_kneeSEIInputKneePointValue( 1, 999, 0, 999, defaultInputKneeCodes,
@@ -613,7 +616,7 @@ bool PCCVTMLibVideoEncoderCfg::parseCfg( int argc, char* argv[] ) {
   SMultiValueInput<unsigned> cfg_virtualBoundariesPosX( 0, std::numeric_limits<uint32_t>::max(), 0, 3 );
   SMultiValueInput<unsigned> cfg_virtualBoundariesPosY( 0, std::numeric_limits<uint32_t>::max(), 0, 3 );
 
-  SMultiValueInput<uint8_t>  cfg_SubProfile( 0, std::numeric_limits<uint8_t>::max(), 0,
+  SMultiValueInput<uint32_t> cfg_SubProfile( 0, std::numeric_limits<uint8_t>::max(), 0,
                                             std::numeric_limits<uint8_t>::max() );
   SMultiValueInput<uint32_t> cfg_subPicCtuTopLeftX( 0, std::numeric_limits<uint32_t>::max(), 0, MAX_NUM_SUB_PICS );
   SMultiValueInput<uint32_t> cfg_subPicCtuTopLeftY( 0, std::numeric_limits<uint32_t>::max(), 0, MAX_NUM_SUB_PICS );
@@ -662,8 +665,8 @@ bool PCCVTMLibVideoEncoderCfg::parseCfg( int argc, char* argv[] ) {
 	  ("OccupancyMapFile",                            m_occupancyMapFileName,                      string(""), "Input occupancy map file name")
 	  ("PatchInfoFile",                               m_patchInfoFileName,                         string(""), "Input patch info file name")
 #endif
-  ("SourceWidth,-wdt",                                m_iSourceWidth,                                       0, "Source picture width")
-  ("SourceHeight,-hgt",                               m_iSourceHeight,                                      0, "Source picture height")
+  ("SourceWidth,-wdt",                                m_sourceWidth,                                       0, "Source picture width")
+  ("SourceHeight,-hgt",                               m_sourceHeight,                                      0, "Source picture height")
   ("InputBitDepth",                                   m_inputBitDepth[CHANNEL_TYPE_LUMA],                   8, "Bit-depth of input file")
   ("OutputBitDepth",                                  m_outputBitDepth[CHANNEL_TYPE_LUMA],                  0, "Bit-depth of output file (default:InternalBitDepth)")
   ("MSBExtendedBitDepth",                             m_MSBExtendedBitDepth[CHANNEL_TYPE_LUMA],             0, "bit depth of luma component after addition of MSBs of value 0 (used for synthesising High Dynamic Range source material). (default:InputBitDepth)")
@@ -672,6 +675,9 @@ bool PCCVTMLibVideoEncoderCfg::parseCfg( int argc, char* argv[] ) {
   ("OutputBitDepthC",                                 m_outputBitDepth[CHANNEL_TYPE_CHROMA],                0, "As per OutputBitDepth but for chroma component. (default: use luma output bit-depth)")
   ("MSBExtendedBitDepthC",                            m_MSBExtendedBitDepth[CHANNEL_TYPE_CHROMA],           0, "As per MSBExtendedBitDepth but for chroma component. (default:MSBExtendedBitDepth)")
   ("ExtendedPrecision",                               m_extendedPrecisionProcessingFlag,                false, "Increased internal accuracies to support high bit depths (not valid in V1 profiles)")
+#if JVET_V0054_TSRC_RICE
+  ("TSRCRicePresent",                                 m_tsrcRicePresentFlag,                            false, "Indicate that TSRC Rice information is present in slice header (not valid in V1 profiles)")
+#endif  
   ("HighPrecisionPredictionWeighting",                m_highPrecisionOffsetsEnabledFlag,                false, "Use high precision option for weighted prediction (not valid in V1 profiles)")
   ("InputColourSpaceConvert",                         inputColourSpaceConvert,                     string(""), "Colour space conversion to apply to input video. Permitted values are (empty string=UNCHANGED) " + getListOfColourSpaceConverts(true))
   ("SNRInternalColourSpace",                          m_snrInternalColourSpace,                         false, "If true, then no colour space conversion is applied prior to SNR, otherwise inverse of input is applied.")
@@ -682,16 +688,12 @@ bool PCCVTMLibVideoEncoderCfg::parseCfg( int argc, char* argv[] ) {
   ("PrintFrameMSE",                                   m_printFrameMSE,                                  false, "0 (default) emit only bit count and PSNRs for each frame, 1 = also emit MSE values")
   ("PrintSequenceMSE",                                m_printSequenceMSE,                               false, "0 (default) emit only bit rate and PSNRs for the whole sequence, 1 = also emit MSE values")
   ("PrintMSSSIM",                                     m_printMSSSIM,                                    false, "0 (default) do not print MS-SSIM scores, 1 = print MS-SSIM scores for each frame and for the whole sequence")
+  ("PrintWPSNR",                                      m_printWPSNR,                                     false, "0 (default) do not print HDR-PQ based wPSNR, 1 = print HDR-PQ based wPSNR")
   ("CabacZeroWordPaddingEnabled",                     m_cabacZeroWordPaddingEnabled,                     true, "0 do not add conforming cabac-zero-words to bit streams, 1 (default) = add cabac-zero-words as required")
   ("ChromaFormatIDC,-cf",                             tmpChromaFormat,                                      0, "ChromaFormatIDC (400|420|422|444 or set 0 (default) for same as InputChromaFormat)")
-  ("ConformanceMode",                                 m_conformanceWindowMode,                              0, "Deprecated alias of ConformanceWindowMode")
-  ("ConformanceWindowMode",                           m_conformanceWindowMode,                              0, "Window conformance mode (0: no window, 1:automatic padding, 2:padding, 3:conformance")
-  ("HorizontalPadding,-pdx",                          m_aiPad[0],                                           0, "Horizontal source padding for conformance window mode 2")
-  ("VerticalPadding,-pdy",                            m_aiPad[1],                                           0, "Vertical source padding for conformance window mode 2")
-  ("ConfLeft",                                        m_confWinLeft,                                        0, "Deprecated alias of ConfWinLeft")
-  ("ConfRight",                                       m_confWinRight,                                       0, "Deprecated alias of ConfWinRight")
-  ("ConfTop",                                         m_confWinTop,                                         0, "Deprecated alias of ConfWinTop")
-  ("ConfBottom",                                      m_confWinBottom,                                      0, "Deprecated alias of ConfWinBottom")
+  ("ConformanceWindowMode",                           m_conformanceWindowMode,                              1, "Window conformance mode (0: no window, 1:automatic padding (default), 2:padding parameters specified, 3:conformance window parameters specified")
+  ("HorizontalPadding,-pdx",                          m_sourcePadding[0],                                   0, "Horizontal source padding for conformance window mode 2")
+  ("VerticalPadding,-pdy",                            m_sourcePadding[1],                                   0, "Vertical source padding for conformance window mode 2")
   ("ConfWinLeft",                                     m_confWinLeft,                                        0, "Left offset for window conformance mode 3")
   ("ConfWinRight",                                    m_confWinRight,                                       0, "Right offset for window conformance mode 3")
   ("ConfWinTop",                                      m_confWinTop,                                         0, "Top offset for window conformance mode 3")
@@ -730,8 +732,8 @@ bool PCCVTMLibVideoEncoderCfg::parseCfg( int argc, char* argv[] ) {
   //Field coding parameters
   ("FieldCoding",                                     m_isField,                                        false, "Signals if it's a field based coding")
   ("TopFieldFirst, Tff",                              m_isTopFieldFirst,                                false, "In case of field based coding, signals whether if it's a top field first or not")
-  ("EfficientFieldIRAPEnabled",                       m_bEfficientFieldIRAPEnabled,                      true, "Enable to code fields in a specific, potentially more efficient, order.")
-  ("HarmonizeGopFirstFieldCoupleEnabled",             m_bHarmonizeGopFirstFieldCoupleEnabled,            true, "Enables harmonization of Gop first field couple")
+  ("EfficientFieldIRAPEnabled",                       m_efficientFieldIRAPEnabled,                      true, "Enable to code fields in a specific, potentially more efficient, order.")
+  ("HarmonizeGopFirstFieldCoupleEnabled",             m_harmonizeGopFirstFieldCoupleEnabled,            true, "Enables harmonization of Gop first field couple")
 
   // Profile and level
   ("Profile",                                         extendedProfile,              ExtendedProfileName::NONE, "Profile name to use for encoding. Use [multilayer_]main_10[_444][_still_picture], auto, or none")
@@ -949,6 +951,13 @@ bool PCCVTMLibVideoEncoderCfg::parseCfg( int argc, char* argv[] ) {
 
   // Coding structure paramters
   ("IntraPeriod,-ip",                                 m_iIntraPeriod,                                      -1, "Intra period in frames, (-1: only first frame)")
+#if GDR_ENABLED
+  ("GdrEnabled",                                      m_gdrEnabled,                                     false, "GDR enabled")
+  ("GdrPocStart",                                     m_gdrPocStart,                                       -1, "GDR poc start")
+  ("GdrPeriod",                                       m_gdrPeriod,                                         -1, "Number of frames between GDR picture to the next GDR picture")
+  ("GdrInterval",                                     m_gdrInterval,                                       -1, "Number of frames from GDR picture to the recovery point picture")
+  ("GdrNoHash",                                       m_gdrNoHash,                                       true, "Do not generate decode picture hash SEI messages for GDR and recovering pictures")
+#endif
   ("DecodingRefreshType,-dr",                         m_iDecodingRefreshType,                               0, "Intra refresh type (0:none 1:CRA 2:IDR 3:RecPointSEI)")
   ("GOPSize,g",                                       m_iGOPSize,                                           1, "GOP size of temporal structure")
   ("DRAPPeriod",                                      m_drapPeriod,                                         0, "DRAP period in frames (0: disable Dependent RAP indication SEI messages)")
@@ -993,7 +1002,8 @@ bool PCCVTMLibVideoEncoderCfg::parseCfg( int argc, char* argv[] ) {
   ("DeltaQpRD,-dqr",                                  m_uiDeltaQpRD,                                       0u, "max dQp offset for slice")
   ("MaxDeltaQP,d",                                    m_iMaxDeltaQP,                                        0, "max dQp offset for block")
   ("MaxCuDQPSubdiv,-dqd",                             m_cuQpDeltaSubdiv,                                    0, "Maximum subdiv for CU luma Qp adjustment")
-  ("MaxCuChromaQpOffsetSubdiv",                       m_cuChromaQpOffsetSubdiv,                            -1, "Maximum subdiv for CU chroma Qp adjustment - set less than 0 to disable")
+  ("MaxCuChromaQpOffsetSubdiv",                       m_cuChromaQpOffsetSubdiv,                             0, "Maximum subdiv for CU chroma Qp adjustment")
+  ("SliceCuChromaQpOffsetEnabled",                    m_cuChromaQpOffsetEnabled,                         true, "Enable local chroma QP offsets (slice level flag)")
   ("FastDeltaQP",                                     m_bFastDeltaQP,                                   false, "Fast Delta QP Algorithm")
 #if SHARP_LUMA_DELTA_QP
   ("LumaLevelToDeltaQPMode",                          lumaLevelToDeltaQPMode,                              0u, "Luma based Delta QP 0(default): not used. 1: Based on CTU average, 2: Based on Max luma in CTU")
@@ -1002,6 +1012,14 @@ bool PCCVTMLibVideoEncoderCfg::parseCfg( int argc, char* argv[] ) {
 #endif
   ("LumaLevelToDeltaQPMappingLuma",                   cfg_lumaLeveltoDQPMappingLuma,  cfg_lumaLeveltoDQPMappingLuma, "Luma to Delta QP Mapping - luma thresholds")
   ("LumaLevelToDeltaQPMappingDQP",                    cfg_lumaLeveltoDQPMappingQP,  cfg_lumaLeveltoDQPMappingQP, "Luma to Delta QP Mapping - DQP values")
+#endif
+#if JVET_V0078
+  ("SmoothQPReductionEnable",                         m_smoothQPReductionEnable,                         false, "Enable QP reduction for smooth blocks according to: Clip3(SmoothQPReductionLimit, 0, SmoothQPReductionModelScale*baseQP+SmoothQPReductionModelOffset)")
+  ("SmoothQPReductionThreshold",                      m_smoothQPReductionThreshold,                        3.0, "Threshold parameter for smoothness (SmoothQPReductionThreshold * number of samples in block)")
+  ("SmoothQPReductionModelScale",                     m_smoothQPReductionModelScale,                      -1.0, "Scale parameter of the QP reduction model")
+  ("SmoothQPReductionModelOffset",                    m_smoothQPReductionModelOffset,                     27.0, "Offset parameter of the QP reduction model")
+  ("SmoothQPReductionLimit",                          m_smoothQPReductionLimit,                            -16, "Threshold parameter for controlling maximum amount of QP reduction by the QP reduction model")
+  ("SmoothQPReductionPeriodicity",                    m_smoothQPReductionPeriodicity,                        1, "Periodicity parameter of the QP reduction model, 1: all frames, 0: only intra pictures, 2: every second frame, etc")
 #endif
   ("UseIdentityTableForNon420Chroma",                 m_useIdentityTableForNon420Chroma,                 true, "True: Indicates that 422/444 chroma uses identity chroma QP mapping tables; False: explicit Qp table may be specified in config")
   ("SameCQPTablesForAllChroma",                       m_chromaQpMappingTableParams.m_sameCQPTableForAllChromaFlag,                        true, "0: Different tables for Cb, Cr and joint Cb-Cr components, 1 (default): Same tables for all three chroma components")
@@ -1029,6 +1047,9 @@ bool PCCVTMLibVideoEncoderCfg::parseCfg( int argc, char* argv[] ) {
   ("SliceCbQpOffsetIntraOrPeriodic",                  m_sliceChromaQpOffsetIntraOrPeriodic[0],              0, "Chroma Cb QP Offset at slice level for I slice or for periodic inter slices as defined by SliceChromaQPOffsetPeriodicity. Replaces offset in the GOP table.")
   ("SliceCrQpOffsetIntraOrPeriodic",                  m_sliceChromaQpOffsetIntraOrPeriodic[1],              0, "Chroma Cr QP Offset at slice level for I slice or for periodic inter slices as defined by SliceChromaQPOffsetPeriodicity. Replaces offset in the GOP table.")
 #endif
+  ("CbQpOffsetList",                                  cfg_cbQpOffsetList,                  cfg_cbQpOffsetList, "Chroma Cb QP offset list for local adjustment")
+  ("CrQpOffsetList",                                  cfg_crQpOffsetList,                  cfg_crQpOffsetList, "Chroma Cb QP offset list for local adjustment")
+  ("CbCrQpOffsetList",                                cfg_cbCrQpOffsetList,              cfg_cbCrQpOffsetList, "Chroma joint Cb-Cr QP offset list for local adjustment")
 
   ("AdaptiveQP,-aq",                                  m_bUseAdaptiveQP,                                 false, "QP adaptation based on a psycho-visual model")
   ("MaxQPAdaptationRange,-aqr",                       m_iQPAdaptationRange,                                 6, "QP adaptation range")
@@ -1045,14 +1066,14 @@ bool PCCVTMLibVideoEncoderCfg::parseCfg( int argc, char* argv[] ) {
   ("RDpenalty",                                       m_rdPenalty,                                          0, "RD-penalty for 32x32 TU for intra in non-intra slices. 0:disabled  1:RD-penalty  2:maximum RD-penalty")
 
   // Deblocking filter parameters
-  ("LoopFilterDisable",                               m_bLoopFilterDisable,                             false)
-  ("LoopFilterOffsetInPPS",                           m_loopFilterOffsetInPPS,                           true)
-  ("LoopFilterBetaOffset_div2",                       m_loopFilterBetaOffsetDiv2,                           0)
-  ("LoopFilterTcOffset_div2",                         m_loopFilterTcOffsetDiv2,                             0)
-  ("LoopFilterCbBetaOffset_div2",                     m_loopFilterCbBetaOffsetDiv2,                         0)
-  ("LoopFilterCbTcOffset_div2",                       m_loopFilterCbTcOffsetDiv2,                           0)
-  ("LoopFilterCrBetaOffset_div2",                     m_loopFilterCrBetaOffsetDiv2,                         0)
-  ("LoopFilterCrTcOffset_div2",                       m_loopFilterCrTcOffsetDiv2,                           0)
+  ("DeblockingFilterDisable",                         m_deblockingFilterDisable,                        false)
+  ("DeblockingFilterOffsetInPPS",                     m_deblockingFilterOffsetInPPS,                     true)
+  ("DeblockingFilterBetaOffset_div2",                 m_deblockingFilterBetaOffsetDiv2,                     0)
+  ("DeblockingFilterTcOffset_div2",                   m_deblockingFilterTcOffsetDiv2,                       0)
+  ("DeblockingFilterCbBetaOffset_div2",               m_deblockingFilterCbBetaOffsetDiv2,                   0)
+  ("DeblockingFilterCbTcOffset_div2",                 m_deblockingFilterCbTcOffsetDiv2,                     0)
+  ("DeblockingFilterCrBetaOffset_div2",               m_deblockingFilterCrBetaOffsetDiv2,                   0)
+  ("DeblockingFilterCrTcOffset_div2",                 m_deblockingFilterCrTcOffsetDiv2,                     0)
 #if W0038_DB_OPT
   ("DeblockingFilterMetric",                          m_deblockingFilterMetric,                             0)
 #else
@@ -1068,6 +1089,9 @@ bool PCCVTMLibVideoEncoderCfg::parseCfg( int argc, char* argv[] ) {
   ("ISPFast",                                         m_useFastISP,                                     false, "Fast encoder search for ISP")
   ("ResidualRotation",                                m_transformSkipRotationEnabledFlag,               false, "Enable rotation of transform-skipped and transquant-bypassed TUs through 180 degrees prior to entropy coding (not valid in V1 profiles)")
   ("SingleSignificanceMapContext",                    m_transformSkipContextEnabledFlag,                false, "Enable, for transform-skipped and transquant-bypassed TUs, the selection of a single significance map context variable for all coefficients (not valid in V1 profiles)")
+#if JVET_V0106_RRC_RICE
+  ("ExtendedRiceRRC",                                 m_rrcRiceExtensionEnableFlag,                     false, "Enable the extention of the Golomb-Rice parameter derivation for RRC")
+#endif
   ("GolombRiceParameterAdaptation",                   m_persistentRiceAdaptationEnabledFlag,            false, "Enable the adaptation of the Golomb-Rice parameter over the course of each slice")
   ("AlignCABACBeforeBypass",                          m_cabacBypassAlignmentEnabledFlag,                false, "Align the CABAC engine to a defined fraction of a bit prior to coding bypass data. Must be 1 in high bit rate profile, 0 otherwise")
   ("SAO",                                             m_bUseSAO,                                         true, "Enable Sample Adaptive Offset")
@@ -1334,16 +1358,19 @@ bool PCCVTMLibVideoEncoderCfg::parseCfg( int argc, char* argv[] ) {
   ("StopAfterFFtoPOC",                                m_stopAfterFFtoPOC,                       false, "If using fast forward to POC, after the POC of interest has been hit, stop further encoding.")
   ("ForceDecodeBitstream1",                           m_forceDecodeBitstream1,                  false, "force decoding of bitstream 1 - use this only if you are realy sure about what you are doing ")
   ("DecodeBitstream2ModPOCAndType",                   m_bs2ModPOCAndType,                       false, "Modify POC and NALU-type of second input bitstream, to use second BS as closing I-slice")
-  ("NumSplitThreads",                                 m_numSplitThreads,                            1, "Number of threads used to parallelize splitting")
-  ("ForceSingleSplitThread",                          m_forceSplitSequential,                   false, "Force single thread execution even if taking the parallelized path")
-  ("NumWppThreads",                                   m_numWppThreads,                              1, "Number of threads used to run WPP-style parallelization")
-  ("NumWppExtraLines",                                m_numWppExtraLines,                           0, "Number of additional wpp lines to switch when threads are blocked")
+
   ("DebugCTU",                                        m_debugCTU,                                  -1, "If DebugBitstream is present, load frames up to this POC from this bitstream. Starting with DebugPOC-frame at CTUline containin debug CTU.")
-  ("EnsureWppBitEqual",                               m_ensureWppBitEqual,                      false, "Ensure the results are equal to results with WPP-style parallelism, even if WPP is off")
+#if JVET_V0095_ALF_SAO_TRUE_ORG
+  ("AlfSaoTrueOrg",                                    m_alfSaoTrueOrg,                         false, "Using true original samples for ALF and SAO optimization when MCTF is enabled\n")
+#endif
   ( "ALF",                                             m_alf,                                    true, "Adaptive Loop Filter\n" )
-  ("ALFStrength",                                      m_alfStrength,                             1.0, "Adaptive Loop Filter strength. The parameter scales the magnitudes of the ALF filter coefficients for both luma and chroma. Valid range is 0.0 <= ALFStrength <= 1.0")
+  ("ALFStrengthLuma",                                  m_alfStrengthLuma,                         1.0, "Adaptive Loop Filter strength for luma. The parameter scales the magnitudes of the ALF filter coefficients for luma. Valid range is 0.0 <= ALFStrengthLuma <= 1.0")
   ("ALFAllowPredefinedFilters",                        m_alfAllowPredefinedFilters,              true, "Allow use of predefined filters for ALF")
   ("CCALFStrength",                                    m_ccalfStrength,                           1.0, "Cross-component Adaptive Loop Filter strength. The parameter scales the magnitudes of the CCALF filter coefficients. Valid range is 0.0 <= CCALFStrength <= 1.0")
+  ("ALFStrengthChroma",                                m_alfStrengthChroma,                       1.0, "Adaptive Loop Filter strength for chroma. The parameter scales the magnitudes of the ALF filter coefficients for chroma. Valid range is 0.0 <= ALFStrengthChroma <= 1.0")
+  ("ALFStrengthTargetLuma",                            m_alfStrengthTargetLuma,                   1.0, "Adaptive Loop Filter strength target for ALF luma filter optimization. The parameter scales the auto-correlation matrix E and the cross-correlation vector y for luma. Valid range is 0.0 <= ALFStrengthTargetLuma <= 1.0")
+  ("ALFStrengthTargetChroma",                          m_alfStrengthTargetChroma,                 1.0, "Adaptive Loop Filter strength target for ALF chroma filter optimization. The parameter scales the auto-correlation matrix E and the cross-correlation vector y for chroma. Valid range is 0.0 <= ALFStrengthTargetChroma <= 1.0")
+  ("CCALFStrengthTarget",                              m_ccalfStrengthTarget,                     1.0, "Cross-component Adaptive Loop Filter strength target for filter optimization. The parameter scales the auto-correlation matrix E and the cross-correlation vector y. Valid range is 0.0 <= CCALFStrengthTarget <= 1.0")
   ( "CCALF",                                           m_ccalf,                                  true, "Cross-component Adaptive Loop Filter" )
   ( "CCALFQpTh",                                       m_ccalfQpThreshold,                         37, "QP threshold above which encoder reduces CCALF usage")
   ( "RPR",                                            m_rprEnabledFlag,                          true, "Reference Sample Resolution" )
@@ -1418,6 +1445,62 @@ bool PCCVTMLibVideoEncoderCfg::parseCfg( int argc, char* argv[] ) {
   // to be equal to 0. And vice versa
   if ( m_iIntraPeriod == -1 ) { m_iDecodingRefreshType = 0; }
   if ( !m_iDecodingRefreshType ) { m_iIntraPeriod = -1; }
+
+#if GDR_ENABLED
+  if ( m_gdrEnabled ) {
+    m_iDecodingRefreshType = 3;
+    m_intraQPOffset        = 0;
+    m_iGOPSize             = 1;
+
+    m_GOPList[0].m_POC                 = 1;
+    m_GOPList[0].m_sliceType           = 'B';
+    m_GOPList[0].m_QPOffset            = 0;
+    m_GOPList[0].m_QPOffsetModelOffset = 0;
+    m_GOPList[0].m_QPOffsetModelScale  = 0;
+    m_GOPList[0].m_CbQPoffset          = 0;
+    m_GOPList[0].m_CrQPoffset          = 0;
+    m_GOPList[0].m_QPFactor            = 1.0;
+    m_GOPList[0].m_tcOffsetDiv2        = 0;
+    m_GOPList[0].m_betaOffsetDiv2      = 0;
+    m_GOPList[0].m_CbTcOffsetDiv2      = 0;
+    m_GOPList[0].m_CbBetaOffsetDiv2    = 0;
+    m_GOPList[0].m_CrTcOffsetDiv2      = 0;
+    m_GOPList[0].m_CrBetaOffsetDiv2    = 0;
+    m_GOPList[0].m_temporalId          = 0;
+
+    m_GOPList[0].m_numRefPicsActive0 = 4;
+    m_GOPList[0].m_numRefPics0       = 4;
+    m_GOPList[0].m_deltaRefPics0[0]  = 1;
+    m_GOPList[0].m_deltaRefPics0[1]  = 2;
+    m_GOPList[0].m_deltaRefPics0[2]  = 3;
+    m_GOPList[0].m_deltaRefPics0[3]  = 4;
+
+    m_GOPList[0].m_numRefPicsActive1 = 4;
+    m_GOPList[0].m_numRefPics1       = 4;
+    m_GOPList[0].m_deltaRefPics1[0]  = 1;
+    m_GOPList[0].m_deltaRefPics1[1]  = 2;
+    m_GOPList[0].m_deltaRefPics1[2]  = 3;
+    m_GOPList[0].m_deltaRefPics1[3]  = 4;
+
+    m_BIO  = false;
+    m_DMVR = false;
+    m_SMVD = false;
+
+    if ( m_gdrPeriod < 0 ) { m_gdrPeriod = m_iFrameRate * 2; }
+
+    if ( m_gdrInterval < 0 ) { m_gdrInterval = m_iFrameRate; }
+
+    if ( m_gdrPocStart < 0 ) { m_gdrPocStart = m_gdrPeriod; }
+
+    if ( m_iIntraPeriod == -1 ) {
+      m_iFrameRate = ( m_iFrameRate == 0 ) ? 30 : m_iFrameRate;
+      if ( m_gdrPocStart % m_iFrameRate != 0 )
+        m_iIntraPeriod = -1;
+      else
+        m_iIntraPeriod = m_gdrPeriod;
+    }
+  }
+#endif
 
   m_bpDeltasGOPStructure = false;
   if ( m_iGOPSize == 16 ) {
@@ -1505,8 +1588,8 @@ bool PCCVTMLibVideoEncoderCfg::parseCfg( int argc, char* argv[] ) {
    * Set any derived parameters
    */
 #if EXTENSION_360_VIDEO
-  m_inputFileWidth  = m_iSourceWidth;
-  m_inputFileHeight = m_iSourceHeight;
+  m_inputFileWidth  = m_sourceWidth;
+  m_inputFileHeight = m_sourceHeight;
   m_ext360.setMaxCUInfo( m_uiCTUSize, 1 << MIN_CU_LOG2 );
 #endif
 
@@ -1521,9 +1604,9 @@ bool PCCVTMLibVideoEncoderCfg::parseCfg( int argc, char* argv[] ) {
   m_adIntraLambdaModifier = cfg_adIntraLambdaModifier.values;
   if ( m_isField ) {
     // Frame height
-    m_iSourceHeightOrg = m_iSourceHeight;
+    m_sourceHeightOrg = m_sourceHeight;
     // Field height
-    m_iSourceHeight = m_iSourceHeight >> 1;
+    m_sourceHeight = m_sourceHeight >> 1;
     // number of fields to encode
     m_framesToBeEncoded *= 2;
   }
@@ -1560,8 +1643,8 @@ bool PCCVTMLibVideoEncoderCfg::parseCfg( int argc, char* argv[] ) {
     if ( m_subPicIdMappingExplicitlySignalledFlag ) {
       for ( int i = 0; i < m_numSubPics; i++ ) { m_subPicId[i] = cfg_subPicId.values[i]; }
     }
-    uint32_t tmpWidthVal  = ( m_iSourceWidth + m_uiCTUSize - 1 ) / m_uiCTUSize;
-    uint32_t tmpHeightVal = ( m_iSourceHeight + m_uiCTUSize - 1 ) / m_uiCTUSize;
+    uint32_t tmpWidthVal  = ( m_sourceWidth + m_uiCTUSize - 1 ) / m_uiCTUSize;
+    uint32_t tmpHeightVal = ( m_sourceHeight + m_uiCTUSize - 1 ) / m_uiCTUSize;
     if ( !m_subPicSameSizeFlag ) {
       for ( int i = 0; i < m_numSubPics; i++ ) {
         CHECK( m_subPicCtuTopLeftX[i] + m_subPicWidth[i] > tmpWidthVal, "Subpicture must not exceed picture boundary" );
@@ -1592,11 +1675,11 @@ bool PCCVTMLibVideoEncoderCfg::parseCfg( int argc, char* argv[] ) {
   }
 
   if ( m_virtualBoundariesPresentFlag ) {
-    if ( m_iSourceWidth <= 8 )
+    if ( m_sourceWidth <= 8 )
       CHECK( m_numVerVirtualBoundaries != 0,
              "The number of vertical virtual boundaries shall be 0 when the picture width is less than or equal to 8" );
 
-    if ( m_iSourceHeight <= 8 )
+    if ( m_sourceHeight <= 8 )
       CHECK(
           m_numHorVirtualBoundaries != 0,
           "The number of horizontal virtual boundaries shall be 0 when the picture height is less than or equal to 8" );
@@ -1789,46 +1872,52 @@ bool PCCVTMLibVideoEncoderCfg::parseCfg( int argc, char* argv[] ) {
 
   // Picture width and height must be multiples of 8 and minCuSize
   const int minResolutionMultiple = std::max( 8, 1 << m_log2MinCuSize );
-  CHECK( ( ( m_iSourceWidth % minResolutionMultiple ) || ( m_iSourceHeight % minResolutionMultiple ) ) &&
-             m_conformanceWindowMode != 1,
-         "Picture width or height is not a multiple of 8 or minCuSize, please use ConformanceMode 1!" );
+
   switch ( m_conformanceWindowMode ) {
     case 0: {
       // no conformance or padding
       m_confWinLeft = m_confWinRight = m_confWinTop = m_confWinBottom = 0;
-      m_aiPad[1] = m_aiPad[0] = 0;
+      m_sourcePadding[1] = m_sourcePadding[0] = 0;
       break;
     }
     case 1: {
       // automatic padding to minimum CU size
-      if ( m_iSourceWidth % minResolutionMultiple ) {
-        m_aiPad[0] = m_confWinRight =
-            ( ( m_iSourceWidth / minResolutionMultiple ) + 1 ) * minResolutionMultiple - m_iSourceWidth;
-        m_iSourceWidth += m_confWinRight;
+      if ( m_sourceWidth % minResolutionMultiple ) {
+        m_sourcePadding[0] = m_confWinRight =
+            ( ( m_sourceWidth / minResolutionMultiple ) + 1 ) * minResolutionMultiple - m_sourceWidth;
+        m_sourceWidth += m_confWinRight;
       }
-      if ( m_iSourceHeight % minResolutionMultiple ) {
-        m_aiPad[1] = m_confWinBottom =
-            ( ( m_iSourceHeight / minResolutionMultiple ) + 1 ) * minResolutionMultiple - m_iSourceHeight;
-        m_iSourceHeight += m_confWinBottom;
+      if ( m_sourceHeight % minResolutionMultiple ) {
+        m_sourcePadding[1] = m_confWinBottom =
+            ( ( m_sourceHeight / minResolutionMultiple ) + 1 ) * minResolutionMultiple - m_sourceHeight;
+        m_sourceHeight += m_confWinBottom;
         if ( m_isField ) {
-          m_iSourceHeightOrg += m_confWinBottom << 1;
-          m_aiPad[1] = m_confWinBottom << 1;
+          m_sourceHeightOrg += m_confWinBottom << 1;
+          m_sourcePadding[1] = m_confWinBottom << 1;
         }
       }
-      if ( m_aiPad[0] % SPS::getWinUnitX( m_chromaFormatIDC ) != 0 ) {
+      if ( m_sourcePadding[0] % SPS::getWinUnitX( m_chromaFormatIDC ) != 0 ) {
         EXIT( "Error: picture width is not an integer multiple of the specified chroma subsampling" );
       }
-      if ( m_aiPad[1] % SPS::getWinUnitY( m_chromaFormatIDC ) != 0 ) {
+      if ( m_sourcePadding[1] % SPS::getWinUnitY( m_chromaFormatIDC ) != 0 ) {
         EXIT( "Error: picture height is not an integer multiple of the specified chroma subsampling" );
+      }
+      if ( m_sourcePadding[0] ) {
+        msg( VTM_INFO, "Info: Conformance window automatically enabled. Adding %i lumal pel horizontally\n",
+             m_sourcePadding[0] );
+      }
+      if ( m_sourcePadding[1] ) {
+        msg( VTM_INFO, "Info: Conformance window automatically enabled. Adding %i lumal pel vertically\n",
+             m_sourcePadding[1] );
       }
       break;
     }
     case 2: {
       // padding
-      m_iSourceWidth += m_aiPad[0];
-      m_iSourceHeight += m_aiPad[1];
-      m_confWinRight  = m_aiPad[0];
-      m_confWinBottom = m_aiPad[1];
+      m_sourceWidth += m_sourcePadding[0];
+      m_sourceHeight += m_sourcePadding[1];
+      m_confWinRight  = m_sourcePadding[0];
+      m_confWinBottom = m_sourcePadding[1];
       break;
     }
     case 3: {
@@ -1836,24 +1925,27 @@ bool PCCVTMLibVideoEncoderCfg::parseCfg( int argc, char* argv[] ) {
       if ( ( m_confWinLeft == 0 ) && ( m_confWinRight == 0 ) && ( m_confWinTop == 0 ) && ( m_confWinBottom == 0 ) ) {
         msg( VTM_ERROR, "Warning: Conformance window enabled, but all conformance window parameters set to zero\n" );
       }
-      if ( ( m_aiPad[1] != 0 ) || ( m_aiPad[0] != 0 ) ) {
+      if ( ( m_sourcePadding[1] != 0 ) || ( m_sourcePadding[0] != 0 ) ) {
         msg( VTM_ERROR, "Warning: Conformance window enabled, padding parameters will be ignored\n" );
       }
-      m_aiPad[1] = m_aiPad[0] = 0;
+      m_sourcePadding[1] = m_sourcePadding[0] = 0;
       break;
     }
   }
+  CHECK( ( ( m_sourceWidth % minResolutionMultiple ) || ( m_sourceHeight % minResolutionMultiple ) ),
+         "Picture width or height (after padding) is not a multiple of 8 or minCuSize, please use "
+         "ConformanceWindowMode=1 for automatic adjustment or ConformanceWindowMode=2 to specify padding manually!!" );
 
   if ( m_conformanceWindowMode > 0 && m_subPicInfoPresentFlag ) {
     for ( int i = 0; i < m_numSubPics; i++ ) {
       CHECK( ( m_subPicCtuTopLeftX[i] * m_uiCTUSize ) >=
-                 ( m_iSourceWidth - m_confWinRight * SPS::getWinUnitX( m_chromaFormatIDC ) ),
+                 ( m_sourceWidth - m_confWinRight * SPS::getWinUnitX( m_chromaFormatIDC ) ),
              "No subpicture can be located completely outside of the conformance cropping window" );
       CHECK( ( ( m_subPicCtuTopLeftX[i] + m_subPicWidth[i] ) * m_uiCTUSize ) <=
                  ( m_confWinLeft * SPS::getWinUnitX( m_chromaFormatIDC ) ),
              "No subpicture can be located completely outside of the conformance cropping window" );
       CHECK( ( m_subPicCtuTopLeftY[i] * m_uiCTUSize ) >=
-                 ( m_iSourceHeight - m_confWinBottom * SPS::getWinUnitY( m_chromaFormatIDC ) ),
+                 ( m_sourceHeight - m_confWinBottom * SPS::getWinUnitY( m_chromaFormatIDC ) ),
              "No subpicture can be located completely outside of the conformance cropping window" );
       CHECK( ( ( m_subPicCtuTopLeftY[i] + m_subPicHeight[i] ) * m_uiCTUSize ) <=
                  ( m_confWinTop * SPS::getWinUnitY( m_chromaFormatIDC ) ),
@@ -2004,6 +2096,24 @@ bool PCCVTMLibVideoEncoderCfg::parseCfg( int argc, char* argv[] ) {
     }
   }
 
+  /* Local chroma QP offsets configuration */
+  CHECK( m_cuChromaQpOffsetSubdiv < 0, "MaxCuChromaQpOffsetSubdiv shall be >= 0" );
+  CHECK( cfg_crQpOffsetList.values.size() != cfg_cbQpOffsetList.values.size(),
+         "Chroma QP offset lists shall be the same size" );
+  CHECK(
+      cfg_cbCrQpOffsetList.values.size() != cfg_cbQpOffsetList.values.size() && cfg_cbCrQpOffsetList.values.size() > 0,
+      "Chroma QP offset list for joint CbCr shall be either the same size as Cb and Cr or empty" );
+  if ( m_cuChromaQpOffsetSubdiv > 0 && !cfg_cbQpOffsetList.values.size() ) {
+    msg( VTM_WARNING, "MaxCuChromaQpOffsetSubdiv has no effect when chroma QP offset lists are empty\n" );
+  }
+  m_cuChromaQpOffsetList.resize( cfg_cbQpOffsetList.values.size() );
+  for ( int i = 0; i < cfg_cbQpOffsetList.values.size(); i++ ) {
+    m_cuChromaQpOffsetList[i].u.comp.CbOffset = cfg_cbQpOffsetList.values[i];
+    m_cuChromaQpOffsetList[i].u.comp.CrOffset = cfg_crQpOffsetList.values[i];
+    m_cuChromaQpOffsetList[i].u.comp.JointCbCrOffset =
+        cfg_cbCrQpOffsetList.values.size() ? cfg_cbCrQpOffsetList.values[i] : 0;
+  }
+
 #if LUMA_ADAPTIVE_DEBLOCKING_FILTER_QP_OFFSET
   if ( m_LadfEnabed ) {
     CHECK( m_LadfNumIntervals != cfg_LadfQpOffset.values.size(),
@@ -2037,7 +2147,17 @@ bool PCCVTMLibVideoEncoderCfg::parseCfg( int argc, char* argv[] ) {
   }
 #endif
 
+#if GDR_ENABLED
+  if ( m_gdrEnabled ) {
+    m_virtualBoundariesEnabledFlag = 1;
+    m_virtualBoundariesPresentFlag = 0;
+  } else {
   m_virtualBoundariesEnabledFlag = 0;
+  }
+#else
+  m_virtualBoundariesEnabledFlag = 0;
+#endif
+
   if ( m_numVerVirtualBoundaries > 0 || m_numHorVirtualBoundaries > 0 ) m_virtualBoundariesEnabledFlag = 1;
 
   if ( m_virtualBoundariesEnabledFlag ) {
@@ -2057,7 +2177,7 @@ bool PCCVTMLibVideoEncoderCfg::parseCfg( int argc, char* argv[] ) {
       m_virtualBoundariesPosX = cfg_virtualBoundariesPosX.values;
       if ( m_numVerVirtualBoundaries > 1 ) { sort( m_virtualBoundariesPosX.begin(), m_virtualBoundariesPosX.end() ); }
       for ( unsigned i = 0; i < m_numVerVirtualBoundaries; i++ ) {
-        CHECK( m_virtualBoundariesPosX[i] == 0 || m_virtualBoundariesPosX[i] >= m_iSourceWidth,
+        CHECK( m_virtualBoundariesPosX[i] == 0 || m_virtualBoundariesPosX[i] >= m_sourceWidth,
                "The vertical virtual boundary must be within the picture" );
         CHECK( m_virtualBoundariesPosX[i] % 8, "The vertical virtual boundary must be a multiple of 8 luma samples" );
         if ( i > 0 ) {
@@ -2069,7 +2189,7 @@ bool PCCVTMLibVideoEncoderCfg::parseCfg( int argc, char* argv[] ) {
       m_virtualBoundariesPosY = cfg_virtualBoundariesPosY.values;
       if ( m_numHorVirtualBoundaries > 1 ) { sort( m_virtualBoundariesPosY.begin(), m_virtualBoundariesPosY.end() ); }
       for ( unsigned i = 0; i < m_numHorVirtualBoundaries; i++ ) {
-        CHECK( m_virtualBoundariesPosY[i] == 0 || m_virtualBoundariesPosY[i] >= m_iSourceHeight,
+        CHECK( m_virtualBoundariesPosY[i] == 0 || m_virtualBoundariesPosY[i] >= m_sourceHeight,
                "The horizontal virtual boundary must be within the picture" );
         CHECK( m_virtualBoundariesPosY[i] % 8, "The horizontal virtual boundary must be a multiple of 8 luma samples" );
         if ( i > 0 ) {
@@ -2243,7 +2363,7 @@ bool PCCVTMLibVideoEncoderCfg::parseCfg( int argc, char* argv[] ) {
   }
   m_reshapeCW.binCW.resize( 3 );
   m_reshapeCW.rspFps     = m_iFrameRate;
-  m_reshapeCW.rspPicSize = m_iSourceWidth * m_iSourceHeight;
+  m_reshapeCW.rspPicSize = m_sourceWidth * m_sourceHeight;
   m_reshapeCW.rspFpsToIp = std::max( 16, 16 * (int)( round( (double)m_iFrameRate / 16.0 ) ) );
   m_reshapeCW.rspBaseQP  = m_iQP;
   m_reshapeCW.updateCtrl = m_updateCtrl;
@@ -2254,7 +2374,7 @@ bool PCCVTMLibVideoEncoderCfg::parseCfg( int argc, char* argv[] ) {
   if ( bTracingChannelsList && g_trace_ctx ) {
     std::string sChannelsList;
     g_trace_ctx->getChannelsList( sChannelsList );
-    msg( INFO, "\n Using tracing channels:\n\n%s\n", sChannelsList.c_str() );
+    msg( VTM_INFO, "\n Using tracing channels:\n\n%s\n", sChannelsList.c_str() );
   }
 #endif
 
@@ -2268,25 +2388,25 @@ bool PCCVTMLibVideoEncoderCfg::parseCfg( int argc, char* argv[] ) {
 
 #if ENABLE_QPA_SUB_CTU
 #if QP_SWITCHING_FOR_PARALLEL
-  if ( ( m_iQP < 38 ) && m_bUsePerceptQPA && !m_bUseAdaptiveQP && ( m_iSourceWidth <= 2048 ) &&
-       ( m_iSourceHeight <= 1280 )
+  if ( ( m_iQP < 38 ) && m_bUsePerceptQPA && !m_bUseAdaptiveQP && ( m_sourceWidth <= 2048 ) &&
+       ( m_sourceHeight <= 1280 )
 #else
-  if ( ( (int)m_fQP < 38 ) && m_bUsePerceptQPA && !m_bUseAdaptiveQP && ( m_iSourceWidth <= 2048 ) &&
-       ( m_iSourceHeight <= 1280 )
+  if ( ( (int)m_fQP < 38 ) && m_bUsePerceptQPA && !m_bUseAdaptiveQP && ( m_sourceWidth <= 2048 ) &&
+       ( m_sourceHeight <= 1280 )
 #endif
 #if WCG_EXT && ER_CHROMA_QP_WCG_PPS
        && ( !m_wcgChromaQpControl.enabled )
 #endif
-       && ( ( 1 << ( m_log2MaxTbSize + 1 ) ) == m_uiCTUSize ) && ( m_iSourceWidth > 512 || m_iSourceHeight > 320 ) ) {
+       && ( ( 1 << ( m_log2MaxTbSize + 1 ) ) == m_uiCTUSize ) && ( m_sourceWidth > 512 || m_sourceHeight > 320 ) ) {
     m_cuQpDeltaSubdiv = 2;
   }
 #else
 #if QP_SWITCHING_FOR_PARALLEL
-  if ( ( m_iQP < 38 ) && ( m_iGOPSize > 4 ) && m_bUsePerceptQPA && !m_bUseAdaptiveQP && ( m_iSourceHeight <= 1280 ) &&
-       ( m_iSourceWidth <= 2048 ) )
+  if ( ( m_iQP < 38 ) && ( m_iGOPSize > 4 ) && m_bUsePerceptQPA && !m_bUseAdaptiveQP && ( m_sourceHeight <= 1280 ) &&
+       ( m_sourceWidth <= 2048 ) )
 #else
   if ( ( (int)m_fQP < 38 ) && ( m_iGOPSize > 4 ) && m_bUsePerceptQPA && !m_bUseAdaptiveQP &&
-       ( m_iSourceHeight <= 1280 ) && ( m_iSourceWidth <= 2048 ) )
+       ( m_sourceHeight <= 1280 ) && ( m_sourceWidth <= 2048 ) )
 #endif
   {
     msg( VTM_WARNING, "*************************************************************************\n" );
@@ -2407,22 +2527,11 @@ bool PCCVTMLibVideoEncoderCfg::xCheckParameter() {
     const int minCUSize = 1 << m_log2MinCuSize;
     xConfirmPara( m_wrapAroundOffset <= m_uiCTUSize + minCUSize,
                   "Wrap-around offset must be greater than CtbSizeY + MinCbSize" );
-    xConfirmPara( m_wrapAroundOffset > m_iSourceWidth,
+    xConfirmPara( m_wrapAroundOffset > m_sourceWidth,
                   "Wrap-around offset must not be greater than the source picture width" );
     xConfirmPara( m_wrapAroundOffset % minCUSize != 0,
                   "Wrap-around offset must be an integer multiple of the specified minimum CU size" );
   }
-
-#if ENABLE_SPLIT_PARALLELISM
-  xConfirmPara( m_numSplitThreads < 1, "Number of used threads cannot be smaller than 1" );
-  xConfirmPara( m_numSplitThreads > PARL_SPLIT_MAX_NUM_THREADS,
-                "Number of used threads cannot be higher than the number of actual jobs" );
-#else
-  xConfirmPara( m_numSplitThreads != 1, "ENABLE_SPLIT_PARALLELISM is disabled, numSplitThreads has to be 1" );
-#endif
-
-  xConfirmPara( m_numWppThreads != 1, "ENABLE_WPP_PARALLELISM is disabled, numWppThreads has to be 1" );
-  xConfirmPara( m_ensureWppBitEqual, "ENABLE_WPP_PARALLELISM is disabled, cannot ensure being WPP bit-equal" );
 
 #if SHARP_LUMA_DELTA_QP && ENABLE_QPA
   xConfirmPara( m_bUsePerceptQPA && m_lumaLevelToDeltaQPMapping.mode >= 2,
@@ -2449,10 +2558,17 @@ bool PCCVTMLibVideoEncoderCfg::xCheckParameter() {
                   "UseResidualRotation must not be enabled for given profile." );
     xConfirmPara( m_transformSkipContextEnabledFlag == true,
                   "UseSingleSignificanceMapContext must not be enabled for given profile." );
+#if JVET_V0106_RRC_RICE
+    xConfirmPara( m_rrcRiceExtensionEnableFlag == true,
+                  "Extention of the Golomb-Rice parameter derivation for RRC must not be enabled for given profile." );
+#endif
     xConfirmPara( m_persistentRiceAdaptationEnabledFlag == true,
                   "GolombRiceParameterAdaption must not be enabled for given profile." );
     xConfirmPara( m_extendedPrecisionProcessingFlag == true,
                   "UseExtendedPrecision must not be enabled for given profile." );
+#if JVET_V0054_TSRC_RICE
+    xConfirmPara( m_tsrcRicePresentFlag == true, "TSRCRicePresent must not be enabled for given profile." );
+#endif
     xConfirmPara( m_highPrecisionOffsetsEnabledFlag == true,
                   "UseHighPrecisionPredictionWeighting must not be enabled for given profile." );
     xConfirmPara( m_enableIntraReferenceSmoothing == false,
@@ -2543,23 +2659,23 @@ bool PCCVTMLibVideoEncoderCfg::xCheckParameter() {
                 "QP exceeds supported range (-QpBDOffsety to 63)" );
 #if W0038_DB_OPT
   xConfirmPara(
-      m_deblockingFilterMetric != 0 && ( m_bLoopFilterDisable || m_loopFilterOffsetInPPS ),
+      m_deblockingFilterMetric != 0 && ( m_deblockingFilterDisable || m_deblockingFilterOffsetInPPS ),
       "If DeblockingFilterMetric is non-zero then both LoopFilterDisable and LoopFilterOffsetInPPS must be 0" );
 #else
   xConfirmPara( m_DeblockingFilterMetric && ( m_bLoopFilterDisable || m_loopFilterOffsetInPPS ),
                 "If DeblockingFilterMetric is true then both LoopFilterDisable and LoopFilterOffsetInPPS must be 0" );
 #endif
-  xConfirmPara( m_loopFilterBetaOffsetDiv2 < -12 || m_loopFilterBetaOffsetDiv2 > 12,
+  xConfirmPara( m_deblockingFilterBetaOffsetDiv2 < -12 || m_deblockingFilterBetaOffsetDiv2 > 12,
                 "Loop Filter Beta Offset div. 2 exceeds supported range (-12 to 12" );
-  xConfirmPara( m_loopFilterTcOffsetDiv2 < -12 || m_loopFilterTcOffsetDiv2 > 12,
+  xConfirmPara( m_deblockingFilterTcOffsetDiv2 < -12 || m_deblockingFilterTcOffsetDiv2 > 12,
                 "Loop Filter Tc Offset div. 2 exceeds supported range (-12 to 12)" );
-  xConfirmPara( m_loopFilterCbBetaOffsetDiv2 < -12 || m_loopFilterCbBetaOffsetDiv2 > 12,
+  xConfirmPara( m_deblockingFilterCbBetaOffsetDiv2 < -12 || m_deblockingFilterCbBetaOffsetDiv2 > 12,
                 "Loop Filter Beta Offset div. 2 exceeds supported range (-12 to 12" );
-  xConfirmPara( m_loopFilterCbTcOffsetDiv2 < -12 || m_loopFilterCbTcOffsetDiv2 > 12,
+  xConfirmPara( m_deblockingFilterCbTcOffsetDiv2 < -12 || m_deblockingFilterCbTcOffsetDiv2 > 12,
                 "Loop Filter Tc Offset div. 2 exceeds supported range (-12 to 12)" );
-  xConfirmPara( m_loopFilterCrBetaOffsetDiv2 < -12 || m_loopFilterCrBetaOffsetDiv2 > 12,
+  xConfirmPara( m_deblockingFilterCrBetaOffsetDiv2 < -12 || m_deblockingFilterCrBetaOffsetDiv2 > 12,
                 "Loop Filter Beta Offset div. 2 exceeds supported range (-12 to 12" );
-  xConfirmPara( m_loopFilterCrTcOffsetDiv2 < -12 || m_loopFilterCrTcOffsetDiv2 > 12,
+  xConfirmPara( m_deblockingFilterCrTcOffsetDiv2 < -12 || m_deblockingFilterCrTcOffsetDiv2 > 12,
                 "Loop Filter Tc Offset div. 2 exceeds supported range (-12 to 12)" );
   xConfirmPara( m_iSearchRange < 0, "Search Range must be more than 0" );
   xConfirmPara( m_bipredSearchRange < 0, "Bi-prediction refinement search range must be more than 0" );
@@ -2621,13 +2737,35 @@ bool PCCVTMLibVideoEncoderCfg::xCheckParameter() {
     m_dualTree = false;
   }
   if ( m_alf ) {
-    xConfirmPara( m_alfStrength < 0.0, "ALFStrength is less than 0. Valid range is 0.0 <= ALFStrength <= 1.0" );
-    xConfirmPara( m_alfStrength > 1.0, "ALFStrength is greater than 1. Valid range is 0.0 <= ALFStrength <= 1.0" );
+    xConfirmPara( m_alfStrengthLuma < 0.0,
+                  "ALFStrengthLuma is less than 0. Valid range is 0.0 <= ALFStrengthLuma <= 1.0" );
+    xConfirmPara( m_alfStrengthLuma > 1.0,
+                  "ALFStrengthLuma is greater than 1. Valid range is 0.0 <= ALFStrengthLuma <= 1.0" );
   }
   if ( m_ccalf ) {
     xConfirmPara( m_ccalfStrength < 0.0, "CCALFStrength is less than 0. Valid range is 0.0 <= CCALFStrength <= 1.0" );
     xConfirmPara( m_ccalfStrength > 1.0,
                   "CCALFStrength is greater than 1. Valid range is 0.0 <= CCALFStrength <= 1.0" );
+  }
+  if ( m_alf ) {
+    xConfirmPara( m_alfStrengthChroma < 0.0,
+                  "ALFStrengthChroma is less than 0. Valid range is 0.0 <= ALFStrengthChroma <= 1.0" );
+    xConfirmPara( m_alfStrengthChroma > 1.0,
+                  "ALFStrengthChroma is greater than 1. Valid range is 0.0 <= ALFStrengthChroma <= 1.0" );
+    xConfirmPara( m_alfStrengthTargetLuma < 0.0,
+                  "ALFStrengthTargetLuma is less than 0. Valid range is 0.0 <= ALFStrengthTargetLuma <= 1.0" );
+    xConfirmPara( m_alfStrengthTargetLuma > 1.0,
+                  "ALFStrengthTargetLuma is greater than 1. Valid range is 0.0 <= ALFStrengthTargetLuma <= 1.0" );
+    xConfirmPara( m_alfStrengthTargetChroma < 0.0,
+                  "ALFStrengthTargetChroma is less than 0. Valid range is 0.0 <= ALFStrengthTargetChroma <= 1.0" );
+    xConfirmPara( m_alfStrengthTargetChroma > 1.0,
+                  "ALFStrengthTargetChroma is greater than 1. Valid range is 0.0 <= ALFStrengthTargetChroma <= 1.0" );
+  }
+  if ( m_ccalf ) {
+    xConfirmPara( m_ccalfStrengthTarget < 0.0,
+                  "CCALFStrengthTarget is less than 0. Valid range is 0.0 <= CCALFStrengthTarget <= 1.0" );
+    xConfirmPara( m_ccalfStrengthTarget > 1.0,
+                  "CCALFStrengthTarget is greater than 1. Valid range is 0.0 <= CCALFStrengthTarget <= 1.0" );
   }
   if ( m_ccalf && ( m_chromaFormatIDC == CHROMA_400 ) ) {
     msg( VTM_WARNING, "****************************************************************************\n" );
@@ -2667,7 +2805,7 @@ bool PCCVTMLibVideoEncoderCfg::xCheckParameter() {
   xConfirmPara( m_uiMinQT[0] < minCuSize, "Min Luma QT size in I slices should be larger than or equal to minCuSize" );
   xConfirmPara( m_uiMinQT[1] < minCuSize,
                 "Min Luma QT size in non-I slices should be larger than or equal to minCuSize" );
-  xConfirmPara( ( m_iSourceWidth % minCuSize ) || ( m_iSourceHeight % minCuSize ),
+  xConfirmPara( ( m_sourceWidth % minCuSize ) || ( m_sourceHeight % minCuSize ),
                 "Picture width or height is not a multiple of minCuSize" );
   const int minDiff = (int)floorLog2( m_uiMinQT[2] ) -
                       std::max( MIN_CU_LOG2, (int)m_log2MinCuSize -
@@ -2708,9 +2846,9 @@ bool PCCVTMLibVideoEncoderCfg::xCheckParameter() {
                 "Maximum TT size for chroma block in I slice should be larger than minimum QT size" );
   xConfirmPara( m_uiMaxTT[2] > m_uiCTUSize,
                 "Maximum TT size for chroma block in I slice should be smaller than or equal to CTUSize" );
-  xConfirmPara( ( m_iSourceWidth % ( std::max( 8u, m_log2MinCuSize ) ) ) != 0,
+  xConfirmPara( ( m_sourceWidth % ( std::max( 8u, m_log2MinCuSize ) ) ) != 0,
                 "Resulting coded frame width must be a multiple of Max(8, the minimum CU size)" );
-  xConfirmPara( ( m_iSourceHeight % ( std::max( 8u, m_log2MinCuSize ) ) ) != 0,
+  xConfirmPara( ( m_sourceHeight % ( std::max( 8u, m_log2MinCuSize ) ) ) != 0,
                 "Resulting coded frame height must be a multiple of Max(8, the minimum CU size)" );
   if ( m_uiMaxMTTHierarchyDepthI == 0 ) {
     xConfirmPara( m_uiMaxBT[0] != m_uiMinQT[0],
@@ -2764,14 +2902,14 @@ bool PCCVTMLibVideoEncoderCfg::xCheckParameter() {
 
   if ( !m_alf ) { xConfirmPara( m_ccalf, "CCALF cannot be enabled when ALF is disabled" ); }
 
-  xConfirmPara( m_iSourceWidth % SPS::getWinUnitX( m_chromaFormatIDC ) != 0,
+  xConfirmPara( m_sourceWidth % SPS::getWinUnitX( m_chromaFormatIDC ) != 0,
                 "Picture width must be an integer multiple of the specified chroma subsampling" );
-  xConfirmPara( m_iSourceHeight % SPS::getWinUnitY( m_chromaFormatIDC ) != 0,
+  xConfirmPara( m_sourceHeight % SPS::getWinUnitY( m_chromaFormatIDC ) != 0,
                 "Picture height must be an integer multiple of the specified chroma subsampling" );
 
-  xConfirmPara( m_aiPad[0] % SPS::getWinUnitX( m_chromaFormatIDC ) != 0,
+  xConfirmPara( m_sourcePadding[0] % SPS::getWinUnitX( m_chromaFormatIDC ) != 0,
                 "Horizontal padding must be an integer multiple of the specified chroma subsampling" );
-  xConfirmPara( m_aiPad[1] % SPS::getWinUnitY( m_chromaFormatIDC ) != 0,
+  xConfirmPara( m_sourcePadding[1] % SPS::getWinUnitY( m_chromaFormatIDC ) != 0,
                 "Vertical padding must be an integer multiple of the specified chroma subsampling" );
 
   xConfirmPara( m_confWinLeft % SPS::getWinUnitX( m_chromaFormatIDC ) != 0,
@@ -2835,25 +2973,25 @@ bool PCCVTMLibVideoEncoderCfg::xCheckParameter() {
     }
   }
 
-  if ( ( m_iIntraPeriod != 1 ) && !m_loopFilterOffsetInPPS && ( !m_bLoopFilterDisable ) ) {
+  if ( ( m_iIntraPeriod != 1 ) && !m_deblockingFilterOffsetInPPS && ( !m_deblockingFilterDisable ) ) {
     for ( int i = 0; i < m_iGOPSize; i++ ) {
-      xConfirmPara( ( m_GOPList[i].m_betaOffsetDiv2 + m_loopFilterBetaOffsetDiv2 ) < -12 ||
-                        ( m_GOPList[i].m_betaOffsetDiv2 + m_loopFilterBetaOffsetDiv2 ) > 12,
+      xConfirmPara( ( m_GOPList[i].m_betaOffsetDiv2 + m_deblockingFilterBetaOffsetDiv2 ) < -12 ||
+                        ( m_GOPList[i].m_betaOffsetDiv2 + m_deblockingFilterBetaOffsetDiv2 ) > 12,
                     "Loop Filter Beta Offset div. 2 for one of the GOP entries exceeds supported range (-12 to 12)" );
-      xConfirmPara( ( m_GOPList[i].m_tcOffsetDiv2 + m_loopFilterTcOffsetDiv2 ) < -12 ||
-                        ( m_GOPList[i].m_tcOffsetDiv2 + m_loopFilterTcOffsetDiv2 ) > 12,
+      xConfirmPara( ( m_GOPList[i].m_tcOffsetDiv2 + m_deblockingFilterTcOffsetDiv2 ) < -12 ||
+                        ( m_GOPList[i].m_tcOffsetDiv2 + m_deblockingFilterTcOffsetDiv2 ) > 12,
                     "Loop Filter Tc Offset div. 2 for one of the GOP entries exceeds supported range (-12 to 12)" );
-      xConfirmPara( ( m_GOPList[i].m_CbBetaOffsetDiv2 + m_loopFilterCbBetaOffsetDiv2 ) < -12 ||
-                        ( m_GOPList[i].m_CbBetaOffsetDiv2 + m_loopFilterCbBetaOffsetDiv2 ) > 12,
+      xConfirmPara( ( m_GOPList[i].m_CbBetaOffsetDiv2 + m_deblockingFilterCbBetaOffsetDiv2 ) < -12 ||
+                        ( m_GOPList[i].m_CbBetaOffsetDiv2 + m_deblockingFilterCbBetaOffsetDiv2 ) > 12,
                     "Loop Filter Beta Offset div. 2 for one of the GOP entries exceeds supported range (-12 to 12)" );
-      xConfirmPara( ( m_GOPList[i].m_CbTcOffsetDiv2 + m_loopFilterCbTcOffsetDiv2 ) < -12 ||
-                        ( m_GOPList[i].m_CbTcOffsetDiv2 + m_loopFilterCbTcOffsetDiv2 ) > 12,
+      xConfirmPara( ( m_GOPList[i].m_CbTcOffsetDiv2 + m_deblockingFilterCbTcOffsetDiv2 ) < -12 ||
+                        ( m_GOPList[i].m_CbTcOffsetDiv2 + m_deblockingFilterCbTcOffsetDiv2 ) > 12,
                     "Loop Filter Tc Offset div. 2 for one of the GOP entries exceeds supported range (-12 to 12)" );
-      xConfirmPara( ( m_GOPList[i].m_CrBetaOffsetDiv2 + m_loopFilterCrBetaOffsetDiv2 ) < -12 ||
-                        ( m_GOPList[i].m_CrBetaOffsetDiv2 + m_loopFilterCrBetaOffsetDiv2 ) > 12,
+      xConfirmPara( ( m_GOPList[i].m_CrBetaOffsetDiv2 + m_deblockingFilterCrBetaOffsetDiv2 ) < -12 ||
+                        ( m_GOPList[i].m_CrBetaOffsetDiv2 + m_deblockingFilterCrBetaOffsetDiv2 ) > 12,
                     "Loop Filter Beta Offset div. 2 for one of the GOP entries exceeds supported range (-12 to 12)" );
-      xConfirmPara( ( m_GOPList[i].m_CrTcOffsetDiv2 + m_loopFilterCrTcOffsetDiv2 ) < -12 ||
-                        ( m_GOPList[i].m_CrTcOffsetDiv2 + m_loopFilterCrTcOffsetDiv2 ) > 12,
+      xConfirmPara( ( m_GOPList[i].m_CrTcOffsetDiv2 + m_deblockingFilterCrTcOffsetDiv2 ) < -12 ||
+                        ( m_GOPList[i].m_CrTcOffsetDiv2 + m_deblockingFilterCrTcOffsetDiv2 ) > 12,
                     "Loop Filter Tc Offset div. 2 for one of the GOP entries exceeds supported range (-12 to 12)" );
     }
   }
@@ -3132,8 +3270,8 @@ bool PCCVTMLibVideoEncoderCfg::xCheckParameter() {
     uint32_t colIdx, rowIdx;
     uint32_t remSize;
 
-    pps.setPicWidthInLumaSamples( m_iSourceWidth );
-    pps.setPicHeightInLumaSamples( m_iSourceHeight );
+    pps.setPicWidthInLumaSamples( m_sourceWidth );
+    pps.setPicHeightInLumaSamples( m_sourceHeight );
     pps.setLog2CtuSize( floorLog2( m_uiCTUSize ) );
 
     // set default tile column if not provided
@@ -3585,7 +3723,7 @@ const char* profileToString( const Profile::Name profile ) {
   }
 
   // if we get here, we didn't find this profile in the list - so there is an error
-  EXIT( "ERROR: Unknown profile \"" << profile << "\" in profileToString" );
+  EXIT( "VTM_ERROR: Unknown profile \"" << profile << "\" in profileToString" );
   return "";
 }
 
@@ -3594,18 +3732,9 @@ void PCCVTMLibVideoEncoderCfg::xPrintParameter() {
   msg( VTM_DETAILS, "Input          File                    : %s\n", m_inputFileName.c_str() );
   msg( VTM_DETAILS, "Bitstream      File                    : %s\n", m_bitstreamFileName.c_str() );
   msg( VTM_DETAILS, "Reconstruction File                    : %s\n", m_reconFileName.c_str() );
-#if PATCH_BASED_MVP || PCC_ME_EXT
-  msg( VTM_DETAILS, "PCCExt                                 : %s\n", ( m_usePCCExt ? "Enabled" : "Disabled" ) );
-  if ( m_usePCCExt ) {
-    msg( VTM_DETAILS, "BlockToPatch   File                    : %s\n", ( m_blockToPatchFileName.c_str() ) );
-    msg( VTM_DETAILS, "OccupancyMap   File                    : %s\n", ( m_occupancyMapFileName.c_str() ) );
-    msg( VTM_DETAILS, "PatchInfo      File                    : %s\n", ( m_patchInfoFileName.c_str() ) );
-  }
-#endif
-  msg( VTM_DETAILS, "Real     Format                        : %dx%d %gHz\n",
-       m_iSourceWidth - m_confWinLeft - m_confWinRight, m_iSourceHeight - m_confWinTop - m_confWinBottom,
-       (double)m_iFrameRate / m_temporalSubsampleRatio );
-  msg( VTM_DETAILS, "Internal Format                        : %dx%d %gHz\n", m_iSourceWidth, m_iSourceHeight,
+  msg( VTM_DETAILS, "Real     Format                        : %dx%d %gHz\n", m_sourceWidth - m_confWinLeft - m_confWinRight,
+       m_sourceHeight - m_confWinTop - m_confWinBottom, (double)m_iFrameRate / m_temporalSubsampleRatio );
+  msg( VTM_DETAILS, "Internal Format                        : %dx%d %gHz\n", m_sourceWidth, m_sourceHeight,
        (double)m_iFrameRate / m_temporalSubsampleRatio );
   msg( VTM_DETAILS, "Sequence PSNR output                   : %s\n",
        ( m_printMSEBasedSequencePSNR ? "Linear average, MSE-based" : "Linear average only" ) );
@@ -3619,8 +3748,7 @@ void PCCVTMLibVideoEncoderCfg::xPrintParameter() {
     msg( VTM_DETAILS, "Frame/Field                            : Field based coding\n" );
     msg( VTM_DETAILS, "Field index                            : %u - %d (%d fields)\n", m_FrameSkip,
          m_FrameSkip + m_framesToBeEncoded - 1, m_framesToBeEncoded );
-    msg( VTM_DETAILS, "Field Order                            : %s field first\n",
-         m_isTopFieldFirst ? "Top" : "Bottom" );
+    msg( VTM_DETAILS, "Field Order                            : %s field first\n", m_isTopFieldFirst ? "Top" : "Bottom" );
 
   } else {
     msg( VTM_DETAILS, "Frame/Field                            : Frame based coding\n" );
@@ -3641,8 +3769,7 @@ void PCCVTMLibVideoEncoderCfg::xPrintParameter() {
       if ( !m_subPicSameSizeFlag ) {
         msg( VTM_DETAILS, "[%d]th subpicture location              : [%d %d]\n", i, m_subPicCtuTopLeftX[i],
              m_subPicCtuTopLeftY[i] );
-        msg( VTM_DETAILS, "[%d]th subpicture size                  : [%d %d]\n", i, m_subPicWidth[i],
-             m_subPicHeight[i] );
+        msg( VTM_DETAILS, "[%d]th subpicture size                  : [%d %d]\n", i, m_subPicWidth[i], m_subPicHeight[i] );
       }
       msg( VTM_DETAILS, "[%d]th subpicture treated as picture    : %d\n", i,
            m_subPicTreatedAsPicFlag[i] ? "Enabled" : "Disabled" );
@@ -3667,8 +3794,8 @@ void PCCVTMLibVideoEncoderCfg::xPrintParameter() {
   msg( VTM_DETAILS, "DRAP period                            : %d\n", m_drapPeriod );
 #if QP_SWITCHING_FOR_PARALLEL
   if ( m_qpIncrementAtSourceFrame.bPresent ) {
-    msg( VTM_DETAILS, "QP                                     : %d (incrementing internal QP at source frame %d)\n",
-         m_iQP, m_qpIncrementAtSourceFrame.value );
+    msg( VTM_DETAILS, "QP                                     : %d (incrementing internal QP at source frame %d)\n", m_iQP,
+         m_qpIncrementAtSourceFrame.value );
   } else {
     msg( VTM_DETAILS, "QP                                     : %d\n", m_iQP );
   }
@@ -3690,15 +3817,33 @@ void PCCVTMLibVideoEncoderCfg::xPrintParameter() {
        m_internalBitDepth[CHANNEL_TYPE_CHROMA] );
   msg( VTM_DETAILS, "Intra reference smoothing              : %s\n",
        ( m_enableIntraReferenceSmoothing ? "Enabled" : "Disabled" ) );
-  msg( VTM_DETAILS, "cu_chroma_qp_offset_subdiv             : %d\n", m_cuChromaQpOffsetSubdiv );
+  if ( m_cuChromaQpOffsetList.size() > 0 ) {
+    msg( VTM_DETAILS, "Chroma QP offset list                  : (" );
+    for ( int i = 0; i < m_cuChromaQpOffsetList.size(); i++ ) {
+      msg( VTM_DETAILS, "%d %d %d%s", m_cuChromaQpOffsetList[i].u.comp.CbOffset, m_cuChromaQpOffsetList[i].u.comp.CrOffset,
+           m_cuChromaQpOffsetList[i].u.comp.JointCbCrOffset, ( i + 1 < m_cuChromaQpOffsetList.size() ? ", " : ")\n" ) );
+    }
+    msg( VTM_DETAILS, "cu_chroma_qp_offset_subdiv             : %d\n", m_cuChromaQpOffsetSubdiv );
+    msg( VTM_DETAILS, "cu_chroma_qp_offset_enabled_flag       : %s\n",
+         ( m_cuChromaQpOffsetEnabled ? "Enabled" : "Disabled" ) );
+  } else {
+    msg( VTM_DETAILS, "Chroma QP offset list                  : Disabled\n" );
+  }
   msg( VTM_DETAILS, "extended_precision_processing_flag     : %s\n",
        ( m_extendedPrecisionProcessingFlag ? "Enabled" : "Disabled" ) );
+#if JVET_V0054_TSRC_RICE
+  msg( VTM_DETAILS, "TSRC_Rice_present_flag                 : %s\n", ( m_tsrcRicePresentFlag ? "Enabled" : "Disabled" ) );
+#endif
   msg( VTM_DETAILS, "transform_skip_rotation_enabled_flag   : %s\n",
        ( m_transformSkipRotationEnabledFlag ? "Enabled" : "Disabled" ) );
   msg( VTM_DETAILS, "transform_skip_context_enabled_flag    : %s\n",
        ( m_transformSkipContextEnabledFlag ? "Enabled" : "Disabled" ) );
   msg( VTM_DETAILS, "high_precision_offsets_enabled_flag    : %s\n",
        ( m_highPrecisionOffsetsEnabledFlag ? "Enabled" : "Disabled" ) );
+#if JVET_V0106_RRC_RICE
+  msg( VTM_DETAILS, "rrc_rice_extension_flag                : %s\n",
+       ( m_rrcRiceExtensionEnableFlag ? "Enabled" : "Disabled" ) );
+#endif
   msg( VTM_DETAILS, "persistent_rice_adaptation_enabled_flag: %s\n",
        ( m_persistentRiceAdaptationEnabledFlag ? "Enabled" : "Disabled" ) );
   msg( VTM_DETAILS, "cabac_bypass_alignment_enabled_flag    : %s\n",
@@ -3742,6 +3887,16 @@ void PCCVTMLibVideoEncoderCfg::xPrintParameter() {
 #endif
   }
 
+#if GDR_ENABLED
+  msg( VTM_DETAILS, "GDREnabled                             : %d\n", m_gdrEnabled );
+
+  if ( m_gdrEnabled ) {
+    msg( VTM_DETAILS, "GDR Start                              : %d\n", m_gdrPocStart );
+    msg( VTM_DETAILS, "GDR Interval                           : %d\n", m_gdrInterval );
+    msg( VTM_DETAILS, "GDR Period                             : %d\n", m_gdrPeriod );
+  }
+#endif
+
   msg( VTM_DETAILS, "Max Num Merge Candidates               : %d\n", m_maxNumMergeCand );
   msg( VTM_DETAILS, "Max Num Affine Merge Candidates        : %d\n", m_maxNumAffineMergeCand );
   msg( VTM_DETAILS, "Max Num Geo Merge Candidates           : %d\n", m_maxNumGeoCand );
@@ -3783,7 +3938,7 @@ void PCCVTMLibVideoEncoderCfg::xPrintParameter() {
   msg( VTM_VERBOSE, "WPB:%d ", (int)m_useWeightedBiPred );
   msg( VTM_VERBOSE, "PME:%d ", m_log2ParallelMergeLevel );
   const int iWaveFrontSubstreams =
-      m_entropyCodingSyncEnabledFlag ? ( m_iSourceHeight + m_uiMaxCUHeight - 1 ) / m_uiMaxCUHeight : 1;
+      m_entropyCodingSyncEnabledFlag ? ( m_sourceHeight + m_uiMaxCUHeight - 1 ) / m_uiMaxCUHeight : 1;
   msg( VTM_VERBOSE, " WaveFrontSynchro:%d WaveFrontSubstreams:%d", m_entropyCodingSyncEnabledFlag ? 1 : 0,
        iWaveFrontSubstreams );
   msg( VTM_VERBOSE, " ScalingList:%d ", m_useScalingListId );
@@ -3876,11 +4031,6 @@ void PCCVTMLibVideoEncoderCfg::xPrintParameter() {
   msg( VTM_VERBOSE, "MaxNumAlfAlternativesChroma:%d ", m_maxNumAlfAlternativesChroma );
   if ( m_MIP ) msg( VTM_VERBOSE, "FastMIP:%d ", m_useFastMIP );
   msg( VTM_VERBOSE, "FastLocalDualTree:%d ", m_fastLocalDualTreeMode );
-
-  msg( VTM_VERBOSE, "NumSplitThreads:%d ", m_numSplitThreads );
-  if ( m_numSplitThreads > 1 ) { msg( VTM_VERBOSE, "ForceSingleSplitThread:%d ", m_forceSplitSequential ); }
-  msg( VTM_VERBOSE, "NumWppThreads:%d+%d ", m_numWppThreads, m_numWppExtraLines );
-  msg( VTM_VERBOSE, "EnsureWppBitEqual:%d ", m_ensureWppBitEqual );
 
   if ( m_resChangeInClvsEnabled ) {
     msg( VTM_VERBOSE, "RPR:(%1.2lfx, %1.2lfx)|%d ", m_scalingRatioHor, m_scalingRatioVer, m_switchPocPeriod );

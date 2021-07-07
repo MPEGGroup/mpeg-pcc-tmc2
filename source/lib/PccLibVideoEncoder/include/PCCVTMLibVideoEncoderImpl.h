@@ -82,7 +82,7 @@ class PCCVTMLibVideoEncoderImpl : public PCCVTMLibVideoEncoderCfg, public AUWrit
 
  private:
   void xInitLibCfg();
-  void xInitLib( bool isFieldCoding );
+  void xInitLib();
   void xDestroyLib();
   void xWriteOutput( std::ostream&           bitstreamFile,
                      int                     iNumEncoded,

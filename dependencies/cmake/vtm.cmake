@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.17 FATAL_ERROR)
-SET( VTM_VERSION         VTM-11.2 )
-SET( VTM_DIR             ${CMAKE_SOURCE_DIR}/dependencies/${VTM_VERSION} )
+SET( VTM_VERSION         VTM-13.0 )
+SET( VTM_DIR             ${CMAKE_SOURCE_DIR}/dependencies/VTM )
 set( VTM_LIB_SOURCE_DIR  ${VTM_DIR}/source/Lib )
 MESSAGE("Clone and build VTM libraries: ${VTM_LIB_SOURCE_DIR}") 
 
@@ -17,7 +17,7 @@ ENDIF()
 
 IF( NOT EXISTS "${VTM_DIR}/PATCHED" )
   MESSAGE("VTM patch: ${VTM_DIR}")
-  SET( VTM_PATCH ${CMAKE_SOURCE_DIR}/dependencies/vtm-modification/adaptions_for_vtm_11_2.patch )
+  SET( VTM_PATCH ${CMAKE_SOURCE_DIR}/dependencies/vtm-modification/adaptions_for_vtm_13_0.patch )
   EXECUTE_PROCESS( COMMAND git apply ${VTM_PATCH} --whitespace=nowarn WORKING_DIRECTORY ${VTM_DIR} RESULT_VARIABLE ret )
   IF( NOT ${ret} EQUAL "0")
     MESSAGE( FATAL_ERROR "Error during the VTM patch process. Check that git is well installed on your system." )
