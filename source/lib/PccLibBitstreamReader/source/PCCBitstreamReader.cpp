@@ -2241,7 +2241,7 @@ void PCCBitstreamReader::attributeSmoothing( PCCBitstream& bitstream, SEI& seiAb
         sei.setMethodType( k, m, bitstream.readUvlc() );  // ue(v)
         if ( sei.getMethodType( k, m ) ) {
           sei.setFilterEomPointsFlag( k, m, bitstream.read( 1 ) );  // u(1)
-          sei.setGridSizeMinus2( k, m, bitstream.read( 85 ) );      // u(5)
+          sei.setGridSizeMinus2( k, m, bitstream.read( 5 ) );       // u(5)
           sei.setThreshold( k, m, bitstream.read( 8 ) );            // u(8)
           sei.setThresholdVariation( k, m, bitstream.read( 8 ) );   // u(8)
           sei.setThresholdDifference( k, m, bitstream.read( 8 ) );  // u(8)
