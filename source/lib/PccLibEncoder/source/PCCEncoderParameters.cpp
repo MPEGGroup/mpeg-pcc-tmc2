@@ -587,6 +587,100 @@ void PCCEncoderParameters::print() {
 
 bool PCCEncoderParameters::check() {
   bool ret = true;
+
+
+  // Profile Tools set idc
+  // Basic
+  if ( profileToolsetIdc_ == 0 ) {
+    if ( multipleStreams_ == 0 && mapCountMinus1_ > 0 ) {
+      multipleStreams_ = true;
+      std::cerr << "multipleStreams is force to one because profileToolsetIdc set to 0. \n";
+    }
+    if ( pointLocalReconstruction_ == 1 ) {
+      pointLocalReconstruction_ = false;
+      std::cerr << "pointLocalReconstruction is force to zero because profileToolsetIdc set to 0. \n";
+    }
+    if ( noEightOrientationsConstraintFlag_ == false ) {
+      noEightOrientationsConstraintFlag_ = true;
+      std::cerr << "noEightOrientationsConstraintFlag is to one because profileToolsetIdc set to 0. \n";
+    }     
+    if ( no45DegreeProjectionPatchConstraintFlag_ == false ) {
+      no45DegreeProjectionPatchConstraintFlag_ = true;
+      std::cerr << "no45DegreeProjectionPatchConstraintFlag is to one because profileToolsetIdc set to 0. \n";
+    }    
+    if ( additionalProjectionPlaneMode_ > 0 ) {
+      additionalProjectionPlaneMode_ = 0;
+      std::cerr << "additionalrojectionPlaneMode is to zero because profileToolsetIdc set to 0. \n";
+    }       
+  }
+
+  // Profile reconctruction idc
+  // Rec0
+  if ( profileReconstructionIdc_ == 0 ) {
+    if ( singleMapPixelInterleaving_ ) {
+      singleMapPixelInterleaving_ = false;
+      std::cerr << "singleMapPixelInterleaving is ignored because profileReconstructionIdc set to 0. \n";
+    }
+    if ( pointLocalReconstruction_ ) {
+      pointLocalReconstruction_ = false;
+      std::cerr << "pointLocalReconstruction is ignored because profileReconstructionIdc set to 0. \n";
+    }
+    if ( enhancedOccupancyMapCode_ ) {
+      enhancedOccupancyMapCode_ = 0;
+      std::cerr << "enhancedOccupancyMapCode is ignored because profileReconstructionIdc set to 0. \n";
+    }
+    if ( removeDuplicatePoints_ ) {
+      removeDuplicatePoints_ = 0;
+      std::cerr << "removeDuplicatePoints is ignored because profileReconstructionIdc set to 0. \n";
+    }
+    if ( lossyRawPointsPatch_ ) {
+      lossyRawPointsPatch_ = 0;
+      std::cerr << "lossyRawPointsPatch is ignored because profileReconstructionIdc set to 0. \n";
+    }
+    if ( rawPointsPatch_ ) {
+      rawPointsPatch_ = 0;
+      std::cerr << "rawPointsPatch is ignored because profileReconstructionIdc set to 0. \n";
+    }
+    if ( flagGeometrySmoothing_ ) {
+      flagGeometrySmoothing_ = false;
+      std::cerr << "flagGeometrySmoothing is ignored because profileReconstructionIdc set to 0. \n";
+    }
+    if ( gridSmoothing_ ) {
+      gridSmoothing_ = false;
+      std::cerr << "gridSmoothing is ignored because profileReconstructionIdc set to 0. \n";
+    }
+    if ( flagColorSmoothing_ ) {
+      flagColorSmoothing_ = false;
+      std::cerr << "flagColorSmoothing is ignored because profileReconstructionIdc set to 0. \n";
+    }
+    if ( pbfEnableFlag_ ) {
+      pbfEnableFlag_ = false;
+      std::cerr << "pbfEnableFlag is ignored because profileReconstructionIdc set to 0. \n";
+    }
+  }
+
+  // Rec1
+  if ( profileReconstructionIdc_ == 1 ) {
+    if ( pbfEnableFlag_ ) {
+      pbfEnableFlag_ = false;
+      std::cerr << "pbfEnableFlag is ignored because profileReconstructionIdc set to 1. \n";
+    }
+  }
+
+  // Rec2
+  if ( profileReconstructionIdc_ == 0 ) {
+    if ( flagGeometrySmoothing_ ) {
+      flagGeometrySmoothing_ = false;
+      std::cerr << "flagGeometrySmoothing is ignored because profileReconstructionIdc set to 2. \n";
+    }
+    if ( gridSmoothing_ ) {
+      gridSmoothing_ = false;
+      std::cerr << "gridSmoothing_ is ignored because profileReconstructionIdc set to 2. \n";
+    }
+    // Note: Attribute transfer cannot be disabled. one encoder input parameter must be added.
+  }
+
+
   if ( ( levelOfDetailX_ == 0 || levelOfDetailY_ == 0 ) ) {
     if ( levelOfDetailX_ == 0 ) { levelOfDetailX_ = 1; }
     if ( levelOfDetailY_ == 0 ) { levelOfDetailY_ = 1; }
@@ -931,72 +1025,6 @@ bool PCCEncoderParameters::check() {
   if ( EOMFixBitCount_ < 1 ) {
     ret = false;
     std::cerr << "EOMFixBitCount shall be greater than 0. \n";
-  }
-
-  // Profile reconctruction idc
-  // Rec0
-  if ( profileReconstructionIdc_ == 0 ) {
-    if ( singleMapPixelInterleaving_ ) {
-      singleMapPixelInterleaving_ = false;
-      std::cerr << "singleMapPixelInterleaving is ignored because profileReconstructionIdc set to 0. \n";
-    }
-    if ( pointLocalReconstruction_ ) {
-      pointLocalReconstruction_ = false;
-      std::cerr << "pointLocalReconstruction is ignored because profileReconstructionIdc set to 0. \n";
-    }
-    if ( enhancedOccupancyMapCode_ ) {
-      enhancedOccupancyMapCode_ = 0;
-      std::cerr << "enhancedOccupancyMapCode is ignored because profileReconstructionIdc set to 0. \n";
-    }
-    if ( removeDuplicatePoints_ ) {
-      removeDuplicatePoints_ = 0;
-      std::cerr << "removeDuplicatePoints is ignored because profileReconstructionIdc set to 0. \n";
-    }
-    if ( lossyRawPointsPatch_ ) {
-      lossyRawPointsPatch_ = 0;
-      std::cerr << "lossyRawPointsPatch is ignored because profileReconstructionIdc set to 0. \n";
-    }
-    if ( rawPointsPatch_ ) {
-      rawPointsPatch_ = 0;
-      std::cerr << "rawPointsPatch is ignored because profileReconstructionIdc set to 0. \n";
-    }
-    if ( flagGeometrySmoothing_ ) {
-      flagGeometrySmoothing_ = false;
-      std::cerr << "flagGeometrySmoothing is ignored because profileReconstructionIdc set to 0. \n";
-    }
-    if ( gridSmoothing_ ) {
-      gridSmoothing_ = false;
-      std::cerr << "gridSmoothing is ignored because profileReconstructionIdc set to 0. \n";
-    }
-    if ( flagColorSmoothing_ ) {
-      flagColorSmoothing_ = false;
-      std::cerr << "flagColorSmoothing is ignored because profileReconstructionIdc set to 0. \n";
-    }
-    if ( pbfEnableFlag_ ) {
-      pbfEnableFlag_ = false;
-      std::cerr << "pbfEnableFlag is ignored because profileReconstructionIdc set to 0. \n";
-    }
-  }
-
-  // Rec1
-  if ( profileReconstructionIdc_ == 1 ) {
-    if ( pbfEnableFlag_ ) {
-      pbfEnableFlag_ = false;
-      std::cerr << "pbfEnableFlag is ignored because profileReconstructionIdc set to 1. \n";
-    }
-  }
-
-  // Rec2
-  if ( profileReconstructionIdc_ == 0 ) {
-    if ( flagGeometrySmoothing_ ) {
-      flagGeometrySmoothing_ = false;
-      std::cerr << "flagGeometrySmoothing is ignored because profileReconstructionIdc set to 2. \n";
-    }
-    if ( gridSmoothing_ ) {
-      gridSmoothing_ = false;
-      std::cerr << "gridSmoothing_ is ignored because profileReconstructionIdc set to 2. \n";
-    }
-    // Note: Attribute transfer cannot be disabled. one encoder input parameter must be added.
   }
 
   // Based on profileCodecGroupIdc_, fixe the used video codecs.
