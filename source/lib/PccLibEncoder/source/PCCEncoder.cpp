@@ -611,64 +611,68 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
       if ( ppSEIParams.gridSmoothing_ ) {
         smoothPointCloudPostprocess( reconstruct, params_.colorTransform_, ppSEIParams, partition );
       }
-      if ( !ppSEIParams.pbfEnableFlag_ ) {
-        // These are different attribute transfer functions
-        if ( params_.postprocessSmoothingFilter_ == 1 || params_.postprocessSmoothingFilter_ == 5 ) {
-          TRACE_PATCH( " transferColors16bitBP \n" );
-          tempFrameBuffer.transferColors16bitBP( reconstruct,                          // target
-                                                 params_.postprocessSmoothingFilter_,  // filterType
-                                                 int32_t( 0 ),                         // searchRange
-                                                 isAttributes444,                      // losslessAttribute
-                                                 8,                                    // numNeighborsColorTransferFwd
-                                                 1,                                    // numNeighborsColorTransferBwd
-                                                 true,                                 // useDistWeightedAverageFwd
-                                                 true,                                 // useDistWeightedAverageBwd
-                                                 true,          // skipAvgIfIdenticalSourcePointPresentFwd
-                                                 false,         // skipAvgIfIdenticalSourcePointPresentBwd
-                                                 4,             // distOffsetFwd
-                                                 4,             // distOffsetBwd
-                                                 1000,          // maxGeometryDist2Fwd
-                                                 1000,          // maxGeometryDist2Bwd
-                                                 1000 * 256,    // maxColorDist2Fwd
-                                                 1000 * 256 );  // maxColorDist2Bwd
-        } else if ( params_.postprocessSmoothingFilter_ == 2 ) {
-          TRACE_PATCH( " transferColorWeight \n" );
-          tempFrameBuffer.transferColorWeight( reconstruct, 0.1 );
-        } else if ( params_.postprocessSmoothingFilter_ == 3 ) {
-          TRACE_PATCH( " transferColorsFilter3 \n" );
-          tempFrameBuffer.transferColorsFilter3( reconstruct, int32_t( 0 ), isAttributes444 );
-        } else if ( params_.postprocessSmoothingFilter_ == 7 || params_.postprocessSmoothingFilter_ == 9 ) {
-          TRACE_PATCH( " transferColorsFilter3 \n" );
-          tempFrameBuffer.transferColorsBackward16bitBP( reconstruct,                          //  target
-                                                         params_.postprocessSmoothingFilter_,  //  filterType
-                                                         int32_t( 0 ),                         //  searchRange
-                                                         isAttributes444,                      //  losslessAttribute
-                                                         8,             //  numNeighborsColorTransferFwd
-                                                         1,             //  numNeighborsColorTransferBwd
-                                                         true,          //  useDistWeightedAverageFwd
-                                                         true,          //  useDistWeightedAverageBwd
-                                                         true,          //  skipAvgIfIdenticalSourcePointPresentFwd
-                                                         false,         //  skipAvgIfIdenticalSourcePointPresentBwd
-                                                         4,             //  distOffsetFwd
-                                                         4,             //  distOffsetBwd
-                                                         1000,          //  maxGeometryDist2Fwd
-                                                         1000,          //  maxGeometryDist2Bwd
-                                                         1000 * 256,    //  maxColorDist2Fwd
-                                                         1000 * 256 );  //  maxColorDist2Bwd
+
+      if ( ai.getAttributeCount() > 0 ) {
+        if ( !ppSEIParams.pbfEnableFlag_ ) {
+          // These are different attribute transfer functions
+          if ( params_.postprocessSmoothingFilter_ == 1 || params_.postprocessSmoothingFilter_ == 5 ) {
+            TRACE_PATCH( " transferColors16bitBP \n" );
+            tempFrameBuffer.transferColors16bitBP( reconstruct,                          // target
+                                                   params_.postprocessSmoothingFilter_,  // filterType
+                                                   int32_t( 0 ),                         // searchRange
+                                                   isAttributes444,                      // losslessAttribute
+                                                   8,                                    // numNeighborsColorTransferFwd
+                                                   1,                                    // numNeighborsColorTransferBwd
+                                                   true,                                 // useDistWeightedAverageFwd
+                                                   true,                                 // useDistWeightedAverageBwd
+                                                   true,          // skipAvgIfIdenticalSourcePointPresentFwd
+                                                   false,         // skipAvgIfIdenticalSourcePointPresentBwd
+                                                   4,             // distOffsetFwd
+                                                   4,             // distOffsetBwd
+                                                   1000,          // maxGeometryDist2Fwd
+                                                   1000,          // maxGeometryDist2Bwd
+                                                   1000 * 256,    // maxColorDist2Fwd
+                                                   1000 * 256 );  // maxColorDist2Bwd
+          } else if ( params_.postprocessSmoothingFilter_ == 2 ) {
+            TRACE_PATCH( " transferColorWeight \n" );
+            tempFrameBuffer.transferColorWeight( reconstruct, 0.1 );
+          } else if ( params_.postprocessSmoothingFilter_ == 3 ) {
+            TRACE_PATCH( " transferColorsFilter3 \n" );
+            tempFrameBuffer.transferColorsFilter3( reconstruct, int32_t( 0 ), isAttributes444 );
+          } else if ( params_.postprocessSmoothingFilter_ == 7 || params_.postprocessSmoothingFilter_ == 9 ) {
+            TRACE_PATCH( " transferColorsFilter3 \n" );
+            tempFrameBuffer.transferColorsBackward16bitBP( reconstruct,                          //  target
+                                                           params_.postprocessSmoothingFilter_,  //  filterType
+                                                           int32_t( 0 ),                         //  searchRange
+                                                           isAttributes444,                      //  losslessAttribute
+                                                           8,             //  numNeighborsColorTransferFwd
+                                                           1,             //  numNeighborsColorTransferBwd
+                                                           true,          //  useDistWeightedAverageFwd
+                                                           true,          //  useDistWeightedAverageBwd
+                                                           true,          //  skipAvgIfIdenticalSourcePointPresentFwd
+                                                           false,         //  skipAvgIfIdenticalSourcePointPresentBwd
+                                                           4,             //  distOffsetFwd
+                                                           4,             //  distOffsetBwd
+                                                           1000,          //  maxGeometryDist2Fwd
+                                                           1000,          //  maxGeometryDist2Bwd
+                                                           1000 * 256,    //  maxColorDist2Fwd
+                                                           1000 * 256 );  //  maxColorDist2Bwd
+          }
         }
       }
     }
-
-    if ( ppSEIParams.flagColorSmoothing_ ) {
-      TRACE_PATCH( " colorSmoothing \n" );
-      colorSmoothing( reconstruct, params_.colorTransform_, ppSEIParams );
-    }
-    if ( !isAttributes444 ) {  // lossy: convert 16-bit yuv444 to 8-bit RGB444
-      TRACE_PATCH( "lossy: convert 16-bit yuv444 to 8-bit RGB444 (convertYUV16ToRGB8) \n" );
-      reconstruct.convertYUV16ToRGB8();
-    } else {  // lossless: copy 16-bit RGB to 8-bit RGB
-      TRACE_PATCH( "lossy: lossless: copy 16-bit RGB to 8-bit RGB (copyRGB16ToRGB8) \n" );
-      reconstruct.copyRGB16ToRGB8();
+    if ( ai.getAttributeCount() > 0 ) {
+      if ( ppSEIParams.flagColorSmoothing_ ) {
+        TRACE_PATCH( " colorSmoothing \n" );
+        colorSmoothing( reconstruct, params_.colorTransform_, ppSEIParams );
+      }
+      if ( !isAttributes444 ) {  // lossy: convert 16-bit yuv444 to 8-bit RGB444
+        TRACE_PATCH( "lossy: convert 16-bit yuv444 to 8-bit RGB444 (convertYUV16ToRGB8) \n" );
+        reconstruct.convertYUV16ToRGB8();
+      } else {  // lossless: copy 16-bit RGB to 8-bit RGB
+        TRACE_PATCH( "lossy: lossless: copy 16-bit RGB to 8-bit RGB (copyRGB16ToRGB8) \n" );
+        reconstruct.copyRGB16ToRGB8();
+      }
     }
     TRACE_RECFRAME( "Atlas Frame Index = %d \n", frameIdx );
     auto checksum = reconstructs[frameIdx].computeChecksum( true );
@@ -8304,22 +8308,48 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&         context,
 
 void PCCEncoder::createHlsAtlasTileLogFiles( PCCContext& context, int frameIndex, int afpsId ) {
   TRACE_HLS( "Atlas Frame Index = %d\n", frameIndex );
+  TRACE_HLS( "Atlas Frame Parameter Set Index = %d\n", afpsId );
   auto& afps = context.getAtlasFrameParameterSet( afpsId );
   auto& asps = context.getAtlasSequenceParameterSet( afps.getAtlasSequenceParameterSetId() );
   auto& afc  = context.getFrame( frameIndex );
   auto& vps  = context.getVps();
 
+  std::vector<uint8_t> encMD5( 16 );
   std::vector<uint8_t> highLevelAtlasData;
   aspsCommonByteString( highLevelAtlasData, asps );
+  encMD5 = context.computeMD5( highLevelAtlasData.data(), highLevelAtlasData.size() );
+  TRACE_HLS( " HLSMD5 = " );
+  for ( auto& md5 : encMD5 ) TRACE_HLS( "%02x", md5 );
+  TRACE_HLS( "\n" );
   aspsApplicationByteString( highLevelAtlasData, asps, afps );
+  encMD5 = context.computeMD5( highLevelAtlasData.data(), highLevelAtlasData.size() );
+  TRACE_HLS( " HLSMD5 = " );
+  for ( auto& md5 : encMD5 ) TRACE_HLS( "%02x", md5 );
+  TRACE_HLS( "\n" );
   afpsCommonByteString( highLevelAtlasData, context, afpsId, frameIndex );
+  encMD5 = context.computeMD5( highLevelAtlasData.data(), highLevelAtlasData.size() );
+  TRACE_HLS( " HLSMD5 = " );
+  for ( auto& md5 : encMD5 ) TRACE_HLS( "%02x", md5 );
+  TRACE_HLS( "\n" );
   afpsApplicationByteString( highLevelAtlasData, asps, afps );
-  std::vector<uint8_t> encMD5( 16 );
   encMD5 = context.computeMD5( highLevelAtlasData.data(), highLevelAtlasData.size() );
   TRACE_HLS( " HLSMD5 = " );
   for ( auto& md5 : encMD5 ) TRACE_HLS( "%02x", md5 );
   TRACE_HLS( "\n" );
 
+
+  // std::vector<uint8_t> highLevelAtlasData;
+  // aspsCommonByteString( highLevelAtlasData, asps );
+  // aspsApplicationByteString( highLevelAtlasData, asps, afps );
+  // afpsCommonByteString( highLevelAtlasData, context, afpsIndex, frameIndex );
+  // afpsApplicationByteString( highLevelAtlasData, asps, afps );
+  // std::vector<uint8_t> decMD5( 16 );
+  // TRACE_HLS( "Atlas Frame Index = %d\n", frameIndex );
+  // decMD5 = context.computeMD5( highLevelAtlasData.data(), highLevelAtlasData.size() );
+  // TRACE_HLS( " HLSMD5 = " );
+  // for ( int j = 0; j < 16; j++ ) TRACE_HLS( "%02x", decMD5[j] );
+  // TRACE_HLS( "\n" );
+  highLevelAtlasData.clear();
   std::vector<PatchParams>                       atlasPatchParams;
   std::vector<std::vector<PatchParams>>          tilePatchParams;
   std::vector<std::vector<std::vector<int64_t>>> tileB2PPatchParams;

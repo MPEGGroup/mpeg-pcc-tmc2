@@ -237,7 +237,7 @@ PCCEncoderParameters::PCCEncoderParameters() {
   // Profile tier level
   tierFlag_                 = 0;                        // Low Tier
   profileCodecGroupIdc_     = CODEC_GROUP_HEVC_MAIN10;  // HEVC Main10
-  profileToolsetIdc_        = 0;                        // V-PCC Basic V-PCC Extend
+  profileToolsetIdc_        = 1;                        // V-PCC Basic V-PCC Extend
   profileReconstructionIdc_ = 0;                        // Rec0, Rec1 or Rec2
   levelIdc_                 = 30;                       // Corresponds to level 1.0 in Table A.5
   avcCodecIdIndex_          = 0;                        // Index use if CMC SEI
@@ -587,7 +587,6 @@ void PCCEncoderParameters::print() {
 
 bool PCCEncoderParameters::check() {
   bool ret = true;
-
 
   // Profile Tools set idc
   // Basic
@@ -1001,6 +1000,13 @@ bool PCCEncoderParameters::check() {
       }
     }
   }
+
+  if ( noAttributes_ ) {
+    flagColorPreSmoothing_ = false;
+    flagColorSmoothing_    = false;
+    std::cerr << "Color smoothings are disable because noAttributes is true \n";
+  }
+
   if ( flagGeometrySmoothing_ ) {
     if ( pbfEnableFlag_ ) {
       gridSmoothing_ = false;
@@ -1237,7 +1243,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   asps.setMaxNumberProjectionsMinus1( 5 + 4 * ( std::min )( additionalProjectionPlaneMode_, 3 ) );
   asps.setNormalAxisLimitsQuantizationEnabledFlag( true );
   asps.setNormalAxisMaxDeltaValueEnabledFlag( true );
-  asps.setxelDeinterleavingFlag( singleMapPixelInterleaving_ );
+  asps.setPixelDeinterleavingFlag( singleMapPixelInterleaving_ );
   asps.setPatchPrecedenceOrderFlag( patchPrecedenceOrderFlag_ );
   asps.setPatchSizeQuantizerPresentFlag( context.getEnablePatchSizeQuantization() );
   asps.setEomPatchEnabledFlag( enhancedOccupancyMapCode_ );
@@ -1250,8 +1256,12 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   asps.setRawPatchEnabledFlag( rawPointsPatch_ || lossyRawPointsPatch_ );
   if ( asps.getVpccExtensionFlag() ) {
     auto& ext = asps.getAspsVpccExtension();
-    ext.setRemoveDuplicatePointEnableFlag( removeDuplicatePoints_ );
-    ext.setSurfaceThicknessMinus1( surfaceThickness_ - 1 );
+    ext.setRemoveDuplicatePointEnableFlag( removeDuplicatePoints_ );    
+    if ( asps.getPixelDeinterleavingFlag() || asps.getPLREnabledFlag() ) {
+      ext.setSurfaceThicknessMinus1( surfaceThickness_ - 1 );
+    } else {
+      ext.setSurfaceThicknessMinus1( 0 );
+    }
   }
   asps.setEomFixBitCountMinus1( EOMFixBitCount_ - 1 );
   asps.setGeometry2dBitdepthMinus1( uint8_t( geometryNominal2dBitdepth_ - 1 ) );

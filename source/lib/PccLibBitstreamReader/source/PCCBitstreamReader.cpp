@@ -503,7 +503,7 @@ void PCCBitstreamReader::atlasSequenceParameterSetRbsp( AtlasSequenceParameterSe
   TRACE_BITSTREAM( "Log2PatchPackingBlockSize = %u \n", asps.getLog2PatchPackingBlockSize() );
   asps.setPatchSizeQuantizerPresentFlag( bitstream.read( 1 ) );  // u(1)
   asps.setMapCountMinus1( bitstream.read( 4 ) );                 // u(4)
-  asps.setxelDeinterleavingFlag( bitstream.read( 1 ) );          // u(1)
+  asps.setPixelDeinterleavingFlag( bitstream.read( 1 ) );          // u(1)
   if ( asps.getPixelDeinterleavingFlag() ) {
     for ( size_t i = 0; i < asps.getMapCountMinus1() + 1; i++ ) {
       asps.setPixelDeinterleavingMapFlag( i, bitstream.read( 1 ) );  // u(1)

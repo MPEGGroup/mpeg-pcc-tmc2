@@ -573,23 +573,23 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                       reconstru
   const size_t blockToPatchHeight    = tile.getHeight() / params.occupancyResolution_;
   const size_t totalPatchCount       = patches.size();
   uint32_t     patchIndex            = 0;
+  const size_t mapCount              = params.mapCountMinus1_ + 1;
   reconstruct.addColors();
 
-  printf( "generatePointCloud pbfEnableFlag_ = %d \n", params.pbfEnableFlag_ );
+  printf( "generatePointCloud pbfEnableFlag_ = %d \n", params.pbfEnableFlag_ ); fflush(stdout);
   TRACE_CODEC( "generatePointCloud pbfEnableFlag_ = %d \n", params.pbfEnableFlag_ );
   if ( params.pbfEnableFlag_ ) {
+    size_t              frameIndex = params.multipleStreams_ ? tile.getFrameIndex() : tile.getFrameIndex() * mapCount;
     PatchBlockFiltering patchBlockFiltering;
     patchBlockFiltering.setPatches( &( tile.getPatches() ) );
     patchBlockFiltering.setBlockToPatch( &( tile.getBlockToPatch() ) );
     patchBlockFiltering.setOccupancyMapEncoder( &( tile.getOccupancyMap() ) );
     patchBlockFiltering.setOccupancyMapVideo( &( videoOccupancyMap.getFrame( tile.getFrameIndex() ).getChannel( 0 ) ) );
-    patchBlockFiltering.setGeometryVideo(
-        &( videoGeometry.getFrame( tile.getFrameIndex() * ( params.mapCountMinus1_ + 1 ) ).getChannel( 0 ) ) );
+    patchBlockFiltering.setGeometryVideo( &( videoGeometry.getFrame( frameIndex ).getChannel( 0 ) ) );
     patchBlockFiltering.patchBorderFiltering( tile.getWidth(), tile.getHeight(), params.occupancyResolution_,
                                               params.occupancyPrecision_,
                                               !params.enhancedOccupancyMapCode_ ? params.thresholdLossyOM_ : 0,
-                                              params.pbfPassesCount_, params.pbfFilterSize_, params.pbfLog2Threshold_ );
-    printf( "PBF done \n" );
+                                              params.pbfPassesCount_, params.pbfFilterSize_, params.pbfLog2Threshold_ );    
     TRACE_CODEC( "PBF done \n" );
   }
 
@@ -634,7 +634,7 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                       reconstru
         }        // u0
       }          // v0
     }
-  }
+  }  
   // partition.resize( 0 );
   pointToPixel.resize( 0 );
   reconstruct.clear();
@@ -645,8 +645,7 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                       reconstru
 
   bool         useRawPointsSeparateVideo = tile.getUseRawPointsSeparateVideo();
   size_t       videoFrameIndex;
-  const size_t mapCount = params.mapCountMinus1_ + 1;
-  TRACE_CODEC( " mapCount                       = %d \n", mapCount );
+  TRACE_CODEC( " mapCount                       = %d \n", mapCount );  
   if ( params.multipleStreams_ ) {
     videoFrameIndex = tile.getFrameIndex();
     if ( videoGeometryMultiple[0].getFrameCount() < ( videoFrameIndex + 1 ) ) { return; }
@@ -2521,9 +2520,9 @@ void PCCCodec::getB2PHashPatchParams( PCCContext&                               
 }
 
 void PCCCodec::aspsCommonByteString( std::vector<uint8_t>& stringByte, AtlasSequenceParameterSetRbsp& asps ) {
-  uint8_t val = asps.getFrameWidth() & 0xFF;
-  stringByte.push_back( val );
-  val = ( size_t( asps.getFrameWidth() ) >> 8 ) & 0xFF;
+  uint8_t val = asps.getFrameWidth() & 0xFF;                    
+  stringByte.push_back( val );  
+  val = ( size_t( asps.getFrameWidth() ) >> 8 ) & 0xFF;   
   stringByte.push_back( val );
   val = ( size_t( asps.getFrameWidth() ) >> 16 ) & 0xFF;
   stringByte.push_back( val );
@@ -2556,7 +2555,7 @@ void PCCCodec::aspsApplicationByteString( std::vector<uint8_t>&          stringB
   if ( asps.getPixelDeinterleavingFlag() ) {
     for ( int j = 0; j <= asps.getMapCountMinus1(); j++ ) {
       val = uint8_t( asps.getPixelDeinterleavingMapFlag( j ) ) & 0xFF;
-      stringByte.push_back( val );
+      stringByte.push_back( val ); 
     }
   }
   val = uint8_t( asps.getRawPatchEnabledFlag() ) & 0xFF;
@@ -2564,7 +2563,7 @@ void PCCCodec::aspsApplicationByteString( std::vector<uint8_t>&          stringB
   val = uint8_t( asps.getEomPatchEnabledFlag() ) & 0xFF;
   stringByte.push_back( val );
   if ( asps.getEomPatchEnabledFlag() && asps.getMapCountMinus1() == 0 ) {
-    val = asps.getEomFixBitCountMinus1() & 0xFF;
+    val = asps.getEomFixBitCountMinus1() & 0xFF;   
     stringByte.push_back( val );
   }
   if ( asps.getAuxiliaryVideoEnabledFlag() && ( asps.getRawPatchEnabledFlag() || asps.getEomPatchEnabledFlag() ) ) {
@@ -2610,7 +2609,7 @@ void PCCCodec::aspsApplicationByteString( std::vector<uint8_t>&          stringB
   auto& ext = asps.getAspsVpccExtension();
   val       = uint8_t( ext.getRemoveDuplicatePointEnableFlag() ) & 0xFF;
   stringByte.push_back( val );
-  val = ext.getSurfaceThicknessMinus1() & 0xFF;
+  val = ext.getSurfaceThicknessMinus1() & 0xFF; 
   stringByte.push_back( val );
   val = ( size_t( ext.getSurfaceThicknessMinus1() ) >> 8 ) & 0xFF;
   stringByte.push_back( val );
