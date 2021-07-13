@@ -321,6 +321,19 @@ class PCCBitstream {
     return ( bits & 1 ) ? ( int32_t )( bits >> 1 ) + 1 : -( int32_t )( bits >> 1 );
   }
 
+  inline void writeFloat( float value ) {
+    uint32_t code = 0;
+    memcpy( &code, &value, sizeof( float ) );
+    write( code, 32 );
+  }
+
+  inline float readFloat() {
+    uint32_t code  = read( 32 );
+    float    value = 0;
+    memcpy( &value, &code, sizeof( float ) );
+    return value;
+  }
+
 #ifdef BITSTREAM_TRACE
   template <typename... Args>
   void trace( const char* pFormat, Args... eArgs ) {

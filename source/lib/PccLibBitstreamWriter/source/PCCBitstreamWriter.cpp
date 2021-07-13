@@ -2008,16 +2008,15 @@ void PCCBitstreamWriter::viewportCameraParameters( PCCBitstream& bitstream, SEI&
       bitstream.write( sei.getErpHorizontalFov(), 32 );          // u(32)
       bitstream.write( sei.getErpVerticalFov(), 32 );            // u(32)
     } else if ( sei.getCameraType() == 1 ) {                     // perspective
-      bitstream.write( sei.getPerspectiveAspectRatio(), 32 );    // fl(32)
+      bitstream.writeFloat( sei.getPerspectiveAspectRatio() );    // fl(32)
       bitstream.write( sei.getPerspectiveHorizontalFov(), 32 );  // u(32)
-    } else if ( sei.getCameraType() == 2 ) {                     /* orthographic */
-      bitstream.write( sei.getOrthoAspectRatio(), 32 );          // fl(32)
-      bitstream.write( sei.getOrthoHorizontalSize(), 32 );       // fl(32)
+    } else if ( sei.getCameraType() == 2 ) {                     // orthographic 
+      bitstream.writeFloat( sei.getOrthoAspectRatio() );          // fl(32)
+      bitstream.writeFloat( sei.getOrthoHorizontalSize() );       // fl(32)
     }
-    bitstream.write( sei.getClippingNearPlane(), 32 );  // fl(32)
-    bitstream.write( sei.getClippingFarPlane(), 32 );   // fl(32)
+    bitstream.writeFloat( sei.getClippingNearPlane() );  // fl(32)
+    bitstream.writeFloat( sei.getClippingFarPlane() );   // fl(32)
   }
-  // JR TODO: fl(32) must be check
 }
 
 // F.2.15.2	Viewport position SEI messages syntax
@@ -2033,7 +2032,7 @@ void PCCBitstreamWriter::viewportPosition( PCCBitstream& bitstream, SEI& seiAbst
   if ( !sei.getCancelFlag() ) {
     bitstream.write( sei.getPersistenceFlag(), 1 );  // u(1)
     for ( size_t d = 0; d < 3; d++ ) {
-      bitstream.write( sei.getPosition( d ), 32 );  //	fl(32)
+      bitstream.writeFloat( sei.getPosition( d ) );  //	fl(32)
     }
     bitstream.write( sei.getRotationQX(), 16 );     //	i(16)
     bitstream.write( sei.getRotationQY(), 16 );     //	i(16)
@@ -2043,7 +2042,6 @@ void PCCBitstreamWriter::viewportPosition( PCCBitstream& bitstream, SEI& seiAbst
       bitstream.write( sei.getLeftViewFlag(), 1 );  // u(1)
     }
   }
-  // Note: fl(32) must be checked
 }
 
 // F.2.16 Decoded Atlas Information Hash SEI message syntax
@@ -2331,7 +2329,7 @@ void PCCBitstreamWriter::vuiParameters( PCCBitstream& bitstream, VUIParameters& 
     bitstream.write( vp.getAnchorPointPresentFlag(), 1 );  // u(1)
     if ( vp.getAnchorPointPresentFlag() ) {
       for ( size_t d = 0; d < 3; d++ ) {
-        bitstream.write( vp.getAnchorPoint( d ), 32 );  // fl(32)
+        bitstream.writeUvlc( vp.getAnchorPoint( d ) );  // u(v)
       }
     }
   }
