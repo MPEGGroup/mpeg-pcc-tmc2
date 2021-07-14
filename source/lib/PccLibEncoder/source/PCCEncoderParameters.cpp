@@ -1260,7 +1260,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
     if ( asps.getPixelDeinterleavingFlag() || asps.getPLREnabledFlag() ) {
       ext.setSurfaceThicknessMinus1( surfaceThickness_ - 1 );
     } else {
-      ext.setSurfaceThicknessMinus1( 3 );
+      ext.setSurfaceThicknessMinus1( 0 );
     }
   }
   asps.setEomFixBitCountMinus1( EOMFixBitCount_ - 1 );
