@@ -260,10 +260,6 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
       }
     }
   }
-  bool isAttributes444 = context.getVideoAttributesMultiple( 0 ).getColorFormat() == PCCCOLORFORMAT::RGB444;
-  printf( "isAttributes444 = %d Format = %d \n", isAttributes444,
-          context.getVideoAttributesMultiple( 0 ).getColorFormat() );
-  fflush( stdout );
 
   reconstructs.setFrameCount( frameCount );
   // recreating the prediction list per attribute (either the attribute is coded absolute, or follows the geometry)
@@ -374,6 +370,12 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
       if ( ppSEIParams.gridSmoothing_ ) {
         smoothPointCloudPostprocess( reconstruct, params_.colorTransform_, ppSEIParams, partition );
       }
+      if ( ai.getAttributeCount() > 0 ) {
+      bool isAttributes444 = context.getVideoAttributesMultiple( 0 ).getColorFormat() == PCCCOLORFORMAT::RGB444;
+      printf( "isAttributes444 = %d Format = %d \n", isAttributes444,
+              context.getVideoAttributesMultiple( 0 ).getColorFormat() );
+      fflush( stdout );
+      
       if ( !ppSEIParams.pbfEnableFlag_ ) {
         // These are different attribute transfer functions
         if ( params_.postprocessSmoothingFilter_ == 1 || params_.postprocessSmoothingFilter_ == 5 ) {
@@ -422,18 +424,20 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
           );
         }
       }
+      }//if ( ai.getAttributeCount() > 0 )
     }
-
+    if ( ai.getAttributeCount() > 0 ) {
     if ( ppSEIParams.flagColorSmoothing_ ) {
       TRACE_PATCH( " colorSmoothing \n" );
       colorSmoothing( reconstruct, params_.colorTransform_, ppSEIParams );
     }
-    if ( !isAttributes444 ) {  // lossy: convert 16-bit yuv444 to 8-bit RGB444
+      if ( context.getVideoAttributesMultiple( 0 ).getColorFormat() != PCCCOLORFORMAT::RGB444 ) {  // lossy: convert 16-bit yuv444 to 8-bit RGB444
       TRACE_PATCH( "lossy: convert 16-bit yuv444 to 8-bit RGB444 (convertYUV16ToRGB8) \n" );
       reconstruct.convertYUV16ToRGB8();
     } else {  // lossless: copy 16-bit RGB to 8-bit RGB
       TRACE_PATCH( "lossy: lossless: copy 16-bit RGB to 8-bit RGB (copyRGB16ToRGB8) \n" );
       reconstruct.copyRGB16ToRGB8();
+    }
     }
     /*auto tmp = reconstruct.computeChecksum();
     TRACE_PCFRAME( " MD5 checksum = " );
@@ -1426,7 +1430,7 @@ void PCCDecoder::createHlsAtlasTileLogFiles( PCCContext& context, int frameIndex
       atlasFrameOrderCnt, asps.getFrameWidth(), asps.getFrameHeight(), vps.getAtlasId( 0 ),
       asps.getFrameWidth() * asps.getFrameHeight(), vps.getMapCountMinus1( 0 ) + 1,
       vps.getAttributeInformation( 0 ).getAttributeCount(),
-      vps.getAttributeInformation( 0 ).getAttributeDimensionMinus1( 0 ) + 1,
+      vps.getAttributeInformation( 0 ).getAttributeCount()>0? vps.getAttributeInformation( 0 ).getAttributeDimensionMinus1( 0 ) + 1 : 0,
       afps.getAtlasFrameTileInformation().getNumTilesInAtlasFrameMinus1() + 1, numProjPatches, numRawPatches,
       numEomPatches );
   decMD5 = context.computeMD5( atlasData.data(), atlasData.size() );

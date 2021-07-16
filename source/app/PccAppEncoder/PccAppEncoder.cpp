@@ -965,15 +965,7 @@ bool parseParameters( int                   argc,
     ( "oneV3CFrameOnlyFlag", 
       encoderParams.oneV3CFrameOnlyFlag_,
       encoderParams.oneV3CFrameOnlyFlag_, 
-      "One V3C Frame Only Flag" )
-    ( "noEightOrientationsConstraintFlag", 
-      encoderParams.noEightOrientationsConstraintFlag_,
-      encoderParams.noEightOrientationsConstraintFlag_, 
-      "No Eight Orientations Constraint Flag" )
-    ( "no45DegreeProjectionPatchConstraintFlag", 
-      encoderParams.no45DegreeProjectionPatchConstraintFlag_,
-      encoderParams.no45DegreeProjectionPatchConstraintFlag_, 
-      "No 45 Degree Projection Patch Constraint Flag" );
+     "One V3C Frame Only Flag" );
 
   // clang-format on
   po::setDefaults( opts );

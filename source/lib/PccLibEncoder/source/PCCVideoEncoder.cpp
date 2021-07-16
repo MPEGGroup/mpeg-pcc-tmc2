@@ -52,6 +52,237 @@ PCCVideoEncoder::PCCVideoEncoder() = default;
 PCCVideoEncoder::~PCCVideoEncoder() = default;
 
 template <typename T>
+void PCCVideoEncoder::patchColorSubsmple( PCCVideo<T, 3>&    video,
+                                         PCCContext&        contexts,
+                                         const size_t      width,
+                                         const size_t      height,
+                                         const std::string& configColorSpace,
+                                         const std::string& colorSpaceConversionPath,
+                                         const std::string& fileName)
+{
+  printf( "Encoder convert : patchColorSubsampling\n" );
+  
+  std::shared_ptr<PCCVirtualColorConverter<T>> converter;
+  if ( colorSpaceConversionPath.empty() ) {
+    converter               = std::make_shared<PCCInternalColorConverter<T>>();
+  } else {
+#ifdef USE_HDRTOOLS
+    converter = std::make_shared<PCCHDRToolsLibColorConverter<T>>();
+#else
+    converter = std::make_shared<PCCHDRToolsAppColorConverter<T>>();
+#endif
+  }
+  
+  PCCVideo<T, 3> video444;
+  // perform color-subsampling based on patch information
+  video444.resize( video.getFrameCount() );
+  for ( size_t frNum = 0; frNum < video.getFrameCount(); frNum++ ) {
+    // context variable, contains the patch information
+    auto& context = contexts[(int)( frNum / 2 )];
+    // full resolution image (already filled by previous dilation
+    auto& refImage = video.getFrame( frNum );
+    // image that will contain the per-patch chroma sub-sampled image
+    auto& destImage = video444.getFrame( frNum );
+    destImage.resize( width, height, PCCCOLORFORMAT::YUV444 );
+
+    // iterate the patch information and perform chroma down-sampling on
+    // each patch individually
+    std::vector<PCCPatch>& patches      = context.getTitleFrameContext().getPatches();
+    std::vector<size_t>&   blockToPatch = context.getTitleFrameContext().getBlockToPatch();
+    for ( int patchIdx = 0; patchIdx <= patches.size(); patchIdx++ ) {
+      size_t occupancyResolution;
+      size_t patch_left;
+      size_t patch_top;
+      size_t patch_width;
+      size_t patch_height;
+      if ( patchIdx == 0 ) {
+        // background, does not have a corresponding patch
+        auto& patch         = patches[0];
+        occupancyResolution = patch.getOccupancyResolution();
+        patch_left          = 0;
+        patch_top           = 0;
+        patch_width         = width;
+        patch_height        = height;
+      } else {
+        auto& patch         = patches[patchIdx - 1];
+        occupancyResolution = patch.getOccupancyResolution();
+        patch_left          = patch.getU0() * occupancyResolution;
+        patch_top           = patch.getV0() * occupancyResolution;
+        if ( !( patch.isPatchDimensionSwitched() ) ) {
+          patch_width  = patch.getSizeU0() * occupancyResolution;
+          patch_height = patch.getSizeV0() * occupancyResolution;
+        } else {
+          patch_width  = patch.getSizeV0() * occupancyResolution;
+          patch_height = patch.getSizeU0() * occupancyResolution;
+        }
+      }
+      // initializing the image container with zeros
+      PCCImage<T, 3> tmpImage;
+      tmpImage.resize( patch_width, patch_height, PCCCOLORFORMAT::YUV444 );
+      // cut out the patch image
+      refImage.copyBlock( patch_top, patch_left, patch_width, patch_height, tmpImage );
+      // fill in the blocks by extending the edges
+      for ( size_t i = 0; i < patch_height / occupancyResolution; i++ ) {
+        for ( size_t j = 0; j < patch_width / occupancyResolution; j++ ) {
+          if ( blockToPatch[( i + patch_top / occupancyResolution ) * ( width / occupancyResolution ) + j +
+                            patch_left / occupancyResolution] == patchIdx ) {
+            // do nothing
+            continue;
+          } else {
+            // search for the block that contains attribute information and extend the block edge
+            int              direction;
+            int              searchIndex;
+            std::vector<int> neighborIdx( 4, -1 );
+            std::vector<int> neighborDistance( 4, ( std::numeric_limits<int>::max )() );
+            // looking for the neighboring block to the left of the current block
+            searchIndex = (int)j;
+            while ( searchIndex >= 0 ) {
+              if ( blockToPatch[( i + patch_top / occupancyResolution ) * ( width / occupancyResolution ) +
+                                searchIndex + patch_left / occupancyResolution] == patchIdx ) {
+                neighborIdx[0]      = searchIndex;
+                neighborDistance[0] = (int)j - searchIndex;
+                searchIndex         = 0;
+              }
+              searchIndex--;
+            }
+            // looking for the neighboring block to the right of the current block
+            searchIndex = (int)j;
+            while ( searchIndex < patch_width / occupancyResolution ) {
+              if ( blockToPatch[( i + patch_top / occupancyResolution ) * ( width / occupancyResolution ) +
+                                searchIndex + patch_left / occupancyResolution] == patchIdx ) {
+                neighborIdx[1]      = searchIndex;
+                neighborDistance[1] = searchIndex - (int)j;
+                searchIndex         = (int)patch_width / occupancyResolution;
+              }
+              searchIndex++;
+            }
+            // looking for the neighboring block above the current block
+            searchIndex = (int)i;
+            while ( searchIndex >= 0 ) {
+              if ( blockToPatch[( searchIndex + patch_top / occupancyResolution ) *
+                                    ( width / occupancyResolution ) +
+                                j + patch_left / occupancyResolution] == patchIdx ) {
+                neighborIdx[2]      = searchIndex;
+                neighborDistance[2] = (int)i - searchIndex;
+                searchIndex         = 0;
+              }
+              searchIndex--;
+            }
+            // looking for the neighboring block below the current block
+            searchIndex = (int)i;
+            while ( searchIndex < patch_height / occupancyResolution ) {
+              if ( blockToPatch[( searchIndex + patch_top / occupancyResolution ) *
+                                    ( width / occupancyResolution ) +
+                                j + patch_left / occupancyResolution] == patchIdx ) {
+                neighborIdx[3]      = searchIndex;
+                neighborDistance[3] = searchIndex - (int)i;
+                searchIndex         = (int)patch_height / occupancyResolution;
+              }
+              searchIndex++;
+            }
+            // check if the candidate was found
+            assert( *( std::max )( neighborIdx.begin(), neighborIdx.end() ) > 0 );
+            // now fill in the block with the edge value coming from the nearest neighbor
+            direction =
+                std::min_element( neighborDistance.begin(), neighborDistance.end() ) - neighborDistance.begin();
+            if ( direction == 0 ) {
+              // copying from left neighboring block
+              for ( size_t iBlk = 0; iBlk < occupancyResolution; iBlk++ ) {
+                for ( size_t jBlk = 0; jBlk < occupancyResolution; jBlk++ ) {
+                  tmpImage.setValue(
+                      0, j * occupancyResolution + jBlk, i * occupancyResolution + iBlk,
+                      tmpImage.getValue( 0, neighborIdx[0] * occupancyResolution + occupancyResolution - 1,
+                                         i * occupancyResolution + iBlk ) );
+                  tmpImage.setValue(
+                      1, j * occupancyResolution + jBlk, i * occupancyResolution + iBlk,
+                      tmpImage.getValue( 1, neighborIdx[0] * occupancyResolution + occupancyResolution - 1,
+                                         i * occupancyResolution + iBlk ) );
+                  tmpImage.setValue(
+                      2, j * occupancyResolution + jBlk, i * occupancyResolution + iBlk,
+                      tmpImage.getValue( 2, neighborIdx[0] * occupancyResolution + occupancyResolution - 1,
+                                         i * occupancyResolution + iBlk ) );
+                }
+              }
+            } else if ( direction == 1 ) {
+              // copying block from right neighboring position
+              for ( size_t iBlk = 0; iBlk < occupancyResolution; iBlk++ ) {
+                for ( size_t jBlk = 0; jBlk < occupancyResolution; jBlk++ ) {
+                  tmpImage.setValue( 0, j * occupancyResolution + jBlk, i * occupancyResolution + iBlk,
+                                     tmpImage.getValue( 0, neighborIdx[1] * occupancyResolution,
+                                                        i * occupancyResolution + iBlk ) );
+                  tmpImage.setValue( 1, j * occupancyResolution + jBlk, i * occupancyResolution + iBlk,
+                                     tmpImage.getValue( 1, neighborIdx[1] * occupancyResolution,
+                                                        i * occupancyResolution + iBlk ) );
+                  tmpImage.setValue( 2, j * occupancyResolution + jBlk, i * occupancyResolution + iBlk,
+                                     tmpImage.getValue( 2, neighborIdx[1] * occupancyResolution,
+                                                        i * occupancyResolution + iBlk ) );
+                }
+              }
+            } else if ( direction == 2 ) {
+              // copying block from above
+              for ( size_t iBlk = 0; iBlk < occupancyResolution; iBlk++ ) {
+                for ( size_t jBlk = 0; jBlk < occupancyResolution; jBlk++ ) {
+                  tmpImage.setValue(
+                      0, j * occupancyResolution + jBlk, i * occupancyResolution + iBlk,
+                      tmpImage.getValue( 0, j * occupancyResolution + jBlk,
+                                         neighborIdx[2] * occupancyResolution + occupancyResolution - 1 ) );
+                  tmpImage.setValue(
+                      1, j * occupancyResolution + jBlk, i * occupancyResolution + iBlk,
+                      tmpImage.getValue( 1, j * occupancyResolution + jBlk,
+                                         neighborIdx[2] * occupancyResolution + occupancyResolution - 1 ) );
+                  tmpImage.setValue(
+                      2, j * occupancyResolution + jBlk, i * occupancyResolution + iBlk,
+                      tmpImage.getValue( 2, j * occupancyResolution + jBlk,
+                                         neighborIdx[2] * occupancyResolution + occupancyResolution - 1 ) );
+                }
+              }
+            } else if ( direction == 3 ) {
+              // copying block from below
+              for ( size_t iBlk = 0; iBlk < occupancyResolution; iBlk++ ) {
+                for ( size_t jBlk = 0; jBlk < occupancyResolution; jBlk++ ) {
+                  tmpImage.setValue( 0, j * occupancyResolution + jBlk, i * occupancyResolution + iBlk,
+                                     tmpImage.getValue( 0, j * occupancyResolution + jBlk,
+                                                        neighborIdx[3] * occupancyResolution ) );
+                  tmpImage.setValue( 1, j * occupancyResolution + jBlk, i * occupancyResolution + iBlk,
+                                     tmpImage.getValue( 1, j * occupancyResolution + jBlk,
+                                                        neighborIdx[3] * occupancyResolution ) );
+                  tmpImage.setValue( 2, j * occupancyResolution + jBlk, i * occupancyResolution + iBlk,
+                                     tmpImage.getValue( 2, j * occupancyResolution + jBlk,
+                                                        neighborIdx[3] * occupancyResolution ) );
+                }
+              }
+            } else {
+              printf( "This condition should never occur, report an error" );
+              return false;
+            }
+          }
+        }
+      }
+      // perform downsampling
+      PCCVideo<T, 3> tmpVideo;
+      tmpVideo.resize( 1 );
+      tmpVideo[0] = tmpImage;
+      converter->convert( configColorSpace, tmpVideo, colorSpaceConversionPath, fileName + "_tmp" );
+      // substitute the pixels in the output image for compression
+      for ( size_t i = 0; i < patch_height; i++ ) {
+        for ( size_t j = 0; j < patch_width; j++ ) {
+          if ( blockToPatch[( ( i + patch_top ) / occupancyResolution ) * ( width / occupancyResolution ) +
+                            ( j + patch_left ) / occupancyResolution] == patchIdx ) {
+            // do nothing
+            for ( size_t cc = 0; cc < 3; cc++ ) {
+              destImage.setValue( cc, j + patch_left, i + patch_top, tmpImage.getValue( cc, j, i ) );
+            }
+          }
+        }
+      }
+    }
+  }
+  // saving the video
+  video444.convertYUV444ToYUV420();
+  video = video444;
+}
+
+template <typename T>
 bool PCCVideoEncoder::compress( PCCVideo<T, 3>&    video,
                                 const std::string& path,
                                 const int          qp,
@@ -121,214 +352,7 @@ bool PCCVideoEncoder::compress( PCCVideo<T, 3>&    video,
   } else {
     if ( keepIntermediateFiles ) { video.write( srcRgbFileName, nbyte ); }
     if ( patchColorSubsampling ) {
-      printf( "Encoder convert : patchColorSubsampling\n" );
-      PCCVideo<T, 3> video444;
-      // perform color-subsampling based on patch information
-      video444.resize( video.getFrameCount() );
-      for ( size_t frNum = 0; frNum < video.getFrameCount(); frNum++ ) {
-        // context variable, contains the patch information
-        auto& context = contexts[(int)( frNum / 2 )];
-        // full resolution image (already filled by previous dilation
-        auto& refImage = video.getFrame( frNum );
-        // image that will contain the per-patch chroma sub-sampled image
-        auto& destImage = video444.getFrame( frNum );
-        destImage.resize( width, height, PCCCOLORFORMAT::YUV444 );
-
-        // iterate the patch information and perform chroma down-sampling on
-        // each patch individually
-        std::vector<PCCPatch>& patches      = context.getTitleFrameContext().getPatches();
-        std::vector<size_t>&   blockToPatch = context.getTitleFrameContext().getBlockToPatch();
-        for ( int patchIdx = 0; patchIdx <= patches.size(); patchIdx++ ) {
-          size_t occupancyResolution;
-          size_t patch_left;
-          size_t patch_top;
-          size_t patch_width;
-          size_t patch_height;
-          if ( patchIdx == 0 ) {
-            // background, does not have a corresponding patch
-            auto& patch         = patches[0];
-            occupancyResolution = patch.getOccupancyResolution();
-            patch_left          = 0;
-            patch_top           = 0;
-            patch_width         = width;
-            patch_height        = height;
-          } else {
-            auto& patch         = patches[patchIdx - 1];
-            occupancyResolution = patch.getOccupancyResolution();
-            patch_left          = patch.getU0() * occupancyResolution;
-            patch_top           = patch.getV0() * occupancyResolution;
-            if ( !( patch.isPatchDimensionSwitched() ) ) {
-              patch_width  = patch.getSizeU0() * occupancyResolution;
-              patch_height = patch.getSizeV0() * occupancyResolution;
-            } else {
-              patch_width  = patch.getSizeV0() * occupancyResolution;
-              patch_height = patch.getSizeU0() * occupancyResolution;
-            }
-          }
-          // initializing the image container with zeros
-          PCCImage<T, 3> tmpImage;
-          tmpImage.resize( patch_width, patch_height, PCCCOLORFORMAT::YUV444 );
-          // cut out the patch image
-          refImage.copyBlock( patch_top, patch_left, patch_width, patch_height, tmpImage );
-          // fill in the blocks by extending the edges
-          for ( size_t i = 0; i < patch_height / occupancyResolution; i++ ) {
-            for ( size_t j = 0; j < patch_width / occupancyResolution; j++ ) {
-              if ( blockToPatch[( i + patch_top / occupancyResolution ) * ( width / occupancyResolution ) + j +
-                                patch_left / occupancyResolution] == patchIdx ) {
-                // do nothing
-                continue;
-              } else {
-                // search for the block that contains attribute information and extend the block edge
-                int              direction;
-                int              searchIndex;
-                std::vector<int> neighborIdx( 4, -1 );
-                std::vector<int> neighborDistance( 4, ( std::numeric_limits<int>::max )() );
-                // looking for the neighboring block to the left of the current block
-                searchIndex = (int)j;
-                while ( searchIndex >= 0 ) {
-                  if ( blockToPatch[( i + patch_top / occupancyResolution ) * ( width / occupancyResolution ) +
-                                    searchIndex + patch_left / occupancyResolution] == patchIdx ) {
-                    neighborIdx[0]      = searchIndex;
-                    neighborDistance[0] = (int)j - searchIndex;
-                    searchIndex         = 0;
-                  }
-                  searchIndex--;
-                }
-                // looking for the neighboring block to the right of the current block
-                searchIndex = (int)j;
-                while ( searchIndex < patch_width / occupancyResolution ) {
-                  if ( blockToPatch[( i + patch_top / occupancyResolution ) * ( width / occupancyResolution ) +
-                                    searchIndex + patch_left / occupancyResolution] == patchIdx ) {
-                    neighborIdx[1]      = searchIndex;
-                    neighborDistance[1] = searchIndex - (int)j;
-                    searchIndex         = (int)patch_width / occupancyResolution;
-                  }
-                  searchIndex++;
-                }
-                // looking for the neighboring block above the current block
-                searchIndex = (int)i;
-                while ( searchIndex >= 0 ) {
-                  if ( blockToPatch[( searchIndex + patch_top / occupancyResolution ) *
-                                        ( width / occupancyResolution ) +
-                                    j + patch_left / occupancyResolution] == patchIdx ) {
-                    neighborIdx[2]      = searchIndex;
-                    neighborDistance[2] = (int)i - searchIndex;
-                    searchIndex         = 0;
-                  }
-                  searchIndex--;
-                }
-                // looking for the neighboring block below the current block
-                searchIndex = (int)i;
-                while ( searchIndex < patch_height / occupancyResolution ) {
-                  if ( blockToPatch[( searchIndex + patch_top / occupancyResolution ) *
-                                        ( width / occupancyResolution ) +
-                                    j + patch_left / occupancyResolution] == patchIdx ) {
-                    neighborIdx[3]      = searchIndex;
-                    neighborDistance[3] = searchIndex - (int)i;
-                    searchIndex         = (int)patch_height / occupancyResolution;
-                  }
-                  searchIndex++;
-                }
-                // check if the candidate was found
-                assert( *( std::max )( neighborIdx.begin(), neighborIdx.end() ) > 0 );
-                // now fill in the block with the edge value coming from the nearest neighbor
-                direction =
-                    std::min_element( neighborDistance.begin(), neighborDistance.end() ) - neighborDistance.begin();
-                if ( direction == 0 ) {
-                  // copying from left neighboring block
-                  for ( size_t iBlk = 0; iBlk < occupancyResolution; iBlk++ ) {
-                    for ( size_t jBlk = 0; jBlk < occupancyResolution; jBlk++ ) {
-                      tmpImage.setValue(
-                          0, j * occupancyResolution + jBlk, i * occupancyResolution + iBlk,
-                          tmpImage.getValue( 0, neighborIdx[0] * occupancyResolution + occupancyResolution - 1,
-                                             i * occupancyResolution + iBlk ) );
-                      tmpImage.setValue(
-                          1, j * occupancyResolution + jBlk, i * occupancyResolution + iBlk,
-                          tmpImage.getValue( 1, neighborIdx[0] * occupancyResolution + occupancyResolution - 1,
-                                             i * occupancyResolution + iBlk ) );
-                      tmpImage.setValue(
-                          2, j * occupancyResolution + jBlk, i * occupancyResolution + iBlk,
-                          tmpImage.getValue( 2, neighborIdx[0] * occupancyResolution + occupancyResolution - 1,
-                                             i * occupancyResolution + iBlk ) );
-                    }
-                  }
-                } else if ( direction == 1 ) {
-                  // copying block from right neighboring position
-                  for ( size_t iBlk = 0; iBlk < occupancyResolution; iBlk++ ) {
-                    for ( size_t jBlk = 0; jBlk < occupancyResolution; jBlk++ ) {
-                      tmpImage.setValue( 0, j * occupancyResolution + jBlk, i * occupancyResolution + iBlk,
-                                         tmpImage.getValue( 0, neighborIdx[1] * occupancyResolution,
-                                                            i * occupancyResolution + iBlk ) );
-                      tmpImage.setValue( 1, j * occupancyResolution + jBlk, i * occupancyResolution + iBlk,
-                                         tmpImage.getValue( 1, neighborIdx[1] * occupancyResolution,
-                                                            i * occupancyResolution + iBlk ) );
-                      tmpImage.setValue( 2, j * occupancyResolution + jBlk, i * occupancyResolution + iBlk,
-                                         tmpImage.getValue( 2, neighborIdx[1] * occupancyResolution,
-                                                            i * occupancyResolution + iBlk ) );
-                    }
-                  }
-                } else if ( direction == 2 ) {
-                  // copying block from above
-                  for ( size_t iBlk = 0; iBlk < occupancyResolution; iBlk++ ) {
-                    for ( size_t jBlk = 0; jBlk < occupancyResolution; jBlk++ ) {
-                      tmpImage.setValue(
-                          0, j * occupancyResolution + jBlk, i * occupancyResolution + iBlk,
-                          tmpImage.getValue( 0, j * occupancyResolution + jBlk,
-                                             neighborIdx[2] * occupancyResolution + occupancyResolution - 1 ) );
-                      tmpImage.setValue(
-                          1, j * occupancyResolution + jBlk, i * occupancyResolution + iBlk,
-                          tmpImage.getValue( 1, j * occupancyResolution + jBlk,
-                                             neighborIdx[2] * occupancyResolution + occupancyResolution - 1 ) );
-                      tmpImage.setValue(
-                          2, j * occupancyResolution + jBlk, i * occupancyResolution + iBlk,
-                          tmpImage.getValue( 2, j * occupancyResolution + jBlk,
-                                             neighborIdx[2] * occupancyResolution + occupancyResolution - 1 ) );
-                    }
-                  }
-                } else if ( direction == 3 ) {
-                  // copying block from below
-                  for ( size_t iBlk = 0; iBlk < occupancyResolution; iBlk++ ) {
-                    for ( size_t jBlk = 0; jBlk < occupancyResolution; jBlk++ ) {
-                      tmpImage.setValue( 0, j * occupancyResolution + jBlk, i * occupancyResolution + iBlk,
-                                         tmpImage.getValue( 0, j * occupancyResolution + jBlk,
-                                                            neighborIdx[3] * occupancyResolution ) );
-                      tmpImage.setValue( 1, j * occupancyResolution + jBlk, i * occupancyResolution + iBlk,
-                                         tmpImage.getValue( 1, j * occupancyResolution + jBlk,
-                                                            neighborIdx[3] * occupancyResolution ) );
-                      tmpImage.setValue( 2, j * occupancyResolution + jBlk, i * occupancyResolution + iBlk,
-                                         tmpImage.getValue( 2, j * occupancyResolution + jBlk,
-                                                            neighborIdx[3] * occupancyResolution ) );
-                    }
-                  }
-                } else {
-                  printf( "This condition should never occur, report an error" );
-                  return false;
-                }
-              }
-            }
-          }
-          // perform downsampling
-          PCCVideo<T, 3> tmpVideo;
-          tmpVideo.resize( 1 );
-          tmpVideo[0] = tmpImage;
-          converter->convert( configColorSpace, tmpVideo, colorSpaceConversionPath, fileName + "_tmp" );
-          // substitute the pixels in the output image for compression
-          for ( size_t i = 0; i < patch_height; i++ ) {
-            for ( size_t j = 0; j < patch_width; j++ ) {
-              if ( blockToPatch[( ( i + patch_top ) / occupancyResolution ) * ( width / occupancyResolution ) +
-                                ( j + patch_left ) / occupancyResolution] == patchIdx ) {
-                // do nothing
-                for ( size_t cc = 0; cc < 3; cc++ ) {
-                  destImage.setValue( cc, j + patch_left, i + patch_top, tmpImage.getValue( cc, j, i ) );
-                }
-              }
-            }
-          }
-        }
-      }
-      // saving the video
-      video444.convertYUV444ToYUV420();
-      video = video444;
+      patchColorSubsmple(video, contexts, width, height, configColorSpace, colorSpaceConversionPath, fileName);
     } else {
       converter->convert( configColorSpace, video, colorSpaceConversionPath, fileName + "_rec" );
     }

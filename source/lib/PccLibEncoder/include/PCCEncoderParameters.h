@@ -308,9 +308,16 @@ class PCCEncoderParameters {
 
   // Profile toolset constraints information
   bool oneV3CFrameOnlyFlag_;
+  bool EOMContraintFlag_;
+  size_t maxMapCountMinus1_;
+  size_t maxAtlasCountMinus1_;
+  bool multipleMapStreamsConstraintFlag_;
+  bool PLRConstraintFlag_;
+  size_t attributeMaxDimensionMinus1_;
+  size_t attributeMaxDimensionPartitionsMinus1_;
   bool noEightOrientationsConstraintFlag_;
   bool no45DegreeProjectionPatchConstraintFlag_;
-
+  
   // SHVC
   size_t shvcLayerIndex_;
   size_t shvcRateX_;

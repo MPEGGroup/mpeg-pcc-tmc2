@@ -158,8 +158,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     markRawPatchLocationOccupancyMapVideo( context );
   }
   if ( params_.tileSegmentationType_ > 0 ) {
-    generateAtlasBlockToPatchFromOccupancyMapVideo( context, params_.occupancyResolution_,
-                                                    params_.occupancyPrecision_ );
+    generateAtlasBlockToPatchFromOccupancyMapVideo( context, params_.occupancyResolution_, params_.occupancyPrecision_ );
   } else {
     generateBlockToPatchFromOccupancyMapVideo( context, params_.occupancyResolution_, params_.occupancyPrecision_ );
   }
@@ -560,6 +559,8 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
       }
     }
   }
+  
+  if ( ai.getAttributeCount() > 0 ){
   // RECOLOR RECONSTRUCTED POINT CLOUD
   std::cout << "Color Point Clouds" << std::endl;
   std::vector<std::vector<bool>> absoluteT1List;
@@ -594,7 +595,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     for ( auto& c : checksum ) { TRACE_PCFRAME( "%02x", c ); }
     TRACE_PCFRAME( "\n" );
   }
-
+  }//if ( ai.getAttributeCount() > 0 )
   std::cout << "Post Processing Point Clouds" << std::endl;
   bool isAttributes444 = static_cast<int>( params_.rawPointsPatch_ ) == 1;
   for ( size_t frameIdx = 0; frameIdx < sources.getFrameCount(); frameIdx++ ) {
@@ -611,6 +612,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
       if ( ppSEIParams.gridSmoothing_ ) {
         smoothPointCloudPostprocess( reconstruct, params_.colorTransform_, ppSEIParams, partition );
       }
+      if ( ai.getAttributeCount() > 0 ){
       if ( !ppSEIParams.pbfEnableFlag_ ) {
         // These are different attribute transfer functions
         if ( params_.postprocessSmoothingFilter_ == 1 || params_.postprocessSmoothingFilter_ == 5 ) {
@@ -657,8 +659,9 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
                                                          1000 * 256 );  //  maxColorDist2Bwd
         }
       }
+      }//if ( ai.getAttributeCount() > 0 )
     }
-
+    if ( ai.getAttributeCount() > 0 ){
     if ( ppSEIParams.flagColorSmoothing_ ) {
       TRACE_PATCH( " colorSmoothing \n" );
       colorSmoothing( reconstruct, params_.colorTransform_, ppSEIParams );
@@ -670,6 +673,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
       TRACE_PATCH( "lossy: lossless: copy 16-bit RGB to 8-bit RGB (copyRGB16ToRGB8) \n" );
       reconstruct.copyRGB16ToRGB8();
     }
+    }//if ( ai.getAttributeCount() > 0 )
     TRACE_RECFRAME( "Atlas Frame Index = %d \n", frameIdx );
     auto checksum = reconstructs[frameIdx].computeChecksum( true );
     TRACE_RECFRAME( " MD5 checksum = " );
@@ -8332,7 +8336,8 @@ void PCCEncoder::createHlsAtlasTileLogFiles( PCCContext& context, int frameIndex
       afc.getTitleFrameContext().getAtlasFrmOrderCntVal(), asps.getFrameWidth(), asps.getFrameHeight(),
       vps.getAtlasId( 0 ), asps.getFrameWidth() * asps.getFrameHeight(), vps.getMapCountMinus1( 0 ) + 1,
       vps.getAttributeInformation( 0 ).getAttributeCount(),
-      vps.getAttributeInformation( 0 ).getAttributeDimensionMinus1( 0 ) + 1, afc.getNumTilesInAtlasFrame(),
+      vps.getAttributeInformation( 0 ).getAttributeCount()>0? vps.getAttributeInformation( 0 ).getAttributeDimensionMinus1( 0 ) + 1: 0,
+      afc.getNumTilesInAtlasFrame(),
       afc.getTitleFrameContext().getPatches().size(), afc.getTitleFrameContext().getNumberOfRawPointsPatches(),
       afc.getTitleFrameContext().getEomPatches().size() );
   size_t numTilesInPatchFrame = context[frameIndex].getNumTilesInAtlasFrame();

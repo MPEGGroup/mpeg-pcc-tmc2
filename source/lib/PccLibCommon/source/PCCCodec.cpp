@@ -2067,11 +2067,6 @@ void PCCCodec::generateAtlasBlockToPatchFromOccupancyMapVideo( PCCContext&  cont
     PCCImageOccupancyMap& occupancyImage = context.getVideoOccupancyMap().getFrame( fi );
     auto&                 atlasFrame     = context.getFrame( fi ).getTitleFrameContext();
     // construct atlasPatchData;
-    atlasFrame.getPatches().clear();
-    for ( size_t ti = 0; ti < context.getFrame( fi ).getNumTilesInAtlasFrame(); ti++ ) {
-      auto& tile = context.getFrame( fi ).getTile( ti );
-      for ( auto patch : tile.getPatches() ) { atlasFrame.getPatches().push_back( patch ); }
-    }
     generateAtlasBlockToPatchFromOccupancyMapVideo( context, context.getFrame( fi ).getTitleFrameContext(), fi,
                                                     occupancyImage, occupancyResolution, occupancyPrecision );
   }

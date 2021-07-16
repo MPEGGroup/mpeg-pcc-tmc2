@@ -247,9 +247,16 @@ PCCEncoderParameters::PCCEncoderParameters() {
 
   // Profile toolset constraints information
   oneV3CFrameOnlyFlag_                     = 0;  // V-PCC Basic
+  EOMContraintFlag_                        = false;
+  maxMapCountMinus1_                       = 1;
+  maxAtlasCountMinus1_                     = 0;
+  multipleMapStreamsConstraintFlag_        = false;
+  PLRConstraintFlag_                       = false;
+  attributeMaxDimensionMinus1_             = 2;
+  attributeMaxDimensionPartitionsMinus1_   = 0;
   noEightOrientationsConstraintFlag_       = 0;  // Default value, does not impose a constraint
   no45DegreeProjectionPatchConstraintFlag_ = 0;  // Default value, does not impose a constraint
-
+ 
   // SHVC
   shvcLayerIndex_ = 8;
   shvcRateX_      = 0;
@@ -592,26 +599,42 @@ bool PCCEncoderParameters::check() {
   // Profile Tools set idc
   // Basic
   if ( profileToolsetIdc_ == 0 ) {
+    if ( enhancedOccupancyMapCode_ == 1 ){
+      enhancedOccupancyMapCode_ = false;
+      std::cerr << "enhancedOccupancyMapCode is set to 0 because profileToolsetIdc is 0. \n";
+    }
     if ( multipleStreams_ == 0 && mapCountMinus1_ > 0 ) {
       multipleStreams_ = true;
-      std::cerr << "multipleStreams is force to one because profileToolsetIdc set to 0. \n";
+      std::cerr << "multipleStreams is set to 1 because profileToolsetIdc is 0. \n";
     }
     if ( pointLocalReconstruction_ == 1 ) {
       pointLocalReconstruction_ = false;
-      std::cerr << "pointLocalReconstruction is force to zero because profileToolsetIdc set to 0. \n";
+      std::cerr << "pointLocalReconstruction is set to 0 because profileToolsetIdc is 0. \n";
     }
-    if ( noEightOrientationsConstraintFlag_ == false ) {
-      noEightOrientationsConstraintFlag_ = true;
-      std::cerr << "noEightOrientationsConstraintFlag is to one because profileToolsetIdc set to 0. \n";
-    }     
-    if ( no45DegreeProjectionPatchConstraintFlag_ == false ) {
-      no45DegreeProjectionPatchConstraintFlag_ = true;
-      std::cerr << "no45DegreeProjectionPatchConstraintFlag is to one because profileToolsetIdc set to 0. \n";
-    }    
-    if ( additionalProjectionPlaneMode_ > 0 ) {
+    if ( useEightOrientations_ == 1 ){
+      useEightOrientations_=false;
+      std::cerr << "useEightOrientations is set to 0 because profileToolsetIdc is 0. \n";
+    }
+    if( additionalProjectionPlaneMode_!=0 || partialAdditionalProjectionPlane_!=0 ){
+    //asps_extended_projection_enabled_flag =0
       additionalProjectionPlaneMode_ = 0;
-      std::cerr << "additionalrojectionPlaneMode is to zero because profileToolsetIdc set to 0. \n";
-    }       
+      partialAdditionalProjectionPlane_ = 0;
+      std::cerr << "additionalProjectionPlaneMode and partialAdditionalProjectionPlane are set to 0 because profileToolsetIdc is 0. \n";
+    }
+    
+    //constraint options
+    EOMContraintFlag_ = true;
+    multipleMapStreamsConstraintFlag_ = false;
+    PLRConstraintFlag_ = true;
+    noEightOrientationsConstraintFlag_ = true;
+    no45DegreeProjectionPatchConstraintFlag_ = true;
+  }else{
+    //constraint options
+    EOMContraintFlag_ = false;
+    multipleMapStreamsConstraintFlag_ = false;
+    PLRConstraintFlag_ = false;
+    noEightOrientationsConstraintFlag_ = false;
+    no45DegreeProjectionPatchConstraintFlag_ = false;
   }
 
   // Profile reconctruction idc
@@ -668,7 +691,7 @@ bool PCCEncoderParameters::check() {
   }
 
   // Rec2
-  if ( profileReconstructionIdc_ == 0 ) {
+  if ( profileReconstructionIdc_ == 2 ) {
     if ( flagGeometrySmoothing_ ) {
       flagGeometrySmoothing_ = false;
       std::cerr << "flagGeometrySmoothing is ignored because profileReconstructionIdc set to 2. \n";
@@ -680,6 +703,40 @@ bool PCCEncoderParameters::check() {
     // Note: Attribute transfer cannot be disabled. one encoder input parameter must be added.
   }
 
+  //constraints by profile_toolset_constraints_information( )
+  if ( oneV3CFrameOnlyFlag_ ){
+    if(frameCount_ != 1) std::cerr << "frameCount is set to 1 ptci.oneV3CFrameOnlyFlag is 1. \n";
+    frameCount_ = 1;
+  }
+  if ( EOMContraintFlag_ ){
+    if(enhancedOccupancyMapCode_) std::cerr << "enhancedOccupancyMapCode_ is set to 1 ptci.EOMContraintFlag is 1. \n";
+    enhancedOccupancyMapCode_ = false;
+  }
+  if ( multipleMapStreamsConstraintFlag_ ){
+    if(multipleStreams_) std::cerr << "multipleStreams_ is set to 1 ptci.multipleMapStreamsConstraintFlag is 1. \n";
+    multipleStreams_ = false;
+  }
+  if ( PLRConstraintFlag_ ){
+    if(pointLocalReconstruction_) std::cerr << "pointLocalReconstruction is set to 0 because ptci.PLRConstraintFlag is 1. \n";
+    pointLocalReconstruction_ = false;
+  }
+  if ( noEightOrientationsConstraintFlag_  ){
+    if(useEightOrientations_)std::cerr << "useEightOrientations is set to 0 because ptci.noEightOrientationsConstraintFlag is 1. \n";
+    useEightOrientations_=false;
+  }
+  if ( no45DegreeProjectionPatchConstraintFlag_  ){
+    if(additionalProjectionPlaneMode_!=0 || partialAdditionalProjectionPlane_!=0) std::cerr << "additionalProjectionPlaneMode and partialAdditionalProjectionPlane are set to 0 because ptci.no45DegreeProjectionPatchConstraintFlag is 0. \n";
+
+    additionalProjectionPlaneMode_ = 0;
+    partialAdditionalProjectionPlane_ = 0;
+  }
+
+  if(mapCountMinus1_ > maxMapCountMinus1_){
+    if(mapCountMinus1_>maxMapCountMinus1_)
+      std::cerr << "mapCountMinus1_ are set to "<<mapCountMinus1_<<" because ptci.maxMapCountMinus1_ is "<<maxMapCountMinus1_<<". \n";
+    mapCountMinus1_ = maxMapCountMinus1_;
+  }
+  
 
   if ( ( levelOfDetailX_ == 0 || levelOfDetailY_ == 0 ) ) {
     if ( levelOfDetailX_ == 0 ) { levelOfDetailX_ = 1; }
@@ -1221,9 +1278,11 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   // V3C Profile toolset constraints information syntax
   auto& ptci = ptl.getProfileToolsetConstraintsInformation();
   ptci.setOneFrameOnlyFlag( oneV3CFrameOnlyFlag_ );
+  ptci.setEOMContraintFlag(EOMContraintFlag_);
+  ptci.setPLRConstraintFlag(PLRConstraintFlag_);
   ptci.setNoEightOrientationsConstraintFlag( noEightOrientationsConstraintFlag_ );
   ptci.setNo45DegreeProjectionPatchConstraintFlag( no45DegreeProjectionPatchConstraintFlag_ );
-
+    
   // Atlas sequence parameter set
   auto& asps = context.addAtlasSequenceParameterSet( 0 );
   asps.setLog2PatchPackingBlockSize( std::log2( occupancyResolution_ ) );
