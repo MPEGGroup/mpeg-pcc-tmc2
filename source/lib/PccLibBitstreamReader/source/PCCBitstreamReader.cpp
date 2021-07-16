@@ -503,7 +503,7 @@ void PCCBitstreamReader::atlasSequenceParameterSetRbsp( AtlasSequenceParameterSe
   TRACE_BITSTREAM( "Log2PatchPackingBlockSize = %u \n", asps.getLog2PatchPackingBlockSize() );
   asps.setPatchSizeQuantizerPresentFlag( bitstream.read( 1 ) );  // u(1)
   asps.setMapCountMinus1( bitstream.read( 4 ) );                 // u(4)
-  asps.setxelDeinterleavingFlag( bitstream.read( 1 ) );          // u(1)
+  asps.setPixelDeinterleavingFlag( bitstream.read( 1 ) );          // u(1)
   if ( asps.getPixelDeinterleavingFlag() ) {
     for ( size_t i = 0; i < asps.getMapCountMinus1() + 1; i++ ) {
       asps.setPixelDeinterleavingMapFlag( i, bitstream.read( 1 ) );  // u(1)
@@ -793,6 +793,8 @@ void PCCBitstreamReader::atlasTileHeader( AtlasTileHeader&    ath,
   if ( nalUnitType >= NAL_BLA_W_LP && nalUnitType <= NAL_RSV_IRAP_ACL_29 ) {
     ath.setNoOutputOfPriorAtlasFramesFlag( bitstream.read( 1 ) );  // u(1)
   }
+  if( nalUnitType == NAL_TRAIL_R ) { ath.setTileNaluTypeInfo( 1 ); }
+  if( nalUnitType == NAL_TRAIL_N ) { ath.setTileNaluTypeInfo( 2 ); }  
   ath.setAtlasFrameParameterSetId( bitstream.readUvlc() );       // ue(v)
   ath.setAtlasAdaptationParameterSetId( bitstream.readUvlc() );  // ue(v)
   size_t                         afpsId = ath.getAtlasFrameParameterSetId();
@@ -1967,16 +1969,15 @@ void PCCBitstreamReader::viewportCameraParameters( PCCBitstream& bitstream, SEI&
       sei.setErpHorizontalFov( bitstream.read( 32 ) );          // u(32)
       sei.setErpVerticalFov( bitstream.read( 32 ) );            // u(32)
     } else if ( sei.getCameraType() == 1 ) {                    // perspective
-      sei.setPerspectiveAspectRatio( bitstream.read( 32 ) );    // fl(32)
+      sei.setPerspectiveAspectRatio( bitstream.readFloat() );   // fl(32)
       sei.setPerspectiveHorizontalFov( bitstream.read( 32 ) );  // u(32)
     } else if ( sei.getCameraType() == 2 ) {                    /* orthographic */
-      sei.setOrthoAspectRatio( bitstream.read( 32 ) );          // fl(32)
-      sei.setOrthoHorizontalSize( bitstream.read( 32 ) );       // fl(32)
+      sei.setOrthoAspectRatio( bitstream.readFloat() );         // fl(32)
+      sei.setOrthoHorizontalSize( bitstream.readFloat() );      // fl(32)
     }
-    sei.setClippingNearPlane( bitstream.read( 32 ) );  // fl(32)
-    sei.setClippingFarPlane( bitstream.read( 32 ) );   // fl(32)
+    sei.setClippingNearPlane( bitstream.readFloat() );  // fl(32)
+    sei.setClippingFarPlane( bitstream.readFloat() );   // fl(32)
   }
-  // JR TODO: fl(32) must be check
 }
 
 // F.2.15.2 Viewport position SEI messages syntax
@@ -1992,7 +1993,7 @@ void PCCBitstreamReader::viewportPosition( PCCBitstream& bitstream, SEI& seiAbst
   if ( !sei.getCancelFlag() ) {
     sei.setPersistenceFlag( bitstream.read( 1 ) );  // u(1)
     for ( size_t d = 0; d < 3; d++ ) {
-      sei.setPosition( d, bitstream.read( 32 ) );  // fl(32)
+      sei.setPosition( d, bitstream.readFloat() );  // fl(32)
     }
     sei.setRotationQX( bitstream.read( 16 ) );     // i(16)
     sei.setRotationQY( bitstream.read( 16 ) );     // i(16)
@@ -2002,7 +2003,6 @@ void PCCBitstreamReader::viewportPosition( PCCBitstream& bitstream, SEI& seiAbst
       sei.setLeftViewFlag( bitstream.read( 1 ) );  // u(1)
     }
   }
-  // JR TODO: fl(32) must be check
 }
 
 // F.2.16 Decoded Atlas Information Hash SEI message syntax
@@ -2271,7 +2271,7 @@ void PCCBitstreamReader::vuiParameters( PCCBitstream& bitstream, VUIParameters& 
     vp.setFixedAtlasTileStructureFlag( bitstream.read( 1 ) );              // u(1)
     vp.setFixedVideoTileStructureFlag( bitstream.read( 1 ) );              //	u(1)
     vp.setConstrainedTilesAcrossV3cComponentsIdc( bitstream.readUvlc() );  // ue(v)
-    vp.setMaxNumTilesPerAtlasMinus1( bitstream.readUvlc() );               // 	ue(v)
+    vp.setMaxNumTilesPerAtlasMinus1( bitstream.readUvlc() );               // ue(v)
   }
   vp.setCoordinateSystemParametersPresentFlag( bitstream.read( 1 ) );  // u(1)
   if ( vp.getCoordinateSystemParametersPresentFlag() ) {
@@ -2287,7 +2287,7 @@ void PCCBitstreamReader::vuiParameters( PCCBitstream& bitstream, VUIParameters& 
     vp.setAnchorPointPresentFlag( bitstream.read( 1 ) );  // u(1)
     if ( vp.getAnchorPointPresentFlag() ) {
       for ( size_t d = 0; d < 3; d++ ) {
-        vp.setAnchorPoint( d, bitstream.read( 32 ) );  // fl(32)
+        vp.setAnchorPoint( d, bitstream.readUvlc() );  // u(v)
       }
     }
   }

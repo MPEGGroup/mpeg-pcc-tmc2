@@ -14,7 +14,6 @@ INCLUDE_DIRECTORIES( ${CMAKE_SOURCE_DIR}/source/lib/PccLibCommon/include
                      ${CMAKE_SOURCE_DIR}/source/lib/PccLibBitstreamCommon/include 
                      ${CMAKE_SOURCE_DIR}/source/lib/PccLibBitstreamReader/include
                      ${CMAKE_SOURCE_DIR}/dependencies/program-options-lite
-                     ${CMAKE_SOURCE_DIR}/dependencies/arithmetic-coding/inc
                      ${CMAKE_SOURCE_DIR}/dependencies/tbb/include 
                      ${CMAKE_SOURCE_DIR}/source/lib/PccLibConformance/include )
 

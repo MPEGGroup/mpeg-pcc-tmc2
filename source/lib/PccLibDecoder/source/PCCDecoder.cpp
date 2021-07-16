@@ -339,14 +339,14 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
       if ( ai.getAttributeCount() > 0 ) {
         reconstruct.addColors();
         reconstruct.addColors16bit();
-      }
-      for ( size_t attIdx = 0; attIdx < ai.getAttributeCount(); attIdx++ ) {
-        printf( "start colorPointCloud attIdx = %zu / %u ] \n", attIdx, ai.getAttributeCount() );
-        fflush( stdout );
-        size_t updatedPointCount  = colorPointCloud( reconstruct, context, tile, absoluteT1List[attIdx],
-                                                    sps.getMultipleMapStreamsPresentFlag( atlasIndex ),
-                                                    ai.getAttributeCount(), accTilePointCount[attIdx], gpcParams );
-        accTilePointCount[attIdx] = updatedPointCount;
+        for ( size_t attIdx = 0; attIdx < ai.getAttributeCount(); attIdx++ ) {
+          printf( "start colorPointCloud attIdx = %zu / %u ] \n", attIdx, ai.getAttributeCount() );
+          fflush( stdout );
+          size_t updatedPointCount  = colorPointCloud( reconstruct, context, tile, absoluteT1List[attIdx],
+                                                      sps.getMultipleMapStreamsPresentFlag( atlasIndex ),
+                                                      ai.getAttributeCount(), accTilePointCount[attIdx], gpcParams );
+          accTilePointCount[attIdx] = updatedPointCount;
+        }
       }
 
       numRawPoints += tile.getTotalNumberOfRawPoints();
@@ -375,7 +375,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
       printf( "isAttributes444 = %d Format = %d \n", isAttributes444,
               context.getVideoAttributesMultiple( 0 ).getColorFormat() );
       fflush( stdout );
-      
+
       if ( !ppSEIParams.pbfEnableFlag_ ) {
         // These are different attribute transfer functions
         if ( params_.postprocessSmoothingFilter_ == 1 || params_.postprocessSmoothingFilter_ == 5 ) {
@@ -396,7 +396,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
                                                  1000,        // maxGeometryDist2Bwd
                                                  1000 * 256,  // maxColorDist2Fwd
                                                  1000 * 256   // maxColorDist2Bwd
-          );                                                  // jkie: let's make it general
+          );
         } else if ( params_.postprocessSmoothingFilter_ == 2 ) {
           TRACE_PATCH( " transferColorWeight \n" );
           tempFrameBuffer.transferColorWeight( reconstruct, 0.1 );
@@ -1377,14 +1377,27 @@ void PCCDecoder::createHlsAtlasTileLogFiles( PCCContext& context, int frameIndex
   auto&  afps       = context.getAtlasFrameParameterSet( afpsIndex );
   auto&  vps        = context.getVps();
 
+  TRACE_HLS( "Atlas Frame Index = %d\n", frameIndex );
+  TRACE_HLS( "Atlas Frame Parameter Set Index = %d\n", afpsIndex );
+  std::vector<uint8_t> decMD5( 16 );
   std::vector<uint8_t> highLevelAtlasData;
   aspsCommonByteString( highLevelAtlasData, asps );
+  decMD5 = context.computeMD5( highLevelAtlasData.data(), highLevelAtlasData.size() );
+  TRACE_HLS( " HLSMD5 = " );
+  for ( int j = 0; j < 16; j++ ) TRACE_HLS( "%02x", decMD5[j] );
+  TRACE_HLS( "\n" );
   aspsApplicationByteString( highLevelAtlasData, asps, afps );
+  decMD5 = context.computeMD5( highLevelAtlasData.data(), highLevelAtlasData.size() );
+  TRACE_HLS( " HLSMD5 = " );
+  for ( int j = 0; j < 16; j++ ) TRACE_HLS( "%02x", decMD5[j] );
+  TRACE_HLS( "\n" );
   afpsCommonByteString( highLevelAtlasData, context, afpsIndex, frameIndex );
+  decMD5 = context.computeMD5( highLevelAtlasData.data(), highLevelAtlasData.size() );
+  TRACE_HLS( " HLSMD5 = " );
+  for ( int j = 0; j < 16; j++ ) TRACE_HLS( "%02x", decMD5[j] );
+  TRACE_HLS( "\n" );
   afpsApplicationByteString( highLevelAtlasData, asps, afps );
-  std::vector<uint8_t> decMD5( 16 );
 
-  TRACE_HLS( "Atlas Frame Index = %d\n", frameIndex );
   decMD5 = context.computeMD5( highLevelAtlasData.data(), highLevelAtlasData.size() );
   TRACE_HLS( " HLSMD5 = " );
   for ( int j = 0; j < 16; j++ ) TRACE_HLS( "%02x", decMD5[j] );
