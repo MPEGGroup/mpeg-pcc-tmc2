@@ -321,13 +321,15 @@ void PCCEncoderParameters::print() {
   std::cout << "\t colorTransform                             " << colorTransform_ << std::endl;
   std::cout << "\t nbThread                                   " << nbThread_ << std::endl;
   std::cout << "\t keepIntermediateFiles                      " << keepIntermediateFiles_ << std::endl;
-  std::cout << "\t absoluteD1                                 " << absoluteD1_ << std::endl;
   std::cout << "\t multipleStreams                            " << multipleStreams_ << std::endl;
-  std::cout << "\t deltaQPD0                                  " << deltaQPD0_ << std::endl;
-  std::cout << "\t deltaQPD1                                  " << deltaQPD1_ << std::endl;
-  std::cout << "\t deltaQPT0                                  " << deltaQPT0_ << std::endl;
-  std::cout << "\t deltaQPT1                                  " << deltaQPT1_ << std::endl;
-  std::cout << "\t absoluteT1                                 " << absoluteT1_ << std::endl;
+  if(multipleStreams_){
+  std::cout << "\t deltaQPD0                                " << deltaQPD0_ << std::endl;
+  std::cout << "\t deltaQPD1                                " << deltaQPD1_ << std::endl;
+  std::cout << "\t deltaQPT0                                " << deltaQPT0_ << std::endl;
+  std::cout << "\t deltaQPT1                                " << deltaQPT1_ << std::endl;
+  std::cout << "\t absoluteD1                               " << absoluteD1_ << std::endl;
+  std::cout << "\t absoluteT1                               " << absoluteT1_ << std::endl;
+  }
   std::cout << "\t constrainedPack                            " << constrainedPack_ << std::endl;
   std::cout << "\t maxNumRefPatchList                         " << maxNumRefAtlasList_ << std::endl;
   std::cout << "\t maxNumRefIndex                             " << maxNumRefAtlasFrame_ << std::endl;
@@ -708,11 +710,11 @@ bool PCCEncoderParameters::check() {
     frameCount_ = 1;
   }
   if ( EOMContraintFlag_ ){
-    if(enhancedOccupancyMapCode_) std::cerr << "enhancedOccupancyMapCode_ is set to 1 ptci.EOMContraintFlag is 1. \n";
+    if(enhancedOccupancyMapCode_) std::cerr << "enhancedOccupancyMapCode_ is set to 0 because ptci.EOMContraintFlag is 1. \n";
     enhancedOccupancyMapCode_ = false;
   }
   if ( multipleMapStreamsConstraintFlag_ ){
-    if(multipleStreams_) std::cerr << "multipleStreams_ is set to 1 ptci.multipleMapStreamsConstraintFlag is 1. \n";
+    if(multipleStreams_) std::cerr << "multipleStreams_ is set to 0 because ptci.multipleMapStreamsConstraintFlag is 1. \n";
     multipleStreams_ = false;
   }
   if ( PLRConstraintFlag_ ){
@@ -724,7 +726,7 @@ bool PCCEncoderParameters::check() {
     useEightOrientations_=false;
   }
   if ( no45DegreeProjectionPatchConstraintFlag_  ){
-    if(additionalProjectionPlaneMode_!=0 || partialAdditionalProjectionPlane_!=0) std::cerr << "additionalProjectionPlaneMode and partialAdditionalProjectionPlane are set to 0 because ptci.no45DegreeProjectionPatchConstraintFlag is 0. \n";
+    if(additionalProjectionPlaneMode_!=0 || partialAdditionalProjectionPlane_!=0) std::cerr << "additionalProjectionPlaneMode and partialAdditionalProjectionPlane are set to 0 because ptci.no45DegreeProjectionPatchConstraintFlag is 1. \n";
 
     additionalProjectionPlaneMode_ = 0;
     partialAdditionalProjectionPlane_ = 0;
@@ -1279,6 +1281,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   ptl.setTierFlag( tierFlag_ );
   ptl.setProfileCodecGroupIdc( profileCodecGroupIdc_ );
   ptl.setProfileToolsetIdc( profileToolsetIdc_ );
+  ptl.setProfileReconstructionIdc( profileReconstructionIdc_ );
   ptl.setLevelIdc( levelIdc_ );
 
   // V3C Profile toolset constraints information syntax

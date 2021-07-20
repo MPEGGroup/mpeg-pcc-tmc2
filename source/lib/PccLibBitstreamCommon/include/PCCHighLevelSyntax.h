@@ -477,6 +477,8 @@ class PCCHighLevelSyntax {
   void    setGeometry3dCoordinatesBitdepth( size_t value ) { geometry3dCoordinatesBitdepth_ = value; }
   bool&   getSingleLayerMode() { return singleLayerMode_; }
 
+  size_t checkProfile();
+  
  private:
   std::vector<PCCVideoBitstream>              videoBitstream_;
   V3CUnitHeader                               v3cUnitHeader_[5];

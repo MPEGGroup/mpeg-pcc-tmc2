@@ -314,7 +314,10 @@ int decompressVideo( const PCCDecoderParameters& decoderParams,
     bitstreamReader.setLogger( logger );
 #endif
     if ( bitstreamReader.decode( ssvu, context ) == 0 ) { return 0; }
-
+#if 1
+    if( context.checkProfile() !=0 ) { } //return 0;
+#endif
+    
     // allocate atlas structure
     context.resizeAtlas( context.getVps().getAtlasCountMinus1() + 1 );
     for ( uint32_t atlId = 0; atlId < context.getVps().getAtlasCountMinus1() + 1; atlId++ ) {
