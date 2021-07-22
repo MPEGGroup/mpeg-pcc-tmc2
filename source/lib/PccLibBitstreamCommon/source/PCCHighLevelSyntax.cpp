@@ -77,11 +77,14 @@ PCCAtlasHighLevelSyntax::PCCAtlasHighLevelSyntax() {}
 PCCAtlasHighLevelSyntax::~PCCAtlasHighLevelSyntax() { videoBitstream_.clear(); }
 
 size_t PCCHighLevelSyntax::checkProfile(){
+  size_t ret = 0;
   if( atlasHLS_.size() !=1 ){
-    printf( "number of atlas should be 1\n");
+    std::cout << "ProfileToolsetConstraint Violation(1) : number of atlas should be 1\n";
     return 1;
   }
   auto& vps = vpccParameterSets_[activeVPS_];
+  if(vps.getProfileTierLevel().getToolConstraintsPresentFlag() == false) return 0;
+  
   //auto oneFrameOnlyFlag = vps.getProfileTierLevel().getProfileToolsetConstraintsInformation().getOneFrameOnlyFlag();
   auto EOMContraintFlag                        = vps.getProfileTierLevel().getProfileToolsetConstraintsInformation().getEOMContraintFlag();
   auto maxMapCountMinus1                       = vps.getProfileTierLevel().getProfileToolsetConstraintsInformation().getMaxMapCountMinus1();
@@ -109,38 +112,38 @@ size_t PCCHighLevelSyntax::checkProfile(){
   //constraints by profile_toolset_constraints_information( )
   if ( multipleMapStreamsConstraintFlag ){
     if(vps.getMultipleMapStreamsPresentFlag(0) == 1 ){
-      std::cout << "MultipleMapStreamsPresentFlag is 1 wherea ptci.multipleMapStreamsConstraintFlag is 1.\n";
-      return 3;
+      std::cout << "ProfileToolsetConstraint Violation(3) : MultipleMapStreamsPresentFlag is 1 wherea ptci.multipleMapStreamsConstraintFlag is 1.\n";
+      ret = 3;
     }
   }
   
   if( vps.getMapCountMinus1(0) > maxMapCountMinus1) {
-      std::cout << "mapCountMinus1 is set to "<<vps.getMapCountMinus1(0)<<" wherea ptci.maxMapCountMinus1_ is "<<maxMapCountMinus1<<". \n";
-      return  7;
+    std::cout << "ProfileToolsetConstraint Violation(7) : mapCountMinus1 is set to "<<vps.getMapCountMinus1(0)<<" wherea ptci.maxMapCountMinus1_ is "<<maxMapCountMinus1<<". \n";
+    ret = 7;
   }
   for( auto& asps : atlasHLS_[0].getAtlasSequenceParameterSetList() ){
     if ( EOMContraintFlag ){
         if(asps.getEomPatchEnabledFlag()!=false) {
-          std::cout << "ptci.EOMContraintFlag is 1 wherea ptci.EOMContraintFlag is 1\n";
-          return 2;
+          std::cout << "ProfileToolsetConstraint Violation(2) : ptci.EOMContraintFlag is 1 wherea ptci.EOMContraintFlag is 1\n";
+          ret = 2;
         }
     }
     if ( PLRConstraintFlag ){
         if( asps.getPLREnabledFlag()) {
-        std::cout << "pointLocalReconstruction is 1 wherea ptci.PLRConstraintFlag is 1. \n";
-        return 4;
+          std::cout << "ProfileToolsetConstraint Violation(4) : pointLocalReconstruction is 1 wherea ptci.PLRConstraintFlag is 1. \n";
+          ret = 4;
       }
     }
     if ( noEightOrientationsConstraintFlag  ){
       if(asps.getUseEightOrientationsFlag()){
-        std::cout << "useEightOrientations is set to 1 wherea ptci.noEightOrientationsConstraintFlag is 1. \n";
-        return 5;
+        std::cout << "ProfileToolsetConstraint Violation(5) : useEightOrientations is 1 wherea ptci.noEightOrientationsConstraintFlag is 1. \n";
+        ret = 5;
       }
     }
     if ( no45DegreeProjectionPatchConstraintFlag  ){
       if(asps.getExtendedProjectionEnabledFlag()){
-        std::cout << "getExtendedProjectionEnabledFlag is 1 wherea ptci.no45DegreeProjectionPatchConstraintFlag is 1. \n";
-        return 6;
+        std::cout << "ProfileToolsetConstraint Violation(6) : getExtendedProjectionEnabledFlag is 1 wherea ptci.no45DegreeProjectionPatchConstraintFlag is 1. \n";
+        ret = 6;
       }
     }
   }
@@ -154,29 +157,29 @@ size_t PCCHighLevelSyntax::checkProfile(){
     // Basic
     if ( profileToolsetIdc == 0 ) {
       if (asps.getEomPatchEnabledFlag()){
-        std::cout << "enhancedOccupancyMapCode is not 0 wherea profileToolsetIdc is 0. \n";
-        return 11;
+        std::cout << "ProfileToolsetConstraint Violation(11) : enhancedOccupancyMapCode is not 0 wherea profileToolsetIdc is 0. \n";
+        ret = 11;
       }
       if ( vps.getMultipleMapStreamsPresentFlag(0) != 1 &&  vps.getMapCountMinus1(0) > 0 ){
-        std::cout << "multipleStreams is not 1 wherea profileToolsetIdc is 0. \n";
-        return 12;
+        std::cout << "ProfileToolsetConstraint Violation(12) : multipleStreams is not 1 wherea profileToolsetIdc is 0. \n";
+        ret = 12;
       }
       if ( asps.getPLREnabledFlag()) {
-        std::cout << "pointLocalReconstruction is 1 wherea profileToolsetIdc is 0. \n";
-        return 13;
+        std::cout << "ProfileToolsetConstraint Violation(13) : pointLocalReconstruction is 1 wherea profileToolsetIdc is 0. \n";
+        ret = 13;
       }
       if (asps.getUseEightOrientationsFlag()){
-        std::cout << "useEightOrientations is 1 wherea profileToolsetIdc is 0. \n";
-        return 14;
+        std::cout << "ProfileToolsetConstraint Violation(14) : useEightOrientations is 1 wherea profileToolsetIdc is 0. \n";
+        ret = 14;
       }
       if(asps.getExtendedProjectionEnabledFlag()){
-        std::cout << "additionalProjection is 1  and wherea profileToolsetIdc is 0. \n";
-        return 15;
+        std::cout << "ProfileToolsetConstraint Violation(15) : additionalProjection is 1  and wherea profileToolsetIdc is 0. \n";
+        ret = 15;
       }
       
     }//profile
 
     }//asps
 
-  return 0;
+  return ret;
 }
