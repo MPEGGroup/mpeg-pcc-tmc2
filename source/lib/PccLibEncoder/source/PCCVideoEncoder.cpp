@@ -253,7 +253,7 @@ void PCCVideoEncoder::patchColorSubsmple( PCCVideo<T, 3>&    video,
               }
             } else {
               printf( "This condition should never occur, report an error" );
-              return false;
+              return;
             }
           }
         }
