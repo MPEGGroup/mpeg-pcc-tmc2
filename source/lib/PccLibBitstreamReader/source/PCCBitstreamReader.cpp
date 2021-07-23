@@ -505,6 +505,7 @@ void PCCBitstreamReader::atlasSequenceParameterSetRbsp( AtlasSequenceParameterSe
   asps.setMapCountMinus1( bitstream.read( 4 ) );                 // u(4)
   asps.setPixelDeinterleavingFlag( bitstream.read( 1 ) );          // u(1)
   if ( asps.getPixelDeinterleavingFlag() ) {
+    asps.allocatePixelDeinterleavingMapFlag();
     for ( size_t i = 0; i < asps.getMapCountMinus1() + 1; i++ ) {
       asps.setPixelDeinterleavingMapFlag( i, bitstream.read( 1 ) );  // u(1)
     }

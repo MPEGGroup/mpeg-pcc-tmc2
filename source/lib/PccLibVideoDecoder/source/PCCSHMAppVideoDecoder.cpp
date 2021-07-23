@@ -79,7 +79,7 @@ void PCCSHMAppVideoDecoder<T>::decode( PCCVideoBitstream& bitstream,
       exit( -1 );
     }
     video.upsample( rateX );
-    printf( "Upsample video size = % zu x % zu frame count = % zu \n ", video.getWidth(), video.getHeight(),
+    printf( "Upsample video size = %zu x %zu frame count = %zu \n ", video.getWidth(), video.getHeight(),
             video.getFrameCount() );
     fflush( stdout );
   }

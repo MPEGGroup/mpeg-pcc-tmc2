@@ -50,7 +50,16 @@ PCCDecoderParameters::PCCDecoderParameters() {
   byteStreamVideoCoderAttribute_     = true;
   nbThread_                          = 1;
   keepIntermediateFiles_             = false;
-  postprocessSmoothingFilter_        = 1;
+  pixelDeinterleavingType_           = -1;
+  pointLocalReconstructionType_      = -1;
+  reconstructEomType_                = -1;
+  duplicatedPointRemovalType_        = -1;
+  reconstructRawType_                = -1;
+  applyGeoSmoothingType_             = -1;
+  applyAttrSmoothingType_            = -1;
+  attrTransferFilterType_       = -1;
+  applyOccupanySynthesisType_        = -1;
+  
   patchColorSubsampling_             = false;
   shvcLayerIndex_                    = 8;
 }
@@ -109,4 +118,49 @@ bool PCCDecoderParameters::check() {
     std::cerr << "videoDecoderAttributePath not set\n";
   }
   return ret;
+}
+
+void PCCDecoderParameters::setReconstructionParameters( size_t profileReconstructionIdc ){
+  if( profileReconstructionIdc == 0 ){
+    if( pixelDeinterleavingType_      == -1 ) pixelDeinterleavingType_      = 0;
+    if( pointLocalReconstructionType_ == -1 ) pointLocalReconstructionType_ = 0;
+    if( reconstructEomType_           == -1 ) reconstructEomType_           = 0;
+    if( duplicatedPointRemovalType_   == -1 ) duplicatedPointRemovalType_   = 0;
+    if( reconstructRawType_           == -1 ) reconstructRawType_           = 0;
+    if( applyGeoSmoothingType_        == -1 ) applyGeoSmoothingType_        = 0;
+    if( applyAttrSmoothingType_       == -1 ) applyAttrSmoothingType_       = 0;
+    if( attrTransferFilterType_  == -1 ) attrTransferFilterType_  = 0;
+    if( applyOccupanySynthesisType_   == -1 ) applyOccupanySynthesisType_   = 0;
+  }else if( profileReconstructionIdc == 1 ){
+    if( pixelDeinterleavingType_      == -1 ) pixelDeinterleavingType_      = 1;
+    if( pointLocalReconstructionType_ == -1 ) pointLocalReconstructionType_ = 1;
+    if( reconstructEomType_           == -1 ) reconstructEomType_           = 1;
+    if( duplicatedPointRemovalType_   == -1 ) duplicatedPointRemovalType_   = 1;
+    if( reconstructRawType_           == -1 ) reconstructRawType_           = 1;
+    if( applyGeoSmoothingType_        == -1 ) applyGeoSmoothingType_        = 1;
+    if( applyAttrSmoothingType_       == -1 ) applyAttrSmoothingType_       = 1;
+    if( attrTransferFilterType_  == -1 ) attrTransferFilterType_  = 1;
+    if( applyOccupanySynthesisType_   == -1 ) applyOccupanySynthesisType_   = 0;
+  }else if( profileReconstructionIdc == 2 ){
+    if( pixelDeinterleavingType_      == -1 ) pixelDeinterleavingType_      = 0;
+    if( pointLocalReconstructionType_ == -1 ) pointLocalReconstructionType_ = 0;
+    if( reconstructEomType_           == -1 ) reconstructEomType_           = 0;
+    if( duplicatedPointRemovalType_   == -1 ) duplicatedPointRemovalType_   = 0;
+    if( reconstructRawType_           == -1 ) reconstructRawType_           = 0;
+    if( applyGeoSmoothingType_        == -1 ) applyGeoSmoothingType_        = 0;
+    if( applyAttrSmoothingType_       == -1 ) applyAttrSmoothingType_       = 1;
+    if( attrTransferFilterType_  == -1 ) attrTransferFilterType_  = 0;
+    if( applyOccupanySynthesisType_   == -1 ) applyOccupanySynthesisType_   = 1;
+  }
+  printf("---profileReconstructionIdc(%zu)-------\n", profileReconstructionIdc);
+  printf( "pixelDeinterleavingType      : %d\n", pixelDeinterleavingType_      );
+  printf( "pointLocalReconstructionType : %d\n", pointLocalReconstructionType_ );
+  printf( "reconstructEomType           : %d\n", reconstructEomType_           );
+  printf( "duplicatedPointRemovalType   : %d\n", duplicatedPointRemovalType_   );
+  printf( "reconstructRawType           : %d\n", reconstructRawType_           );
+  printf( "applyGeoSmoothingType        : %d\n", applyGeoSmoothingType_        );
+  printf( "applyAttrSmoothingType       : %d\n", applyAttrSmoothingType_       );
+  printf( "applyAttrTransferFilterType  : %d\n", attrTransferFilterType_  );
+  printf( "applyOccupanySynthesisType   : %d\n", applyOccupanySynthesisType_   );
+  printf("---------------------------------------\n");
 }

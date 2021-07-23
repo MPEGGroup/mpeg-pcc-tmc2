@@ -62,6 +62,7 @@ class PCCDecoder : public PCCCodec {
   int decode( PCCContext& context, PCCGroupOfFrames& reconstruct, int32_t atlasIndex );
 
   void setParameters( const PCCDecoderParameters& params );
+  void setReconstructionParameters( const PCCDecoderParameters& params );
   void setPostProcessingSeiParameters( GeneratePointCloudParameters& gpcParams, PCCContext& context );
   void setGeneratePointCloudParameters( GeneratePointCloudParameters& gpcParams, PCCContext& context );
   void createPatchFrameDataStructure( PCCContext& context );

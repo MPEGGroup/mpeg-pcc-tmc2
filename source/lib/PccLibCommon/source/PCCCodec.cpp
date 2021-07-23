@@ -925,6 +925,9 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                       reconstru
     }
     tile.setTotalNumberOfEOMPoints( totalEOMPointsInFrame );
     printf( "frame %zu, tile %zu: regularPoints+eomPoints %zu\n", frameIndex, tileIndex, reconstruct.getPointCount() );
+  }else{
+    tile.setTotalNumberOfEOMPoints( 0 );
+    printf( "frame %zu, tile %zu: regularPoints+eomPoints %zu\n", frameIndex, tileIndex, reconstruct.getPointCount() );
   }
   TRACE_CODEC( " totalEOMPointsInFrame = %zu  \n", totalEOMPointsInFrame );
   TRACE_CODEC( " point = %zu  \n", reconstruct.getPointCount() );
@@ -979,6 +982,10 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                       reconstru
     }
     printf( "frame %zu, tile %zu: regularPoints+eomPoints+rawPoints %zu\n", frameIndex, tileIndex,
             reconstruct.getPointCount() );
+  }else{
+    printf( "frame %zu, tile %zu: regularPoints+eomPoints+rawPoints %zu\n", frameIndex, tileIndex,
+            reconstruct.getPointCount() );
+    tile.setTotalNumberOfRawPoints( 0 );
   }
 
   if ( params.flagGeometrySmoothing_ && !params.pbfEnableFlag_ ) {
@@ -1963,15 +1970,17 @@ void PCCCodec::generateRawPointsAttributefromVideo( PCCContext& context, PCCFram
       std::vector<PCCColor3B>& eomAttributes  = tile.getEOMAttribute();
       size_t                   patchStartPosX = eomPointsPatch.u0_ * eomPointsPatch.occupancyResolution_;
       size_t                   patchStartPosY = eomPointsPatch.v0_ * eomPointsPatch.occupancyResolution_;
+      size_t                   blockSize      = eomPointsPatch.occupancyResolution_*eomPointsPatch.occupancyResolution_;
+      size_t                   widthInBlock   = width / eomPointsPatch.occupancyResolution_;
       for ( size_t k = 0; k < eomPointsPatch.eomCount_; k++ ) {
-        size_t nBlock = k / 256;
-        size_t uBlock = nBlock % ( width / 16 );
-        size_t vBlock = nBlock / ( width / 16 );
-        xx            = patchStartPosX + uBlock * 16 + ( nPixelInCurrentBlockCount % 16 );
-        yy            = patchStartPosY + vBlock * 16 + ( nPixelInCurrentBlockCount / 16 ) +
+        size_t nBlock = k / blockSize;
+        size_t uBlock = nBlock % widthInBlock;
+        size_t vBlock = nBlock / widthInBlock;
+        xx            = patchStartPosX + uBlock * eomPointsPatch.occupancyResolution_ + ( nPixelInCurrentBlockCount % eomPointsPatch.occupancyResolution_ );
+        yy            = patchStartPosY + vBlock * eomPointsPatch.occupancyResolution_ + ( nPixelInCurrentBlockCount / eomPointsPatch.occupancyResolution_ ) +
              context[frameIndex].getAuxTileLeftTopY( tile.getTileIndex() );
         ++nPixelInCurrentBlockCount;
-        if ( nPixelInCurrentBlockCount >= 256 ) { nPixelInCurrentBlockCount = 0; }
+        if ( nPixelInCurrentBlockCount >= blockSize ) { nPixelInCurrentBlockCount = 0; }
         eomAttributes[k + eomPatchOffset].r() = image.getValue( 0, xx, yy );
         eomAttributes[k + eomPatchOffset].g() = image.getValue( 1, xx, yy );
         eomAttributes[k + eomPatchOffset].b() = image.getValue( 2, xx, yy );

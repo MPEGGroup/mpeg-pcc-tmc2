@@ -86,6 +86,8 @@ class PCCEncoderParameters {
   int         deltaQPD1_;
   int         deltaQPT0_;
   int         deltaQPT1_;
+  int         auxGeometryQP_;
+  int         auxAttributeQP_;
   std::string geometryConfig_;
   std::string geometry0Config_;
   std::string geometry1Config_;
@@ -137,7 +139,6 @@ class PCCEncoderParameters {
   bool   gridSmoothing_;
   size_t gridSize_;
   bool   flagGeometrySmoothing_;
-  size_t postprocessSmoothingFilter_;
 
   // Patch Expansion (m47772, CE2.12)
   bool patchExpansion_;
@@ -231,7 +232,6 @@ class PCCEncoderParameters {
   // Lossy raw points Patch
   bool   lossyRawPointsPatch_;
   double minNormSumOfInvDist4MPSelection_;
-  int    lossyRawPointPatchGeoQP_;
 
   // GPA
   int globalPatchAllocation_;
@@ -318,6 +318,17 @@ class PCCEncoderParameters {
   bool noEightOrientationsConstraintFlag_;
   bool no45DegreeProjectionPatchConstraintFlag_;
   
+  //reconstruction options : 0. ignore 1. use indicated syntaxes 2. open
+  size_t pixelDeinterleavingType_;
+  size_t pointLocalReconstructionType_;
+  size_t reconstructEomType_;
+  size_t duplicatedPointRemovalType_;
+  size_t reconstructRawType_;
+  size_t applyGeoSmoothingType_;
+  size_t applyAttrSmoothingType_;
+  size_t attrTransferFilterType_;
+  size_t applyOccupanySynthesisType_;
+    
   // SHVC
   size_t shvcLayerIndex_;
   size_t shvcRateX_;
