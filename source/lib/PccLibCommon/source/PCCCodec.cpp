@@ -2642,7 +2642,9 @@ void PCCCodec::afpsCommonByteString( std::vector<uint8_t>& stringByte,
     for ( int j = topLeftColumn; j <= bottomRightColumn; j++ ) {
       tileWidth += context[frameIndex].getPartitionWidth( j );
     }
-    for ( int j = topLeftRow; j <= bottomRightRow; j++ ) { tileHeight += context[frameIndex].getPartitionHeight( j ); }
+    for ( int j = topLeftRow; j <= bottomRightRow; j++ ) {
+      tileHeight += context[frameIndex].getPartitionHeight( j );
+    }
     size_t auxTileHeight = hashAuxTileHeight[i];
     size_t auxTileOffset = prevAuxTileOffset + auxTileHeight;
     prevAuxTileOffset    = auxTileOffset;

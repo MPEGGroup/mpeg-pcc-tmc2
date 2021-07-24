@@ -1530,6 +1530,14 @@ void PCCDecoder::setTilePartitionSizeAfti( PCCContext& context ) {  // decoder
     partitionHeight.resize( numPartitionRows );
     partitionPosX.resize( numPartitionCols );
     partitionPosY.resize( numPartitionRows );
+    
+    if ( afti.getSingleTileInAtlasFrameFlag() ) {
+      partitionWidth [0] =  asps.getFrameWidth();
+      partitionHeight[0] = asps.getFrameHeight();
+      partitionPosX  [0] = 0;
+      partitionPosY  [0] = 0;
+    }else {
+    
     if ( afti.getUniformPartitionSpacingFlag() ) {
       size_t uniformPatitionWidth  = 64 * ( afti.getPartitionColumnWidthMinus1( 0 ) + 1 );
       size_t uniformPatitionHeight = 64 * ( afti.getPartitionRowHeightMinus1( 0 ) + 1 );
@@ -1580,6 +1588,7 @@ void PCCDecoder::setTilePartitionSizeAfti( PCCContext& context ) {  // decoder
             partitionPosY[numPartitionRows - 2] + partitionHeight[numPartitionRows - 2];
         partitionHeight[numPartitionRows - 1] = frameHeight - partitionPosY[numPartitionRows - 1];
       }
+    }
     }
   }  // afpsIdx
 }
