@@ -571,7 +571,6 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     }
   }
   for ( size_t frameIdx = 0; frameIdx < context.size(); frameIdx++ ) {
-    size_t numProjPoints = 0, numRawPoints = 0, numEomPoints = 0;
     reconstructs[frameIdx].addColors();
     reconstructs[frameIdx].addColors16bit();
     size_t accTilePointCount = 0;
@@ -583,10 +582,30 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
                                                     accTilePointCount, gpcParams );
         accTilePointCount        = updatedPointCount;
       }
+    }  // tile
+  }
+  }//if ( ai.getAttributeCount() > 0 )
+
+#ifdef CONFORMANCE_TRACE
+  for ( size_t frameIdx = 0; frameIdx < context.size(); frameIdx++ ) {
+    size_t numProjPoints = 0, numRawPoints = 0, numEomPoints = 0;
+    for ( size_t tileIdx = 0; tileIdx < context[frameIdx].getNumTilesInAtlasFrame(); tileIdx++ ) {
+      auto& tile = context[frameIdx].getTile( tileIdx );
       numProjPoints += tile.getTotalNumberOfRegularPoints();
       numEomPoints += tile.getTotalNumberOfEOMPoints();
       numRawPoints += tile.getTotalNumberOfRawPoints();
     }  // tile
+    if ( ai.getAttributeCount() == 0 ){
+      reconstructs[frameIdx].removeColors();
+      reconstructs[frameIdx].removeColors16bit();
+    }else{
+      bool isAttributes444 = static_cast<int>( params_.rawPointsPatch_ ) == 1;
+      if ( !isAttributes444 ) {  // lossy: convert 16-bit yuv444 to 8-bit RGB444
+        reconstructs[frameIdx].convertYUV16ToRGB8();
+      } else {
+        reconstructs[frameIdx].copyRGB16ToRGB8();
+      }
+    }
     TRACE_PCFRAME( "Atlas Frame Index = %d\n", frameIdx );
     TRACE_PCFRAME( "PointCloudFrameOrderCntVal = %d, NumProjPoints = %zu, NumRawPoints = %zu, NumEomPoints = %zu,",
                    frameIdx, numProjPoints, numRawPoints, numEomPoints );
@@ -595,7 +614,8 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     for ( auto& c : checksum ) { TRACE_PCFRAME( "%02x", c ); }
     TRACE_PCFRAME( "\n" );
   }
-  }//if ( ai.getAttributeCount() > 0 )
+#endif
+  
   std::cout << "Post Processing Point Clouds" << std::endl;
   bool isAttributes444 = static_cast<int>( params_.rawPointsPatch_ ) == 1;
   for ( size_t frameIdx = 0; frameIdx < sources.getFrameCount(); frameIdx++ ) {
