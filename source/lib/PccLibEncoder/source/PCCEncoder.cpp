@@ -587,7 +587,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
       numEomPoints += tile.getTotalNumberOfEOMPoints();
       numRawPoints += tile.getTotalNumberOfRawPoints();
     }  // tile
-    TRACE_PCFRAME( "Atlas Frame Index = %d \n", frameIdx );
+    TRACE_PCFRAME( "Atlas Frame Index = %d\n", frameIdx );
     TRACE_PCFRAME( "PointCloudFrameOrderCntVal = %d, NumProjPoints = %zu, NumRawPoints = %zu, NumEomPoints = %zu,",
                    frameIdx, numProjPoints, numRawPoints, numEomPoints );
     auto checksum = reconstructs[frameIdx].computeChecksum( true );
@@ -674,7 +674,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
       reconstruct.copyRGB16ToRGB8();
     }
     }//if ( ai.getAttributeCount() > 0 )
-    TRACE_RECFRAME( "Atlas Frame Index = %d \n", frameIdx );
+    TRACE_RECFRAME( "Atlas Frame Index = %d\n", frameIdx );
     auto checksum = reconstructs[frameIdx].computeChecksum( true );
     TRACE_RECFRAME( " MD5 checksum = " );
     for ( auto& c : checksum ) { TRACE_RECFRAME( "%02x", c ); }
@@ -8393,7 +8393,7 @@ void PCCEncoder::createHlsAtlasTileLogFiles( PCCContext& context, int frameIndex
   atlasB2PData.clear();
 
   // for tiles
-  TRACE_TILE( "Atlas Frame Index = %d \n", frameIndex );
+  TRACE_TILE( "Atlas Frame Index = %d\n", frameIndex );
   for ( size_t tileIdx = 0; tileIdx < context[frameIndex].getNumTilesInAtlasFrame(); tileIdx++ ) {
     auto&  tile          = context.getFrame( frameIndex ).getTile( tileIdx );
     size_t atlIdx        = tile.getAtlIndex();

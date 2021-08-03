@@ -354,7 +354,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
       numProjPoints += tile.getTotalNumberOfRegularPoints();
     }  // tile
 
-    TRACE_PCFRAME( "Atlas Frame Index = %d \n", frameIdx );
+    TRACE_PCFRAME( "Atlas Frame Index = %d\n", frameIdx );
     TRACE_PCFRAME( "PointCloudFrameOrderCntVal = %d, NumProjPoints = %zu, NumRawPoints = %zu, NumEomPoints = %zu,",
                    frameIdx, numProjPoints, numRawPoints, numEomPoints );
     auto checksum = reconstructs[frameIdx].computeChecksum( true );
@@ -443,7 +443,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
     TRACE_PCFRAME( " MD5 checksum = " );
     for ( auto& c : tmp ) { TRACE_PCFRAME( "%02x", c ); }
     TRACE_PCFRAME( "\n" );*/
-    TRACE_RECFRAME( "Atlas Frame Index = %d \n", frameIdx );
+    TRACE_RECFRAME( "Atlas Frame Index = %d\n", frameIdx );
     checksum = reconstructs[frameIdx].computeChecksum( true );
     TRACE_RECFRAME( " MD5 checksum = " );
     for ( auto& c : checksum ) { TRACE_RECFRAME( "%02x", c ); }
@@ -882,6 +882,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
           refPatch.getU1(), refPatch.getV1(), refPatch.getSizeU0(), refPatch.getSizeV0(), refPatch.getSizeD(),
           refPatch.getLodScaleX(), refPatch.getLodScaleY() );
       patch.setProjectionMode( refPatch.getProjectionMode() );
+      patch.setViewId( refPatch.getViewId() );
       patch.setU0( ipdu.get2dPosX() + refPatch.getU0() );
       patch.setV0( ipdu.get2dPosY() + refPatch.getV0() );
       patch.setPatchOrientation( refPatch.getPatchOrientation() );
@@ -976,6 +977,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
         }
       }
       patch.setProjectionMode( refPatch.getProjectionMode() );
+      patch.setViewId( refPatch.getViewId() );
       patch.setPatchOrientation( refPatch.getPatchOrientation() );
       patch.setNormalAxis( refPatch.getNormalAxis() );
       patch.setTangentAxis( refPatch.getTangentAxis() );
@@ -1012,6 +1014,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
                    refPatch.getSizeU0(), refPatch.getSizeV0(), refPatch.getSizeD(), refPatch.getLodScaleX(),
                    refPatch.getLodScaleY() );
       patch.setProjectionMode( refPatch.getProjectionMode() );
+      patch.setViewId( refPatch.getViewId() );
       patch.setU0( refPatch.getU0() );
       patch.setV0( refPatch.getV0() );
       patch.setPatchOrientation( refPatch.getPatchOrientation() );
@@ -1435,7 +1438,7 @@ void PCCDecoder::createHlsAtlasTileLogFiles( PCCContext& context, int frameIndex
     numEomPoints += tile.getTotalNumberOfEOMPoints();
     numRawPoints += tile.getTotalNumberOfRawPoints();
   }
-  TRACE_ATLAS( "Atlas Frame Index = %d \n", frameIndex );
+  TRACE_ATLAS( "Atlas Frame Index = %d\n", frameIndex );
   TRACE_ATLAS(
       "AtlasFrameOrderCntVal = %d,  AtlasFrameWidthMax =  %d, AtlasFrameHeightMax = %d, AtlasID = %d, "
       "ASPSFrameSize = %d, VPSMapCount = %d, AttributeCount = %d, AttributeDimension = %d, NumTilesAtlasFrame = %d, "
