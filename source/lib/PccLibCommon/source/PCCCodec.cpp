@@ -2586,7 +2586,7 @@ void PCCCodec::aspsApplicationByteString( std::vector<uint8_t>&          stringB
       if ( asps.getPLRInformation( i ).getMapEnabledFlag() ) {
         val = asps.getPLRInformation( i ).getNumberOfModesMinus1() & 0xFF;
         stringByte.push_back( val );
-        for ( int j = 0; j < asps.getPLRInformation( i ).getNumberOfModesMinus1() + 1; j++ ) {
+        for ( int j = 0; j < asps.getPLRInformation( i ).getNumberOfModesMinus1(); j++ ) {
           val = uint8_t( asps.getPLRInformation( i ).getInterpolateFlag( j ) ) & 0xFF;
           stringByte.push_back( val );
           val = uint8_t( asps.getPLRInformation( i ).getFillingFlag( j ) ) & 0xFF;

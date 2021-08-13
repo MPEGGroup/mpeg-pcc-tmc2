@@ -81,7 +81,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
   printf( " Decode 0 size = %zu \n", context.getVideoBitstream( VIDEO_OCCUPANCY ).size() );
   fflush( stdout );
   TRACE_PICTURE( "Occupancy\n" );
-  TRACE_PICTURE( "MapIdx = 0,  AuxiliaryVideoFlag =  0\n" );
+  TRACE_PICTURE( "MapIdx = 0, AuxiliaryVideoFlag = 0\n" );
   videoDecoder.decompress( context.getVideoOccupancyMap(),                // video
                            context,                                       // contexts
                            path.str(),                                    // path
@@ -101,7 +101,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
     context.getVideoGeometryMultiple().resize( sps.getMapCountMinus1( atlasIndex ) + 1 );
     size_t totalGeoSize = 0;
     for ( uint32_t mapIndex = 0; mapIndex < sps.getMapCountMinus1( atlasIndex ) + 1; mapIndex++ ) {
-      TRACE_PICTURE( "MapIdx = %d,  AuxiliaryVideoFlag =  0\n", mapIndex );
+      TRACE_PICTURE( "MapIdx = %d, AuxiliaryVideoFlag = 0\n", mapIndex );
       std::cout << "*******Video Decoding: Geometry[" << mapIndex << "] ********" << std::endl;
       auto  geometryIndex  = static_cast<PCCVideoType>( VIDEO_GEOMETRY_D0 + mapIndex );
       auto& videoBitstream = context.getVideoBitstream( geometryIndex );
@@ -123,7 +123,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
     }
     std::cout << "total geometry video ->" << totalGeoSize << " B" << std::endl;
   } else {
-    TRACE_PICTURE( "MapIdx = 0,  AuxiliaryVideoFlag =  0\n" );
+    TRACE_PICTURE( "MapIdx = 0, AuxiliaryVideoFlag = 0\n" );
     std::cout << "*******Video Decoding: Geometry ********" << std::endl;
     auto& videoBitstream = context.getVideoBitstream( VIDEO_GEOMETRY );
 
@@ -147,7 +147,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
 
   if ( asps.getRawPatchEnabledFlag() && asps.getAuxiliaryVideoEnabledFlag() &&
        sps.getAuxiliaryVideoPresentFlag( atlasIndex ) ) {
-    TRACE_PICTURE( "MapIdx = 0,  AuxiliaryVideoFlag =  1\n" );
+    TRACE_PICTURE( "MapIdx = 0, AuxiliaryVideoFlag = 1\n" );
     std::cout << "*******Video Decoding: Aux Geometry ********" << std::endl;
     auto& videoBitstreamMP = context.getVideoBitstream( VIDEO_GEOMETRY_RAW );
     auto  auxGeometryCodecId =
@@ -186,7 +186,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
           // this allocation is considering only one attribute, with a single partition, but multiple streams
           for ( uint32_t mapIndex = 0; mapIndex < sps.getMapCountMinus1( atlasIndex ) + 1; mapIndex++ ) {
             // decompress T[mapIndex]
-            TRACE_PICTURE( "MapIdx = %d, AuxiliaryVideoFlag =  0\n", mapIndex );
+            TRACE_PICTURE( "MapIdx = %d, AuxiliaryVideoFlag = 0\n", mapIndex );
             std::cout << "*******Video Decoding: Attribute [" << mapIndex << "] ********" << std::endl;
             auto  attributeIndex = static_cast<PCCVideoType>( VIDEO_ATTRIBUTE_T0 + attrPartitionIndex +
                                                              MAX_NUM_ATTR_PARTITIONS * mapIndex );
@@ -209,7 +209,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
           }
           std::cout << "attribute    video ->" << sizeAttributeVideo << " B" << std::endl;
         } else {
-          TRACE_PICTURE( "MapIdx = 0, AuxiliaryVideoFlag =  0\n" );
+          TRACE_PICTURE( "MapIdx = 0, AuxiliaryVideoFlag = 0\n" );
           std::cout << "*******Video Decoding: Attribute ********" << std::endl;
           auto  attributeIndex = static_cast<PCCVideoType>( VIDEO_ATTRIBUTE + attrPartitionIndex );
           auto& videoBitstream = context.getVideoBitstream( attributeIndex );
@@ -233,10 +233,11 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
 
         if ( asps.getRawPatchEnabledFlag() && asps.getAuxiliaryVideoEnabledFlag() &&
              sps.getAuxiliaryVideoPresentFlag( atlasIndex ) ) {
-          TRACE_PICTURE( "MapIdx = 0, AuxiliaryVideoFlag =  1," );
           std::cout << "*******Video Decoding: Aux Attribute ********" << std::endl;
-          auto attributeIndex = static_cast<PCCVideoType>( VIDEO_ATTRIBUTE_RAW + attrPartitionIndex );
-          TRACE_PICTURE( "AttrPartIdx = %d, AttrTypeID = %d, ", attributeIndex, attributeTypeId );
+          auto attributeIndex = static_cast<PCCVideoType>( VIDEO_ATTRIBUTE_RAW + attrPartitionIndex );          
+          int attrPartitionIndex = sps.getAttributeInformation( atlasIndex ).getAttributeDimensionPartitionsMinus1( 0 );
+          int attrTypeId         = sps.getAttributeInformation( atlasIndex ).getAttributeTypeId( 0 );
+          TRACE_PICTURE( "MapIdx = 0, AuxiliaryVideoFlag = 1, AttrIdx = 0, AttrPartIdx = %d, AttrTypeID = %d, ", attrPartitionIndex, attrTypeId );          
           auto& videoBitstreamMP    = context.getVideoBitstream( attributeIndex );
           auto  auxAttributeCodecId = getCodedCodecId( context, ai.getAuxiliaryAttributeCodecId( attrIndex ),
                                                       params_.videoDecoderAttributePath_ );
@@ -1423,9 +1424,8 @@ void PCCDecoder::createHlsAtlasTileLogFiles( PCCContext& context, int frameIndex
   size_t               patchCount = atlasPatchParams.size();
   for ( size_t patchIdx = 0; patchIdx < patchCount; patchIdx++ ) {
     atlasPatchCommonByteString( atlasData, patchIdx, atlasPatchParams );
-    atlasPatchApplicationByteString( atlasData, patchIdx, atlasPatchParams );
+    atlasPatchApplicationByteString( atlasData, patchIdx, atlasPatchParams );      
   }
-
   size_t numProjPatches = 0, numRawPatches = 0, numEomPatches = 0;
   size_t numProjPoints = 0, numRawPoints = 0, numEomPoints = 0;
   int    atlasFrameOrderCnt = atlu.getAtlasFrmOrderCntVal();

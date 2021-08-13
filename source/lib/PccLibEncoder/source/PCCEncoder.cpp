@@ -130,7 +130,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
 
   // ENCODE OCCUPANCY MAP
   TRACE_PICTURE( "Occupancy\n" );
-  TRACE_PICTURE( "MapIdx = 0,  AuxiliaryVideoFlag =  0\n" );
+  TRACE_PICTURE( "MapIdx = 0, AuxiliaryVideoFlag = 0\n" );
   auto& videoBitstream = context.createVideoBitstream( VIDEO_OCCUPANCY );
   generateOccupancyMapVideo( sources, context );
   auto& videoOccupancyMap = context.getVideoOccupancyMap();
@@ -420,7 +420,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     const size_t nbyteAtt  = 1;
     int attrPartitionIndex = sps.getAttributeInformation( atlasIndex ).getAttributeDimensionPartitionsMinus1( 0 );
     int attrTypeId         = sps.getAttributeInformation( atlasIndex ).getAttributeTypeId( 0 );
-    TRACE_PICTURE( "AttrIdx = 0, AttrPartIdx = %d, AttrTypeID = %d, MapIdx = 0, AuxiliaryVideoFlag = 0\n",
+    TRACE_PICTURE( "MapIdx = 0, AuxiliaryVideoFlag = 0, AttrIdx = 0, AttrPartIdx = %d, AttrTypeID = %d\n",
                    attrPartitionIndex, attrTypeId );
     auto encoderConfig0 = params_.multipleStreams_
                               ? ( params_.mapCountMinus1_ == 0 ? getEncoderConfig1L( params_.attributeConfig_ )
@@ -506,8 +506,8 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     }
 
     if ( asps.getRawPatchEnabledFlag() && asps.getAuxiliaryVideoEnabledFlag() ) {
-      TRACE_PICTURE( "AttrIdx = 0, AttrPartIdx = %d, AttrTypeID = %d ", attrPartitionIndex, attrTypeId );
-      TRACE_PICTURE( "MapIdx = 0, AuxiliaryVideoFlag = 1\n" );
+      TRACE_PICTURE( "MapIdx = 0, AuxiliaryVideoFlag = 1, AttrIdx = 0, AttrPartIdx = %d, AttrTypeID = %d, ",
+                     attrPartitionIndex, attrTypeId );
       std::cout << "*******Video: Aux (Attribute) ********" << std::endl;
       auto& videoBitstreamMP = context.createVideoBitstream( VIDEO_ATTRIBUTE_RAW );
       generateRawPointsAttributeVideo( context );
@@ -7742,22 +7742,14 @@ void PCCEncoder::setPLRData( PCCFrameContext& frame,
   TRACE_PATCH( "  LevelFlag = %d \n", plrd.getLevelFlag() );
   if ( plrd.getLevelFlag() ) {
     plrd.setPresentFlag( patch.getPointLocalReconstructionMode() > 0 );
-    plrd.setModeMinus1( patch.getPointLocalReconstructionMode() - 1 );
+    plrd.setModeMinus1( plrd.getPresentFlag() ? patch.getPointLocalReconstructionMode() - 1 : 0 );
     TRACE_PATCH( "  ModePatch: Present = %d ModeMinus1 = %2d \n", plrd.getPresentFlag(),
                  plrd.getPresentFlag() ? (int32_t)plrd.getModeMinus1() : -1 );
   } else {
     auto& blockToPatch = frame.getBlockToPatch();
-    printf( "plrd.getBlockToPatchMapHeight() = %zu \n", plrd.getBlockToPatchMapHeight() );
-    fflush( stdout );
-    printf( "plrd.getBlockToPatchMapWidth()  = %zu \n", plrd.getBlockToPatchMapWidth() );
-    fflush( stdout );
-    printf( "blockToPatch size               = %zu \n", blockToPatch.size() );
-    fflush( stdout );
     for ( size_t v0 = 0; v0 < plrd.getBlockToPatchMapHeight(); ++v0 ) {
       for ( size_t u0 = 0; u0 < plrd.getBlockToPatchMapWidth(); ++u0 ) {
         size_t index = v0 * plrd.getBlockToPatchMapWidth() + u0;
-        printf( "index = %zu \n", index );
-        fflush( stdout );
         int  pos = patch.patchBlock2CanvasBlock( ( u0 ), ( v0 ), blockToPatchWidth, blockToPatchHeight );
         bool occupied =
             ( blockToPatch[pos] == patchIndex + 1 ) && ( patch.getPointLocalReconstructionMode( u0, v0 ) > 0 );
@@ -8374,9 +8366,9 @@ void PCCEncoder::createHlsAtlasTileLogFiles( PCCContext& context, int frameIndex
   getB2PHashPatchParams( context, frameIndex, tileB2PPatchParams, atlasB2PPatchParams );
   size_t               patchCount = atlasPatchParams.size();
   std::vector<uint8_t> atlasData;
-  for ( size_t atlasPatchIdx = 0; atlasPatchIdx < patchCount; atlasPatchIdx++ ) {
-    atlasPatchCommonByteString( atlasData, atlasPatchIdx, atlasPatchParams );
-    atlasPatchApplicationByteString( atlasData, atlasPatchIdx, atlasPatchParams );
+  for ( size_t patchIdx = 0; patchIdx < patchCount; patchIdx++ ) {
+    atlasPatchCommonByteString( atlasData, patchIdx, atlasPatchParams );
+    atlasPatchApplicationByteString( atlasData, patchIdx, atlasPatchParams );
   }
   std::vector<uint8_t> md5Digest = context.computeMD5( atlasData.data(), atlasData.size() );
   TRACE_ATLAS( " Atlas MD5 = " );
