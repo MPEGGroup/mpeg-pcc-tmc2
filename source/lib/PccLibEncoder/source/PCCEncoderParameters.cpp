@@ -134,13 +134,13 @@ PCCEncoderParameters::PCCEncoderParameters() {
   attributeAuxVideoConfig_                 = {};
   nbThread_                                = 1;
   keepIntermediateFiles_                   = false;
-  absoluteD1_                              = true;
-  absoluteT1_                              = true;
+  absoluteD1_                              = false;
+  absoluteT1_                              = false;
   multipleStreams_                         = false;
   deltaQPD0_                               = 0;
-  deltaQPD1_                               = 0;
+  deltaQPD1_                               = 2;
   deltaQPT0_                               = 0;
-  deltaQPT1_                               = 0;
+  deltaQPT1_                               = 2;
   constrainedPack_                         = true;
   thresholdColorSmoothing_                 = 10.0;
   thresholdColorDifference_                = 10.0;
@@ -713,6 +713,10 @@ bool PCCEncoderParameters::check() {
       std::cout << "enhancedOccupancyMapCode is ignored because profileReconstructionIdc set to 0. \n";
     }
     //removeDuplicatePoints_ is removed
+    if ( removeDuplicatePoints_ ) {
+      removeDuplicatePoints_ = 0;
+      std::cout << "removeDuplicatePoints is ignored because profileReconstructionIdc set to 0. \n";
+    }
     //rawPointsPatch_ is removed
     if ( lossyRawPointsPatch_ ) {
       lossyRawPointsPatch_ = 0;
@@ -730,6 +734,11 @@ bool PCCEncoderParameters::check() {
       flagColorSmoothing_ = false;
       std::cout << "flagColorSmoothing is ignored because profileReconstructionIdc set to 0. \n";
     }
+    if ( attrTransferFilterType_ ){
+      attrTransferFilterType_ = 0;
+      std::cout << "attrTransferFilterType is ignored because profileReconstructionIdc set to 0. \n";
+    }
+    
     if ( pbfEnableFlag_ ) {
       pbfEnableFlag_ = false;
       std::cout << "pbfEnableFlag is ignored because profileReconstructionIdc set to 0. \n";

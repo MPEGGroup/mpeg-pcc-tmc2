@@ -57,7 +57,7 @@ PCCDecoderParameters::PCCDecoderParameters() {
   reconstructRawType_                = -1;
   applyGeoSmoothingType_             = -1;
   applyAttrSmoothingType_            = -1;
-  attrTransferFilterType_       = -1;
+  attrTransferFilterType_            = -1;
   applyOccupanySynthesisType_        = -1;
   
   patchColorSubsampling_             = false;

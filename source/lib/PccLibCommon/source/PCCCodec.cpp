@@ -987,7 +987,9 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                       reconstru
             reconstruct.getPointCount() );
     tile.setTotalNumberOfRawPoints( 0 );
   }
-
+  TRACE_CODEC( " totalRawPointsInFrame = %zu  \n", tile.getTotalNumberOfRawPoints() );
+  TRACE_CODEC( " point = %zu  \n", reconstruct.getPointCount() );
+  
   if ( params.flagGeometrySmoothing_ && !params.pbfEnableFlag_ ) {
     TRACE_CODEC( " identify first boundary layer \n" );
     if ( useRawPointsSeparateVideo ) {

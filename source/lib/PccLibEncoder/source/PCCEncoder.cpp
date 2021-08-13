@@ -224,6 +224,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     }
 
     // Compress geometry1
+    TRACE_PICTURE( "Geometry\n" );
     TRACE_PICTURE( "MapIdx = 1, AuxiliaryVideoFlag = 0\n" );
     auto& videoGeometryD1  = context.getVideoGeometryMultiple()[1];
     auto& videoBitstreamD1 = context.createVideoBitstream( VIDEO_GEOMETRY_D1 );
@@ -566,7 +567,6 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     }
   }
   for ( size_t frameIdx = 0; frameIdx < context.size(); frameIdx++ ) {
-    size_t numProjPoints = 0, numRawPoints = 0, numEomPoints = 0;
     reconstructs[frameIdx].addColors();
     reconstructs[frameIdx].addColors16bit();
     size_t accTilePointCount = 0;
@@ -578,11 +578,31 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
                                                     accTilePointCount, gpcParams );
         accTilePointCount        = updatedPointCount;
       }
+    }  // tile
+  }
+  }//if ( ai.getAttributeCount() > 0 )
+
+#ifdef CONFORMANCE_TRACE
+  for ( size_t frameIdx = 0; frameIdx < context.size(); frameIdx++ ) {
+    size_t numProjPoints = 0, numRawPoints = 0, numEomPoints = 0;
+    for ( size_t tileIdx = 0; tileIdx < context[frameIdx].getNumTilesInAtlasFrame(); tileIdx++ ) {
+      auto& tile = context[frameIdx].getTile( tileIdx );
       numProjPoints += tile.getTotalNumberOfRegularPoints();
       numEomPoints += tile.getTotalNumberOfEOMPoints();
       numRawPoints += tile.getTotalNumberOfRawPoints();
     }  // tile
-    TRACE_PCFRAME( "Atlas Frame Index = %d \n", frameIdx );
+    if ( ai.getAttributeCount() == 0 ){
+      reconstructs[frameIdx].removeColors();
+      reconstructs[frameIdx].removeColors16bit();
+    }else{
+      bool isAttributes444 = static_cast<int>( params_.rawPointsPatch_ ) == 1;
+      if ( !isAttributes444 ) {  // lossy: convert 16-bit yuv444 to 8-bit RGB444
+        reconstructs[frameIdx].convertYUV16ToRGB8();
+      } else {
+        reconstructs[frameIdx].copyRGB16ToRGB8();
+      }
+    }
+    TRACE_PCFRAME( "Atlas Frame Index = %d\n", frameIdx );
     TRACE_PCFRAME( "PointCloudFrameOrderCntVal = %d, NumProjPoints = %zu, NumRawPoints = %zu, NumEomPoints = %zu,",
                    frameIdx, numProjPoints, numRawPoints, numEomPoints );
     auto checksum = reconstructs[frameIdx].computeChecksum( true );
@@ -590,7 +610,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     for ( auto& c : checksum ) { TRACE_PCFRAME( "%02x", c ); }
     TRACE_PCFRAME( "\n" );
   }
-  }//if ( ai.getAttributeCount() > 0 )
+#endif
   std::cout << "Post Processing Point Clouds" << std::endl;
   bool isAttributes444 = static_cast<int>( params_.rawPointsPatch_ ) == 1;
   for ( size_t frameIdx = 0; frameIdx < sources.getFrameCount(); frameIdx++ ) {
@@ -670,7 +690,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
       reconstruct.copyRGB16ToRGB8();
     }
     }//if ( ai.getAttributeCount() > 0 )
-    TRACE_RECFRAME( "Atlas Frame Index = %d \n", frameIdx );
+    TRACE_RECFRAME( "Atlas Frame Index = %d\n", frameIdx );
     auto checksum = reconstructs[frameIdx].computeChecksum( true );
     TRACE_RECFRAME( " MD5 checksum = " );
     for ( auto& c : checksum ) { TRACE_RECFRAME( "%02x", c ); }
@@ -8394,7 +8414,7 @@ void PCCEncoder::createHlsAtlasTileLogFiles( PCCContext& context, int frameIndex
   atlasB2PData.clear();
 
   // for tiles
-  TRACE_TILE( "Atlas Frame Index = %d \n", frameIndex );
+  TRACE_TILE( "Atlas Frame Index = %d\n", frameIndex );
   for ( size_t tileIdx = 0; tileIdx < context[frameIndex].getNumTilesInAtlasFrame(); tileIdx++ ) {
     auto&  tile          = context.getFrame( frameIndex ).getTile( tileIdx );
     size_t atlIdx        = tile.getAtlIndex();

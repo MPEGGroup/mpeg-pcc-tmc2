@@ -318,7 +318,6 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
     std::vector<uint32_t> partition;
     // Decode point cloud
     printf( "call generatePointCloud() \n" );
-    size_t              numProjPoints = 0, numRawPoints = 0, numEomPoints = 0;
     std::vector<size_t> accTilePointCount;
     accTilePointCount.resize( ai.getAttributeCount(), 0 );
     for ( size_t tileIdx = 0; tileIdx < context[frameIdx].getNumTilesInAtlasFrame(); tileIdx++ ) {
@@ -359,19 +358,37 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
           accTilePointCount[attIdx] = updatedPointCount;
         }
       }
-
-      numRawPoints += tile.getTotalNumberOfRawPoints();
-      numEomPoints += tile.getTotalNumberOfEOMPoints();
-      numProjPoints += tile.getTotalNumberOfRegularPoints();
     }  // tile
 
-    TRACE_PCFRAME( "Atlas Frame Index = %d \n", frameIdx );
+#ifdef CONFORMANCE_TRACE
+    if(1){
+    size_t numProjPoints = 0, numRawPoints = 0, numEomPoints = 0;
+    for ( size_t tileIdx = 0; tileIdx < context[frameIdx].getNumTilesInAtlasFrame(); tileIdx++ ) {
+      auto& tile = context[frameIdx].getTile( tileIdx );
+      numProjPoints += tile.getTotalNumberOfRegularPoints();
+      numEomPoints += tile.getTotalNumberOfEOMPoints();
+      numRawPoints += tile.getTotalNumberOfRawPoints();
+    }  // tile
+    if ( ai.getAttributeCount() == 0 ){
+      reconstructs[frameIdx].removeColors();
+      reconstructs[frameIdx].removeColors16bit();
+    }else{
+      bool isAttributes444 = context.getVideoAttributesMultiple( 0 ).getColorFormat() == PCCCOLORFORMAT::RGB444;
+      if ( !isAttributes444 ) {  // lossy: convert 16-bit yuv444 to 8-bit RGB444
+        reconstructs[frameIdx].convertYUV16ToRGB8();
+      } else {
+        reconstructs[frameIdx].copyRGB16ToRGB8();
+      }
+    }
+    TRACE_PCFRAME( "Atlas Frame Index = %d\n", frameIdx );
     TRACE_PCFRAME( "PointCloudFrameOrderCntVal = %d, NumProjPoints = %zu, NumRawPoints = %zu, NumEomPoints = %zu,",
                    frameIdx, numProjPoints, numRawPoints, numEomPoints );
     auto checksum = reconstructs[frameIdx].computeChecksum( true );
     TRACE_PCFRAME( " MD5 checksum = " );
     for ( auto& c : checksum ) { TRACE_PCFRAME( "%02x", c ); }
     TRACE_PCFRAME( "\n" );
+    }
+#endif
 
     // Post-Processing
     TRACE_PATCH( "Post-Processing: postprocessSmoothing = %zu pbfEnableFlag = %d \n",
@@ -454,8 +471,8 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
     TRACE_PCFRAME( " MD5 checksum = " );
     for ( auto& c : tmp ) { TRACE_PCFRAME( "%02x", c ); }
     TRACE_PCFRAME( "\n" );*/
-    TRACE_RECFRAME( "Atlas Frame Index = %d \n", frameIdx );
-    checksum = reconstructs[frameIdx].computeChecksum( true );
+    TRACE_RECFRAME( "Atlas Frame Index = %d\n", frameIdx );
+    auto checksum = reconstructs[frameIdx].computeChecksum( true );
     TRACE_RECFRAME( " MD5 checksum = " );
     for ( auto& c : checksum ) { TRACE_RECFRAME( "%02x", c ); }
     TRACE_RECFRAME( "\n" );
@@ -893,6 +910,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
           refPatch.getU1(), refPatch.getV1(), refPatch.getSizeU0(), refPatch.getSizeV0(), refPatch.getSizeD(),
           refPatch.getLodScaleX(), refPatch.getLodScaleY() );
       patch.setProjectionMode( refPatch.getProjectionMode() );
+      patch.setViewId( refPatch.getViewId() );
       patch.setU0( ipdu.get2dPosX() + refPatch.getU0() );
       patch.setV0( ipdu.get2dPosY() + refPatch.getV0() );
       patch.setPatchOrientation( refPatch.getPatchOrientation() );
@@ -987,6 +1005,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
         }
       }
       patch.setProjectionMode( refPatch.getProjectionMode() );
+      patch.setViewId( refPatch.getViewId() );
       patch.setPatchOrientation( refPatch.getPatchOrientation() );
       patch.setNormalAxis( refPatch.getNormalAxis() );
       patch.setTangentAxis( refPatch.getTangentAxis() );
@@ -1023,6 +1042,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
                    refPatch.getSizeU0(), refPatch.getSizeV0(), refPatch.getSizeD(), refPatch.getLodScaleX(),
                    refPatch.getLodScaleY() );
       patch.setProjectionMode( refPatch.getProjectionMode() );
+      patch.setViewId( refPatch.getViewId() );
       patch.setU0( refPatch.getU0() );
       patch.setV0( refPatch.getV0() );
       patch.setPatchOrientation( refPatch.getPatchOrientation() );
@@ -1446,7 +1466,7 @@ void PCCDecoder::createHlsAtlasTileLogFiles( PCCContext& context, int frameIndex
     numEomPoints += tile.getTotalNumberOfEOMPoints();
     numRawPoints += tile.getTotalNumberOfRawPoints();
   }
-  TRACE_ATLAS( "Atlas Frame Index = %d \n", frameIndex );
+  TRACE_ATLAS( "Atlas Frame Index = %d\n", frameIndex );
   TRACE_ATLAS(
       "AtlasFrameOrderCntVal = %d,  AtlasFrameWidthMax =  %d, AtlasFrameHeightMax = %d, AtlasID = %d, "
       "ASPSFrameSize = %d, VPSMapCount = %d, AttributeCount = %d, AttributeDimension = %d, NumTilesAtlasFrame = %d, "
@@ -1486,7 +1506,7 @@ void PCCDecoder::createHlsAtlasTileLogFiles( PCCContext& context, int frameIndex
     size_t      tileOffsetY   = context[frameIndex].getPartitionPosY( topLeftRow );
     TRACE_TILE(
         "TileID = %d, AtlasFrameOrderCntVal = %d, TileType = %d, TileOffsetX = %d, TileOffsetY = %d, TileWidth = %d, "
-        "TileHeight = %d,",
+        "TileHeight = %d, ",
         tileId, ath.getAtlasFrmOrderCntLsb(), tileType, tileOffsetX, tileOffsetY, tile.getWidth(), tile.getHeight() );
     std::vector<uint8_t> atlasTileData;
     for ( size_t patchIdx = 0; patchIdx < atlu.getDataUnit().getPatchCount(); patchIdx++ ) {
@@ -1541,6 +1561,13 @@ void PCCDecoder::setTilePartitionSizeAfti( PCCContext& context ) {  // decoder
     partitionHeight.resize( numPartitionRows );
     partitionPosX.resize( numPartitionCols );
     partitionPosY.resize( numPartitionRows );
+    
+    if ( afti.getSingleTileInAtlasFrameFlag() ) {
+      partitionWidth [0] = asps.getFrameWidth();
+      partitionHeight[0] = asps.getFrameHeight();
+      partitionPosX  [0] = 0;
+      partitionPosY  [0] = 0;
+    }else {
     if ( afti.getUniformPartitionSpacingFlag() ) {
       size_t uniformPatitionWidth  = 64 * ( afti.getPartitionColumnWidthMinus1( 0 ) + 1 );
       size_t uniformPatitionHeight = 64 * ( afti.getPartitionRowHeightMinus1( 0 ) + 1 );
@@ -1591,6 +1618,7 @@ void PCCDecoder::setTilePartitionSizeAfti( PCCContext& context ) {  // decoder
             partitionPosY[numPartitionRows - 2] + partitionHeight[numPartitionRows - 2];
         partitionHeight[numPartitionRows - 1] = frameHeight - partitionPosY[numPartitionRows - 1];
       }
+    }
     }
   }  // afpsIdx
 }
