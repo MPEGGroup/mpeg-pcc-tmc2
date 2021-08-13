@@ -5146,6 +5146,18 @@ void PCCEncoder::generateTilesFromSegments( PCCContext& context ) {
       printf( "ERROR: tiles sizes in not correct. \n" );
       exit( 254 );
     }
+    
+    for(size_t ti=0; ti< context[fi].getNumTilesInAtlasFrame(); ti++){
+      auto& tile = context[fi].getTile( ti );
+      if(tile.getEomPatches().size()!=0){
+        for( auto& eomPatch : tile.getEomPatches() ){
+          eomPatch.occupancyResolution_ = params_.occupancyResolution_;
+          eomPatch.frameIndex_ = fi;
+          eomPatch.tileIndex_ = ti;
+        }
+      }
+    }
+    
   }  // fi
 }
 
