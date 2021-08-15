@@ -539,7 +539,7 @@ void PCCBitstreamWriter::profileTierLevel( ProfileTierLevel& ptl, PCCBitstream& 
   bitstream.write( ptl.getProfileToolsetIdc(), 8 );         // u(8)
   bitstream.write( ptl.getProfileReconstructionIdc(), 8 );  // u(8)
   bitstream.write( 0, 16 );                                 // u(16)
-  bitstream.write( 0, 16 );                                 // u(16)
+  bitstream.write( 0xFFFF, 16 );                            // u(16)
   bitstream.write( ptl.getLevelIdc(), 8 );                  // u(8)
   bitstream.write( ptl.getNumSubProfiles(), 6 );            // u(6)
   bitstream.write( ptl.getExtendedSubProfileFlag(), 1 );    // u(1)
