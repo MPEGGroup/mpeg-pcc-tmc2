@@ -470,7 +470,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
 
       // compress attribute1
       TRACE_PICTURE( "Attribute\n" );
-      TRACE_PICTURE( "MapIdx = 1, AuxiliaryVideoFlag = 0\n" );
+      TRACE_PICTURE( "AttrIdx = 0, AttrPartIdx = %d, AttrTypeID = %d, MapIdx = 1, AuxiliaryVideoFlag = 0\n", attrPartitionIndex, attrTypeId );
       auto& videoBitstreamT1 = context.createVideoBitstream( VIDEO_ATTRIBUTE_T1 );
       auto  encoderConfig1 =
           params_.mapCountMinus1_ == 0 ? getEncoderConfig1L( params_.attributeConfig_ ) : params_.attribute1Config_;
@@ -504,8 +504,8 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     }
 
     if ( asps.getRawPatchEnabledFlag() && asps.getAuxiliaryVideoEnabledFlag() ) {
-      TRACE_PICTURE( "AttrIdx = 0, AttrPartIdx = %d, AttrTypeID = %d ", attrPartitionIndex, attrTypeId );
-      TRACE_PICTURE( "MapIdx = 0, AuxiliaryVideoFlag = 1\n" );
+      TRACE_PICTURE( "Attribute\n" );
+      TRACE_PICTURE( "AttrIdx = 0, AttrPartIdx = %d, AttrTypeID = %d, MapIdx = 0, AuxiliaryVideoFlag = 1\n", attrPartitionIndex, attrTypeId );
       std::cout << "*******Video: Aux (Attribute) ********" << std::endl;
       auto& videoBitstreamMP = context.createVideoBitstream( VIDEO_ATTRIBUTE_RAW );
       generateRawPointsAttributeVideo( context );
@@ -5194,13 +5194,16 @@ void PCCEncoder::placeTiles( PCCContext& context, size_t minFrameWidth, size_t m
           frameHeight += tile3.getHeight();
         }
       }
-      // copying to framesForPatchSegmentation
+      // copying to titleFrameContext
       auto& outputFrame = context[frameIdx].getTitleFrameContext();
       outputFrame.setWidth( frameWidth );
       outputFrame.setHeight( frameHeight );
       auto& outputFrameOccupanctMap = outputFrame.getOccupancyMap();
       outputFrameOccupanctMap.resize( frameWidth * frameHeight );
       outputFrame.getPatches().clear();
+      outputFrame.getRawPointsPatches().clear();
+      outputFrame.getEomPatches().clear();
+      
       for ( size_t tileIdx = 0; tileIdx < context[frameIdx].getNumTilesInAtlasFrame(); tileIdx++ ) {
         auto& inputTile          = context[frameIdx].getTile( tileIdx );
         auto& outputFramePatches = outputFrame.getPatches();
@@ -5214,7 +5217,6 @@ void PCCEncoder::placeTiles( PCCContext& context, size_t minFrameWidth, size_t m
         // raw
         auto& outputFrameRawPatches = outputFrame.getRawPointsPatches();
         auto& inputTileRawPatches   = inputTile.getRawPointsPatches();
-        outputFrameRawPatches.clear();
         for ( size_t patchIdx = 0; patchIdx < inputTileRawPatches.size(); patchIdx++ ) {
           outputFrameRawPatches.push_back( inputTileRawPatches[patchIdx] );
           if ( !params_.useRawPointsSeparateVideo_ ) {
@@ -8388,6 +8390,14 @@ void PCCEncoder::createHlsAtlasTileLogFiles( PCCContext& context, int frameIndex
   std::vector<std::vector<PatchParams>>          tilePatchParams;
   std::vector<std::vector<std::vector<int64_t>>> tileB2PPatchParams;
   std::vector<std::vector<int64_t>>              atlasB2PPatchParams;
+  size_t numProjPatches = 0, numRawPatches = 0, numEomPatches = 0;
+  size_t numTilesInPatchFrame = context[frameIndex].getNumTilesInAtlasFrame();
+  for ( size_t tileIdx = 0; tileIdx < numTilesInPatchFrame; tileIdx++ ) {
+    auto& tile = context[frameIndex].getTile( tileIdx );
+    numProjPatches += tile.getPatches().size();
+    numEomPatches += tile.getEomPatches().size();
+    numRawPatches += tile.getRawPointsPatches().size();
+  }
   TRACE_ATLAS( "Atlas Frame Index = %d\n", frameIndex );
   TRACE_ATLAS(
       "AtlasFrameOrderCntVal = %d,  AtlasFrameWidthMax =  %d, AtlasFrameHeightMax = %d, AtlasID = %d, ASPSFrameSize "
@@ -8398,9 +8408,7 @@ void PCCEncoder::createHlsAtlasTileLogFiles( PCCContext& context, int frameIndex
       vps.getAttributeInformation( 0 ).getAttributeCount(),
       vps.getAttributeInformation( 0 ).getAttributeCount()>0? vps.getAttributeInformation( 0 ).getAttributeDimensionMinus1( 0 ) + 1: 0,
       afc.getNumTilesInAtlasFrame(),
-      afc.getTitleFrameContext().getPatches().size(), afc.getTitleFrameContext().getNumberOfRawPointsPatches(),
-      afc.getTitleFrameContext().getEomPatches().size() );
-  size_t numTilesInPatchFrame = context[frameIndex].getNumTilesInAtlasFrame();
+      numProjPatches, numRawPatches, numEomPatches );
   tilePatchParams.resize( numTilesInPatchFrame );
   for ( size_t tileIdx = 0; tileIdx < numTilesInPatchFrame; tileIdx++ ) {
     getHashPatchParams( context, frameIndex, tileIdx, tilePatchParams, atlasPatchParams );
