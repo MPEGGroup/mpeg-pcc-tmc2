@@ -121,36 +121,36 @@ bool PCCDecoderParameters::check() {
 }
 
 void PCCDecoderParameters::setReconstructionParameters( size_t profileReconstructionIdc ){
-  if( profileReconstructionIdc == 0 ){
-    if( pixelDeinterleavingType_      == -1 ) pixelDeinterleavingType_      = 0;
-    if( pointLocalReconstructionType_ == -1 ) pointLocalReconstructionType_ = 0;
-    if( reconstructEomType_           == -1 ) reconstructEomType_           = 0;
-    if( duplicatedPointRemovalType_   == -1 ) duplicatedPointRemovalType_   = 0;
-    if( reconstructRawType_           == -1 ) reconstructRawType_           = 0;
-    if( applyGeoSmoothingType_        == -1 ) applyGeoSmoothingType_        = 0;
-    if( applyAttrSmoothingType_       == -1 ) applyAttrSmoothingType_       = 0;
-    if( attrTransferFilterType_  == -1 ) attrTransferFilterType_  = 0;
-    if( applyOccupanySynthesisType_   == -1 ) applyOccupanySynthesisType_   = 0;
-  }else if( profileReconstructionIdc == 1 ){
-    if( pixelDeinterleavingType_      == -1 ) pixelDeinterleavingType_      = 1;
-    if( pointLocalReconstructionType_ == -1 ) pointLocalReconstructionType_ = 1;
-    if( reconstructEomType_           == -1 ) reconstructEomType_           = 1;
-    if( duplicatedPointRemovalType_   == -1 ) duplicatedPointRemovalType_   = 1;
-    if( reconstructRawType_           == -1 ) reconstructRawType_           = 1;
-    if( applyGeoSmoothingType_        == -1 ) applyGeoSmoothingType_        = 1;
-    if( applyAttrSmoothingType_       == -1 ) applyAttrSmoothingType_       = 1;
-    if( attrTransferFilterType_  == -1 ) attrTransferFilterType_  = 1;
-    if( applyOccupanySynthesisType_   == -1 ) applyOccupanySynthesisType_   = 0;
-  }else if( profileReconstructionIdc == 2 ){
-    if( pixelDeinterleavingType_      == -1 ) pixelDeinterleavingType_      = 0;
-    if( pointLocalReconstructionType_ == -1 ) pointLocalReconstructionType_ = 0;
-    if( reconstructEomType_           == -1 ) reconstructEomType_           = 0;
-    if( duplicatedPointRemovalType_   == -1 ) duplicatedPointRemovalType_   = 0;
-    if( reconstructRawType_           == -1 ) reconstructRawType_           = 0;
-    if( applyGeoSmoothingType_        == -1 ) applyGeoSmoothingType_        = 0;
-    if( applyAttrSmoothingType_       == -1 ) applyAttrSmoothingType_       = 1;
-    if( attrTransferFilterType_  == -1 ) attrTransferFilterType_  = 0;
-    if( applyOccupanySynthesisType_   == -1 ) applyOccupanySynthesisType_   = 1;
+  if ( profileReconstructionIdc == 0 ) {
+    pixelDeinterleavingType_      = 0;
+    pointLocalReconstructionType_ = 0;
+    reconstructEomType_           = 0;
+    duplicatedPointRemovalType_   = 0;
+    reconstructRawType_           = 0;
+    applyGeoSmoothingType_        = 0;
+    applyAttrSmoothingType_       = 0;
+    attrTransferFilterType_       = 0;
+    applyOccupanySynthesisType_   = 0;
+  } else if ( profileReconstructionIdc == 1 ) {
+    pixelDeinterleavingType_      = 1;
+    pointLocalReconstructionType_ = 1;
+    reconstructEomType_           = 1;
+    duplicatedPointRemovalType_   = 1;
+    reconstructRawType_           = 1;
+    applyGeoSmoothingType_        = 1;
+    applyAttrSmoothingType_       = 1;
+    attrTransferFilterType_       = 1;
+    applyOccupanySynthesisType_   = 0;
+  } else if ( profileReconstructionIdc == 2 ) {
+    pixelDeinterleavingType_      = 1;
+    pointLocalReconstructionType_ = 1;
+    reconstructEomType_           = 1;
+    duplicatedPointRemovalType_   = 1;
+    reconstructRawType_           = 1;
+    applyGeoSmoothingType_        = 0;
+    applyAttrSmoothingType_       = 1;
+    attrTransferFilterType_       = 0;
+    applyOccupanySynthesisType_   = 1;
   }
   printf("---profileReconstructionIdc(%zu)-------\n", profileReconstructionIdc);
   printf( "pixelDeinterleavingType      : %d\n", pixelDeinterleavingType_      );

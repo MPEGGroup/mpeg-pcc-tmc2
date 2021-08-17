@@ -769,7 +769,7 @@ bool PCCEncoderParameters::check() {
     reconstructRawType_           = 1;
     applyGeoSmoothingType_        = 1;
     applyAttrSmoothingType_       = 1;
-    attrTransferFilterType_  = 1;
+    attrTransferFilterType_       = 1;
     applyOccupanySynthesisType_   = 0;
   }
 
@@ -790,7 +790,7 @@ bool PCCEncoderParameters::check() {
     reconstructRawType_           = 1;
     applyGeoSmoothingType_        = 0;
     applyAttrSmoothingType_       = 1;
-    attrTransferFilterType_  = 0;
+    attrTransferFilterType_       = 0;
     applyOccupanySynthesisType_   = 1;
   }
 

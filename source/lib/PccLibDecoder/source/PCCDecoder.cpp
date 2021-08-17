@@ -53,15 +53,15 @@ PCCDecoder::PCCDecoder() {
 PCCDecoder::~PCCDecoder() = default;
 void PCCDecoder::setParameters( const PCCDecoderParameters& params ) { params_ = params; }
 void PCCDecoder::setReconstructionParameters( const PCCDecoderParameters& params ) {
-  params_.pixelDeinterleavingType_ = params.pixelDeinterleavingType_;
+  params_.pixelDeinterleavingType_      = params.pixelDeinterleavingType_;
   params_.pointLocalReconstructionType_ = params.pointLocalReconstructionType_;
-  params_.reconstructEomType_ = params.reconstructEomType_;
-  params_.duplicatedPointRemovalType_ = params.duplicatedPointRemovalType_;
-  params_.reconstructRawType_ = params.reconstructRawType_;
-  params_.applyGeoSmoothingType_ = params.applyGeoSmoothingType_;
-  params_.applyAttrSmoothingType_ = params.applyAttrSmoothingType_;
-  params_.attrTransferFilterType_ = params.attrTransferFilterType_;
-  params_.applyOccupanySynthesisType_ = params.applyOccupanySynthesisType_;
+  params_.reconstructEomType_           = params.reconstructEomType_;
+  params_.duplicatedPointRemovalType_   = params.duplicatedPointRemovalType_;
+  params_.reconstructRawType_           = params.reconstructRawType_;
+  params_.applyGeoSmoothingType_        = params.applyGeoSmoothingType_;
+  params_.applyAttrSmoothingType_       = params.applyAttrSmoothingType_;
+  params_.attrTransferFilterType_       = params.attrTransferFilterType_;
+  params_.applyOccupanySynthesisType_   = params.applyOccupanySynthesisType_;
 }
 
 int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int32_t atlasIndex = 0 ) {
