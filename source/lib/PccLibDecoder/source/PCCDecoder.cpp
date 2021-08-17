@@ -111,10 +111,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
     context.getVideoGeometryMultiple().resize( sps.getMapCountMinus1( atlasIndex ) + 1 );
     size_t totalGeoSize = 0;
     for ( uint32_t mapIndex = 0; mapIndex < sps.getMapCountMinus1( atlasIndex ) + 1; mapIndex++ ) {
-<<<<<<< HEAD
-=======
       TRACE_PICTURE( "Geometry\n" );
->>>>>>> origin/171-parameters-for-reconstruction-profile
       TRACE_PICTURE( "MapIdx = %d, AuxiliaryVideoFlag = 0\n", mapIndex );
       std::cout << "*******Video Decoding: Geometry[" << mapIndex << "] ********" << std::endl;
       auto  geometryIndex  = static_cast<PCCVideoType>( VIDEO_GEOMETRY_D0 + mapIndex );
@@ -137,10 +134,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
     }
     std::cout << "total geometry video ->" << totalGeoSize << " B" << std::endl;
   } else {
-<<<<<<< HEAD
-=======
     TRACE_PICTURE( "Geometry\n" );
->>>>>>> origin/171-parameters-for-reconstruction-profile
     TRACE_PICTURE( "MapIdx = 0, AuxiliaryVideoFlag = 0\n" );
     std::cout << "*******Video Decoding: Geometry ********" << std::endl;
     auto& videoBitstream = context.getVideoBitstream( VIDEO_GEOMETRY );
@@ -201,12 +195,8 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
           // this allocation is considering only one attribute, with a single partition, but multiple streams
           for ( uint32_t mapIndex = 0; mapIndex < sps.getMapCountMinus1( atlasIndex ) + 1; mapIndex++ ) {
             // decompress T[mapIndex]
-<<<<<<< HEAD
-            TRACE_PICTURE( "MapIdx = %d, AuxiliaryVideoFlag = 0\n", mapIndex );
-=======
             TRACE_PICTURE( "Attribute\n" );
             TRACE_PICTURE( "AttrIdx = %d, AttrPartIdx = %d, AttrTypeID = %d, MapIdx = %d, AuxiliaryVideoFlag = 0\n", attrIndex, attrPartitionIndex, attributeTypeId, mapIndex);
->>>>>>> origin/171-parameters-for-reconstruction-profile
             std::cout << "*******Video Decoding: Attribute [" << mapIndex << "] ********" << std::endl;
             auto  attributeIndex = static_cast<PCCVideoType>( VIDEO_ATTRIBUTE_T0 + attrPartitionIndex +
                                                              MAX_NUM_ATTR_PARTITIONS * mapIndex );
@@ -229,12 +219,8 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
           }
           std::cout << "attribute    video ->" << sizeAttributeVideo << " B" << std::endl;
         } else {
-<<<<<<< HEAD
-          TRACE_PICTURE( "MapIdx = 0, AuxiliaryVideoFlag = 0\n" );
-=======
           TRACE_PICTURE( "Attribute\n" );
           TRACE_PICTURE( "AttrIdx = 0, AttrPartIdx = %d, AttrTypeID = %d, MapIdx = 0, AuxiliaryVideoFlag = 0\n", attrPartitionIndex, attributeTypeId );
->>>>>>> origin/171-parameters-for-reconstruction-profile
           std::cout << "*******Video Decoding: Attribute ********" << std::endl;
           auto  attributeIndex = static_cast<PCCVideoType>( VIDEO_ATTRIBUTE + attrPartitionIndex );
           auto& videoBitstream = context.getVideoBitstream( attributeIndex );
@@ -259,16 +245,9 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
         if ( asps.getRawPatchEnabledFlag() && asps.getAuxiliaryVideoEnabledFlag() &&
              sps.getAuxiliaryVideoPresentFlag( atlasIndex ) ) {
           std::cout << "*******Video Decoding: Aux Attribute ********" << std::endl;
-<<<<<<< HEAD
-          auto attributeIndex = static_cast<PCCVideoType>( VIDEO_ATTRIBUTE_RAW + attrPartitionIndex );          
-          int attrPartitionIndex = sps.getAttributeInformation( atlasIndex ).getAttributeDimensionPartitionsMinus1( 0 );
-          int attrTypeId         = sps.getAttributeInformation( atlasIndex ).getAttributeTypeId( 0 );
-          TRACE_PICTURE( "MapIdx = 0, AuxiliaryVideoFlag = 1, AttrIdx = 0, AttrPartIdx = %d, AttrTypeID = %d, ", attrPartitionIndex, attrTypeId );          
-=======
           auto attributeIndex = static_cast<PCCVideoType>( VIDEO_ATTRIBUTE_RAW + attrPartitionIndex );
           TRACE_PICTURE( "Attribute\n" );
           TRACE_PICTURE( "AttrIdx = 0, AttrPartIdx = %d, AttrTypeID = %d, MapIdx = 0, AuxiliaryVideoFlag = 1\n", attrPartitionIndex, attributeTypeId );
->>>>>>> origin/171-parameters-for-reconstruction-profile
           auto& videoBitstreamMP    = context.getVideoBitstream( attributeIndex );
           auto  auxAttributeCodecId = getCodedCodecId( context, ai.getAuxiliaryAttributeCodecId( attrIndex ),
                                                       params_.videoDecoderAttributePath_ );
@@ -390,9 +369,6 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
       numEomPoints += tile.getTotalNumberOfEOMPoints();
       numRawPoints += tile.getTotalNumberOfRawPoints();
     }  // tile
-<<<<<<< HEAD
-
-=======
     if ( ai.getAttributeCount() == 0 ){
       reconstructs[frameIdx].removeColors();
       reconstructs[frameIdx].removeColors16bit();
@@ -404,7 +380,6 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
         reconstructs[frameIdx].copyRGB16ToRGB8();
       }
     }
->>>>>>> origin/171-parameters-for-reconstruction-profile
     TRACE_PCFRAME( "Atlas Frame Index = %d\n", frameIdx );
     TRACE_PCFRAME( "PointCloudFrameOrderCntVal = %d, NumProjPoints = %zu, NumRawPoints = %zu, NumEomPoints = %zu,",
                    frameIdx, numProjPoints, numRawPoints, numEomPoints );
@@ -497,11 +472,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
     for ( auto& c : tmp ) { TRACE_PCFRAME( "%02x", c ); }
     TRACE_PCFRAME( "\n" );*/
     TRACE_RECFRAME( "Atlas Frame Index = %d\n", frameIdx );
-<<<<<<< HEAD
-    checksum = reconstructs[frameIdx].computeChecksum( true );
-=======
     auto checksum = reconstructs[frameIdx].computeChecksum( true );
->>>>>>> origin/171-parameters-for-reconstruction-profile
     TRACE_RECFRAME( " MD5 checksum = " );
     for ( auto& c : checksum ) { TRACE_RECFRAME( "%02x", c ); }
     TRACE_RECFRAME( "\n" );
@@ -1591,19 +1562,11 @@ void PCCDecoder::setTilePartitionSizeAfti( PCCContext& context ) {  // decoder
     partitionPosY.resize( numPartitionRows );
     
     if ( afti.getSingleTileInAtlasFrameFlag() ) {
-<<<<<<< HEAD
-      partitionWidth [0] =  asps.getFrameWidth();
-=======
       partitionWidth [0] = asps.getFrameWidth();
->>>>>>> origin/171-parameters-for-reconstruction-profile
       partitionHeight[0] = asps.getFrameHeight();
       partitionPosX  [0] = 0;
       partitionPosY  [0] = 0;
     }else {
-<<<<<<< HEAD
-    
-=======
->>>>>>> origin/171-parameters-for-reconstruction-profile
     if ( afti.getUniformPartitionSpacingFlag() ) {
       size_t uniformPatitionWidth  = 64 * ( afti.getPartitionColumnWidthMinus1( 0 ) + 1 );
       size_t uniformPatitionHeight = 64 * ( afti.getPartitionRowHeightMinus1( 0 ) + 1 );

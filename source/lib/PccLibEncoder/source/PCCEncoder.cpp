@@ -504,13 +504,8 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     }
 
     if ( asps.getRawPatchEnabledFlag() && asps.getAuxiliaryVideoEnabledFlag() ) {
-<<<<<<< HEAD
-      TRACE_PICTURE( "MapIdx = 0, AuxiliaryVideoFlag = 1, AttrIdx = 0, AttrPartIdx = %d, AttrTypeID = %d, ",
-                     attrPartitionIndex, attrTypeId );
-=======
       TRACE_PICTURE( "Attribute\n" );
       TRACE_PICTURE( "AttrIdx = 0, AttrPartIdx = %d, AttrTypeID = %d, MapIdx = 0, AuxiliaryVideoFlag = 1\n", attrPartitionIndex, attrTypeId );
->>>>>>> origin/171-parameters-for-reconstruction-profile
       std::cout << "*******Video: Aux (Attribute) ********" << std::endl;
       auto& videoBitstreamMP = context.createVideoBitstream( VIDEO_ATTRIBUTE_RAW );
       generateRawPointsAttributeVideo( context );
@@ -597,8 +592,6 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
       numEomPoints += tile.getTotalNumberOfEOMPoints();
       numRawPoints += tile.getTotalNumberOfRawPoints();
     }  // tile
-<<<<<<< HEAD
-=======
     if ( ai.getAttributeCount() == 0 ){
       reconstructs[frameIdx].removeColors();
       reconstructs[frameIdx].removeColors16bit();
@@ -610,7 +603,6 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
         reconstructs[frameIdx].copyRGB16ToRGB8();
       }
     }
->>>>>>> origin/171-parameters-for-reconstruction-profile
     TRACE_PCFRAME( "Atlas Frame Index = %d\n", frameIdx );
     TRACE_PCFRAME( "PointCloudFrameOrderCntVal = %d, NumProjPoints = %zu, NumRawPoints = %zu, NumEomPoints = %zu,",
                    frameIdx, numProjPoints, numRawPoints, numEomPoints );
