@@ -64,7 +64,6 @@ class AtlasSequenceParameterSetRbsp {
       patchSizeQuantizerPresentFlag_( false ),
       mapCountMinus1_( 0 ),
       pixelDeinterleavingFlag_( false ),
-      pixelDeinterleavingMapFlag_( false ),
       eomPatchEnabledFlag_( false ),
       eomFixBitCountMinus1_( 0 ),
       rawPatchEnabledFlag_( false ),
@@ -83,7 +82,7 @@ class AtlasSequenceParameterSetRbsp {
   AtlasSequenceParameterSetRbsp& operator=( const AtlasSequenceParameterSetRbsp& ) = default;
 
   void allocateRefListStruct() { refListStruct_.resize( numRefAtlasFrameListsInAsps_ ); }
-  void allocatePixelDeinterleavingMapFlag() { pixelDeinterleavingMapFlag_.resize( mapCountMinus1_ ); }
+  void allocatePixelDeinterleavingMapFlag() { pixelDeinterleavingMapFlag_.resize( mapCountMinus1_ + 1, false ); }
   void allocatePLRInformation() { plrInformation_.resize( mapCountMinus1_ + 1 ); }
 
   uint8_t            getAtlasSequenceParameterSetId() { return atlasSequenceParameterSetId_; }

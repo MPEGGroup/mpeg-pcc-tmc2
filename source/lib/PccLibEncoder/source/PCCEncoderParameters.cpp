@@ -1306,6 +1306,10 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   asps.setNormalAxisLimitsQuantizationEnabledFlag( true );
   asps.setNormalAxisMaxDeltaValueEnabledFlag( true );
   asps.setPixelDeinterleavingFlag( singleMapPixelInterleaving_ );
+  if ( singleMapPixelInterleaving_ ) {
+    asps.allocatePixelDeinterleavingMapFlag();
+    for ( size_t i = 0; i < asps.getMapCountMinus1() + 1; i++ ) { asps.setPixelDeinterleavingMapFlag( i, true ); }
+  }
   asps.setPatchPrecedenceOrderFlag( patchPrecedenceOrderFlag_ );
   asps.setPatchSizeQuantizerPresentFlag( context.getEnablePatchSizeQuantization() );
   asps.setEomPatchEnabledFlag( enhancedOccupancyMapCode_ );

@@ -8328,19 +8328,6 @@ void PCCEncoder::createHlsAtlasTileLogFiles( PCCContext& context, int frameIndex
   TRACE_HLS( " HLSMD5 = " );
   for ( auto& md5 : encMD5 ) TRACE_HLS( "%02x", md5 );
   TRACE_HLS( "\n" );
-
-
-  // std::vector<uint8_t> highLevelAtlasData;
-  // aspsCommonByteString( highLevelAtlasData, asps );
-  // aspsApplicationByteString( highLevelAtlasData, asps, afps );
-  // afpsCommonByteString( highLevelAtlasData, context, afpsIndex, frameIndex );
-  // afpsApplicationByteString( highLevelAtlasData, asps, afps );
-  // std::vector<uint8_t> decMD5( 16 );
-  // TRACE_HLS( "Atlas Frame Index = %d\n", frameIndex );
-  // decMD5 = context.computeMD5( highLevelAtlasData.data(), highLevelAtlasData.size() );
-  // TRACE_HLS( " HLSMD5 = " );
-  // for ( int j = 0; j < 16; j++ ) TRACE_HLS( "%02x", decMD5[j] );
-  // TRACE_HLS( "\n" );
   highLevelAtlasData.clear();
   std::vector<PatchParams>                       atlasPatchParams;
   std::vector<std::vector<PatchParams>>          tilePatchParams;
