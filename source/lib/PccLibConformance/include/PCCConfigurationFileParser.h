@@ -40,7 +40,11 @@ namespace pcc {
 
 const std::vector<std::string> bitStrMD5Keys = {"BITSTRMD5"};
 
+<<<<<<< HEAD
 const std::vector<std::string> hlsKeys = {"AtlasFrameIndex", "AtlasFrameParameterSetIndex", "HLSMD5"};
+=======
+const std::vector<std::string> hlsKeys = {"AtlasFrameIndex", "AtlasFrameParameterSetIndex", "HLSMD5"};;
+>>>>>>> origin/171-parameters-for-reconstruction-profile
 
 const std::vector<std::string> atlasKeys = {"AtlasFrameIndex",
                                             "AtlasFrameOrderCntVal",
@@ -69,9 +73,16 @@ const std::vector<std::string> pcframeKeys = {
 const std::vector<std::string> recPcframeKeys = {"AtlasFrameIndex", "PointCloudFrameOrderCntVal", "MD5checksum"};
 
 const std::vector<std::string> pictureKeys = {
+<<<<<<< HEAD
     "Occupancy",   "Geometry",   "Attribute", "MapIdx", "AuxiliaryVideoFlag", "PicOrderCntVal", "IdxOutOrderCntVal", 
     "AttrIdx", "AttrPartIdx", "AttrTypeID", "Width",     "Height", "MD5checksumChan0",   "MD5checksumChan1",  
     "MD5checksumChan2"};
+=======
+  "Occupancy",   "Geometry",   "Attribute", "MapIdx", "AuxiliaryVideoFlag", "PicOrderCntVal", "IdxOutOrderCntVal",
+  "AttrIdx", "AttrPartIdx", "AttrTypeID", "Width",     "Height", "MD5checksumChan0",   "MD5checksumChan1",
+  "MD5checksumChan2"};
+
+>>>>>>> origin/171-parameters-for-reconstruction-profile
 
 const size_t V3CLevelTable[6][9] = {  // Table A-5
     {30000000, 1500000, 1500000, 1000000, 50000, 50000, 2, 1, 3},

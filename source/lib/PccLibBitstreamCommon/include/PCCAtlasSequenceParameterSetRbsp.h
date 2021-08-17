@@ -82,7 +82,11 @@ class AtlasSequenceParameterSetRbsp {
   AtlasSequenceParameterSetRbsp& operator=( const AtlasSequenceParameterSetRbsp& ) = default;
 
   void allocateRefListStruct() { refListStruct_.resize( numRefAtlasFrameListsInAsps_ ); }
+<<<<<<< HEAD
   void allocatePixelDeinterleavingMapFlag() { pixelDeinterleavingMapFlag_.resize( mapCountMinus1_ + 1, false ); }
+=======
+  void allocatePixelDeinterleavingMapFlag() { pixelDeinterleavingMapFlag_.resize( mapCountMinus1_ + 1 ); }
+>>>>>>> origin/171-parameters-for-reconstruction-profile
   void allocatePLRInformation() { plrInformation_.resize( mapCountMinus1_ + 1 ); }
 
   uint8_t            getAtlasSequenceParameterSetId() { return atlasSequenceParameterSetId_; }

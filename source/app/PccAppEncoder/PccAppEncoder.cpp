@@ -321,9 +321,9 @@ bool parseParameters( int                   argc,
       "Enable decoded atlas information hash 0. disable 1.MD5 2.CRC 3.Checksum\n" )
 
     // smoothing
-    ( "postprocessSmoothingFilterType",
-      encoderParams.postprocessSmoothingFilter_,
-      encoderParams.postprocessSmoothingFilter_,
+    ( "attributeTransferFilterType",
+      encoderParams.attrTransferFilterType_,
+      encoderParams.attrTransferFilterType_,
       "Exclude geometry smoothing from attribute transfer\n" )
     ( "flagGeometrySmoothing",
       encoderParams.flagGeometrySmoothing_,
@@ -515,6 +515,14 @@ bool parseParameters( int                   argc,
       encoderParams.attributeQP_,
       encoderParams.attributeQP_,
       "QP for compression of attribute video" )
+    ( "auxGeometryQP",
+      encoderParams.auxGeometryQP_,
+      encoderParams.auxGeometryQP_,
+      "QP for compression of auxiliary geometry video : default=4 for lossy raw points, geometryQP for lossless raw points" )
+    ( "auxAttributeQP",
+      encoderParams.auxAttributeQP_,
+      encoderParams.auxAttributeQP_,
+      "QP for compression of auxiliary attribute video" )
     ( "geometryConfig",
       encoderParams.geometryConfig_,
       encoderParams.geometryConfig_,
@@ -727,10 +735,6 @@ bool parseParameters( int                   argc,
       encoderParams.minNormSumOfInvDist4MPSelection_,
       encoderParams.minNormSumOfInvDist4MPSelection_,
       "Minimum normalized sum of inverse distance for raw points selection: double value between 0.0 and 1.0 (default=0.35)" )
-    ( "lossyRawPointPatchGeoQP",
-      encoderParams.lossyRawPointPatchGeoQP_,
-      encoderParams.lossyRawPointPatchGeoQP_,
-      "QP value for geometry in lossy raw points patch (default=4)" )
     ( "globalPatchAllocation",
       encoderParams.globalPatchAllocation_,
       encoderParams.globalPatchAllocation_,
@@ -979,7 +983,7 @@ bool parseParameters( int                   argc,
   }
   encoderParams.completePath();
   metricsParams.completePath();
-  if ( !encoderParams.check() ) { std::cerr << "Input encoder parameters not correct \n"; }
+  if ( !encoderParams.check() ) { std::cerr << "Input encoder parameters not correct \n"; err.is_errored = true; }
   if ( !metricsParams.check() ) { std::cerr << "Input metrics parameters not correct \n"; }
   encoderParams.print();
   metricsParams.print();
@@ -1057,7 +1061,7 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
       if ( bRunMetric ) { metrics.compute( sources, reconstructs, normals ); }
     }
     if ( metricsParams.computeChecksum_ ) {
-      if ( encoderParams.rawPointsPatch_ ) {
+      if ( encoderParams.rawPointsPatch_ && encoderParams.reconstructRawType_!=0 ) {
         checksum.computeSource( sources );
         checksum.computeReordered( reconstructs );
       }
@@ -1094,7 +1098,7 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
   if ( metricsParams.computeMetrics_ ) { metrics.display(); }
   bool checksumEqual = true;
   if ( metricsParams.computeChecksum_ ) {
-    if ( encoderParams.rawPointsPatch_ ) { checksumEqual = checksum.compareSrcRec(); }
+    if ( encoderParams.rawPointsPatch_ && encoderParams.reconstructRawType_!=0 ) { checksumEqual = checksum.compareSrcRec(); }
     checksum.write( encoderParams.compressedStreamPath_ );
   }
   return checksumEqual ? 0 : -1;

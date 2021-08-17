@@ -149,9 +149,9 @@ bool parseParameters( int                       argc,
       decoderParams.nbThread_,
       decoderParams.nbThread_,
     "Number of thread used for parallel processing")
-    ( "postprocessSmoothingFilterType",
-      decoderParams.postprocessSmoothingFilter_,
-      decoderParams.postprocessSmoothingFilter_,
+    ( "attributeTransferFilterType",
+      decoderParams.attrTransferFilterType_,
+      decoderParams.attrTransferFilterType_,
     "Exclude geometry smoothing from attribute transfer")
     ( "keepIntermediateFiles",
       decoderParams.keepIntermediateFiles_,
@@ -273,7 +273,7 @@ bool parseParameters( int                       argc,
   return !err.is_errored;
 }
 
-int decompressVideo( const PCCDecoderParameters& decoderParams,
+int decompressVideo(       PCCDecoderParameters& decoderParams,
                      const PCCMetricsParameters& metricsParams,
                      PCCConformanceParameters&   conformanceParams,
                      StopwatchUserTime&          clock ) {
@@ -316,6 +316,8 @@ int decompressVideo( const PCCDecoderParameters& decoderParams,
     if ( bitstreamReader.decode( ssvu, context ) == 0 ) { return 0; }
 #if 1
     if( context.checkProfile() !=0 ) { } //return 0;
+    decoderParams.setReconstructionParameters( context.getVps().getProfileTierLevel().getProfileReconstructionIdc());
+    decoder.setReconstructionParameters(decoderParams);
 #endif
     
     // allocate atlas structure
