@@ -1755,6 +1755,10 @@ PCCCodecId PCCDecoder::getCodedCodecId( PCCContext&        context,
 #elif defined( USE_JMLIB_VIDEO_CODEC )
       return JMLIB;
 #elif defined( USE_JMAPP_VIDEO_CODEC )
+      if( videoDecoderPath.empty() ){
+        fprintf( stderr, "video decoder path not set and JMAPP video codec is used \n");
+        exit( -1 );
+      }
       return JMAPP;
 #else
       fprintf( stderr, "JM Codec not supported \n" );
@@ -1763,11 +1767,15 @@ PCCCodecId PCCDecoder::getCodedCodecId( PCCContext&        context,
       break;
     case CODEC_GROUP_HEVC_MAIN10:
     case CODEC_GROUP_HEVC444:
-#if defined( USE_JMAPP_VIDEO_CODEC ) && defined( USE_JMLIB_VIDEO_CODEC )
+#if defined( USE_HMAPP_VIDEO_CODEC ) && defined( USE_HMLIB_VIDEO_CODEC )
       return videoDecoderPath.empty() ? HMLIB : HMAPP;
-#elif defined( USE_JMLIB_VIDEO_CODEC )
+#elif defined( USE_HMLIB_VIDEO_CODEC )
       return HMLIB;
-#elif defined( USE_JMAPP_VIDEO_CODEC )
+#elif defined( USE_HMAPP_VIDEO_CODEC )
+      if( videoDecoderPath.empty() ){
+        fprintf( stderr, "video decoder path not set and HMAPP video codec is used \n");
+        exit( -1 );
+      }
       return HMAPP;
 #else
       fprintf( stderr, "HM Codec not supported \n" );
@@ -1792,18 +1800,25 @@ PCCCodecId PCCDecoder::getCodedCodecId( PCCContext&        context,
 #elif defined( USE_JMLIB_VIDEO_CODEC )
           return JMLIB;
 #elif defined( USE_JMAPP_VIDEO_CODEC )
+          if ( videoDecoderPath.empty() ) {
+            fprintf( stderr, "video decoder path not set and JMAPP video codec is used \n" );
+            exit( -1 );
+          }
           return JMAPP;
 #else
           fprintf( stderr, "JM Codec not supported \n" );
           exit( -1 );
 #endif
         } else if ( codec4cc.compare( "hev1" ) == 0 ) {
-#if defined( USE_JMAPP_VIDEO_CODEC ) && defined( USE_JMLIB_VIDEO_CODEC )
-          // return videoDecoderPath.empty() ? HMLIB : HMAPP;
-          return HMLIB;  // TEMP FIX for SHMAPP lossless conditions
-#elif defined( USE_JMLIB_VIDEO_CODEC )
+#if defined( USE_HMAPP_VIDEO_CODEC ) && defined( USE_HMLIB_VIDEO_CODEC )
+          return videoDecoderPath.empty() ? HMLIB : HMAPP;          
+#elif defined( USE_HMLIB_VIDEO_CODEC )
           return HMLIB;
-#elif defined( USE_JMAPP_VIDEO_CODEC )
+#elif defined( USE_HMAPP_VIDEO_CODEC )
+          if ( videoDecoderPath.empty() ) {
+            fprintf( stderr, "video decoder path not set and HMAPP video codec is used \n" );
+            exit( -1 );
+          }
           return HMAPP;
 #else
           fprintf( stderr, "HM Codec not supported \n" );
@@ -1811,6 +1826,10 @@ PCCCodecId PCCDecoder::getCodedCodecId( PCCContext&        context,
 #endif
         } else if ( codec4cc.compare( "svc1" ) == 0 ) {
 #if defined( USE_SHMAPP_VIDEO_CODEC )
+          if ( videoDecoderPath.empty() ) {
+            fprintf( stderr, "video decoder path not set and SHMAPP video codec is used \n" );
+            exit( -1 );
+          }
           return SHMAPP;
 #else
           fprintf( stderr, "SHM Codec not supported \n" );

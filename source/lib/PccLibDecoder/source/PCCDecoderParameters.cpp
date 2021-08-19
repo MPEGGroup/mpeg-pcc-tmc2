@@ -108,15 +108,6 @@ bool PCCDecoderParameters::check() {
     ret = false;
     std::cerr << "inverseColorSpaceConversionConfig not set or exist\n";
   }
-  if ( videoDecoderOccupancyPath_.empty() || !exist( videoDecoderOccupancyPath_ ) ) {
-    std::cerr << "videoDecoderOccupancyPath not set\n";
-  }
-  if ( videoDecoderGeometryPath_.empty() || !exist( videoDecoderGeometryPath_ ) ) {
-    std::cerr << "videoDecoderGeometryPath not set\n";
-  }
-  if ( videoDecoderAttributePath_.empty() || !exist( videoDecoderAttributePath_ ) ) {
-    std::cerr << "videoDecoderAttributePath not set\n";
-  }
   return ret;
 }
 
