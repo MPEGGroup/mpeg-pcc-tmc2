@@ -61,7 +61,7 @@ void PCCConformance::check( const PCCConformanceParameters& params ) {
   logFileTestsMatch_ = true;
   if ( !compareLogFiles( fileDecA, fileDecB, bitStrMD5Keys, key_val_decA, key_val_decB ) ) {
     std::string tmp = fileDecA + " with " + fileDecB;
-    errMsg.warn( "\n ******* Could Not Check ******* \n", tmp );
+    errMsg.warn( "\n ******* Please Check ******* \n", tmp );
   }
   cout << "^^^^^^ BitStream MD5 : " << ( logFileTestsMatch_ ? "MATCH" : "DIFF" ) << std::endl;
 
@@ -74,7 +74,7 @@ void PCCConformance::check( const PCCConformanceParameters& params ) {
   logFileTestsMatch_ = true;
   if ( !compareLogFiles( fileDecA, fileDecB, hlsKeys, key_val_decA, key_val_decB ) ) {
     std::string tmp = fileDecA + " with " + fileDecB;
-    errMsg.warn( "\n ******* Could Not Check ******* \n", tmp );
+    errMsg.warn( "\n ******* Please Check ******* \n", tmp );
   }
   cout << "^^^^^^ High Level Syntax MD5 : " << ( logFileTestsMatch_ ? "MATCH" : "DIFF" ) << std::endl;
 
@@ -86,7 +86,7 @@ void PCCConformance::check( const PCCConformanceParameters& params ) {
   logFileTestsMatch_ = true;
   if ( !compareLogFiles( fileDecA, fileDecB, atlasKeys, key_val_decA, key_val_decB ) ) {
     std::string tmp = fileDecA + " with " + fileDecB;
-    errMsg.warn( "\n ******* Could Not Check ******* \n", tmp );
+    errMsg.warn( "\n ******* Please Check ******* \n", tmp );
   }
   cout << "^^^^^^ Atlas Log Files " << ( logFileTestsMatch_ ? "MATCH" : "DIFF" ) << std::endl;
 
@@ -103,7 +103,7 @@ void PCCConformance::check( const PCCConformanceParameters& params ) {
   fileDecB           = params.path_ + "dec_tile_log.txt";
   if ( !compareLogFiles( fileDecA, fileDecB, tileKeys, key_val_decA, key_val_decB ) ) {
     std::string tmp = fileDecA + " with " + fileDecB;
-    errMsg.warn( "\n ******* Could Not Check ******* \n", tmp );
+    errMsg.warn( "\n ******* Please Check ******* \n", tmp );
   }
   cout << "^^^^^^ Tile Logs: " << ( logFileTestsMatch_ ? "MATCH" : "DIFF" ) << std::endl;
 
@@ -116,7 +116,7 @@ void PCCConformance::check( const PCCConformanceParameters& params ) {
   logFileTestsMatch_ = true;
   if ( !compareLogFiles( fileDecA, fileDecB, pcframeKeys, key_val_decA, key_val_decB ) ) {
     std::string tmp = fileDecA + " with " + fileDecB;
-    errMsg.warn( "\n ******* Could Not Check  ******* \n", tmp );
+    errMsg.warn( "\n ******* Please Check  ******* \n", tmp );
   }
   cout << "^^^^^^ Point Cloud Frame Log Files : " << ( logFileTestsMatch_ ? "MATCH" : "DIFF" ) << std::endl;
 
@@ -133,7 +133,7 @@ void PCCConformance::check( const PCCConformanceParameters& params ) {
   fileDecB = params.path_ + "dec_rec_pcframe_log.txt";
   if ( !compareLogFiles( fileDecA, fileDecB, recPcframeKeys, key_val_decA, key_val_decB ) ) {
     std::string tmp = fileDecA + " with " + fileDecB;
-    errMsg.warn( "\n ******* Could Not Check ******* \n", tmp );
+    errMsg.warn( "\n ******* Please Check ******* \n", tmp );
   }
   cout << "^^^^^^ Post Reconstruction Point Cloud Frame Log Files: " << ( logFileTestsMatch_ ? "MATCH" : "DIFF" )
        << std::endl;
@@ -146,7 +146,7 @@ void PCCConformance::check( const PCCConformanceParameters& params ) {
   fileDecB = params.path_ + "dec_picture_log.txt";
   if ( !compareLogFiles( fileDecA, fileDecB, pictureKeys, key_val_decA, key_val_decB ) ) {
     std::string tmp = fileDecA + " with " + fileDecB;
-    errMsg.warn( "\n ******* Could Not Check ******* \n", tmp );
+    errMsg.warn( "\n ******* Please Check ******* \n", tmp );
   }
   cout << "^^^^^^  Picture Log Files: " << ( logFileTestsMatch_ ? "MATCH" : "DIFF" ) << std::endl;
 
