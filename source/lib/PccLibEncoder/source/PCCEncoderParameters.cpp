@@ -813,6 +813,12 @@ bool PCCEncoderParameters::check() {
       std::cerr << "enablePointCloudPartitioning should be 1 when tileSegmentationType is 1.\n";
     }
   }
+  if ( tileSegmentationType_ == 2 ) {
+    if ( enablePointCloudPartitioning_ == 1 ) {
+      enablePointCloudPartitioning_ = 0;
+      std::cerr << "enablePointCloudPartitioning should be 0 when tileSegmentationType is 2.\n";
+    }
+  }
   if ( tileSegmentationType_ != 1 && enablePointCloudPartitioning_ && ( globalPatchAllocation_ != 0 ) ) {
     std::cerr << "Point cloud partitioning does not currently support global patch allocation. \n";
   }

@@ -4324,6 +4324,8 @@ void PCCEncoder::sortRawPointsPatch( PCCFrameContext& frame, size_t index ) {
   const size_t maxNeighborCount     = 5;
   const size_t neighborSearchRadius = 5 * 5;
   size_t       numRawPoints         = rawPointsPatch.getNumberOfRawPoints();
+  
+  printf("sortRawPointsPatch numRawPoints = %zu \n",numRawPoints); fflush(stdout);
   if ( numRawPoints != 0u ) {
     vector<size_t> sortIdx;
     sortIdx.reserve( numRawPoints );
@@ -5449,6 +5451,7 @@ void PCCEncoder::pointLocalReconstructionSearch( PCCContext&                    
 bool PCCEncoder::resizeGeometryVideo( PCCContext& context, PCCCodecId codecId ) {
   size_t maxWidth  = 0;
   size_t maxHeight = 0;
+  printf("resizeGeometryVideo \n"); fflush(stdout);
   for ( auto& frame : context.getFrames() ) {
     maxWidth  = ( std::max )( maxWidth, frame.getTitleFrameContext().getWidth() );
     maxHeight = ( std::max )( maxHeight, frame.getTitleFrameContext().getHeight() );
@@ -5516,8 +5519,10 @@ bool PCCEncoder::resizeTileGeometryVideo( PCCContext& context,
     maxHeight = ( std::max )( maxHeight, frameHeight );
   } else {
     maxWidth  = std::ceil( (double)maxWidth / 64.0 ) * 64;
+    printf("maxWidth: %zu, frameWidth: %zu\n", maxWidth, context[0].getTitleFrameContext().getWidth());
+    maxWidth  = std::min( maxWidth, context[0].getTitleFrameContext().getWidth());
     maxHeight = std::ceil( (double)maxHeight / 64.0 ) * 64;
-  }
+  }  
   for ( size_t frameIdx = startFrame; frameIdx < endFrame; frameIdx++ ) {
     auto& tile       = context[frameIdx].getTile( tileIndex );
     tile.getWidth()  = maxWidth;
@@ -5533,6 +5538,7 @@ bool PCCEncoder::resizeTileGeometryVideo( PCCContext& context,
 }
 
 bool PCCEncoder::relocateTileGeometryVideo( PCCContext& context ) {
+  // only for titleType = 1
   for ( size_t frameIdx = 0; frameIdx < context.size(); frameIdx++ ) {
     size_t frameWidth  = context[frameIdx].getAtlasFrameWidth();
     size_t frameHeight = context[frameIdx].getTile( 0 ).getHeight();
@@ -5557,6 +5563,8 @@ bool PCCEncoder::relocateTileGeometryVideo( PCCContext& context ) {
       tile.setLeftTopYInFrame( tempLeftTopY );
       assert( tempLeftTopX + tile.getWidth() <= frameWidth );
       frameHeight = std::max( frameHeight, (size_t)tempLeftTopY + tile.getHeight() );
+      printf( "tile[%zu] is placed: %zu,%zu %zux%zu in %zux%zu image\n", tileIndex, tile.getLeftTopXInFrame(),
+              tile.getLeftTopYInFrame(), tile.getWidth(), tile.getHeight(), frameWidth, frameHeight );
     }
     context[frameIdx].setAtlasFrameHeight( frameHeight );
   }
