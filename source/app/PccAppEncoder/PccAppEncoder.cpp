@@ -291,9 +291,9 @@ bool parseParameters( int                   argc,
       encoderParams.occupancyPrecision_,
       encoderParams.occupancyPrecision_, 
       "Occupancy map B0 precision" )
-    ( "occupancyMapVideoEncoderConfig",
-      encoderParams.occupancyMapVideoEncoderConfig_,
-      encoderParams.occupancyMapVideoEncoderConfig_,
+    ( "occupancyMapConfig",
+      encoderParams.occupancyMapConfig_,
+      encoderParams.occupancyMapConfig_,
       "Occupancy map encoder config file" )
     ( "occupancyMapQP",
       encoderParams.occupancyMapQP_,

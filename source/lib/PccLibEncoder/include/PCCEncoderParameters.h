@@ -123,7 +123,7 @@ class PCCEncoderParameters {
   // occupancy map encoding
   size_t      maxCandidateCount_;
   size_t      occupancyPrecision_;
-  std::string occupancyMapVideoEncoderConfig_;
+  std::string occupancyMapConfig_;
   size_t      occupancyMapQP_;
   size_t      EOMFixBitCount_;
   bool        occupancyMapRefinement_;

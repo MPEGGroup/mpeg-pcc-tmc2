@@ -138,7 +138,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
                          path.str(),                                // path
                          params_.occupancyMapQP_,                   // QP
                          videoBitstream,                            // bitstream
-                         params_.occupancyMapVideoEncoderConfig_,   // config file
+                         params_.occupancyMapConfig_,   // config file
                          params_.videoEncoderOccupancyPath_,        // encoder path
                          params_.videoEncoderOccupancyCodecId_,     // Codec id
                          params_.byteStreamVideoCoderOccupancy_,    // byteStreamVideoCoder

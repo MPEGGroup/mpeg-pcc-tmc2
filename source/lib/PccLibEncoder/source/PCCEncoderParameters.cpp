@@ -80,7 +80,7 @@ PCCEncoderParameters::PCCEncoderParameters() {
   minimumImageHeight_                  = 1280;
   maxCandidateCount_                   = 4;
   occupancyPrecision_                  = 4;
-  occupancyMapVideoEncoderConfig_      = {};
+  occupancyMapConfig_      = {};
   occupancyMapQP_                      = 8;
   occupancyMapRefinement_              = false;
   decodedAtlasInformationHash_         = 0;
@@ -301,8 +301,8 @@ void PCCEncoderParameters::completePath() {
     if ( !colorSpaceConversionConfig_.empty() ) {
       colorSpaceConversionConfig_ = configurationFolder_ + colorSpaceConversionConfig_;
     }
-    if ( !occupancyMapVideoEncoderConfig_.empty() ) {
-      occupancyMapVideoEncoderConfig_ = configurationFolder_ + occupancyMapVideoEncoderConfig_;
+    if ( !occupancyMapConfig_.empty() ) {
+      occupancyMapConfig_ = configurationFolder_ + occupancyMapConfig_;
     }
     if ( useRawPointsSeparateVideo_ ) {
       if ( !geometryAuxVideoConfig_.empty() ) {
@@ -432,7 +432,7 @@ void PCCEncoderParameters::print() {
   std::cout << "\t Occupancy map encoding " << std::endl;
   std::cout << "\t   maxCandidateCount                        " << maxCandidateCount_ << std::endl;
   std::cout << "\t   occupancyPrecision                       " << occupancyPrecision_ << std::endl;
-  std::cout << "\t   occupancyMapVideoEncoderConfig           " << occupancyMapVideoEncoderConfig_ << std::endl;
+  std::cout << "\t   occupancyMapConfig           " << occupancyMapConfig_ << std::endl;
   std::cout << "\t   occupancyMapQP                           " << occupancyMapQP_ << std::endl;
   std::cout << "\t   EOMFixBitCount                           " << EOMFixBitCount_ << std::endl;
   std::cout << "\t   occupancyMapRefinement                   " << occupancyMapRefinement_ << std::endl;
@@ -1074,7 +1074,7 @@ bool PCCEncoderParameters::check() {
     }
   }
 
-  if ( occupancyMapVideoEncoderConfig_.empty() ) {
+  if ( occupancyMapConfig_.empty() ) {
     ret = false;
     std::cerr << "to use segmentation, you must define a segmentationDataPath \n";
   }
