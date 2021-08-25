@@ -94,8 +94,8 @@ class PCCBitstreamWriter {
   PCCBitstreamWriter();
   ~PCCBitstreamWriter();
 
-  int32_t write( SampleStreamNalUnit& ssnu, PCCBitstream& bitstream );
-  size_t  write( SampleStreamV3CUnit& ssvu, PCCBitstream& bitstream );
+  int32_t write( SampleStreamNalUnit& ssnu, PCCBitstream& bitstream, uint32_t forcedSsvhUnitSizePrecisionBytes = 0 );
+  size_t  write( SampleStreamV3CUnit& ssvu, PCCBitstream& bitstream, uint32_t forcedSsvhUnitSizePrecisionBytes = 0 );
   int     encode( PCCHighLevelSyntax& syntax, SampleStreamV3CUnit& ssvu );
 
 #ifdef BITSTREAM_TRACE

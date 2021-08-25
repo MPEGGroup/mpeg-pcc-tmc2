@@ -59,6 +59,7 @@ PCCEncoderParameters::PCCEncoderParameters() {
   inverseColorSpaceConversionConfig_   = {};
   nnNormalEstimation_                  = 16;
   normalOrientation_                   = 1;
+  forcedSsvhUnitSizePrecisionBytes_    = 0;
   gridBasedRefineSegmentation_         = true;
   maxNNCountRefineSegmentation_        = gridBasedRefineSegmentation_ ? ( gridBasedSegmentation_ ? 384 : 1024 ) : 256;
   iterationCountRefineSegmentation_    = gridBasedRefineSegmentation_ ? ( gridBasedSegmentation_ ? 5 : 10 ) : 100;
@@ -325,7 +326,7 @@ void PCCEncoderParameters::print() {
   std::cout << "\t enhancedOccupancyMapCode                   " << enhancedOccupancyMapCode_ << std::endl;
   std::cout << "\t useRawPointsSeparateVideo                  " << useRawPointsSeparateVideo_ << std::endl;
   if(useRawPointsSeparateVideo_)
-  std::cout << "\t    attributeRawSeparateVideoWidth             " << attributeRawSeparateVideoWidth_ << std::endl;
+  std::cout << "\t attributeRawSeparateVideoWidth             " << attributeRawSeparateVideoWidth_ << std::endl;
   std::cout << "\t uncompressedDataPath                       " << uncompressedDataPath_ << std::endl;
   std::cout << "\t compressedStreamPath                       " << compressedStreamPath_ << std::endl;
   std::cout << "\t reconstructedDataPath                      " << reconstructedDataPath_ << std::endl;
@@ -337,13 +338,15 @@ void PCCEncoderParameters::print() {
   std::cout << "\t nbThread                                   " << nbThread_ << std::endl;
   std::cout << "\t keepIntermediateFiles                      " << keepIntermediateFiles_ << std::endl;
   std::cout << "\t multipleStreams                            " << multipleStreams_ << std::endl;
-  if(multipleStreams_){
-  std::cout << "\t    deltaQPD0                               " << deltaQPD0_ << std::endl;
-  std::cout << "\t    deltaQPD1                               " << deltaQPD1_ << std::endl;
-  std::cout << "\t    deltaQPT0                               " << deltaQPT0_ << std::endl;
-  std::cout << "\t    deltaQPT1                               " << deltaQPT1_ << std::endl;
-  std::cout << "\t    absoluteD1                              " << absoluteD1_ << std::endl;
-  std::cout << "\t    absoluteT1                              " << absoluteT1_ << std::endl;
+  std::cout << "\t multipleStreams                            " << multipleStreams_ << std::endl;
+  std::cout << "\t forcedSsvhUnitSizePrecisionBytes           " << forcedSsvhUnitSizePrecisionBytes_ << std::endl;
+  if ( multipleStreams_ ) {
+    std::cout << "\t    deltaQPD0                               " << deltaQPD0_ << std::endl;
+    std::cout << "\t    deltaQPD1                               " << deltaQPD1_ << std::endl;
+    std::cout << "\t    deltaQPT0                               " << deltaQPT0_ << std::endl;
+    std::cout << "\t    deltaQPT1                               " << deltaQPT1_ << std::endl;
+    std::cout << "\t    absoluteD1                              " << absoluteD1_ << std::endl;
+    std::cout << "\t    absoluteT1                              " << absoluteT1_ << std::endl;
   }
   std::cout << "\t constrainedPack                            " << constrainedPack_ << std::endl;
   std::cout << "\t maxNumRefPatchList                         " << maxNumRefAtlasList_ << std::endl;

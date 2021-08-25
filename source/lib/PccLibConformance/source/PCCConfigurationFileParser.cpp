@@ -54,11 +54,9 @@ std::ostream& PCCErrorMessage::warn( const std::string& warningMessage, const st
   return cerr;
 }
 
-void PCCConfigurationFileParser::scanLine( std::string& line, KeyValMaps& key_val_maps ) {  
+void PCCConfigurationFileParser::scanLine( std::string& line, KeyValMaps& key_val_maps ) {
   // Ignore comment lines starting with "**********"
-  if ( line.rfind( "**********", 0) == 0) {
-    return;
-  } 
+  if ( line.rfind( "**********", 0 ) == 0 ) { return; }
   std::map<std::string, std::string> key_val_map;
   std::string                        spKey[3] = {"Occupancy", "Geometry", "Attribute"};
   if ( line.find( "#" ) != std::string::npos ) { return; }  // skip comment line

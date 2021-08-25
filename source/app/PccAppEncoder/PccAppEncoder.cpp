@@ -153,6 +153,10 @@ bool parseParameters( int                   argc,
       encoderParams.reconstructedDataPath_,
       encoderParams.reconstructedDataPath_,
       "Output decoded pointcloud. Multi-frame sequences may be represented by %04i" )
+    ( "forcedSsvhUnitSizePrecisionBytes",
+      encoderParams.forcedSsvhUnitSizePrecisionBytes_,
+      encoderParams.forcedSsvhUnitSizePrecisionBytes_,
+      "forced SSVH unit size precision bytes" )
 
     // sequence configuration
     ( "startFrameNumber",
@@ -1046,7 +1050,6 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
     bitstreamWriter.setLogger( logger );
 #endif
     ret |= bitstreamWriter.encode( context, ssvu );
-
     clock.stop();
 
     PCCGroupOfFrames normals;
@@ -1087,12 +1090,11 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
 
   bitstreamStat.setHeader( bitstream.size() );
   PCCBitstreamWriter bitstreamWriter;
-  size_t             headerSize = bitstreamWriter.write( ssvu, bitstream );
+  size_t headerSize = bitstreamWriter.write( ssvu, bitstream, encoderParams.forcedSsvhUnitSizePrecisionBytes_ );
   bitstreamStat.incrHeader( headerSize );
   bitstream.write( encoderParams.compressedStreamPath_ );
   bitstreamStat.trace();
   std::cout << "Total bitstream size " << bitstream.size() << " B" << std::endl;
-
   bitstream.computeMD5();
 
   if ( metricsParams.computeMetrics_ ) { metrics.display(); }
