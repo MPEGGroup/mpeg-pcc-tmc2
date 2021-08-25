@@ -60,6 +60,7 @@ PCCEncoderParameters::PCCEncoderParameters() {
   nnNormalEstimation_                  = 16;
   normalOrientation_                   = 1;
   forcedSsvhUnitSizePrecisionBytes_    = 0;
+  increaseV3CParameterSetId_           = true;
   gridBasedRefineSegmentation_         = true;
   maxNNCountRefineSegmentation_        = gridBasedRefineSegmentation_ ? ( gridBasedSegmentation_ ? 384 : 1024 ) : 256;
   iterationCountRefineSegmentation_    = gridBasedRefineSegmentation_ ? ( gridBasedSegmentation_ ? 5 : 10 ) : 100;
@@ -340,6 +341,7 @@ void PCCEncoderParameters::print() {
   std::cout << "\t multipleStreams                            " << multipleStreams_ << std::endl;
   std::cout << "\t multipleStreams                            " << multipleStreams_ << std::endl;
   std::cout << "\t forcedSsvhUnitSizePrecisionBytes           " << forcedSsvhUnitSizePrecisionBytes_ << std::endl;
+  std::cout << "\t increaseV3CParameterSetId                  " << increaseV3CParameterSetId_ << std::endl;  
   if ( multipleStreams_ ) {
     std::cout << "\t    deltaQPD0                               " << deltaQPD0_ << std::endl;
     std::cout << "\t    deltaQPD1                               " << deltaQPD1_ << std::endl;

@@ -75,6 +75,7 @@ class PCCEncoderParameters {
   size_t            groupOfFramesSize_;
   std::string       uncompressedDataPath_;
   uint32_t          forcedSsvhUnitSizePrecisionBytes_;
+  bool              increaseV3CParameterSetId_; 
 
   // packing
   size_t minimumImageWidth_;

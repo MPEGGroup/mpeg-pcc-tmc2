@@ -157,6 +157,10 @@ bool parseParameters( int                   argc,
       encoderParams.forcedSsvhUnitSizePrecisionBytes_,
       encoderParams.forcedSsvhUnitSizePrecisionBytes_,
       "forced SSVH unit size precision bytes" )
+    ( "increaseV3CParameterSetId",
+      encoderParams.increaseV3CParameterSetId_,
+      encoderParams.increaseV3CParameterSetId_,
+      "increase V3CParameterSetId for each GOP" )
 
     // sequence configuration
     ( "startFrameNumber",
@@ -1078,11 +1082,10 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
     sources.clear();
     reconstructs.clear();
     startFrameNumber = endFrameNumber;
-    contextIndex++;
+    if ( encoderParams.increaseV3CParameterSetId_ ) { contextIndex++; }
   }
 
   PCCBitstream bitstream;
-
 #if defined( BITSTREAM_TRACE ) || defined( CONFORMANCE_TRACE )
   bitstream.setLogger( logger );
   bitstream.setTrace( true );
