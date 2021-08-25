@@ -418,7 +418,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
         reconstructs[frameIdx].copyRGB16ToRGB8();
       }
     }
-    TRACE_PCFRAME( "Atlas Frame Index = %d\n", frameIdx );
+    TRACE_PCFRAME( "AtlasFrameIndex = %d\n", frameIdx );
     TRACE_PCFRAME( "PointCloudFrameOrderCntVal = %d, NumProjPoints = %zu, NumRawPoints = %zu, NumEomPoints = %zu,",
                     frameIdx, numProjPoints, numRawPoints, numEomPoints );
     auto checksumFrame = reconstructs[frameIdx].computeChecksum( true );
@@ -508,7 +508,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
     TRACE_PCFRAME( " MD5 checksum = " );
     for ( auto& c : tmp ) { TRACE_PCFRAME( "%02x", c ); }
     TRACE_PCFRAME( "\n" );*/
-    TRACE_RECFRAME( "Atlas Frame Index = %d\n", frameIdx );
+    TRACE_RECFRAME( "AtlasFrameIndex = %d\n", frameIdx );
     auto checksum = reconstructs[frameIdx].computeChecksum( true );
     TRACE_RECFRAME( " MD5 checksum = " );
     for ( auto& c : checksum ) { TRACE_RECFRAME( "%02x", c ); }
@@ -1455,7 +1455,7 @@ void PCCDecoder::createHlsAtlasTileLogFiles( PCCContext& context, int frameIndex
   auto&  afps       = context.getAtlasFrameParameterSet( afpsIndex );
   auto&  vps        = context.getVps();
 
-  TRACE_HLS( "Atlas Frame Index = %d\n", frameIndex );
+  TRACE_HLS( "AtlasFrameIndex = %d\n", frameIndex );
   /*TRACE_HLS( "Atlas Frame Parameter Set Index = %d\n", afpsIndex );*/
   std::vector<uint8_t> decMD5( 16 );
   std::vector<uint8_t> highLevelAtlasData;
@@ -1511,7 +1511,7 @@ void PCCDecoder::createHlsAtlasTileLogFiles( PCCContext& context, int frameIndex
     numEomPoints += tile.getTotalNumberOfEOMPoints();
     numRawPoints += tile.getTotalNumberOfRawPoints();
   }
-  TRACE_ATLAS( "Atlas Frame Index = %d\n", frameIndex );
+  TRACE_ATLAS( "AtlasFrameIndex = %d\n", frameIndex );
   TRACE_ATLAS(
       "AtlasFrameOrderCntVal = %d,  AtlasFrameWidthMax =  %d, AtlasFrameHeightMax = %d, AtlasID = %d, "
       "ASPSFrameSize = %d, VPSMapCount = %d, AttributeCount = %d, AttributeDimension = %d, NumTilesAtlasFrame = %d, "
@@ -1536,7 +1536,7 @@ void PCCDecoder::createHlsAtlasTileLogFiles( PCCContext& context, int frameIndex
   TRACE_ATLAS( "\n" );
 
   // for tiles
-  TRACE_TILE( "Atlas Frame Index = %d\n", frameIndex );
+  TRACE_TILE( "AtlasFrameIndex = %d\n", frameIndex );
   for ( size_t tileIdx = 0; tileIdx < numTilesInPatchFrame; tileIdx++ ) {
     auto&       tile          = context[frameIndex].getTile( tileIdx );
     auto&       atlu          = context.getAtlasTileLayer( tile.getAtlIndex() );  // ajt::why atlIdx?

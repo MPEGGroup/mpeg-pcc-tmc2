@@ -603,7 +603,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
         reconstructs[frameIdx].copyRGB16ToRGB8();
       }
     }
-    TRACE_PCFRAME( "Atlas Frame Index = %d\n", frameIdx );
+    TRACE_PCFRAME( "AtlasFrameIndex = %d\n", frameIdx );
     TRACE_PCFRAME( "PointCloudFrameOrderCntVal = %d, NumProjPoints = %zu, NumRawPoints = %zu, NumEomPoints = %zu,",
                    frameIdx, numProjPoints, numRawPoints, numEomPoints );
     auto checksum = reconstructs[frameIdx].computeChecksum( true );
@@ -691,7 +691,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
       reconstruct.copyRGB16ToRGB8();
     }
     }//if ( ai.getAttributeCount() > 0 )
-    TRACE_RECFRAME( "Atlas Frame Index = %d\n", frameIdx );
+    TRACE_RECFRAME( "AtlasFrameIndex = %d\n", frameIdx );
     auto checksum = reconstructs[frameIdx].computeChecksum( true );
     TRACE_RECFRAME( " MD5 checksum = " );
     for ( auto& c : checksum ) { TRACE_RECFRAME( "%02x", c ); }
@@ -8376,7 +8376,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&         context,
 }
 
 void PCCEncoder::createHlsAtlasTileLogFiles( PCCContext& context, int frameIndex, int afpsId ) {
-  TRACE_HLS( "Atlas Frame Index = %d\n", frameIndex );
+  TRACE_HLS( "AtlasFrameIndex = %d\n", frameIndex );
   //TRACE_HLS( "Atlas Frame Parameter Set Index = %d\n", afpsId );
   auto& afps = context.getAtlasFrameParameterSet( afpsId );
   auto& asps = context.getAtlasSequenceParameterSet( afps.getAtlasSequenceParameterSetId() );
@@ -8418,7 +8418,7 @@ void PCCEncoder::createHlsAtlasTileLogFiles( PCCContext& context, int frameIndex
     numEomPatches += tile.getEomPatches().size();
     numRawPatches += tile.getRawPointsPatches().size();
   }
-  TRACE_ATLAS( "Atlas Frame Index = %d\n", frameIndex );
+  TRACE_ATLAS( "AtlasFrameIndex = %d\n", frameIndex );
   TRACE_ATLAS(
       "AtlasFrameOrderCntVal = %d,  AtlasFrameWidthMax =  %d, AtlasFrameHeightMax = %d, AtlasID = %d, ASPSFrameSize "
       "= %d, VPSMapCount = %d, AttributeCount = %d, AttributeDimension = %d, NumTilesAtlasFrame = %d, "
@@ -8455,7 +8455,7 @@ void PCCEncoder::createHlsAtlasTileLogFiles( PCCContext& context, int frameIndex
   atlasB2PData.clear();
 
   // for tiles
-  TRACE_TILE( "Atlas Frame Index = %d\n", frameIndex );
+  TRACE_TILE( "AtlasFrameIndex = %d\n", frameIndex );
   for ( size_t tileIdx = 0; tileIdx < context[frameIndex].getNumTilesInAtlasFrame(); tileIdx++ ) {
     auto&  tile          = context.getFrame( frameIndex ).getTile( tileIdx );
     size_t atlIdx        = tile.getAtlIndex();

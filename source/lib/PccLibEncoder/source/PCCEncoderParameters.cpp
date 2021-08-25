@@ -80,7 +80,7 @@ PCCEncoderParameters::PCCEncoderParameters() {
   minimumImageHeight_                  = 1280;
   maxCandidateCount_                   = 4;
   occupancyPrecision_                  = 4;
-  occupancyMapConfig_      = {};
+  occupancyMapConfig_                  = {};
   occupancyMapQP_                      = 8;
   occupancyMapRefinement_              = false;
   decodedAtlasInformationHash_         = 0;
@@ -1076,13 +1076,12 @@ bool PCCEncoderParameters::check() {
 
   if ( occupancyMapConfig_.empty() ) {
     ret = false;
-    std::cerr << "to use segmentation, you must define a segmentationDataPath \n";
+    std::cerr << "Occupancy map configuration must be defined \n";
   }
   if ( lossyRawPointsPatch_ ) {
     if ( !useRawPointsSeparateVideo_ ) {
-      std::cerr << "Lossy raw points patch in the same video frame as the "
-                   "regular patches is "
-                   "not optimized as of now.\n";
+      std::cerr
+          << "Lossy raw points patch in the same video frame as the regular patches is not optimized as of now.\n";
     }
     if ( ( minNormSumOfInvDist4MPSelection_ < 0.0 ) || ( minNormSumOfInvDist4MPSelection_ > 1.0 ) ) {
       ret = false;
