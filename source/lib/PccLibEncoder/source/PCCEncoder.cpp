@@ -7990,12 +7990,12 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
     }
   }
 
+  #ifdef CONFORMANCE_TRACE
   if ( params_.decodedAtlasInformationHash_ > 0 ) {
-    printf( "Create  Hash SEI Information \n" );
-    for ( size_t fi = 0; fi < frameCount; fi++ ) {
-      createHashSEI( context, fi, params_.decodedAtlasInformationHash_ - 1 );
-    }
+    std::printf( "Create  Decoded Atlas Hash Information SEI \n" );
+    createHashSEI( context, 0, params_.decodedAtlasInformationHash_ - 1 ); //ajt:: Apply to frame 0 only and set pessitence flag to 1
   }
+  #endif
 
   if ( params_.flagGeometrySmoothing_ ) {
     if ( params_.gridSmoothing_ ) {
@@ -8012,6 +8012,16 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
         sei.setGridSizeMinus2( k, params_.gridSize_ - 2 );
         sei.setThreshold( k, params_.thresholdSmoothing_ );
       }
+
+#ifdef CONFORMANCE_TRACE
+      auto& temp = sei.getMD5ByteStrData();
+      if ( temp.size() > 0 ) {  // ajt:: An example of how to generate md5 checksum for hash SEI message - could be
+                                // computed different ways!
+        TRACE_HLS( "**********GEOMETRY_SMOOTHING_ESEI***********\n" );
+        TRACE_HLS( "SEI%02dMD5 = ", sei.getPayloadType() );
+        SEIMd5Checksum( context, temp );
+      }
+#endif
     }
     if ( params_.pbfEnableFlag_ ) {
       auto& sei = static_cast<SEIOccupancySynthesis&>( context.addSeiPrefix( OCCUPANCY_SYNTHESIS, true ) );
@@ -8028,9 +8038,15 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
         sei.setPbfPassesCountMinus1( k, params_.pbfPassesCount_ - 1 );
         sei.setPbfFilterSizeMinus1( k, params_.pbfFilterSize_ - 1 );
       }
+#ifdef CONFORMANCE_TRACE
+      auto& vec = sei.getMD5ByteStrData(); // ajt:: this is just an example of how to generate a md5 checksum for occupancy synthesis SEI message
+      if ( vec.size() > 0 ) {TRACE_HLS( "**********OCCUPANCY_SYNTHESIS_ESEI***********\n" );
+          TRACE_HLS( "SEI%02dMD5 = ", sei.getPayloadType() );
+          SEIMd5Checksum( context, vec );
+      }
     }
+#endif
   }
-
   if ( params_.flagColorSmoothing_ ) {
     auto& sei = static_cast<SEIAttributeSmoothing&>( context.addSeiPrefix( ATTRIBUTE_SMOOTHING, true ) );
     if ( params_.flagColorSmoothing_ ) {
@@ -8058,6 +8074,15 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
         }
       }
     }
+#ifdef CONFORMANCE_TRACE
+    auto& temp = sei.getMD5ByteStrData();
+    if ( temp.size() > 0 ) {  // ajt:: An example of how to generate md5 checksum for attribute smoothing SEI message - could be
+                              // computed different ways!
+      TRACE_HLS( "**********ATTRIBUTE_SMOOTHING_ESEI***********\n" );
+      TRACE_HLS( "SEI%02dMD5 = ", sei.getPayloadType() );
+      SEIMd5Checksum( context, temp );
+    }
+#endif
   }
   auto& vps = context.getVps();
   auto& plt = vps.getProfileTierLevel();
@@ -8107,6 +8132,14 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
       sei.setCodecId( index++, params_.vvcCodecIdIndex_ );
       sei.setCodec4cc( params_.vvcCodecIdIndex_, "vvi1" );
     }
+#ifdef CONFORMANCE_TRACE
+    auto& temp = sei.getMD5ByteStrData();
+    if ( temp.size() > 0 ) { 
+      TRACE_HLS( "**********CODEC_COMPONENT_MAPPING_ESEI***********\n" );
+      TRACE_HLS( "SEI%02dMD5 = ", sei.getPayloadType() );
+      SEIMd5Checksum( context, temp );
+    }
+#endif
   }
 }
 
@@ -8344,7 +8377,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&         context,
 
 void PCCEncoder::createHlsAtlasTileLogFiles( PCCContext& context, int frameIndex, int afpsId ) {
   TRACE_HLS( "Atlas Frame Index = %d\n", frameIndex );
-  TRACE_HLS( "Atlas Frame Parameter Set Index = %d\n", afpsId );
+  //TRACE_HLS( "Atlas Frame Parameter Set Index = %d\n", afpsId );
   auto& afps = context.getAtlasFrameParameterSet( afpsId );
   auto& asps = context.getAtlasSequenceParameterSet( afps.getAtlasSequenceParameterSetId() );
   auto& afc  = context.getFrame( frameIndex );
@@ -8353,23 +8386,23 @@ void PCCEncoder::createHlsAtlasTileLogFiles( PCCContext& context, int frameIndex
   std::vector<uint8_t> encMD5( 16 );
   std::vector<uint8_t> highLevelAtlasData;
   aspsCommonByteString( highLevelAtlasData, asps );
-  encMD5 = context.computeMD5( highLevelAtlasData.data(), highLevelAtlasData.size() );
+  /*encMD5 = context.computeMD5( highLevelAtlasData.data(), highLevelAtlasData.size() ); //ajt::It is removed since it is not according to the FDIS spec.
   TRACE_HLS( " HLSMD5 = " );
   for ( auto& md5 : encMD5 ) TRACE_HLS( "%02x", md5 );
-  TRACE_HLS( "\n" );
+  TRACE_HLS( "\n" );*/
   aspsApplicationByteString( highLevelAtlasData, asps, afps );
-  encMD5 = context.computeMD5( highLevelAtlasData.data(), highLevelAtlasData.size() );
+  /*encMD5 = context.computeMD5( highLevelAtlasData.data(), highLevelAtlasData.size() ); //ajt::It is removed since it is not according to the FDIS spec.
   TRACE_HLS( " HLSMD5 = " );
   for ( auto& md5 : encMD5 ) TRACE_HLS( "%02x", md5 );
-  TRACE_HLS( "\n" );
+  TRACE_HLS( "\n" );*/
   afpsCommonByteString( highLevelAtlasData, context, afpsId, frameIndex );
-  encMD5 = context.computeMD5( highLevelAtlasData.data(), highLevelAtlasData.size() );
+  /*encMD5 = context.computeMD5( highLevelAtlasData.data(), highLevelAtlasData.size() ); //ajt::It is removed since it is not according to the FDIS spec.
   TRACE_HLS( " HLSMD5 = " );
   for ( auto& md5 : encMD5 ) TRACE_HLS( "%02x", md5 );
-  TRACE_HLS( "\n" );
+  TRACE_HLS( "\n" );*/
   afpsApplicationByteString( highLevelAtlasData, asps, afps );
   encMD5 = context.computeMD5( highLevelAtlasData.data(), highLevelAtlasData.size() );
-  TRACE_HLS( " HLSMD5 = " );
+  TRACE_HLS( "HLSMD5 = " );
   for ( auto& md5 : encMD5 ) TRACE_HLS( "%02x", md5 );
   TRACE_HLS( "\n" );
   highLevelAtlasData.clear();
@@ -8487,6 +8520,7 @@ void PCCEncoder::createHashSEI( PCCContext& context, int frameIndex, size_t hash
   sei.setDecodedAtlasTilesHashPresentFlag( context[frameIndex].getNumTilesInAtlasFrame() >= 0 );
   sei.setDecodedAtlasTilesB2pHashPresentFlag( context[frameIndex].getNumTilesInAtlasFrame() >= 0 );
   sei.setCancelFlag( false );
+  sei.setPersistenceFlag( true ); // ajt:: decoded atlas hash information to persist
   sei.setHashType( hashType );
   bool seiHashCancelFlag = sei.getCancelFlag();
 
@@ -8680,6 +8714,15 @@ void PCCEncoder::createHashSEI( PCCContext& context, int frameIndex, size_t hash
     e.clear();
   }
   tileB2PPatchParams.clear();
+#ifdef CONFORMANCE_TRACE
+  auto& temp = sei.getMD5ByteStrData();
+  if ( temp.size() > 0 ) {  // ajt:: An example of how to generate md5 checksum for hash SEI message - could be computed
+                            // different ways!
+    TRACE_HLS( "**********DECODED_ATLAS_INFORMATION_HASH_NSEI***********\n" );
+    TRACE_HLS( "SEI%02dMD5 = ", sei.getPayloadType() );
+    SEIMd5Checksum( context, temp );
+  }
+#endif
 }
 
 void PCCEncoder::segmentationPartiallyAddtinalProjectionPlane( const PCCPointSet3&                 source,

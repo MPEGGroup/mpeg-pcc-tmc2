@@ -40,7 +40,8 @@ namespace pcc {
 
 const std::vector<std::string> bitStrMD5Keys = {"BITSTRMD5"};
 
-const std::vector<std::string> hlsKeys = {"AtlasFrameIndex", "AtlasFrameParameterSetIndex", "HLSMD5"};
+const std::vector<std::string> hlsKeys = { "AtlasFrameIndex", "HLSMD5",  "SEI11MD5", "SEI19MD5",
+                                           "SEI65MD5", "SEI66MD5", "SEI67MD5" };
 
 const std::vector<std::string> atlasKeys = {"AtlasFrameIndex",
                                             "AtlasFrameOrderCntVal",

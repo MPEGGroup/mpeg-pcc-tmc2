@@ -392,7 +392,7 @@ bool PCCVideoEncoder::compress( PCCVideo<T, 3>&    video,
 
   size_t frameIndex = 0;
   for ( auto& image : videoRec ) {
-    TRACE_PICTURE( "PicOrderCntVal = %d, ", frameIndex++ );
+    TRACE_PICTURE( " IdxOutOrderCntVal = %d, ", frameIndex++ );
     TRACE_PICTURE( " MD5checksumChan0 = %s, ", image.computeMD5( 0 ).c_str() );
     TRACE_PICTURE( " MD5checksumChan1 = %s, ", image.computeMD5( 1 ).c_str() );
     TRACE_PICTURE( " MD5checksumChan2 = %s \n", image.computeMD5( 2 ).c_str() );

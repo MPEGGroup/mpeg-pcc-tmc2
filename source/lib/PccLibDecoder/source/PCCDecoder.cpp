@@ -291,6 +291,45 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
     }
   }
 
+  #ifdef CONFORMANCE_TRACE
+  if ( context.seiIsPresent( NAL_PREFIX_ESEI, GEOMETRY_SMOOTHING ) ) {
+    auto* sei = static_cast<SEIGeometrySmoothing*>( context.getSei( NAL_PREFIX_ESEI, GEOMETRY_SMOOTHING ) );
+    auto& vec = sei->getMD5ByteStrData();
+    if ( vec.size() > 0 ) {
+      TRACE_HLS( "**********GEOMETRY_SMOOTHING_ESEI***********\n" );
+      TRACE_HLS( "SEI%02dMD5 = ", sei->getPayloadType() );
+      SEIMd5Checksum( context, vec );
+    }
+  }
+  if ( context.seiIsPresent( NAL_PREFIX_ESEI, OCCUPANCY_SYNTHESIS ) ) {
+    auto* sei = static_cast<SEIOccupancySynthesis*>( context.getSei( NAL_PREFIX_ESEI, OCCUPANCY_SYNTHESIS ) );
+    auto& vec = sei->getMD5ByteStrData();
+    if ( vec.size() > 0 ) {
+      TRACE_HLS( "**********OCCUPANCY_SYNTHESIS_ESEI***********\n" );
+      TRACE_HLS( "SEI%02dMD5 = ", sei->getPayloadType() );
+      SEIMd5Checksum( context, vec );
+    }
+  }
+  if ( context.seiIsPresent( NAL_PREFIX_ESEI, ATTRIBUTE_SMOOTHING ) ) {
+    auto* sei = static_cast<SEIAttributeSmoothing*>( context.getSei( NAL_PREFIX_ESEI, ATTRIBUTE_SMOOTHING ) );
+    auto& vec = sei->getMD5ByteStrData();
+    if ( vec.size() > 0 ) {
+      TRACE_HLS( "**********ATTRIBUTE_SMOOTHING_ESEI***********\n" );
+      TRACE_HLS( "SEI%02dMD5 = ", sei->getPayloadType() );
+      SEIMd5Checksum( context, vec );
+    }
+  }
+  if ( context.seiIsPresent( NAL_PREFIX_ESEI, COMPONENT_CODEC_MAPPING ) ) {
+    auto* sei = static_cast<SEIOccupancySynthesis*>( context.getSei( NAL_PREFIX_ESEI, COMPONENT_CODEC_MAPPING ) );
+    auto& temp = sei->getMD5ByteStrData();
+    if ( temp.size() > 0 ) { 
+      TRACE_HLS( "**********CODEC_COMPONENT_MAPPING_ESEI***********\n" );
+      TRACE_HLS( "SEI%02dMD5 = ", sei->getPayloadType() );
+      SEIMd5Checksum( context, temp );
+    }
+  }
+#endif
+
   printf( "generate point cloud of %zu frames \n", frameCount );
   fflush( stdout );
   for ( size_t frameIdx = 0; frameIdx < frameCount; frameIdx++ ) {
@@ -360,8 +399,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
       }
     }  // tile
 
-#ifdef CONFORMANCE_TRACE
-    if(1){
+#ifdef CONFORMANCE_TRACE    
     size_t numProjPoints = 0, numRawPoints = 0, numEomPoints = 0;
     for ( size_t tileIdx = 0; tileIdx < context[frameIdx].getNumTilesInAtlasFrame(); tileIdx++ ) {
       auto& tile = context[frameIdx].getTile( tileIdx );
@@ -369,10 +407,10 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
       numEomPoints += tile.getTotalNumberOfEOMPoints();
       numRawPoints += tile.getTotalNumberOfRawPoints();
     }  // tile
-    if ( ai.getAttributeCount() == 0 ){
+    if ( ai.getAttributeCount() == 0 ) {
       reconstructs[frameIdx].removeColors();
       reconstructs[frameIdx].removeColors16bit();
-    }else{
+    } else {
       bool isAttributes444 = context.getVideoAttributesMultiple( 0 ).getColorFormat() == PCCCOLORFORMAT::RGB444;
       if ( !isAttributes444 ) {  // lossy: convert 16-bit yuv444 to 8-bit RGB444
         reconstructs[frameIdx].convertYUV16ToRGB8();
@@ -382,12 +420,11 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
     }
     TRACE_PCFRAME( "Atlas Frame Index = %d\n", frameIdx );
     TRACE_PCFRAME( "PointCloudFrameOrderCntVal = %d, NumProjPoints = %zu, NumRawPoints = %zu, NumEomPoints = %zu,",
-                   frameIdx, numProjPoints, numRawPoints, numEomPoints );
-    auto checksum = reconstructs[frameIdx].computeChecksum( true );
+                    frameIdx, numProjPoints, numRawPoints, numEomPoints );
+    auto checksumFrame = reconstructs[frameIdx].computeChecksum( true );
     TRACE_PCFRAME( " MD5 checksum = " );
-    for ( auto& c : checksum ) { TRACE_PCFRAME( "%02x", c ); }
+    for ( auto& c : checksumFrame ) { TRACE_PCFRAME( "%02x", c ); }
     TRACE_PCFRAME( "\n" );
-    }
 #endif
 
     // Post-Processing
@@ -751,8 +788,9 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context ) {
   bool bHashSeiIsPresent = context.seiIsPresent( NAL_SUFFIX_NSEI, DECODED_ATLAS_INFORMATION_HASH );
   if ( bHashSeiIsPresent ) {
     TRACE_PATCH( "create Hash SEI \n" );
-    assert( context.getSeiHash().size() == frameCount );
-    for ( size_t fi = 0; fi < frameCount; fi++ ) { createHashSEI( context, fi ); }
+    size_t hashSeiCount = context.getSeiHash().size();
+    assert( context.getSeiHash().size() <= frameCount );
+    for ( size_t fi = 0; fi < hashSeiCount; fi++ ) { createHashSEI( context, fi ); }
   }
 }
 
@@ -1193,24 +1231,24 @@ void PCCDecoder::createHashSEI( PCCContext& context, int frameIndex ) {
     if ( sei.getHashType() == 0 ) {
       std::vector<uint8_t> encMD5( 16 ), decMD5( 16 );
       encMD5 = context.computeMD5( highLevelAtlasData.data(), highLevelAtlasData.size() );
-      // TRACE_SEI( " Derived (MD5) = " );
+      TRACE_SEI( " Derived (MD5) = " );
       for ( int j = 0; j < 16; j++ ) {
         decMD5[j] = sei.getHighLevelMd5( j );
-        // TRACE_SEI( "%02x", encMD5[j] );
+        TRACE_SEI( "%02x", encMD5[j] );
       }
-      // TRACE_SEI( "\t Derived vs. SEI (MD5) : " );
+      TRACE_SEI( "\t Derived vs. SEI (MD5) : " );
       TRACE_SEI( "HLS MD5: " );
       bool equal = compareHashSEIMD5( encMD5, decMD5 );
       TRACE_SEI( " (%s) \n", equal ? "OK" : "DIFF" );
     } else if ( sei.getHashType() == 1 ) {
       uint16_t crc = context.computeCRC( highLevelAtlasData.data(), highLevelAtlasData.size() );
-      // TRACE_SEI( " Derived (CRC): %d ", crc );
+      TRACE_SEI( " Derived (CRC): %d ", crc );
       TRACE_SEI( "HLS CRC: " );
       bool equal = compareHashSEICrc( crc, sei.getHighLevelCrc() );
       TRACE_SEI( " (%s) \n", equal ? "OK" : "DIFF" );
     } else if ( sei.getHashType() == 2 ) {
       uint32_t checkSum = context.computeCheckSum( highLevelAtlasData.data(), highLevelAtlasData.size() );
-      // TRACE_SEI( " Derived (CheckSum): %d ", checkSum );
+      TRACE_SEI( " Derived (CheckSum): %d ", checkSum );
       TRACE_SEI( "HLS CheckSum: " );
       bool equal = compareHashSEICheckSum( checkSum, sei.getHighLevelCheckSum() );
       TRACE_SEI( " (%s) \n", equal ? "OK" : "DIFF" );
@@ -1244,24 +1282,24 @@ void PCCDecoder::createHashSEI( PCCContext& context, int frameIndex ) {
     if ( sei.getHashType() == 0 ) {
       std::vector<uint8_t> encMD5( 16 ), decMD5( 16 );
       encMD5 = context.computeMD5( atlasData.data(), atlasData.size() );
-      // TRACE_SEI( " Derived Atlas MD5 = " );
+      TRACE_SEI( " Derived Atlas MD5 = " );
       TRACE_SEI( "Atlas MD5: " );
       for ( int j = 0; j < 16; j++ ) {
         decMD5[j] = sei.getAtlasMd5( j );
-        // TRACE_SEI( "%02x", encMD5[j] );
+        TRACE_SEI( "%02x", encMD5[j] );
       }
-      // TRACE_SEI( "\n\t**sei** (MD5): " );
+      TRACE_SEI( "\n\t**sei** (MD5): " );
       bool equal = compareHashSEIMD5( encMD5, decMD5 );
       TRACE_SEI( " (%s) \n", equal ? "OK" : "DIFF" );
     } else if ( sei.getHashType() == 1 ) {
       uint16_t crc = context.computeCRC( atlasData.data(), atlasData.size() );
-      // TRACE_SEI( "\n Derived (CRC): %d", crc );
+      TRACE_SEI( "\n Derived (CRC): %d", crc );
       TRACE_SEI( "Atlas CRC: " );
       bool equal = compareHashSEICrc( crc, sei.getAtlasCrc() );
       TRACE_SEI( " (%s) \n", equal ? "OK" : "DIFF" );
     } else if ( sei.getHashType() == 2 ) {
       uint32_t checkSum = context.computeCheckSum( atlasData.data(), atlasData.size() );
-      // TRACE_SEI( "\n Derived (CheckSum): %d", checkSum );
+      TRACE_SEI( "\n Derived (CheckSum): %d", checkSum );
       TRACE_SEI( "Atlas CheckSum: " );
       bool equal = compareHashSEICheckSum( checkSum, sei.getAtlasCheckSum() );
       TRACE_SEI( " (%s) \n", equal ? "OK" : "DIFF" );
@@ -1272,28 +1310,28 @@ void PCCDecoder::createHashSEI( PCCContext& context, int frameIndex ) {
     std::vector<uint8_t> atlasB2PData;
     atlasBlockToPatchByteString( atlasB2PData, atlasB2PPatchParams );
 
-    // TRACE_SEI( "**sei** AtlasBlockToPatchHash: frame(%d)", frameIndex );
+    TRACE_SEI( "**sei** AtlasBlockToPatchHash: frame(%d)", frameIndex );
     if ( sei.getHashType() == 0 ) {
       bool                 equal = true;
       std::vector<uint8_t> encMD5( 16 ), decMD5( 16 );
       encMD5 = context.computeMD5( atlasB2PData.data(), atlasB2PData.size() );
-      // TRACE_SEI( " Derived Atlas B2P MD5 = " );
+      TRACE_SEI( " Derived Atlas B2P MD5 = " );
       TRACE_SEI( "Atlas B2P MD5: " );
       for ( int j = 0; j < 16; j++ ) {
         decMD5[j] = sei.getAtlasB2pMd5( j );
-        // TRACE_SEI( "%02x", encMD5[j] );
+        TRACE_SEI( "%02x", encMD5[j] );
       }
       equal = compareHashSEIMD5( encMD5, decMD5 );
       TRACE_SEI( " (%s) \n", equal ? "OK" : "DIFF" );
     } else if ( sei.getHashType() == 1 ) {
       uint16_t crc = context.computeCRC( atlasB2PData.data(), atlasB2PData.size() );
-      // TRACE_SEI( "\n Derived (CRC): %d ", crc );
+      TRACE_SEI( "\n Derived (CRC): %d ", crc );
       TRACE_SEI( "Atlas B2P CRC: " );
       bool equal = compareHashSEICrc( crc, sei.getAtlasB2pCrc() );
       TRACE_SEI( " (%s) \n", equal ? "OK" : "DIFF" );
     } else if ( sei.getHashType() == 2 ) {
       uint32_t checkSum = context.computeCheckSum( atlasB2PData.data(), atlasB2PData.size() );
-      // TRACE_SEI( "\n Derived (CheckSum): %d ", checkSum );
+      TRACE_SEI( "\n Derived (CheckSum): %d ", checkSum );
       TRACE_SEI( "Atlas B2P CheckSum: " );
       bool equal = compareHashSEICheckSum( checkSum, sei.getAtlasB2pCheckSum() );
       TRACE_SEI( " (%s) \n", equal ? "OK" : "DIFF" );
@@ -1325,11 +1363,11 @@ void PCCDecoder::createHashSEI( PCCContext& context, int frameIndex ) {
         if ( sei.getHashType() == 0 ) {
           std::vector<uint8_t> encMD5( 16 ), decMD5( 16 );
           encMD5 = context.computeMD5( atlasTileData.data(), atlasTileData.size() );
-          // TRACE_SEI( " Derived Tile MD5 = " );
+          TRACE_SEI( " Derived Tile MD5 = " );
           TRACE_SEI( "Tile( id = %d, idx = %d ) MD5: ", tileId, tileIdx );
           for ( int j = 0; j < 16; j++ ) {
             decMD5[j] = sei.getAtlasTilesMd5( tileId, j );
-            // TRACE_SEI( "%02x", encMD5[j] );
+            TRACE_SEI( "%02x", encMD5[j] );
           }
           bool equal = compareHashSEIMD5( encMD5, decMD5 );
           TRACE_SEI( " (%s) \n", equal ? "OK" : "DIFF" );
@@ -1341,7 +1379,7 @@ void PCCDecoder::createHashSEI( PCCContext& context, int frameIndex ) {
           TRACE_SEI( " (%s) \n", equal ? "OK" : "DIFF" );
         } else if ( sei.getHashType() == 2 ) {
           uint32_t checkSum = context.computeCheckSum( atlasTileData.data(), atlasTileData.size() );
-          // TRACE_SEI( "\n Derived CheckSum: %d ", checkSum );
+          TRACE_SEI( "\n Derived CheckSum: %d ", checkSum );
           TRACE_SEI( "Tile( id = %d, idx = %d ) CheckSum: ", tileId, tileIdx );
           bool equal = compareHashSEICheckSum( checkSum, sei.getAtlasTilesCheckSum( tileId ) );
           TRACE_SEI( " (%s) \n", equal ? "OK" : "DIFF" );
@@ -1356,7 +1394,7 @@ void PCCDecoder::createHashSEI( PCCContext& context, int frameIndex ) {
         if ( sei.getHashType() == 0 ) {
           std::vector<uint8_t> encMD5( 16 ), decMD5( 16 );
           encMD5 = context.computeMD5( tileB2PData.data(), tileB2PData.size() );
-          // TRACE_SEI( " Derived Tile B2P MD5 = " );
+          TRACE_SEI( " Derived Tile B2P MD5 = " );
           TRACE_SEI( "Tile B2P( id = %d, idx = %d ) MD5: ", tileId, tileIdx );
           for ( int j = 0; j < 16; j++ ) {
             decMD5[j] = sei.getAtlasTilesB2pMd5( tileId, j );
@@ -1366,13 +1404,13 @@ void PCCDecoder::createHashSEI( PCCContext& context, int frameIndex ) {
           TRACE_SEI( " (%s) \n", equal ? "OK" : "DIFF" );
         } else if ( sei.getHashType() == 1 ) {
           uint16_t crc = context.computeCRC( tileB2PData.data(), tileB2PData.size() );
-          // TRACE_SEI( "\n Derived Tile B2P CRC: %d ", crc );
+          TRACE_SEI( "\n Derived Tile B2P CRC: %d ", crc );
           TRACE_SEI( "Tile B2P( id = %d, idx = %d ) CRC: ", tileId, tileIdx );
           bool equal = compareHashSEICrc( crc, sei.getAtlasTilesB2pCrc( tileId ) );
           TRACE_SEI( " (%s) \n", equal ? "OK" : "DIFF" );
         } else if ( sei.getHashType() == 2 ) {
           uint32_t checkSum = context.computeCheckSum( tileB2PData.data(), tileB2PData.size() );
-          // TRACE_SEI( "\n Derived Tile B2P CheckSum: %d ", checkSum );
+          TRACE_SEI( "\n Derived Tile B2P CheckSum: %d ", checkSum );
           TRACE_SEI( "Tile( id = %d, idx = %d ) CheckSum: ", tileId, tileIdx );
           bool equal = compareHashSEICheckSum( checkSum, sei.getAtlasTilesB2pCheckSum( tileId ) );
           TRACE_SEI( " (%s) \n", equal ? "OK" : "DIFF" );
@@ -1396,7 +1434,16 @@ void PCCDecoder::createHashSEI( PCCContext& context, int frameIndex ) {
     e.clear();
   }
   tileB2PPatchParams.clear();
-}
+
+#ifdef CONFORMANCE_TRACE
+  auto& temp = sei.getMD5ByteStrData();
+  if ( temp.size() > 0 ) {  // ajt:: An example of how to generate md5 checksum for hash SEI message - could be computed different ways!
+      TRACE_HLS( "**********DECODED_ATLAS_INFORMATION_HASH_NSEI***********\n");
+      TRACE_HLS( "SEI%02dMD5 = ", sei.getPayloadType() );
+      SEIMd5Checksum( context, temp );
+  }
+#endif
+  }
 
 void PCCDecoder::createHlsAtlasTileLogFiles( PCCContext& context, int frameIndex ) {
   size_t atlIdx     = context[frameIndex].getTile( 0 ).getAtlIndex();
@@ -1409,28 +1456,27 @@ void PCCDecoder::createHlsAtlasTileLogFiles( PCCContext& context, int frameIndex
   auto&  vps        = context.getVps();
 
   TRACE_HLS( "Atlas Frame Index = %d\n", frameIndex );
-  TRACE_HLS( "Atlas Frame Parameter Set Index = %d\n", afpsIndex );
+  /*TRACE_HLS( "Atlas Frame Parameter Set Index = %d\n", afpsIndex );*/
   std::vector<uint8_t> decMD5( 16 );
   std::vector<uint8_t> highLevelAtlasData;
   aspsCommonByteString( highLevelAtlasData, asps );
-  decMD5 = context.computeMD5( highLevelAtlasData.data(), highLevelAtlasData.size() );
+  /*decMD5 = context.computeMD5( highLevelAtlasData.data(), highLevelAtlasData.size() );
   TRACE_HLS( " HLSMD5 = " );
   for ( int j = 0; j < 16; j++ ) TRACE_HLS( "%02x", decMD5[j] );
-  TRACE_HLS( "\n" );
+  TRACE_HLS( "\n" );*/
   aspsApplicationByteString( highLevelAtlasData, asps, afps );
-  decMD5 = context.computeMD5( highLevelAtlasData.data(), highLevelAtlasData.size() );
+  /*decMD5 = context.computeMD5( highLevelAtlasData.data(), highLevelAtlasData.size() );
   TRACE_HLS( " HLSMD5 = " );
   for ( int j = 0; j < 16; j++ ) TRACE_HLS( "%02x", decMD5[j] );
-  TRACE_HLS( "\n" );
+  TRACE_HLS( "\n" );*/
   afpsCommonByteString( highLevelAtlasData, context, afpsIndex, frameIndex );
-  decMD5 = context.computeMD5( highLevelAtlasData.data(), highLevelAtlasData.size() );
+  /*decMD5 = context.computeMD5( highLevelAtlasData.data(), highLevelAtlasData.size() );
   TRACE_HLS( " HLSMD5 = " );
   for ( int j = 0; j < 16; j++ ) TRACE_HLS( "%02x", decMD5[j] );
-  TRACE_HLS( "\n" );
+  TRACE_HLS( "\n" );*/
   afpsApplicationByteString( highLevelAtlasData, asps, afps );
-
   decMD5 = context.computeMD5( highLevelAtlasData.data(), highLevelAtlasData.size() );
-  TRACE_HLS( " HLSMD5 = " );
+  TRACE_HLS( "HLSMD5 = " );
   for ( int j = 0; j < 16; j++ ) TRACE_HLS( "%02x", decMD5[j] );
   TRACE_HLS( "\n" );
   highLevelAtlasData.clear();
