@@ -48,9 +48,9 @@ int32_t PCCBitstreamWriter::write( SampleStreamNalUnit& ssnu,
                                    PCCBitstream&        bitstream,
                                    uint32_t             forcedSsvhUnitSizePrecisionBytes ) {
   TRACE_BITSTREAM( "PCCBitstreamXXcoder: SampleStream Nal Unit start \n" );
-  uint32_t precision = 3; 
-  precision = ( std::max )( precision, forcedSsvhUnitSizePrecisionBytes - 1 );
-  ssnu.setSizePrecisionBytesMinus1( precision );
+  uint32_t precision = 4; 
+  precision = ( std::max )( precision, forcedSsvhUnitSizePrecisionBytes );
+  ssnu.setSizePrecisionBytesMinus1( precision - 1 );
   sampleStreamNalHeader( bitstream, ssnu );
   TRACE_BITSTREAM( "PCCBitstreamXXcoder: SampleStream Nal Unit start done \n" );
   return 0;
@@ -68,9 +68,9 @@ size_t PCCBitstreamWriter::write( SampleStreamV3CUnit& ssvu,
   }
   TRACE_BITSTREAM( "maxUnitSize = %u \n", maxUnitSize );
   uint32_t precision = static_cast<uint32_t>(
-      min( max( static_cast<int>( ceil( static_cast<double>( ceilLog2( maxUnitSize ) ) / 8.0 ) ), 1 ), 8 ) - 1 );
-  precision = ( std::max )( precision, forcedSsvhUnitSizePrecisionBytes - 1 );
-  ssvu.setSsvhUnitSizePrecisionBytesMinus1( precision );
+      min( max( static_cast<int>( ceil( static_cast<double>( ceilLog2( maxUnitSize ) ) / 8.0 ) ), 1 ), 8 ) );
+  precision = ( std::max )( precision, forcedSsvhUnitSizePrecisionBytes  );
+  ssvu.setSsvhUnitSizePrecisionBytesMinus1( precision - 1 );
   TRACE_BITSTREAM( " => SsvhUnitSizePrecisionBytesMinus1 = %u \n", ssvu.getSsvhUnitSizePrecisionBytesMinus1() );
 
   sampleStreamV3CHeader( bitstream, ssvu );
