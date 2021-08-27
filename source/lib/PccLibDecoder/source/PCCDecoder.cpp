@@ -80,7 +80,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
   auto&             plt              = sps.getProfileTierLevel();
   const size_t      mapCount         = sps.getMapCountMinus1( atlasIndex ) + 1;
   int               geometryBitDepth = gi.getGeometry2dBitdepthMinus1() + 1;
-  setConsitantFourCCCode( context );
+  setConsitantFourCCCode( context, 0 );  // 
   auto occupancyCodecId = getCodedCodecId( context, oi.getOccupancyCodecId(), params_.videoDecoderOccupancyPath_ );
   auto geometryCodecId  = getCodedCodecId( context, gi.getGeometryCodecId(), params_.videoDecoderGeometryPath_ );
   path << removeFileExtension( params_.compressedStreamPath_ ) << "_dec_GOF" << sps.getV3CParameterSetId() << "_";
@@ -290,46 +290,6 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
       }
     }
   }
-
-  #ifdef CONFORMANCE_TRACE
-  if ( context.seiIsPresent( NAL_PREFIX_ESEI, GEOMETRY_SMOOTHING ) ) {
-    auto* sei = static_cast<SEIGeometrySmoothing*>( context.getSei( NAL_PREFIX_ESEI, GEOMETRY_SMOOTHING ) );
-    auto& vec = sei->getMD5ByteStrData();
-    if ( vec.size() > 0 ) {
-      TRACE_HLS( "**********GEOMETRY_SMOOTHING_ESEI***********\n" );
-      TRACE_HLS( "SEI%02dMD5 = ", sei->getPayloadType() );
-      SEIMd5Checksum( context, vec );
-    }
-  }
-  if ( context.seiIsPresent( NAL_PREFIX_ESEI, OCCUPANCY_SYNTHESIS ) ) {
-    auto* sei = static_cast<SEIOccupancySynthesis*>( context.getSei( NAL_PREFIX_ESEI, OCCUPANCY_SYNTHESIS ) );
-    auto& vec = sei->getMD5ByteStrData();
-    if ( vec.size() > 0 ) {
-      TRACE_HLS( "**********OCCUPANCY_SYNTHESIS_ESEI***********\n" );
-      TRACE_HLS( "SEI%02dMD5 = ", sei->getPayloadType() );
-      SEIMd5Checksum( context, vec );
-    }
-  }
-  if ( context.seiIsPresent( NAL_PREFIX_ESEI, ATTRIBUTE_SMOOTHING ) ) {
-    auto* sei = static_cast<SEIAttributeSmoothing*>( context.getSei( NAL_PREFIX_ESEI, ATTRIBUTE_SMOOTHING ) );
-    auto& vec = sei->getMD5ByteStrData();
-    if ( vec.size() > 0 ) {
-      TRACE_HLS( "**********ATTRIBUTE_SMOOTHING_ESEI***********\n" );
-      TRACE_HLS( "SEI%02dMD5 = ", sei->getPayloadType() );
-      SEIMd5Checksum( context, vec );
-    }
-  }
-  if ( context.seiIsPresent( NAL_PREFIX_ESEI, COMPONENT_CODEC_MAPPING ) ) {
-    auto* sei = static_cast<SEIOccupancySynthesis*>( context.getSei( NAL_PREFIX_ESEI, COMPONENT_CODEC_MAPPING ) );
-    auto& temp = sei->getMD5ByteStrData();
-    if ( temp.size() > 0 ) { 
-      TRACE_HLS( "**********CODEC_COMPONENT_MAPPING_ESEI***********\n" );
-      TRACE_HLS( "SEI%02dMD5 = ", sei->getPayloadType() );
-      SEIMd5Checksum( context, temp );
-    }
-  }
-#endif
-
   printf( "generate point cloud of %zu frames \n", frameCount );
   fflush( stdout );
   for ( size_t frameIdx = 0; frameIdx < frameCount; frameIdx++ ) {
@@ -350,8 +310,6 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
     context.setOccupancyPrecision( sps.getFrameWidth( atlasIndex ) / context.getVideoOccupancyMap().getWidth() );
     GeneratePointCloudParameters gpcParams;
     GeneratePointCloudParameters ppSEIParams;
-    setGeneratePointCloudParameters( gpcParams, context );
-    setPostProcessingSeiParameters( ppSEIParams, context );
 
     auto&                 reconstruct = reconstructs[frameIdx];
     std::vector<uint32_t> partition;
@@ -359,7 +317,10 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
     printf( "call generatePointCloud() \n" );
     std::vector<size_t> accTilePointCount;
     accTilePointCount.resize( ai.getAttributeCount(), 0 );
-    for ( size_t tileIdx = 0; tileIdx < context[frameIdx].getNumTilesInAtlasFrame(); tileIdx++ ) {
+    for ( size_t tileIdx = 0; tileIdx < context[frameIdx].getNumTilesInAtlasFrame(); tileIdx++ ) {      
+      auto atglIndex = context.getAtlasHighLevelSyntax().getAtlasTileLayerIndex( frameIdx, tileIdx ); 
+      setGeneratePointCloudParameters( gpcParams, context, atglIndex );
+      setPostProcessingSeiParameters( ppSEIParams, context, atglIndex );
       // std::cout << "Processing frame " << frameIdx << " tile " << tileIdx << std::endl;
       auto& tile = context[frameIdx].getTile( tileIdx );
       if ( !ppSEIParams.pbfEnableFlag_ ) {
@@ -582,7 +543,7 @@ void PCCDecoder::setPLRData( PCCFrameContext& tile, PCCPatch& patch, PLRData& pl
 #endif
 }
 
-void PCCDecoder::setPostProcessingSeiParameters( GeneratePointCloudParameters& params, PCCContext& context ) {
+void PCCDecoder::setPostProcessingSeiParameters( GeneratePointCloudParameters& params, PCCContext& context, size_t atglIndex ) {
   auto&   sps                   = context.getVps();
   int32_t atlasIndex            = 0;
   auto&   oi                    = sps.getOccupancyInformation( atlasIndex );
@@ -597,8 +558,8 @@ void PCCDecoder::setPostProcessingSeiParameters( GeneratePointCloudParameters& p
   params.pbfPassesCount_        = 0;
   params.pbfFilterSize_         = 0;
   params.pbfLog2Threshold_      = 0;
-  if ( params_.applyGeoSmoothingType_!=0 && context.seiIsPresent( NAL_PREFIX_ESEI, GEOMETRY_SMOOTHING ) ) {
-    auto* sei = static_cast<SEIGeometrySmoothing*>( context.getSei( NAL_PREFIX_ESEI, GEOMETRY_SMOOTHING ) );
+  if ( params_.applyGeoSmoothingType_!=0 && context.seiIsPresentInReceivedData( NAL_PREFIX_ESEI, GEOMETRY_SMOOTHING, atglIndex ) ) {
+    auto* sei = static_cast<SEIGeometrySmoothing*>( context.getSeiInReceivedData( NAL_PREFIX_ESEI, GEOMETRY_SMOOTHING, atglIndex ) );
     for ( size_t i = 0; i < sei->getInstancesUpdated(); i++ ) {
       size_t k = sei->getInstanceIndex( i );
       if ( !sei->getInstanceCancelFlag( k ) ) {
@@ -611,8 +572,8 @@ void PCCDecoder::setPostProcessingSeiParameters( GeneratePointCloudParameters& p
       }
     }
   }
-  if ( params_.applyOccupanySynthesisType_!=0 && context.seiIsPresent( NAL_PREFIX_ESEI, OCCUPANCY_SYNTHESIS ) ) {
-    auto* sei = static_cast<SEIOccupancySynthesis*>( context.getSei( NAL_PREFIX_ESEI, OCCUPANCY_SYNTHESIS ) );
+  if ( params_.applyOccupanySynthesisType_!=0 && context.seiIsPresentInReceivedData( NAL_PREFIX_ESEI, OCCUPANCY_SYNTHESIS, atglIndex ) ) {
+    auto* sei = static_cast<SEIOccupancySynthesis*>( context.getSeiInReceivedData( NAL_PREFIX_ESEI, OCCUPANCY_SYNTHESIS, atglIndex ) );
     for ( size_t i = 0; i < sei->getInstancesUpdated(); i++ ) {
       size_t k = sei->getInstanceIndex( i );
       if ( !sei->getInstanceCancelFlag( k ) ) {
@@ -640,8 +601,8 @@ void PCCDecoder::setPostProcessingSeiParameters( GeneratePointCloudParameters& p
   params.cgridSize_                = 0;
   params.thresholdColorDifference_ = 0;
   params.thresholdColorVariation_  = 0;
-  if ( params_.applyAttrSmoothingType_!=0 && context.seiIsPresent( NAL_PREFIX_ESEI, ATTRIBUTE_SMOOTHING ) ) {
-    auto* sei = static_cast<SEIAttributeSmoothing*>( context.getSei( NAL_PREFIX_ESEI, ATTRIBUTE_SMOOTHING ) );
+  if ( params_.applyAttrSmoothingType_!=0 && context.seiIsPresentInReceivedData( NAL_PREFIX_ESEI, ATTRIBUTE_SMOOTHING, atglIndex ) ) {
+    auto* sei = static_cast<SEIAttributeSmoothing*>( context.getSeiInReceivedData( NAL_PREFIX_ESEI, ATTRIBUTE_SMOOTHING, atglIndex ) );
     for ( size_t j = 0; j < sei->getNumAttributesUpdated(); j++ ) {
       size_t k = sei->getAttributeIdx( j );
       if ( !sei->getAttributeSmoothingCancelFlag( k ) ) {
@@ -670,7 +631,7 @@ void PCCDecoder::setPostProcessingSeiParameters( GeneratePointCloudParameters& p
   params.geometryBitDepth3D_            = gi.getGeometry3dCoordinatesBitdepthMinus1() + 1;
 }
 
-void PCCDecoder::setGeneratePointCloudParameters( GeneratePointCloudParameters& params, PCCContext& context ) {
+void PCCDecoder::setGeneratePointCloudParameters( GeneratePointCloudParameters& params, PCCContext& context, size_t atglIndex ) {
   auto&   sps                   = context.getVps();
   int32_t atlasIndex            = 0;
   auto&   oi                    = sps.getOccupancyInformation( atlasIndex );
@@ -685,8 +646,10 @@ void PCCDecoder::setGeneratePointCloudParameters( GeneratePointCloudParameters& 
   params.pbfPassesCount_        = 0;
   params.pbfFilterSize_         = 0;
   params.pbfLog2Threshold_      = 0;
-  if ( params_.applyGeoSmoothingType_!=0 &&  context.seiIsPresent( NAL_PREFIX_ESEI, GEOMETRY_SMOOTHING ) ) {
-    auto* sei = static_cast<SEIGeometrySmoothing*>( context.getSei( NAL_PREFIX_ESEI, GEOMETRY_SMOOTHING ) );
+  if ( params_.applyGeoSmoothingType_ != 0 &&
+       context.seiIsPresentInReceivedData( NAL_PREFIX_ESEI, GEOMETRY_SMOOTHING, atglIndex ) ) {
+    auto* sei = static_cast<SEIGeometrySmoothing*>(
+        context.getSeiInReceivedData( NAL_PREFIX_ESEI, GEOMETRY_SMOOTHING, atglIndex ) );
     for ( size_t i = 0; i < sei->getInstancesUpdated(); i++ ) {
       size_t k = sei->getInstanceIndex( i );
       if ( !sei->getInstanceCancelFlag( k ) ) {
@@ -699,8 +662,10 @@ void PCCDecoder::setGeneratePointCloudParameters( GeneratePointCloudParameters& 
       }
     }
   }
-  if ( params_.applyOccupanySynthesisType_!=0 && context.seiIsPresent( NAL_PREFIX_ESEI, OCCUPANCY_SYNTHESIS ) ) {
-    auto* sei = static_cast<SEIOccupancySynthesis*>( context.getSei( NAL_PREFIX_ESEI, OCCUPANCY_SYNTHESIS ) );
+  if ( params_.applyOccupanySynthesisType_ != 0 &&
+       context.seiIsPresentInReceivedData( NAL_PREFIX_ESEI, OCCUPANCY_SYNTHESIS, atglIndex ) ) {
+    auto* sei = static_cast<SEIOccupancySynthesis*>(
+        context.getSeiInReceivedData( NAL_PREFIX_ESEI, OCCUPANCY_SYNTHESIS, atglIndex ) );
     for ( size_t i = 0; i < sei->getInstancesUpdated(); i++ ) {
       size_t k = sei->getInstanceIndex( i );
       if ( !sei->getInstanceCancelFlag( k ) ) {
@@ -728,8 +693,10 @@ void PCCDecoder::setGeneratePointCloudParameters( GeneratePointCloudParameters& 
   params.thresholdColorSmoothing_  = 0.;
   params.thresholdColorDifference_ = 0;
   params.thresholdColorVariation_  = 0;
-  if ( params_.applyAttrSmoothingType_!=0 && context.seiIsPresent( NAL_PREFIX_ESEI, ATTRIBUTE_SMOOTHING ) ) {
-    auto* sei = static_cast<SEIAttributeSmoothing*>( context.getSei( NAL_PREFIX_ESEI, ATTRIBUTE_SMOOTHING ) );
+  if ( params_.applyAttrSmoothingType_ != 0 &&
+       context.seiIsPresentInReceivedData( NAL_PREFIX_ESEI, ATTRIBUTE_SMOOTHING, atglIndex ) ) {
+    auto* sei = static_cast<SEIAttributeSmoothing*>(
+        context.getSeiInReceivedData( NAL_PREFIX_ESEI, ATTRIBUTE_SMOOTHING, atglIndex ) );
     for ( size_t j = 0; j < sei->getNumAttributesUpdated(); j++ ) {
       size_t k = sei->getAttributeIdx( j );
       if ( !sei->getAttributeSmoothingCancelFlag( k ) ) {
@@ -764,6 +731,7 @@ void PCCDecoder::setGeneratePointCloudParameters( GeneratePointCloudParameters& 
 void PCCDecoder::createPatchFrameDataStructure( PCCContext& context ) {
   TRACE_PATCH( "createPatchFrameDataStructure GOP start \n" );
   size_t frameCount = 0;
+  int32_t prevFrameIndex = -1; 
   auto&  atlList    = context.getAtlasTileLayerList();
 
   // partition information derivation
@@ -775,30 +743,92 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context ) {
   }
   context.resize( frameCount );
   setPointLocalReconstruction( context );
-  for ( size_t atglOrder = 0; atglOrder < atlList.size(); atglOrder++ ) {
-    if ( atglOrder == 0 ||
-         atlList[atglOrder].getAtlasFrmOrderCntVal() != atlList[atglOrder - 1].getAtlasFrmOrderCntVal() ) {
-      setTileSizeAndLocation( context, atlList[atglOrder].getHeader().getFrameIndex(), atlList[atglOrder].getHeader() );
+  for ( size_t atglIndex = 0; atglIndex < atlList.size(); atglIndex++ ) {
+    auto& atgl = atlList[atglIndex];
+    if ( atglIndex == 0 || atgl.getAtlasFrmOrderCntVal() != atlList[atglIndex - 1].getAtlasFrmOrderCntVal() ) {
+      setTileSizeAndLocation( context, atgl.getHeader().getFrameIndex(), atgl.getHeader() );
     }
-    createPatchFrameDataStructure( context, atglOrder );
-  }
+    auto&  atlu       = context.getAtlasTileLayer( atglIndex );
+    auto&  ath        = atlu.getHeader();
+    size_t frameIndex = ath.getFrameIndex();
+    createPatchFrameDataStructure( context, atglIndex );
+
 #ifdef CONFORMANCE_TRACE
-  for ( size_t fi = 0; fi < frameCount; fi++ ) { createHlsAtlasTileLogFiles( context, fi ); }
+    // JR QUESTION: why we only tests this 4 SEI ?
+    // JR QUESTION: for( auto& tmp : atgl.getSEI().getSeiPrefix() ){
+    // JR QUESTION:     auto* sei = static_cast<SEIGeometrySmoothing*>( tmp );
+    // JR QUESTION:     auto& vec = sei->getMD5ByteStrData();
+    // JR QUESTION:     if ( vec.size() > 0 ) {
+    // JR QUESTION:       TRACE_HLS( "SEI%02dMD5 = ", sei->getPayloadType() );
+    // JR QUESTION:       SEIMd5Checksum( context, vec );
+    // JR QUESTION:     }
+    // JR QUESTION: }
+    // JR QUESTION: for( auto& tmp : atgl.getSEI().getSeiSuffix() ){
+    // JR QUESTION:     auto* sei = static_cast<SEIGeometrySmoothing*>( tmp );
+    // JR QUESTION:     auto& vec = sei->getMD5ByteStrData();
+    // JR QUESTION:     if ( vec.size() > 0 ) {
+    // JR QUESTION:       TRACE_HLS( "SEI%02dMD5 = ", sei->getPayloadType() );
+    // JR QUESTION:       SEIMd5Checksum( context, vec );
+    // JR QUESTION:     }
+    // JR QUESTION: }
+    if ( atgl.getSEI().seiIsPresent( NAL_PREFIX_ESEI, GEOMETRY_SMOOTHING ) ) {
+      auto* sei = static_cast<SEIGeometrySmoothing*>( atgl.getSEI().getSei( NAL_PREFIX_ESEI, GEOMETRY_SMOOTHING ) );
+      auto& vec = sei->getMD5ByteStrData();
+      if ( vec.size() > 0 ) {
+        TRACE_HLS( "**********GEOMETRY_SMOOTHING_ESEI***********\n" );
+        TRACE_HLS( "SEI%02dMD5 = ", sei->getPayloadType() );
+        SEIMd5Checksum( context, vec );
+      }
+    }
+    if ( atgl.getSEI().seiIsPresent( NAL_PREFIX_ESEI, OCCUPANCY_SYNTHESIS ) ) {
+      auto* sei = static_cast<SEIOccupancySynthesis*>( atgl.getSEI().getSei( NAL_PREFIX_ESEI, OCCUPANCY_SYNTHESIS ) );
+      auto& vec = sei->getMD5ByteStrData();
+      if ( vec.size() > 0 ) {
+        TRACE_HLS( "**********OCCUPANCY_SYNTHESIS_ESEI***********\n" );
+        TRACE_HLS( "SEI%02dMD5 = ", sei->getPayloadType() );
+        SEIMd5Checksum( context, vec );
+      }
+    }
+    if ( atgl.getSEI().seiIsPresent( NAL_PREFIX_ESEI, ATTRIBUTE_SMOOTHING ) ) {
+      auto* sei = static_cast<SEIAttributeSmoothing*>( atgl.getSEI().getSei( NAL_PREFIX_ESEI, ATTRIBUTE_SMOOTHING ) );
+      auto& vec = sei->getMD5ByteStrData();
+      if ( vec.size() > 0 ) {
+        TRACE_HLS( "**********ATTRIBUTE_SMOOTHING_ESEI***********\n" );
+        TRACE_HLS( "SEI%02dMD5 = ", sei->getPayloadType() );
+        SEIMd5Checksum( context, vec );
+      }
+    }
+    if ( atgl.getSEI().seiIsPresent( NAL_PREFIX_ESEI, COMPONENT_CODEC_MAPPING ) ) {
+      auto* sei =
+          static_cast<SEIOccupancySynthesis*>( atgl.getSEI().getSei( NAL_PREFIX_ESEI, COMPONENT_CODEC_MAPPING ) );
+      auto& temp = sei->getMD5ByteStrData();
+      if ( temp.size() > 0 ) {
+        TRACE_HLS( "**********CODEC_COMPONENT_MAPPING_ESEI***********\n" );
+        TRACE_HLS( "SEI%02dMD5 = ", sei->getPayloadType() );
+        SEIMd5Checksum( context, temp );
+      }
+    }
 #endif
-  bool bHashSeiIsPresent = context.seiIsPresent( NAL_SUFFIX_NSEI, DECODED_ATLAS_INFORMATION_HASH );
-  if ( bHashSeiIsPresent ) {
-    TRACE_PATCH( "create Hash SEI \n" );
-    size_t hashSeiCount = context.getSeiHash().size();
-    assert( context.getSeiHash().size() <= frameCount );
-    for ( size_t fi = 0; fi < hashSeiCount; fi++ ) { createHashSEI( context, fi ); }
+    if ( atgl.getSEI().seiIsPresent( NAL_SUFFIX_NSEI, DECODED_ATLAS_INFORMATION_HASH ) ) {
+      auto* sei = static_cast<SEIDecodedAtlasInformationHash*>(
+          atgl.getSEI().getSei( NAL_SUFFIX_NSEI, DECODED_ATLAS_INFORMATION_HASH ) );
+      TRACE_PATCH( "create Hash SEI \n" );
+      auto& atlu = context.getAtlasTileLayer( atglIndex );
+      auto& ath  = atlu.getHeader();
+      createHashSEI( context, ath.getFrameIndex(), *sei );
+    }
+#ifdef CONFORMANCE_TRACE
+    if ( prevFrameIndex != frameIndex ) { createHlsAtlasTileLogFiles( context, frameIndex ); }
+#endif
+    prevFrameIndex = frameIndex;
   }
 }
 
-void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atglOrder ) {
-  TRACE_PATCH( "createPatchFrameDataStructure Tile %zu \n", atglOrder );
+void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atglIndex ) {
+  TRACE_PATCH( "createPatchFrameDataStructure Tile %zu \n", atglIndex );
   auto&  sps                = context.getVps();
   size_t atlasIndex         = context.getAtlasIndex();
-  auto&  atlu               = context.getAtlasTileLayer( atglOrder );
+  auto&  atlu               = context.getAtlasTileLayer( atglIndex );
   auto&  ath                = atlu.getHeader();
   auto&  afps               = context.getAtlasFrameParameterSet( ath.getAtlasFrameParameterSetId() );
   auto&  asps               = context.getAtlasSequenceParameterSet( afps.getAtlasSequenceParameterSetId() );
@@ -806,18 +836,18 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
   auto&  atgdu              = atlu.getDataUnit();
   auto   geometryBitDepth2D = asps.getGeometry2dBitdepthMinus1() + 1;
   auto   geometryBitDepth3D = asps.getGeometry3dBitdepthMinus1() + 1;
-  size_t frameIndex         = ath.getFrameIndex();  // atlu.getAtlasFrmOrderCntVal();
+  size_t frameIndex         = ath.getFrameIndex();  
   size_t tileIndex          = afti.getSignalledTileIdFlag() ? afti.getTileId( ath.getId() ) : ath.getId();
 
-  printf( "createPatchFrameDataStructure Frame = %zu Tiles = %zu atlasIndex = %zu atglOrder %zu \n", frameIndex,
-          tileIndex, context.getAtlasIndex(), atglOrder );
+  printf( "createPatchFrameDataStructure Frame = %zu Tiles = %zu atlasIndex = %zu atglIndex %zu \n", frameIndex,
+          tileIndex, context.getAtlasIndex(), atglIndex );
   fflush( stdout );
   PCCFrameContext& tile = context[frameIndex].getTile( tileIndex );
   tile.setFrameIndex( frameIndex );
   tile.setAtlasFrmOrderCntVal( atlu.getAtlasFrmOrderCntVal() );
   tile.setAtlasFrmOrderCntMsb( atlu.getAtlasFrmOrderCntMsb() );
   tile.setTileIndex( tileIndex );
-  tile.setAtlIndex( atglOrder );
+  tile.setAtlIndex( atglIndex );
   tile.setUseRawPointsSeparateVideo( sps.getAuxiliaryVideoPresentFlag( atlasIndex ) &&
                                      asps.getAuxiliaryVideoEnabledFlag() );
   tile.setRawPatchEnabledFlag( asps.getRawPatchEnabledFlag() );
@@ -1205,9 +1235,7 @@ bool PCCDecoder::compareHashSEICheckSum( uint32_t encCheckSum, uint32_t decCheck
   return equal;
 }
 
-void PCCDecoder::createHashSEI( PCCContext& context, int frameIndex ) {
-  size_t                                         hashIndex         = frameIndex;
-  auto&                                          sei               = context.getSeiHash( hashIndex );
+void PCCDecoder::createHashSEI( PCCContext& context, int frameIndex, SEIDecodedAtlasInformationHash& sei ) {
   bool                                           seiHashCancelFlag = sei.getCancelFlag();
   std::vector<PatchParams>                       atlasPatchParams;
   std::vector<std::vector<PatchParams>>          tilePatchParams;
@@ -1437,13 +1465,14 @@ void PCCDecoder::createHashSEI( PCCContext& context, int frameIndex ) {
 
 #ifdef CONFORMANCE_TRACE
   auto& temp = sei.getMD5ByteStrData();
-  if ( temp.size() > 0 ) {  // ajt:: An example of how to generate md5 checksum for hash SEI message - could be computed different ways!
-      TRACE_HLS( "**********DECODED_ATLAS_INFORMATION_HASH_NSEI***********\n");
-      TRACE_HLS( "SEI%02dMD5 = ", sei.getPayloadType() );
-      SEIMd5Checksum( context, temp );
+  if ( temp.size() > 0 ) {  // ajt:: An example of how to generate md5 checksum for hash SEI message - could be computed
+                            // different ways!
+    TRACE_HLS( "**********DECODED_ATLAS_INFORMATION_HASH_NSEI***********\n" );
+    TRACE_HLS( "SEI%02dMD5 = ", sei.getPayloadType() );
+    SEIMd5Checksum( context, temp );
   }
 #endif
-  }
+}
 
 void PCCDecoder::createHlsAtlasTileLogFiles( PCCContext& context, int frameIndex ) {
   size_t atlIdx     = context[frameIndex].getTile( 0 ).getAtlIndex();
@@ -1773,9 +1802,9 @@ size_t PCCDecoder::setTileSizeAndLocation( PCCContext& context, size_t frameInde
   return tileIndex;
 }
 
-void PCCDecoder::setConsitantFourCCCode( PCCContext& context ) {
-  if ( context.seiIsPresent( NAL_PREFIX_ESEI, COMPONENT_CODEC_MAPPING ) ) {
-    auto* sei = static_cast<SEIComponentCodecMapping*>( context.getSei( NAL_PREFIX_ESEI, COMPONENT_CODEC_MAPPING ) );
+void PCCDecoder::setConsitantFourCCCode( PCCContext& context, size_t atglIndex ) {
+  if ( context.seiIsPresentInReceivedData( NAL_PREFIX_ESEI, COMPONENT_CODEC_MAPPING,atglIndex ) ) {
+    auto* sei = static_cast<SEIComponentCodecMapping*>( context.getSeiInReceivedData( NAL_PREFIX_ESEI, COMPONENT_CODEC_MAPPING, atglIndex ) );
     consitantFourCCCode_.resize( 256, std::string( "" ) );
     for ( size_t i = 0; i <= sei->getCodecMappingsCountMinus1(); i++ ) {
       auto codecId                  = sei->getCodecId( i );

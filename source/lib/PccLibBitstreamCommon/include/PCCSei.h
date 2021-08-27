@@ -1844,6 +1844,104 @@ class SEITimeCode : public SEI {
   int16_t  timeOffsetValue_;
 };
 
+
+class PCCSEI{
+  public:
+  PCCSEI(){ seiPrefix_.clear(); seiSuffix_.clear(); }
+  ~PCCSEI(){ seiPrefix_.clear(); seiSuffix_.clear(); }
+
+  SEI& addSei( NalUnitType nalUnitType, SeiPayloadType payloadType ) {
+    std::shared_ptr<SEI> sharedPtr;
+    switch ( payloadType ) {
+      case BUFFERING_PERIOD: sharedPtr = std::make_shared<SEIBufferingPeriod>(); break;
+      case ATLAS_FRAME_TIMING: sharedPtr = std::make_shared<SEIAtlasFrameTiming>(); break;
+      case FILLER_PAYLOAD: break;
+      case USER_DATAREGISTERED_ITUTT35: sharedPtr = std::make_shared<SEIUserDataRegisteredItuTT35>(); break;
+      case USER_DATA_UNREGISTERED: sharedPtr = std::make_shared<SEIUserDataUnregistered>(); break;
+      case RECOVERY_POINT: sharedPtr = std::make_shared<SEIRecoveryPoint>(); break;
+      case NO_RECONSTRUCTION: sharedPtr = std::make_shared<SEINoDisplay>(); break;
+      case TIME_CODE: sharedPtr = std::make_shared<SEITimeCode>(); break;
+      case SEI_MANIFEST: sharedPtr = std::make_shared<SEIManifest>(); break;
+      case SEI_PREFIX_INDICATION: sharedPtr = std::make_shared<SEIPrefixIndication>(); break;
+      case ACTIVE_SUB_BITSTREAMS: sharedPtr = std::make_shared<SEIActiveSubBitstreams>(); break;
+      case COMPONENT_CODEC_MAPPING: sharedPtr = std::make_shared<SEIComponentCodecMapping>(); break;
+      case SCENE_OBJECT_INFORMATION: sharedPtr = std::make_shared<SEISceneObjectInformation>(); break;
+      case OBJECT_LABEL_INFORMATION: sharedPtr = std::make_shared<SEIObjectLabelInformation>(); break;
+      case PATCH_INFORMATION: sharedPtr = std::make_shared<SEIPatchInformation>(); break;
+      case VOLUMETRIC_RECTANGLE_INFORMATION: sharedPtr = std::make_shared<SEIVolumetricRectangleInformation>(); break;
+      case ATLAS_OBJECT_INFORMATION: sharedPtr = std::make_shared<SEIAtlasInformation>(); break;
+      case VIEWPORT_CAMERA_PARAMETERS: sharedPtr = std::make_shared<SEIViewportCameraParameters>(); break;
+      case VIEWPORT_POSITION: sharedPtr = std::make_shared<SEIViewportPosition>(); break;
+      case DECODED_ATLAS_INFORMATION_HASH: sharedPtr = std::make_shared<SEIDecodedAtlasInformationHash>(); break;
+      case ATTRIBUTE_TRANSFORMATION_PARAMS: sharedPtr = std::make_shared<SEIAttributeTransformationParams>(); break;
+      case OCCUPANCY_SYNTHESIS: sharedPtr = std::make_shared<SEIOccupancySynthesis>(); break;
+      case GEOMETRY_SMOOTHING: sharedPtr = std::make_shared<SEIGeometrySmoothing>(); break;
+      case ATTRIBUTE_SMOOTHING: sharedPtr = std::make_shared<SEIAttributeSmoothing>(); break;
+      case RESERVED_SEI_MESSAGE: sharedPtr = std::make_shared<SEIReservedSeiMessage>(); break;
+      default:
+        fprintf( stderr, "SEI payload type not supported \n" );
+        exit( -1 );
+        break;
+    }
+    if ( nalUnitType == NAL_PREFIX_ESEI || nalUnitType == NAL_PREFIX_NSEI ) {
+      seiPrefix_.push_back( sharedPtr );
+      return *( seiPrefix_.back().get() );
+    } else if ( nalUnitType == NAL_SUFFIX_ESEI || nalUnitType == NAL_SUFFIX_NSEI ) {
+      seiSuffix_.push_back( sharedPtr );
+      return *( seiSuffix_.back().get() );
+    } else {
+      fprintf( stderr, "Nal unit type of SEI not correct\n" );
+      exit( -1 );
+    }
+    return *( sharedPtr );
+  }
+  bool seiIsPresent( NalUnitType nalUnitType, SeiPayloadType payloadType ) {
+    if ( nalUnitType != NAL_PREFIX_ESEI && nalUnitType != NAL_SUFFIX_ESEI && nalUnitType != NAL_PREFIX_NSEI &&
+         nalUnitType != NAL_SUFFIX_NSEI ) {
+      return false;
+    }
+    for ( auto& sei : nalUnitType == NAL_PREFIX_ESEI || nalUnitType == NAL_PREFIX_NSEI ? seiPrefix_ : seiSuffix_ ) {
+      if ( sei->getPayloadType() == payloadType ) { return true; }
+    }
+    return false;
+  }
+  SEI* getSei( NalUnitType nalUnitType, SeiPayloadType payloadType ) {
+    auto& seis = ( nalUnitType == NAL_PREFIX_ESEI || nalUnitType == NAL_PREFIX_NSEI ) ? seiPrefix_ : seiSuffix_;
+    for ( auto& sei : seis ) {
+      if ( sei->getPayloadType() == payloadType ) { return sei.get(); }
+    }
+    assert( 0 );
+    return (SEI*)nullptr;
+  }
+
+  SEI* getLastSei( NalUnitType nalUnitType, SeiPayloadType payloadType ) {
+    auto& seis = ( nalUnitType == NAL_PREFIX_ESEI || nalUnitType == NAL_PREFIX_NSEI ) ? seiPrefix_ : seiSuffix_;
+    for ( auto sei = seis.rbegin(); sei != seis.rend(); ++sei ) {
+      if ( sei->get()->getPayloadType() == payloadType ) { return sei->get(); }
+    }
+    assert( 0 );
+    return (SEI*)nullptr;
+  }
+  SEI& addSeiPrefix( SeiPayloadType payloadType, bool essensial ) {
+    return addSei( essensial ? NAL_PREFIX_ESEI : NAL_PREFIX_NSEI, payloadType );
+  }
+  SEI& addSeiSuffix( SeiPayloadType payloadType, bool essensial ) {
+    return addSei( essensial ? NAL_SUFFIX_ESEI : NAL_SUFFIX_NSEI, payloadType );
+  }
+  void addSeiToSeiSuffix( SeiPayloadType payloadType, bool essensial, SEIDecodedAtlasInformationHash& seiContext ) {
+    seiSuffix_.push_back( std::make_shared<SEIDecodedAtlasInformationHash>( seiContext ) );
+  }
+
+  std::vector<std::shared_ptr<SEI>>& getSeiPrefix() { return seiPrefix_; }
+  std::vector<std::shared_ptr<SEI>>& getSeiSuffix() { return seiSuffix_; }
+  SEI&                               getSeiPrefix( size_t index ) { return *( seiPrefix_[index] ); }
+  SEI&                               getSeiSuffix( size_t index ) { return *( seiSuffix_[index] ); }
+
+ private:
+  std::vector<std::shared_ptr<SEI>> seiPrefix_;  
+  std::vector<std::shared_ptr<SEI>> seiSuffix_;
+};
+
 };  // namespace pcc
 
 #endif  //~PCC_BITSTREAM_SEI_H

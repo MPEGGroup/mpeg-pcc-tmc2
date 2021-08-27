@@ -85,7 +85,7 @@ PCCEncoderParameters::PCCEncoderParameters() {
   occupancyMapConfig_                  = {};
   occupancyMapQP_                      = 8;
   occupancyMapRefinement_              = false;
-  decodedAtlasInformationHash_         = 0;
+  decodedAtlasInformationHash_         = 1;
   flagGeometrySmoothing_               = true;
   patchExpansion_                      = false;
   gridSmoothing_                       = true;
@@ -447,8 +447,9 @@ void PCCEncoderParameters::print() {
   std::cout << "\t   Lossy occupancy map prefilter            " << prefilterLossyOM_ << std::endl;
   std::cout << "\t Decoded Atlas Information Hash             " << ( decodedAtlasInformationHash_ > 0 ? 1 : 0 )
             << std::endl;
-  if ( decodedAtlasInformationHash_ > 0 )
+  if ( decodedAtlasInformationHash_ > 0 ){
     std::cout << "\t   DecodedAtlasInformationHash Type             " << decodedAtlasInformationHash_ << std::endl;
+  }
   std::cout << "\t Geometry smoothing                         " << std::endl;
   std::cout << "\t   flagGeometrySmoothing                    " << flagGeometrySmoothing_ << std::endl;
   if ( flagGeometrySmoothing_ ) {

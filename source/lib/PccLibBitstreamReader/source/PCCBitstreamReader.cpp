@@ -57,6 +57,7 @@ size_t PCCBitstreamReader::read( PCCBitstream& bitstream, SampleStreamV3CUnit& s
   TRACE_BITSTREAM( "UnitSizePrecisionBytesMinus1 %d <=> bytesToRead %d\n", ssvu.getSsvhUnitSizePrecisionBytesMinus1(),
                    ( 8 * ( ssvu.getSsvhUnitSizePrecisionBytesMinus1() + 1 ) ) );
   size_t unitCount = 0;
+  printf("PCCBitstreamReader read: \n");
   while ( bitstream.moreData() ) {
     auto& v3cUnit = ssvu.addV3CUnit();
     sampleStreamV3CUnit( bitstream, ssvu, v3cUnit );
@@ -64,15 +65,16 @@ size_t PCCBitstreamReader::read( PCCBitstream& bitstream, SampleStreamV3CUnit& s
     unitCount++;
     headerSize += ssvu.getSsvhUnitSizePrecisionBytesMinus1() + 1;
   }
-  TRACE_BITSTREAM( "PCCBitstreamXXcoder: SampleStream Vpcc Unit start done \n" );
+  TRACE_BITSTREAM( "PCCBitstreamXXcoder: SampleStream Vpcc Unit start done \n" );  
   return headerSize;
 }
 
 int32_t PCCBitstreamReader::decode( SampleStreamV3CUnit& ssvu, PCCHighLevelSyntax& syntax ) {
+  printf("PCCBitstreamReader decode: \n");
   bool  endOfGop     = false;
   int   numVPS       = 0;  // counter for the atlas information
   auto& bistreamStat = syntax.getBitstreamStat();
-  bistreamStat.newGOF();
+  bistreamStat.newGOF();  
   while ( !endOfGop && ssvu.getV3CUnitCount() > 0 ) {
     auto&       unit        = ssvu.front();
     V3CUnitType v3cUnitType = V3C_VPS;
@@ -100,6 +102,7 @@ void PCCBitstreamReader::videoSubStream( PCCHighLevelSyntax& syntax,
                                          V3CUnitType&        V3CUnitType,
                                          size_t              V3CPayloadSize ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
+  printf("    videoSubStream \n");
   size_t atlasIndex   = 0;
   auto&  bistreamStat = syntax.getBitstreamStat();
   if ( V3CUnitType == V3C_OVD ) {
@@ -165,12 +168,14 @@ void PCCBitstreamReader::v3cUnit( PCCHighLevelSyntax& syntax, V3CUnit& currV3CUn
   auto position = static_cast<int32_t>( bitstream.size() );
   v3cUnitHeader( syntax, bitstream, v3cUnitType );
   assert( v3cUnitType == currV3CUnit.getType() );
+  printf( "  v3cUnit: size = %8zu type = %2hhu %s \n", currV3CUnit.getSize(), v3cUnitType,
+          toString( V3CUnitType( v3cUnitType ) ).c_str() );
+  fflush( stdout );
   v3cUnitPayload( syntax, bitstream, v3cUnitType, currV3CUnit.getSize() );
   syntax.getBitstreamStat().setV3CUnitSize( v3cUnitType, static_cast<int32_t>( bitstream.size() ) - position );
   TRACE_BITSTREAM( "v3cUnit: V3CUnitType = %d(%s) \n", v3cUnitType, toString( v3cUnitType ).c_str() );
   TRACE_BITSTREAM( "v3cUnit: size [%d ~ %d] \n", position, bitstream.size() );
   TRACE_BITSTREAM( "%s done\n", __func__ );
-  std::cout << "<----v3cUnit: V3CUnitType = " << toString( V3CUnitType( v3cUnitType ) ) << std::endl;
 }
 
 // 8.3.2.2 V3C unit header syntax
@@ -224,36 +229,19 @@ void PCCBitstreamReader::v3cUnitPayload( PCCHighLevelSyntax& syntax,
 // 8.3.2.4 Atlas sub-bitstream syntax
 void PCCBitstreamReader::atlasSubStream( PCCHighLevelSyntax& syntax, PCCBitstream& bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
+  printf( "    atlasSubStream \n" );
   size_t              sizeBitstream = bitstream.capacity();
   SampleStreamNalUnit ssnu;
   sampleStreamNalHeader( bitstream, ssnu );
-
-  //  uint64_t tempPos = bitstream.size();
-  //  while(tempPos<sizeBitstream){
-  //    uint8_t unitSizePrecision = ( 8 * ( ssnu.getSizePrecisionBytesMinus1() + 1 ) );
-  //    uint32_t unitSize = 0;
-  //    for(uint8_t byteRead=0; byteRead<unitSizePrecision; byteRead++){
-  //      unitSize += bitstream.peekByteAt(tempPos+byteRead)<<(8*(unitSizePrecision-byteRead-1));
-  //    }
-  //
-  //    uint16_t firstByte = bitstream.peekByteAt(tempPos+unitSizePrecision);
-  //    firstByte = firstByte<<1; //removing first bit of nal_layer_id
-  //    firstByte = firstByte>>2; //removing nal_forbidden_zero_bit and a bit by the above operation
-  //    nal_unit_type = (uint8_t)firstByte;
-  //
-  //    tempPos +=( unitSizePrecision + unitSize);
-  //  }
-
+  PCCSEI prefixSEI;  // list to store the prefix sei message, this list will be copy in the next ATGL.
   while ( bitstream.size() < sizeBitstream ) {
     ssnu.addNalUnit();
-    sampleStreamNalUnit( syntax, bitstream, ssnu, ssnu.getNalUnit().size() - 1 );
+    sampleStreamNalUnit( syntax, bitstream, ssnu, ssnu.getNalUnit().size() - 1, prefixSEI );
 #ifdef BITSTREAM_TRACE
     auto& nu = ssnu.getNalUnit( ssnu.getNalUnit().size() - 1 );
-    TRACE_BITSTREAM(
-        "nalu[%d]:%s, nalSizePrecision:%d, naluSize:%zu, sizeBitstream "
-        "written: %llu\n",
-        (int)nu.getType(), toString( nu.getType() ).c_str(), ( ssnu.getSizePrecisionBytesMinus1() + 1 ), nu.getSize(),
-        bitstream.size() );
+    TRACE_BITSTREAM( "nalu[%d]:%s, nalSizePrecision:%d, naluSize:%zu, sizeBitstream written: %llu\n", (int)nu.getType(),
+                     toString( nu.getType() ).c_str(), ( ssnu.getSizePrecisionBytesMinus1() + 1 ), nu.getSize(),
+                     bitstream.size() );
 #endif
   }
 }
@@ -270,6 +258,7 @@ void PCCBitstreamReader::byteAlignment( PCCBitstream& bitstream ) {
 // 8.3.4.1 General V3C parameter set syntax
 void PCCBitstreamReader::v3cParameterSet( V3CParameterSet& sps, PCCHighLevelSyntax& syntax, PCCBitstream& bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
+  printf("    v3cParameterSet \n");
   profileTierLevel( sps.getProfileTierLevel(), bitstream );
   sps.setV3CParameterSetId( bitstream.read( 4 ) );  // u(4)
   bitstream.read( 8 );                              // u(8)
@@ -734,11 +723,12 @@ void PCCBitstreamReader::atlasAdaptationParameterSetRbsp( AtlasAdaptationParamet
 // 8.3.6.4  Supplemental enhancement information Rbsp
 void PCCBitstreamReader::seiRbsp( PCCHighLevelSyntax& syntax,
                                   PCCBitstream&       bitstream,
-                                  NalUnitType         nalUnitType ) {  // JR: TODO
+                                  NalUnitType         nalUnitType,
+                                  PCCSEI&             sei ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
   // do { seiMessage( syntax, bitstream ); } while ( moreRbspData( bitstream )
   // );
-  seiMessage( bitstream, syntax, nalUnitType );
+  seiMessage( bitstream, syntax, nalUnitType, sei );
 }
 
 // 8.3.6.5 Access unit delimiter RBSP syntax
@@ -1351,7 +1341,7 @@ void PCCBitstreamReader::plrData( PLRData&                       plrd,
 }
 
 // 8.3.8 Supplemental enhancement information message syntax
-void PCCBitstreamReader::seiMessage( PCCBitstream& bitstream, PCCHighLevelSyntax& syntax, NalUnitType nalUnitType ) {
+void PCCBitstreamReader::seiMessage( PCCBitstream& bitstream, PCCHighLevelSyntax& syntax, NalUnitType nalUnitType, PCCSEI& sei ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
   int32_t payloadType = 0;
   int32_t payloadSize = 0;
@@ -1364,11 +1354,11 @@ void PCCBitstreamReader::seiMessage( PCCBitstream& bitstream, PCCHighLevelSyntax
     byte = bitstream.read( 8 );  // u(8)
     payloadSize += byte;
   } while ( byte == 0xff );
-  seiPayload( bitstream, syntax, nalUnitType, static_cast<SeiPayloadType>( payloadType ), payloadSize );
-  if ( static_cast<SeiPayloadType>( payloadType ) == DECODED_ATLAS_INFORMATION_HASH ) {
-    syntax.getSeiHash().push_back(
-        static_cast<SEIDecodedAtlasInformationHash&>( *( syntax.getSeiSuffix().back().get() ) ) );
-  }
+  seiPayload( bitstream, syntax, nalUnitType, static_cast<SeiPayloadType>( payloadType ), payloadSize, sei );
+  // if ( static_cast<SeiPayloadType>( payloadType ) == DECODED_ATLAS_INFORMATION_HASH ) {
+  //   syntax.getSeiHash().push_back(
+  //       static_cast<SEIDecodedAtlasInformationHash&>( *( sei.getSeiSuffix().back().get() ) ) );
+  // }
 }
 
 // C.2 Sample stream V3C unit syntax and semantics
@@ -1388,8 +1378,9 @@ void PCCBitstreamReader::sampleStreamV3CUnit( PCCBitstream& bitstream, SampleStr
   uint8_t v3cUnitType8 = v3cUnit.getBitstream().buffer()[0];
   auto    v3cUnitType  = static_cast<V3CUnitType>( v3cUnitType8 >>= 3 );
   v3cUnit.setType( v3cUnitType );
-  TRACE_BITSTREAM( "V3CUnitType: %hhu V3CUnitSize: %zu\n", v3cUnitType8, v3cUnit.getSize() );
-  printf( "V3CUnitType: %hhu V3CUnitSize: %zu\n", v3cUnitType8, v3cUnit.getSize() );
+  TRACE_BITSTREAM( "V3CUnitType: %hhu V3CUnitSize: %zu\n", v3cUnitType, v3cUnit.getSize() );
+  printf( "  v3cUnit: size = %8zu type = %2hhu %s \n", v3cUnit.getSize(), v3cUnitType,
+          toString( V3CUnitType( v3cUnitType ) ).c_str() );
 }
 
 // D.2 Sample stream NAL unit syntax and semantics
@@ -1405,13 +1396,17 @@ void PCCBitstreamReader::sampleStreamNalHeader( PCCBitstream& bitstream, SampleS
 void PCCBitstreamReader::sampleStreamNalUnit( PCCHighLevelSyntax&  syntax,
                                               PCCBitstream&        bitstream,
                                               SampleStreamNalUnit& ssnu,
-                                              size_t               index ) {
+                                              size_t               index,
+                                              PCCSEI&              prefixSEI ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
   auto& nalu = ssnu.getNalUnit( index );
   TRACE_BITSTREAM( "UnitSizePrecisionBytesMinus1 = %lu \n", ssnu.getSizePrecisionBytesMinus1() );
   nalu.setSize( bitstream.read( 8 * ( ssnu.getSizePrecisionBytesMinus1() + 1 ) ) );  // u(v)
   nalu.allocate();
   nalUnitHeader( bitstream, nalu );
+  printf( "      sampleStreamNalUnit %3zu type = %3zu %s \n", index, (size_t)nalu.getType(),
+          toString( nalu.getType() ).c_str() );
+  fflush(stdout);
   switch ( nalu.getType() ) {
     case NAL_ASPS: atlasSequenceParameterSetRbsp( syntax.addAtlasSequenceParameterSet(), syntax, bitstream ); break;
     case NAL_AFPS: atlasFrameParameterSetRbsp( syntax.addAtlasFrameParameterSet(), syntax, bitstream ); break;
@@ -1427,11 +1422,19 @@ void PCCBitstreamReader::sampleStreamNalUnit( PCCHighLevelSyntax&  syntax,
     case NAL_RASL_R:
     case NAL_SKIP_N:
     case NAL_SKIP_R:
-    case NAL_IDR_N_LP: atlasTileLayerRbsp( syntax.addAtlasTileLayer(), syntax, nalu.getType(), bitstream ); break;
-    case NAL_SUFFIX_ESEI:
-    case NAL_SUFFIX_NSEI: seiRbsp( syntax, bitstream, nalu.getType() ); break;
+    case NAL_IDR_N_LP:
+      atlasTileLayerRbsp( syntax.addAtlasTileLayer(), syntax, nalu.getType(), bitstream );
+      syntax.getAtlasTileLayerList().back().getSEI().getSeiPrefix() = prefixSEI.getSeiPrefix();
+      prefixSEI.getSeiPrefix().clear();
+      break;
     case NAL_PREFIX_ESEI:
-    case NAL_PREFIX_NSEI: seiRbsp( syntax, bitstream, nalu.getType() ); break;
+    case NAL_PREFIX_NSEI:
+      seiRbsp( syntax, bitstream, nalu.getType(), prefixSEI );
+      break;
+    case NAL_SUFFIX_ESEI:
+    case NAL_SUFFIX_NSEI:
+      seiRbsp( syntax, bitstream, nalu.getType(), syntax.getAtlasTileLayerList().back().getSEI() );
+      break;
     default: fprintf( stderr, "sampleStreamNalUnit type = %d not supported\n", static_cast<int32_t>( nalu.getType() ) );
   }
 }
@@ -1442,15 +1445,22 @@ void PCCBitstreamReader::seiPayload( PCCBitstream&       bitstream,
                                      PCCHighLevelSyntax& syntax,
                                      NalUnitType         nalUnitType,
                                      SeiPayloadType      payloadType,
-                                     size_t              payloadSize ) {
+                                     size_t              payloadSize,
+                                     PCCSEI&             seiList ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
-  SEI& sei = syntax.addSei( nalUnitType, payloadType );
+  SEI& sei = seiList.addSei( nalUnitType, payloadType );
+  printf("        seiMessage: type = %d %s \n",payloadType, toString( payloadType ).c_str() );
+  fflush(stdout);
   if ( nalUnitType == NAL_PREFIX_ESEI || nalUnitType == NAL_PREFIX_NSEI ) {
     if ( payloadType == BUFFERING_PERIOD ) {  // 0
       bufferingPeriod( bitstream, sei );
     } else if ( payloadType == ATLAS_FRAME_TIMING ) {  // 1
-      assert( syntax.seiIsPresent( NAL_PREFIX_NSEI, BUFFERING_PERIOD ) );
-      auto& bpsei = *syntax.getLastSei( NAL_PREFIX_NSEI, BUFFERING_PERIOD );
+      assert( seiList.seiIsPresent( NAL_PREFIX_NSEI, BUFFERING_PERIOD ) );  
+      // JR TODO: the seach must be in all the previous frame sei not only the current one.
+      // JR TODO: The seiIsPresent, getLastSei function must be extend to all received messages. 
+      // JR TODO: we must check in the current seiList (preffixSEI and in the SEI messages of the 
+      // JR TODO: previous ATLG.
+      auto& bpsei = *seiList.getLastSei( NAL_PREFIX_NSEI, BUFFERING_PERIOD );
       atlasFrameTiming( bitstream, sei, bpsei, false );
     } else if ( payloadType == FILLER_PAYLOAD ) {  // 2
       fillerPayload( bitstream, sei, payloadSize );

@@ -7923,16 +7923,17 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
       }
     }
   }
-  for ( size_t i = 0; i < frameCount; i++ ) {
+  // For all frames
+  for ( size_t frameIndex = 0; frameIndex < frameCount; frameIndex++ ) {
     size_t atlasFrameParameterSetId = 0;
     // partition information
-    if ( i == 0 ) {
+    if ( frameIndex == 0 ) {
       AtlasFrameTileInformation& afti = context.getAtlasFrameParameterSet( 0 ).getAtlasFrameTileInformation();
       generateAfti( context, 0, afti );
     } else {
       AtlasFrameTileInformation aftiUpdated;
       bool                      bPersistance = false;
-      generateAfti( context, i, aftiUpdated );
+      generateAfti( context, frameIndex, aftiUpdated );
       for ( size_t afpsId = 0; afpsId < context.getAtlasFrameParameterSetList().size(); afpsId++ ) {
         if ( aftiUpdated == context.getAtlasFrameParameterSet( afpsId ).getAtlasFrameTileInformation() ) {
           atlasFrameParameterSetId = afpsId;
@@ -7946,37 +7947,49 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
         atlasFrameParameterSetId = context.getAtlasFrameParameterSetList().size() - 1;
       }
     }
-    for ( size_t ti = 0; ti < context[i].getNumTilesInAtlasFrame(); ti++ ) {
-      printf( "createPatchFrameDataStructure tile %zu\n", ti );
-      auto& atl = context.addAtlasTileLayer( i, ti );
-      auto& ath = atl.getHeader();
-      ath.setAtlasFrameParameterSetId( atlasFrameParameterSetId );
+    // For all tiles
+    for ( size_t tileIndex = 0; tileIndex < context[frameIndex].getNumTilesInAtlasFrame(); tileIndex++ ) {
+      printf( "createPatchFrameDataStructure tile %zu\n", tileIndex );
+      auto& atgl = context.addAtlasTileLayer( frameIndex, tileIndex );
+      auto& atgh = atgl.getHeader();
+      atgh.setAtlasFrameParameterSetId( atlasFrameParameterSetId );
       auto& afps = context.getAtlasFrameParameterSet( atlasFrameParameterSetId );
-      ath.setPosMinDQuantizer( uint8_t( std::log2( params_.minLevel_ ) ) );
-      ath.setPosDeltaMaxDQuantizer( uint8_t( std::log2( params_.minLevel_ ) ) );
-      ath.setPatchSizeXinfoQuantizer( params_.log2QuantizerSizeX_ );
-      ath.setPatchSizeYinfoQuantizer( params_.log2QuantizerSizeY_ );
+      atgh.setPosMinDQuantizer( uint8_t( std::log2( params_.minLevel_ ) ) );
+      atgh.setPosDeltaMaxDQuantizer( uint8_t( std::log2( params_.minLevel_ ) ) );
+      atgh.setPatchSizeXinfoQuantizer( params_.log2QuantizerSizeX_ );
+      atgh.setPatchSizeYinfoQuantizer( params_.log2QuantizerSizeY_ );
       if ( afps.getRaw3dOffsetBitCountExplicitModeFlag() ) {
-        ath.setRaw3dOffsetAxisBitCountMinus1( 0 );  // Note. need to be an encoder parameter
+        atgh.setRaw3dOffsetAxisBitCountMinus1( 0 );  // Note. need to be an encoder parameter
       } else {
-        ath.setRaw3dOffsetAxisBitCountMinus1( params_.geometry3dCoordinatesBitdepth_ +
-                                              ( params_.additionalProjectionPlaneMode_ > 0 ) -
-                                              params_.geometryNominal2dBitdepth_ - 1 );
+        atgh.setRaw3dOffsetAxisBitCountMinus1( params_.geometry3dCoordinatesBitdepth_ +
+                                               ( params_.additionalProjectionPlaneMode_ > 0 ) -
+                                               params_.geometryNominal2dBitdepth_ - 1 );
       }
-      ath.setNumRefIdxActiveOverrideFlag( false );
-      ath.setRefAtlasFrameListSpsFlag( true );
-      ath.setRefAtlasFrameListIdx( 0 );
-      PCCFrameContext& tile = context[i].getTile( ti );
-      createPatchFrameDataStructure( context, tile, atl, i, ti );
+      atgh.setNumRefIdxActiveOverrideFlag( false );
+      atgh.setRefAtlasFrameListSpsFlag( true );
+      atgh.setRefAtlasFrameListIdx( 0 );
+      PCCFrameContext& tile = context[frameIndex].getTile( tileIndex );
+      createPatchFrameDataStructure( context, tile, atgl, frameIndex, tileIndex );
       tile.setAtlIndex( context.getAtlasTileLayerList().size() - 1 );
-    }  // tileIdx
+
+      // Create SEI messages
+      if ( frameIndex == 0 && tileIndex == 0 ) {
+        auto& plt = context.getVps().getProfileTierLevel();
+        if ( params_.flagGeometrySmoothing_ ) { createGeometrySmoothingSei( context, atgl ); }
+        if ( params_.flagColorSmoothing_ ) { createAttributeSmoothingSei( context, atgl ); }
+        if ( plt.getProfileCodecGroupIdc() == CODEC_GROUP_MP4RA ) { createCodecComponentMappingSei( context, atgl ); }
+      }
+#ifdef CONFORMANCE_TRACE
+      if ( params_.decodedAtlasInformationHash_ > 0 ) { createHashSEI( context, frameIndex, atgl ); }
+#endif
+    }  // tileIndex
     auto& afps = context.getAtlasFrameParameterSet( atlasFrameParameterSetId );
     auto& asps = context.getAtlasSequenceParameterSet( afps.getAtlasSequenceParameterSetId() );
-    auto& afc  = context.getFrame( i );
+    auto& afc  = context.getFrame( frameIndex );
     auto& vps  = context.getVps();
 #ifdef CONFORMANCE_TRACE
-    TRACE_PATCH( "Create HLS + ATlas + Tile Log File %zu \n", i );
-    createHlsAtlasTileLogFiles( context, i, atlasFrameParameterSetId );
+    TRACE_PATCH( "Create HLS + ATlas + Tile Log File %zu \n", frameIndex );
+    createHlsAtlasTileLogFiles( context, frameIndex, atlasFrameParameterSetId );
 #endif
   }  // frameCount
 
@@ -7988,158 +8001,6 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
       if ( ( fi != 0 ) && ( params_.constrainedPack_ ) ) { ath.setTileNaluTypeInfo( 1 ); }
       if ( !tile.getReferredTile() ) { ath.setTileNaluTypeInfo( 2 ); }
     }
-  }
-
-  #ifdef CONFORMANCE_TRACE
-  if ( params_.decodedAtlasInformationHash_ > 0 ) {
-    std::printf( "Create  Decoded Atlas Hash Information SEI \n" );
-    createHashSEI( context, 0, params_.decodedAtlasInformationHash_ - 1 ); //ajt:: Apply to frame 0 only and set pessitence flag to 1
-  }
-  #endif
-
-  if ( params_.flagGeometrySmoothing_ ) {
-    if ( params_.gridSmoothing_ ) {
-      auto& sei = static_cast<SEIGeometrySmoothing&>( context.addSeiPrefix( GEOMETRY_SMOOTHING, true ) );
-      sei.setPersistenceFlag( true );
-      sei.setResetFlag( true );
-      sei.setInstancesUpdated( true );
-      sei.allocate();
-      for ( size_t i = 0; i < sei.getInstancesUpdated(); i++ ) {
-        size_t k = i;
-        sei.setInstanceIndex( i, k );
-        sei.setInstanceCancelFlag( k, false );
-        sei.setMethodType( k, 1 );
-        sei.setGridSizeMinus2( k, params_.gridSize_ - 2 );
-        sei.setThreshold( k, params_.thresholdSmoothing_ );
-      }
-
-#ifdef CONFORMANCE_TRACE
-      auto& temp = sei.getMD5ByteStrData();
-      if ( temp.size() > 0 ) {  // ajt:: An example of how to generate md5 checksum for hash SEI message - could be
-                                // computed different ways!
-        TRACE_HLS( "**********GEOMETRY_SMOOTHING_ESEI***********\n" );
-        TRACE_HLS( "SEI%02dMD5 = ", sei.getPayloadType() );
-        SEIMd5Checksum( context, temp );
-      }
-#endif
-    }
-    if ( params_.pbfEnableFlag_ ) {
-      auto& sei = static_cast<SEIOccupancySynthesis&>( context.addSeiPrefix( OCCUPANCY_SYNTHESIS, true ) );
-      sei.setPersistenceFlag( true );
-      sei.setResetFlag( true );
-      sei.setInstancesUpdated( true );
-      sei.allocate();
-      for ( size_t i = 0; i < sei.getInstancesUpdated(); i++ ) {
-        size_t k = i;
-        sei.setInstanceIndex( i, k );
-        sei.setInstanceCancelFlag( k, false );
-        sei.setMethodType( k, 1 );
-        sei.setPbfLog2ThresholdMinus1( k, params_.pbfLog2Threshold_ - 1 );
-        sei.setPbfPassesCountMinus1( k, params_.pbfPassesCount_ - 1 );
-        sei.setPbfFilterSizeMinus1( k, params_.pbfFilterSize_ - 1 );
-      }
-#ifdef CONFORMANCE_TRACE
-      auto& vec = sei.getMD5ByteStrData(); // ajt:: this is just an example of how to generate a md5 checksum for occupancy synthesis SEI message
-      if ( vec.size() > 0 ) {TRACE_HLS( "**********OCCUPANCY_SYNTHESIS_ESEI***********\n" );
-          TRACE_HLS( "SEI%02dMD5 = ", sei.getPayloadType() );
-          SEIMd5Checksum( context, vec );
-      }
-    }
-#endif
-  }
-  if ( params_.flagColorSmoothing_ ) {
-    auto& sei = static_cast<SEIAttributeSmoothing&>( context.addSeiPrefix( ATTRIBUTE_SMOOTHING, true ) );
-    if ( params_.flagColorSmoothing_ ) {
-      sei.setPersistenceFlag( true );
-      sei.setResetFlag( true );
-      sei.setNumAttributesUpdated( 1 );
-      sei.allocate();
-      for ( size_t j = 0; j < sei.getNumAttributesUpdated(); j++ ) {
-        size_t k = j;
-        sei.setAttributeIdx( j, k );
-        sei.setInstancesUpdated( k, 1 );
-        sei.setAttributeSmoothingCancelFlag( k, false );
-        sei.allocate( k + 1, sei.getInstancesUpdated( k ) + 1 );
-        for ( size_t i = 0; i < sei.getInstancesUpdated( k ); i++ ) {
-          size_t m = i;
-          sei.setInstanceIndex( k, i, m );
-          sei.setInstanceCancelFlag( k, m, false );
-          sei.setMethodType( k, m, 1 );
-          if ( sei.getMethodType( k, m ) == 1 ) {
-            sei.setGridSizeMinus2( k, m, params_.cgridSize_ - 2 );
-            sei.setThreshold( k, m, params_.thresholdColorSmoothing_ );
-            sei.setThresholdVariation( k, m, params_.thresholdColorVariation_ );
-            sei.setThresholdDifference( k, m, params_.thresholdColorDifference_ );
-          }
-        }
-      }
-    }
-#ifdef CONFORMANCE_TRACE
-    auto& temp = sei.getMD5ByteStrData();
-    if ( temp.size() > 0 ) {  // ajt:: An example of how to generate md5 checksum for attribute smoothing SEI message - could be
-                              // computed different ways!
-      TRACE_HLS( "**********ATTRIBUTE_SMOOTHING_ESEI***********\n" );
-      TRACE_HLS( "SEI%02dMD5 = ", sei.getPayloadType() );
-      SEIMd5Checksum( context, temp );
-    }
-#endif
-  }
-  auto& vps = context.getVps();
-  auto& plt = vps.getProfileTierLevel();
-  if ( plt.getProfileCodecGroupIdc() == CODEC_GROUP_MP4RA ) {
-    size_t atlasIndex = context.getAtlasIndex();
-    auto&  ai         = vps.getAttributeInformation( atlasIndex );
-    auto&  oi         = vps.getOccupancyInformation( atlasIndex );
-    auto&  gi         = vps.getGeometryInformation( atlasIndex );
-    bool   useAvc     = oi.getOccupancyCodecId() == params_.avcCodecIdIndex_ ||
-                  gi.getGeometryCodecId() == params_.avcCodecIdIndex_ ||
-                  ai.getAttributeCodecId( 0 ) == params_.avcCodecIdIndex_;
-    bool useHevc = oi.getOccupancyCodecId() == params_.hevcCodecIdIndex_ ||
-                   gi.getGeometryCodecId() == params_.hevcCodecIdIndex_ ||
-                   ai.getAttributeCodecId( 0 ) == params_.hevcCodecIdIndex_;
-    bool useShvc = oi.getOccupancyCodecId() == params_.shvcCodecIdIndex_ ||
-                   gi.getGeometryCodecId() == params_.shvcCodecIdIndex_ ||
-                   ai.getAttributeCodecId( 0 ) == params_.shvcCodecIdIndex_;
-    bool useVvc = oi.getOccupancyCodecId() == params_.vvcCodecIdIndex_ ||
-                  gi.getGeometryCodecId() == params_.vvcCodecIdIndex_ ||
-                  ai.getAttributeCodecId( 0 ) == params_.vvcCodecIdIndex_;
-
-    printf( "CODEC ID = %d %d %d \n", oi.getOccupancyCodecId(), gi.getGeometryCodecId(), ai.getAttributeCodecId( 0 ) );
-    printf( "ProfileCodecGroupIdc = CODEC_GROUP_MP4RA: AVC = %d HEVC = %d SHVC = %d VVC = %d \n", useAvc, useHevc,
-            useShvc, useVvc );
-    auto& sei = static_cast<SEIComponentCodecMapping&>( context.addSeiPrefix(
-        COMPONENT_CODEC_MAPPING,
-        true ) );  // ajt0526:what happens if all components have the same codecId but CCM changes codecId to another
-                   // codec. The intention was to use the new codec for geometry component, only?
-    sei.setComponentCodecCancelFlag( false );
-    sei.setCodecMappingsCountMinus1( useAvc + useHevc + useShvc + useVvc - 1 );
-    printf( "sei.getCodecMappingsCountMinus1() = %u \n", sei.getCodecMappingsCountMinus1() );
-    sei.allocate();
-    uint8_t index = 0;
-    if ( useAvc ) {
-      sei.setCodecId( index++, params_.avcCodecIdIndex_ );
-      sei.setCodec4cc( params_.avcCodecIdIndex_, "avc3" );
-    }
-    if ( useHevc ) {
-      sei.setCodecId( index++, params_.hevcCodecIdIndex_ );
-      sei.setCodec4cc( params_.hevcCodecIdIndex_, "hev1" );
-    }
-    if ( useShvc ) {
-      sei.setCodecId( index++, params_.shvcCodecIdIndex_ );
-      sei.setCodec4cc( params_.shvcCodecIdIndex_, "svc1" );
-    }
-    if ( useVvc ) {
-      sei.setCodecId( index++, params_.vvcCodecIdIndex_ );
-      sei.setCodec4cc( params_.vvcCodecIdIndex_, "vvi1" );
-    }
-#ifdef CONFORMANCE_TRACE
-    auto& temp = sei.getMD5ByteStrData();
-    if ( temp.size() > 0 ) { 
-      TRACE_HLS( "**********CODEC_COMPONENT_MAPPING_ESEI***********\n" );
-      TRACE_HLS( "SEI%02dMD5 = ", sei.getPayloadType() );
-      SEIMd5Checksum( context, temp );
-    }
-#endif
   }
 }
 
@@ -8509,11 +8370,153 @@ void PCCEncoder::createHlsAtlasTileLogFiles( PCCContext& context, int frameIndex
   tileB2PPatchParams.clear();
 }
 
-void PCCEncoder::createHashSEI( PCCContext& context, int frameIndex, size_t hashType ) {
-  size_t hashIndex = frameIndex;
+void PCCEncoder::createGeometrySmoothingSei( PCCContext& context, AtlasTileLayerRbsp& atgl ) {
+  if ( params_.gridSmoothing_ ) {
+    auto& sei = static_cast<SEIGeometrySmoothing&>( atgl.getSEI().addSeiPrefix( GEOMETRY_SMOOTHING, true ) );
+    sei.setPersistenceFlag( true );
+    sei.setResetFlag( true );
+    sei.setInstancesUpdated( true );
+    sei.allocate();
+    for ( size_t i = 0; i < sei.getInstancesUpdated(); i++ ) {
+      size_t k = i;
+      sei.setInstanceIndex( i, k );
+      sei.setInstanceCancelFlag( k, false );
+      sei.setMethodType( k, 1 );
+      sei.setGridSizeMinus2( k, params_.gridSize_ - 2 );
+      sei.setThreshold( k, params_.thresholdSmoothing_ );
+    }
+#ifdef CONFORMANCE_TRACE
+    auto& temp = sei.getMD5ByteStrData();
+    if ( temp.size() > 0 ) {  // ajt:: An example of how to generate md5 checksum for hash SEI message - could be
+                              // computed different ways!
+      TRACE_HLS( "**********GEOMETRY_SMOOTHING_ESEI***********\n" );
+      TRACE_HLS( "SEI%02dMD5 = ", sei.getPayloadType() );
+      SEIMd5Checksum( context, temp );
+    }
+#endif
+  }
+  if ( params_.pbfEnableFlag_ ) {
+    auto& sei = static_cast<SEIOccupancySynthesis&>( atgl.getSEI().addSeiPrefix( OCCUPANCY_SYNTHESIS, true ) );
+    sei.setPersistenceFlag( true );
+    sei.setResetFlag( true );
+    sei.setInstancesUpdated( true );
+    sei.allocate();
+    for ( size_t i = 0; i < sei.getInstancesUpdated(); i++ ) {
+      size_t k = i;
+      sei.setInstanceIndex( i, k );
+      sei.setInstanceCancelFlag( k, false );
+      sei.setMethodType( k, 1 );
+      sei.setPbfLog2ThresholdMinus1( k, params_.pbfLog2Threshold_ - 1 );
+      sei.setPbfPassesCountMinus1( k, params_.pbfPassesCount_ - 1 );
+      sei.setPbfFilterSizeMinus1( k, params_.pbfFilterSize_ - 1 );
+    }
+#ifdef CONFORMANCE_TRACE
+    auto& vec = sei.getMD5ByteStrData();  // ajt:: this is just an example of how to generate a md5 checksum for
+                                          // occupancy synthesis SEI message
+    if ( vec.size() > 0 ) {
+      TRACE_HLS( "**********OCCUPANCY_SYNTHESIS_ESEI***********\n" );
+      TRACE_HLS( "SEI%02dMD5 = ", sei.getPayloadType() );
+      SEIMd5Checksum( context, vec );
+    }
+  }
+#endif
+}
+
+void PCCEncoder::createAttributeSmoothingSei( PCCContext& context, AtlasTileLayerRbsp& atgl) {
+  auto& sei = static_cast<SEIAttributeSmoothing&>( atgl.getSEI().addSeiPrefix( ATTRIBUTE_SMOOTHING, true ) );
+  sei.setPersistenceFlag( true );
+  sei.setResetFlag( true );
+  sei.setNumAttributesUpdated( 1 );
+  sei.allocate();
+  for ( size_t j = 0; j < sei.getNumAttributesUpdated(); j++ ) {
+    size_t k = j;
+    sei.setAttributeIdx( j, k );
+    sei.setInstancesUpdated( k, 1 );
+    sei.setAttributeSmoothingCancelFlag( k, false );
+    sei.allocate( k + 1, sei.getInstancesUpdated( k ) + 1 );
+    for ( size_t i = 0; i < sei.getInstancesUpdated( k ); i++ ) {
+      size_t m = i;
+      sei.setInstanceIndex( k, i, m );
+      sei.setInstanceCancelFlag( k, m, false );
+      sei.setMethodType( k, m, 1 );
+      if ( sei.getMethodType( k, m ) == 1 ) {
+        sei.setGridSizeMinus2( k, m, params_.cgridSize_ - 2 );
+        sei.setThreshold( k, m, params_.thresholdColorSmoothing_ );
+        sei.setThresholdVariation( k, m, params_.thresholdColorVariation_ );
+        sei.setThresholdDifference( k, m, params_.thresholdColorDifference_ );
+      }
+    }
+  }
+#ifdef CONFORMANCE_TRACE
+  auto& temp = sei.getMD5ByteStrData();
+  if ( temp.size() > 0 ) {  // ajt:: An example of how to generate md5 checksum for attribute smoothing SEI message -
+                            // could be computed different ways!
+    TRACE_HLS( "**********ATTRIBUTE_SMOOTHING_ESEI***********\n" );
+    TRACE_HLS( "SEI%02dMD5 = ", sei.getPayloadType() );
+    SEIMd5Checksum( context, temp );
+  }
+#endif
+}
+
+void PCCEncoder::createCodecComponentMappingSei( PCCContext& context, AtlasTileLayerRbsp& atgl ) {
+  auto&  vps        = context.getVps();
+  size_t atlasIndex = context.getAtlasIndex();
+  auto&  ai         = vps.getAttributeInformation( atlasIndex );
+  auto&  oi         = vps.getOccupancyInformation( atlasIndex );
+  auto&  gi         = vps.getGeometryInformation( atlasIndex );
+  bool   useAvc     = oi.getOccupancyCodecId() == params_.avcCodecIdIndex_ ||
+                gi.getGeometryCodecId() == params_.avcCodecIdIndex_ ||
+                ai.getAttributeCodecId( 0 ) == params_.avcCodecIdIndex_;
+  bool useHevc = oi.getOccupancyCodecId() == params_.hevcCodecIdIndex_ ||
+                 gi.getGeometryCodecId() == params_.hevcCodecIdIndex_ ||
+                 ai.getAttributeCodecId( 0 ) == params_.hevcCodecIdIndex_;
+  bool useShvc = oi.getOccupancyCodecId() == params_.shvcCodecIdIndex_ ||
+                 gi.getGeometryCodecId() == params_.shvcCodecIdIndex_ ||
+                 ai.getAttributeCodecId( 0 ) == params_.shvcCodecIdIndex_;
+  bool useVvc = oi.getOccupancyCodecId() == params_.vvcCodecIdIndex_ ||
+                gi.getGeometryCodecId() == params_.vvcCodecIdIndex_ ||
+                ai.getAttributeCodecId( 0 ) == params_.vvcCodecIdIndex_;
+  printf( "CODEC ID = %d %d %d \n", oi.getOccupancyCodecId(), gi.getGeometryCodecId(), ai.getAttributeCodecId( 0 ) );
+  printf( "ProfileCodecGroupIdc = CODEC_GROUP_MP4RA: AVC = %d HEVC = %d SHVC = %d VVC = %d \n", useAvc, useHevc,
+          useShvc, useVvc );
+  auto& sei = static_cast<SEIComponentCodecMapping&>( atgl.getSEI().addSeiPrefix( COMPONENT_CODEC_MAPPING, true ) );
+  // ajt0526:what happens if all components have the same codecId but CCM changes codecId to another
+  // codec. The intention was to use the new codec for geometry component, only?
+  sei.setComponentCodecCancelFlag( false );
+  sei.setCodecMappingsCountMinus1( useAvc + useHevc + useShvc + useVvc - 1 );
+  printf( "sei.getCodecMappingsCountMinus1() = %u \n", sei.getCodecMappingsCountMinus1() );
+  sei.allocate();
+  uint8_t index = 0;
+  if ( useAvc ) {
+    sei.setCodecId( index++, params_.avcCodecIdIndex_ );
+    sei.setCodec4cc( params_.avcCodecIdIndex_, "avc3" );
+  }
+  if ( useHevc ) {
+    sei.setCodecId( index++, params_.hevcCodecIdIndex_ );
+    sei.setCodec4cc( params_.hevcCodecIdIndex_, "hev1" );
+  }
+  if ( useShvc ) {
+    sei.setCodecId( index++, params_.shvcCodecIdIndex_ );
+    sei.setCodec4cc( params_.shvcCodecIdIndex_, "svc1" );
+  }
+  if ( useVvc ) {
+    sei.setCodecId( index++, params_.vvcCodecIdIndex_ );
+    sei.setCodec4cc( params_.vvcCodecIdIndex_, "vvi1" );
+  }
+#ifdef CONFORMANCE_TRACE
+  auto& temp = sei.getMD5ByteStrData();
+  if ( temp.size() > 0 ) {
+    TRACE_HLS( "**********CODEC_COMPONENT_MAPPING_ESEI***********\n" );
+    TRACE_HLS( "SEI%02dMD5 = ", sei.getPayloadType() );
+    SEIMd5Checksum( context, temp );
+  }
+#endif
+}
+
+void PCCEncoder::createHashSEI( PCCContext& context, size_t frameIndex, AtlasTileLayerRbsp& atgl ) {
+  size_t hashType = params_.decodedAtlasInformationHash_ - 1; 
   TRACE_SEI( "Hash SEI Information Frame %zu \n", frameIndex );
-  context.allocateSeiHash();
-  auto& sei = context.getSeiHash( hashIndex );
+  auto& sei = static_cast<SEIDecodedAtlasInformationHash&>( atgl.getSEI().addSeiSuffix( DECODED_ATLAS_INFORMATION_HASH, true ) );  
   sei.setDecodedHighLevelHashPresentFlag( frameIndex >= 0 );
   sei.setDecodedAtlasHashPresentFlag( frameIndex >= 0 );
   sei.setDecodedAtlasB2pHashPresentFlag( true );
@@ -8699,7 +8702,6 @@ void PCCEncoder::createHashSEI( PCCContext& context, int frameIndex, size_t hash
       }
     }
   }
-  context.addSeiHashToSeiSuffix( hashIndex );
   if ( atlasPatchParams.size() != 0 ) atlasPatchParams.clear();
   if ( tilePatchParams.size() != 0 ) {
     for ( size_t ti = 0; ti < tilePatchParams.size(); ti++ ) {

@@ -128,8 +128,11 @@ class PCCEncoder : public PCCCodec {
                                       size_t              frameIndex,
                                       size_t              tileIndex = 0 );
 
+  void createGeometrySmoothingSei( PCCContext& context, AtlasTileLayerRbsp& );
+  void createAttributeSmoothingSei( PCCContext& context, AtlasTileLayerRbsp& );
+  void createCodecComponentMappingSei( PCCContext& context, AtlasTileLayerRbsp& );
+  void createHashSEI( PCCContext& context, size_t frameIndex, AtlasTileLayerRbsp&  );
   void createHlsAtlasTileLogFiles( PCCContext& context, int frameIndex, int afpsId );
-  void createHashSEI( PCCContext& context, int frameIndex, size_t hashType );
 
  private:
   template <typename T>

@@ -65,21 +65,21 @@ size_t PCCAtlasContext::calculateAFOCLsb( size_t frameOrder ) {
   return frameOrder % ( size_t( 1 ) << log2MaxAtlasFrameOrderCntLsb_ );
 }
 
-size_t PCCContext::calculateAFOCval( std::vector<AtlasTileLayerRbsp>& atglList, size_t atglOrder ) {
+size_t PCCContext::calculateAFOCval( std::vector<AtlasTileLayerRbsp>& atglList, size_t atglIndex ) {
   // 8.2.3.1 Atals frame order count derivation process
-  if ( atglOrder == 0 ) {
-    atglList[atglOrder].setAtlasFrmOrderCntMsb( 0 );
-    atglList[atglOrder].setAtlasFrmOrderCntVal( atglList[atglOrder].getHeader().getAtlasFrmOrderCntLsb() );
-    return atglList[atglOrder].getHeader().getAtlasFrmOrderCntLsb();
+  if ( atglIndex == 0 ) {
+    atglList[atglIndex].setAtlasFrmOrderCntMsb( 0 );
+    atglList[atglIndex].setAtlasFrmOrderCntVal( atglList[atglIndex].getHeader().getAtlasFrmOrderCntLsb() );
+    return atglList[atglIndex].getHeader().getAtlasFrmOrderCntLsb();
   }
-  size_t prevAtlasFrmOrderCntMsb = atglList[atglOrder - 1].getAtlasFrmOrderCntMsb();
+  size_t prevAtlasFrmOrderCntMsb = atglList[atglIndex - 1].getAtlasFrmOrderCntMsb();
   size_t atlasFrmOrderCntMsb     = 0;
-  auto&  atgh                    = atglList[atglOrder].getHeader();
+  auto&  atgh                    = atglList[atglIndex].getHeader();
   auto&  afps                    = getAtlasFrameParameterSet( atgh.getAtlasFrameParameterSetId() );
   auto&  asps                    = getAtlasSequenceParameterSet( afps.getAtlasSequenceParameterSetId() );
   size_t maxAtlasFrmOrderCntLsb  = size_t( 1 ) << ( asps.getLog2MaxAtlasFrameOrderCntLsbMinus4() + 4 );
   size_t afocLsb                 = atgh.getAtlasFrmOrderCntLsb();
-  size_t prevAtlasFrmOrderCntLsb = atglList[atglOrder - 1].getHeader().getAtlasFrmOrderCntLsb();
+  size_t prevAtlasFrmOrderCntLsb = atglList[atglIndex - 1].getHeader().getAtlasFrmOrderCntLsb();
   if ( ( afocLsb < prevAtlasFrmOrderCntLsb ) &&
        ( ( prevAtlasFrmOrderCntLsb - afocLsb ) >= ( maxAtlasFrmOrderCntLsb / 2 ) ) ) {
     atlasFrmOrderCntMsb = prevAtlasFrmOrderCntMsb + maxAtlasFrmOrderCntLsb;
@@ -89,8 +89,8 @@ size_t PCCContext::calculateAFOCval( std::vector<AtlasTileLayerRbsp>& atglList, 
   } else {
     atlasFrmOrderCntMsb = prevAtlasFrmOrderCntMsb;
   }
-  atglList[atglOrder].setAtlasFrmOrderCntMsb( atlasFrmOrderCntMsb );
-  atglList[atglOrder].setAtlasFrmOrderCntVal( atlasFrmOrderCntMsb + afocLsb );
+  atglList[atglIndex].setAtlasFrmOrderCntMsb( atlasFrmOrderCntMsb );
+  atglList[atglIndex].setAtlasFrmOrderCntVal( atlasFrmOrderCntMsb + afocLsb );
   return atlasFrmOrderCntMsb + afocLsb;
 }
 

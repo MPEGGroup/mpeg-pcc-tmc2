@@ -181,7 +181,11 @@ class PCCBitstreamWriter {
   void atlasAdaptationParameterSetRbsp( AtlasAdaptationParameterSetRbsp& aaps, PCCBitstream& bitstream );
 
   // 8.3.6.4  Supplemental enhancement information Rbsp
-  void seiRbsp( PCCHighLevelSyntax& syntax, PCCBitstream& bitstream, SEI& sei, NalUnitType nalUnitType );
+  void seiRbsp( PCCHighLevelSyntax& syntax,
+                PCCBitstream&       bitstream,
+                SEI&                sei,
+                NalUnitType         nalUnitType,
+                size_t              atglIndex );
 
   // 8.3.6.5  Access unit delimiter Rbsp syntax
   void accessUnitDelimiterRbsp( AccessUnitDelimiterRbsp& aud, PCCHighLevelSyntax& syntax, PCCBitstream& bitstream );
@@ -264,7 +268,11 @@ class PCCBitstreamWriter {
                        PCCBitstream&                  bitstream );
 
   // 8.3.8 Supplemental enhancement information message syntax
-  void seiMessage( PCCBitstream& bitstream, PCCHighLevelSyntax& syntax, SEI& sei, NalUnitType nalUnitType );
+  void seiMessage( PCCBitstream&       bitstream,
+                   PCCHighLevelSyntax& syntax,
+                   SEI&                sei,
+                   NalUnitType         nalUnitType,
+                   size_t              atglIndex );
 
   // 8.3.5.3 Patch sequence parameter set syntax
   void patchV3CParameterSet( PatchDataGroup& pdg, size_t index, PCCBitstream& bitstream );
@@ -381,11 +389,16 @@ class PCCBitstreamWriter {
                             PCCBitstream&        bitstream,
                             SampleStreamNalUnit& ssnu,
                             NalUnit&             nalUnit,
-                            size_t               index = 0 );
+                            size_t               index     = 0,
+                            size_t               atglIndex = 0 );
 
   // F.2  SEI payload syntax
   // F.2.1  General SEI message syntax
-  void seiPayload( PCCBitstream& bitstream, PCCHighLevelSyntax& syntax, SEI& sei, NalUnitType nalUnitType );
+  void seiPayload( PCCBitstream&       bitstream,
+                   PCCHighLevelSyntax& syntax,
+                   SEI&                sei,
+                   NalUnitType         nalUnitType,
+                   size_t              atglIndex );
   // F.2.2  Filler payload SEI message syntax
   static void fillerPayload( PCCBitstream& bitstream, SEI& sei );
   // F.2.3  User data registered by Recommendation ITU-T T.35 SEI message syntax

@@ -66,6 +66,7 @@ class AtlasTileLayerRbsp {
   void               setDataUnit( AtlasTileDataUnit value ) { dataUnit_ = value; }
   void               setEncFrameIndex( int value ) { encFrameIndex_ = value; }
   void               setEncTileIndex( int value ) { encTileIndex_ = value; }
+  PCCSEI&            getSEI() { return sei_; }
 
  private:
   AtlasTileHeader   header_;
@@ -75,6 +76,7 @@ class AtlasTileLayerRbsp {
   size_t            tileOrder_;
   int               encFrameIndex_;
   int               encTileIndex_;
+  PCCSEI            sei_;
 };
 
 };  // namespace pcc

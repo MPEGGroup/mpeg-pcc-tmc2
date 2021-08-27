@@ -171,105 +171,20 @@ class PCCAtlasHighLevelSyntax {
     atlasTileLayer_.push_back( atgl );
     return atlasTileLayer_.back();
   }
+  size_t getAtlasTileLayerIndex( size_t frameIndex, size_t tileIndex ) {
+    for ( size_t atglIndex = 0; atglIndex < atlasTileLayer_.size(); atglIndex++ ) {
+      if ( atlasTileLayer_[atglIndex].getEncFrameIndex() == frameIndex &&
+           atlasTileLayer_[atglIndex].getEncTileIndex() == tileIndex ) {
+        return atglIndex;
+      }
+    }
+    return 0;
+  }
   std::vector<AtlasTileLayerRbsp>& getAtlasTileLayerList() { return atlasTileLayer_; }
-  AtlasTileLayerRbsp&              getAtlasTileLayer( size_t atglOrder ) { return atlasTileLayer_[atglOrder]; }
+  AtlasTileLayerRbsp&              getAtlasTileLayer( size_t atglIndex ) { return atlasTileLayer_[atglIndex]; }
   AtlasTileLayerRbsp&              getAtlasTileLayer( size_t frameIndex, size_t tileIndex ) {
-    for ( size_t atglOrder = 0; atglOrder < atlasTileLayer_.size(); atglOrder++ ) {
-      if ( atlasTileLayer_[atglOrder].getEncFrameIndex() == frameIndex &&
-           atlasTileLayer_[atglOrder].getEncTileIndex() == tileIndex )
-        return atlasTileLayer_[atglOrder];
-    }
-    assert( 0 );
-    return atlasTileLayer_[0];
+    return atlasTileLayer_[ getAtlasTileLayerIndex( frameIndex, tileIndex )];
   }
-
-  // SEI related functions
-  SEI& addSei( NalUnitType nalUnitType, SeiPayloadType payloadType ) {
-    std::shared_ptr<SEI> sharedPtr;
-    switch ( payloadType ) {
-      case BUFFERING_PERIOD: sharedPtr = std::make_shared<SEIBufferingPeriod>(); break;
-      case ATLAS_FRAME_TIMING: sharedPtr = std::make_shared<SEIAtlasFrameTiming>(); break;
-      case FILLER_PAYLOAD: break;
-      case USER_DATAREGISTERED_ITUTT35: sharedPtr = std::make_shared<SEIUserDataRegisteredItuTT35>(); break;
-      case USER_DATA_UNREGISTERED: sharedPtr = std::make_shared<SEIUserDataUnregistered>(); break;
-      case RECOVERY_POINT: sharedPtr = std::make_shared<SEIRecoveryPoint>(); break;
-      case NO_RECONSTRUCTION: sharedPtr = std::make_shared<SEINoDisplay>(); break;
-      case TIME_CODE: sharedPtr = std::make_shared<SEITimeCode>(); break;
-      case SEI_MANIFEST: sharedPtr = std::make_shared<SEIManifest>(); break;
-      case SEI_PREFIX_INDICATION: sharedPtr = std::make_shared<SEIPrefixIndication>(); break;
-      case ACTIVE_SUB_BITSTREAMS: sharedPtr = std::make_shared<SEIActiveSubBitstreams>(); break;
-      case COMPONENT_CODEC_MAPPING: sharedPtr = std::make_shared<SEIComponentCodecMapping>(); break;
-      case SCENE_OBJECT_INFORMATION: sharedPtr = std::make_shared<SEISceneObjectInformation>(); break;
-      case OBJECT_LABEL_INFORMATION: sharedPtr = std::make_shared<SEIObjectLabelInformation>(); break;
-      case PATCH_INFORMATION: sharedPtr = std::make_shared<SEIPatchInformation>(); break;
-      case VOLUMETRIC_RECTANGLE_INFORMATION: sharedPtr = std::make_shared<SEIVolumetricRectangleInformation>(); break;
-      case ATLAS_OBJECT_INFORMATION: sharedPtr = std::make_shared<SEIAtlasInformation>(); break;
-      case VIEWPORT_CAMERA_PARAMETERS: sharedPtr = std::make_shared<SEIViewportCameraParameters>(); break;
-      case VIEWPORT_POSITION: sharedPtr = std::make_shared<SEIViewportPosition>(); break;
-      case DECODED_ATLAS_INFORMATION_HASH: sharedPtr = std::make_shared<SEIDecodedAtlasInformationHash>(); break;
-      case ATTRIBUTE_TRANSFORMATION_PARAMS: sharedPtr = std::make_shared<SEIAttributeTransformationParams>(); break;
-      case OCCUPANCY_SYNTHESIS: sharedPtr = std::make_shared<SEIOccupancySynthesis>(); break;
-      case GEOMETRY_SMOOTHING: sharedPtr = std::make_shared<SEIGeometrySmoothing>(); break;
-      case ATTRIBUTE_SMOOTHING: sharedPtr = std::make_shared<SEIAttributeSmoothing>(); break;
-      case RESERVED_SEI_MESSAGE: sharedPtr = std::make_shared<SEIReservedSeiMessage>(); break;
-      default:
-        fprintf( stderr, "SEI payload type not supported \n" );
-        exit( -1 );
-        break;
-    }
-    if ( nalUnitType == NAL_PREFIX_ESEI || nalUnitType == NAL_PREFIX_NSEI ) {
-      seiPrefix_.push_back( sharedPtr );
-      return *( seiPrefix_.back().get() );
-    } else if ( nalUnitType == NAL_SUFFIX_ESEI || nalUnitType == NAL_SUFFIX_NSEI ) {
-      seiSuffix_.push_back( sharedPtr );
-      return *( seiSuffix_.back().get() );
-    } else {
-      fprintf( stderr, "Nal unit type of SEI not correct\n" );
-      exit( -1 );
-    }
-    return *( sharedPtr );
-  }
-  bool seiIsPresent( NalUnitType nalUnitType, SeiPayloadType payloadType ) {
-    if ( nalUnitType != NAL_PREFIX_ESEI && nalUnitType != NAL_SUFFIX_ESEI && nalUnitType != NAL_PREFIX_NSEI &&
-         nalUnitType != NAL_SUFFIX_NSEI ) {
-      return false;
-    }
-    for ( auto& sei : nalUnitType == NAL_PREFIX_ESEI || nalUnitType == NAL_PREFIX_NSEI ? seiPrefix_ : seiSuffix_ ) {
-      if ( sei->getPayloadType() == payloadType ) { return true; }
-    }
-    return false;
-  }
-  SEI* getSei( NalUnitType nalUnitType, SeiPayloadType payloadType ) {
-    auto& seis = ( nalUnitType == NAL_PREFIX_ESEI || nalUnitType == NAL_PREFIX_NSEI ) ? seiPrefix_ : seiSuffix_;
-    for ( auto& sei : seis ) {
-      if ( sei->getPayloadType() == payloadType ) { return sei.get(); }
-    }
-    assert( 0 );
-    return (SEI*)nullptr;
-  }
-
-  SEI* getLastSei( NalUnitType nalUnitType, SeiPayloadType payloadType ) {
-    auto& seis = ( nalUnitType == NAL_PREFIX_ESEI || nalUnitType == NAL_PREFIX_NSEI ) ? seiPrefix_ : seiSuffix_;
-    for ( auto sei = seis.rbegin(); sei != seis.rend(); ++sei ) {
-      if ( sei->get()->getPayloadType() == payloadType ) { return sei->get(); }
-    }
-    assert( 0 );
-    return (SEI*)nullptr;
-  }
-  SEI& addSeiPrefix( SeiPayloadType payloadType, bool essensial ) {
-    return addSei( essensial ? NAL_PREFIX_ESEI : NAL_PREFIX_NSEI, payloadType );
-  }
-  SEI& addSeiSuffix( SeiPayloadType payloadType, bool essensial ) {
-    return addSei( essensial ? NAL_SUFFIX_ESEI : NAL_SUFFIX_NSEI, payloadType );
-  }
-  void addSeiToSeiSuffix( SeiPayloadType payloadType, bool essensial, SEIDecodedAtlasInformationHash& seiContext ) {
-    seiSuffix_.push_back( std::make_shared<SEIDecodedAtlasInformationHash>( seiContext ) );
-  }
-
-  std::vector<std::shared_ptr<SEI>>& getSeiPrefix() { return seiPrefix_; }
-  std::vector<std::shared_ptr<SEI>>& getSeiSuffix() { return seiSuffix_; }
-  SEI&                               getSeiPrefix( size_t index ) { return *( seiPrefix_[index] ); }
-  SEI&                               getSeiSuffix( size_t index ) { return *( seiSuffix_[index] ); }
 
  private:
   std::vector<PCCVideoBitstream>             videoBitstream_;             // video related variables
@@ -279,8 +194,6 @@ class PCCAtlasHighLevelSyntax {
   std::vector<PointLocalReconstructionMode>  pointLocalReconstructionMode_;
   std::vector<AtlasFrameParameterSetRbsp>    atlasFrameParameterSet_;  // AFPS related variables
   std::vector<AtlasTileLayerRbsp>            atlasTileLayer_;          // ATGL related variables
-  std::vector<std::shared_ptr<SEI>>          seiPrefix_;               // SEI related variables
-  std::vector<std::shared_ptr<SEI>>          seiSuffix_;
 };
 
 class PCCHighLevelSyntax {
@@ -333,6 +246,7 @@ class PCCHighLevelSyntax {
     atlasIndex_ = 0;
   }
   void setAtlasIndex( size_t atlId ) { atlasIndex_ = atlId; }
+  PCCAtlasHighLevelSyntax& getAtlasHighLevelSyntax() { return atlasHLS_[atlasIndex_]; } 
 
   // All the functions below are just redirect to the corresponding atlas function
   // video related functions
@@ -344,7 +258,7 @@ class PCCHighLevelSyntax {
   PCCVideoBitstream& getVideoBitstream( PCCVideoType type ) { return atlasHLS_[atlasIndex_].getVideoBitstream( type ); }
   void               printVideoBitstream() { return atlasHLS_[atlasIndex_].printVideoBitstream(); };
 
-  // ASPS related functions
+  // ASPS related functions  
   AtlasSequenceParameterSetRbsp& getAtlasSequenceParameterSet( size_t setId ) {
     return atlasHLS_[atlasIndex_].getAtlasSequenceParameterSet( setId );
   }
@@ -416,55 +330,44 @@ class PCCHighLevelSyntax {
     return atlasHLS_[atlasIndex_].addAtlasTileLayer( frameIdx, tileIdx );
   }
   std::vector<AtlasTileLayerRbsp>& getAtlasTileLayerList() { return atlasHLS_[atlasIndex_].getAtlasTileLayerList(); }
-  AtlasTileLayerRbsp&              getAtlasTileLayer( size_t atglOrder ) {
-    return atlasHLS_[atlasIndex_].getAtlasTileLayer( atglOrder );
+  AtlasTileLayerRbsp&              getAtlasTileLayer( size_t atglIndex ) {
+    return atlasHLS_[atlasIndex_].getAtlasTileLayer( atglIndex );
   }
   AtlasTileLayerRbsp& getAtlasTileLayer( size_t frameIdx, size_t tileIdx ) {
     return atlasHLS_[atlasIndex_].getAtlasTileLayer( frameIdx, tileIdx );
   }
 
-  // SEI related functions
-  SEI& addSei( NalUnitType nalUnitType, SeiPayloadType payloadType ) {
-    return atlasHLS_[atlasIndex_].addSei( nalUnitType, payloadType );
-  }
-  bool seiIsPresent( NalUnitType nalUnitType, SeiPayloadType payloadType ) {
-    return atlasHLS_[atlasIndex_].seiIsPresent( nalUnitType, payloadType );
-  }
-  SEI* getSei( NalUnitType nalUnitType, SeiPayloadType payloadType ) {
-    return atlasHLS_[atlasIndex_].getSei( nalUnitType, payloadType );
-  }
-  SEI* getLastSei( NalUnitType nalUnitType, SeiPayloadType payloadType ) {
-    return atlasHLS_[atlasIndex_].getLastSei( nalUnitType, payloadType );
-  }
-  SEI& addSeiPrefix( SeiPayloadType payloadType, bool essensial ) {
-    return atlasHLS_[atlasIndex_].addSeiPrefix( payloadType, essensial );
-  }
-  SEI& addSeiSuffix( SeiPayloadType payloadType, bool essensial ) {
-    return atlasHLS_[atlasIndex_].addSeiSuffix( payloadType, essensial );
-  }
-  std::vector<std::shared_ptr<SEI>>& getSeiPrefix() { return atlasHLS_[atlasIndex_].getSeiPrefix(); }
-  std::vector<std::shared_ptr<SEI>>& getSeiSuffix() { return atlasHLS_[atlasIndex_].getSeiSuffix(); }
-  SEI& getSeiPrefix( size_t index ) { return atlasHLS_[atlasIndex_].getSeiPrefix( index ); }
-  SEI& getSeiSuffix( size_t index ) { return atlasHLS_[atlasIndex_].getSeiSuffix( index ); }
 
-  std::vector<SEIDecodedAtlasInformationHash>& getSeiHash() { return seiHash_; }
-  SEIDecodedAtlasInformationHash&              getSeiHash( size_t index ) { return seiHash_[index]; }
-
-  void addSeiHashToSeiSuffix( size_t i ) {
-    return atlasHLS_[atlasIndex_].addSeiToSeiSuffix( DECODED_ATLAS_INFORMATION_HASH, true, seiHash_[i] );
+  bool seiIsPresentInReceivedData( NalUnitType nalUnitType, SeiPayloadType payloadType, size_t atglIndex ) {
+    if( getAtlasTileLayer( atglIndex ).getSEI().seiIsPresent( nalUnitType, payloadType ) ){
+      return true;
+    }
+    for( int32_t index = (int32_t)atglIndex -1; index > 0; index -- ){
+      if( getAtlasTileLayer( index ).getSEI().seiIsPresent( nalUnitType, payloadType ) ){
+        // auto& sei = getAtlasTileLayer( index ).getSEI().getSei( nalUnitType, payloadType ); 
+        // JR TODO: we must check that the SEI is percistant but this information is sei dependent
+        return true;
+      }
+    }
+    return false;
   }
-
-  void allocateSeiHash( size_t hashCount ) { seiHash_.resize( hashCount ); }
-  void allocateSeiHash() {
-    size_t size = seiHash_.size();
-    seiHash_.resize( size + 1 );
+  SEI* getSeiInReceivedData( NalUnitType nalUnitType, SeiPayloadType payloadType, size_t atglIndex ) {
+    if ( getAtlasTileLayer( atglIndex ).getSEI().seiIsPresent( nalUnitType, payloadType ) ) {
+      return getAtlasTileLayer( atglIndex ).getSEI().getSei( nalUnitType, payloadType );
+    }
+    for ( int32_t index = (int32_t)atglIndex - 1; index > 0; index-- ) {
+      if ( getAtlasTileLayer( index ).getSEI().seiIsPresent( nalUnitType, payloadType ) ) {
+        // auto& sei = getAtlasTileLayer( index ).getSEI().getSei( nalUnitType, payloadType );
+        // JR TODO: we must check that the SEI is percistant but this information is sei dependent
+        return getAtlasTileLayer( index ).getSEI().getSei( nalUnitType, payloadType );
+      }
+    }
+    return (SEI*)nullptr;
   }
-
   uint8_t getOccupancyPrecision() { return occupancyPrecision_; }
   uint8_t getLog2PatchQuantizerSizeX() { return log2PatchQuantizerSizeX_; }
   uint8_t getLog2PatchQuantizerSizeY() { return log2PatchQuantizerSizeY_; }
   bool    getEnablePatchSizeQuantization() { return enablePatchSizeQuantization_; }
-
   bool&   getPrefilterLossyOM() { return prefilterLossyOM_; }
   size_t& getOffsetLossyOM() { return offsetLossyOM_; }
   size_t  getGeometry3dCoordinatesBitdepth() { return geometry3dCoordinatesBitdepth_; }
@@ -495,7 +398,7 @@ class PCCHighLevelSyntax {
   PCCBitstreamStat*                           bitstreamStat_;
   std::vector<PCCAtlasHighLevelSyntax>        atlasHLS_;
   size_t                                      atlasIndex_;
-  std::vector<SEIDecodedAtlasInformationHash> seiHash_;
+  // std::vector<SEIDecodedAtlasInformationHash> seiHash_;
 };
 };  // namespace pcc
 
