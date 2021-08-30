@@ -7949,7 +7949,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
     }
     // For all tiles
     for ( size_t tileIndex = 0; tileIndex < context[frameIndex].getNumTilesInAtlasFrame(); tileIndex++ ) {
-      printf( "createPatchFrameDataStructure tile %zu\n", tileIndex );
+      printf( "createPatchFrameDataStructure tile %zu / %zu \n", tileIndex,context[frameIndex].getNumTilesInAtlasFrame() );
       auto& atgl = context.addAtlasTileLayer( frameIndex, tileIndex );
       auto& atgh = atgl.getHeader();
       atgh.setAtlasFrameParameterSetId( atlasFrameParameterSetId );
@@ -7971,7 +7971,6 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
       PCCFrameContext& tile = context[frameIndex].getTile( tileIndex );
       createPatchFrameDataStructure( context, tile, atgl, frameIndex, tileIndex );
       tile.setAtlIndex( context.getAtlasTileLayerList().size() - 1 );
-
       // Create SEI messages
       if ( frameIndex == 0 && tileIndex == 0 ) {
         auto& plt = context.getVps().getProfileTierLevel();
@@ -7980,13 +7979,12 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
         if ( plt.getProfileCodecGroupIdc() == CODEC_GROUP_MP4RA ) { createCodecComponentMappingSei( context, atgl ); }
       }
 #ifdef CONFORMANCE_TRACE
-      if ( params_.decodedAtlasInformationHash_ > 0 ) { createHashSEI( context, frameIndex, atgl ); }
+      if ( ( params_.decodedAtlasInformationHash_ > 0 ) &&
+           ( tileIndex + 1 == context[frameIndex].getNumTilesInAtlasFrame() ) ) {
+        createHashSEI( context, frameIndex, atgl );
+      }
 #endif
     }  // tileIndex
-    auto& afps = context.getAtlasFrameParameterSet( atlasFrameParameterSetId );
-    auto& asps = context.getAtlasSequenceParameterSet( afps.getAtlasSequenceParameterSetId() );
-    auto& afc  = context.getFrame( frameIndex );
-    auto& vps  = context.getVps();
 #ifdef CONFORMANCE_TRACE
     TRACE_PATCH( "Create HLS + ATlas + Tile Log File %zu \n", frameIndex );
     createHlsAtlasTileLogFiles( context, frameIndex, atlasFrameParameterSetId );

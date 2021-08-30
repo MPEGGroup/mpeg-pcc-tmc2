@@ -2303,7 +2303,7 @@ void PCCCodec::getHashPatchParams( PCCContext&                            contex
                                    std::vector<PatchParams>&              atlasPatchParams ) {
   auto&       tile          = context.getFrame( frameIndex ).getTile( tileIndex );
   size_t      atlIdx        = tile.getAtlIndex();
-  auto&       atl           = context.getAtlasTileLayer( atlIdx );
+  auto&       atl           = context.getAtlasTileLayer( frameIndex, atlIdx );
   auto&       ath           = atl.getHeader();
   auto&       afps          = context.getAtlasFrameParameterSet( ath.getAtlasFrameParameterSetId() );
   auto&       asps          = context.getAtlasSequenceParameterSet( afps.getAtlasSequenceParameterSetId() );
@@ -2313,7 +2313,6 @@ void PCCCodec::getHashPatchParams( PCCContext&                            contex
   size_t      tileOffsetX   = context[frameIndex].getPartitionPosX( topLeftColumn );
   size_t      tileOffsetY   = context[frameIndex].getPartitionPosY( topLeftRow );
   PCCTileType tileType      = ath.getType();
-
   size_t patchCount = tile.getPatches().size();
   for ( size_t patchIdx = 0; patchIdx < patchCount; patchIdx++ ) {
     PatchParams  pps;
