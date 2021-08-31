@@ -7925,6 +7925,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
   }
   // For all frames
   for ( size_t frameIndex = 0; frameIndex < frameCount; frameIndex++ ) {
+    printf( "createPatchFrameDataStructure frameIndex = %zu / %zu \n", frameIndex, frameCount );
     size_t atlasFrameParameterSetId = 0;
     // partition information
     if ( frameIndex == 0 ) {
@@ -7949,7 +7950,9 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
     }
     // For all tiles
     for ( size_t tileIndex = 0; tileIndex < context[frameIndex].getNumTilesInAtlasFrame(); tileIndex++ ) {
-      printf( "createPatchFrameDataStructure tile %zu / %zu \n", tileIndex,context[frameIndex].getNumTilesInAtlasFrame() );
+      printf( "createPatchFrameDataStructure frameIndex = %zu tile %zu / %zu \n", frameIndex, tileIndex,
+              context[frameIndex].getNumTilesInAtlasFrame() );
+      fflush( stdout );
       auto& atgl = context.addAtlasTileLayer( frameIndex, tileIndex );
       auto& atgh = atgl.getHeader();
       atgh.setAtlasFrameParameterSetId( atlasFrameParameterSetId );
