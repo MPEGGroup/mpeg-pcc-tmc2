@@ -1045,7 +1045,6 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
       endFrameNumber  = startFrameNumber + sources.getFrameCount();
       endFrameNumber0 = endFrameNumber;
     }
-
     std::cout << "Compressing " << contextIndex << " frames " << startFrameNumber << " -> " << endFrameNumber << "..."
               << std::endl;
     int                ret = encoder.encode( sources, context, reconstructs );
@@ -1055,7 +1054,6 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
 #endif
     ret |= bitstreamWriter.encode( context, ssvu );
     clock.stop();
-
     PCCGroupOfFrames normals;
     if ( metricsParams.computeMetrics_ ) {
       bool bRunMetric = true;
@@ -1082,7 +1080,7 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
     sources.clear();
     reconstructs.clear();
     startFrameNumber = endFrameNumber;
-    if ( encoderParams.increaseV3CParameterSetId_ ) { contextIndex++; }
+    contextIndex++; 
   }
 
   PCCBitstream bitstream;

@@ -190,8 +190,7 @@ class V3CParameterSet {
   uint8_t                           extension8Bits_;
   size_t                            extensionLengthMinus1_;
   std::vector<uint8_t>              extensionDataByte_;
-
-  VpsVpccExtension vpsVpccExtension_;
+  VpsVpccExtension                  vpsVpccExtension_;
 };
 
 };  // namespace pcc

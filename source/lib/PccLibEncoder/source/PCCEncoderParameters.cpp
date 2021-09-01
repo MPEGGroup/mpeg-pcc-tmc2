@@ -743,8 +743,7 @@ bool PCCEncoderParameters::check() {
     if ( attrTransferFilterType_ ){
       attrTransferFilterType_ = 0;
       std::cout << "attrTransferFilterType is ignored because profileReconstructionIdc set to 0. \n";
-    }
-    
+    }    
     if ( pbfEnableFlag_ ) {
       pbfEnableFlag_ = false;
       std::cout << "pbfEnableFlag is ignored because profileReconstructionIdc set to 0. \n";
