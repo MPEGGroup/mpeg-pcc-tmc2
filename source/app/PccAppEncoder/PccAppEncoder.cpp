@@ -157,10 +157,6 @@ bool parseParameters( int                   argc,
       encoderParams.forcedSsvhUnitSizePrecisionBytes_,
       encoderParams.forcedSsvhUnitSizePrecisionBytes_,
       "forced SSVH unit size precision bytes" )
-    ( "increaseV3CParameterSetId",
-      encoderParams.increaseV3CParameterSetId_,
-      encoderParams.increaseV3CParameterSetId_,
-      "increase V3CParameterSetId for each GOP" )
 
     // sequence configuration
     ( "startFrameNumber",
