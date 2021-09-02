@@ -53,18 +53,17 @@ PCCVideoEncoder::~PCCVideoEncoder() = default;
 
 template <typename T>
 void PCCVideoEncoder::patchColorSubsmple( PCCVideo<T, 3>&    video,
-                                         PCCContext&        contexts,
-                                         const size_t      width,
-                                         const size_t      height,
-                                         const std::string& configColorSpace,
-                                         const std::string& colorSpaceConversionPath,
-                                         const std::string& fileName)
-{
+                                          PCCContext&        contexts,
+                                          const size_t       width,
+                                          const size_t       height,
+                                          const std::string& configColorSpace,
+                                          const std::string& colorSpaceConversionPath,
+                                          const std::string& fileName ) {
   printf( "Encoder convert : patchColorSubsampling\n" );
-  
+
   std::shared_ptr<PCCVirtualColorConverter<T>> converter;
   if ( colorSpaceConversionPath.empty() ) {
-    converter               = std::make_shared<PCCInternalColorConverter<T>>();
+    converter = std::make_shared<PCCInternalColorConverter<T>>();
   } else {
 #ifdef USE_HDRTOOLS
     converter = std::make_shared<PCCHDRToolsLibColorConverter<T>>();
@@ -72,7 +71,7 @@ void PCCVideoEncoder::patchColorSubsmple( PCCVideo<T, 3>&    video,
     converter = std::make_shared<PCCHDRToolsAppColorConverter<T>>();
 #endif
   }
-  
+
   PCCVideo<T, 3> video444;
   // perform color-subsampling based on patch information
   video444.resize( video.getFrameCount() );
@@ -159,8 +158,7 @@ void PCCVideoEncoder::patchColorSubsmple( PCCVideo<T, 3>&    video,
             // looking for the neighboring block above the current block
             searchIndex = (int)i;
             while ( searchIndex >= 0 ) {
-              if ( blockToPatch[( searchIndex + patch_top / occupancyResolution ) *
-                                    ( width / occupancyResolution ) +
+              if ( blockToPatch[( searchIndex + patch_top / occupancyResolution ) * ( width / occupancyResolution ) +
                                 j + patch_left / occupancyResolution] == patchIdx ) {
                 neighborIdx[2]      = searchIndex;
                 neighborDistance[2] = (int)i - searchIndex;
@@ -171,8 +169,7 @@ void PCCVideoEncoder::patchColorSubsmple( PCCVideo<T, 3>&    video,
             // looking for the neighboring block below the current block
             searchIndex = (int)i;
             while ( searchIndex < patch_height / occupancyResolution ) {
-              if ( blockToPatch[( searchIndex + patch_top / occupancyResolution ) *
-                                    ( width / occupancyResolution ) +
+              if ( blockToPatch[( searchIndex + patch_top / occupancyResolution ) * ( width / occupancyResolution ) +
                                 j + patch_left / occupancyResolution] == patchIdx ) {
                 neighborIdx[3]      = searchIndex;
                 neighborDistance[3] = searchIndex - (int)i;
@@ -183,8 +180,7 @@ void PCCVideoEncoder::patchColorSubsmple( PCCVideo<T, 3>&    video,
             // check if the candidate was found
             assert( *( std::max )( neighborIdx.begin(), neighborIdx.end() ) > 0 );
             // now fill in the block with the edge value coming from the nearest neighbor
-            direction =
-                std::min_element( neighborDistance.begin(), neighborDistance.end() ) - neighborDistance.begin();
+            direction = std::min_element( neighborDistance.begin(), neighborDistance.end() ) - neighborDistance.begin();
             if ( direction == 0 ) {
               // copying from left neighboring block
               for ( size_t iBlk = 0; iBlk < occupancyResolution; iBlk++ ) {
@@ -207,15 +203,15 @@ void PCCVideoEncoder::patchColorSubsmple( PCCVideo<T, 3>&    video,
               // copying block from right neighboring position
               for ( size_t iBlk = 0; iBlk < occupancyResolution; iBlk++ ) {
                 for ( size_t jBlk = 0; jBlk < occupancyResolution; jBlk++ ) {
-                  tmpImage.setValue( 0, j * occupancyResolution + jBlk, i * occupancyResolution + iBlk,
-                                     tmpImage.getValue( 0, neighborIdx[1] * occupancyResolution,
-                                                        i * occupancyResolution + iBlk ) );
-                  tmpImage.setValue( 1, j * occupancyResolution + jBlk, i * occupancyResolution + iBlk,
-                                     tmpImage.getValue( 1, neighborIdx[1] * occupancyResolution,
-                                                        i * occupancyResolution + iBlk ) );
-                  tmpImage.setValue( 2, j * occupancyResolution + jBlk, i * occupancyResolution + iBlk,
-                                     tmpImage.getValue( 2, neighborIdx[1] * occupancyResolution,
-                                                        i * occupancyResolution + iBlk ) );
+                  tmpImage.setValue(
+                      0, j * occupancyResolution + jBlk, i * occupancyResolution + iBlk,
+                      tmpImage.getValue( 0, neighborIdx[1] * occupancyResolution, i * occupancyResolution + iBlk ) );
+                  tmpImage.setValue(
+                      1, j * occupancyResolution + jBlk, i * occupancyResolution + iBlk,
+                      tmpImage.getValue( 1, neighborIdx[1] * occupancyResolution, i * occupancyResolution + iBlk ) );
+                  tmpImage.setValue(
+                      2, j * occupancyResolution + jBlk, i * occupancyResolution + iBlk,
+                      tmpImage.getValue( 2, neighborIdx[1] * occupancyResolution, i * occupancyResolution + iBlk ) );
                 }
               }
             } else if ( direction == 2 ) {
@@ -240,15 +236,15 @@ void PCCVideoEncoder::patchColorSubsmple( PCCVideo<T, 3>&    video,
               // copying block from below
               for ( size_t iBlk = 0; iBlk < occupancyResolution; iBlk++ ) {
                 for ( size_t jBlk = 0; jBlk < occupancyResolution; jBlk++ ) {
-                  tmpImage.setValue( 0, j * occupancyResolution + jBlk, i * occupancyResolution + iBlk,
-                                     tmpImage.getValue( 0, j * occupancyResolution + jBlk,
-                                                        neighborIdx[3] * occupancyResolution ) );
-                  tmpImage.setValue( 1, j * occupancyResolution + jBlk, i * occupancyResolution + iBlk,
-                                     tmpImage.getValue( 1, j * occupancyResolution + jBlk,
-                                                        neighborIdx[3] * occupancyResolution ) );
-                  tmpImage.setValue( 2, j * occupancyResolution + jBlk, i * occupancyResolution + iBlk,
-                                     tmpImage.getValue( 2, j * occupancyResolution + jBlk,
-                                                        neighborIdx[3] * occupancyResolution ) );
+                  tmpImage.setValue(
+                      0, j * occupancyResolution + jBlk, i * occupancyResolution + iBlk,
+                      tmpImage.getValue( 0, j * occupancyResolution + jBlk, neighborIdx[3] * occupancyResolution ) );
+                  tmpImage.setValue(
+                      1, j * occupancyResolution + jBlk, i * occupancyResolution + iBlk,
+                      tmpImage.getValue( 1, j * occupancyResolution + jBlk, neighborIdx[3] * occupancyResolution ) );
+                  tmpImage.setValue(
+                      2, j * occupancyResolution + jBlk, i * occupancyResolution + iBlk,
+                      tmpImage.getValue( 2, j * occupancyResolution + jBlk, neighborIdx[3] * occupancyResolution ) );
                 }
               }
             } else {
@@ -352,7 +348,7 @@ bool PCCVideoEncoder::compress( PCCVideo<T, 3>&    video,
   } else {
     if ( keepIntermediateFiles ) { video.write( srcRgbFileName, nbyte ); }
     if ( patchColorSubsampling ) {
-      patchColorSubsmple(video, contexts, width, height, configColorSpace, colorSpaceConversionPath, fileName);
+      patchColorSubsmple( video, contexts, width, height, configColorSpace, colorSpaceConversionPath, fileName );
     } else {
       converter->convert( configColorSpace, video, colorSpaceConversionPath, fileName + "_rec" );
     }

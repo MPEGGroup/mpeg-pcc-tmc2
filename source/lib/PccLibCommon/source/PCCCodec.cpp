@@ -372,7 +372,7 @@ std::vector<PCCPoint3D> PCCCodec::generatePoints( const GeneratePointCloudParame
     }
     auto&        blockToPatch      = tile.getBlockToPatch();
     const size_t blockToPatchWidth = tile.getWidth() / params.occupancyResolution_;
-    double       depthNeighbors[4] = { 0.0, 0.0, 0.0, 0.0 };
+    double       depthNeighbors[4] = {0.0, 0.0, 0.0, 0.0};
     int          count             = 0;
     double       minimumDepth      = point0[patch.getNormalAxis()];
     double       maximumDepth      = point0[patch.getNormalAxis()];
@@ -614,8 +614,8 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                       reconstru
     if ( videoGeometry.getFrameCount() < ( videoFrameIndex + mapCount ) ) { return; }
   }
   TRACE_CODEC( " videoFrameIndex(shift):frameIndex*mapCount  = %d \n", videoFrameIndex );
-  const auto&           frame0     = params.multipleStreams_ ? videoGeometryMultiple[0].getFrame( videoFrameIndex )
-                                                             : videoGeometry.getFrame( videoFrameIndex );
+  const auto& frame0 = params.multipleStreams_ ? videoGeometryMultiple[0].getFrame( videoFrameIndex )
+                                               : videoGeometry.getFrame( videoFrameIndex );
   const size_t          tileWidth  = tile.getWidth();
   const size_t          tileHeight = tile.getHeight();
   std::vector<uint32_t> BPflag;
@@ -684,15 +684,15 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                       reconstru
                 uint16_t    eomCode = 0;
                 size_t      d1pos   = 0;
                 const auto& frame0  = params.multipleStreams_ ? videoGeometryMultiple[0].getFrame( videoFrameIndex )
-                                                              : videoGeometry.getFrame( videoFrameIndex );
-                const auto& indx    = patch.patch2Canvas( u, v, tileWidth, tileHeight, x, y );
+                                                             : videoGeometry.getFrame( videoFrameIndex );
+                const auto& indx = patch.patch2Canvas( u, v, tileWidth, tileHeight, x, y );
                 if ( params.mapCountMinus1_ > 0 ) {
                   const auto& frame1 = params.multipleStreams_ ? videoGeometryMultiple[1].getFrame( videoFrameIndex )
                                                                : videoGeometry.getFrame( videoFrameIndex + 1 );
-                  int16_t     diff   = params.absoluteD1_
-                                           ? ( static_cast<int16_t>( frame1.getValue( 0, xInVideoFrame, yInVideoFrame ) ) -
+                  int16_t diff = params.absoluteD1_
+                                     ? ( static_cast<int16_t>( frame1.getValue( 0, xInVideoFrame, yInVideoFrame ) ) -
                                          static_cast<int16_t>( frame0.getValue( 0, xInVideoFrame, yInVideoFrame ) ) )
-                                           : static_cast<int16_t>( frame1.getValue( 0, xInVideoFrame, yInVideoFrame ) );
+                                     : static_cast<int16_t>( frame1.getValue( 0, xInVideoFrame, yInVideoFrame ) );
                   assert( diff >= 0 );
                   // Convert occupancy map to eomCode
                   if ( diff == 0 ) {
@@ -815,15 +815,13 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                       reconstru
                       }
                       partition.push_back( uint32_t( patchIndex ) );
                       if ( params.singleMapPixelInterleaving_ ) {
-                        pointToPixel.emplace_back( x, y,
-                                                   i == 0   ? ( static_cast<size_t>( x + y ) % 2 )
-                                                   : i == 1 ? ( static_cast<size_t>( x + y + 1 ) % 2 )
-                                                            : g_intermediateLayerIndex );
+                        pointToPixel.emplace_back(
+                            x, y,
+                            i == 0 ? ( static_cast<size_t>( x + y ) % 2 )
+                                   : i == 1 ? ( static_cast<size_t>( x + y + 1 ) % 2 ) : g_intermediateLayerIndex );
                       } else if ( params.pointLocalReconstruction_ ) {
-                        pointToPixel.emplace_back( x, y,
-                                                   i == 0   ? 0
-                                                   : i == 1 ? g_intermediateLayerIndex
-                                                            : g_intermediateLayerIndex + 1 );
+                        pointToPixel.emplace_back(
+                            x, y, i == 0 ? 0 : i == 1 ? g_intermediateLayerIndex : g_intermediateLayerIndex + 1 );
                       } else {
                         pointToPixel.emplace_back( x, y, i < 2 ? i : g_intermediateLayerIndex + 1 );
                       }
@@ -987,7 +985,7 @@ void PCCCodec::addGridCentroid( PCCPoint3D&                     point,
                                 int                             cellId ) {
   if ( count[cellId] == 0 ) {
     gpartition[cellId] = patchIdx;
-    centerGrid[cellId] = { 0., 0., 0. };
+    centerGrid[cellId] = {0., 0., 0.};
     doSmooth[cellId]   = false;
   } else if ( !doSmooth[cellId] && gpartition[cellId] != patchIdx ) {
     doSmooth[cellId] = true;
@@ -1168,7 +1166,7 @@ void PCCCodec::addGridColorCentroid( PCCPoint3D&                             poi
                                      int                                     cellId ) {
   if ( colorGridCount[cellId] == 0 ) {
     colorPartition[cellId] = tilePatchIdx;
-    colorCenter[cellId]    = { 0., 0., 0. };
+    colorCenter[cellId]    = {0., 0., 0.};
     colorDoSmooth[cellId]  = false;
   } else if ( !colorDoSmooth[cellId] && colorPartition[cellId] != tilePatchIdx ) {
     colorDoSmooth[cellId] = true;
@@ -1763,7 +1761,7 @@ void PCCCodec::generateBlockToPatchFromOccupancyMapVideo( PCCContext&           
 
 void PCCCodec::generateAfti( PCCContext& context, size_t frameIndex,
                              AtlasFrameTileInformation& afti ) {  // encoder
-  auto& partitionInfoPerFrame = context[frameIndex];
+  auto&partitionInfoPerFrame = context[frameIndex];
   afti.setSingleTileInAtlasFrameFlag( partitionInfoPerFrame.getNumTilesInAtlasFrame() == 1 );
   if ( partitionInfoPerFrame.getNumTilesInAtlasFrame() == 1 ) {
     if ( partitionInfoPerFrame.getTitleFrameContext().getUseRawPointsSeparateVideo() ) {
@@ -1800,7 +1798,7 @@ void PCCCodec::generateAfti( PCCContext& context, size_t frameIndex,
   } else {
     for ( size_t ti = 0; ti < partitionInfoPerFrame.getNumTilesInAtlasFrame(); ti++ ) { afti.setTileId( ti, ti ); }
   }
-  auto& atlasFrame = context.getFrame( frameIndex );
+  auto&atlasFrame = context.getFrame( frameIndex );
   for ( size_t ti = 0; ti < partitionInfoPerFrame.getNumTilesInAtlasFrame(); ti++ ) {
     auto& tile = atlasFrame.getTile( ti );
     if ( tile.getPatches().size() == 0 &&

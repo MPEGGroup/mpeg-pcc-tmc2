@@ -131,7 +131,7 @@ class PCCEncoder : public PCCCodec {
   void createGeometrySmoothingSei( PCCContext& context, AtlasTileLayerRbsp& );
   void createAttributeSmoothingSei( PCCContext& context, AtlasTileLayerRbsp& );
   void createCodecComponentMappingSei( PCCContext& context, AtlasTileLayerRbsp& );
-  void createHashSEI( PCCContext& context, size_t frameIndex, AtlasTileLayerRbsp&  );
+  void createHashSEI( PCCContext& context, size_t frameIndex, AtlasTileLayerRbsp& );
   void createHlsAtlasTileLogFiles( PCCContext& context, int frameIndex, int afpsId );
 
  private:

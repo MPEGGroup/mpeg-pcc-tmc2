@@ -48,13 +48,13 @@ class PCCVideoEncoder {
   PCCVideoEncoder();
   ~PCCVideoEncoder();
   template <typename T>
-  void patchColorSubsmple( PCCVideo<T, 3>&   video,
-                          PCCContext&        contexts,
-                          const size_t       width,
-                          const size_t       height,
-                          const std::string& configColorSpace,
-                          const std::string& colorSpaceConversionPath,
-                          const std::string& fileName );
+  void patchColorSubsmple( PCCVideo<T, 3>&    video,
+                           PCCContext&        contexts,
+                           const size_t       width,
+                           const size_t       height,
+                           const std::string& configColorSpace,
+                           const std::string& colorSpaceConversionPath,
+                           const std::string& fileName );
   template <typename T>
   bool compress( PCCVideo<T, 3>&    video,
                  const std::string& path,

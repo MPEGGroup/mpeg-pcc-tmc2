@@ -62,7 +62,7 @@ bool parseParameters( int          argc,
   // clang-format off
   po::Options opts;
   opts.addOptions()
-     ("help",            print_help,     false,          "This help text" )
+     ( "help",            print_help,     false,          "This help text" )
      ( "srcVideoPath",   srcVideoPath,   srcVideoPath,   "Source yuv file path" )
      ( "dstVideoPath",   dstVideoPath,   dstVideoPath,   "Create yuv file path" )
      ( "configFile",     configFile,     configFile,     "HDRTools configuration files" )
@@ -110,10 +110,8 @@ int main( int argc, char* argv[] ) {
     return -1;
   }
   typedef uint16_t T;
-  PCCCOLORFORMAT   format = colorFormat == "RGB444"
-                              ? PCCCOLORFORMAT::RGB444
-                              : colorFormat == "YUV444" ? PCCCOLORFORMAT::YUV444 : PCCCOLORFORMAT::YUV420;
-  PCCVideo<T, 3> videoSrc, videoRec;
+  PCCCOLORFORMAT   format = colorFormat == "RGB444" ? RGB444 : colorFormat == "YUV444" ? YUV444 : YUV420;
+  PCCVideo<T, 3>   videoSrc, videoRec;
   videoSrc.read( srcVideoPath, width, height, format, inputNumBytes );
 #ifdef USE_HDRTOOLS
   PCCHDRToolsLibColorConverter<T> convert;

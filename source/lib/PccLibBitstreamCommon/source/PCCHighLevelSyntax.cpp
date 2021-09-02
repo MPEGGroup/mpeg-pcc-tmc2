@@ -76,110 +76,126 @@ PCCAtlasHighLevelSyntax::PCCAtlasHighLevelSyntax() {}
 
 PCCAtlasHighLevelSyntax::~PCCAtlasHighLevelSyntax() { videoBitstream_.clear(); }
 
-size_t PCCHighLevelSyntax::checkProfile(){
+size_t PCCHighLevelSyntax::checkProfile() {
   size_t ret = 0;
-  if( atlasHLS_.size() !=1 ){
+  if ( atlasHLS_.size() != 1 ) {
     std::cout << "ProfileToolsetConstraint Violation(1) : number of atlas should be 1\n";
     return 1;
   }
   auto& vps = vpccParameterSets_[activeVPS_];
-  if(vps.getProfileTierLevel().getToolConstraintsPresentFlag() == false) return 0;
-  
-  //auto oneFrameOnlyFlag = vps.getProfileTierLevel().getProfileToolsetConstraintsInformation().getOneFrameOnlyFlag();
-  auto EOMContraintFlag                        = vps.getProfileTierLevel().getProfileToolsetConstraintsInformation().getEOMContraintFlag();
-  auto maxMapCountMinus1                       = vps.getProfileTierLevel().getProfileToolsetConstraintsInformation().getMaxMapCountMinus1();
-  auto maxAtlasCountMinus1                     = vps.getProfileTierLevel().getProfileToolsetConstraintsInformation().getMaxAtlasCountMinus1();
-  auto multipleMapStreamsConstraintFlag        = vps.getProfileTierLevel().getProfileToolsetConstraintsInformation().getMultipleMapStreamsConstraintFlag();
-  auto PLRConstraintFlag                       = vps.getProfileTierLevel().getProfileToolsetConstraintsInformation().getPLRConstraintFlag();
-  auto attributeMaxDimensionMinus1             = vps.getProfileTierLevel().getProfileToolsetConstraintsInformation().getAttributeMaxDimensionMinus1();
-  auto attributeMaxDimensionPartitionsMinus1   = vps.getProfileTierLevel().getProfileToolsetConstraintsInformation().getAttributeMaxDimensionPartitionsMinus1();
-  auto noEightOrientationsConstraintFlag       = vps.getProfileTierLevel().getProfileToolsetConstraintsInformation().getNoEightOrientationsConstraintFlag();
-  auto no45DegreeProjectionPatchConstraintFlag = vps.getProfileTierLevel().getProfileToolsetConstraintsInformation().getNo45DegreeProjectionPatchConstraintFlag();
-  
-  printf("activeVPS_ : %zu\n", (size_t)activeVPS_);
-  printf("---ProfileToolsetConstraintsInformation-------\n");
-  printf(" EOMContraintFlag                        : %zu\n", (size_t)EOMContraintFlag                       );
-  printf(" maxMapCountMinus1                       : %zu\n", (size_t)maxMapCountMinus1                      );
-  printf(" maxAtlasCountMinus1                     : %zu\n", (size_t)maxAtlasCountMinus1                    );
-  printf(" multipleMapStreamsConstraintFlag        : %zu\n", (size_t)multipleMapStreamsConstraintFlag       );
-  printf(" PLRConstraintFlag                       : %zu\n", (size_t)PLRConstraintFlag                      );
-  printf(" attributeMaxDimensionMinus1             : %zu\n", (size_t)attributeMaxDimensionMinus1            );
-  printf(" attributeMaxDimensionPartitionsMinus1   : %zu\n", (size_t)attributeMaxDimensionPartitionsMinus1  );
-  printf(" noEightOrientationsConstraintFlag       : %zu\n", (size_t)noEightOrientationsConstraintFlag      );
-  printf(" no45DegreeProjectionPatchConstraintFlag : %zu\n", (size_t)no45DegreeProjectionPatchConstraintFlag);
+  if ( vps.getProfileTierLevel().getToolConstraintsPresentFlag() == false ) return 0;
 
-  
-  //constraints by profile_toolset_constraints_information( )
-  if ( multipleMapStreamsConstraintFlag ){
-    if(vps.getMultipleMapStreamsPresentFlag(0) == 1 ){
-      std::cout << "ProfileToolsetConstraint Violation(3) : MultipleMapStreamsPresentFlag is 1 wherea ptci.multipleMapStreamsConstraintFlag is 1.\n";
+  // auto oneFrameOnlyFlag = vps.getProfileTierLevel().getProfileToolsetConstraintsInformation().getOneFrameOnlyFlag();
+  auto EOMContraintFlag  = vps.getProfileTierLevel().getProfileToolsetConstraintsInformation().getEOMContraintFlag();
+  auto maxMapCountMinus1 = vps.getProfileTierLevel().getProfileToolsetConstraintsInformation().getMaxMapCountMinus1();
+  auto maxAtlasCountMinus1 =
+      vps.getProfileTierLevel().getProfileToolsetConstraintsInformation().getMaxAtlasCountMinus1();
+  auto multipleMapStreamsConstraintFlag =
+      vps.getProfileTierLevel().getProfileToolsetConstraintsInformation().getMultipleMapStreamsConstraintFlag();
+  auto PLRConstraintFlag = vps.getProfileTierLevel().getProfileToolsetConstraintsInformation().getPLRConstraintFlag();
+  auto attributeMaxDimensionMinus1 =
+      vps.getProfileTierLevel().getProfileToolsetConstraintsInformation().getAttributeMaxDimensionMinus1();
+  auto attributeMaxDimensionPartitionsMinus1 =
+      vps.getProfileTierLevel().getProfileToolsetConstraintsInformation().getAttributeMaxDimensionPartitionsMinus1();
+  auto noEightOrientationsConstraintFlag =
+      vps.getProfileTierLevel().getProfileToolsetConstraintsInformation().getNoEightOrientationsConstraintFlag();
+  auto no45DegreeProjectionPatchConstraintFlag =
+      vps.getProfileTierLevel().getProfileToolsetConstraintsInformation().getNo45DegreeProjectionPatchConstraintFlag();
+
+  printf( "activeVPS_ : %zu\n", (size_t)activeVPS_ );
+  printf( "---ProfileToolsetConstraintsInformation-------\n" );
+  printf( " EOMContraintFlag                        : %zu\n", (size_t)EOMContraintFlag );
+  printf( " maxMapCountMinus1                       : %zu\n", (size_t)maxMapCountMinus1 );
+  printf( " maxAtlasCountMinus1                     : %zu\n", (size_t)maxAtlasCountMinus1 );
+  printf( " multipleMapStreamsConstraintFlag        : %zu\n", (size_t)multipleMapStreamsConstraintFlag );
+  printf( " PLRConstraintFlag                       : %zu\n", (size_t)PLRConstraintFlag );
+  printf( " attributeMaxDimensionMinus1             : %zu\n", (size_t)attributeMaxDimensionMinus1 );
+  printf( " attributeMaxDimensionPartitionsMinus1   : %zu\n", (size_t)attributeMaxDimensionPartitionsMinus1 );
+  printf( " noEightOrientationsConstraintFlag       : %zu\n", (size_t)noEightOrientationsConstraintFlag );
+  printf( " no45DegreeProjectionPatchConstraintFlag : %zu\n", (size_t)no45DegreeProjectionPatchConstraintFlag );
+
+  // constraints by profile_toolset_constraints_information( )
+  if ( multipleMapStreamsConstraintFlag ) {
+    if ( vps.getMultipleMapStreamsPresentFlag( 0 ) == 1 ) {
+      std::cout << "ProfileToolsetConstraint Violation(3) : MultipleMapStreamsPresentFlag is 1 wherea "
+                   "ptci.multipleMapStreamsConstraintFlag is 1.\n";
       ret = 3;
     }
   }
-  
-  if( vps.getMapCountMinus1(0) > maxMapCountMinus1) {
-    std::cout << "ProfileToolsetConstraint Violation(7) : mapCountMinus1 is set to "<<vps.getMapCountMinus1(0)<<" wherea ptci.maxMapCountMinus1_ is "<<maxMapCountMinus1<<". \n";
+
+  if ( vps.getMapCountMinus1( 0 ) > maxMapCountMinus1 ) {
+    std::cout << "ProfileToolsetConstraint Violation(7) : mapCountMinus1 is set to " << vps.getMapCountMinus1( 0 )
+              << " wherea ptci.maxMapCountMinus1_ is " << maxMapCountMinus1 << ". \n";
     ret = 7;
   }
-  for( auto& asps : atlasHLS_[0].getAtlasSequenceParameterSetList() ){
-    if ( EOMContraintFlag ){
-        if(asps.getEomPatchEnabledFlag()!=false) {
-          std::cout << "ProfileToolsetConstraint Violation(2) : ptci.EOMContraintFlag is 1 wherea ptci.EOMContraintFlag is 1\n";
-          ret = 2;
-        }
-    }
-    if ( PLRConstraintFlag ){
-        if( asps.getPLREnabledFlag()) {
-          std::cout << "ProfileToolsetConstraint Violation(4) : pointLocalReconstruction is 1 wherea ptci.PLRConstraintFlag is 1. \n";
-          ret = 4;
+  for ( auto& asps : atlasHLS_[0].getAtlasSequenceParameterSetList() ) {
+    if ( EOMContraintFlag ) {
+      if ( asps.getEomPatchEnabledFlag() != false ) {
+        std::cout
+            << "ProfileToolsetConstraint Violation(2) : ptci.EOMContraintFlag is 1 wherea ptci.EOMContraintFlag is 1\n";
+        ret = 2;
       }
     }
-    if ( noEightOrientationsConstraintFlag  ){
-      if(asps.getUseEightOrientationsFlag()){
-        std::cout << "ProfileToolsetConstraint Violation(5) : useEightOrientations is 1 wherea ptci.noEightOrientationsConstraintFlag is 1. \n";
+    if ( PLRConstraintFlag ) {
+      if ( asps.getPLREnabledFlag() ) {
+        std::cout << "ProfileToolsetConstraint Violation(4) : pointLocalReconstruction is 1 wherea "
+                     "ptci.PLRConstraintFlag is 1. \n";
+        ret = 4;
+      }
+    }
+    if ( noEightOrientationsConstraintFlag ) {
+      if ( asps.getUseEightOrientationsFlag() ) {
+        std::cout << "ProfileToolsetConstraint Violation(5) : useEightOrientations is 1 wherea "
+                     "ptci.noEightOrientationsConstraintFlag is 1. \n";
         ret = 5;
       }
     }
-    if ( no45DegreeProjectionPatchConstraintFlag  ){
-      if(asps.getExtendedProjectionEnabledFlag()){
-        std::cout << "ProfileToolsetConstraint Violation(6) : getExtendedProjectionEnabledFlag is 1 wherea ptci.no45DegreeProjectionPatchConstraintFlag is 1. \n";
+    if ( no45DegreeProjectionPatchConstraintFlag ) {
+      if ( asps.getExtendedProjectionEnabledFlag() ) {
+        std::cout << "ProfileToolsetConstraint Violation(6) : getExtendedProjectionEnabledFlag is 1 wherea "
+                     "ptci.no45DegreeProjectionPatchConstraintFlag is 1. \n";
         ret = 6;
       }
     }
   }
 
-  //profile.reconstruction setting
-  auto profileToolsetIdc                       = vps.getProfileTierLevel().getProfileToolsetIdc();
-  auto profileReconstructionIdc                = vps.getProfileTierLevel().getProfileReconstructionIdc();
-  
-  for( auto& asps : atlasHLS_[0].getAtlasSequenceParameterSetList() ){
+  // profile.reconstruction setting
+  auto profileToolsetIdc        = vps.getProfileTierLevel().getProfileToolsetIdc();
+  auto profileReconstructionIdc = vps.getProfileTierLevel().getProfileReconstructionIdc();
+
+  for ( auto& asps : atlasHLS_[0].getAtlasSequenceParameterSetList() ) {
     // Profile Tools set idc
     // Basic
     if ( profileToolsetIdc == 0 ) {
-      if (asps.getEomPatchEnabledFlag()){
-        std::cout << "ProfileToolsetConstraint Violation(11) : enhancedOccupancyMapCode is not 0 wherea profileToolsetIdc is 0. \n";
+      if ( asps.getEomPatchEnabledFlag() ) {
+        std::cout << "ProfileToolsetConstraint Violation(11) : enhancedOccupancyMapCode is not 0 wherea "
+                     "profileToolsetIdc is 0. \n";
         ret = 11;
       }
-      if ( vps.getMultipleMapStreamsPresentFlag(0) != 1 &&  vps.getMapCountMinus1(0) > 0 ){
-        std::cout << "ProfileToolsetConstraint Violation(12) : multipleStreams is not 1 wherea profileToolsetIdc is 0. \n";
+      if ( vps.getMultipleMapStreamsPresentFlag( 0 ) != 1 && vps.getMapCountMinus1( 0 ) > 0 ) {
+        std::cout
+            << "ProfileToolsetConstraint Violation(12) : multipleStreams is not 1 wherea profileToolsetIdc is 0. \n";
         ret = 12;
       }
-      if ( asps.getPLREnabledFlag()) {
-        std::cout << "ProfileToolsetConstraint Violation(13) : pointLocalReconstruction is 1 wherea profileToolsetIdc is 0. \n";
+      if ( asps.getPLREnabledFlag() ) {
+        std::cout << "ProfileToolsetConstraint Violation(13) : pointLocalReconstruction is 1 wherea profileToolsetIdc "
+                     "is 0. \n";
         ret = 13;
       }
-      if (asps.getUseEightOrientationsFlag()){
-        std::cout << "ProfileToolsetConstraint Violation(14) : useEightOrientations is 1 wherea profileToolsetIdc is 0. \n";
+      if ( asps.getUseEightOrientationsFlag() ) {
+        std::cout
+            << "ProfileToolsetConstraint Violation(14) : useEightOrientations is 1 wherea profileToolsetIdc is 0. \n";
         ret = 14;
       }
-      if(asps.getExtendedProjectionEnabledFlag()){
-        std::cout << "ProfileToolsetConstraint Violation(15) : additionalProjection is 1  and wherea profileToolsetIdc is 0. \n";
+      if ( asps.getExtendedProjectionEnabledFlag() ) {
+        std::cout << "ProfileToolsetConstraint Violation(15) : additionalProjection is 1  and wherea profileToolsetIdc "
+                     "is 0. \n";
         ret = 15;
       }
-      
-    }//profile
 
-    }//asps
+    }  // profile
+
+  }  // asps
 
   return ret;
 }

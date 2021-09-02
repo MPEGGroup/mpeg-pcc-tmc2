@@ -308,18 +308,18 @@ class PCCEncoderParameters {
   size_t vvcCodecIdIndex_;
 
   // Profile toolset constraints information
-  bool oneV3CFrameOnlyFlag_;
-  bool EOMContraintFlag_;
+  bool   oneV3CFrameOnlyFlag_;
+  bool   EOMContraintFlag_;
   size_t maxMapCountMinus1_;
   size_t maxAtlasCountMinus1_;
-  bool multipleMapStreamsConstraintFlag_;
-  bool PLRConstraintFlag_;
+  bool   multipleMapStreamsConstraintFlag_;
+  bool   PLRConstraintFlag_;
   size_t attributeMaxDimensionMinus1_;
   size_t attributeMaxDimensionPartitionsMinus1_;
-  bool noEightOrientationsConstraintFlag_;
-  bool no45DegreeProjectionPatchConstraintFlag_;
-  
-  //reconstruction options : 0. ignore 1. use indicated syntaxes 2. open
+  bool   noEightOrientationsConstraintFlag_;
+  bool   no45DegreeProjectionPatchConstraintFlag_;
+
+  // reconstruction options : 0. ignore 1. use indicated syntaxes 2. open
   size_t pixelDeinterleavingType_;
   size_t pointLocalReconstructionType_;
   size_t reconstructEomType_;
@@ -329,7 +329,7 @@ class PCCEncoderParameters {
   size_t applyAttrSmoothingType_;
   size_t attrTransferFilterType_;
   size_t applyOccupanySynthesisType_;
-    
+
   // SHVC
   size_t shvcLayerIndex_;
   size_t shvcRateX_;

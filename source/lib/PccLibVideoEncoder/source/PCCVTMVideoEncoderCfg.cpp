@@ -284,7 +284,11 @@ struct SMultiValueInput {
   std::vector<T>    values;
   SMultiValueInput() : minValIncl( 0 ), maxValIncl( 0 ), minNumValuesIncl( 0 ), maxNumValuesIncl( 0 ), values() {}
   SMultiValueInput( std::vector<T>& defaults ) :
-      minValIncl( 0 ), maxValIncl( 0 ), minNumValuesIncl( 0 ), maxNumValuesIncl( 0 ), values( defaults ) {}
+      minValIncl( 0 ),
+      maxValIncl( 0 ),
+      minNumValuesIncl( 0 ),
+      maxNumValuesIncl( 0 ),
+      values( defaults ) {}
   SMultiValueInput( const T&    minValue,
                     const T&    maxValue,
                     std::size_t minNumberValues = 0,
@@ -524,16 +528,16 @@ bool PCCVTMLibVideoEncoderCfg::parseCfg( int argc, char* argv[] ) {
 #endif
   const int qpInVals[]  = {25, 33, 43};  // qpInVal values used to derive the chroma QP mapping table used in VTM-5.0
   const int qpOutVals[] = {25, 32, 37};  // qpOutVal values used to derive the chroma QP mapping table used in VTM-5.0
-  SMultiValueInput<int>      cfg_qpInValCb( MIN_QP_VALUE_FOR_16_BIT, MAX_QP, 0, MAX_NUM_QP_VALUES, qpInVals,
+  SMultiValueInput<int> cfg_qpInValCb( MIN_QP_VALUE_FOR_16_BIT, MAX_QP, 0, MAX_NUM_QP_VALUES, qpInVals,
                                        sizeof( qpInVals ) / sizeof( int ) );
-  SMultiValueInput<int>      cfg_qpOutValCb( MIN_QP_VALUE_FOR_16_BIT, MAX_QP, 0, MAX_NUM_QP_VALUES, qpOutVals,
+  SMultiValueInput<int> cfg_qpOutValCb( MIN_QP_VALUE_FOR_16_BIT, MAX_QP, 0, MAX_NUM_QP_VALUES, qpOutVals,
                                         sizeof( qpOutVals ) / sizeof( int ) );
-  const int                  zeroVector[] = {0};
-  SMultiValueInput<int>      cfg_qpInValCr( MIN_QP_VALUE_FOR_16_BIT, MAX_QP, 0, MAX_NUM_QP_VALUES, zeroVector, 1 );
-  SMultiValueInput<int>      cfg_qpOutValCr( MIN_QP_VALUE_FOR_16_BIT, MAX_QP, 0, MAX_NUM_QP_VALUES, zeroVector, 1 );
-  SMultiValueInput<int>      cfg_qpInValCbCr( MIN_QP_VALUE_FOR_16_BIT, MAX_QP, 0, MAX_NUM_QP_VALUES, zeroVector, 1 );
-  SMultiValueInput<int>      cfg_qpOutValCbCr( MIN_QP_VALUE_FOR_16_BIT, MAX_QP, 0, MAX_NUM_QP_VALUES, zeroVector, 1 );
-  const int             cQpOffsets[] = { 6 };
+  const int             zeroVector[] = {0};
+  SMultiValueInput<int> cfg_qpInValCr( MIN_QP_VALUE_FOR_16_BIT, MAX_QP, 0, MAX_NUM_QP_VALUES, zeroVector, 1 );
+  SMultiValueInput<int> cfg_qpOutValCr( MIN_QP_VALUE_FOR_16_BIT, MAX_QP, 0, MAX_NUM_QP_VALUES, zeroVector, 1 );
+  SMultiValueInput<int> cfg_qpInValCbCr( MIN_QP_VALUE_FOR_16_BIT, MAX_QP, 0, MAX_NUM_QP_VALUES, zeroVector, 1 );
+  SMultiValueInput<int> cfg_qpOutValCbCr( MIN_QP_VALUE_FOR_16_BIT, MAX_QP, 0, MAX_NUM_QP_VALUES, zeroVector, 1 );
+  const int             cQpOffsets[] = {6};
   SMultiValueInput<int> cfg_cbQpOffsetList( -12, 12, 0, 6, cQpOffsets, 0 );
   SMultiValueInput<int> cfg_crQpOffsetList( -12, 12, 0, 6, cQpOffsets, 0 );
   SMultiValueInput<int> cfg_cbCrQpOffsetList( -12, 12, 0, 6, cQpOffsets, 0 );
@@ -617,7 +621,7 @@ bool PCCVTMLibVideoEncoderCfg::parseCfg( int argc, char* argv[] ) {
   SMultiValueInput<unsigned> cfg_virtualBoundariesPosY( 0, std::numeric_limits<uint32_t>::max(), 0, 3 );
 
   SMultiValueInput<uint32_t> cfg_SubProfile( 0, std::numeric_limits<uint8_t>::max(), 0,
-                                            std::numeric_limits<uint8_t>::max() );
+                                             std::numeric_limits<uint8_t>::max() );
   SMultiValueInput<uint32_t> cfg_subPicCtuTopLeftX( 0, std::numeric_limits<uint32_t>::max(), 0, MAX_NUM_SUB_PICS );
   SMultiValueInput<uint32_t> cfg_subPicCtuTopLeftY( 0, std::numeric_limits<uint32_t>::max(), 0, MAX_NUM_SUB_PICS );
   SMultiValueInput<uint32_t> cfg_subPicWidth( 1, std::numeric_limits<uint32_t>::max(), 0, MAX_NUM_SUB_PICS );
@@ -2152,7 +2156,7 @@ bool PCCVTMLibVideoEncoderCfg::parseCfg( int argc, char* argv[] ) {
     m_virtualBoundariesEnabledFlag = 1;
     m_virtualBoundariesPresentFlag = 0;
   } else {
-  m_virtualBoundariesEnabledFlag = 0;
+    m_virtualBoundariesEnabledFlag = 0;
   }
 #else
   m_virtualBoundariesEnabledFlag = 0;
@@ -3732,8 +3736,9 @@ void PCCVTMLibVideoEncoderCfg::xPrintParameter() {
   msg( VTM_DETAILS, "Input          File                    : %s\n", m_inputFileName.c_str() );
   msg( VTM_DETAILS, "Bitstream      File                    : %s\n", m_bitstreamFileName.c_str() );
   msg( VTM_DETAILS, "Reconstruction File                    : %s\n", m_reconFileName.c_str() );
-  msg( VTM_DETAILS, "Real     Format                        : %dx%d %gHz\n", m_sourceWidth - m_confWinLeft - m_confWinRight,
-       m_sourceHeight - m_confWinTop - m_confWinBottom, (double)m_iFrameRate / m_temporalSubsampleRatio );
+  msg( VTM_DETAILS, "Real     Format                        : %dx%d %gHz\n",
+       m_sourceWidth - m_confWinLeft - m_confWinRight, m_sourceHeight - m_confWinTop - m_confWinBottom,
+       (double)m_iFrameRate / m_temporalSubsampleRatio );
   msg( VTM_DETAILS, "Internal Format                        : %dx%d %gHz\n", m_sourceWidth, m_sourceHeight,
        (double)m_iFrameRate / m_temporalSubsampleRatio );
   msg( VTM_DETAILS, "Sequence PSNR output                   : %s\n",
@@ -3748,7 +3753,8 @@ void PCCVTMLibVideoEncoderCfg::xPrintParameter() {
     msg( VTM_DETAILS, "Frame/Field                            : Field based coding\n" );
     msg( VTM_DETAILS, "Field index                            : %u - %d (%d fields)\n", m_FrameSkip,
          m_FrameSkip + m_framesToBeEncoded - 1, m_framesToBeEncoded );
-    msg( VTM_DETAILS, "Field Order                            : %s field first\n", m_isTopFieldFirst ? "Top" : "Bottom" );
+    msg( VTM_DETAILS, "Field Order                            : %s field first\n",
+         m_isTopFieldFirst ? "Top" : "Bottom" );
 
   } else {
     msg( VTM_DETAILS, "Frame/Field                            : Frame based coding\n" );
@@ -3769,7 +3775,8 @@ void PCCVTMLibVideoEncoderCfg::xPrintParameter() {
       if ( !m_subPicSameSizeFlag ) {
         msg( VTM_DETAILS, "[%d]th subpicture location              : [%d %d]\n", i, m_subPicCtuTopLeftX[i],
              m_subPicCtuTopLeftY[i] );
-        msg( VTM_DETAILS, "[%d]th subpicture size                  : [%d %d]\n", i, m_subPicWidth[i], m_subPicHeight[i] );
+        msg( VTM_DETAILS, "[%d]th subpicture size                  : [%d %d]\n", i, m_subPicWidth[i],
+             m_subPicHeight[i] );
       }
       msg( VTM_DETAILS, "[%d]th subpicture treated as picture    : %d\n", i,
            m_subPicTreatedAsPicFlag[i] ? "Enabled" : "Disabled" );
@@ -3794,8 +3801,8 @@ void PCCVTMLibVideoEncoderCfg::xPrintParameter() {
   msg( VTM_DETAILS, "DRAP period                            : %d\n", m_drapPeriod );
 #if QP_SWITCHING_FOR_PARALLEL
   if ( m_qpIncrementAtSourceFrame.bPresent ) {
-    msg( VTM_DETAILS, "QP                                     : %d (incrementing internal QP at source frame %d)\n", m_iQP,
-         m_qpIncrementAtSourceFrame.value );
+    msg( VTM_DETAILS, "QP                                     : %d (incrementing internal QP at source frame %d)\n",
+         m_iQP, m_qpIncrementAtSourceFrame.value );
   } else {
     msg( VTM_DETAILS, "QP                                     : %d\n", m_iQP );
   }
@@ -3820,8 +3827,9 @@ void PCCVTMLibVideoEncoderCfg::xPrintParameter() {
   if ( m_cuChromaQpOffsetList.size() > 0 ) {
     msg( VTM_DETAILS, "Chroma QP offset list                  : (" );
     for ( int i = 0; i < m_cuChromaQpOffsetList.size(); i++ ) {
-      msg( VTM_DETAILS, "%d %d %d%s", m_cuChromaQpOffsetList[i].u.comp.CbOffset, m_cuChromaQpOffsetList[i].u.comp.CrOffset,
-           m_cuChromaQpOffsetList[i].u.comp.JointCbCrOffset, ( i + 1 < m_cuChromaQpOffsetList.size() ? ", " : ")\n" ) );
+      msg( VTM_DETAILS, "%d %d %d%s", m_cuChromaQpOffsetList[i].u.comp.CbOffset,
+           m_cuChromaQpOffsetList[i].u.comp.CrOffset, m_cuChromaQpOffsetList[i].u.comp.JointCbCrOffset,
+           ( i + 1 < m_cuChromaQpOffsetList.size() ? ", " : ")\n" ) );
     }
     msg( VTM_DETAILS, "cu_chroma_qp_offset_subdiv             : %d\n", m_cuChromaQpOffsetSubdiv );
     msg( VTM_DETAILS, "cu_chroma_qp_offset_enabled_flag       : %s\n",
@@ -3832,7 +3840,8 @@ void PCCVTMLibVideoEncoderCfg::xPrintParameter() {
   msg( VTM_DETAILS, "extended_precision_processing_flag     : %s\n",
        ( m_extendedPrecisionProcessingFlag ? "Enabled" : "Disabled" ) );
 #if JVET_V0054_TSRC_RICE
-  msg( VTM_DETAILS, "TSRC_Rice_present_flag                 : %s\n", ( m_tsrcRicePresentFlag ? "Enabled" : "Disabled" ) );
+  msg( VTM_DETAILS, "TSRC_Rice_present_flag                 : %s\n",
+       ( m_tsrcRicePresentFlag ? "Enabled" : "Disabled" ) );
 #endif
   msg( VTM_DETAILS, "transform_skip_rotation_enabled_flag   : %s\n",
        ( m_transformSkipRotationEnabledFlag ? "Enabled" : "Disabled" ) );

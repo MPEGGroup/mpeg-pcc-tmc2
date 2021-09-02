@@ -325,16 +325,16 @@ class PCCCodec {
                                    std::vector<std::vector<std::vector<int64_t>>>& tileB2PPatchParams,
                                    std::vector<std::vector<int64_t>>&              atlasB2PPatchParams );
 
-  void       inverseRotatePosition45DegreeOnAxis( size_t Axis, size_t lod, PCCPoint3D input, PCCVector3D& output );
+  void inverseRotatePosition45DegreeOnAxis( size_t Axis, size_t lod, PCCPoint3D input, PCCVector3D& output );
 
-  inline void SEIMd5Checksum( PCCContext& context, std::vector<uint8_t>& vec) {
+  inline void SEIMd5Checksum( PCCContext& context, std::vector<uint8_t>& vec ) {
     std::vector<uint8_t> md5Digest( 16 );
     md5Digest = context.computeMD5( vec.data(), vec.size() );
     for ( auto& e : md5Digest ) TRACE_HLS( "%02x", e );
     TRACE_HLS( "\n" );
     vec.clear();
   }
-  
+
   PCCLogger* logger_ = nullptr;
 
  private:

@@ -83,11 +83,20 @@ bool parseParameters( int                             argc,
   std::string uncompressedDataPath;
   size_t tmp = 0;
   opts.addOptions()
-    ("help", print_help, false,"This help text")
+    ( "help", print_help, false,"This help text" )
     ( "c,config", po::parseConfigFile, "Configuration file name" )
-    ( "configurationFolder",configurationFolder,configurationFolder, "Folder where the configuration files are stored,use for cfg relative paths." )
-    ( "uncompressedDataFolder",uncompressedDataFolder,uncompressedDataFolder,"Folder where the uncompress input data are stored, use for cfg relative paths." )
-    ( "uncompressedDataPath",uncompressedDataPath,uncompressedDataPath,"Input pointcloud to encode. Multi-frame sequences may be represented by %04i" )
+    ( "configurationFolder",
+      configurationFolder,
+      configurationFolder, 
+      "Folder where the configuration files are stored,use for cfg relative paths." )
+    ( "uncompressedDataFolder",
+      uncompressedDataFolder,
+      uncompressedDataFolder,
+      "Folder where the uncompress input data are stored, use for cfg relative paths." )
+    ( "uncompressedDataPath",
+      uncompressedDataPath,
+      uncompressedDataPath,
+      "Input pointcloud to encode. Multi-frame sequences may be represented by %04i" )
     //parameters not used, but in the configuration files, so we add them here
     ( "geometry3dCoordinatesBitdepth",tmp,tmp,"UNUSED" )
     ( "geometryNominal2dBitdepth",tmp,tmp,"UNUSED" )
@@ -115,29 +124,87 @@ bool parseParameters( int                             argc,
     ( "enhancedProjectionPlane",tmp,tmp,"UNUSED" )
     ( "skipAvgIfIdenticalSourcePointPresentBwd",tmp,tmp,"UNUSED" )
     // i/o
-    ("srcPlyPath",srcPlyPath,srcPlyPath,"Input pointcloud to encode. Multi-frame sequences may be represented by %04i")
-    ("dstPlyPath",dstPlyPath,dstPlyPath,"Output decoded pointcloud. Multi-frame sequences may be represented by %04i")
+    ( "srcPlyPath",
+      srcPlyPath,
+      srcPlyPath,
+      "Input pointcloud to encode. Multi-frame sequences may be represented by %04i" )
+    ( "dstPlyPath",
+      dstPlyPath,
+      dstPlyPath,
+      "Output decoded pointcloud. Multi-frame sequences may be represented by %04i" )
     // sequence configuration
-    ("startFrameNumber",startFrame,startFrame,"First frame number in sequence to encode/decode")
-    ("frameCount",numFrames,numFrames,"Number of frames to encode")
+    ( "startFrameNumber",
+      startFrame,
+      startFrame,
+      "First frame number in sequence to encode/decode" )
+    ( "frameCount",
+      numFrames,
+      numFrames,
+      "Number of frames to encode" )
     // etc
-    ("nbThread",numThread,numThread,"Number of thread used for parallel processing")
+    ( "nbThread",
+      numThread,
+      numThread,
+      "Number of thread used for parallel processing" )
     // Normal generation parameters
-    ("viewPointX",normalParams.viewPoint_[0],normalParams.viewPoint_[0],"View Point X")
-    ("viewPointY",normalParams.viewPoint_[1],normalParams.viewPoint_[1],"View Point Y")
-    ("viewPointZ",normalParams.viewPoint_[2],normalParams.viewPoint_[2],"View Point Z")
-    ("radiusNormalSmoothing",normalParams.radiusNormalSmoothing_,normalParams.radiusNormalSmoothing_,"Radius Normal Smoothing (default:MAX_VAL)")
-    ("radiusNormalEstimation",normalParams.radiusNormalEstimation_,normalParams.radiusNormalEstimation_,"Radius Normal Estimation (default:MAX_VAL)")
-    ("radiusNormalOrientation",normalParams.radiusNormalOrientation_,normalParams.radiusNormalOrientation_,"Radius Normal Orientation (default:MAX_VAL)")
-    ("weightNormalSmoothing",normalParams.weightNormalSmoothing_,normalParams.weightNormalSmoothing_,"Weight Normal Smoothing (default:MAX_VAL)")
-    ("numberOfNearestNeighborsInNormalSmoothing",normalParams.numberOfNearestNeighborsInNormalSmoothing_,normalParams.numberOfNearestNeighborsInNormalSmoothing_,"Number Of Nearest Neighbors In Normal Smoothing (default:16)")
-    ("numberOfNearestNeighborsInNormalEstimation",normalParams.numberOfNearestNeighborsInNormalEstimation_,normalParams.numberOfNearestNeighborsInNormalEstimation_,"Number Of Nearest Neighbors In Normal Estimation (default:16)")
-    ("numberOfNearestNeighborsInNormalOrientation",normalParams.numberOfNearestNeighborsInNormalOrientation_,normalParams.numberOfNearestNeighborsInNormalOrientation_,"Number Of Nearest Neighbors In Normal Orientation (default:16)")
-    ("numberOfIterationsInNormalSmoothing",normalParams.numberOfIterationsInNormalSmoothing_,normalParams.numberOfIterationsInNormalSmoothing_,"Number Of Iterations In Normal Smoothing (default:0)")
-    ("orientationStrategy",normalParams.orientationStrategy_,normalParams.orientationStrategy_,"(0)NONE, (1)SPANNING TREE, (2)VIEWPOINT, (3)CUBEMAP PROJECTION")
-    ("storeEigenvalues",normalParams.storeEigenvalues_,normalParams.storeEigenvalues_,"Store Eigenvalues (0)false/(1)true")
-    ("storeNumberOfNearestNeighborsInNormalEstimation",normalParams.storeNumberOfNearestNeighborsInNormalEstimation_,normalParams.storeNumberOfNearestNeighborsInNormalEstimation_,"Store Number Of Nearest Neighbors In Normal Estimation (0)false/(1)true")
-    ("storeCentroids",normalParams.storeCentroids_,normalParams.storeCentroids_,"Store Centroids (0)false/(1)true")
+    ( "viewPointX",
+      normalParams.viewPoint_[0],
+      
+      normalParams.viewPoint_[0],"View Point X" )
+    ( "viewPointY",
+      normalParams.viewPoint_[1],
+      normalParams.viewPoint_[1],
+      "View Point Y" )
+    ( "viewPointZ",
+      normalParams.viewPoint_[2],
+      normalParams.viewPoint_[2],
+      "View Point Z" )
+    ( "radiusNormalSmoothing",normalParams.radiusNormalSmoothing_,
+      normalParams.radiusNormalSmoothing_,
+      "Radius Normal Smoothing (default:MAX_VAL)" )
+    ( "radiusNormalEstimation",
+      normalParams.radiusNormalEstimation_,
+      normalParams.radiusNormalEstimation_,
+      "Radius Normal Estimation (default:MAX_VAL)" )
+    ( "radiusNormalOrientation",
+      normalParams.radiusNormalOrientation_,
+      normalParams.radiusNormalOrientation_,
+      "Radius Normal Orientation (default:MAX_VAL)" )
+    ( "weightNormalSmoothing",
+      normalParams.weightNormalSmoothing_,
+      normalParams.weightNormalSmoothing_,
+      "Weight Normal Smoothing (default:MAX_VAL)" )
+    ( "numberOfNearestNeighborsInNormalSmoothing",
+      normalParams.numberOfNearestNeighborsInNormalSmoothing_,
+      normalParams.numberOfNearestNeighborsInNormalSmoothing_,
+      "Number Of Nearest Neighbors In Normal Smoothing (default:16)" )
+    ( "numberOfNearestNeighborsInNormalEstimation",
+      normalParams.numberOfNearestNeighborsInNormalEstimation_,
+      normalParams.numberOfNearestNeighborsInNormalEstimation_,
+      "Number Of Nearest Neighbors In Normal Estimation (default:16)" )
+    ( "numberOfNearestNeighborsInNormalOrientation",
+      normalParams.numberOfNearestNeighborsInNormalOrientation_,
+      normalParams.numberOfNearestNeighborsInNormalOrientation_,
+      "Number Of Nearest Neighbors In Normal Orientation (default:16)" )
+    ( "numberOfIterationsInNormalSmoothing",
+      normalParams.numberOfIterationsInNormalSmoothing_,
+      normalParams.numberOfIterationsInNormalSmoothing_,
+      "Number Of Iterations In Normal Smoothing (default:0)" )
+    ( "orientationStrategy",
+      normalParams.orientationStrategy_,
+      normalParams.orientationStrategy_,
+      "(0)NONE, (1)SPANNING TREE, (2)VIEWPOINT, (3)CUBEMAP PROJECTION" )
+    ( "storeEigenvalues",normalParams.storeEigenvalues_,
+      normalParams.storeEigenvalues_,
+      "Store Eigenvalues (0)false/(1)true" )
+    ( "storeNumberOfNearestNeighborsInNormalEstimation",
+      normalParams.storeNumberOfNearestNeighborsInNormalEstimation_,
+      normalParams.storeNumberOfNearestNeighborsInNormalEstimation_,
+      "Store Number Of Nearest Neighbors In Normal Estimation (0)false/(1)true" )
+    ( "storeCentroids",
+      normalParams.storeCentroids_,
+      normalParams.storeCentroids_,
+      "Store Centroids (0)false/(1)true" )
     ;
   opts.addOptions();
   // clang-format on

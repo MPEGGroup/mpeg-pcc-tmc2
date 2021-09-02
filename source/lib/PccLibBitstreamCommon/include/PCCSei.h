@@ -49,17 +49,16 @@ class SEI {
   virtual ~SEI() { byteStrData_.clear(); }
   virtual SeiPayloadType getPayloadType() = 0;
 
-  virtual std::vector<uint8_t>&  getMD5ByteStrData() { return byteStrData_; }
+  virtual std::vector<uint8_t>& getMD5ByteStrData() { return byteStrData_; }
 
-  size_t                 getPayloadSize() { return payloadSize_; }
-  void                   setPayloadSize( size_t value ) { payloadSize_ = value; }
+  size_t getPayloadSize() { return payloadSize_; }
+  void   setPayloadSize( size_t value ) { payloadSize_ = value; }
 
  protected:
-     std::vector<uint8_t> byteStrData_;
+  std::vector<uint8_t> byteStrData_;
 
  private:
   size_t payloadSize_;
-
 };
 
 // F.2.3  User data registered by Recommendation ITU-T T.35 SEI message syntax
@@ -380,9 +379,7 @@ class SEIComponentCodecMapping : public SEI {
   void setCodecId( size_t i, uint8_t value ) { codecId_[i] = value; }
   void setCodec4cc( size_t i, std::string value ) { codec4cc_[i] = value; }
 
-  std::vector<uint8_t>& getMD5ByteStrData() {  // ajt::this is just an example of how to create a byte string data for
-                                               // computing MD5 for component codec mapping SEI. Can be sustituted by
-                                               // alternate methods of computing.
+  std::vector<uint8_t>& getMD5ByteStrData() {
     uint8_t val;
     val = componentCodecCancelFlag_ & 0xFF;
     byteStrData_.push_back( val );
@@ -1178,15 +1175,14 @@ class SEIDecodedAtlasInformationHash : public SEI {
     }
   }
 
-  bool    getCancelFlag() { return cancelFlag_; }
-  bool    getPersistenceFlag() { return persistenceFlag_; }
-  uint8_t getHashType() { return hashType_; }
-  bool    getDecodedHighLevelHashPresentFlag() { return decodedHighLevelHashPresentFlag_; }
-  bool    getDecodedAtlasHashPresentFlag() { return decodedAtlasHashPresentFlag_; }
-  bool    getDecodedAtlasB2pHashPresentFlag() { return decodedAtlasB2pHashPresentFlag_; }
-  bool    getDecodedAtlasTilesHashPresentFlag() { return decodedAtlasTilesHashPresentFlag_; }
-  bool    getDecodedAtlasTilesB2pHashPresentFlag() { return decodedAtlasTilesB2pHashPresentFlag_; }
-
+  bool     getCancelFlag() { return cancelFlag_; }
+  bool     getPersistenceFlag() { return persistenceFlag_; }
+  uint8_t  getHashType() { return hashType_; }
+  bool     getDecodedHighLevelHashPresentFlag() { return decodedHighLevelHashPresentFlag_; }
+  bool     getDecodedAtlasHashPresentFlag() { return decodedAtlasHashPresentFlag_; }
+  bool     getDecodedAtlasB2pHashPresentFlag() { return decodedAtlasB2pHashPresentFlag_; }
+  bool     getDecodedAtlasTilesHashPresentFlag() { return decodedAtlasTilesHashPresentFlag_; }
+  bool     getDecodedAtlasTilesB2pHashPresentFlag() { return decodedAtlasTilesB2pHashPresentFlag_; }
   uint16_t getHighLevelCrc() { return highLevelCrc_; }
   uint16_t getAtlasCrc() { return atlasCrc_; }
   uint32_t getHighLevelCheckSum() { return highLevelChecksum_; }
@@ -1233,193 +1229,191 @@ class SEIDecodedAtlasInformationHash : public SEI {
   void setAtlasTilesMd5( size_t i, size_t j, uint32_t value ) { atlasTilesMd5_[i][j] = value; }
   void setAtlasTilesB2pMd5( size_t i, size_t j, uint32_t value ) { atlasTilesB2pMd5_[i][j] = value; }
 
-   std::vector<uint8_t>& getMD5ByteStrData() {  // ajt::this is just an example of how to create a byte string data for
-                                               // computing MD5 for  decoded atlas information hash SEI. Can be sustituted by
-                                               // alternate methods of computing.
-   uint8_t val;
-   val = cancelFlag_ & 0xFF;
-   byteStrData_.push_back( val );
-   val = persistenceFlag_ & 0xFF;
-   byteStrData_.push_back( val );
-   val = hashType_ & 0xFF;
-   byteStrData_.push_back( val );
-   val = decodedHighLevelHashPresentFlag_ & 0xFF;
-   byteStrData_.push_back( val );
-   val = decodedAtlasHashPresentFlag_ & 0xFF;
-   byteStrData_.push_back( val );
-   val = decodedAtlasB2pHashPresentFlag_ & 0xFF;
-   byteStrData_.push_back( val );
-   val = decodedAtlasTilesHashPresentFlag_ & 0xFF;
-   byteStrData_.push_back( val );
-   val = decodedAtlasTilesB2pHashPresentFlag_ & 0xFF;
-   byteStrData_.push_back( val );
-   if (decodedHighLevelHashPresentFlag_) { 
-       switch ( hashType_ ) { 
-       case 0:
-           for (int i = 0; i < 16; i++) { 
-               val = highLevelMd5_[i] & 0xFF;
-               byteStrData_.push_back( val );
-           }
-           break;
-       case 1:
-         val = highLevelCrc_ & 0xFF;
-         byteStrData_.push_back( val );
-         val = (highLevelCrc_ >> 8) & 0xFF;
-         byteStrData_.push_back( val );
-         break;
-       case 2:
-         val = highLevelChecksum_ & 0xFF;
-         byteStrData_.push_back( val );
-         val = ( highLevelChecksum_ >> 8 ) & 0xFF;
-         byteStrData_.push_back( val );
-         val = ( highLevelChecksum_ >> 16 ) & 0xFF;
-         byteStrData_.push_back( val );
-         val = ( highLevelChecksum_ >> 24 ) & 0xFF;
-         byteStrData_.push_back( val );
-         break;
-       default: std::cerr << " Undefined Hash Type " << std::endl;
-       }
-       if ( decodedAtlasHashPresentFlag_ ) {
-         switch ( hashType_ ) {
-           case 0:
-             for ( int i = 0; i < 16; i++ ) {
-               val = atlasMd5_[i] & 0xFF;
-               byteStrData_.push_back( val );
-             }
-             break;
-           case 1:
-             val = atlasCrc_ & 0xFF;
-             byteStrData_.push_back( val );
-             val = ( atlasCrc_ >> 8 ) & 0xFF;
-             byteStrData_.push_back( val );
-             break;
-           case 2:;
-             val = atlasChecksum_ & 0xFF;
-             byteStrData_.push_back( val );
-             val = ( atlasChecksum_ >> 8 ) & 0xFF;
-             byteStrData_.push_back( val );
-             val = ( atlasChecksum_ >> 16 ) & 0xFF;
-             byteStrData_.push_back( val );
-             val = ( atlasChecksum_ >> 24 ) & 0xFF;
-             byteStrData_.push_back( val );
-             break;
-           default: std::cerr << " Undefined Hash Type " << std::endl;
-         }
-       }
-       if ( decodedAtlasB2pHashPresentFlag_ ) {
-         switch ( hashType_ ) {
-           case 0:
-             for ( int i = 0; i < 16; i++ ) {
-               val = atlasB2pMd5_[i] & 0xFF;
-               byteStrData_.push_back( val );
-             }
-             break;
-           case 1:
-             val = atlasB2pCrc_ & 0xFF;
-             byteStrData_.push_back( val );
-             val = ( atlasB2pCrc_ >> 8 ) & 0xFF;
-             byteStrData_.push_back( val );
-             break;
-           case 2:;
-             val = atlasChecksum_ & 0xFF;
-             byteStrData_.push_back( val );
-             val = ( atlasB2pChecksum_ >> 8 ) & 0xFF;
-             byteStrData_.push_back( val );
-             val = ( atlasB2pChecksum_ >> 16 ) & 0xFF;
-             byteStrData_.push_back( val );
-             val = ( atlasB2pChecksum_ >> 24 ) & 0xFF;
-             byteStrData_.push_back( val );
-             break;
-           default: std::cerr << " Undefined Hash Type " << std::endl;
-         }
-       }
-       if ( decodedAtlasTilesHashPresentFlag_ || decodedAtlasTilesB2pHashPresentFlag_ ) {
-         val = numTilesMinus1_ & 0XFF;
-         byteStrData_.push_back( val );
-         val = ( numTilesMinus1_ >> 8 ) & 0XFF;
-         byteStrData_.push_back( val );
-         val = ( numTilesMinus1_ >> 16 ) & 0XFF;
-         byteStrData_.push_back( val );
-         val = ( numTilesMinus1_ >> 24 ) & 0XFF;
-         byteStrData_.push_back( val );
-         val = tileIdLenMinus1_ & 0XFF;
-         byteStrData_.push_back( val );
-         val = ( tileIdLenMinus1_ >> 8 ) & 0XFF;
-         byteStrData_.push_back( val );
-         val = ( tileIdLenMinus1_ >> 16 ) & 0XFF;
-         byteStrData_.push_back( val );
-         val = ( tileIdLenMinus1_ >> 24 ) & 0XFF;
-         byteStrData_.push_back( val );
-         for ( int t = 0; t < numTilesMinus1_ + 1; t++ ) {
-           val = tileId_[t] & 0XFF;
-           byteStrData_.push_back( val );
-           val = ( tileId_[t] >> 8 ) & 0XFF;
-           byteStrData_.push_back( val );
-           val = ( tileId_[t] >> 16 ) & 0XFF;
-           byteStrData_.push_back( val );
-           val = ( tileId_[t] >> 24 ) & 0XFF;
-           byteStrData_.push_back( val );
-         }
-         for ( int t = 0; t < numTilesMinus1_ + 1; t++ ) {
-           uint32_t j = tileId_[t];
-           if ( decodedAtlasTilesHashPresentFlag_ ) {
-             switch ( hashType_ ) {
-               case 0:
-                 for ( int i = 0; i < 16; i++ ) {
-                   val = atlasTilesMd5_[j][i] & 0xFF;
-                   byteStrData_.push_back( val );
-                 }
-                 break;
-               case 1:
-                 val = atlasTilesCrc_[j] & 0xFF;
-                 byteStrData_.push_back( val );
-                 val = ( atlasTilesCrc_ [j] >> 8 ) & 0xFF;
-                 byteStrData_.push_back( val );
-                 break;
-               case 2:;
-                 val = atlasTilesChecksum_[j] & 0xFF;
-                 byteStrData_.push_back( val );
-                 val = ( atlasTilesChecksum_[j] >> 8 ) & 0xFF;
-                 byteStrData_.push_back( val );
-                 val = ( atlasTilesChecksum_[j] >> 16 ) & 0xFF;
-                 byteStrData_.push_back( val );
-                 val = ( atlasTilesChecksum_[j] >> 24 ) & 0xFF;
-                 byteStrData_.push_back( val );
-                 break;
-               default: std::cerr << " Undefined Hash Type " << std::endl;
-             }
-           }
-           if ( decodedAtlasTilesB2pHashPresentFlag_ ) {
-             switch ( hashType_ ) {
-               case 0:
-                 for ( int i = 0; i < 16; i++ ) {
-                   val = atlasTilesB2pMd5_[j][i] & 0xFF;
-                   byteStrData_.push_back( val );
-                 }
-                 break;
-               case 1:
-                 val = atlasTilesB2pCrc_[j] & 0xFF;
-                 byteStrData_.push_back( val );
-                 val = ( atlasTilesB2pCrc_[j] >> 8 ) & 0xFF;
-                 byteStrData_.push_back( val );
-                 break;
-               case 2:;
-                 val = atlasTilesB2pChecksum_[j] & 0xFF;
-                 byteStrData_.push_back( val );
-                 val = ( atlasTilesB2pChecksum_[j] >> 8 ) & 0xFF;
-                 byteStrData_.push_back( val );
-                 val = ( atlasTilesB2pChecksum_[j] >> 16 ) & 0xFF;
-                 byteStrData_.push_back( val );
-                 val = ( atlasTilesB2pChecksum_[j] >> 24 ) & 0xFF;
-                 byteStrData_.push_back( val );
-                 break;
-               default: std::cerr << " Undefined Hash Type " << std::endl;
-             }
-           }
-         }
-       }
-   }
-   return byteStrData_;
+  std::vector<uint8_t>& getMD5ByteStrData() {
+    uint8_t val;
+    val = cancelFlag_ & 0xFF;
+    byteStrData_.push_back( val );
+    val = persistenceFlag_ & 0xFF;
+    byteStrData_.push_back( val );
+    val = hashType_ & 0xFF;
+    byteStrData_.push_back( val );
+    val = decodedHighLevelHashPresentFlag_ & 0xFF;
+    byteStrData_.push_back( val );
+    val = decodedAtlasHashPresentFlag_ & 0xFF;
+    byteStrData_.push_back( val );
+    val = decodedAtlasB2pHashPresentFlag_ & 0xFF;
+    byteStrData_.push_back( val );
+    val = decodedAtlasTilesHashPresentFlag_ & 0xFF;
+    byteStrData_.push_back( val );
+    val = decodedAtlasTilesB2pHashPresentFlag_ & 0xFF;
+    byteStrData_.push_back( val );
+    if ( decodedHighLevelHashPresentFlag_ ) {
+      switch ( hashType_ ) {
+        case 0:
+          for ( int i = 0; i < 16; i++ ) {
+            val = highLevelMd5_[i] & 0xFF;
+            byteStrData_.push_back( val );
+          }
+          break;
+        case 1:
+          val = highLevelCrc_ & 0xFF;
+          byteStrData_.push_back( val );
+          val = ( highLevelCrc_ >> 8 ) & 0xFF;
+          byteStrData_.push_back( val );
+          break;
+        case 2:
+          val = highLevelChecksum_ & 0xFF;
+          byteStrData_.push_back( val );
+          val = ( highLevelChecksum_ >> 8 ) & 0xFF;
+          byteStrData_.push_back( val );
+          val = ( highLevelChecksum_ >> 16 ) & 0xFF;
+          byteStrData_.push_back( val );
+          val = ( highLevelChecksum_ >> 24 ) & 0xFF;
+          byteStrData_.push_back( val );
+          break;
+        default: std::cerr << " Undefined Hash Type " << std::endl;
+      }
+      if ( decodedAtlasHashPresentFlag_ ) {
+        switch ( hashType_ ) {
+          case 0:
+            for ( int i = 0; i < 16; i++ ) {
+              val = atlasMd5_[i] & 0xFF;
+              byteStrData_.push_back( val );
+            }
+            break;
+          case 1:
+            val = atlasCrc_ & 0xFF;
+            byteStrData_.push_back( val );
+            val = ( atlasCrc_ >> 8 ) & 0xFF;
+            byteStrData_.push_back( val );
+            break;
+          case 2:;
+            val = atlasChecksum_ & 0xFF;
+            byteStrData_.push_back( val );
+            val = ( atlasChecksum_ >> 8 ) & 0xFF;
+            byteStrData_.push_back( val );
+            val = ( atlasChecksum_ >> 16 ) & 0xFF;
+            byteStrData_.push_back( val );
+            val = ( atlasChecksum_ >> 24 ) & 0xFF;
+            byteStrData_.push_back( val );
+            break;
+          default: std::cerr << " Undefined Hash Type " << std::endl;
+        }
+      }
+      if ( decodedAtlasB2pHashPresentFlag_ ) {
+        switch ( hashType_ ) {
+          case 0:
+            for ( int i = 0; i < 16; i++ ) {
+              val = atlasB2pMd5_[i] & 0xFF;
+              byteStrData_.push_back( val );
+            }
+            break;
+          case 1:
+            val = atlasB2pCrc_ & 0xFF;
+            byteStrData_.push_back( val );
+            val = ( atlasB2pCrc_ >> 8 ) & 0xFF;
+            byteStrData_.push_back( val );
+            break;
+          case 2:;
+            val = atlasChecksum_ & 0xFF;
+            byteStrData_.push_back( val );
+            val = ( atlasB2pChecksum_ >> 8 ) & 0xFF;
+            byteStrData_.push_back( val );
+            val = ( atlasB2pChecksum_ >> 16 ) & 0xFF;
+            byteStrData_.push_back( val );
+            val = ( atlasB2pChecksum_ >> 24 ) & 0xFF;
+            byteStrData_.push_back( val );
+            break;
+          default: std::cerr << " Undefined Hash Type " << std::endl;
+        }
+      }
+      if ( decodedAtlasTilesHashPresentFlag_ || decodedAtlasTilesB2pHashPresentFlag_ ) {
+        val = numTilesMinus1_ & 0XFF;
+        byteStrData_.push_back( val );
+        val = ( numTilesMinus1_ >> 8 ) & 0XFF;
+        byteStrData_.push_back( val );
+        val = ( numTilesMinus1_ >> 16 ) & 0XFF;
+        byteStrData_.push_back( val );
+        val = ( numTilesMinus1_ >> 24 ) & 0XFF;
+        byteStrData_.push_back( val );
+        val = tileIdLenMinus1_ & 0XFF;
+        byteStrData_.push_back( val );
+        val = ( tileIdLenMinus1_ >> 8 ) & 0XFF;
+        byteStrData_.push_back( val );
+        val = ( tileIdLenMinus1_ >> 16 ) & 0XFF;
+        byteStrData_.push_back( val );
+        val = ( tileIdLenMinus1_ >> 24 ) & 0XFF;
+        byteStrData_.push_back( val );
+        for ( int t = 0; t < numTilesMinus1_ + 1; t++ ) {
+          val = tileId_[t] & 0XFF;
+          byteStrData_.push_back( val );
+          val = ( tileId_[t] >> 8 ) & 0XFF;
+          byteStrData_.push_back( val );
+          val = ( tileId_[t] >> 16 ) & 0XFF;
+          byteStrData_.push_back( val );
+          val = ( tileId_[t] >> 24 ) & 0XFF;
+          byteStrData_.push_back( val );
+        }
+        for ( int t = 0; t < numTilesMinus1_ + 1; t++ ) {
+          uint32_t j = tileId_[t];
+          if ( decodedAtlasTilesHashPresentFlag_ ) {
+            switch ( hashType_ ) {
+              case 0:
+                for ( int i = 0; i < 16; i++ ) {
+                  val = atlasTilesMd5_[j][i] & 0xFF;
+                  byteStrData_.push_back( val );
+                }
+                break;
+              case 1:
+                val = atlasTilesCrc_[j] & 0xFF;
+                byteStrData_.push_back( val );
+                val = ( atlasTilesCrc_[j] >> 8 ) & 0xFF;
+                byteStrData_.push_back( val );
+                break;
+              case 2:;
+                val = atlasTilesChecksum_[j] & 0xFF;
+                byteStrData_.push_back( val );
+                val = ( atlasTilesChecksum_[j] >> 8 ) & 0xFF;
+                byteStrData_.push_back( val );
+                val = ( atlasTilesChecksum_[j] >> 16 ) & 0xFF;
+                byteStrData_.push_back( val );
+                val = ( atlasTilesChecksum_[j] >> 24 ) & 0xFF;
+                byteStrData_.push_back( val );
+                break;
+              default: std::cerr << " Undefined Hash Type " << std::endl;
+            }
+          }
+          if ( decodedAtlasTilesB2pHashPresentFlag_ ) {
+            switch ( hashType_ ) {
+              case 0:
+                for ( int i = 0; i < 16; i++ ) {
+                  val = atlasTilesB2pMd5_[j][i] & 0xFF;
+                  byteStrData_.push_back( val );
+                }
+                break;
+              case 1:
+                val = atlasTilesB2pCrc_[j] & 0xFF;
+                byteStrData_.push_back( val );
+                val = ( atlasTilesB2pCrc_[j] >> 8 ) & 0xFF;
+                byteStrData_.push_back( val );
+                break;
+              case 2:;
+                val = atlasTilesB2pChecksum_[j] & 0xFF;
+                byteStrData_.push_back( val );
+                val = ( atlasTilesB2pChecksum_[j] >> 8 ) & 0xFF;
+                byteStrData_.push_back( val );
+                val = ( atlasTilesB2pChecksum_[j] >> 16 ) & 0xFF;
+                byteStrData_.push_back( val );
+                val = ( atlasTilesB2pChecksum_[j] >> 24 ) & 0xFF;
+                byteStrData_.push_back( val );
+                break;
+              default: std::cerr << " Undefined Hash Type " << std::endl;
+            }
+          }
+        }
+      }
+    }
+    return byteStrData_;
   }
 
  private:
@@ -1495,9 +1489,7 @@ class SEIOccupancySynthesis : public SEI {
   void setPbfPassesCountMinus1( size_t i, uint8_t value ) { pbfPassesCountMinus1_[i] = value; }
   void setPbfFilterSizeMinus1( size_t i, uint8_t value ) { pbfFilterSizeMinus1_[i] = value; }
 
-  std::vector<uint8_t>&
-      getMD5ByteStrData() {  // ajt::this is just an example of how to create a byte string data for
-                             // computing MD5 for occupancy synthesis SEI. Can be sustituted by alternate methods of computing.
+  std::vector<uint8_t>& getMD5ByteStrData() {
     uint8_t val;
     val = persistenceFlag_ & 0xFF;
     byteStrData_.push_back( val );
@@ -1511,7 +1503,7 @@ class SEIOccupancySynthesis : public SEI {
       byteStrData_.push_back( val );
       val = instanceCancelFlag_[k] & 0xFF;
       byteStrData_.push_back( val );
-      val = methodType_[k] & 0xFF; //ajt:: ue(v) is used to code the value. The max. value is not specified in FDIS (use 8-bit value as specified in the SW)?
+      val = methodType_[k] & 0xFF;
       byteStrData_.push_back( val );
       if ( methodType_[k] == 1 ) {
         val = pbfLog2ThresholdMinus1_[k] & 0xFF;
@@ -1581,8 +1573,7 @@ class SEIGeometrySmoothing : public SEI {
   void setGridSizeMinus2( size_t i, uint8_t value ) { gridSizeMinus2_[i] = value; }
   void setThreshold( size_t i, uint8_t value ) { threshold_[i] = value; }
 
-  std::vector<uint8_t>& getMD5ByteStrData() {  // ajt::this is just an example of how to create a byte string data for
-                                               // computing MD5 for geometry smoothing SEI. Can be sustituted by alternate methods of computing.
+  std::vector<uint8_t>& getMD5ByteStrData() {
     uint8_t val;
     val = persistenceFlag_ & 0xFF;
     byteStrData_.push_back( val );
@@ -1597,8 +1588,7 @@ class SEIGeometrySmoothing : public SEI {
       val = instanceCancelFlag_[k] & 0xFF;
       byteStrData_.push_back( val );
       if ( instanceCancelFlag_[k] != 1 ) {
-        val = methodType_[k] & 0xFF;  // ajt:: ue(v) is used to code the value. The max. value is not specified in FDIS
-                                      // (use 8-bit value as specified in the SW)?
+        val = methodType_[k] & 0xFF;
         byteStrData_.push_back( val );
         if ( methodType_[k] == 1 ) {
           val = filterEomPointsFlag_[k] & 0xFF;
@@ -1708,46 +1698,44 @@ class SEIAttributeSmoothing : public SEI {
   void setThresholdVariation( size_t i, size_t j, uint8_t value ) { thresholdVariation_[i][j] = value; }
   void setThresholdDifference( size_t i, size_t j, uint8_t value ) { thresholdDifference_[i][j] = value; }
 
-  std::vector<uint8_t>& getMD5ByteStrData() {  // ajt::this is just an example of how to create a byte string data for
-                                               // computing MD5 for attribute smoothing SEI. Can be sustituted by
-                                               // alternate methods of computing.
+  std::vector<uint8_t>& getMD5ByteStrData() {
     uint8_t val;
     val = persistenceFlag_ & 0xFF;
     byteStrData_.push_back( val );
     val = resetFlag_ & 0xFF;
     byteStrData_.push_back( val );
-    val = numAttributesUpdated_ & 0xFF; //ajt:: ue(v) is used to code the value. The max. value is not specified in FDIS (use 8-bit value as specified in the SW)?
+    val = numAttributesUpdated_ & 0xFF;
     byteStrData_.push_back( val );
     for ( int j = 0; j < numAttributesUpdated_; j++ ) {
-      val       = attributeIdx_[j] & 0xFF;
+      val = attributeIdx_[j] & 0xFF;
       byteStrData_.push_back( val );
       uint8_t k = attributeIdx_[j];
-      val = attributeSmoothingCancelFlag_[k] & 0xFF;
+      val       = attributeSmoothingCancelFlag_[k] & 0xFF;
       byteStrData_.push_back( val );
       val = instancesUpdated_[k] & 0xFF;
       byteStrData_.push_back( val );
-      for (int i = 0; i < instancesUpdated_[k]; i++) { 
-          val = instanceIndex_[k][i] & 0xFF;
+      for ( int i = 0; i < instancesUpdated_[k]; i++ ) {
+        val = instanceIndex_[k][i] & 0xFF;
+        byteStrData_.push_back( val );
+        uint8_t m = instanceIndex_[k][i];
+        val       = instanceCancelFlag_[k][m] & 0xFF;
+        byteStrData_.push_back( val );
+        if ( instanceCancelFlag_[k][m] != 1 ) {
+          val = methodType_[k][m] & 0XFF;
           byteStrData_.push_back( val );
-          uint8_t m = instanceIndex_[k][i];
-          val       = instanceCancelFlag_[k][m] & 0xFF;
-          byteStrData_.push_back( val );
-          if (instanceCancelFlag_[k][m] != 1) { 
-              val = methodType_[k][m] & 0XFF; //ajt:: ue(v) is used to code the value. The max. value is not specified in FDIS (use 8-bit value as specified in the SW)?
-              byteStrData_.push_back( val );
-              if ( methodType_[k][m] == 1 ) {  
-                  val = filterEomPointsFlag_[k][m] & 0XFF;
-                  byteStrData_.push_back( val );
-                  val = gridSizeMinus2_[k][m] & 0XFF;
-                  byteStrData_.push_back( val );
-                  val = threshold_[k][m] & 0XFF;
-                  byteStrData_.push_back( val );
-                  val = thresholdVariation_[k][m] & 0XFF;
-                  byteStrData_.push_back( val );
-                  val = thresholdDifference_[k][m] & 0XFF;
-                  byteStrData_.push_back( val );
-              }
+          if ( methodType_[k][m] == 1 ) {
+            val = filterEomPointsFlag_[k][m] & 0XFF;
+            byteStrData_.push_back( val );
+            val = gridSizeMinus2_[k][m] & 0XFF;
+            byteStrData_.push_back( val );
+            val = threshold_[k][m] & 0XFF;
+            byteStrData_.push_back( val );
+            val = thresholdVariation_[k][m] & 0XFF;
+            byteStrData_.push_back( val );
+            val = thresholdDifference_[k][m] & 0XFF;
+            byteStrData_.push_back( val );
           }
+        }
       }
     }
     return byteStrData_;
@@ -1844,11 +1832,16 @@ class SEITimeCode : public SEI {
   int16_t  timeOffsetValue_;
 };
 
-
-class PCCSEI{
-  public:
-  PCCSEI(){ seiPrefix_.clear(); seiSuffix_.clear(); }
-  ~PCCSEI(){ seiPrefix_.clear(); seiSuffix_.clear(); }
+class PCCSEI {
+ public:
+  PCCSEI() {
+    seiPrefix_.clear();
+    seiSuffix_.clear();
+  }
+  ~PCCSEI() {
+    seiPrefix_.clear();
+    seiSuffix_.clear();
+  }
 
   SEI& addSei( NalUnitType nalUnitType, SeiPayloadType payloadType ) {
     std::shared_ptr<SEI> sharedPtr;
@@ -1938,7 +1931,7 @@ class PCCSEI{
   SEI&                               getSeiSuffix( size_t index ) { return *( seiSuffix_[index] ); }
 
  private:
-  std::vector<std::shared_ptr<SEI>> seiPrefix_;  
+  std::vector<std::shared_ptr<SEI>> seiPrefix_;
   std::vector<std::shared_ptr<SEI>> seiSuffix_;
 };
 

@@ -227,10 +227,10 @@ enum PCCPatchType {
   ERROR_PATCH       // 7: error patch
 };
 
-enum PCCHashPatchType {  
-  PROJECTED = 0,         // 0: protected
-  RAW,                   // 1: raw
-  EOM                    // 2: eom
+enum PCCHashPatchType {
+  PROJECTED = 0,  // 0: protected
+  RAW,            // 1: raw
+  EOM             // 2: eom
 };
 
 enum SeiPayloadType {

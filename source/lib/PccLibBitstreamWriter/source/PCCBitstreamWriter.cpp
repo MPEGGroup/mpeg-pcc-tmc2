@@ -48,8 +48,8 @@ int32_t PCCBitstreamWriter::write( SampleStreamNalUnit& ssnu,
                                    PCCBitstream&        bitstream,
                                    uint32_t             forcedSsvhUnitSizePrecisionBytes ) {
   TRACE_BITSTREAM( "PCCBitstreamXXcoder: SampleStream Nal Unit start \n" );
-  uint32_t precision = 4; 
-  precision = ( std::max )( precision, forcedSsvhUnitSizePrecisionBytes );
+  uint32_t precision = 4;
+  precision          = ( std::max )( precision, forcedSsvhUnitSizePrecisionBytes );
   ssnu.setSizePrecisionBytesMinus1( precision - 1 );
   sampleStreamNalHeader( bitstream, ssnu );
   TRACE_BITSTREAM( "PCCBitstreamXXcoder: SampleStream Nal Unit start done \n" );
@@ -69,7 +69,7 @@ size_t PCCBitstreamWriter::write( SampleStreamV3CUnit& ssvu,
   TRACE_BITSTREAM( "maxUnitSize = %u \n", maxUnitSize );
   uint32_t precision = static_cast<uint32_t>(
       min( max( static_cast<int>( ceil( static_cast<double>( ceilLog2( maxUnitSize ) ) / 8.0 ) ), 1 ), 8 ) );
-  precision = ( std::max )( precision, forcedSsvhUnitSizePrecisionBytes  );
+  precision = ( std::max )( precision, forcedSsvhUnitSizePrecisionBytes );
   ssvu.setSsvhUnitSizePrecisionBytesMinus1( precision - 1 );
   TRACE_BITSTREAM( " => SsvhUnitSizePrecisionBytesMinus1 = %u \n", ssvu.getSsvhUnitSizePrecisionBytesMinus1() );
 
@@ -1512,13 +1512,13 @@ void PCCBitstreamWriter::sampleStreamNalUnit( PCCHighLevelSyntax&  syntax,
       break;
     case NAL_SUFFIX_ESEI:
     case NAL_SUFFIX_NSEI:
-      seiRbsp( syntax, bitstream, syntax.getAtlasTileLayer( atglIndex ).getSEI().getSeiSuffix( index ),
-               nalu.getType(), atglIndex );
+      seiRbsp( syntax, bitstream, syntax.getAtlasTileLayer( atglIndex ).getSEI().getSeiSuffix( index ), nalu.getType(),
+               atglIndex );
       break;
     case NAL_PREFIX_ESEI:
     case NAL_PREFIX_NSEI:
-      seiRbsp( syntax, bitstream, syntax.getAtlasTileLayer( atglIndex ).getSEI().getSeiPrefix( index ),
-               nalu.getType(), atglIndex );
+      seiRbsp( syntax, bitstream, syntax.getAtlasTileLayer( atglIndex ).getSEI().getSeiPrefix( index ), nalu.getType(),
+               atglIndex );
       break;
     default: fprintf( stderr, "sampleStreamNalUnit type = %d not supported\n", static_cast<int32_t>( nalu.getType() ) );
   }
@@ -1538,7 +1538,7 @@ void PCCBitstreamWriter::seiPayload( PCCBitstream&       bitstream,
       bufferingPeriod( bitstream, sei );
     } else if ( payloadType == ATLAS_FRAME_TIMING ) {  // 1
       assert( syntax.getAtlasTileLayer( atglIndex ).getSEI().seiIsPresent( NAL_PREFIX_NSEI, BUFFERING_PERIOD ) );
-      auto& bpsei = *syntax.getAtlasTileLayer( atglIndex).getSEI().getLastSei( NAL_PREFIX_NSEI, BUFFERING_PERIOD );
+      auto& bpsei = *syntax.getAtlasTileLayer( atglIndex ).getSEI().getLastSei( NAL_PREFIX_NSEI, BUFFERING_PERIOD );
       atlasFrameTiming( bitstream, sei, bpsei, false );
     } else if ( payloadType == FILLER_PAYLOAD ) {  // 2
       fillerPayload( bitstream, sei );
@@ -2038,11 +2038,11 @@ void PCCBitstreamWriter::viewportCameraParameters( PCCBitstream& bitstream, SEI&
       bitstream.write( sei.getErpHorizontalFov(), 32 );          // u(32)
       bitstream.write( sei.getErpVerticalFov(), 32 );            // u(32)
     } else if ( sei.getCameraType() == 1 ) {                     // perspective
-      bitstream.writeFloat( sei.getPerspectiveAspectRatio() );    // fl(32)
+      bitstream.writeFloat( sei.getPerspectiveAspectRatio() );   // fl(32)
       bitstream.write( sei.getPerspectiveHorizontalFov(), 32 );  // u(32)
-    } else if ( sei.getCameraType() == 2 ) {                     // orthographic 
-      bitstream.writeFloat( sei.getOrthoAspectRatio() );          // fl(32)
-      bitstream.writeFloat( sei.getOrthoHorizontalSize() );       // fl(32)
+    } else if ( sei.getCameraType() == 2 ) {                     // orthographic
+      bitstream.writeFloat( sei.getOrthoAspectRatio() );         // fl(32)
+      bitstream.writeFloat( sei.getOrthoHorizontalSize() );      // fl(32)
     }
     bitstream.writeFloat( sei.getClippingNearPlane() );  // fl(32)
     bitstream.writeFloat( sei.getClippingFarPlane() );   // fl(32)

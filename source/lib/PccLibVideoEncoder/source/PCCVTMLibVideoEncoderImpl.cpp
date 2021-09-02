@@ -214,8 +214,8 @@ void PCCVTMLibVideoEncoderImpl<T>::createLib( const int layerIdx ) {
 
   if ( m_gopBasedTemporalFilterEnabled ) {
     m_temporalFilter.init( m_FrameSkip, m_inputBitDepth, m_MSBExtendedBitDepth, m_internalBitDepth, m_sourceWidth,
-                           sourceHeight, m_sourcePadding, m_bClipInputVideoToRec709Range, m_inputFileName, m_chromaFormatIDC,
-                           m_inputColourSpaceConvert, m_iQP, m_gopBasedTemporalFilterStrengths,
+                           sourceHeight, m_sourcePadding, m_bClipInputVideoToRec709Range, m_inputFileName,
+                           m_chromaFormatIDC, m_inputColourSpaceConvert, m_iQP, m_gopBasedTemporalFilterStrengths,
                            m_gopBasedTemporalFilterFutureReference );
   }
 }

@@ -231,7 +231,7 @@ class PCCVTMLibVideoEncoderCfg {
   bool         m_oneSlicePerSubpicConstraintFlag;
   bool         m_noSubpicInfoConstraintFlag;
   // coding structure
-  int      m_iIntraPeriod;          ///< period of I-slice (random access period)
+  int m_iIntraPeriod;  ///< period of I-slice (random access period)
 #if GDR_ENABLED
   bool m_gdrEnabled;
   int  m_gdrPocStart;
@@ -282,15 +282,15 @@ class PCCVTMLibVideoEncoderCfg {
   int  m_intraQPOffset;       ///< QP offset for intra slice (integer)
   bool m_lambdaFromQPEnable;  ///< enable flag for QP:lambda fix
 #endif
-  std::string m_dQPFileName;             ///< QP offset for each slice (initialized from external file)
-  int*        m_aidQP;                   ///< array of slice QP values
-  int         m_iMaxDeltaQP;             ///< max. |delta QP|
-  uint32_t    m_uiDeltaQpRD;             ///< dQP range for multi-pass slice QP optimization
-  int         m_cuQpDeltaSubdiv;         ///< Maximum subdiv for CU luma Qp adjustment (0:default)
-  int         m_cuChromaQpOffsetSubdiv;  ///< If negative, then do not apply chroma qp offsets.
+  std::string              m_dQPFileName;              ///< QP offset for each slice (initialized from external file)
+  int*                     m_aidQP;                    ///< array of slice QP values
+  int                      m_iMaxDeltaQP;              ///< max. |delta QP|
+  uint32_t                 m_uiDeltaQpRD;              ///< dQP range for multi-pass slice QP optimization
+  int                      m_cuQpDeltaSubdiv;          ///< Maximum subdiv for CU luma Qp adjustment (0:default)
+  int                      m_cuChromaQpOffsetSubdiv;   ///< If negative, then do not apply chroma qp offsets.
   std::vector<ChromaQpAdj> m_cuChromaQpOffsetList;     ///< Local chroma QP offsets list (to be signalled in PPS)
   bool                     m_cuChromaQpOffsetEnabled;  ///< Enable local chroma QP offsets (slice level flag)
-  bool        m_bFastDeltaQP;            ///< Fast Delta QP (false:default)
+  bool                     m_bFastDeltaQP;             ///< Fast Delta QP (false:default)
 
   int m_cbQpOffset;            ///< Chroma Cb QP Offset (0:default)
   int m_crQpOffset;            ///< Chroma Cr QP Offset (0:default)
@@ -754,7 +754,7 @@ class PCCVTMLibVideoEncoderCfg {
   bool m_bs2ModPOCAndType;
   bool m_forceDecodeBitstream1;
 
-  bool   m_alf;  ///< Adaptive Loop Filter
+  bool m_alf;  ///< Adaptive Loop Filter
 #if JVET_V0095_ALF_SAO_TRUE_ORG
   bool m_alfSaoTrueOrg;
 #endif

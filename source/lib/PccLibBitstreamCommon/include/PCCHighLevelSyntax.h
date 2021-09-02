@@ -171,13 +171,13 @@ class PCCAtlasHighLevelSyntax {
     atlasTileLayer_.push_back( atgl );
     return atlasTileLayer_.back();
   }
-  void traceAtlasTileLayer(){
-    printf("traceAtlasTileLayer: atlasTileLayer_.size() = %zu \n",atlasTileLayer_.size());
+  void traceAtlasTileLayer() {
+    printf( "traceAtlasTileLayer: atlasTileLayer_.size() = %zu \n", atlasTileLayer_.size() );
     for ( size_t atglIndex = 0; atglIndex < atlasTileLayer_.size(); atglIndex++ ) {
-        printf("  atgl %3zu: EncFrameIndex = %zu EncTileIndex = %zu \n",atglIndex, atlasTileLayer_[atglIndex].getEncFrameIndex(),
-        atlasTileLayer_[atglIndex].getEncTileIndex() ); 
+      printf( "  atgl %3zu: EncFrameIndex = %zu EncTileIndex = %zu \n", atglIndex,
+              atlasTileLayer_[atglIndex].getEncFrameIndex(), atlasTileLayer_[atglIndex].getEncTileIndex() );
     }
-    fflush(stdout);
+    fflush( stdout );
   }
   size_t getAtlasTileLayerIndex( size_t frameIndex, size_t tileIndex ) {
     for ( size_t atglIndex = 0; atglIndex < atlasTileLayer_.size(); atglIndex++ ) {
@@ -191,7 +191,7 @@ class PCCAtlasHighLevelSyntax {
   std::vector<AtlasTileLayerRbsp>& getAtlasTileLayerList() { return atlasTileLayer_; }
   AtlasTileLayerRbsp&              getAtlasTileLayer( size_t atglIndex ) { return atlasTileLayer_[atglIndex]; }
   AtlasTileLayerRbsp&              getAtlasTileLayer( size_t frameIndex, size_t tileIndex ) {
-    return atlasTileLayer_[ getAtlasTileLayerIndex( frameIndex, tileIndex )];
+    return atlasTileLayer_[getAtlasTileLayerIndex( frameIndex, tileIndex )];
   }
 
  private:
@@ -253,8 +253,8 @@ class PCCHighLevelSyntax {
     atlasHLS_.resize( size );
     atlasIndex_ = 0;
   }
-  void setAtlasIndex( size_t atlId ) { atlasIndex_ = atlId; }
-  PCCAtlasHighLevelSyntax& getAtlasHighLevelSyntax() { return atlasHLS_[atlasIndex_]; } 
+  void                     setAtlasIndex( size_t atlId ) { atlasIndex_ = atlId; }
+  PCCAtlasHighLevelSyntax& getAtlasHighLevelSyntax() { return atlasHLS_[atlasIndex_]; }
 
   // All the functions below are just redirect to the corresponding atlas function
   // video related functions
@@ -266,7 +266,7 @@ class PCCHighLevelSyntax {
   PCCVideoBitstream& getVideoBitstream( PCCVideoType type ) { return atlasHLS_[atlasIndex_].getVideoBitstream( type ); }
   void               printVideoBitstream() { return atlasHLS_[atlasIndex_].printVideoBitstream(); };
 
-  // ASPS related functions  
+  // ASPS related functions
   AtlasSequenceParameterSetRbsp& getAtlasSequenceParameterSet( size_t setId ) {
     return atlasHLS_[atlasIndex_].getAtlasSequenceParameterSet( setId );
   }
@@ -345,15 +345,11 @@ class PCCHighLevelSyntax {
     return atlasHLS_[atlasIndex_].getAtlasTileLayer( frameIdx, tileIdx );
   }
 
-
   bool seiIsPresentInReceivedData( NalUnitType nalUnitType, SeiPayloadType payloadType, size_t atglIndex ) {
-    if( getAtlasTileLayer( atglIndex ).getSEI().seiIsPresent( nalUnitType, payloadType ) ){
-      return true;
-    }
-    for( int32_t index = (int32_t)atglIndex -1; index > 0; index -- ){
-      if( getAtlasTileLayer( index ).getSEI().seiIsPresent( nalUnitType, payloadType ) ){
-        // auto& sei = getAtlasTileLayer( index ).getSEI().getSei( nalUnitType, payloadType ); 
-        // JR TODO: we must check that the SEI is percistant but this information is sei dependent
+    if ( getAtlasTileLayer( atglIndex ).getSEI().seiIsPresent( nalUnitType, payloadType ) ) { return true; }
+    for ( int32_t index = (int32_t)atglIndex - 1; index > 0; index-- ) {
+      if ( getAtlasTileLayer( index ).getSEI().seiIsPresent( nalUnitType, payloadType ) ) {
+        // we must check that the SEI is percistant but this information is sei de pendent
         return true;
       }
     }
@@ -365,8 +361,7 @@ class PCCHighLevelSyntax {
     }
     for ( int32_t index = (int32_t)atglIndex - 1; index > 0; index-- ) {
       if ( getAtlasTileLayer( index ).getSEI().seiIsPresent( nalUnitType, payloadType ) ) {
-        // auto& sei = getAtlasTileLayer( index ).getSEI().getSei( nalUnitType, payloadType );
-        // JR TODO: we must check that the SEI is percistant but this information is sei dependent
+        // we must check that the SEI is percistant but this information is sei dependent
         return getAtlasTileLayer( index ).getSEI().getSei( nalUnitType, payloadType );
       }
     }
@@ -389,24 +384,23 @@ class PCCHighLevelSyntax {
   bool&   getSingleLayerMode() { return singleLayerMode_; }
 
   size_t checkProfile();
-  
+
  private:
-  std::vector<PCCVideoBitstream>              videoBitstream_;
-  V3CUnitHeader                               v3cUnitHeader_[5];
-  std::vector<V3CParameterSet>                vpccParameterSets_;
-  uint8_t                                     activeVPS_;
-  uint8_t                                     occupancyPrecision_;
-  uint8_t                                     log2PatchQuantizerSizeX_;
-  uint8_t                                     log2PatchQuantizerSizeY_;
-  bool                                        enablePatchSizeQuantization_;
-  bool                                        prefilterLossyOM_;
-  size_t                                      offsetLossyOM_;
-  size_t                                      geometry3dCoordinatesBitdepth_;
-  bool                                        singleLayerMode_;
-  PCCBitstreamStat*                           bitstreamStat_;
-  std::vector<PCCAtlasHighLevelSyntax>        atlasHLS_;
-  size_t                                      atlasIndex_;
-  // std::vector<SEIDecodedAtlasInformationHash> seiHash_;
+  std::vector<PCCVideoBitstream>       videoBitstream_;
+  V3CUnitHeader                        v3cUnitHeader_[5];
+  std::vector<V3CParameterSet>         vpccParameterSets_;
+  uint8_t                              activeVPS_;
+  uint8_t                              occupancyPrecision_;
+  uint8_t                              log2PatchQuantizerSizeX_;
+  uint8_t                              log2PatchQuantizerSizeY_;
+  bool                                 enablePatchSizeQuantization_;
+  bool                                 prefilterLossyOM_;
+  size_t                               offsetLossyOM_;
+  size_t                               geometry3dCoordinatesBitdepth_;
+  bool                                 singleLayerMode_;
+  PCCBitstreamStat*                    bitstreamStat_;
+  std::vector<PCCAtlasHighLevelSyntax> atlasHLS_;
+  size_t                               atlasIndex_;
 };
 };  // namespace pcc
 

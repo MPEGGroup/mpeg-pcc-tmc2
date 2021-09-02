@@ -273,7 +273,7 @@ bool parseParameters( int                       argc,
   return !err.is_errored;
 }
 
-int decompressVideo(       PCCDecoderParameters& decoderParams,
+int decompressVideo( PCCDecoderParameters&       decoderParams,
                      const PCCMetricsParameters& metricsParams,
                      PCCConformanceParameters&   conformanceParams,
                      StopwatchUserTime&          clock ) {
@@ -318,7 +318,7 @@ int decompressVideo(       PCCDecoderParameters& decoderParams,
     decoderParams.setReconstructionParameters( context.getVps().getProfileTierLevel().getProfileReconstructionIdc() );
     decoder.setReconstructionParameters( decoderParams );
 #endif
-    
+
     // allocate atlas structure
     context.resizeAtlas( context.getVps().getAtlasCountMinus1() + 1 );
     for ( uint32_t atlId = 0; atlId < context.getVps().getAtlasCountMinus1() + 1; atlId++ ) {
@@ -388,16 +388,13 @@ int main( int argc, char* argv[] ) {
   clockWall.stop();
 
   using namespace std::chrono;
-  using ms       = milliseconds;
-  auto totalWall = duration_cast<ms>( clockWall.count() ).count();
-  std::cout << "Processing time (wall): " << ( ret == 0 ? totalWall / 1000.0 : -1 ) << " s\n";
-
-  auto totalUserSelf = duration_cast<ms>( clockUser.self.count() ).count();
-  std::cout << "Processing time (user.self): " << ( ret == 0 ? totalUserSelf / 1000.0 : -1 ) << " s\n";
-
+  using ms            = milliseconds;
+  auto totalWall      = duration_cast<ms>( clockWall.count() ).count();
+  auto totalUserSelf  = duration_cast<ms>( clockUser.self.count() ).count();
   auto totalUserChild = duration_cast<ms>( clockUser.children.count() ).count();
+  std::cout << "Processing time (wall): " << ( ret == 0 ? totalWall / 1000.0 : -1 ) << " s\n";
+  std::cout << "Processing time (user.self): " << ( ret == 0 ? totalUserSelf / 1000.0 : -1 ) << " s\n";
   std::cout << "Processing time (user.children): " << ( ret == 0 ? totalUserChild / 1000.0 : -1 ) << " s\n";
-
   std::cout << "Peak memory: " << getPeakMemory() << " KB\n";
   return ret;
 }

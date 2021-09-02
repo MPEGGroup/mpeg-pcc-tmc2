@@ -987,7 +987,10 @@ bool parseParameters( int                   argc,
   }
   encoderParams.completePath();
   metricsParams.completePath();
-  if ( !encoderParams.check() ) { std::cerr << "Input encoder parameters not correct \n"; err.is_errored = true; }
+  if ( !encoderParams.check() ) {
+    std::cerr << "Input encoder parameters not correct \n";
+    err.is_errored = true;
+  }
   if ( !metricsParams.check() ) { std::cerr << "Input metrics parameters not correct \n"; }
   encoderParams.print();
   metricsParams.print();
@@ -1062,7 +1065,7 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
       if ( bRunMetric ) { metrics.compute( sources, reconstructs, normals ); }
     }
     if ( metricsParams.computeChecksum_ ) {
-      if ( encoderParams.rawPointsPatch_ && encoderParams.reconstructRawType_!=0 ) {
+      if ( encoderParams.rawPointsPatch_ && encoderParams.reconstructRawType_ != 0 ) {
         checksum.computeSource( sources );
         checksum.computeReordered( reconstructs );
       }
@@ -1076,7 +1079,7 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
     sources.clear();
     reconstructs.clear();
     startFrameNumber = endFrameNumber;
-    contextIndex++; 
+    contextIndex++;
   }
 
   PCCBitstream bitstream;
@@ -1097,7 +1100,9 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
   if ( metricsParams.computeMetrics_ ) { metrics.display(); }
   bool checksumEqual = true;
   if ( metricsParams.computeChecksum_ ) {
-    if ( encoderParams.rawPointsPatch_ && encoderParams.reconstructRawType_!=0 ) { checksumEqual = checksum.compareSrcRec(); }
+    if ( encoderParams.rawPointsPatch_ && encoderParams.reconstructRawType_ != 0 ) {
+      checksumEqual = checksum.compareSrcRec();
+    }
     checksum.write( encoderParams.compressedStreamPath_ );
   }
   return checksumEqual ? 0 : -1;

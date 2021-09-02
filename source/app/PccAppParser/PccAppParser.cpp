@@ -79,7 +79,6 @@ int parserPccBin( const std::string& filename ) {
 
 int main( int argc, char* argv[] ) {
   std::cout << "PccAppParser v" << TMC2_VERSION_MAJOR << "." << TMC2_VERSION_MINOR << std::endl << std::endl;
-
   if ( argc != 2 ) { usage(); }
   if ( !exist( argv[1] ) ) {
     printf( "File %s not exist \n", argv[1] );

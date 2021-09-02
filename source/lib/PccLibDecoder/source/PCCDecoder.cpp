@@ -80,7 +80,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
   auto&             plt              = sps.getProfileTierLevel();
   const size_t      mapCount         = sps.getMapCountMinus1( atlasIndex ) + 1;
   int               geometryBitDepth = gi.getGeometry2dBitdepthMinus1() + 1;
-  setConsitantFourCCCode( context, 0 );  // 
+  setConsitantFourCCCode( context, 0 );  //
   auto occupancyCodecId = getCodedCodecId( context, oi.getOccupancyCodecId(), params_.videoDecoderOccupancyPath_ );
   auto geometryCodecId  = getCodedCodecId( context, gi.getGeometryCodecId(), params_.videoDecoderGeometryPath_ );
   path << removeFileExtension( params_.compressedStreamPath_ ) << "_dec_GOF" << sps.getV3CParameterSetId() << "_";
@@ -196,7 +196,8 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
           for ( uint32_t mapIndex = 0; mapIndex < sps.getMapCountMinus1( atlasIndex ) + 1; mapIndex++ ) {
             // decompress T[mapIndex]
             TRACE_PICTURE( "Attribute\n" );
-            TRACE_PICTURE( "AttrIdx = %d, AttrPartIdx = %d, AttrTypeID = %d, MapIdx = %d, AuxiliaryVideoFlag = 0\n", attrIndex, attrPartitionIndex, attributeTypeId, mapIndex);
+            TRACE_PICTURE( "AttrIdx = %d, AttrPartIdx = %d, AttrTypeID = %d, MapIdx = %d, AuxiliaryVideoFlag = 0\n",
+                           attrIndex, attrPartitionIndex, attributeTypeId, mapIndex );
             std::cout << "*******Video Decoding: Attribute [" << mapIndex << "] ********" << std::endl;
             auto  attributeIndex = static_cast<PCCVideoType>( VIDEO_ATTRIBUTE_T0 + attrPartitionIndex +
                                                              MAX_NUM_ATTR_PARTITIONS * mapIndex );
@@ -220,7 +221,8 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
           std::cout << "attribute    video ->" << sizeAttributeVideo << " B" << std::endl;
         } else {
           TRACE_PICTURE( "Attribute\n" );
-          TRACE_PICTURE( "AttrIdx = 0, AttrPartIdx = %d, AttrTypeID = %d, MapIdx = 0, AuxiliaryVideoFlag = 0\n", attrPartitionIndex, attributeTypeId );
+          TRACE_PICTURE( "AttrIdx = 0, AttrPartIdx = %d, AttrTypeID = %d, MapIdx = 0, AuxiliaryVideoFlag = 0\n",
+                         attrPartitionIndex, attributeTypeId );
           std::cout << "*******Video Decoding: Attribute ********" << std::endl;
           auto  attributeIndex = static_cast<PCCVideoType>( VIDEO_ATTRIBUTE + attrPartitionIndex );
           auto& videoBitstream = context.getVideoBitstream( attributeIndex );
@@ -247,7 +249,8 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
           std::cout << "*******Video Decoding: Aux Attribute ********" << std::endl;
           auto attributeIndex = static_cast<PCCVideoType>( VIDEO_ATTRIBUTE_RAW + attrPartitionIndex );
           TRACE_PICTURE( "Attribute\n" );
-          TRACE_PICTURE( "AttrIdx = 0, AttrPartIdx = %d, AttrTypeID = %d, MapIdx = 0, AuxiliaryVideoFlag = 1\n", attrPartitionIndex, attributeTypeId );
+          TRACE_PICTURE( "AttrIdx = 0, AttrPartIdx = %d, AttrTypeID = %d, MapIdx = 0, AuxiliaryVideoFlag = 1\n",
+                         attrPartitionIndex, attributeTypeId );
           auto& videoBitstreamMP    = context.getVideoBitstream( attributeIndex );
           auto  auxAttributeCodecId = getCodedCodecId( context, ai.getAuxiliaryAttributeCodecId( attrIndex ),
                                                       params_.videoDecoderAttributePath_ );
@@ -317,8 +320,8 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
     printf( "call generatePointCloud() \n" );
     std::vector<size_t> accTilePointCount;
     accTilePointCount.resize( ai.getAttributeCount(), 0 );
-    for ( size_t tileIdx = 0; tileIdx < context[frameIdx].getNumTilesInAtlasFrame(); tileIdx++ ) {      
-      auto atglIndex = context.getAtlasHighLevelSyntax().getAtlasTileLayerIndex( frameIdx, tileIdx ); 
+    for ( size_t tileIdx = 0; tileIdx < context[frameIdx].getNumTilesInAtlasFrame(); tileIdx++ ) {
+      auto atglIndex = context.getAtlasHighLevelSyntax().getAtlasTileLayerIndex( frameIdx, tileIdx );
       setGeneratePointCloudParameters( gpcParams, context, atglIndex );
       setPostProcessingSeiParameters( ppSEIParams, context, atglIndex );
       // std::cout << "Processing frame " << frameIdx << " tile " << tileIdx << std::endl;
@@ -360,7 +363,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
       }
     }  // tile
 
-#ifdef CONFORMANCE_TRACE    
+#ifdef CONFORMANCE_TRACE
     size_t numProjPoints = 0, numRawPoints = 0, numEomPoints = 0;
     for ( size_t tileIdx = 0; tileIdx < context[frameIdx].getNumTilesInAtlasFrame(); tileIdx++ ) {
       auto& tile = context[frameIdx].getTile( tileIdx );
@@ -381,7 +384,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
     }
     TRACE_PCFRAME( "AtlasFrameIndex = %d\n", frameIdx );
     TRACE_PCFRAME( "PointCloudFrameOrderCntVal = %d, NumProjPoints = %zu, NumRawPoints = %zu, NumEomPoints = %zu,",
-                    frameIdx, numProjPoints, numRawPoints, numEomPoints );
+                   frameIdx, numProjPoints, numRawPoints, numEomPoints );
     auto checksumFrame = reconstructs[frameIdx].computeChecksum( true );
     TRACE_PCFRAME( " MD5 checksum = " );
     for ( auto& c : checksumFrame ) { TRACE_PCFRAME( "%02x", c ); }
@@ -389,81 +392,82 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
 #endif
 
     // Post-Processing
-    TRACE_PATCH( "Post-Processing: postprocessSmoothing = %zu pbfEnableFlag = %d \n",
-                 params_.attrTransferFilterType_, ppSEIParams.pbfEnableFlag_ );
-    if ( params_.applyGeoSmoothingType_!=0 && ppSEIParams.flagGeometrySmoothing_ ) {
+    TRACE_PATCH( "Post-Processing: postprocessSmoothing = %zu pbfEnableFlag = %d \n", params_.attrTransferFilterType_,
+                 ppSEIParams.pbfEnableFlag_ );
+    if ( params_.applyGeoSmoothingType_ != 0 && ppSEIParams.flagGeometrySmoothing_ ) {
       PCCPointSet3 tempFrameBuffer = reconstruct;
       if ( ppSEIParams.gridSmoothing_ ) {
         smoothPointCloudPostprocess( reconstruct, params_.colorTransform_, ppSEIParams, partition );
       }
       if ( ai.getAttributeCount() > 0 ) {
-      bool isAttributes444 = context.getVideoAttributesMultiple( 0 ).getColorFormat() == PCCCOLORFORMAT::RGB444;
-      printf( "isAttributes444 = %d Format = %d \n", isAttributes444,
-              context.getVideoAttributesMultiple( 0 ).getColorFormat() );
-      fflush( stdout );
+        bool isAttributes444 = context.getVideoAttributesMultiple( 0 ).getColorFormat() == PCCCOLORFORMAT::RGB444;
+        printf( "isAttributes444 = %d Format = %d \n", isAttributes444,
+                context.getVideoAttributesMultiple( 0 ).getColorFormat() );
+        fflush( stdout );
 
-      if ( !ppSEIParams.pbfEnableFlag_ ) {
-        // These are different attribute transfer functions
-        if ( params_.attrTransferFilterType_ == 1 || params_.attrTransferFilterType_ == 5 ) {
-          TRACE_PATCH( " transferColors16bitBP \n" );
-          tempFrameBuffer.transferColors16bitBP( reconstruct,                          // target
-                                                 params_.attrTransferFilterType_,  // filterType
-                                                 int32_t( 0 ),                         // searchRange
-                                                 isAttributes444,                      // losslessAttribute
-                                                 8,                                    // numNeighborsColorTransferFwd
-                                                 1,                                    // numNeighborsColorTransferBwd
-                                                 true,                                 // useDistWeightedAverageFwd
-                                                 true,                                 // useDistWeightedAverageBwd
-                                                 true,        // skipAvgIfIdenticalSourcePointPresentFwd
-                                                 false,       // skipAvgIfIdenticalSourcePointPresentBwd
-                                                 4,           // distOffsetFwd
-                                                 4,           // distOffsetBwd
-                                                 1000,        // maxGeometryDist2Fwd
-                                                 1000,        // maxGeometryDist2Bwd
-                                                 1000 * 256,  // maxColorDist2Fwd
-                                                 1000 * 256   // maxColorDist2Bwd
-          );
-        } else if ( params_.attrTransferFilterType_ == 2 ) {
-          TRACE_PATCH( " transferColorWeight \n" );
-          tempFrameBuffer.transferColorWeight( reconstruct, 0.1 );
-        } else if ( params_.attrTransferFilterType_ == 3 ) {
-          TRACE_PATCH( " transferColorsFilter3 \n" );
-          tempFrameBuffer.transferColorsFilter3( reconstruct, int32_t( 0 ), isAttributes444 );
-        } else if ( params_.attrTransferFilterType_ == 7 || params_.attrTransferFilterType_ == 9 ) {
-          TRACE_PATCH( " transferColorsFilter3 \n" );
-          tempFrameBuffer.transferColorsBackward16bitBP( reconstruct,                          //  target
-                                                         params_.attrTransferFilterType_,  //  filterType
-                                                         int32_t( 0 ),                         //  searchRange
-                                                         isAttributes444,                      //  losslessAttribute
-                                                         8,           //  numNeighborsColorTransferFwd
-                                                         1,           //  numNeighborsColorTransferBwd
-                                                         true,        //  useDistWeightedAverageFwd
-                                                         true,        //  useDistWeightedAverageBwd
-                                                         true,        //  skipAvgIfIdenticalSourcePointPresentFwd
-                                                         false,       //  skipAvgIfIdenticalSourcePointPresentBwd
-                                                         4,           //  distOffsetFwd
-                                                         4,           //  distOffsetBwd
-                                                         1000,        //  maxGeometryDist2Fwd
-                                                         1000,        //  maxGeometryDist2Bwd
-                                                         1000 * 256,  //  maxColorDist2Fwd
-                                                         1000 * 256   //  maxColorDist2Bwd
-          );
+        if ( !ppSEIParams.pbfEnableFlag_ ) {
+          // These are different attribute transfer functions
+          if ( params_.attrTransferFilterType_ == 1 || params_.attrTransferFilterType_ == 5 ) {
+            TRACE_PATCH( " transferColors16bitBP \n" );
+            tempFrameBuffer.transferColors16bitBP( reconstruct,                      // target
+                                                   params_.attrTransferFilterType_,  // filterType
+                                                   int32_t( 0 ),                     // searchRange
+                                                   isAttributes444,                  // losslessAttribute
+                                                   8,                                // numNeighborsColorTransferFwd
+                                                   1,                                // numNeighborsColorTransferBwd
+                                                   true,                             // useDistWeightedAverageFwd
+                                                   true,                             // useDistWeightedAverageBwd
+                                                   true,        // skipAvgIfIdenticalSourcePointPresentFwd
+                                                   false,       // skipAvgIfIdenticalSourcePointPresentBwd
+                                                   4,           // distOffsetFwd
+                                                   4,           // distOffsetBwd
+                                                   1000,        // maxGeometryDist2Fwd
+                                                   1000,        // maxGeometryDist2Bwd
+                                                   1000 * 256,  // maxColorDist2Fwd
+                                                   1000 * 256   // maxColorDist2Bwd
+            );
+          } else if ( params_.attrTransferFilterType_ == 2 ) {
+            TRACE_PATCH( " transferColorWeight \n" );
+            tempFrameBuffer.transferColorWeight( reconstruct, 0.1 );
+          } else if ( params_.attrTransferFilterType_ == 3 ) {
+            TRACE_PATCH( " transferColorsFilter3 \n" );
+            tempFrameBuffer.transferColorsFilter3( reconstruct, int32_t( 0 ), isAttributes444 );
+          } else if ( params_.attrTransferFilterType_ == 7 || params_.attrTransferFilterType_ == 9 ) {
+            TRACE_PATCH( " transferColorsFilter3 \n" );
+            tempFrameBuffer.transferColorsBackward16bitBP( reconstruct,                      //  target
+                                                           params_.attrTransferFilterType_,  //  filterType
+                                                           int32_t( 0 ),                     //  searchRange
+                                                           isAttributes444,                  //  losslessAttribute
+                                                           8,           //  numNeighborsColorTransferFwd
+                                                           1,           //  numNeighborsColorTransferBwd
+                                                           true,        //  useDistWeightedAverageFwd
+                                                           true,        //  useDistWeightedAverageBwd
+                                                           true,        //  skipAvgIfIdenticalSourcePointPresentFwd
+                                                           false,       //  skipAvgIfIdenticalSourcePointPresentBwd
+                                                           4,           //  distOffsetFwd
+                                                           4,           //  distOffsetBwd
+                                                           1000,        //  maxGeometryDist2Fwd
+                                                           1000,        //  maxGeometryDist2Bwd
+                                                           1000 * 256,  //  maxColorDist2Fwd
+                                                           1000 * 256   //  maxColorDist2Bwd
+            );
+          }
         }
-      }
-      }//if ( ai.getAttributeCount() > 0 )
+      }  // if ( ai.getAttributeCount() > 0 )
     }
     if ( ai.getAttributeCount() > 0 ) {
-    if ( params_.applyAttrSmoothingType_!=0 && ppSEIParams.flagColorSmoothing_ ) {
-      TRACE_PATCH( " colorSmoothing \n" );
-      colorSmoothing( reconstruct, params_.colorTransform_, ppSEIParams );
-    }
-      if ( context.getVideoAttributesMultiple( 0 ).getColorFormat() != PCCCOLORFORMAT::RGB444 ) {  // lossy: convert 16-bit yuv444 to 8-bit RGB444
-      TRACE_PATCH( "lossy: convert 16-bit yuv444 to 8-bit RGB444 (convertYUV16ToRGB8) \n" );
-      reconstruct.convertYUV16ToRGB8();
-    } else {  // lossless: copy 16-bit RGB to 8-bit RGB
-      TRACE_PATCH( "lossy: lossless: copy 16-bit RGB to 8-bit RGB (copyRGB16ToRGB8) \n" );
-      reconstruct.copyRGB16ToRGB8();
-    }
+      if ( params_.applyAttrSmoothingType_ != 0 && ppSEIParams.flagColorSmoothing_ ) {
+        TRACE_PATCH( " colorSmoothing \n" );
+        colorSmoothing( reconstruct, params_.colorTransform_, ppSEIParams );
+      }
+      if ( context.getVideoAttributesMultiple( 0 ).getColorFormat() !=
+           PCCCOLORFORMAT::RGB444 ) {  // lossy: convert 16-bit yuv444 to 8-bit RGB444
+        TRACE_PATCH( "lossy: convert 16-bit yuv444 to 8-bit RGB444 (convertYUV16ToRGB8) \n" );
+        reconstruct.convertYUV16ToRGB8();
+      } else {  // lossless: copy 16-bit RGB to 8-bit RGB
+        TRACE_PATCH( "lossy: lossless: copy 16-bit RGB to 8-bit RGB (copyRGB16ToRGB8) \n" );
+        reconstruct.copyRGB16ToRGB8();
+      }
     }
     /*auto tmp = reconstruct.computeChecksum();
     TRACE_PCFRAME( " MD5 checksum = " );
@@ -543,7 +547,9 @@ void PCCDecoder::setPLRData( PCCFrameContext& tile, PCCPatch& patch, PLRData& pl
 #endif
 }
 
-void PCCDecoder::setPostProcessingSeiParameters( GeneratePointCloudParameters& params, PCCContext& context, size_t atglIndex ) {
+void PCCDecoder::setPostProcessingSeiParameters( GeneratePointCloudParameters& params,
+                                                 PCCContext&                   context,
+                                                 size_t                        atglIndex ) {
   auto&   sps                   = context.getVps();
   int32_t atlasIndex            = 0;
   auto&   oi                    = sps.getOccupancyInformation( atlasIndex );
@@ -558,8 +564,10 @@ void PCCDecoder::setPostProcessingSeiParameters( GeneratePointCloudParameters& p
   params.pbfPassesCount_        = 0;
   params.pbfFilterSize_         = 0;
   params.pbfLog2Threshold_      = 0;
-  if ( params_.applyGeoSmoothingType_!=0 && context.seiIsPresentInReceivedData( NAL_PREFIX_ESEI, GEOMETRY_SMOOTHING, atglIndex ) ) {
-    auto* sei = static_cast<SEIGeometrySmoothing*>( context.getSeiInReceivedData( NAL_PREFIX_ESEI, GEOMETRY_SMOOTHING, atglIndex ) );
+  if ( params_.applyGeoSmoothingType_ != 0 &&
+       context.seiIsPresentInReceivedData( NAL_PREFIX_ESEI, GEOMETRY_SMOOTHING, atglIndex ) ) {
+    auto* sei = static_cast<SEIGeometrySmoothing*>(
+        context.getSeiInReceivedData( NAL_PREFIX_ESEI, GEOMETRY_SMOOTHING, atglIndex ) );
     for ( size_t i = 0; i < sei->getInstancesUpdated(); i++ ) {
       size_t k = sei->getInstanceIndex( i );
       if ( !sei->getInstanceCancelFlag( k ) ) {
@@ -572,8 +580,10 @@ void PCCDecoder::setPostProcessingSeiParameters( GeneratePointCloudParameters& p
       }
     }
   }
-  if ( params_.applyOccupanySynthesisType_!=0 && context.seiIsPresentInReceivedData( NAL_PREFIX_ESEI, OCCUPANCY_SYNTHESIS, atglIndex ) ) {
-    auto* sei = static_cast<SEIOccupancySynthesis*>( context.getSeiInReceivedData( NAL_PREFIX_ESEI, OCCUPANCY_SYNTHESIS, atglIndex ) );
+  if ( params_.applyOccupanySynthesisType_ != 0 &&
+       context.seiIsPresentInReceivedData( NAL_PREFIX_ESEI, OCCUPANCY_SYNTHESIS, atglIndex ) ) {
+    auto* sei = static_cast<SEIOccupancySynthesis*>(
+        context.getSeiInReceivedData( NAL_PREFIX_ESEI, OCCUPANCY_SYNTHESIS, atglIndex ) );
     for ( size_t i = 0; i < sei->getInstancesUpdated(); i++ ) {
       size_t k = sei->getInstanceIndex( i );
       if ( !sei->getInstanceCancelFlag( k ) ) {
@@ -601,8 +611,10 @@ void PCCDecoder::setPostProcessingSeiParameters( GeneratePointCloudParameters& p
   params.cgridSize_                = 0;
   params.thresholdColorDifference_ = 0;
   params.thresholdColorVariation_  = 0;
-  if ( params_.applyAttrSmoothingType_!=0 && context.seiIsPresentInReceivedData( NAL_PREFIX_ESEI, ATTRIBUTE_SMOOTHING, atglIndex ) ) {
-    auto* sei = static_cast<SEIAttributeSmoothing*>( context.getSeiInReceivedData( NAL_PREFIX_ESEI, ATTRIBUTE_SMOOTHING, atglIndex ) );
+  if ( params_.applyAttrSmoothingType_ != 0 &&
+       context.seiIsPresentInReceivedData( NAL_PREFIX_ESEI, ATTRIBUTE_SMOOTHING, atglIndex ) ) {
+    auto* sei = static_cast<SEIAttributeSmoothing*>(
+        context.getSeiInReceivedData( NAL_PREFIX_ESEI, ATTRIBUTE_SMOOTHING, atglIndex ) );
     for ( size_t j = 0; j < sei->getNumAttributesUpdated(); j++ ) {
       size_t k = sei->getAttributeIdx( j );
       if ( !sei->getAttributeSmoothingCancelFlag( k ) ) {
@@ -619,19 +631,22 @@ void PCCDecoder::setPostProcessingSeiParameters( GeneratePointCloudParameters& p
       }
     }
   }
-  params.thresholdLossyOM_              = static_cast<size_t>( oi.getLossyOccupancyCompressionThreshold() );
-  params.removeDuplicatePoints_         = params_.duplicatedPointRemovalType_!=0 && asps.getAspsVpccExtension().getRemoveDuplicatePointEnableFlag();
-  params.pointLocalReconstruction_      = params_.pointLocalReconstructionType_!=0 && asps.getPLREnabledFlag();
+  params.thresholdLossyOM_ = static_cast<size_t>( oi.getLossyOccupancyCompressionThreshold() );
+  params.removeDuplicatePoints_ =
+      params_.duplicatedPointRemovalType_ != 0 && asps.getAspsVpccExtension().getRemoveDuplicatePointEnableFlag();
+  params.pointLocalReconstruction_      = params_.pointLocalReconstructionType_ != 0 && asps.getPLREnabledFlag();
   params.mapCountMinus1_                = sps.getMapCountMinus1( atlasIndex );
-  params.singleMapPixelInterleaving_    = params_.pixelDeinterleavingType_!=0 && asps.getPixelDeinterleavingFlag();
-  params.useAdditionalPointsPatch_      = params_.reconstructRawType_!=0 && asps.getRawPatchEnabledFlag();
-  params.enhancedOccupancyMapCode_      = params_.reconstructEomType_!=0 && asps.getEomPatchEnabledFlag();
+  params.singleMapPixelInterleaving_    = params_.pixelDeinterleavingType_ != 0 && asps.getPixelDeinterleavingFlag();
+  params.useAdditionalPointsPatch_      = params_.reconstructRawType_ != 0 && asps.getRawPatchEnabledFlag();
+  params.enhancedOccupancyMapCode_      = params_.reconstructEomType_ != 0 && asps.getEomPatchEnabledFlag();
   params.EOMFixBitCount_                = asps.getEomFixBitCountMinus1() + 1;
   params.geometry3dCoordinatesBitdepth_ = gi.getGeometry3dCoordinatesBitdepthMinus1() + 1;
   params.geometryBitDepth3D_            = gi.getGeometry3dCoordinatesBitdepthMinus1() + 1;
 }
 
-void PCCDecoder::setGeneratePointCloudParameters( GeneratePointCloudParameters& params, PCCContext& context, size_t atglIndex ) {
+void PCCDecoder::setGeneratePointCloudParameters( GeneratePointCloudParameters& params,
+                                                  PCCContext&                   context,
+                                                  size_t                        atglIndex ) {
   auto&   sps                   = context.getVps();
   int32_t atlasIndex            = 0;
   auto&   oi                    = sps.getOccupancyInformation( atlasIndex );
@@ -715,14 +730,15 @@ void PCCDecoder::setGeneratePointCloudParameters( GeneratePointCloudParameters& 
       }
     }
   }
-  params.thresholdLossyOM_              = static_cast<size_t>( oi.getLossyOccupancyCompressionThreshold() );
-  params.removeDuplicatePoints_         = params_.duplicatedPointRemovalType_!=0 && asps.getAspsVpccExtension().getRemoveDuplicatePointEnableFlag();
-  params.pointLocalReconstruction_      = params_.pointLocalReconstructionType_!=0 && asps.getPLREnabledFlag();
+  params.thresholdLossyOM_ = static_cast<size_t>( oi.getLossyOccupancyCompressionThreshold() );
+  params.removeDuplicatePoints_ =
+      params_.duplicatedPointRemovalType_ != 0 && asps.getAspsVpccExtension().getRemoveDuplicatePointEnableFlag();
+  params.pointLocalReconstruction_      = params_.pointLocalReconstructionType_ != 0 && asps.getPLREnabledFlag();
   params.mapCountMinus1_                = sps.getMapCountMinus1( atlasIndex );
-  params.singleMapPixelInterleaving_    = params_.pixelDeinterleavingType_!=0 && asps.getPixelDeinterleavingFlag();
-  params.useAdditionalPointsPatch_      = params_.reconstructRawType_!=0 && asps.getRawPatchEnabledFlag();
+  params.singleMapPixelInterleaving_    = params_.pixelDeinterleavingType_ != 0 && asps.getPixelDeinterleavingFlag();
+  params.useAdditionalPointsPatch_      = params_.reconstructRawType_ != 0 && asps.getRawPatchEnabledFlag();
   params.useAuxSeperateVideo_           = asps.getAuxiliaryVideoEnabledFlag();
-  params.enhancedOccupancyMapCode_      = params_.reconstructEomType_!=0 && asps.getEomPatchEnabledFlag();
+  params.enhancedOccupancyMapCode_      = params_.reconstructEomType_ != 0 && asps.getEomPatchEnabledFlag();
   params.EOMFixBitCount_                = asps.getEomFixBitCountMinus1() + 1;
   params.geometry3dCoordinatesBitdepth_ = gi.getGeometry3dCoordinatesBitdepthMinus1() + 1;
   params.geometryBitDepth3D_            = gi.getGeometry3dCoordinatesBitdepthMinus1() + 1;
@@ -836,7 +852,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
   auto&  atgdu              = atlu.getDataUnit();
   auto   geometryBitDepth2D = asps.getGeometry2dBitdepthMinus1() + 1;
   auto   geometryBitDepth3D = asps.getGeometry3dBitdepthMinus1() + 1;
-  size_t frameIndex         = ath.getFrameIndex();  
+  size_t frameIndex         = ath.getFrameIndex();
   size_t tileIndex          = afti.getSignalledTileIdFlag() ? afti.getTileId( ath.getId() ) : ath.getId();
 
   printf( "createPatchFrameDataStructure Frame = %zu Tiles = %zu atlasIndex = %zu atglIndex %zu \n", frameIndex,
@@ -1525,7 +1541,7 @@ void PCCDecoder::createHlsAtlasTileLogFiles( PCCContext& context, int frameIndex
   size_t               patchCount = atlasPatchParams.size();
   for ( size_t patchIdx = 0; patchIdx < patchCount; patchIdx++ ) {
     atlasPatchCommonByteString( atlasData, patchIdx, atlasPatchParams );
-    atlasPatchApplicationByteString( atlasData, patchIdx, atlasPatchParams );      
+    atlasPatchApplicationByteString( atlasData, patchIdx, atlasPatchParams );
   }
   size_t numProjPatches = 0, numRawPatches = 0, numEomPatches = 0;
   size_t numProjPoints = 0, numRawPoints = 0, numEomPoints = 0;
@@ -1547,7 +1563,9 @@ void PCCDecoder::createHlsAtlasTileLogFiles( PCCContext& context, int frameIndex
       atlasFrameOrderCnt, asps.getFrameWidth(), asps.getFrameHeight(), vps.getAtlasId( 0 ),
       asps.getFrameWidth() * asps.getFrameHeight(), vps.getMapCountMinus1( 0 ) + 1,
       vps.getAttributeInformation( 0 ).getAttributeCount(),
-      vps.getAttributeInformation( 0 ).getAttributeCount()>0? vps.getAttributeInformation( 0 ).getAttributeDimensionMinus1( 0 ) + 1 : 0,
+      vps.getAttributeInformation( 0 ).getAttributeCount() > 0
+          ? vps.getAttributeInformation( 0 ).getAttributeDimensionMinus1( 0 ) + 1
+          : 0,
       afps.getAtlasFrameTileInformation().getNumTilesInAtlasFrameMinus1() + 1, numProjPatches, numRawPatches,
       numEomPatches );
   decMD5 = context.computeMD5( atlasData.data(), atlasData.size() );
@@ -1634,74 +1652,74 @@ void PCCDecoder::setTilePartitionSizeAfti( PCCContext& context ) {  // decoder
     partitionHeight.resize( numPartitionRows );
     partitionPosX.resize( numPartitionCols );
     partitionPosY.resize( numPartitionRows );
-    
+
     if ( afti.getSingleTileInAtlasFrameFlag() ) {
-      partitionWidth [0] = asps.getFrameWidth();
+      partitionWidth[0]  = asps.getFrameWidth();
       partitionHeight[0] = asps.getFrameHeight();
-      partitionPosX  [0] = 0;
-      partitionPosY  [0] = 0;
-    }else {
-    if ( afti.getUniformPartitionSpacingFlag() ) {
-      size_t uniformPatitionWidth  = 64 * ( afti.getPartitionColumnWidthMinus1( 0 ) + 1 );
-      size_t uniformPatitionHeight = 64 * ( afti.getPartitionRowHeightMinus1( 0 ) + 1 );
-      partitionPosX[0]             = 0;
-      partitionWidth[0]            = uniformPatitionWidth;
-      for ( size_t col = 1; col < numPartitionCols - 1; col++ ) {
-        partitionPosX[col]  = partitionPosX[col - 1] + partitionWidth[col - 1];
-        partitionWidth[col] = uniformPatitionWidth;
-      }
-      if ( numPartitionCols > 1 ) {
-        partitionPosX[numPartitionCols - 1] =
-            partitionPosX[numPartitionCols - 2] + partitionWidth[numPartitionCols - 2];
-        partitionWidth[numPartitionCols - 1] = frameWidth - partitionPosX[numPartitionCols - 1];
-      }
-
+      partitionPosX[0]   = 0;
       partitionPosY[0]   = 0;
-      partitionHeight[0] = uniformPatitionHeight;
-      for ( size_t row = 1; row < numPartitionRows - 1; row++ ) {
-        partitionPosY[row]   = partitionPosY[row - 1] + partitionHeight[row - 1];
-        partitionHeight[row] = uniformPatitionHeight;
-      }
-      if ( numPartitionRows > 1 ) {
-        partitionPosY[numPartitionRows - 1] =
-            partitionPosY[numPartitionRows - 2] + partitionHeight[numPartitionRows - 2];
-        partitionHeight[numPartitionRows - 1] = frameHeight - partitionPosY[numPartitionRows - 1];
-      }
     } else {
-      partitionPosX[0]  = 0;
-      partitionWidth[0] = 64 * ( afti.getPartitionColumnWidthMinus1( 0 ) + 1 );
-      for ( size_t col = 1; col < numPartitionCols - 1; col++ ) {
-        partitionPosX[col]  = partitionPosX[col - 1] + partitionWidth[col - 1];
-        partitionWidth[col] = 64 * ( afti.getPartitionColumnWidthMinus1( col ) + 1 );
-      }
-      if ( numPartitionCols > 1 ) {
-        partitionPosX[numPartitionCols - 1] =
-            partitionPosX[numPartitionCols - 2] + partitionWidth[numPartitionCols - 2];
-        partitionWidth[numPartitionCols - 1] = frameWidth - partitionPosX[numPartitionCols - 1];
-      }
+      if ( afti.getUniformPartitionSpacingFlag() ) {
+        size_t uniformPatitionWidth  = 64 * ( afti.getPartitionColumnWidthMinus1( 0 ) + 1 );
+        size_t uniformPatitionHeight = 64 * ( afti.getPartitionRowHeightMinus1( 0 ) + 1 );
+        partitionPosX[0]             = 0;
+        partitionWidth[0]            = uniformPatitionWidth;
+        for ( size_t col = 1; col < numPartitionCols - 1; col++ ) {
+          partitionPosX[col]  = partitionPosX[col - 1] + partitionWidth[col - 1];
+          partitionWidth[col] = uniformPatitionWidth;
+        }
+        if ( numPartitionCols > 1 ) {
+          partitionPosX[numPartitionCols - 1] =
+              partitionPosX[numPartitionCols - 2] + partitionWidth[numPartitionCols - 2];
+          partitionWidth[numPartitionCols - 1] = frameWidth - partitionPosX[numPartitionCols - 1];
+        }
 
-      partitionPosY[0]   = 0;
-      partitionHeight[0] = 64 * ( afti.getPartitionRowHeightMinus1( 0 ) + 1 );
-      for ( size_t row = 1; row < numPartitionRows - 1; row++ ) {
-        partitionPosY[row]   = partitionPosY[row - 1] + partitionHeight[row - 1];
-        partitionHeight[row] = 64 * ( afti.getPartitionRowHeightMinus1( row ) + 1 );
+        partitionPosY[0]   = 0;
+        partitionHeight[0] = uniformPatitionHeight;
+        for ( size_t row = 1; row < numPartitionRows - 1; row++ ) {
+          partitionPosY[row]   = partitionPosY[row - 1] + partitionHeight[row - 1];
+          partitionHeight[row] = uniformPatitionHeight;
+        }
+        if ( numPartitionRows > 1 ) {
+          partitionPosY[numPartitionRows - 1] =
+              partitionPosY[numPartitionRows - 2] + partitionHeight[numPartitionRows - 2];
+          partitionHeight[numPartitionRows - 1] = frameHeight - partitionPosY[numPartitionRows - 1];
+        }
+      } else {
+        partitionPosX[0]  = 0;
+        partitionWidth[0] = 64 * ( afti.getPartitionColumnWidthMinus1( 0 ) + 1 );
+        for ( size_t col = 1; col < numPartitionCols - 1; col++ ) {
+          partitionPosX[col]  = partitionPosX[col - 1] + partitionWidth[col - 1];
+          partitionWidth[col] = 64 * ( afti.getPartitionColumnWidthMinus1( col ) + 1 );
+        }
+        if ( numPartitionCols > 1 ) {
+          partitionPosX[numPartitionCols - 1] =
+              partitionPosX[numPartitionCols - 2] + partitionWidth[numPartitionCols - 2];
+          partitionWidth[numPartitionCols - 1] = frameWidth - partitionPosX[numPartitionCols - 1];
+        }
+
+        partitionPosY[0]   = 0;
+        partitionHeight[0] = 64 * ( afti.getPartitionRowHeightMinus1( 0 ) + 1 );
+        for ( size_t row = 1; row < numPartitionRows - 1; row++ ) {
+          partitionPosY[row]   = partitionPosY[row - 1] + partitionHeight[row - 1];
+          partitionHeight[row] = 64 * ( afti.getPartitionRowHeightMinus1( row ) + 1 );
+        }
+        if ( numPartitionRows > 1 ) {
+          partitionPosY[numPartitionRows - 1] =
+              partitionPosY[numPartitionRows - 2] + partitionHeight[numPartitionRows - 2];
+          partitionHeight[numPartitionRows - 1] = frameHeight - partitionPosY[numPartitionRows - 1];
+        }
       }
-      if ( numPartitionRows > 1 ) {
-        partitionPosY[numPartitionRows - 1] =
-            partitionPosY[numPartitionRows - 2] + partitionHeight[numPartitionRows - 2];
-        partitionHeight[numPartitionRows - 1] = frameHeight - partitionPosY[numPartitionRows - 1];
-      }
-    }
     }
   }  // afpsIdx
 }
 
 size_t PCCDecoder::setTileSizeAndLocation( PCCContext& context, size_t frameIndex, AtlasTileHeader& ath ) {  // decoder
-  size_t afpsIdx   = ath.getAtlasFrameParameterSetId();
-  auto&  afps      = context.getAtlasFrameParameterSet( afpsIdx );
-  auto&  asps      = context.getAtlasSequenceParameterSet( afps.getAtlasSequenceParameterSetId() );
-  auto&  afti      = afps.getAtlasFrameTileInformation();
-  size_t tileIndex = 0;
+  size_tafpsIdx   = ath.getAtlasFrameParameterSetId();
+  auto&afps       = context.getAtlasFrameParameterSet( afpsIdx );
+  auto&asps       = context.getAtlasSequenceParameterSet( afps.getAtlasSequenceParameterSetId() );
+  auto&afti       = afps.getAtlasFrameTileInformation();
+  size_ttileIndex = 0;
   printf( "setTileSizeAndLocation frameIndex = %zu \n", frameIndex );
   fflush( stdout );
   // this is for the hash functions
@@ -1802,8 +1820,9 @@ size_t PCCDecoder::setTileSizeAndLocation( PCCContext& context, size_t frameInde
 }
 
 void PCCDecoder::setConsitantFourCCCode( PCCContext& context, size_t atglIndex ) {
-  if ( context.seiIsPresentInReceivedData( NAL_PREFIX_ESEI, COMPONENT_CODEC_MAPPING,atglIndex ) ) {
-    auto* sei = static_cast<SEIComponentCodecMapping*>( context.getSeiInReceivedData( NAL_PREFIX_ESEI, COMPONENT_CODEC_MAPPING, atglIndex ) );
+  if ( context.seiIsPresentInReceivedData( NAL_PREFIX_ESEI, COMPONENT_CODEC_MAPPING, atglIndex ) ) {
+    auto* sei = static_cast<SEIComponentCodecMapping*>(
+        context.getSeiInReceivedData( NAL_PREFIX_ESEI, COMPONENT_CODEC_MAPPING, atglIndex ) );
     consitantFourCCCode_.resize( 256, std::string( "" ) );
     for ( size_t i = 0; i <= sei->getCodecMappingsCountMinus1(); i++ ) {
       auto codecId                  = sei->getCodecId( i );
@@ -1829,8 +1848,8 @@ PCCCodecId PCCDecoder::getCodedCodecId( PCCContext&        context,
 #elif defined( USE_JMLIB_VIDEO_CODEC )
       return JMLIB;
 #elif defined( USE_JMAPP_VIDEO_CODEC )
-      if( videoDecoderPath.empty() ){
-        fprintf( stderr, "video decoder path not set and JMAPP video codec is used \n");
+      if ( videoDecoderPath.empty() ) {
+        fprintf( stderr, "video decoder path not set and JMAPP video codec is used \n" );
         exit( -1 );
       }
       return JMAPP;
@@ -1846,8 +1865,8 @@ PCCCodecId PCCDecoder::getCodedCodecId( PCCContext&        context,
 #elif defined( USE_HMLIB_VIDEO_CODEC )
       return HMLIB;
 #elif defined( USE_HMAPP_VIDEO_CODEC )
-      if( videoDecoderPath.empty() ){
-        fprintf( stderr, "video decoder path not set and HMAPP video codec is used \n");
+      if ( videoDecoderPath.empty() ) {
+        fprintf( stderr, "video decoder path not set and HMAPP video codec is used \n" );
         exit( -1 );
       }
       return HMAPP;
@@ -1885,7 +1904,7 @@ PCCCodecId PCCDecoder::getCodedCodecId( PCCContext&        context,
 #endif
         } else if ( codec4cc.compare( "hev1" ) == 0 ) {
 #if defined( USE_HMAPP_VIDEO_CODEC ) && defined( USE_HMLIB_VIDEO_CODEC )
-          return videoDecoderPath.empty() ? HMLIB : HMAPP;          
+          return videoDecoderPath.empty() ? HMLIB : HMAPP;
 #elif defined( USE_HMLIB_VIDEO_CODEC )
           return HMLIB;
 #elif defined( USE_HMAPP_VIDEO_CODEC )

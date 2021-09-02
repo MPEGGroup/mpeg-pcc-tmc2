@@ -134,7 +134,7 @@ void PCCBitstream::computeMD5() {
   MD5                  md5Hash;
   std::vector<uint8_t> tmp_digest;
   tmp_digest.resize( 16 );
-  size_t dataSize = size() == 0 ? data_.size() : size(); 
+  size_t dataSize = size() == 0 ? data_.size() : size();
   TRACE_BITSTRMD5( " BITSTRMD5 = " )
   md5Hash.update( data_.data(), dataSize );
   md5Hash.finalize( tmp_digest.data() );

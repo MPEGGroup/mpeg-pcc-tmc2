@@ -38,52 +38,52 @@
 
 namespace pcc {
 
-const std::vector<std::string> bitStrMD5Keys = { "BITSTRMD5" };
+const std::vector<std::string> bitStrMD5Keys = {"BITSTRMD5"};
 
-const std::vector<std::string> hlsKeys = { "AtlasFrameIndex", "HLSMD5",   "SEI11MD5", "SEI19MD5",
-                                           "SEI65MD5",        "SEI66MD5", "SEI67MD5" };
+const std::vector<std::string> hlsKeys = {"AtlasFrameIndex", "HLSMD5",   "SEI11MD5", "SEI19MD5",
+                                          "SEI65MD5",        "SEI66MD5", "SEI67MD5"};
 
-const std::vector<std::string> atlasKeys = { "AtlasFrameIndex",
-                                             "AtlasFrameOrderCntVal",
-                                             "AtlasFrameWidthMax",
-                                             "AtlasFrameHeightMax",
-                                             "AtlasID",
-                                             "ASPSFrameSize",
-                                             "VPSMapCount",
-                                             "AttributeCount",
-                                             "AttributeDimension",
-                                             "NumTilesAtlasFrame",
-                                             "AtlasTotalNumProjPatches",
-                                             "AtlasTotalNumRawPatches",
-                                             "AtlasTotalNumEomPatches",
-                                             "AtlasMD5",
-                                             "AtlasB2PMD5" };
+const std::vector<std::string> atlasKeys = {"AtlasFrameIndex",
+                                            "AtlasFrameOrderCntVal",
+                                            "AtlasFrameWidthMax",
+                                            "AtlasFrameHeightMax",
+                                            "AtlasID",
+                                            "ASPSFrameSize",
+                                            "VPSMapCount",
+                                            "AttributeCount",
+                                            "AttributeDimension",
+                                            "NumTilesAtlasFrame",
+                                            "AtlasTotalNumProjPatches",
+                                            "AtlasTotalNumRawPatches",
+                                            "AtlasTotalNumEomPatches",
+                                            "AtlasMD5",
+                                            "AtlasB2PMD5"};
 
-const std::vector<std::string> tileKeys = { "AtlasFrameIndex", "TileID",      "AtlasFrameOrderCntVal",
-                                            "TileType",        "TileOffsetX", "TileOffsetY",
-                                            "TileWidth",       "TileHeight",  "TileMD5",
-                                            "TileB2PMD5" };
+const std::vector<std::string> tileKeys = {"AtlasFrameIndex", "TileID",      "AtlasFrameOrderCntVal",
+                                           "TileType",        "TileOffsetX", "TileOffsetY",
+                                           "TileWidth",       "TileHeight",  "TileMD5",
+                                           "TileB2PMD5"};
 
 const std::vector<std::string> pcframeKeys = {
-    "AtlasFrameIndex", "PointCloudFrameOrderCntVal", "NumProjPoints", "NumRawPoints", "NumEomPoints", "MD5checksum" };
+    "AtlasFrameIndex", "PointCloudFrameOrderCntVal", "NumProjPoints", "NumRawPoints", "NumEomPoints", "MD5checksum"};
 
-const std::vector<std::string> recPcframeKeys = { "AtlasFrameIndex", "PointCloudFrameOrderCntVal", "MD5checksum" };
+const std::vector<std::string> recPcframeKeys = {"AtlasFrameIndex", "PointCloudFrameOrderCntVal", "MD5checksum"};
 
-const std::vector<std::string> pictureKeys = { "Occupancy",
-                                               "Geometry",
-                                               "Attribute",
-                                               "MapIdx",
-                                               "AuxiliaryVideoFlag",
-                                               "PicOrderCntVal",
-                                               "IdxOutOrderCntVal",
-                                               "AttrIdx",
-                                               "AttrPartIdx",
-                                               "AttrTypeID",
-                                               "Width",
-                                               "Height",
-                                               "MD5checksumChan0",
-                                               "MD5checksumChan1",
-                                               "MD5checksumChan2" };
+const std::vector<std::string> pictureKeys = {"Occupancy",
+                                              "Geometry",
+                                              "Attribute",
+                                              "MapIdx",
+                                              "AuxiliaryVideoFlag",
+                                              "PicOrderCntVal",
+                                              "IdxOutOrderCntVal",
+                                              "AttrIdx",
+                                              "AttrPartIdx",
+                                              "AttrTypeID",
+                                              "Width",
+                                              "Height",
+                                              "MD5checksumChan0",
+                                              "MD5checksumChan1",
+                                              "MD5checksumChan2"};
 
 const size_t V3CLevelTable[6][9] = {  // Table A-5
     {30000000, 1500000, 1500000, 1000000, 50000, 50000, 2, 1, 3},

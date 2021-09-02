@@ -138,7 +138,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
                          path.str(),                                // path
                          params_.occupancyMapQP_,                   // QP
                          videoBitstream,                            // bitstream
-                         params_.occupancyMapConfig_,   // config file
+                         params_.occupancyMapConfig_,               // config file
                          params_.videoEncoderOccupancyPath_,        // encoder path
                          params_.videoEncoderOccupancyCodecId_,     // Codec id
                          params_.byteStreamVideoCoderOccupancy_,    // byteStreamVideoCoder
@@ -158,7 +158,8 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     markRawPatchLocationOccupancyMapVideo( context );
   }
   if ( params_.tileSegmentationType_ > 0 ) {
-    generateAtlasBlockToPatchFromOccupancyMapVideo( context, params_.occupancyResolution_, params_.occupancyPrecision_ );
+    generateAtlasBlockToPatchFromOccupancyMapVideo( context, params_.occupancyResolution_,
+                                                    params_.occupancyPrecision_ );
   } else {
     generateBlockToPatchFromOccupancyMapVideo( context, params_.occupancyResolution_, params_.occupancyPrecision_ );
   }
@@ -470,7 +471,8 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
 
       // compress attribute1
       TRACE_PICTURE( "Attribute\n" );
-      TRACE_PICTURE( "AttrIdx = 0, AttrPartIdx = %d, AttrTypeID = %d, MapIdx = 1, AuxiliaryVideoFlag = 0\n", attrPartitionIndex, attrTypeId );
+      TRACE_PICTURE( "AttrIdx = 0, AttrPartIdx = %d, AttrTypeID = %d, MapIdx = 1, AuxiliaryVideoFlag = 0\n",
+                     attrPartitionIndex, attrTypeId );
       auto& videoBitstreamT1 = context.createVideoBitstream( VIDEO_ATTRIBUTE_T1 );
       auto  encoderConfig1 =
           params_.mapCountMinus1_ == 0 ? getEncoderConfig1L( params_.attributeConfig_ ) : params_.attribute1Config_;
@@ -505,7 +507,8 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
 
     if ( asps.getRawPatchEnabledFlag() && asps.getAuxiliaryVideoEnabledFlag() ) {
       TRACE_PICTURE( "Attribute\n" );
-      TRACE_PICTURE( "AttrIdx = 0, AttrPartIdx = %d, AttrTypeID = %d, MapIdx = 0, AuxiliaryVideoFlag = 1\n", attrPartitionIndex, attrTypeId );
+      TRACE_PICTURE( "AttrIdx = 0, AttrPartIdx = %d, AttrTypeID = %d, MapIdx = 0, AuxiliaryVideoFlag = 1\n",
+                     attrPartitionIndex, attrTypeId );
       std::cout << "*******Video: Aux (Attribute) ********" << std::endl;
       auto& videoBitstreamMP = context.createVideoBitstream( VIDEO_ATTRIBUTE_RAW );
       generateRawPointsAttributeVideo( context );
@@ -534,10 +537,9 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
                              params_.inverseColorSpaceConversionConfig_,  // inverseColorSpaceConversionConfig
                              params_.colorSpaceConversionPath_ );         // colorSpaceConversionPath
       printf( "generateRawPointsAttributefromVideo \n" );
-        for ( size_t fi = 0; fi < context.size(); fi++ ) { generateRawPointsAttributefromVideo( context, fi ); }
-
+      for ( size_t fi = 0; fi < context.size(); fi++ ) { generateRawPointsAttributefromVideo( context, fi ); }
     }
-  }//attribute
+  }  // attribute
 
   if ( params_.flagGeometrySmoothing_ ) {
     if ( params_.pbfEnableFlag_ ) {
@@ -556,32 +558,32 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
       }
     }
   }
-  
-  if ( ai.getAttributeCount() > 0 ){
-  // RECOLOR RECONSTRUCTED POINT CLOUD
-  std::cout << "Color Point Clouds" << std::endl;
-  std::vector<std::vector<bool>> absoluteT1List;
-  absoluteT1List.resize( ai.getAttributeCount() );
-  for ( int attrIdx = 0; attrIdx < ai.getAttributeCount(); ++attrIdx ) {
-    for ( uint32_t mapIdx = 0; mapIdx < sps.getMapCountMinus1( atlasIndex ) + 1; ++mapIdx ) {
-      absoluteT1List[attrIdx].push_back( params_.absoluteT1_ );
-    }
-  }
-  for ( size_t frameIdx = 0; frameIdx < context.size(); frameIdx++ ) {
-    reconstructs[frameIdx].addColors();
-    reconstructs[frameIdx].addColors16bit();
-    size_t accTilePointCount = 0;
-    for ( size_t tileIdx = 0; tileIdx < context[frameIdx].getNumTilesInAtlasFrame(); tileIdx++ ) {
-      auto& tile = context[frameIdx].getTile( tileIdx );
-      for ( size_t attIdx = 0; attIdx < 1; attIdx++ ) {
-        size_t updatedPointCount = colorPointCloud( reconstructs[frameIdx], context, tile, absoluteT1List[attIdx],
-                                                    sps.getMultipleMapStreamsPresentFlag( 0 ), ai.getAttributeCount(),
-                                                    accTilePointCount, gpcParams );
-        accTilePointCount        = updatedPointCount;
+
+  if ( ai.getAttributeCount() > 0 ) {
+    // RECOLOR RECONSTRUCTED POINT CLOUD
+    std::cout << "Color Point Clouds" << std::endl;
+    std::vector<std::vector<bool>> absoluteT1List;
+    absoluteT1List.resize( ai.getAttributeCount() );
+    for ( int attrIdx = 0; attrIdx < ai.getAttributeCount(); ++attrIdx ) {
+      for ( uint32_t mapIdx = 0; mapIdx < sps.getMapCountMinus1( atlasIndex ) + 1; ++mapIdx ) {
+        absoluteT1List[attrIdx].push_back( params_.absoluteT1_ );
       }
-    }  // tile
-  }
-  }//if ( ai.getAttributeCount() > 0 )
+    }
+    for ( size_t frameIdx = 0; frameIdx < context.size(); frameIdx++ ) {
+      reconstructs[frameIdx].addColors();
+      reconstructs[frameIdx].addColors16bit();
+      size_t accTilePointCount = 0;
+      for ( size_t tileIdx = 0; tileIdx < context[frameIdx].getNumTilesInAtlasFrame(); tileIdx++ ) {
+        auto& tile = context[frameIdx].getTile( tileIdx );
+        for ( size_t attIdx = 0; attIdx < 1; attIdx++ ) {
+          size_t updatedPointCount = colorPointCloud( reconstructs[frameIdx], context, tile, absoluteT1List[attIdx],
+                                                      sps.getMultipleMapStreamsPresentFlag( 0 ), ai.getAttributeCount(),
+                                                      accTilePointCount, gpcParams );
+          accTilePointCount        = updatedPointCount;
+        }
+      }  // tile
+    }
+  }  // if ( ai.getAttributeCount() > 0 )
 
 #ifdef CONFORMANCE_TRACE
   for ( size_t frameIdx = 0; frameIdx < context.size(); frameIdx++ ) {
@@ -592,10 +594,10 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
       numEomPoints += tile.getTotalNumberOfEOMPoints();
       numRawPoints += tile.getTotalNumberOfRawPoints();
     }  // tile
-    if ( ai.getAttributeCount() == 0 ){
+    if ( ai.getAttributeCount() == 0 ) {
       reconstructs[frameIdx].removeColors();
       reconstructs[frameIdx].removeColors16bit();
-    }else{
+    } else {
       bool isAttributes444 = static_cast<int>( params_.rawPointsPatch_ ) == 1;
       if ( !isAttributes444 ) {  // lossy: convert 16-bit yuv444 to 8-bit RGB444
         reconstructs[frameIdx].convertYUV16ToRGB8();
@@ -619,78 +621,84 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     setPostProcessingSeiParameters( ppSEIParams, context );
     auto& reconstruct = reconstructs[frameIdx];
     auto& partition   = partitions[frameIdx];
-    printf( "Post-Processing: attributeTransfer_ = %zu flagGeometrySmoothing_ = %d flagColorSmoothing_ = %d pbfEnableFlag = %d \n",
-            params_.attrTransferFilterType_, ppSEIParams.flagGeometrySmoothing_, ppSEIParams.flagColorSmoothing_, params_.pbfEnableFlag_ );
-    TRACE_PATCH( "Post-Processing: attributeTransfer_ = %zu flagGeometrySmoothing_ = %d flagColorSmoothing_ = %d pbfEnableFlag = %d \n",
-            params_.attrTransferFilterType_, ppSEIParams.flagGeometrySmoothing_, ppSEIParams.flagColorSmoothing_, params_.pbfEnableFlag_ );
-    
-    if ( params_.applyGeoSmoothingType_!=0 && ppSEIParams.flagGeometrySmoothing_ ) {
+    printf(
+        "Post-Processing: attributeTransfer_ = %zu flagGeometrySmoothing_ = %d flagColorSmoothing_ = %d pbfEnableFlag "
+        "= %d \n",
+        params_.attrTransferFilterType_, ppSEIParams.flagGeometrySmoothing_, ppSEIParams.flagColorSmoothing_,
+        params_.pbfEnableFlag_ );
+    TRACE_PATCH(
+        "Post-Processing: attributeTransfer_ = %zu flagGeometrySmoothing_ = %d flagColorSmoothing_ = %d pbfEnableFlag "
+        "= %d \n",
+        params_.attrTransferFilterType_, ppSEIParams.flagGeometrySmoothing_, ppSEIParams.flagColorSmoothing_,
+        params_.pbfEnableFlag_ );
+
+    if ( params_.applyGeoSmoothingType_ != 0 && ppSEIParams.flagGeometrySmoothing_ ) {
       PCCPointSet3 tempFrameBuffer = reconstruct;
       if ( ppSEIParams.gridSmoothing_ ) {
         smoothPointCloudPostprocess( reconstruct, params_.colorTransform_, ppSEIParams, partition );
       }
-      if ( ai.getAttributeCount() > 0 ){
-      if ( !ppSEIParams.pbfEnableFlag_ ) {
-        // These are different attribute transfer functions
-        if ( params_.attrTransferFilterType_ == 1 || params_.attrTransferFilterType_ == 5 ) {
-          TRACE_PATCH( " transferColors16bitBP \n" );
-          tempFrameBuffer.transferColors16bitBP( reconstruct,                          // target
-                                                 params_.attrTransferFilterType_,  // filterType
-                                                 int32_t( 0 ),                         // searchRange
-                                                 isAttributes444,                      // losslessAttribute
-                                                 8,                                    // numNeighborsColorTransferFwd
-                                                 1,                                    // numNeighborsColorTransferBwd
-                                                 true,                                 // useDistWeightedAverageFwd
-                                                 true,                                 // useDistWeightedAverageBwd
-                                                 true,          // skipAvgIfIdenticalSourcePointPresentFwd
-                                                 false,         // skipAvgIfIdenticalSourcePointPresentBwd
-                                                 4,             // distOffsetFwd
-                                                 4,             // distOffsetBwd
-                                                 1000,          // maxGeometryDist2Fwd
-                                                 1000,          // maxGeometryDist2Bwd
-                                                 1000 * 256,    // maxColorDist2Fwd
-                                                 1000 * 256 );  // maxColorDist2Bwd
-        } else if ( params_.attrTransferFilterType_ == 2 ) {
-          TRACE_PATCH( " transferColorWeight \n" );
-          tempFrameBuffer.transferColorWeight( reconstruct, 0.1 );
-        } else if ( params_.attrTransferFilterType_ == 3 ) {
-          TRACE_PATCH( " transferColorsFilter3 \n" );
-          tempFrameBuffer.transferColorsFilter3( reconstruct, int32_t( 0 ), isAttributes444 );
-        } else if ( params_.attrTransferFilterType_ == 7 || params_.attrTransferFilterType_ == 9 ) {
-          TRACE_PATCH( " transferColorsFilter3 \n" );
-          tempFrameBuffer.transferColorsBackward16bitBP( reconstruct,                          //  target
-                                                         params_.attrTransferFilterType_,  //  filterType
-                                                         int32_t( 0 ),                         //  searchRange
-                                                         isAttributes444,                      //  losslessAttribute
-                                                         8,             //  numNeighborsColorTransferFwd
-                                                         1,             //  numNeighborsColorTransferBwd
-                                                         true,          //  useDistWeightedAverageFwd
-                                                         true,          //  useDistWeightedAverageBwd
-                                                         true,          //  skipAvgIfIdenticalSourcePointPresentFwd
-                                                         false,         //  skipAvgIfIdenticalSourcePointPresentBwd
-                                                         4,             //  distOffsetFwd
-                                                         4,             //  distOffsetBwd
-                                                         1000,          //  maxGeometryDist2Fwd
-                                                         1000,          //  maxGeometryDist2Bwd
-                                                         1000 * 256,    //  maxColorDist2Fwd
-                                                         1000 * 256 );  //  maxColorDist2Bwd
+      if ( ai.getAttributeCount() > 0 ) {
+        if ( !ppSEIParams.pbfEnableFlag_ ) {
+          // These are different attribute transfer functions
+          if ( params_.attrTransferFilterType_ == 1 || params_.attrTransferFilterType_ == 5 ) {
+            TRACE_PATCH( " transferColors16bitBP \n" );
+            tempFrameBuffer.transferColors16bitBP( reconstruct,                      // target
+                                                   params_.attrTransferFilterType_,  // filterType
+                                                   int32_t( 0 ),                     // searchRange
+                                                   isAttributes444,                  // losslessAttribute
+                                                   8,                                // numNeighborsColorTransferFwd
+                                                   1,                                // numNeighborsColorTransferBwd
+                                                   true,                             // useDistWeightedAverageFwd
+                                                   true,                             // useDistWeightedAverageBwd
+                                                   true,          // skipAvgIfIdenticalSourcePointPresentFwd
+                                                   false,         // skipAvgIfIdenticalSourcePointPresentBwd
+                                                   4,             // distOffsetFwd
+                                                   4,             // distOffsetBwd
+                                                   1000,          // maxGeometryDist2Fwd
+                                                   1000,          // maxGeometryDist2Bwd
+                                                   1000 * 256,    // maxColorDist2Fwd
+                                                   1000 * 256 );  // maxColorDist2Bwd
+          } else if ( params_.attrTransferFilterType_ == 2 ) {
+            TRACE_PATCH( " transferColorWeight \n" );
+            tempFrameBuffer.transferColorWeight( reconstruct, 0.1 );
+          } else if ( params_.attrTransferFilterType_ == 3 ) {
+            TRACE_PATCH( " transferColorsFilter3 \n" );
+            tempFrameBuffer.transferColorsFilter3( reconstruct, int32_t( 0 ), isAttributes444 );
+          } else if ( params_.attrTransferFilterType_ == 7 || params_.attrTransferFilterType_ == 9 ) {
+            TRACE_PATCH( " transferColorsFilter3 \n" );
+            tempFrameBuffer.transferColorsBackward16bitBP( reconstruct,                      //  target
+                                                           params_.attrTransferFilterType_,  //  filterType
+                                                           int32_t( 0 ),                     //  searchRange
+                                                           isAttributes444,                  //  losslessAttribute
+                                                           8,             //  numNeighborsColorTransferFwd
+                                                           1,             //  numNeighborsColorTransferBwd
+                                                           true,          //  useDistWeightedAverageFwd
+                                                           true,          //  useDistWeightedAverageBwd
+                                                           true,          //  skipAvgIfIdenticalSourcePointPresentFwd
+                                                           false,         //  skipAvgIfIdenticalSourcePointPresentBwd
+                                                           4,             //  distOffsetFwd
+                                                           4,             //  distOffsetBwd
+                                                           1000,          //  maxGeometryDist2Fwd
+                                                           1000,          //  maxGeometryDist2Bwd
+                                                           1000 * 256,    //  maxColorDist2Fwd
+                                                           1000 * 256 );  //  maxColorDist2Bwd
+          }
         }
+      }  // if ( ai.getAttributeCount() > 0 )
+    }
+    if ( ai.getAttributeCount() > 0 ) {
+      if ( params_.applyAttrSmoothingType_ != 0 && ppSEIParams.flagColorSmoothing_ ) {
+        TRACE_PATCH( " colorSmoothing \n" );
+        colorSmoothing( reconstruct, params_.colorTransform_, ppSEIParams );
       }
-      }//if ( ai.getAttributeCount() > 0 )
-    }
-    if ( ai.getAttributeCount() > 0 ){
-    if ( params_.applyAttrSmoothingType_!=0 && ppSEIParams.flagColorSmoothing_ ) {
-      TRACE_PATCH( " colorSmoothing \n" );
-      colorSmoothing( reconstruct, params_.colorTransform_, ppSEIParams );
-    }
-    if ( !isAttributes444 ) {  // lossy: convert 16-bit yuv444 to 8-bit RGB444
-      TRACE_PATCH( "lossy: convert 16-bit yuv444 to 8-bit RGB444 (convertYUV16ToRGB8) \n" );
-      reconstruct.convertYUV16ToRGB8();
-    } else {  // lossless: copy 16-bit RGB to 8-bit RGB
-      TRACE_PATCH( "lossy: lossless: copy 16-bit RGB to 8-bit RGB (copyRGB16ToRGB8) \n" );
-      reconstruct.copyRGB16ToRGB8();
-    }
-    }//if ( ai.getAttributeCount() > 0 )
+      if ( !isAttributes444 ) {  // lossy: convert 16-bit yuv444 to 8-bit RGB444
+        TRACE_PATCH( "lossy: convert 16-bit yuv444 to 8-bit RGB444 (convertYUV16ToRGB8) \n" );
+        reconstruct.convertYUV16ToRGB8();
+      } else {  // lossless: copy 16-bit RGB to 8-bit RGB
+        TRACE_PATCH( "lossy: lossless: copy 16-bit RGB to 8-bit RGB (copyRGB16ToRGB8) \n" );
+        reconstruct.copyRGB16ToRGB8();
+      }
+    }  // if ( ai.getAttributeCount() > 0 )
     TRACE_RECFRAME( "AtlasFrameIndex = %d\n", frameIdx );
     auto checksum = reconstructs[frameIdx].computeChecksum( true );
     TRACE_RECFRAME( " MD5 checksum = " );
@@ -4324,8 +4332,6 @@ void PCCEncoder::sortRawPointsPatch( PCCFrameContext& frame, size_t index ) {
   const size_t maxNeighborCount     = 5;
   const size_t neighborSearchRadius = 5 * 5;
   size_t       numRawPoints         = rawPointsPatch.getNumberOfRawPoints();
-  
-  printf("sortRawPointsPatch numRawPoints = %zu \n",numRawPoints); fflush(stdout);
   if ( numRawPoints != 0u ) {
     vector<size_t> sortIdx;
     sortIdx.reserve( numRawPoints );
@@ -4603,14 +4609,16 @@ void PCCEncoder::generateRawPointsAttributeImage( PCCContext&        context,
       std::vector<PCCColor3B>& eomAttributes  = tile.getEOMAttribute();
       size_t                   patchStartPosX = eomPointsPatch.u0_ * params_.occupancyResolution_;
       size_t                   patchStartPosY = eomPointsPatch.v0_ * params_.occupancyResolution_;
-      size_t                   blockSize      = eomPointsPatch.occupancyResolution_*eomPointsPatch.occupancyResolution_;
-      size_t                   widthInBlock   = width / eomPointsPatch.occupancyResolution_;
+      size_t                   blockSize    = eomPointsPatch.occupancyResolution_ * eomPointsPatch.occupancyResolution_;
+      size_t                   widthInBlock = width / eomPointsPatch.occupancyResolution_;
       for ( size_t k = 0; k < eomPointsPatch.eomCount_; k++ ) {
         size_t nBlock = k / blockSize;
         size_t uBlock = nBlock % widthInBlock;
         size_t vBlock = nBlock / widthInBlock;
-        xx            = patchStartPosX + uBlock * eomPointsPatch.occupancyResolution_ + ( nPixelInCurrentBlockCount % eomPointsPatch.occupancyResolution_ );
-        yy            = patchStartPosY + vBlock * eomPointsPatch.occupancyResolution_ + ( nPixelInCurrentBlockCount / eomPointsPatch.occupancyResolution_ ) +
+        xx            = patchStartPosX + uBlock * eomPointsPatch.occupancyResolution_ +
+             ( nPixelInCurrentBlockCount % eomPointsPatch.occupancyResolution_ );
+        yy = patchStartPosY + vBlock * eomPointsPatch.occupancyResolution_ +
+             ( nPixelInCurrentBlockCount / eomPointsPatch.occupancyResolution_ ) +
              context[tile.getFrameIndex()].getAuxTileLeftTopY( tile.getTileIndex() );
         ++nPixelInCurrentBlockCount;
         if ( nPixelInCurrentBlockCount >= blockSize ) { nPixelInCurrentBlockCount = 0; }
@@ -5150,18 +5158,18 @@ void PCCEncoder::generateTilesFromSegments( PCCContext& context ) {
       printf( "ERROR: tiles sizes in not correct. \n" );
       exit( 254 );
     }
-    
-    for(size_t ti=0; ti< context[fi].getNumTilesInAtlasFrame(); ti++){
+
+    for ( size_t ti = 0; ti < context[fi].getNumTilesInAtlasFrame(); ti++ ) {
       auto& tile = context[fi].getTile( ti );
-      if(tile.getEomPatches().size()!=0){
-        for( auto& eomPatch : tile.getEomPatches() ){
+      if ( tile.getEomPatches().size() != 0 ) {
+        for ( auto& eomPatch : tile.getEomPatches() ) {
           eomPatch.occupancyResolution_ = params_.occupancyResolution_;
-          eomPatch.frameIndex_ = fi;
-          eomPatch.tileIndex_ = ti;
+          eomPatch.frameIndex_          = fi;
+          eomPatch.tileIndex_           = ti;
         }
       }
     }
-    
+
   }  // fi
 }
 
@@ -5206,7 +5214,7 @@ void PCCEncoder::placeTiles( PCCContext& context, size_t minFrameWidth, size_t m
       outputFrame.getPatches().clear();
       outputFrame.getRawPointsPatches().clear();
       outputFrame.getEomPatches().clear();
-      
+
       for ( size_t tileIdx = 0; tileIdx < context[frameIdx].getNumTilesInAtlasFrame(); tileIdx++ ) {
         auto& inputTile          = context[frameIdx].getTile( tileIdx );
         auto& outputFramePatches = outputFrame.getPatches();
@@ -5452,7 +5460,8 @@ void PCCEncoder::pointLocalReconstructionSearch( PCCContext&                    
 bool PCCEncoder::resizeGeometryVideo( PCCContext& context, PCCCodecId codecId ) {
   size_t maxWidth  = 0;
   size_t maxHeight = 0;
-  printf("resizeGeometryVideo \n"); fflush(stdout);
+  printf( "resizeGeometryVideo \n" );
+  fflush( stdout );
   for ( auto& frame : context.getFrames() ) {
     maxWidth  = ( std::max )( maxWidth, frame.getTitleFrameContext().getWidth() );
     maxHeight = ( std::max )( maxHeight, frame.getTitleFrameContext().getHeight() );
@@ -5519,11 +5528,11 @@ bool PCCEncoder::resizeTileGeometryVideo( PCCContext& context,
     maxWidth  = ( std::max )( maxWidth, frameWidth );
     maxHeight = ( std::max )( maxHeight, frameHeight );
   } else {
-    maxWidth  = std::ceil( (double)maxWidth / 64.0 ) * 64;
-    printf("maxWidth: %zu, frameWidth: %zu\n", maxWidth, context[0].getTitleFrameContext().getWidth());
-    maxWidth  = std::min( maxWidth, context[0].getTitleFrameContext().getWidth());
+    maxWidth = std::ceil( (double)maxWidth / 64.0 ) * 64;
+    printf( "maxWidth: %zu, frameWidth: %zu\n", maxWidth, context[0].getTitleFrameContext().getWidth() );
+    maxWidth  = std::min( maxWidth, context[0].getTitleFrameContext().getWidth() );
     maxHeight = std::ceil( (double)maxHeight / 64.0 ) * 64;
-  }  
+  }
   for ( size_t frameIdx = startFrame; frameIdx < endFrame; frameIdx++ ) {
     auto& tile       = context[frameIdx].getTile( tileIndex );
     tile.getWidth()  = maxWidth;
@@ -5585,11 +5594,11 @@ void PCCEncoder::markRawPatchLocation( PCCFrameContext& frame, PCCImageOccupancy
     size_t videoHeight              = frame.getHeight();
     size_t numberOfRawPointsPatches = frame.getNumberOfRawPointsPatches();
     for ( int i = 0; i < numberOfRawPointsPatches; i++ ) {
-      auto&        rawPointsPatch = frame.getRawPointsPatch( i );
-      const size_t v0             = rawPointsPatch.v0_ * rawPointsPatch.occupancyResolution_;
-      const size_t u0             = rawPointsPatch.u0_ * rawPointsPatch.occupancyResolution_;
-      const size_t rawPointsPatchsizeU  = rawPointsPatch.sizeU_/params_.occupancyPrecision_;
-      const size_t rawPointsPatchsizeV  = rawPointsPatch.sizeV_/params_.occupancyPrecision_;
+      auto&        rawPointsPatch      = frame.getRawPointsPatch( i );
+      const size_t v0                  = rawPointsPatch.v0_ * rawPointsPatch.occupancyResolution_;
+      const size_t u0                  = rawPointsPatch.u0_ * rawPointsPatch.occupancyResolution_;
+      const size_t rawPointsPatchsizeU = rawPointsPatch.sizeU_ / params_.occupancyPrecision_;
+      const size_t rawPointsPatchsizeV = rawPointsPatch.sizeV_ / params_.occupancyPrecision_;
       if ( rawPointsPatch.getNumberOfRawPoints() != 0u ) {
         for ( size_t v = 0; v < rawPointsPatchsizeV; ++v ) {
           for ( size_t u = 0; u < rawPointsPatchsizeU; ++u ) {
@@ -7795,8 +7804,8 @@ void PCCEncoder::setPLRData( PCCFrameContext& frame,
     for ( size_t v0 = 0; v0 < plrd.getBlockToPatchMapHeight(); ++v0 ) {
       for ( size_t u0 = 0; u0 < plrd.getBlockToPatchMapWidth(); ++u0 ) {
         size_t index = v0 * plrd.getBlockToPatchMapWidth() + u0;
-        int  pos = patch.patchBlock2CanvasBlock( ( u0 ), ( v0 ), blockToPatchWidth, blockToPatchHeight );
-        bool occupied =
+        int    pos   = patch.patchBlock2CanvasBlock( ( u0 ), ( v0 ), blockToPatchWidth, blockToPatchHeight );
+        bool   occupied =
             ( blockToPatch[pos] == patchIndex + 1 ) && ( patch.getPointLocalReconstructionMode( u0, v0 ) > 0 );
         plrd.setBlockPresentFlag( index, occupied );
         if ( occupied ) { plrd.setBlockModeMinus1( index, patch.getPointLocalReconstructionMode( u0, v0 ) - 1 ); }
@@ -7821,7 +7830,7 @@ void PCCEncoder::setPostProcessingSeiParameters( GeneratePointCloudParameters& p
   params.occupancyResolution_        = params_.occupancyResolution_;
   params.occupancyPrecision_         = params_.occupancyPrecision_;
   params.enableSizeQuantization_     = context.getEnablePatchSizeQuantization();
-  params.flagGeometrySmoothing_      = params_.applyGeoSmoothingType_!=0 && params_.flagGeometrySmoothing_;
+  params.flagGeometrySmoothing_      = params_.applyGeoSmoothingType_ != 0 && params_.flagGeometrySmoothing_;
   params.gridSmoothing_              = params_.gridSmoothing_;
   params.gridSize_                   = params_.gridSize_;
   params.neighborCountSmoothing_     = params_.neighborCountSmoothing_;
@@ -7836,21 +7845,22 @@ void PCCEncoder::setPostProcessingSeiParameters( GeneratePointCloudParameters& p
   params.thresholdColorSmoothing_    = params_.thresholdColorSmoothing_;
   params.thresholdColorDifference_   = params_.thresholdColorDifference_;
   params.thresholdColorVariation_    = params_.thresholdColorVariation_;
-  params.flagColorSmoothing_         = params_.applyAttrSmoothingType_!=0 && params_.flagColorSmoothing_;
+  params.flagColorSmoothing_         = params_.applyAttrSmoothingType_ != 0 && params_.flagColorSmoothing_;
   params.cgridSize_                  = params_.cgridSize_;
-  params.enhancedOccupancyMapCode_   = params_.reconstructEomType_!=0 && params_.enhancedOccupancyMapCode_;
+  params.enhancedOccupancyMapCode_   = params_.reconstructEomType_ != 0 && params_.enhancedOccupancyMapCode_;
   params.thresholdLossyOM_           = params_.thresholdLossyOM_;
-  params.removeDuplicatePoints_      = params_.duplicatedPointRemovalType_!=0 && params_.removeDuplicatePoints_;
-  params.pointLocalReconstruction_   = params_.pointLocalReconstructionType_!=0 &&params_.pointLocalReconstruction_;
+  params.removeDuplicatePoints_      = params_.duplicatedPointRemovalType_ != 0 && params_.removeDuplicatePoints_;
+  params.pointLocalReconstruction_   = params_.pointLocalReconstructionType_ != 0 && params_.pointLocalReconstruction_;
   params.mapCountMinus1_             = params_.mapCountMinus1_;
-  params.singleMapPixelInterleaving_ = params_.pixelDeinterleavingType_!=0 &&params_.singleMapPixelInterleaving_;
+  params.singleMapPixelInterleaving_ = params_.pixelDeinterleavingType_ != 0 && params_.singleMapPixelInterleaving_;
   params.geometry3dCoordinatesBitdepth_ =
       params_.geometry3dCoordinatesBitdepth_ + ( params_.additionalProjectionPlaneMode_ > 0 );
-  params.useAdditionalPointsPatch_ = params_.reconstructRawType_!=0 && (params_.rawPointsPatch_ || params_.lossyRawPointsPatch_);
-  params.plrlNumberOfModes_        = params_.plrlNumberOfModes_;
+  params.useAdditionalPointsPatch_ =
+      params_.reconstructRawType_ != 0 && ( params_.rawPointsPatch_ || params_.lossyRawPointsPatch_ );
+  params.plrlNumberOfModes_  = params_.plrlNumberOfModes_;
   params.geometryBitDepth3D_ = params_.geometry3dCoordinatesBitdepth_ + ( params_.additionalProjectionPlaneMode_ > 0 );
   params.EOMFixBitCount_     = params_.EOMFixBitCount_;
-  params.pbfEnableFlag_      = params_.applyOccupanySynthesisType_!=0 && params_.pbfEnableFlag_;
+  params.pbfEnableFlag_      = params_.applyOccupanySynthesisType_ != 0 && params_.pbfEnableFlag_;
   params.pbfPassesCount_     = params_.pbfPassesCount_;
   params.pbfFilterSize_      = params_.pbfFilterSize_;
   params.pbfLog2Threshold_   = params_.pbfLog2Threshold_;
@@ -7860,7 +7870,7 @@ void PCCEncoder::setGeneratePointCloudParameters( GeneratePointCloudParameters& 
   params.occupancyResolution_        = params_.occupancyResolution_;
   params.occupancyPrecision_         = params_.occupancyPrecision_;
   params.enableSizeQuantization_     = context.getEnablePatchSizeQuantization();
-  params.flagGeometrySmoothing_      = params_.applyGeoSmoothingType_!=0 && params_.flagGeometrySmoothing_;
+  params.flagGeometrySmoothing_      = params_.applyGeoSmoothingType_ != 0 && params_.flagGeometrySmoothing_;
   params.gridSmoothing_              = params_.gridSmoothing_;
   params.gridSize_                   = params_.gridSize_;
   params.neighborCountSmoothing_     = params_.neighborCountSmoothing_;
@@ -7875,19 +7885,20 @@ void PCCEncoder::setGeneratePointCloudParameters( GeneratePointCloudParameters& 
   params.thresholdColorSmoothing_    = params_.thresholdColorSmoothing_;
   params.thresholdColorDifference_   = params_.thresholdColorDifference_;
   params.thresholdColorVariation_    = params_.thresholdColorVariation_;
-  params.flagColorSmoothing_         = params_.applyAttrSmoothingType_!=0 && params_.flagColorSmoothing_;
+  params.flagColorSmoothing_         = params_.applyAttrSmoothingType_ != 0 && params_.flagColorSmoothing_;
   params.cgridSize_                  = params_.cgridSize_;
-  params.enhancedOccupancyMapCode_   = params_.reconstructEomType_!=0 && params_.enhancedOccupancyMapCode_;
+  params.enhancedOccupancyMapCode_   = params_.reconstructEomType_ != 0 && params_.enhancedOccupancyMapCode_;
   params.useAuxSeperateVideo_        = params_.useRawPointsSeparateVideo_;
   params.thresholdLossyOM_           = params_.thresholdLossyOM_;
-  params.removeDuplicatePoints_      = params_.duplicatedPointRemovalType_!=0 && params_.removeDuplicatePoints_;
-  params.pointLocalReconstruction_   = params_.pointLocalReconstructionType_!=0 &&params_.pointLocalReconstruction_;
+  params.removeDuplicatePoints_      = params_.duplicatedPointRemovalType_ != 0 && params_.removeDuplicatePoints_;
+  params.pointLocalReconstruction_   = params_.pointLocalReconstructionType_ != 0 && params_.pointLocalReconstruction_;
   params.mapCountMinus1_             = params_.mapCountMinus1_;
-  params.singleMapPixelInterleaving_ = params_.pixelDeinterleavingType_!=0 &&params_.singleMapPixelInterleaving_;
+  params.singleMapPixelInterleaving_ = params_.pixelDeinterleavingType_ != 0 && params_.singleMapPixelInterleaving_;
   params.geometry3dCoordinatesBitdepth_ =
       params_.geometry3dCoordinatesBitdepth_ + ( params_.additionalProjectionPlaneMode_ > 0 );
-  params.useAdditionalPointsPatch_ = params_.reconstructRawType_!=0 && (params_.rawPointsPatch_ || params_.lossyRawPointsPatch_);
-  params.plrlNumberOfModes_        = params_.plrlNumberOfModes_;
+  params.useAdditionalPointsPatch_ =
+      params_.reconstructRawType_ != 0 && ( params_.rawPointsPatch_ || params_.lossyRawPointsPatch_ );
+  params.plrlNumberOfModes_  = params_.plrlNumberOfModes_;
   params.geometryBitDepth3D_ = params_.geometry3dCoordinatesBitdepth_ + ( params_.additionalProjectionPlaneMode_ > 0 );
   params.EOMFixBitCount_     = params_.EOMFixBitCount_;
   params.pbfEnableFlag_      = false;
@@ -8242,7 +8253,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&         context,
 
 void PCCEncoder::createHlsAtlasTileLogFiles( PCCContext& context, int frameIndex, int afpsId ) {
   TRACE_HLS( "AtlasFrameIndex = %d\n", frameIndex );
-  //TRACE_HLS( "Atlas Frame Parameter Set Index = %d\n", afpsId );
+  // TRACE_HLS( "Atlas Frame Parameter Set Index = %d\n", afpsId );
   auto& afps = context.getAtlasFrameParameterSet( afpsId );
   auto& asps = context.getAtlasSequenceParameterSet( afps.getAtlasSequenceParameterSetId() );
   auto& afc  = context.getFrame( frameIndex );
@@ -8251,19 +8262,16 @@ void PCCEncoder::createHlsAtlasTileLogFiles( PCCContext& context, int frameIndex
   std::vector<uint8_t> encMD5( 16 );
   std::vector<uint8_t> highLevelAtlasData;
   aspsCommonByteString( highLevelAtlasData, asps );
-  /*encMD5 = context.computeMD5( highLevelAtlasData.data(), highLevelAtlasData.size() ); //ajt::It is removed since it is not according to the FDIS spec.
-  TRACE_HLS( " HLSMD5 = " );
-  for ( auto& md5 : encMD5 ) TRACE_HLS( "%02x", md5 );
+  /*encMD5 = context.computeMD5( highLevelAtlasData.data(), highLevelAtlasData.size() ); //ajt::It is removed since it
+  is not according to the FDIS spec. TRACE_HLS( " HLSMD5 = " ); for ( auto& md5 : encMD5 ) TRACE_HLS( "%02x", md5 );
   TRACE_HLS( "\n" );*/
   aspsApplicationByteString( highLevelAtlasData, asps, afps );
-  /*encMD5 = context.computeMD5( highLevelAtlasData.data(), highLevelAtlasData.size() ); //ajt::It is removed since it is not according to the FDIS spec.
-  TRACE_HLS( " HLSMD5 = " );
-  for ( auto& md5 : encMD5 ) TRACE_HLS( "%02x", md5 );
+  /*encMD5 = context.computeMD5( highLevelAtlasData.data(), highLevelAtlasData.size() ); //ajt::It is removed since it
+  is not according to the FDIS spec. TRACE_HLS( " HLSMD5 = " ); for ( auto& md5 : encMD5 ) TRACE_HLS( "%02x", md5 );
   TRACE_HLS( "\n" );*/
   afpsCommonByteString( highLevelAtlasData, context, afpsId, frameIndex );
-  /*encMD5 = context.computeMD5( highLevelAtlasData.data(), highLevelAtlasData.size() ); //ajt::It is removed since it is not according to the FDIS spec.
-  TRACE_HLS( " HLSMD5 = " );
-  for ( auto& md5 : encMD5 ) TRACE_HLS( "%02x", md5 );
+  /*encMD5 = context.computeMD5( highLevelAtlasData.data(), highLevelAtlasData.size() ); //ajt::It is removed since it
+  is not according to the FDIS spec. TRACE_HLS( " HLSMD5 = " ); for ( auto& md5 : encMD5 ) TRACE_HLS( "%02x", md5 );
   TRACE_HLS( "\n" );*/
   afpsApplicationByteString( highLevelAtlasData, asps, afps );
   encMD5 = context.computeMD5( highLevelAtlasData.data(), highLevelAtlasData.size() );
@@ -8275,8 +8283,8 @@ void PCCEncoder::createHlsAtlasTileLogFiles( PCCContext& context, int frameIndex
   std::vector<std::vector<PatchParams>>          tilePatchParams;
   std::vector<std::vector<std::vector<int64_t>>> tileB2PPatchParams;
   std::vector<std::vector<int64_t>>              atlasB2PPatchParams;
-  size_t numProjPatches = 0, numRawPatches = 0, numEomPatches = 0;
-  size_t numTilesInPatchFrame = context[frameIndex].getNumTilesInAtlasFrame();
+  size_t                                         numProjPatches = 0, numRawPatches = 0, numEomPatches = 0;
+  size_t                                         numTilesInPatchFrame = context[frameIndex].getNumTilesInAtlasFrame();
   for ( size_t tileIdx = 0; tileIdx < numTilesInPatchFrame; tileIdx++ ) {
     auto& tile = context[frameIndex].getTile( tileIdx );
     numProjPatches += tile.getPatches().size();
@@ -8291,9 +8299,10 @@ void PCCEncoder::createHlsAtlasTileLogFiles( PCCContext& context, int frameIndex
       afc.getTitleFrameContext().getAtlasFrmOrderCntVal(), asps.getFrameWidth(), asps.getFrameHeight(),
       vps.getAtlasId( 0 ), asps.getFrameWidth() * asps.getFrameHeight(), vps.getMapCountMinus1( 0 ) + 1,
       vps.getAttributeInformation( 0 ).getAttributeCount(),
-      vps.getAttributeInformation( 0 ).getAttributeCount()>0? vps.getAttributeInformation( 0 ).getAttributeDimensionMinus1( 0 ) + 1: 0,
-      afc.getNumTilesInAtlasFrame(),
-      numProjPatches, numRawPatches, numEomPatches );
+      vps.getAttributeInformation( 0 ).getAttributeCount() > 0
+          ? vps.getAttributeInformation( 0 ).getAttributeDimensionMinus1( 0 ) + 1
+          : 0,
+      afc.getNumTilesInAtlasFrame(), numProjPatches, numRawPatches, numEomPatches );
   tilePatchParams.resize( numTilesInPatchFrame );
   for ( size_t tileIdx = 0; tileIdx < numTilesInPatchFrame; tileIdx++ ) {
     getHashPatchParams( context, frameIndex, tileIdx, tilePatchParams, atlasPatchParams );
@@ -8426,7 +8435,7 @@ void PCCEncoder::createGeometrySmoothingSei( PCCContext& context, AtlasTileLayer
 #endif
 }
 
-void PCCEncoder::createAttributeSmoothingSei( PCCContext& context, AtlasTileLayerRbsp& atgl) {
+void PCCEncoder::createAttributeSmoothingSei( PCCContext& context, AtlasTileLayerRbsp& atgl ) {
   auto& sei = static_cast<SEIAttributeSmoothing&>( atgl.getSEI().addSeiPrefix( ATTRIBUTE_SMOOTHING, true ) );
   sei.setPersistenceFlag( true );
   sei.setResetFlag( true );
@@ -8518,16 +8527,17 @@ void PCCEncoder::createCodecComponentMappingSei( PCCContext& context, AtlasTileL
 }
 
 void PCCEncoder::createHashSEI( PCCContext& context, size_t frameIndex, AtlasTileLayerRbsp& atgl ) {
-  size_t hashType = params_.decodedAtlasInformationHash_ - 1; 
+  size_t hashType = params_.decodedAtlasInformationHash_ - 1;
   TRACE_SEI( "Hash SEI Information Frame %zu \n", frameIndex );
-  auto& sei = static_cast<SEIDecodedAtlasInformationHash&>( atgl.getSEI().addSeiSuffix( DECODED_ATLAS_INFORMATION_HASH, true ) );  
+  auto& sei = static_cast<SEIDecodedAtlasInformationHash&>(
+      atgl.getSEI().addSeiSuffix( DECODED_ATLAS_INFORMATION_HASH, true ) );
   sei.setDecodedHighLevelHashPresentFlag( frameIndex >= 0 );
   sei.setDecodedAtlasHashPresentFlag( frameIndex >= 0 );
   sei.setDecodedAtlasB2pHashPresentFlag( true );
   sei.setDecodedAtlasTilesHashPresentFlag( context[frameIndex].getNumTilesInAtlasFrame() >= 0 );
   sei.setDecodedAtlasTilesB2pHashPresentFlag( context[frameIndex].getNumTilesInAtlasFrame() >= 0 );
   sei.setCancelFlag( false );
-  sei.setPersistenceFlag( true ); // ajt:: decoded atlas hash information to persist
+  sei.setPersistenceFlag( true );  // ajt:: decoded atlas hash information to persist
   sei.setHashType( hashType );
   bool seiHashCancelFlag = sei.getCancelFlag();
 

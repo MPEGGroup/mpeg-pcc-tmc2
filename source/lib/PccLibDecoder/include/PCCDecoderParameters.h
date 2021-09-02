@@ -74,19 +74,19 @@ class PCCDecoderParameters {
   double            maxGeometryDist2Bwd_;
   double            maxColorDist2Fwd_;
   double            maxColorDist2Bwd_;
-  
-  //reconstruction options
-  int pixelDeinterleavingType_     ;
+
+  // reconstruction options
+  int pixelDeinterleavingType_;
   int pointLocalReconstructionType_;
-  int reconstructEomType_          ;
-  int duplicatedPointRemovalType_  ;
-  int reconstructRawType_          ;
-  int applyGeoSmoothingType_       ;
-  int applyAttrSmoothingType_      ;
-  int attrTransferFilterType_ ;
-  int applyOccupanySynthesisType_  ;
-  
-  size_t            shvcLayerIndex_;
+  int reconstructEomType_;
+  int duplicatedPointRemovalType_;
+  int reconstructRawType_;
+  int applyGeoSmoothingType_;
+  int applyAttrSmoothingType_;
+  int attrTransferFilterType_;
+  int applyOccupanySynthesisType_;
+
+  size_t shvcLayerIndex_;
 };
 
 };  // namespace pcc
