@@ -1715,11 +1715,11 @@ void PCCDecoder::setTilePartitionSizeAfti( PCCContext& context ) {  // decoder
 }
 
 size_t PCCDecoder::setTileSizeAndLocation( PCCContext& context, size_t frameIndex, AtlasTileHeader& ath ) {  // decoder
-  size_tafpsIdx   = ath.getAtlasFrameParameterSetId();
-  auto&afps       = context.getAtlasFrameParameterSet( afpsIdx );
-  auto&asps       = context.getAtlasSequenceParameterSet( afps.getAtlasSequenceParameterSetId() );
-  auto&afti       = afps.getAtlasFrameTileInformation();
-  size_ttileIndex = 0;
+  size_t afpsIdx   = ath.getAtlasFrameParameterSetId();
+  auto&  afps      = context.getAtlasFrameParameterSet( afpsIdx );
+  auto&  asps      = context.getAtlasSequenceParameterSet( afps.getAtlasSequenceParameterSetId() );
+  auto&  afti      = afps.getAtlasFrameTileInformation();
+  size_t tileIndex = 0;
   printf( "setTileSizeAndLocation frameIndex = %zu \n", frameIndex );
   fflush( stdout );
   // this is for the hash functions
