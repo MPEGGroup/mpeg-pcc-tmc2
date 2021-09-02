@@ -171,6 +171,14 @@ class PCCAtlasHighLevelSyntax {
     atlasTileLayer_.push_back( atgl );
     return atlasTileLayer_.back();
   }
+  void traceAtlasTileLayer(){
+    printf("traceAtlasTileLayer: atlasTileLayer_.size() = %zu \n",atlasTileLayer_.size());
+    for ( size_t atglIndex = 0; atglIndex < atlasTileLayer_.size(); atglIndex++ ) {
+        printf("  atgl %3zu: EncFrameIndex = %zu EncTileIndex = %zu \n",atglIndex, atlasTileLayer_[atglIndex].getEncFrameIndex(),
+        atlasTileLayer_[atglIndex].getEncTileIndex() ); 
+    }
+    fflush(stdout);
+  }
   size_t getAtlasTileLayerIndex( size_t frameIndex, size_t tileIndex ) {
     for ( size_t atglIndex = 0; atglIndex < atlasTileLayer_.size(); atglIndex++ ) {
       if ( atlasTileLayer_[atglIndex].getEncFrameIndex() == frameIndex &&

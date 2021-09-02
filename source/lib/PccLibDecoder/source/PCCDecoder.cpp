@@ -731,7 +731,6 @@ void PCCDecoder::setGeneratePointCloudParameters( GeneratePointCloudParameters& 
 void PCCDecoder::createPatchFrameDataStructure( PCCContext& context ) {
   TRACE_PATCH( "createPatchFrameDataStructure GOP start \n" );
   size_t frameCount = 0;
-  int32_t prevFrameIndex = -1; 
   auto&  atlList    = context.getAtlasTileLayerList();
 
   // partition information derivation
@@ -809,7 +808,9 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context ) {
       }
     }
 #endif
-    if ( atgl.getSEI().seiIsPresent( NAL_SUFFIX_NSEI, DECODED_ATLAS_INFORMATION_HASH ) ) {
+    bool isLastTileOfTheFrames = atglIndex + 1 == atlList.size() ||
+                                 atgl.getAtlasFrmOrderCntVal() != atlList[atglIndex + 1].getAtlasFrmOrderCntVal();
+    if ( isLastTileOfTheFrames && atgl.getSEI().seiIsPresent( NAL_SUFFIX_NSEI, DECODED_ATLAS_INFORMATION_HASH ) ) {
       auto* sei = static_cast<SEIDecodedAtlasInformationHash*>(
           atgl.getSEI().getSei( NAL_SUFFIX_NSEI, DECODED_ATLAS_INFORMATION_HASH ) );
       TRACE_PATCH( "create Hash SEI \n" );
@@ -818,9 +819,8 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context ) {
       createHashSEI( context, ath.getFrameIndex(), *sei );
     }
 #ifdef CONFORMANCE_TRACE
-    if ( prevFrameIndex != frameIndex ) { createHlsAtlasTileLogFiles( context, frameIndex ); }
+    if ( isLastTileOfTheFrames ) { createHlsAtlasTileLogFiles( context, frameIndex ); }
 #endif
-    prevFrameIndex = frameIndex;
   }
 }
 
@@ -1516,7 +1516,6 @@ void PCCDecoder::createHlsAtlasTileLogFiles( PCCContext& context, int frameIndex
   std::vector<std::vector<int64_t>>              atlasB2PPatchParams;
   size_t                                         numTilesInPatchFrame = context[frameIndex].getNumTilesInAtlasFrame();
   tilePatchParams.resize( numTilesInPatchFrame );
-
   for ( size_t tileIdx = 0; tileIdx < numTilesInPatchFrame; tileIdx++ ) {
     getHashPatchParams( context, frameIndex, tileIdx, tilePatchParams, atlasPatchParams );
   }

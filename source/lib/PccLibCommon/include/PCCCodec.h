@@ -397,19 +397,6 @@ class PCCCodec {
                       uint16_t                        gridWidth,
                       std::vector<int>&               cellIndex );
 
-  bool gridFilteringTransfer( const std::vector<uint32_t>& partition,
-                              PCCPointSet3&                pointCloud,
-                              PCCPoint3D&                  curPoint,
-                              PCCVector3D&                 centroid,
-                              int&                         count,
-                              std::vector<int>&            gridCount,
-                              std::vector<PCCVector3D>&    center,
-                              std::vector<bool>&           doSmooth,
-                              int                          gridSize,
-                              int                          gridWidth,
-                              std::vector<PCCVector3D>&    colorGrid,
-                              PCCVector3D&                 color );
-
   void identifyBoundaryPoints( const std::vector<uint32_t>& occupancyMap,
                                const size_t                 x,
                                const size_t                 y,
