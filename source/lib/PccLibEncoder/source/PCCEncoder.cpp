@@ -5052,7 +5052,6 @@ void PCCEncoder::generateTilesFromSegments( PCCContext& context ) {
     auto& tile0 = context[fi].getTile( 0 );
     auto& tile1 = context[fi].getTile( 1 );
     auto& tile2 = context[fi].getTile( 2 );
-    auto& tile3 = context[fi].getTile( 3 );
     tile0.setWidth( tile0Width );
     tile1.setWidth( minimumTileWidth );
     tile2.setWidth( tile0Width );
@@ -5119,6 +5118,7 @@ void PCCEncoder::generateTilesFromSegments( PCCContext& context ) {
       tile2.getEomPatches().push_back( eomPatch[2] );
     }
     if ( ( params_.rawPointsPatch_ || params_.lossyRawPointsPatch_ ) ) {
+      auto& tile3 = context[fi].getTile( 3 );
       tile0.getRawPointsPatches().clear();
       tile1.getRawPointsPatches().clear();
       tile2.getRawPointsPatches().clear();
@@ -5141,6 +5141,7 @@ void PCCEncoder::generateTilesFromSegments( PCCContext& context ) {
     printf( "generateTilesFromSegments: tile[2] : %zux%zu, %zu patches\n", tile2.getWidth(), tile2.getHeight(),
             tile2.getPatches().size() );
     if ( ( params_.rawPointsPatch_ || params_.lossyRawPointsPatch_ ) ) {
+      auto& tile3 = context[fi].getTile( 3 );
       printf( "generateTilesFromSegments: tile[3] : %zux%zu, %zu patches, %zu rawPatches\n", tile3.getWidth(),
               tile3.getHeight(), tile3.getPatches().size(), tile3.getRawPointsPatches().size() );
     }
@@ -7994,12 +7995,14 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
   }  // frameCount
 
   // updateNaluInfo;
-  for ( size_t fi = 0; fi < frameCount; fi++ ) {
+  for ( size_t fi = 1; fi < frameCount; fi++ ) {
     for ( size_t ti = 0; ti < context[fi].getNumTilesInAtlasFrame(); ti++ ) {
       auto& ath  = context.getAtlasTileLayer( fi, ti ).getHeader();
       auto& tile = context[fi].getTile( ti );
-      if ( ( fi != 0 ) && ( params_.constrainedPack_ ) ) { ath.setTileNaluTypeInfo( 1 ); }
-      if ( !tile.getReferredTile() ) { ath.setTileNaluTypeInfo( 2 ); }
+      if ( params_.constrainedPack_ ) {
+        ath.setTileNaluTypeInfo( 1 );
+        if ( !tile.getReferredTile() ) { ath.setTileNaluTypeInfo( 2 ); }
+      }
     }
   }
 }
