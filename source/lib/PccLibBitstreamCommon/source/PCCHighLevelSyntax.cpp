@@ -76,31 +76,36 @@ PCCAtlasHighLevelSyntax::PCCAtlasHighLevelSyntax() {}
 
 PCCAtlasHighLevelSyntax::~PCCAtlasHighLevelSyntax() { videoBitstream_.clear(); }
 
+V3CParameterSet& PCCHighLevelSyntax::getActiveVpccParameterSets() {
+  for ( auto& vps : vpccParameterSets_ ) {
+    if ( vps.getV3CParameterSetId() == activeVPS_ ) { return vps; }
+  }
+  fprintf( stderr, "Error: the VPS of index: %zu can't find in the VPS list\n", activeVPS_ );
+  fflush(stdout);
+  exit(-1);
+  return vpccParameterSets_[0];
+}
+
 size_t PCCHighLevelSyntax::checkProfile() {
   size_t ret = 0;
   if ( atlasHLS_.size() != 1 ) {
     std::cout << "ProfileToolsetConstraint Violation(1) : number of atlas should be 1\n";
     return 1;
   }
-  auto& vps = vpccParameterSets_[activeVPS_];
-  if ( vps.getProfileTierLevel().getToolConstraintsPresentFlag() == false ) return 0;
-
-  // auto oneFrameOnlyFlag = vps.getProfileTierLevel().getProfileToolsetConstraintsInformation().getOneFrameOnlyFlag();
-  auto EOMContraintFlag  = vps.getProfileTierLevel().getProfileToolsetConstraintsInformation().getEOMContraintFlag();
-  auto maxMapCountMinus1 = vps.getProfileTierLevel().getProfileToolsetConstraintsInformation().getMaxMapCountMinus1();
-  auto maxAtlasCountMinus1 =
-      vps.getProfileTierLevel().getProfileToolsetConstraintsInformation().getMaxAtlasCountMinus1();
-  auto multipleMapStreamsConstraintFlag =
-      vps.getProfileTierLevel().getProfileToolsetConstraintsInformation().getMultipleMapStreamsConstraintFlag();
-  auto PLRConstraintFlag = vps.getProfileTierLevel().getProfileToolsetConstraintsInformation().getPLRConstraintFlag();
-  auto attributeMaxDimensionMinus1 =
-      vps.getProfileTierLevel().getProfileToolsetConstraintsInformation().getAttributeMaxDimensionMinus1();
-  auto attributeMaxDimensionPartitionsMinus1 =
-      vps.getProfileTierLevel().getProfileToolsetConstraintsInformation().getAttributeMaxDimensionPartitionsMinus1();
-  auto noEightOrientationsConstraintFlag =
-      vps.getProfileTierLevel().getProfileToolsetConstraintsInformation().getNoEightOrientationsConstraintFlag();
-  auto no45DegreeProjectionPatchConstraintFlag =
-      vps.getProfileTierLevel().getProfileToolsetConstraintsInformation().getNo45DegreeProjectionPatchConstraintFlag();
+  auto& vps = getActiveVpccParameterSets();
+  auto& ptl = vps.getProfileTierLevel();  
+  printf( " ptl.getToolConstraintsPresentFlag() = %d \n", (size_t)ptl.getToolConstraintsPresentFlag() );
+  if ( ptl.getToolConstraintsPresentFlag() == false ) { printf("checkProfile return 0 \n"); fflush(stdout); return 0; }
+  auto& ptci                                    = ptl.getProfileToolsetConstraintsInformation();
+  auto  EOMContraintFlag                        = ptci.getEOMContraintFlag();
+  auto  maxMapCountMinus1                       = ptci.getMaxMapCountMinus1();
+  auto  maxAtlasCountMinus1                     = ptci.getMaxAtlasCountMinus1();
+  auto  multipleMapStreamsConstraintFlag        = ptci.getMultipleMapStreamsConstraintFlag();
+  auto  PLRConstraintFlag                       = ptci.getPLRConstraintFlag();
+  auto  attributeMaxDimensionMinus1             = ptci.getAttributeMaxDimensionMinus1();
+  auto  attributeMaxDimensionPartitionsMinus1   = ptci.getAttributeMaxDimensionPartitionsMinus1();
+  auto  noEightOrientationsConstraintFlag       = ptci.getNoEightOrientationsConstraintFlag();
+  auto  no45DegreeProjectionPatchConstraintFlag = ptci.getNo45DegreeProjectionPatchConstraintFlag();
 
   printf( "activeVPS_ : %zu\n", (size_t)activeVPS_ );
   printf( "---ProfileToolsetConstraintsInformation-------\n" );
@@ -122,7 +127,6 @@ size_t PCCHighLevelSyntax::checkProfile() {
       ret = 3;
     }
   }
-
   if ( vps.getMapCountMinus1( 0 ) > maxMapCountMinus1 ) {
     std::cout << "ProfileToolsetConstraint Violation(7) : mapCountMinus1 is set to " << vps.getMapCountMinus1( 0 )
               << " wherea ptci.maxMapCountMinus1_ is " << maxMapCountMinus1 << ". \n";
@@ -132,7 +136,7 @@ size_t PCCHighLevelSyntax::checkProfile() {
     if ( EOMContraintFlag ) {
       if ( asps.getEomPatchEnabledFlag() != false ) {
         std::cout
-            << "ProfileToolsetConstraint Violation(2) : ptci.EOMContraintFlag is 1 wherea ptci.EOMContraintFlag is 1\n";
+            << "ProfileToolsetConstraint Violation(2) : EOMContraintFlag is 1 wherea ptci.EOMContraintFlag is 1\n";
         ret = 2;
       }
     }
@@ -160,9 +164,8 @@ size_t PCCHighLevelSyntax::checkProfile() {
   }
 
   // profile.reconstruction setting
-  auto profileToolsetIdc        = vps.getProfileTierLevel().getProfileToolsetIdc();
-  auto profileReconstructionIdc = vps.getProfileTierLevel().getProfileReconstructionIdc();
-
+  auto profileToolsetIdc        = ptl.getProfileToolsetIdc();
+  auto profileReconstructionIdc = ptl.getProfileReconstructionIdc();
   for ( auto& asps : atlasHLS_[0].getAtlasSequenceParameterSetList() ) {
     // Profile Tools set idc
     // Basic
@@ -192,10 +195,7 @@ size_t PCCHighLevelSyntax::checkProfile() {
                      "is 0. \n";
         ret = 15;
       }
-
     }  // profile
-
   }  // asps
-
   return ret;
 }
