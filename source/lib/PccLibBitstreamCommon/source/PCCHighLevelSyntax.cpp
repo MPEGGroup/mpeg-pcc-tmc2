@@ -80,7 +80,7 @@ V3CParameterSet& PCCHighLevelSyntax::getActiveVpccParameterSets() {
   for ( auto& vps : vpccParameterSets_ ) {
     if ( vps.getV3CParameterSetId() == activeVPS_ ) { return vps; }
   }
-  fprintf( stderr, "Error: the VPS of index: %zu can't find in the VPS list\n", activeVPS_ );
+  fprintf( stderr, "Error: the VPS of index: %u can't find in the VPS list\n", activeVPS_ );
   fflush(stdout);
   exit(-1);
   return vpccParameterSets_[0];
@@ -94,7 +94,7 @@ size_t PCCHighLevelSyntax::checkProfile() {
   }
   auto& vps = getActiveVpccParameterSets();
   auto& ptl = vps.getProfileTierLevel();  
-  printf( " ptl.getToolConstraintsPresentFlag() = %d \n", (size_t)ptl.getToolConstraintsPresentFlag() );
+  printf( " ptl.getToolConstraintsPresentFlag() = %zu \n", (size_t)ptl.getToolConstraintsPresentFlag() );
   if ( ptl.getToolConstraintsPresentFlag() == false ) { printf("checkProfile return 0 \n"); fflush(stdout); return 0; }
   auto& ptci                                    = ptl.getProfileToolsetConstraintsInformation();
   auto  EOMContraintFlag                        = ptci.getEOMContraintFlag();

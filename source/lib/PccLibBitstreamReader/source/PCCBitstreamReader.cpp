@@ -51,7 +51,7 @@ PCCBitstreamReader::~PCCBitstreamReader() = default;
 // B.2  Sample stream V3C unit syntax
 size_t PCCBitstreamReader::read( PCCBitstream& bitstream, SampleStreamV3CUnit& ssvu ) {
   size_t headerSize = 0;
-  TRACE_BITSTREAM( "PCCBitstreamXXcoder: SampleStream Vpcc Unit start \n" );
+  TRACE_BITSTREAM( "%s \n", "PCCBitstreamXXcoder: SampleStream Vpcc Unit start" );
   sampleStreamV3CHeader( bitstream, ssvu );
   headerSize++;
   TRACE_BITSTREAM( "UnitSizePrecisionBytesMinus1 %d <=> bytesToRead %d\n", ssvu.getSsvhUnitSizePrecisionBytesMinus1(),
@@ -65,7 +65,7 @@ size_t PCCBitstreamReader::read( PCCBitstream& bitstream, SampleStreamV3CUnit& s
     unitCount++;
     headerSize += ssvu.getSsvhUnitSizePrecisionBytesMinus1() + 1;
   }
-  TRACE_BITSTREAM( "PCCBitstreamXXcoder: SampleStream Vpcc Unit start done \n" );
+  TRACE_BITSTREAM( "%s \n", "PCCBitstreamXXcoder: SampleStream Vpcc Unit start done" );
   return headerSize;
 }
 
@@ -106,13 +106,13 @@ void PCCBitstreamReader::videoSubStream( PCCHighLevelSyntax& syntax,
   size_t atlasIndex   = 0;
   auto&  bistreamStat = syntax.getBitstreamStat();
   if ( V3CUnitType == V3C_OVD ) {
-    TRACE_BITSTREAM( "OccupancyMap \n" );
+    TRACE_BITSTREAM( "%s \n", "OccupancyMap" );
     bitstream.readVideoStream( syntax.createVideoBitstream( VIDEO_OCCUPANCY ), V3CPayloadSize );
     bistreamStat.setVideoBinSize( VIDEO_OCCUPANCY, syntax.getVideoBitstream( VIDEO_OCCUPANCY ).size() );
   } else if ( V3CUnitType == V3C_GVD ) {
     auto& vuh = syntax.getV3CUnitHeader( static_cast<size_t>( V3C_GVD ) - 1 );
     if ( vuh.getAuxiliaryVideoFlag() ) {
-      TRACE_BITSTREAM( "Geometry RAW\n" );
+      TRACE_BITSTREAM( "%s \n", "Geometry RAW" );
       bitstream.readVideoStream( syntax.createVideoBitstream( VIDEO_GEOMETRY_RAW ), V3CPayloadSize );
       bistreamStat.setVideoBinSize( VIDEO_GEOMETRY_RAW, syntax.getVideoBitstream( VIDEO_GEOMETRY_RAW ).size() );
     } else {
@@ -123,7 +123,7 @@ void PCCBitstreamReader::videoSubStream( PCCHighLevelSyntax& syntax,
         bitstream.readVideoStream( syntax.createVideoBitstream( geometryIndex ), V3CPayloadSize );
         bistreamStat.setVideoBinSize( geometryIndex, syntax.getVideoBitstream( geometryIndex ).size() );
       } else {
-        TRACE_BITSTREAM( "Geometry \n" );
+        TRACE_BITSTREAM( "%s \n", "Geometry" );
         bitstream.readVideoStream( syntax.createVideoBitstream( VIDEO_GEOMETRY ), V3CPayloadSize );
         bistreamStat.setVideoBinSize( VIDEO_GEOMETRY, syntax.getVideoBitstream( VIDEO_GEOMETRY ).size() );
       }

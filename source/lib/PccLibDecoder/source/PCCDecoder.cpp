@@ -769,23 +769,6 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context ) {
     createPatchFrameDataStructure( context, atglIndex );
 
 #ifdef CONFORMANCE_TRACE
-    // JR QUESTION: why we only tests this 4 SEI ?
-    // JR QUESTION: for( auto& tmp : atgl.getSEI().getSeiPrefix() ){
-    // JR QUESTION:     auto* sei = static_cast<SEIGeometrySmoothing*>( tmp );
-    // JR QUESTION:     auto& vec = sei->getMD5ByteStrData();
-    // JR QUESTION:     if ( vec.size() > 0 ) {
-    // JR QUESTION:       TRACE_HLS( "SEI%02dMD5 = ", sei->getPayloadType() );
-    // JR QUESTION:       SEIMd5Checksum( context, vec );
-    // JR QUESTION:     }
-    // JR QUESTION: }
-    // JR QUESTION: for( auto& tmp : atgl.getSEI().getSeiSuffix() ){
-    // JR QUESTION:     auto* sei = static_cast<SEIGeometrySmoothing*>( tmp );
-    // JR QUESTION:     auto& vec = sei->getMD5ByteStrData();
-    // JR QUESTION:     if ( vec.size() > 0 ) {
-    // JR QUESTION:       TRACE_HLS( "SEI%02dMD5 = ", sei->getPayloadType() );
-    // JR QUESTION:       SEIMd5Checksum( context, vec );
-    // JR QUESTION:     }
-    // JR QUESTION: }
     if ( atgl.getSEI().seiIsPresent( NAL_PREFIX_ESEI, GEOMETRY_SMOOTHING ) ) {
       auto* sei = static_cast<SEIGeometrySmoothing*>( atgl.getSEI().getSei( NAL_PREFIX_ESEI, GEOMETRY_SMOOTHING ) );
       auto& vec = sei->getMD5ByteStrData();
@@ -853,7 +836,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
   auto   geometryBitDepth2D = asps.getGeometry2dBitdepthMinus1() + 1;
   auto   geometryBitDepth3D = asps.getGeometry3dBitdepthMinus1() + 1;
   size_t frameIndex         = ath.getFrameIndex();
-  size_t tileIndex          = afti.getSignalledTileIdFlag() ? afti.getTileId( ath.getId() ) : ath.getId();
+  size_t tileIndex          = afti.getSignalledTileIdFlag() ? afti.getTileId( ath.getId() ) : ath.getId();  
 
   printf( "createPatchFrameDataStructure Frame = %zu Tiles = %zu atlasIndex = %zu atglIndex %zu \n", frameIndex,
           tileIndex, context.getAtlasIndex(), atglIndex );
@@ -893,16 +876,14 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
       numEomPatch++;
     }
   }
-
   TRACE_PATCH( "Patches size                      = %zu \n", patches.size() );
   TRACE_PATCH( "non-regular Patches(raw, eom)     = %zu, %zu \n", numRawPatches, numEomPatch );
   TRACE_PATCH( "Tile Type                         = %zu (0.P_TILE 1.I_TILE 2.SKIP_TILE)\n", (size_t)ath.getType() );
-
-  // TRACE_PATCH( "OccupancyPackingBlockSize           = %d \n", context.getOccupancyPackingBlockSize() );
   size_t  totalNumberOfRawPoints = 0;
   size_t  totalNumberOfEomPoints = 0;
   size_t  patchIndex             = 0;
   int32_t packingBlockSize       = 1 << asps.getLog2PatchPackingBlockSize();
+  double  packingBlockSizeD      = static_cast<double>( packingBlockSize );
   int32_t quantizerSizeX         = 1 << ath.getPatchSizeXinfoQuantizer();
   int32_t quantizerSizeY         = 1 << ath.getPatchSizeYinfoQuantizer();
   tile.setLog2PatchQuantizerSizeX( ath.getPatchSizeXinfoQuantizer() );
@@ -930,10 +911,8 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
       if ( asps.getPatchSizeQuantizerPresentFlag() ) {
         patch.setPatchSize2DXInPixel( ( pdu.get2dSizeXMinus1() + 1 ) * quantizerSizeX );
         patch.setPatchSize2DYInPixel( ( pdu.get2dSizeYMinus1() + 1 ) * quantizerSizeY );
-        patch.setSizeU0(
-            ceil( static_cast<double>( patch.getPatchSize2DXInPixel() ) / static_cast<double>( packingBlockSize ) ) );
-        patch.setSizeV0(
-            ceil( static_cast<double>( patch.getPatchSize2DYInPixel() ) / static_cast<double>( packingBlockSize ) ) );
+        patch.setSizeU0( ceil( static_cast<double>( patch.getPatchSize2DXInPixel() ) / packingBlockSizeD ) );
+        patch.setSizeV0( ceil( static_cast<double>( patch.getPatchSize2DYInPixel() ) / packingBlockSizeD ) );
       } else {
         patch.setSizeU0( pdu.get2dSizeXMinus1() + 1 );
         patch.setSizeV0( pdu.get2dSizeYMinus1() + 1 );
@@ -1003,10 +982,8 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
       if ( asps.getPatchSizeQuantizerPresentFlag() ) {
         patch.setPatchSize2DXInPixel( refPatch.getPatchSize2DXInPixel() + ( ipdu.get2dDeltaSizeX() ) * quantizerSizeX );
         patch.setPatchSize2DYInPixel( refPatch.getPatchSize2DYInPixel() + ( ipdu.get2dDeltaSizeY() ) * quantizerSizeY );
-        patch.setSizeU0(
-            ceil( static_cast<double>( patch.getPatchSize2DXInPixel() ) / static_cast<double>( packingBlockSize ) ) );
-        patch.setSizeV0(
-            ceil( static_cast<double>( patch.getPatchSize2DYInPixel() ) / static_cast<double>( packingBlockSize ) ) );
+        patch.setSizeU0( ceil( static_cast<double>( patch.getPatchSize2DXInPixel() ) / packingBlockSizeD ) );
+        patch.setSizeV0( ceil( static_cast<double>( patch.getPatchSize2DYInPixel() ) / packingBlockSizeD ) );
       } else {
         patch.setSizeU0( ipdu.get2dDeltaSizeX() + refPatch.getSizeU0() );
         patch.setSizeV0( ipdu.get2dDeltaSizeY() + refPatch.getSizeV0() );
@@ -1063,10 +1040,8 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
         if ( asps.getPatchSizeQuantizerPresentFlag() ) {
           patch.setPatchSize2DXInPixel( refPatch.getPatchSize2DXInPixel() + mpdu.get2dDeltaSizeX() * quantizerSizeX );
           patch.setPatchSize2DYInPixel( refPatch.getPatchSize2DYInPixel() + mpdu.get2dDeltaSizeY() * quantizerSizeY );
-          patch.setSizeU0(
-              ceil( static_cast<double>( patch.getPatchSize2DXInPixel() ) / static_cast<double>( packingBlockSize ) ) );
-          patch.setSizeV0(
-              ceil( static_cast<double>( patch.getPatchSize2DYInPixel() ) / static_cast<double>( packingBlockSize ) ) );
+          patch.setSizeU0( ceil( static_cast<double>( patch.getPatchSize2DXInPixel() ) / packingBlockSizeD ) );
+          patch.setSizeV0( ceil( static_cast<double>( patch.getPatchSize2DYInPixel() ) / packingBlockSizeD ) );
         } else {
           patch.setSizeU0( mpdu.get2dDeltaSizeX() + refPatch.getSizeU0() );
           patch.setSizeV0( mpdu.get2dDeltaSizeY() + refPatch.getSizeV0() );
@@ -1115,7 +1090,6 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
       PCCPatch patch;
       TRACE_PATCH( "patch %zu / %zu: Inter \n", patchIndex, patchCount );
       TRACE_PATCH( "SDU: refAtlasFrame= 0 refPatchIdx = %d \n", patchIndex );
-
       patch.setBestMatchIdx( static_cast<int32_t>( patchIndex ) );
       predIndex += patchIndex;
       patch.setRefAtlasFrameIndex( 0 );
@@ -1302,9 +1276,8 @@ void PCCDecoder::createHashSEI( PCCContext& context, int frameIndex, SEIDecodedA
 
   if ( !seiHashCancelFlag && ( sei.getDecodedAtlasTilesHashPresentFlag() || sei.getDecodedAtlasHashPresentFlag() ) ) {
     size_t numTilesInPatchFrame = context[frameIndex].getNumTilesInAtlasFrame();
-    if ( sei.getDecodedAtlasTilesHashPresentFlag() ) tilePatchParams.resize( numTilesInPatchFrame );
+    if ( sei.getDecodedAtlasTilesHashPresentFlag() ) { tilePatchParams.resize( numTilesInPatchFrame ); }
     for ( size_t tileIdx = 0; tileIdx < numTilesInPatchFrame; tileIdx++ ) {
-      // auto& tile = context[frameIndex].getTile( tileIdx );
       getHashPatchParams( context, frameIndex, tileIdx, tilePatchParams, atlasPatchParams );
     }
   }
@@ -1537,12 +1510,6 @@ void PCCDecoder::createHlsAtlasTileLogFiles( PCCContext& context, int frameIndex
   }
   getB2PHashPatchParams( context, frameIndex, tileB2PPatchParams, atlasB2PPatchParams );
   // frame
-  std::vector<uint8_t> atlasData;
-  size_t               patchCount = atlasPatchParams.size();
-  for ( size_t patchIdx = 0; patchIdx < patchCount; patchIdx++ ) {
-    atlasPatchCommonByteString( atlasData, patchIdx, atlasPatchParams );
-    atlasPatchApplicationByteString( atlasData, patchIdx, atlasPatchParams );
-  }
   size_t numProjPatches = 0, numRawPatches = 0, numEomPatches = 0;
   size_t numProjPoints = 0, numRawPoints = 0, numEomPoints = 0;
   int    atlasFrameOrderCnt = atlu.getAtlasFrmOrderCntVal();
@@ -1568,9 +1535,15 @@ void PCCDecoder::createHlsAtlasTileLogFiles( PCCContext& context, int frameIndex
           : 0,
       afps.getAtlasFrameTileInformation().getNumTilesInAtlasFrameMinus1() + 1, numProjPatches, numRawPatches,
       numEomPatches );
+  std::vector<uint8_t> atlasData;
+  size_t               patchCount = atlasPatchParams.size();
+  for ( size_t patchIdx = 0; patchIdx < patchCount; patchIdx++ ) {
+    atlasPatchCommonByteString( atlasData, patchIdx, atlasPatchParams );  
+    atlasPatchApplicationByteString( atlasData, patchIdx, atlasPatchParams );    
+  }
   decMD5 = context.computeMD5( atlasData.data(), atlasData.size() );
   TRACE_ATLAS( " Atlas MD5 = " );
-  for ( int j = 0; j < 16; j++ ) TRACE_ATLAS( "%02x", decMD5[j] );
+  for ( int j = 0; j < 16; j++ ) { TRACE_ATLAS( "%02x", decMD5[j] ); }
   TRACE_ATLAS( "," );
   atlasData.clear();
   std::vector<uint8_t> atlasB2PData;

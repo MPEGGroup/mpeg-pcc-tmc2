@@ -8316,7 +8316,7 @@ void PCCEncoder::createHlsAtlasTileLogFiles( PCCContext& context, int frameIndex
   }
   std::vector<uint8_t> md5Digest = context.computeMD5( atlasData.data(), atlasData.size() );
   TRACE_ATLAS( " Atlas MD5 = " );
-  for ( auto& md5 : md5Digest ) TRACE_ATLAS( "%02x", md5 );
+  for ( auto& md5 : md5Digest ) { TRACE_ATLAS( "%02x", md5 ); }
   TRACE_ATLAS( "," );
   atlasData.clear();
 

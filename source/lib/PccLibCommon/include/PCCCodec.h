@@ -120,10 +120,12 @@ struct PatchParams {
     aspsMapCountMinus1_    = mapCntMinus1;
     patchPackingBlockSize_ = 64;
     plriMapPresentFlag_.resize( aspsMapCountMinus1_ + 1 );
+    plriBlockSize_.resize( aspsMapCountMinus1_ + 1 );
   }
   ~PatchParams() {
     epduAssociatedPoints_.clear();
     plriMapPresentFlag_.clear();
+    plriBlockSize_.clear();
   };
 
   int64_t             patchType_;
@@ -147,6 +149,7 @@ struct PatchParams {
   size_t              patchPackingBlockSize_;
   PLRData             patchPLRData_;
   std::vector<bool>   plriMapPresentFlag_;
+  std::vector<size_t> plriBlockSize_;
 };
 
 class PCCCodec {
@@ -330,8 +333,8 @@ class PCCCodec {
   inline void SEIMd5Checksum( PCCContext& context, std::vector<uint8_t>& vec ) {
     std::vector<uint8_t> md5Digest( 16 );
     md5Digest = context.computeMD5( vec.data(), vec.size() );
-    for ( auto& e : md5Digest ) TRACE_HLS( "%02x", e );
-    TRACE_HLS( "\n" );
+    for ( auto& e : md5Digest ) { TRACE_HLS( "%02x", e ); }
+    TRACE_HLS( "%s", "\n" );
     vec.clear();
   }
 

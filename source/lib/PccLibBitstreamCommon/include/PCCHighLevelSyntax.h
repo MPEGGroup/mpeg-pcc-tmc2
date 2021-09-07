@@ -158,6 +158,8 @@ class PCCAtlasHighLevelSyntax {
     AtlasTileLayerRbsp atgl;
     atgl.setTileOrder( atlasTileLayer_.size() );
     atgl.getDataUnit().setTileOrder( atlasTileLayer_.size() );
+    atgl.setEncFrameIndex( ( std::numeric_limits<size_t>::max )() );
+    atgl.setEncTileIndex( ( std::numeric_limits<size_t>::max )() );
     atlasTileLayer_.push_back( atgl );
     return atlasTileLayer_.back();
   }

@@ -84,7 +84,7 @@ PCCEncoderParameters::PCCEncoderParameters() {
   occupancyMapConfig_                  = {};
   occupancyMapQP_                      = 8;
   occupancyMapRefinement_              = false;
-  decodedAtlasInformationHash_         = 1;
+  decodedAtlasInformationHash_         = 0;
   flagGeometrySmoothing_               = true;
   patchExpansion_                      = false;
   gridSmoothing_                       = true;
@@ -564,8 +564,9 @@ void PCCEncoderParameters::print() {
     std::cout << "\t   numCutsAlong1stLongestAxis               " << numCutsAlong1stLongestAxis_ << std::endl;
     std::cout << "\t   numCutsAlong2ndLongestAxis               " << numCutsAlong2ndLongestAxis_ << std::endl;
     std::cout << "\t   numCutsAlong3rdLongestAxis               " << numCutsAlong3rdLongestAxis_ << std::endl;
-    std::vector<size_t> vecSizes = {roiBoundingBoxMinX_.size(), roiBoundingBoxMaxX_.size(), roiBoundingBoxMinY_.size(),
-                                    roiBoundingBoxMaxY_.size(), roiBoundingBoxMinZ_.size(), roiBoundingBoxMaxZ_.size()};
+    std::vector<size_t> vecSizes = { roiBoundingBoxMinX_.size(), roiBoundingBoxMaxX_.size(),
+                                     roiBoundingBoxMinY_.size(), roiBoundingBoxMaxY_.size(),
+                                     roiBoundingBoxMinZ_.size(), roiBoundingBoxMaxZ_.size() };
     for ( int i = 0; i < vecSizes.size(); ++i ) {
       if ( vecSizes[i] != vecSizes[0] ) {
         std::cerr << "All the 6 arrays roiBoundingBox[Min-Max][X-Y-Z] must "

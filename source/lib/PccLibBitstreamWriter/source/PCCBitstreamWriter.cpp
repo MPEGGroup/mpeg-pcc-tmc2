@@ -47,19 +47,19 @@ PCCBitstreamWriter::~PCCBitstreamWriter() = default;
 int32_t PCCBitstreamWriter::write( SampleStreamNalUnit& ssnu,
                                    PCCBitstream&        bitstream,
                                    uint32_t             forcedSsvhUnitSizePrecisionBytes ) {
-  TRACE_BITSTREAM( "PCCBitstreamXXcoder: SampleStream Nal Unit start \n" );
+  TRACE_BITSTREAM( "%s \n", "PCCBitstreamXXcoder: SampleStream Nal Unit start" );
   uint32_t precision = 4;
   precision          = ( std::max )( precision, forcedSsvhUnitSizePrecisionBytes );
   ssnu.setSizePrecisionBytesMinus1( precision - 1 );
   sampleStreamNalHeader( bitstream, ssnu );
-  TRACE_BITSTREAM( "PCCBitstreamXXcoder: SampleStream Nal Unit start done \n" );
+  TRACE_BITSTREAM( "%s \n", "PCCBitstreamXXcoder: SampleStream Nal Unit start done" );
   return 0;
 }
 
 size_t PCCBitstreamWriter::write( SampleStreamV3CUnit& ssvu,
                                   PCCBitstream&        bitstream,
                                   uint32_t             forcedSsvhUnitSizePrecisionBytes ) {
-  TRACE_BITSTREAM( "PCCBitstreamXXcoder: SampleStream Vpcc Unit start \n" );
+  TRACE_BITSTREAM( "%s \n", "PCCBitstreamXXcoder: SampleStream Vpcc Unit start" );
   size_t headerSize = 0;
   // Calculating the precision of the unit size
   uint32_t maxUnitSize = 0;
@@ -85,7 +85,7 @@ size_t PCCBitstreamWriter::write( SampleStreamV3CUnit& ssvu,
     unitCount++;
     headerSize += ssvu.getSsvhUnitSizePrecisionBytesMinus1() + 1;
   }
-  TRACE_BITSTREAM( "PCCBitstreamXXcoder: SampleStream Vpcc Unit start done \n" );
+  TRACE_BITSTREAM( "%s \n", "PCCBitstreamXXcoder: SampleStream Vpcc Unit start done" );
   return headerSize;
 }
 
@@ -107,7 +107,7 @@ int PCCBitstreamWriter::encode( PCCHighLevelSyntax& syntax, SampleStreamV3CUnit&
 #ifdef BITSTREAM_TRACE
   bitstreamVPS.setTrace( true );
   bitstreamVPS.setLogger( *logger_ );
-  bitstreamVPS.trace( "PCCBitstream::(V3C_VPS)\n" );
+  bitstreamVPS.trace( "%s \n", "PCCBitstream::(V3C_VPS)" );
 #endif
   v3cUnit( syntax, bitstreamVPS, V3C_VPS );
   ssvu.addV3CUnit().setBitstream( std::move( bitstreamVPS ), V3C_VPS );
@@ -121,7 +121,7 @@ int PCCBitstreamWriter::encode( PCCHighLevelSyntax& syntax, SampleStreamV3CUnit&
 #ifdef BITSTREAM_TRACE
     bitstreamAD.setTrace( true );
     bitstreamAD.setLogger( *logger_ );
-    bitstreamAD.trace( "PCCBitstream::(V3C_AD)\n" );
+    bitstreamAD.trace( "%s \n", "PCCBitstream::(V3C_AD)" );
 #endif
     v3cUnit( syntax, bitstreamAD, V3C_AD );
     ssvu.addV3CUnit().setBitstream( std::move( bitstreamAD ), V3C_AD );
@@ -130,7 +130,7 @@ int PCCBitstreamWriter::encode( PCCHighLevelSyntax& syntax, SampleStreamV3CUnit&
 #ifdef BITSTREAM_TRACE
     bitstreamOVD.setTrace( true );
     bitstreamOVD.setLogger( *logger_ );
-    bitstreamOVD.trace( "PCCBitstream::(V3C_OVD)\n" );
+    bitstreamOVD.trace( "%s \n", "PCCBitstream::(V3C_OVD)" );
 #endif
     v3cUnit( syntax, bitstreamOVD, V3C_OVD );
     ssvu.addV3CUnit().setBitstream( std::move( bitstreamOVD ), V3C_OVD );
@@ -141,7 +141,7 @@ int PCCBitstreamWriter::encode( PCCHighLevelSyntax& syntax, SampleStreamV3CUnit&
 #ifdef BITSTREAM_TRACE
         bitstreamGVD.setTrace( true );
         bitstreamGVD.setLogger( *logger_ );
-        bitstreamGVD.trace( "PCCBitstream::(V3C_GVD)\n" );
+        bitstreamGVD.trace( "%s \n", "PCCBitstream::(V3C_GVD)" );
 #endif
         // encode D(mapIdx)
         vuhGVD.setMapIndex( mapIdx );
@@ -154,7 +154,7 @@ int PCCBitstreamWriter::encode( PCCHighLevelSyntax& syntax, SampleStreamV3CUnit&
 #ifdef BITSTREAM_TRACE
       bitstreamGVD.setTrace( true );
       bitstreamGVD.setLogger( *logger_ );
-      bitstreamGVD.trace( "PCCBitstream::(V3C_GVD)\n" );
+      bitstreamGVD.trace( "%s \n", "PCCBitstream::(V3C_GVD)" );
 #endif
       // encode D=D(0)|D(1)|...|D(N)
       vuhGVD.setMapIndex( 0 );
@@ -167,7 +167,7 @@ int PCCBitstreamWriter::encode( PCCHighLevelSyntax& syntax, SampleStreamV3CUnit&
 #ifdef BITSTREAM_TRACE
       bitstreamGVD.setTrace( true );
       bitstreamGVD.setLogger( *logger_ );
-      bitstreamGVD.trace( "PCCBitstream::(V3C_GVD)\n" );
+      bitstreamGVD.trace( "%s \n", "PCCBitstream::(V3C_GVD)" );
 #endif
       // encode RAW
       vuhGVD.setMapIndex( 0 );
@@ -188,7 +188,7 @@ int PCCBitstreamWriter::encode( PCCHighLevelSyntax& syntax, SampleStreamV3CUnit&
 #ifdef BITSTREAM_TRACE
             bitstreamAVD.setTrace( true );
             bitstreamAVD.setLogger( *logger_ );
-            bitstreamAVD.trace( "PCCBitstream::(V3C_AVD)\n" );
+            bitstreamAVD.trace( "%s \n", "PCCBitstream::(V3C_AVD)" );
 #endif
             // encode D(mapIdx)
             vuhAVD.setAttributeIndex( attIdx );
@@ -203,7 +203,7 @@ int PCCBitstreamWriter::encode( PCCHighLevelSyntax& syntax, SampleStreamV3CUnit&
 #ifdef BITSTREAM_TRACE
           bitstreamAVD.setTrace( true );
           bitstreamAVD.setLogger( *logger_ );
-          bitstreamAVD.trace( "PCCBitstream::(V3C_AVD)\n" );
+          bitstreamAVD.trace( "%s \n", "PCCBitstream::(V3C_AVD)" );
 #endif
           // encode D=D(0)|D(1)|...|D(N)
           vuhAVD.setAttributeIndex( attIdx );
@@ -218,7 +218,7 @@ int PCCBitstreamWriter::encode( PCCHighLevelSyntax& syntax, SampleStreamV3CUnit&
 #ifdef BITSTREAM_TRACE
           bitstreamAVD.setTrace( true );
           bitstreamAVD.setLogger( *logger_ );
-          bitstreamAVD.trace( "PCCBitstream::(V3C_AVD)\n" );
+          bitstreamAVD.trace( "%s \n", "PCCBitstream::(V3C_AVD)" );
 #endif
           // encode RAW
           vuhAVD.setAttributeIndex( attIdx );
@@ -243,12 +243,12 @@ void PCCBitstreamWriter::videoSubStream( PCCHighLevelSyntax& syntax,
   size_t atlasIndex   = vuh.getAtlasId();
   auto&  bistreamStat = syntax.getBitstreamStat();
   if ( V3CUnitType == V3C_OVD ) {
-    TRACE_BITSTREAM( "OccupancyMap \n" );
+    TRACE_BITSTREAM( "%s \n", "OccupancyMap" );
     bitstream.writeVideoStream( syntax.getVideoBitstream( VIDEO_OCCUPANCY ) );
     bistreamStat.setVideoBinSize( VIDEO_OCCUPANCY, syntax.getVideoBitstream( VIDEO_OCCUPANCY ).size() );
   } else if ( V3CUnitType == V3C_GVD ) {
     if ( vuh.getAuxiliaryVideoFlag() ) {
-      TRACE_BITSTREAM( "Geometry RAW\n" );
+      TRACE_BITSTREAM( "%s \n", "Geometry RAW" );
       bitstream.writeVideoStream( syntax.getVideoBitstream( VIDEO_GEOMETRY_RAW ) );
       bistreamStat.setVideoBinSize( VIDEO_GEOMETRY_RAW, syntax.getVideoBitstream( VIDEO_GEOMETRY_RAW ).size() );
     } else {
@@ -258,7 +258,7 @@ void PCCBitstreamWriter::videoSubStream( PCCHighLevelSyntax& syntax,
         bitstream.writeVideoStream( syntax.getVideoBitstream( geometryIndex ) );
         bistreamStat.setVideoBinSize( geometryIndex, syntax.getVideoBitstream( geometryIndex ).size() );
       } else {
-        TRACE_BITSTREAM( "Geometry \n" );
+        TRACE_BITSTREAM( "%s \n", "Geometry" );
         bitstream.writeVideoStream( syntax.getVideoBitstream( VIDEO_GEOMETRY ) );
         bistreamStat.setVideoBinSize( VIDEO_GEOMETRY, syntax.getVideoBitstream( VIDEO_GEOMETRY ).size() );
       }
