@@ -836,7 +836,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
   auto   geometryBitDepth2D = asps.getGeometry2dBitdepthMinus1() + 1;
   auto   geometryBitDepth3D = asps.getGeometry3dBitdepthMinus1() + 1;
   size_t frameIndex         = ath.getFrameIndex();
-  size_t tileIndex          = afti.getSignalledTileIdFlag() ? afti.getTileId( ath.getId() ) : ath.getId();  
+  size_t tileIndex          = afti.getSignalledTileIdFlag() ? afti.getTileId( ath.getId() ) : ath.getId();
 
   printf( "createPatchFrameDataStructure Frame = %zu Tiles = %zu atlasIndex = %zu atglIndex %zu \n", frameIndex,
           tileIndex, context.getAtlasIndex(), atglIndex );
@@ -1538,8 +1538,8 @@ void PCCDecoder::createHlsAtlasTileLogFiles( PCCContext& context, int frameIndex
   std::vector<uint8_t> atlasData;
   size_t               patchCount = atlasPatchParams.size();
   for ( size_t patchIdx = 0; patchIdx < patchCount; patchIdx++ ) {
-    atlasPatchCommonByteString( atlasData, patchIdx, atlasPatchParams );  
-    atlasPatchApplicationByteString( atlasData, patchIdx, atlasPatchParams );    
+    atlasPatchCommonByteString( atlasData, patchIdx, atlasPatchParams );
+    atlasPatchApplicationByteString( atlasData, patchIdx, atlasPatchParams );
   }
   decMD5 = context.computeMD5( atlasData.data(), atlasData.size() );
   TRACE_ATLAS( " Atlas MD5 = " );
@@ -1688,11 +1688,11 @@ void PCCDecoder::setTilePartitionSizeAfti( PCCContext& context ) {  // decoder
 }
 
 size_t PCCDecoder::setTileSizeAndLocation( PCCContext& context, size_t frameIndex, AtlasTileHeader& ath ) {  // decoder
-  size_t afpsIdx   = ath.getAtlasFrameParameterSetId();
-  auto&  afps      = context.getAtlasFrameParameterSet( afpsIdx );
-  auto&  asps      = context.getAtlasSequenceParameterSet( afps.getAtlasSequenceParameterSetId() );
-  auto&  afti      = afps.getAtlasFrameTileInformation();
-  size_t tileIndex = 0;
+  size_tafpsIdx   = ath.getAtlasFrameParameterSetId();
+  auto&afps      = context.getAtlasFrameParameterSet( afpsIdx );
+  auto&asps      = context.getAtlasSequenceParameterSet( afps.getAtlasSequenceParameterSetId() );
+  auto&afti      = afps.getAtlasFrameTileInformation();
+  size_ttileIndex = 0;
   printf( "setTileSizeAndLocation frameIndex = %zu \n", frameIndex );
   fflush( stdout );
   // this is for the hash functions

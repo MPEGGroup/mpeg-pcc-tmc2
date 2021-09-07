@@ -315,9 +315,9 @@ int decompressVideo( PCCDecoderParameters&       decoderParams,
     if ( bitstreamReader.decode( ssvu, context ) == 0 ) { return 0; }
 #if 1
     if ( context.checkProfile() != 0 ) {
-      printf("Profile not correct... \n");
+      printf( "Profile not correct... \n" );
       return 0;
-    }  
+    }
     decoderParams.setReconstructionParameters( context.getVps().getProfileTierLevel().getProfileReconstructionIdc() );
     decoder.setReconstructionParameters( decoderParams );
 #endif

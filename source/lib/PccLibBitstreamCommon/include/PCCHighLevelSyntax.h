@@ -384,7 +384,7 @@ class PCCHighLevelSyntax {
   void    setOffsetLossyOM( size_t value ) { offsetLossyOM_ = value; }
   void    setGeometry3dCoordinatesBitdepth( size_t value ) { geometry3dCoordinatesBitdepth_ = value; }
   bool&   getSingleLayerMode() { return singleLayerMode_; }
-  size_t checkProfile();
+  size_t  checkProfile();
 
  private:
   V3CParameterSet&                     getActiveVpccParameterSets();

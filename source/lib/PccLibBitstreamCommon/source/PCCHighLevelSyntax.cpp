@@ -81,8 +81,8 @@ V3CParameterSet& PCCHighLevelSyntax::getActiveVpccParameterSets() {
     if ( vps.getV3CParameterSetId() == activeVPS_ ) { return vps; }
   }
   fprintf( stderr, "Error: the VPS of index: %u can't find in the VPS list\n", activeVPS_ );
-  fflush(stdout);
-  exit(-1);
+  fflush( stdout );
+  exit( -1 );
   return vpccParameterSets_[0];
 }
 
@@ -93,9 +93,13 @@ size_t PCCHighLevelSyntax::checkProfile() {
     return 1;
   }
   auto& vps = getActiveVpccParameterSets();
-  auto& ptl = vps.getProfileTierLevel();  
+  auto& ptl = vps.getProfileTierLevel();
   printf( " ptl.getToolConstraintsPresentFlag() = %zu \n", (size_t)ptl.getToolConstraintsPresentFlag() );
-  if ( ptl.getToolConstraintsPresentFlag() == false ) { printf("checkProfile return 0 \n"); fflush(stdout); return 0; }
+  if ( ptl.getToolConstraintsPresentFlag() == false ) {
+    printf( "checkProfile return 0 \n" );
+    fflush( stdout );
+    return 0;
+  }
   auto& ptci                                    = ptl.getProfileToolsetConstraintsInformation();
   auto  EOMContraintFlag                        = ptci.getEOMContraintFlag();
   auto  maxMapCountMinus1                       = ptci.getMaxMapCountMinus1();
@@ -196,6 +200,6 @@ size_t PCCHighLevelSyntax::checkProfile() {
         ret = 15;
       }
     }  // profile
-  }  // asps
+  }    // asps
   return ret;
 }

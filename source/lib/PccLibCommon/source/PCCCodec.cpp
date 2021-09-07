@@ -1945,16 +1945,16 @@ void PCCCodec::getHashPatchParams( PCCContext&                            contex
   for ( size_t patchIdx = 0; patchIdx < rawPatchCount; patchIdx++ ) {
     PatchParams pps;
     auto&       rawPointsPatch = tile.getRawPointsPatch( patchIdx );
-    pps.patchType_       = RAW;
-    pps.patchRawPoints_  = rawPointsPatch.getNumberOfRawPoints();
-    pps.patch2dPosX_     = rawPointsPatch.u0_;
-    pps.patch2dPosY_     = rawPointsPatch.v0_;
-    pps.patch2dSizeX_    = rawPointsPatch.sizeU0_;
-    pps.patch2dSizeY_    = rawPointsPatch.sizeV0_;
-    pps.patch3dOffsetU_  = rawPointsPatch.u1_;
-    pps.patch3dOffsetV_  = rawPointsPatch.v1_;
-    pps.patch3dOffsetD_  = rawPointsPatch.d1_;
-    pps.patchInAuxVideo_ = rawPointsPatch.isPatchInAuxVideo_;
+    pps.patchType_             = RAW;
+    pps.patchRawPoints_        = rawPointsPatch.getNumberOfRawPoints();
+    pps.patch2dPosX_           = rawPointsPatch.u0_;
+    pps.patch2dPosY_           = rawPointsPatch.v0_;
+    pps.patch2dSizeX_          = rawPointsPatch.sizeU0_;
+    pps.patch2dSizeY_          = rawPointsPatch.sizeV0_;
+    pps.patch3dOffsetU_        = rawPointsPatch.u1_;
+    pps.patch3dOffsetV_        = rawPointsPatch.v1_;
+    pps.patch3dOffsetD_        = rawPointsPatch.d1_;
+    pps.patchInAuxVideo_       = rawPointsPatch.isPatchInAuxVideo_;
     if ( tilePatchParams.size() != 0 ) { tilePatchParams[tileIndex].push_back( pps ); }
     pps.patch2dPosX_ += tileOffsetX;
     pps.patch2dPosY_ += tileOffsetY;
@@ -2337,7 +2337,7 @@ void PCCCodec::atlasPatchApplicationByteString( std::vector<uint8_t>&     string
     val = ( atlasPatchParams[p].patchRawPoints_ >> 8 ) & 0xFF;
     stringByte.push_back( val );
   } else if ( atlasPatchParams[p].patchType_ == PROJECTED ) {
-    size_t bSize    = atlasPatchParams[p].patchPackingBlockSize_;
+    size_t bSize = atlasPatchParams[p].patchPackingBlockSize_;
     for ( int m = 0; m < atlasPatchParams[p].aspsMapCountMinus1_ + 1; m++ ) {
       if ( atlasPatchParams[p].plriMapPresentFlag_[m] == 1 ) {
         auto&        plrd     = atlasPatchParams[p].patchPLRData_;
