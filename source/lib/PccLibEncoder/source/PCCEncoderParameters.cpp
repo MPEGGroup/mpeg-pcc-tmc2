@@ -694,7 +694,6 @@ bool PCCEncoderParameters::check() {
     if ( additionalProjectionPlaneMode_ != 0 || partialAdditionalProjectionPlane_ != 0 )
       std::cerr << "additionalProjectionPlaneMode and partialAdditionalProjectionPlane are set to 0 because "
                    "ptci.no45DegreeProjectionPatchConstraintFlag is 1. \n";
-
     additionalProjectionPlaneMode_    = 0;
     partialAdditionalProjectionPlane_ = 0;
   }
@@ -781,10 +780,6 @@ bool PCCEncoderParameters::check() {
 
   // Rec2
   if ( profileReconstructionIdc_ == 2 ) {
-    if ( flagGeometrySmoothing_ ) {
-      flagGeometrySmoothing_ = false;
-      std::cout << "flagGeometrySmoothing is ignored because profileReconstructionIdc set to 2. \n";
-    }
     if ( gridSmoothing_ ) {
       gridSmoothing_ = false;
       std::cout << "gridSmoothing_ is ignored because profileReconstructionIdc set to 2. \n";
