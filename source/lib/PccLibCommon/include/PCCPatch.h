@@ -333,6 +333,7 @@ class PCCPatch {
   inline const int16_t getOccupancyMap( size_t u, size_t v ) const {
     return occupancyMap_[( v + border_ ) * depthMapWidth_ + u + border_];
   }
+  const bool isBorder( size_t u, size_t v );
   inline int16_t generateDepth( PCCPoint3D point ) const {
     return projectionMode_ == 0 ? point[normalAxis_] - d1_ : d1_ - point[normalAxis_];
   }

@@ -838,6 +838,16 @@ void PCCPatch::setLocalData( const std::vector<uint8_t>&  occupancyMapVideo,
   }
 }
 
+const bool PCCPatch::isBorder( size_t u, size_t v ) {  
+  const int  x1 = u + border_ - 2, x2 = u + border_ + 2;
+  const int  y1 = ( v + border_ - 2 ) * depthMapWidth_, y2 = ( v + border_ + 2 ) * depthMapWidth_;
+  for ( int y = y1; y <= y2; y += depthMapWidth_ ) {
+    for ( int x = x1; x <= x2; ++x ) {
+      if ( occupancyMap_[y + x] == 0 ) { return true; }
+    }
+  }
+  return false;
+}
 void PCCPatch::generateBorderPoints3D() {
   const int32_t w   = depthMapWidth_;
   boundingBox_.min_ = PCCPoint3D( ( std::numeric_limits<int16_t>::max )() );
@@ -964,3 +974,4 @@ void PatchBlockFiltering::patchBorderFiltering( size_t imageWidth,
   for ( auto& patch : *patches_ ) { patch.filtering( passesCount, filterSize, log2Threshold, *patches_ ); }
   for ( auto& patch : *patches_ ) { patch.clearPatchBlockFilteringData(); }
 }
+

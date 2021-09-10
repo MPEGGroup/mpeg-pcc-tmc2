@@ -658,8 +658,10 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                       reconstru
               size_t       canvasIndex   = patch.patch2Canvas( u, v, tileWidth, tileHeight, x, y );
               size_t       xInVideoFrame = x + tile.getLeftTopXInFrame();
               size_t       yInVideoFrame = y + tile.getLeftTopYInFrame();
+              bool         isBoundary    = false;
               if ( params.pbfEnableFlag_ ) {
                 occupancy = patch.getOccupancyMap( u, v ) != 0;
+                if ( occupancy ) { isBoundary = patch.isBorder( u, v ); }
               } else {
                 occupancy = occupancyMap[canvasIndex] != 0;
               }
@@ -804,6 +806,7 @@ void PCCCodec::generatePointCloud( PCCPointSet3&                       reconstru
                       }
                       const size_t pointindex_1 = pointindex;
                       reconstruct.setColor( pointindex_1, color );
+                      if ( params.pbfEnableFlag_ ) { reconstruct.setBoundaryPointType( pointindex_1, isBoundary ); }
                       if ( PCC_SAVE_POINT_TYPE == 1 ) {
                         if ( params.singleMapPixelInterleaving_ ) {
                           size_t flag;
