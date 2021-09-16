@@ -66,10 +66,10 @@ namespace pcc {
 // ******************************************************************* //
 // Trace modes to validate new syntax
 // ******************************************************************* //
-#define BITSTREAM_TRACE
-#define CODEC_TRACE
-#define SEI_TRACE
-#define CONFORMANCE_TRACE
+// #define BITSTREAM_TRACE
+// #define CODEC_TRACE
+// #define SEI_TRACE
+// #define CONFORMANCE_TRACE
 
 // ******************************************************************* //
 // Common constants
