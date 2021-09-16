@@ -556,7 +556,7 @@ bool PCCPointSet3::read( const std::string& fileName, const bool readNormals ) {
       } else if ( propertyType == "int64" ) {
         attributeInfo.type      = ATTRIBUTE_TYPE_INT64;
         attributeInfo.byteCount = 8;
-      } else if ( propertyType == "int32" ) {
+      } else if ( propertyType == "int32" || propertyType == "int" ) {
         attributeInfo.type      = ATTRIBUTE_TYPE_INT32;
         attributeInfo.byteCount = 4;
       } else if ( propertyType == "int16" ) {
