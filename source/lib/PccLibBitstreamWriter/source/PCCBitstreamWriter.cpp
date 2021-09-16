@@ -44,16 +44,22 @@ using namespace pcc;
 PCCBitstreamWriter::PCCBitstreamWriter()  = default;
 PCCBitstreamWriter::~PCCBitstreamWriter() = default;
 
-int32_t PCCBitstreamWriter::write( SampleStreamNalUnit& ssnu, PCCBitstream& bitstream ) {
-  TRACE_BITSTREAM( "PCCBitstreamXXcoder: SampleStream Nal Unit start \n" );
-  ssnu.setSizePrecisionBytesMinus1( 3 );
+int32_t PCCBitstreamWriter::write( SampleStreamNalUnit& ssnu,
+                                   PCCBitstream&        bitstream,
+                                   uint32_t             forcedSsvhUnitSizePrecisionBytes ) {
+  TRACE_BITSTREAM( "%s \n", "PCCBitstreamXXcoder: SampleStream Nal Unit start" );
+  uint32_t precision = 4;
+  precision          = ( std::max )( precision, forcedSsvhUnitSizePrecisionBytes );
+  ssnu.setSizePrecisionBytesMinus1( precision - 1 );
   sampleStreamNalHeader( bitstream, ssnu );
-  TRACE_BITSTREAM( "PCCBitstreamXXcoder: SampleStream Nal Unit start done \n" );
+  TRACE_BITSTREAM( "%s \n", "PCCBitstreamXXcoder: SampleStream Nal Unit start done" );
   return 0;
 }
 
-size_t PCCBitstreamWriter::write( SampleStreamV3CUnit& ssvu, PCCBitstream& bitstream ) {
-  TRACE_BITSTREAM( "PCCBitstreamXXcoder: SampleStream Vpcc Unit start \n" );
+size_t PCCBitstreamWriter::write( SampleStreamV3CUnit& ssvu,
+                                  PCCBitstream&        bitstream,
+                                  uint32_t             forcedSsvhUnitSizePrecisionBytes ) {
+  TRACE_BITSTREAM( "%s \n", "PCCBitstreamXXcoder: SampleStream Vpcc Unit start" );
   size_t headerSize = 0;
   // Calculating the precision of the unit size
   uint32_t maxUnitSize = 0;
@@ -62,8 +68,9 @@ size_t PCCBitstreamWriter::write( SampleStreamV3CUnit& ssvu, PCCBitstream& bitst
   }
   TRACE_BITSTREAM( "maxUnitSize = %u \n", maxUnitSize );
   uint32_t precision = static_cast<uint32_t>(
-      min( max( static_cast<int>( ceil( static_cast<double>( ceilLog2( maxUnitSize ) ) / 8.0 ) ), 1 ), 8 ) - 1 );
-  ssvu.setSsvhUnitSizePrecisionBytesMinus1( precision );
+      min( max( static_cast<int>( ceil( static_cast<double>( ceilLog2( maxUnitSize ) ) / 8.0 ) ), 1 ), 8 ) );
+  precision = ( std::max )( precision, forcedSsvhUnitSizePrecisionBytes );
+  ssvu.setSsvhUnitSizePrecisionBytesMinus1( precision - 1 );
   TRACE_BITSTREAM( " => SsvhUnitSizePrecisionBytesMinus1 = %u \n", ssvu.getSsvhUnitSizePrecisionBytesMinus1() );
 
   sampleStreamV3CHeader( bitstream, ssvu );
@@ -78,7 +85,7 @@ size_t PCCBitstreamWriter::write( SampleStreamV3CUnit& ssvu, PCCBitstream& bitst
     unitCount++;
     headerSize += ssvu.getSsvhUnitSizePrecisionBytesMinus1() + 1;
   }
-  TRACE_BITSTREAM( "PCCBitstreamXXcoder: SampleStream Vpcc Unit start done \n" );
+  TRACE_BITSTREAM( "%s \n", "PCCBitstreamXXcoder: SampleStream Vpcc Unit start done" );
   return headerSize;
 }
 
@@ -100,7 +107,7 @@ int PCCBitstreamWriter::encode( PCCHighLevelSyntax& syntax, SampleStreamV3CUnit&
 #ifdef BITSTREAM_TRACE
   bitstreamVPS.setTrace( true );
   bitstreamVPS.setLogger( *logger_ );
-  bitstreamVPS.trace( "PCCBitstream::(V3C_VPS)\n" );
+  bitstreamVPS.trace( "%s \n", "PCCBitstream::(V3C_VPS)" );
 #endif
   v3cUnit( syntax, bitstreamVPS, V3C_VPS );
   ssvu.addV3CUnit().setBitstream( std::move( bitstreamVPS ), V3C_VPS );
@@ -114,7 +121,7 @@ int PCCBitstreamWriter::encode( PCCHighLevelSyntax& syntax, SampleStreamV3CUnit&
 #ifdef BITSTREAM_TRACE
     bitstreamAD.setTrace( true );
     bitstreamAD.setLogger( *logger_ );
-    bitstreamAD.trace( "PCCBitstream::(V3C_AD)\n" );
+    bitstreamAD.trace( "%s \n", "PCCBitstream::(V3C_AD)" );
 #endif
     v3cUnit( syntax, bitstreamAD, V3C_AD );
     ssvu.addV3CUnit().setBitstream( std::move( bitstreamAD ), V3C_AD );
@@ -123,7 +130,7 @@ int PCCBitstreamWriter::encode( PCCHighLevelSyntax& syntax, SampleStreamV3CUnit&
 #ifdef BITSTREAM_TRACE
     bitstreamOVD.setTrace( true );
     bitstreamOVD.setLogger( *logger_ );
-    bitstreamOVD.trace( "PCCBitstream::(V3C_OVD)\n" );
+    bitstreamOVD.trace( "%s \n", "PCCBitstream::(V3C_OVD)" );
 #endif
     v3cUnit( syntax, bitstreamOVD, V3C_OVD );
     ssvu.addV3CUnit().setBitstream( std::move( bitstreamOVD ), V3C_OVD );
@@ -134,7 +141,7 @@ int PCCBitstreamWriter::encode( PCCHighLevelSyntax& syntax, SampleStreamV3CUnit&
 #ifdef BITSTREAM_TRACE
         bitstreamGVD.setTrace( true );
         bitstreamGVD.setLogger( *logger_ );
-        bitstreamGVD.trace( "PCCBitstream::(V3C_GVD)\n" );
+        bitstreamGVD.trace( "%s \n", "PCCBitstream::(V3C_GVD)" );
 #endif
         // encode D(mapIdx)
         vuhGVD.setMapIndex( mapIdx );
@@ -147,7 +154,7 @@ int PCCBitstreamWriter::encode( PCCHighLevelSyntax& syntax, SampleStreamV3CUnit&
 #ifdef BITSTREAM_TRACE
       bitstreamGVD.setTrace( true );
       bitstreamGVD.setLogger( *logger_ );
-      bitstreamGVD.trace( "PCCBitstream::(V3C_GVD)\n" );
+      bitstreamGVD.trace( "%s \n", "PCCBitstream::(V3C_GVD)" );
 #endif
       // encode D=D(0)|D(1)|...|D(N)
       vuhGVD.setMapIndex( 0 );
@@ -160,7 +167,7 @@ int PCCBitstreamWriter::encode( PCCHighLevelSyntax& syntax, SampleStreamV3CUnit&
 #ifdef BITSTREAM_TRACE
       bitstreamGVD.setTrace( true );
       bitstreamGVD.setLogger( *logger_ );
-      bitstreamGVD.trace( "PCCBitstream::(V3C_GVD)\n" );
+      bitstreamGVD.trace( "%s \n", "PCCBitstream::(V3C_GVD)" );
 #endif
       // encode RAW
       vuhGVD.setMapIndex( 0 );
@@ -181,7 +188,7 @@ int PCCBitstreamWriter::encode( PCCHighLevelSyntax& syntax, SampleStreamV3CUnit&
 #ifdef BITSTREAM_TRACE
             bitstreamAVD.setTrace( true );
             bitstreamAVD.setLogger( *logger_ );
-            bitstreamAVD.trace( "PCCBitstream::(V3C_AVD)\n" );
+            bitstreamAVD.trace( "%s \n", "PCCBitstream::(V3C_AVD)" );
 #endif
             // encode D(mapIdx)
             vuhAVD.setAttributeIndex( attIdx );
@@ -196,7 +203,7 @@ int PCCBitstreamWriter::encode( PCCHighLevelSyntax& syntax, SampleStreamV3CUnit&
 #ifdef BITSTREAM_TRACE
           bitstreamAVD.setTrace( true );
           bitstreamAVD.setLogger( *logger_ );
-          bitstreamAVD.trace( "PCCBitstream::(V3C_AVD)\n" );
+          bitstreamAVD.trace( "%s \n", "PCCBitstream::(V3C_AVD)" );
 #endif
           // encode D=D(0)|D(1)|...|D(N)
           vuhAVD.setAttributeIndex( attIdx );
@@ -211,7 +218,7 @@ int PCCBitstreamWriter::encode( PCCHighLevelSyntax& syntax, SampleStreamV3CUnit&
 #ifdef BITSTREAM_TRACE
           bitstreamAVD.setTrace( true );
           bitstreamAVD.setLogger( *logger_ );
-          bitstreamAVD.trace( "PCCBitstream::(V3C_AVD)\n" );
+          bitstreamAVD.trace( "%s \n", "PCCBitstream::(V3C_AVD)" );
 #endif
           // encode RAW
           vuhAVD.setAttributeIndex( attIdx );
@@ -236,12 +243,12 @@ void PCCBitstreamWriter::videoSubStream( PCCHighLevelSyntax& syntax,
   size_t atlasIndex   = vuh.getAtlasId();
   auto&  bistreamStat = syntax.getBitstreamStat();
   if ( V3CUnitType == V3C_OVD ) {
-    TRACE_BITSTREAM( "OccupancyMap \n" );
+    TRACE_BITSTREAM( "%s \n", "OccupancyMap" );
     bitstream.writeVideoStream( syntax.getVideoBitstream( VIDEO_OCCUPANCY ) );
     bistreamStat.setVideoBinSize( VIDEO_OCCUPANCY, syntax.getVideoBitstream( VIDEO_OCCUPANCY ).size() );
   } else if ( V3CUnitType == V3C_GVD ) {
     if ( vuh.getAuxiliaryVideoFlag() ) {
-      TRACE_BITSTREAM( "Geometry RAW\n" );
+      TRACE_BITSTREAM( "%s \n", "Geometry RAW" );
       bitstream.writeVideoStream( syntax.getVideoBitstream( VIDEO_GEOMETRY_RAW ) );
       bistreamStat.setVideoBinSize( VIDEO_GEOMETRY_RAW, syntax.getVideoBitstream( VIDEO_GEOMETRY_RAW ).size() );
     } else {
@@ -251,7 +258,7 @@ void PCCBitstreamWriter::videoSubStream( PCCHighLevelSyntax& syntax,
         bitstream.writeVideoStream( syntax.getVideoBitstream( geometryIndex ) );
         bistreamStat.setVideoBinSize( geometryIndex, syntax.getVideoBitstream( geometryIndex ).size() );
       } else {
-        TRACE_BITSTREAM( "Geometry \n" );
+        TRACE_BITSTREAM( "%s \n", "Geometry" );
         bitstream.writeVideoStream( syntax.getVideoBitstream( VIDEO_GEOMETRY ) );
         bistreamStat.setVideoBinSize( VIDEO_GEOMETRY, syntax.getVideoBitstream( VIDEO_GEOMETRY ).size() );
       }
@@ -340,20 +347,20 @@ void PCCBitstreamWriter::v3cUnitPayload( PCCHighLevelSyntax& syntax,
 // 8.3.2.4 Atlas sub-bitstream syntax
 void PCCBitstreamWriter::atlasSubStream( PCCHighLevelSyntax& syntax, PCCBitstream& bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
-  SampleStreamNalUnit   ssnu;
-  uint32_t              maxUnitSize = 0;
-  PCCBitstream          tempBitStream;
-  std::vector<uint32_t> aspsSizeList;
-  std::vector<uint32_t> afpsSizeList;
-  std::vector<uint32_t> seiPrefixSizeList;
-  std::vector<uint32_t> seiSuffixSizeList;
+  SampleStreamNalUnit                ssnu;
+  uint32_t                           maxUnitSize = 0;
+  PCCBitstream                       tempBitStream;
+  std::vector<uint32_t>              aspsSizeList;
+  std::vector<uint32_t>              afpsSizeList;
+  std::vector<std::vector<uint32_t>> seiPrefixSizeList;
+  std::vector<std::vector<uint32_t>> seiSuffixSizeList;
+  std::vector<uint32_t>              atglSizeList;
+  const size_t                       atglSize = syntax.getAtlasTileLayerList().size();
   aspsSizeList.resize( syntax.getAtlasSequenceParameterSetList().size() );
   afpsSizeList.resize( syntax.getAtlasFrameParameterSetList().size() );
-  seiPrefixSizeList.resize( syntax.getSeiPrefix().size() );
-  seiSuffixSizeList.resize( syntax.getSeiSuffix().size() );
-
-  std::vector<uint32_t> atglSizeList;
-  atglSizeList.resize( syntax.getAtlasTileLayerList().size() );
+  atglSizeList.resize( atglSize );
+  seiPrefixSizeList.resize( atglSize );
+  seiSuffixSizeList.resize( atglSize );
 
   uint32_t lastSize      = 0;
   size_t   nalHeaderSize = 2;
@@ -369,23 +376,31 @@ void PCCBitstreamWriter::atlasSubStream( PCCHighLevelSyntax& syntax, PCCBitstrea
     lastSize              = tempBitStream.size();
     if ( maxUnitSize < afpsSizeList[afpsIdx] ) { maxUnitSize = afpsSizeList[afpsIdx]; }
   }
-  for ( size_t i = 0; i < syntax.getSeiPrefix().size(); i++ ) {
-    seiRbsp( syntax, tempBitStream, syntax.getSeiPrefix( i ), NAL_PREFIX_ESEI );
-    seiPrefixSizeList[i] = tempBitStream.size() - lastSize + nalHeaderSize;
-    lastSize             = tempBitStream.size();
-    if ( maxUnitSize < seiPrefixSizeList[i] ) { maxUnitSize = seiPrefixSizeList[i]; }
-  }
-  for ( size_t atglIdx = 0; atglIdx < atglSizeList.size(); atglIdx++ ) {
-    atlasTileLayerRbsp( syntax.getAtlasTileLayer( atglIdx ), syntax, NAL_SKIP_R, tempBitStream );
-    atglSizeList[atglIdx] = tempBitStream.size() - lastSize + nalHeaderSize;
-    lastSize              = tempBitStream.size();
-    if ( maxUnitSize < atglSizeList[atglIdx] ) { maxUnitSize = atglSizeList[atglIdx]; }
-  }
-  for ( size_t i = 0; i < syntax.getSeiSuffix().size(); i++ ) {
-    seiRbsp( syntax, tempBitStream, syntax.getSeiSuffix( i ), NAL_SUFFIX_ESEI );
-    seiSuffixSizeList[i] = tempBitStream.size() - lastSize + nalHeaderSize;
-    lastSize             = tempBitStream.size();
-    if ( maxUnitSize < seiSuffixSizeList[i] ) { maxUnitSize = seiSuffixSizeList[i]; }
+  for ( size_t atglIndex = 0; atglIndex < atglSize; atglIndex++ ) {
+    auto& atgl = syntax.getAtlasTileLayer( atglIndex );
+    seiPrefixSizeList[atglIndex].resize( atgl.getSEI().getSeiPrefix().size() );
+    seiSuffixSizeList[atglIndex].resize( atgl.getSEI().getSeiSuffix().size() );
+    // PREFIX SEI MESSAGE
+    for ( size_t i = 0; i < atgl.getSEI().getSeiPrefix().size(); i++ ) {
+      seiRbsp( syntax, tempBitStream, atgl.getSEI().getSeiPrefix( i ), NAL_PREFIX_ESEI, atglIndex );
+      seiPrefixSizeList[atglIndex][i] = tempBitStream.size() - lastSize + nalHeaderSize;
+      lastSize                        = tempBitStream.size();
+      if ( maxUnitSize < seiPrefixSizeList[atglIndex][i] ) { maxUnitSize = seiPrefixSizeList[atglIndex][i]; }
+    }
+
+    // ATLAS TILE LAYER DATA
+    atlasTileLayerRbsp( syntax.getAtlasTileLayer( atglIndex ), syntax, NAL_SKIP_R, tempBitStream );
+    atglSizeList[atglIndex] = tempBitStream.size() - lastSize + nalHeaderSize;
+    lastSize                = tempBitStream.size();
+    if ( maxUnitSize < atglSizeList[atglIndex] ) { maxUnitSize = atglSizeList[atglIndex]; }
+
+    // SUFFIX SEI MESSAGE
+    for ( size_t i = 0; i < atgl.getSEI().getSeiSuffix().size(); i++ ) {
+      seiRbsp( syntax, tempBitStream, atgl.getSEI().getSeiSuffix( i ), NAL_SUFFIX_ESEI, atglIndex );
+      seiSuffixSizeList[atglIndex][i] = tempBitStream.size() - lastSize + nalHeaderSize;
+      lastSize                        = tempBitStream.size();
+      if ( maxUnitSize < seiSuffixSizeList[atglIndex][i] ) { maxUnitSize = seiSuffixSizeList[atglIndex][i]; }
+    }
   }
   // calculation of the max unit size done
   TRACE_BITSTREAM( "maxUnitSize                 = %u\n", maxUnitSize );
@@ -416,48 +431,53 @@ void PCCBitstreamWriter::atlasSubStream( PCCHighLevelSyntax& syntax, PCCBitstrea
         (int)nu.getType(), toString( nu.getType() ).c_str(), ( ssnu.getSizePrecisionBytesMinus1() + 1 ), nu.getSize(),
         bitstream.size() );
   }
-  // NAL_PREFIX_SEI
-  for ( size_t i = 0; i < syntax.getSeiPrefix().size(); i++ ) {
-    NalUnit nu( NAL_PREFIX_ESEI, 0, 1 );
-    nu.setSize( seiPrefixSizeList[i] );
-    sampleStreamNalUnit( syntax, bitstream, ssnu, nu, i );
-    TRACE_BITSTREAM(
-        "nalu[%d]:%s, nalSizePrecision:%d, naluSize:%zu, sizeBitstream "
-        "written: %llu\n",
-        (int)nu.getType(), toString( nu.getType() ).c_str(), ( ssnu.getSizePrecisionBytesMinus1() + 1 ), nu.getSize(),
-        bitstream.size() );
-  }
+
   // NAL_TRAIL, NAL_TSA, NAL_STSA, NAL_RADL, NAL_RASL,NAL_SKIP
-  for ( size_t tileOrder = 0; tileOrder < atglSizeList.size(); tileOrder++ ) {
-    auto&       ath      = syntax.getAtlasTileLayer( tileOrder ).getHeader();
+  for ( size_t atglIndex = 0; atglIndex < atglSize; atglIndex++ ) {
+    auto& atgl = syntax.getAtlasTileLayer( atglIndex );
+
+    // NAL_PREFIX_SEI
+    for ( size_t i = 0; i < atgl.getSEI().getSeiPrefix().size(); i++ ) {
+      NalUnit nu( NAL_PREFIX_ESEI, 0, 1 );
+      nu.setSize( seiPrefixSizeList[atglIndex][i] );
+      sampleStreamNalUnit( syntax, bitstream, ssnu, nu, i, atglIndex );
+      TRACE_BITSTREAM(
+          "nalu[%d]:%s, nalSizePrecision:%d, naluSize:%zu, sizeBitstream "
+          "written: %llu\n",
+          (int)nu.getType(), toString( nu.getType() ).c_str(), ( ssnu.getSizePrecisionBytesMinus1() + 1 ), nu.getSize(),
+          bitstream.size() );
+    }
+
+    // ATLAS_TILE_LAYER_RBSP
+    auto&       atgh     = atgl.getHeader();
     NalUnitType naluType = NAL_IDR_N_LP;
-    if ( ath.getTileNaluTypeInfo() == 1 ) {
+    if ( atgh.getTileNaluTypeInfo() == 1 ) {
       naluType = NAL_TRAIL_R;
-    } else if ( ath.getTileNaluTypeInfo() == 2 ) {
+    } else if ( atgh.getTileNaluTypeInfo() == 2 ) {
       naluType = NAL_TRAIL_N;
     }
     NalUnit nu( naluType, 0, 1 );
+    nu.setSize( atglSizeList[atglIndex] );  //+headsize
+    auto& atl = syntax.getAtlasTileLayer( atglIndex );
+    atl.getDataUnit().setTileOrder( atglIndex );
+    sampleStreamNalUnit( syntax, bitstream, ssnu, nu, atglIndex );
+    TRACE_BITSTREAM(
+        "nalu[%d]:%s, nalSizePrecision:%d, naluSize:%zu, sizeBitstream "
+        "written: %llu\n",
+        (int)nu.getType(), toString( nu.getType() ).c_str(), ( ssnu.getSizePrecisionBytesMinus1() + 1 ), nu.getSize(),
+        bitstream.size() );
 
-    nu.setSize( atglSizeList[tileOrder] );  //+headsize
-    auto& atl = syntax.getAtlasTileLayer( tileOrder );
-    atl.getDataUnit().setTileOrder( tileOrder );
-    sampleStreamNalUnit( syntax, bitstream, ssnu, nu, tileOrder );
-    TRACE_BITSTREAM(
-        "nalu[%d]:%s, nalSizePrecision:%d, naluSize:%zu, sizeBitstream "
-        "written: %llu\n",
-        (int)nu.getType(), toString( nu.getType() ).c_str(), ( ssnu.getSizePrecisionBytesMinus1() + 1 ), nu.getSize(),
-        bitstream.size() );
-  }
-  // NAL_SUFFIX_SEI
-  for ( size_t i = 0; i < syntax.getSeiSuffix().size(); i++ ) {
-    NalUnit nu( NAL_SUFFIX_ESEI, 0, 1 );
-    nu.setSize( seiSuffixSizeList[i] );
-    sampleStreamNalUnit( syntax, bitstream, ssnu, nu, i );
-    TRACE_BITSTREAM(
-        "nalu[%d]:%s, nalSizePrecision:%d, naluSize:%zu, sizeBitstream "
-        "written: %llu\n",
-        (int)nu.getType(), toString( nu.getType() ).c_str(), ( ssnu.getSizePrecisionBytesMinus1() + 1 ), nu.getSize(),
-        bitstream.size() );
+    // NAL_SUFFIX_SEI
+    for ( size_t i = 0; i < atgl.getSEI().getSeiSuffix().size(); i++ ) {
+      NalUnit nu( NAL_SUFFIX_ESEI, 0, 1 );
+      nu.setSize( seiSuffixSizeList[atglIndex][i] );
+      sampleStreamNalUnit( syntax, bitstream, ssnu, nu, i, atglIndex );
+      TRACE_BITSTREAM(
+          "nalu[%d]:%s, nalSizePrecision:%d, naluSize:%zu, sizeBitstream "
+          "written: %llu\n",
+          (int)nu.getType(), toString( nu.getType() ).c_str(), ( ssnu.getSizePrecisionBytesMinus1() + 1 ), nu.getSize(),
+          bitstream.size() );
+    }
   }
 }
 
@@ -539,7 +559,7 @@ void PCCBitstreamWriter::profileTierLevel( ProfileTierLevel& ptl, PCCBitstream& 
   bitstream.write( ptl.getProfileToolsetIdc(), 8 );         // u(8)
   bitstream.write( ptl.getProfileReconstructionIdc(), 8 );  // u(8)
   bitstream.write( 0, 16 );                                 // u(16)
-  bitstream.write( 0, 16 );                                 // u(16)
+  bitstream.write( 0xFFFF, 16 );                            // u(16)
   bitstream.write( ptl.getLevelIdc(), 8 );                  // u(8)
   bitstream.write( ptl.getNumSubProfiles(), 6 );            // u(6)
   bitstream.write( ptl.getExtendedSubProfileFlag(), 1 );    // u(1)
@@ -881,11 +901,12 @@ void PCCBitstreamWriter::atlasAdaptationParameterSetRbsp( AtlasAdaptationParamet
 void PCCBitstreamWriter::seiRbsp( PCCHighLevelSyntax& syntax,
                                   PCCBitstream&       bitstream,
                                   SEI&                sei,
-                                  NalUnitType         nalUnitType ) {  // JR: TODO
+                                  NalUnitType         nalUnitType,
+                                  size_t              atglIndex ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
   // do { seiMessage( syntax, bitstream ); } while ( moreRbspData( bitstream )
   // );
-  seiMessage( bitstream, syntax, sei, nalUnitType );
+  seiMessage( bitstream, syntax, sei, nalUnitType, atglIndex );
 }
 
 // 8.3.6.5 Access unit delimiter RBSP syntax
@@ -1410,7 +1431,8 @@ void PCCBitstreamWriter::plrData( PLRData&                       plrd,
 void PCCBitstreamWriter::seiMessage( PCCBitstream&       bitstream,
                                      PCCHighLevelSyntax& syntax,
                                      SEI&                sei,
-                                     NalUnitType         nalUnitType ) {
+                                     NalUnitType         nalUnitType,
+                                     size_t              atglIndex ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
   auto payloadType = static_cast<int32_t>( sei.getPayloadType() );
   for ( ; payloadType >= 0xff; payloadType -= 0xff ) {
@@ -1420,7 +1442,7 @@ void PCCBitstreamWriter::seiMessage( PCCBitstream&       bitstream,
 
   // Note: calculating the size of the sei message before writing it into the bitstream
   PCCBitstream tempbitstream;
-  seiPayload( tempbitstream, syntax, sei, nalUnitType );
+  seiPayload( tempbitstream, syntax, sei, nalUnitType, atglIndex );
   sei.setPayloadSize( tempbitstream.size() );
 
   auto payloadSize = static_cast<int32_t>( sei.getPayloadSize() );
@@ -1428,7 +1450,7 @@ void PCCBitstreamWriter::seiMessage( PCCBitstream&       bitstream,
     bitstream.write( 0xff, 8 );  // u(8)
   }
   bitstream.write( payloadSize, 8 );  // u(8)
-  seiPayload( bitstream, syntax, sei, nalUnitType );
+  seiPayload( bitstream, syntax, sei, nalUnitType, atglIndex );
 }
 
 // C.2 Sample stream V3C unit syntax and semantics
@@ -1462,7 +1484,8 @@ void PCCBitstreamWriter::sampleStreamNalUnit( PCCHighLevelSyntax&  syntax,
                                               PCCBitstream&        bitstream,
                                               SampleStreamNalUnit& ssnu,
                                               NalUnit&             nalu,
-                                              size_t               index ) {
+                                              size_t               index,
+                                              size_t               atglIndex ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
   TRACE_BITSTREAM( "UnitSizePrecisionBytesMinus1 = %lu \n", ssnu.getSizePrecisionBytesMinus1() );
   bitstream.write( nalu.getSize(), 8 * ( ssnu.getSizePrecisionBytesMinus1() + 1 ) );  // u(v)
@@ -1488,9 +1511,15 @@ void PCCBitstreamWriter::sampleStreamNalUnit( PCCHighLevelSyntax&  syntax,
       atlasTileLayerRbsp( syntax.getAtlasTileLayer( index ), syntax, nalu.getType(), bitstream );
       break;
     case NAL_SUFFIX_ESEI:
-    case NAL_SUFFIX_NSEI: seiRbsp( syntax, bitstream, syntax.getSeiSuffix( index ), nalu.getType() ); break;
+    case NAL_SUFFIX_NSEI:
+      seiRbsp( syntax, bitstream, syntax.getAtlasTileLayer( atglIndex ).getSEI().getSeiSuffix( index ), nalu.getType(),
+               atglIndex );
+      break;
     case NAL_PREFIX_ESEI:
-    case NAL_PREFIX_NSEI: seiRbsp( syntax, bitstream, syntax.getSeiPrefix( index ), nalu.getType() ); break;
+    case NAL_PREFIX_NSEI:
+      seiRbsp( syntax, bitstream, syntax.getAtlasTileLayer( atglIndex ).getSEI().getSeiPrefix( index ), nalu.getType(),
+               atglIndex );
+      break;
     default: fprintf( stderr, "sampleStreamNalUnit type = %d not supported\n", static_cast<int32_t>( nalu.getType() ) );
   }
 }
@@ -1500,15 +1529,16 @@ void PCCBitstreamWriter::sampleStreamNalUnit( PCCHighLevelSyntax&  syntax,
 void PCCBitstreamWriter::seiPayload( PCCBitstream&       bitstream,
                                      PCCHighLevelSyntax& syntax,
                                      SEI&                sei,
-                                     NalUnitType         nalUnitType ) {
+                                     NalUnitType         nalUnitType,
+                                     size_t              atglIndex ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
   auto payloadType = sei.getPayloadType();
   if ( nalUnitType == NAL_PREFIX_ESEI || nalUnitType == NAL_PREFIX_NSEI ) {
     if ( payloadType == BUFFERING_PERIOD ) {  // 0
       bufferingPeriod( bitstream, sei );
     } else if ( payloadType == ATLAS_FRAME_TIMING ) {  // 1
-      assert( syntax.seiIsPresent( NAL_PREFIX_NSEI, BUFFERING_PERIOD ) );
-      auto& bpsei = *syntax.getLastSei( NAL_PREFIX_NSEI, BUFFERING_PERIOD );
+      assert( syntax.getAtlasTileLayer( atglIndex ).getSEI().seiIsPresent( NAL_PREFIX_NSEI, BUFFERING_PERIOD ) );
+      auto& bpsei = *syntax.getAtlasTileLayer( atglIndex ).getSEI().getLastSei( NAL_PREFIX_NSEI, BUFFERING_PERIOD );
       atlasFrameTiming( bitstream, sei, bpsei, false );
     } else if ( payloadType == FILLER_PAYLOAD ) {  // 2
       fillerPayload( bitstream, sei );
@@ -2008,16 +2038,15 @@ void PCCBitstreamWriter::viewportCameraParameters( PCCBitstream& bitstream, SEI&
       bitstream.write( sei.getErpHorizontalFov(), 32 );          // u(32)
       bitstream.write( sei.getErpVerticalFov(), 32 );            // u(32)
     } else if ( sei.getCameraType() == 1 ) {                     // perspective
-      bitstream.write( sei.getPerspectiveAspectRatio(), 32 );    // fl(32)
+      bitstream.writeFloat( sei.getPerspectiveAspectRatio() );   // fl(32)
       bitstream.write( sei.getPerspectiveHorizontalFov(), 32 );  // u(32)
-    } else if ( sei.getCameraType() == 2 ) {                     /* orthographic */
-      bitstream.write( sei.getOrthoAspectRatio(), 32 );          // fl(32)
-      bitstream.write( sei.getOrthoHorizontalSize(), 32 );       // fl(32)
+    } else if ( sei.getCameraType() == 2 ) {                     // orthographic
+      bitstream.writeFloat( sei.getOrthoAspectRatio() );         // fl(32)
+      bitstream.writeFloat( sei.getOrthoHorizontalSize() );      // fl(32)
     }
-    bitstream.write( sei.getClippingNearPlane(), 32 );  // fl(32)
-    bitstream.write( sei.getClippingFarPlane(), 32 );   // fl(32)
+    bitstream.writeFloat( sei.getClippingNearPlane() );  // fl(32)
+    bitstream.writeFloat( sei.getClippingFarPlane() );   // fl(32)
   }
-  // JR TODO: fl(32) must be check
 }
 
 // F.2.15.2	Viewport position SEI messages syntax
@@ -2033,7 +2062,7 @@ void PCCBitstreamWriter::viewportPosition( PCCBitstream& bitstream, SEI& seiAbst
   if ( !sei.getCancelFlag() ) {
     bitstream.write( sei.getPersistenceFlag(), 1 );  // u(1)
     for ( size_t d = 0; d < 3; d++ ) {
-      bitstream.write( sei.getPosition( d ), 32 );  //	fl(32)
+      bitstream.writeFloat( sei.getPosition( d ) );  //	fl(32)
     }
     bitstream.write( sei.getRotationQX(), 16 );     //	i(16)
     bitstream.write( sei.getRotationQY(), 16 );     //	i(16)
@@ -2043,7 +2072,6 @@ void PCCBitstreamWriter::viewportPosition( PCCBitstream& bitstream, SEI& seiAbst
       bitstream.write( sei.getLeftViewFlag(), 1 );  // u(1)
     }
   }
-  // Note: fl(32) must be checked
 }
 
 // F.2.16 Decoded Atlas Information Hash SEI message syntax
@@ -2331,7 +2359,7 @@ void PCCBitstreamWriter::vuiParameters( PCCBitstream& bitstream, VUIParameters& 
     bitstream.write( vp.getAnchorPointPresentFlag(), 1 );  // u(1)
     if ( vp.getAnchorPointPresentFlag() ) {
       for ( size_t d = 0; d < 3; d++ ) {
-        bitstream.write( vp.getAnchorPoint( d ), 32 );  // fl(32)
+        bitstream.writeUvlc( vp.getAnchorPoint( d ) );  // u(v)
       }
     }
   }

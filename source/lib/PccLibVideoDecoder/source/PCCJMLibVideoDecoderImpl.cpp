@@ -125,8 +125,8 @@ void PCCJMLibVideoDecoderImpl<T>::decode( PCCVideoBitstream& bitstream,
 
   // Close and quit;
   CloseDecoder();
-  close( hFileDecOutput0 );
-  close( hFileDecOutput1 );
+  if ( hFileDecOutput0 >= 0 ) { close( hFileDecOutput0 ); }
+  if ( hFileDecOutput1 >= 0 ) { close( hFileDecOutput1 ); }
   // end decoding
 
   video.clear();

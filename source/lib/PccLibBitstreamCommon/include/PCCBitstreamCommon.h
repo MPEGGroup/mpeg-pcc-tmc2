@@ -66,10 +66,10 @@ namespace pcc {
 // ******************************************************************* //
 // Trace modes to validate new syntax
 // ******************************************************************* //
-#define BITSTREAM_TRACE
-#define CODEC_TRACE
-#define SEI_TRACE
-#define CONFORMANCE_TRACE
+// #define BITSTREAM_TRACE
+// #define CODEC_TRACE
+// #define SEI_TRACE
+// #define CONFORMANCE_TRACE
 
 // ******************************************************************* //
 // Common constants
@@ -227,10 +227,10 @@ enum PCCPatchType {
   ERROR_PATCH       // 7: error patch
 };
 
-enum PCCHashPatchType {  // Note JR: must be check with Ali. It is fine (Ali)
-  PROJECTED = 0,         // 0: protected
-  RAW,                   // 1: raw
-  EOM                    // 2: eom
+enum PCCHashPatchType {
+  PROJECTED = 0,  // 0: protected
+  RAW,            // 1: raw
+  EOM             // 2: eom
 };
 
 enum SeiPayloadType {
@@ -417,6 +417,38 @@ static inline std::string toString( PCCVideoType type ) {
   else
     return std::string( "not supported" );
 }
+
+static inline std::string toString( SeiPayloadType payloadType ) {
+  switch ( payloadType ) {
+    case BUFFERING_PERIOD: return std::string( "BUFFERING_PERIOD" ); break;
+    case ATLAS_FRAME_TIMING: return std::string( "ATLAS_FRAME_TIMING" ); break;
+    case FILLER_PAYLOAD: return std::string( "FILLER_PAYLOAD" ); break;
+    case USER_DATAREGISTERED_ITUTT35: return std::string( "USER_DATAREGISTERED_ITUTT35" ); break;
+    case USER_DATA_UNREGISTERED: return std::string( "USER_DATA_UNREGISTERED" ); break;
+    case RECOVERY_POINT: return std::string( "RECOVERY_POINT" ); break;
+    case NO_RECONSTRUCTION: return std::string( "NO_RECONSTRUCTION" ); break;
+    case TIME_CODE: return std::string( "TIME_CODE" ); break;
+    case SEI_MANIFEST: return std::string( "SEI_MANIFEST" ); break;
+    case SEI_PREFIX_INDICATION: return std::string( "SEI_PREFIX_INDICATION" ); break;
+    case ACTIVE_SUB_BITSTREAMS: return std::string( "ACTIVE_SUB_BITSTREAMS" ); break;
+    case COMPONENT_CODEC_MAPPING: return std::string( "COMPONENT_CODEC_MAPPING" ); break;
+    case SCENE_OBJECT_INFORMATION: return std::string( "SCENE_OBJECT_INFORMATION" ); break;
+    case OBJECT_LABEL_INFORMATION: return std::string( "OBJECT_LABEL_INFORMATION" ); break;
+    case PATCH_INFORMATION: return std::string( "PATCH_INFORMATION" ); break;
+    case VOLUMETRIC_RECTANGLE_INFORMATION: return std::string( "VOLUMETRIC_RECTANGLE_INFORMATION" ); break;
+    case ATLAS_OBJECT_INFORMATION: return std::string( "ATLAS_OBJECT_INFORMATION" ); break;
+    case VIEWPORT_CAMERA_PARAMETERS: return std::string( "VIEWPORT_CAMERA_PARAMETERS" ); break;
+    case VIEWPORT_POSITION: return std::string( "VIEWPORT_POSITION" ); break;
+    case DECODED_ATLAS_INFORMATION_HASH: return std::string( "DECODED_ATLAS_INFORMATION_HASH" ); break;
+    case ATTRIBUTE_TRANSFORMATION_PARAMS: return std::string( "ATTRIBUTE_TRANSFORMATION_PARAMS" ); break;
+    case OCCUPANCY_SYNTHESIS: return std::string( "OCCUPANCY_SYNTHESIS" ); break;
+    case GEOMETRY_SMOOTHING: return std::string( "GEOMETRY_SMOOTHING" ); break;
+    case ATTRIBUTE_SMOOTHING: return std::string( "ATTRIBUTE_SMOOTHING" ); break;
+    case RESERVED_SEI_MESSAGE: return std::string( "RESERVED_SEI_MESSAGE" ); break;
+    default: return std::string( "others" ); break;
+  }
+}
+
 static bool exist( const std::string& sString ) {
   struct stat buffer;
   return ( stat( sString.c_str(), &buffer ) == 0 );

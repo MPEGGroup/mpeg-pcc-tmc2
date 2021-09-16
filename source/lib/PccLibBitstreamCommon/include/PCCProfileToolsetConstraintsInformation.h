@@ -43,11 +43,11 @@ class ProfileToolsetConstraintsInformation {
   ProfileToolsetConstraintsInformation() :
       oneFrameOnlyFlag_( false ),
       EOMContraintFlag_( false ),
-      maxMapCountMinus1_( 0 ),
+      maxMapCountMinus1_( 1 ),
       maxAtlasCountMinus1_( 0 ),
       multipleMapStreamsConstraintFlag_( false ),
       PLRConstraintFlag_( false ),
-      attributeMaxDimensionMinus1_( 0 ),
+      attributeMaxDimensionMinus1_( 2 ),
       attributeMaxDimensionPartitionsMinus1_( 0 ),
       noEightOrientationsConstraintFlag_( true ),
       No45DegreeProjectionPatchConstraintFlag_( true ),

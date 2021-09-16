@@ -74,6 +74,7 @@ class PCCEncoderParameters {
   size_t            frameCount_;
   size_t            groupOfFramesSize_;
   std::string       uncompressedDataPath_;
+  uint32_t          forcedSsvhUnitSizePrecisionBytes_;
 
   // packing
   size_t minimumImageWidth_;
@@ -86,6 +87,8 @@ class PCCEncoderParameters {
   int         deltaQPD1_;
   int         deltaQPT0_;
   int         deltaQPT1_;
+  int         auxGeometryQP_;
+  int         auxAttributeQP_;
   std::string geometryConfig_;
   std::string geometry0Config_;
   std::string geometry1Config_;
@@ -121,7 +124,7 @@ class PCCEncoderParameters {
   // occupancy map encoding
   size_t      maxCandidateCount_;
   size_t      occupancyPrecision_;
-  std::string occupancyMapVideoEncoderConfig_;
+  std::string occupancyMapConfig_;
   size_t      occupancyMapQP_;
   size_t      EOMFixBitCount_;
   bool        occupancyMapRefinement_;
@@ -137,7 +140,6 @@ class PCCEncoderParameters {
   bool   gridSmoothing_;
   size_t gridSize_;
   bool   flagGeometrySmoothing_;
-  size_t postprocessSmoothingFilter_;
 
   // Patch Expansion (m47772, CE2.12)
   bool patchExpansion_;
@@ -231,7 +233,6 @@ class PCCEncoderParameters {
   // Lossy raw points Patch
   bool   lossyRawPointsPatch_;
   double minNormSumOfInvDist4MPSelection_;
-  int    lossyRawPointPatchGeoQP_;
 
   // GPA
   int globalPatchAllocation_;
@@ -307,9 +308,27 @@ class PCCEncoderParameters {
   size_t vvcCodecIdIndex_;
 
   // Profile toolset constraints information
-  bool oneV3CFrameOnlyFlag_;
-  bool noEightOrientationsConstraintFlag_;
-  bool no45DegreeProjectionPatchConstraintFlag_;
+  bool   oneV3CFrameOnlyFlag_;
+  bool   EOMContraintFlag_;
+  size_t maxMapCountMinus1_;
+  size_t maxAtlasCountMinus1_;
+  bool   multipleMapStreamsConstraintFlag_;
+  bool   PLRConstraintFlag_;
+  size_t attributeMaxDimensionMinus1_;
+  size_t attributeMaxDimensionPartitionsMinus1_;
+  bool   noEightOrientationsConstraintFlag_;
+  bool   no45DegreeProjectionPatchConstraintFlag_;
+
+  // reconstruction options : 0. ignore 1. use indicated syntaxes 2. open
+  size_t pixelDeinterleavingType_;
+  size_t pointLocalReconstructionType_;
+  size_t reconstructEomType_;
+  size_t duplicatedPointRemovalType_;
+  size_t reconstructRawType_;
+  size_t applyGeoSmoothingType_;
+  size_t applyAttrSmoothingType_;
+  size_t attrTransferFilterType_;
+  size_t applyOccupanySynthesisType_;
 
   // SHVC
   size_t shvcLayerIndex_;

@@ -120,10 +120,12 @@ struct PatchParams {
     aspsMapCountMinus1_    = mapCntMinus1;
     patchPackingBlockSize_ = 64;
     plriMapPresentFlag_.resize( aspsMapCountMinus1_ + 1 );
+    plriBlockSize_.resize( aspsMapCountMinus1_ + 1 );
   }
   ~PatchParams() {
     epduAssociatedPoints_.clear();
     plriMapPresentFlag_.clear();
+    plriBlockSize_.clear();
   };
 
   int64_t             patchType_;
@@ -147,6 +149,7 @@ struct PatchParams {
   size_t              patchPackingBlockSize_;
   PLRData             patchPLRData_;
   std::vector<bool>   plriMapPresentFlag_;
+  std::vector<size_t> plriBlockSize_;
 };
 
 class PCCCodec {
@@ -325,7 +328,16 @@ class PCCCodec {
                                    std::vector<std::vector<std::vector<int64_t>>>& tileB2PPatchParams,
                                    std::vector<std::vector<int64_t>>&              atlasB2PPatchParams );
 
-  void       inverseRotatePosition45DegreeOnAxis( size_t Axis, size_t lod, PCCPoint3D input, PCCVector3D& output );
+  void inverseRotatePosition45DegreeOnAxis( size_t Axis, size_t lod, PCCPoint3D input, PCCVector3D& output );
+
+  inline void SEIMd5Checksum( PCCContext& context, std::vector<uint8_t>& vec ) {
+    std::vector<uint8_t> md5Digest( 16 );
+    md5Digest = context.computeMD5( vec.data(), vec.size() );
+    for ( auto& e : md5Digest ) { TRACE_HLS( "%02x", e ); }
+    TRACE_HLS( "%s", "\n" );
+    vec.clear();
+  }
+
   PCCLogger* logger_ = nullptr;
 
  private:
@@ -387,19 +399,6 @@ class PCCCodec {
                       uint8_t                         gridSize,
                       uint16_t                        gridWidth,
                       std::vector<int>&               cellIndex );
-
-  bool gridFilteringTransfer( const std::vector<uint32_t>& partition,
-                              PCCPointSet3&                pointCloud,
-                              PCCPoint3D&                  curPoint,
-                              PCCVector3D&                 centroid,
-                              int&                         count,
-                              std::vector<int>&            gridCount,
-                              std::vector<PCCVector3D>&    center,
-                              std::vector<bool>&           doSmooth,
-                              int                          gridSize,
-                              int                          gridWidth,
-                              std::vector<PCCVector3D>&    colorGrid,
-                              PCCVector3D&                 color );
 
   void identifyBoundaryPoints( const std::vector<uint32_t>& occupancyMap,
                                const size_t                 x,

@@ -63,13 +63,13 @@ bool parseParameters( int          argc,
   // clang-format off
   po::Options opts;
   opts.addOptions()
-  ( "help,h",       print_help, false,      "This help text" )
-  ( "srcVideo,i",   srcVideo,   srcVideo,   "Source yuv file" )
-  ( "codecId,c",    codecId,    codecId,    "Codec Id" )
-  ( "width",        width,      width,      "Source video width" )
-  ( "height",       height,     height,     "Source video height" )
-  ( "nbyte,b",      nbyte,      nbyte,      "Source video nbyte" )
-  ( "encoderParameters,p", encoderParameters, encoderParameters,"Encoder parameters") ;
+  ( "help,h",              print_help,        false,            "This help text" )
+  ( "srcVideo,i",          srcVideo,          srcVideo,         "Source yuv file" )
+  ( "codecId,c",           codecId,           codecId,          "Codec Id" )
+  ( "width",               width,             width,            "Source video width" )
+  ( "height",              height,            height,           "Source video height" )
+  ( "nbyte,b",             nbyte,             nbyte,            "Source video nbyte" )
+  ( "encoderParameters,p", encoderParameters, encoderParameters,"Encoder parameters" ) ;
   // clang-format on
   po::setDefaults( opts );
   po::ErrorReporter        err;

@@ -62,10 +62,13 @@ class PCCDecoder : public PCCCodec {
   int decode( PCCContext& context, PCCGroupOfFrames& reconstruct, int32_t atlasIndex );
 
   void setParameters( const PCCDecoderParameters& params );
-  void setPostProcessingSeiParameters( GeneratePointCloudParameters& gpcParams, PCCContext& context );
-  void setGeneratePointCloudParameters( GeneratePointCloudParameters& gpcParams, PCCContext& context );
+  void setReconstructionParameters( const PCCDecoderParameters& params );
+  void setPostProcessingSeiParameters( GeneratePointCloudParameters& gpcParams, PCCContext& context, size_t atglIndex );
+  void setGeneratePointCloudParameters( GeneratePointCloudParameters& gpcParams,
+                                        PCCContext&                   context,
+                                        size_t                        atglIndex );
   void createPatchFrameDataStructure( PCCContext& context );
-  void createPatchFrameDataStructure( PCCContext& context, size_t atglOrder );
+  void createPatchFrameDataStructure( PCCContext& context, size_t atglIndex );
 
  private:
   void       setPointLocalReconstruction( PCCContext& context );
@@ -75,9 +78,9 @@ class PCCDecoder : public PCCCodec {
   bool       compareHashSEIMD5( std::vector<uint8_t>& encMD5, std::vector<uint8_t>& decMD5 );
   bool       compareHashSEICrc( uint16_t encCrc, uint16_t decCrc );
   bool       compareHashSEICheckSum( uint32_t encCheckSum, uint32_t decCheckSum );
-  void       createHashSEI( PCCContext& context, int frameIndex );
+  void       createHashSEI( PCCContext& context, int frameIndex, SEIDecodedAtlasInformationHash& sei );
   void       createHlsAtlasTileLogFiles( PCCContext& context, int frameIndex );
-  void       setConsitantFourCCCode( PCCContext& context );
+  void       setConsitantFourCCCode( PCCContext& context, size_t atglIndex );
   PCCCodecId getCodedCodecId( PCCContext& context, const uint8_t codecCodecId, const std::string& videoDecoderPath );
 
   PCCDecoderParameters     params_;

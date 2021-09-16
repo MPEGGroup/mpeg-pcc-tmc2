@@ -1,7 +1,8 @@
-diff -aru VTM-11.2_org/source/App/BitstreamExtractorApp/BitstreamExtractorApp.cpp VTM-11.2/source/App/BitstreamExtractorApp/BitstreamExtractorApp.cpp
---- VTM-11.2_org/source/App/BitstreamExtractorApp/BitstreamExtractorApp.cpp	2021-01-18 04:33:46.000000000 +0900
-+++ VTM-11.2/source/App/BitstreamExtractorApp/BitstreamExtractorApp.cpp	2021-04-08 17:10:33.477106800 +0900
-@@ -54,44 +54,44 @@
+diff --git a/source/App/BitstreamExtractorApp/BitstreamExtractorApp.cpp b/source/App/BitstreamExtractorApp/BitstreamExtractorApp.cpp
+index c31a7a5..60ac8b2 100644
+--- a/source/App/BitstreamExtractorApp/BitstreamExtractorApp.cpp
++++ b/source/App/BitstreamExtractorApp/BitstreamExtractorApp.cpp
+@@ -54,44 +54,44 @@ BitstreamExtractorApp::BitstreamExtractorApp()
  
  void BitstreamExtractorApp::xPrintVPSInfo (VPS *vps)
  {
@@ -64,7 +65,7 @@ diff -aru VTM-11.2_org/source/App/BitstreamExtractorApp/BitstreamExtractorApp.cp
              subP.getSubPicWidthInCTUs(), subP.getSubPicHeightInCTUs(), subP.getSubPicWidthInLumaSample(), subP.getSubPicHeightInLumaSample(), subP.getSubPicID());
      }
    }
-@@ -130,7 +130,7 @@
+@@ -130,7 +130,7 @@ bool BitstreamExtractorApp::xCheckSliceSubpicture(Slice &slice, int targetSubPic
    if (sps->getSubPicInfoPresentFlag())
    {
      // subpic ID is explicitly indicated
@@ -73,7 +74,7 @@ diff -aru VTM-11.2_org/source/App/BitstreamExtractorApp/BitstreamExtractorApp.cp
      return (targetSubPicId == slice.getSliceSubPicId());
    }
    else
-@@ -160,7 +160,7 @@
+@@ -160,7 +160,7 @@ bool BitstreamExtractorApp::xCheckSliceSubpicture(InputNALUnit &nalu, int target
    if (sps->getSubPicInfoPresentFlag())
    {
      // subpic ID is explicitly indicated
@@ -82,7 +83,7 @@ diff -aru VTM-11.2_org/source/App/BitstreamExtractorApp/BitstreamExtractorApp.cp
      return ( targetSubPicId == slice.getSliceSubPicId());
    }
    else
-@@ -600,7 +600,7 @@
+@@ -600,7 +600,7 @@ uint32_t BitstreamExtractorApp::decode()
         *  - two back-to-back start_code_prefixes
         *  - start_code_prefix immediately followed by EOF
         */
@@ -91,7 +92,7 @@ diff -aru VTM-11.2_org/source/App/BitstreamExtractorApp/BitstreamExtractorApp.cp
      }
      else
      {
-@@ -669,7 +669,7 @@
+@@ -669,7 +669,7 @@ uint32_t BitstreamExtractorApp::decode()
          m_parameterSetManager.storeSPS( sps, nalu.getBitstream().getFifo() );
          // get SPS back
          sps = m_parameterSetManager.getSPS(spsId);
@@ -100,7 +101,7 @@ diff -aru VTM-11.2_org/source/App/BitstreamExtractorApp/BitstreamExtractorApp.cp
  
          // example: just write the parsed SPS back to the stream
          // *** add modifications here ***
-@@ -704,7 +704,7 @@
+@@ -704,7 +704,7 @@ uint32_t BitstreamExtractorApp::decode()
          m_parameterSetManager.storePPS( pps, nalu.getBitstream().getFifo() );
          // get PPS back
          pps = m_parameterSetManager.getPPS(ppsId);
@@ -109,7 +110,7 @@ diff -aru VTM-11.2_org/source/App/BitstreamExtractorApp/BitstreamExtractorApp.cp
  
          SPS *sps = m_parameterSetManager.getSPS(pps->getSPSId());
          if ( nullptr == sps)
-@@ -769,7 +769,7 @@
+@@ -769,7 +769,7 @@ uint32_t BitstreamExtractorApp::decode()
          APS* aps = new APS();
          m_hlSynaxReader.setBitstream( &nalu.getBitstream() );
          m_hlSynaxReader.parseAPS( aps );
@@ -118,10 +119,11 @@ diff -aru VTM-11.2_org/source/App/BitstreamExtractorApp/BitstreamExtractorApp.cp
          int apsId = aps->getAPSId();
          int apsType = aps->getAPSType();
          // note: storeAPS may invalidate the aps pointer!
-diff -aru VTM-11.2_org/source/App/BitstreamExtractorApp/BitstreamExtractorAppCfg.cpp VTM-11.2/source/App/BitstreamExtractorApp/BitstreamExtractorAppCfg.cpp
---- VTM-11.2_org/source/App/BitstreamExtractorApp/BitstreamExtractorAppCfg.cpp	2021-01-18 04:33:46.000000000 +0900
-+++ VTM-11.2/source/App/BitstreamExtractorApp/BitstreamExtractorAppCfg.cpp	2021-04-08 17:10:33.478104100 +0900
-@@ -80,7 +80,7 @@
+diff --git a/source/App/BitstreamExtractorApp/BitstreamExtractorAppCfg.cpp b/source/App/BitstreamExtractorApp/BitstreamExtractorAppCfg.cpp
+index 8da4816..a3e254f 100644
+--- a/source/App/BitstreamExtractorApp/BitstreamExtractorAppCfg.cpp
++++ b/source/App/BitstreamExtractorApp/BitstreamExtractorAppCfg.cpp
+@@ -80,7 +80,7 @@ namespace po = df::program_options_lite;
    ("TraceFile",                 tracingFile,                           string( "" ), "Tracing file" )
  #endif
  
@@ -130,7 +132,7 @@ diff -aru VTM-11.2_org/source/App/BitstreamExtractorApp/BitstreamExtractorAppCfg
    ("WarnUnknowParameter,w",     warnUnknownParameter,                  false,        "Warn for unknown configuration parameters instead of failing")
    ;
  
-@@ -105,7 +105,7 @@
+@@ -105,7 +105,7 @@ namespace po = df::program_options_lite;
    {
      std::string channelsList;
      g_trace_ctx->getChannelsList( channelsList );
@@ -139,10 +141,11 @@ diff -aru VTM-11.2_org/source/App/BitstreamExtractorApp/BitstreamExtractorAppCfg
    }
    DTRACE_UPDATE( g_trace_ctx, std::make_pair( "final", 1 ) );
  #endif
-diff -aru VTM-11.2_org/source/App/BitstreamExtractorApp/bitstreamextractormain.cpp VTM-11.2/source/App/BitstreamExtractorApp/bitstreamextractormain.cpp
---- VTM-11.2_org/source/App/BitstreamExtractorApp/bitstreamextractormain.cpp	2021-01-18 04:33:46.000000000 +0900
-+++ VTM-11.2/source/App/BitstreamExtractorApp/bitstreamextractormain.cpp	2021-04-08 17:10:33.480098400 +0900
-@@ -84,7 +84,7 @@
+diff --git a/source/App/BitstreamExtractorApp/bitstreamextractormain.cpp b/source/App/BitstreamExtractorApp/bitstreamextractormain.cpp
+index 3e7b381..7ec98de 100644
+--- a/source/App/BitstreamExtractorApp/bitstreamextractormain.cpp
++++ b/source/App/BitstreamExtractorApp/bitstreamextractormain.cpp
+@@ -84,7 +84,7 @@ int main(int argc, char* argv[])
  #endif // !_DEBUG
      if( 0 != extractorApp->decode() )
      {
@@ -151,10 +154,11 @@ diff -aru VTM-11.2_org/source/App/BitstreamExtractorApp/bitstreamextractormain.c
        returnCode = EXIT_FAILURE;
      }
  #ifndef _DEBUG
-diff -aru VTM-11.2_org/source/App/DecoderApp/DecApp.cpp VTM-11.2/source/App/DecoderApp/DecApp.cpp
---- VTM-11.2_org/source/App/DecoderApp/DecApp.cpp	2021-01-18 04:33:46.000000000 +0900
-+++ VTM-11.2/source/App/DecoderApp/DecApp.cpp	2021-04-08 17:10:33.482093300 +0900
-@@ -186,7 +186,7 @@
+diff --git a/source/App/DecoderApp/DecApp.cpp b/source/App/DecoderApp/DecApp.cpp
+index 023ab15..8c4cb34 100644
+--- a/source/App/DecoderApp/DecApp.cpp
++++ b/source/App/DecoderApp/DecApp.cpp
+@@ -189,7 +189,7 @@ uint32_t DecApp::decode()
           *  - two back-to-back start_code_prefixes
           *  - start_code_prefix immediately followed by EOF
           */
@@ -163,7 +167,7 @@ diff -aru VTM-11.2_org/source/App/DecoderApp/DecApp.cpp VTM-11.2/source/App/Deco
        }
        else
        {
-@@ -281,7 +281,7 @@
+@@ -330,7 +330,7 @@ uint32_t DecApp::decode()
        if (!loopFiltered[nalu.m_nuhLayerId] || bitstreamFile)
        {
          m_cDecLib.executeLoopFilters();
@@ -172,10 +176,11 @@ diff -aru VTM-11.2_org/source/App/DecoderApp/DecApp.cpp VTM-11.2/source/App/Deco
        }
        loopFiltered[nalu.m_nuhLayerId] = (nalu.m_nalUnitType == NAL_UNIT_EOS);
        if (nalu.m_nalUnitType == NAL_UNIT_EOS)
-diff -aru VTM-11.2_org/source/App/DecoderApp/DecAppCfg.cpp VTM-11.2/source/App/DecoderApp/DecAppCfg.cpp
---- VTM-11.2_org/source/App/DecoderApp/DecAppCfg.cpp	2021-01-18 04:33:46.000000000 +0900
-+++ VTM-11.2/source/App/DecoderApp/DecAppCfg.cpp	2021-04-08 17:10:33.484087600 +0900
-@@ -129,7 +129,7 @@
+diff --git a/source/App/DecoderApp/DecAppCfg.cpp b/source/App/DecoderApp/DecAppCfg.cpp
+index 0a126cb..d1ef1d0 100644
+--- a/source/App/DecoderApp/DecAppCfg.cpp
++++ b/source/App/DecoderApp/DecAppCfg.cpp
+@@ -132,7 +132,7 @@ bool DecAppCfg::parseCfg( int argc, char* argv[] )
  
    for (list<const char*>::const_iterator it = argv_unhandled.begin(); it != argv_unhandled.end(); it++)
    {
@@ -184,7 +189,7 @@ diff -aru VTM-11.2_org/source/App/DecoderApp/DecAppCfg.cpp VTM-11.2/source/App/D
    }
  
    if (argc == 1 || do_help)
-@@ -153,7 +153,7 @@
+@@ -156,7 +156,7 @@ bool DecAppCfg::parseCfg( int argc, char* argv[] )
    {
      std::string sChannelsList;
      g_trace_ctx->getChannelsList( sChannelsList );
@@ -193,7 +198,7 @@ diff -aru VTM-11.2_org/source/App/DecoderApp/DecAppCfg.cpp VTM-11.2/source/App/D
    }
  #endif
  
-@@ -167,13 +167,13 @@
+@@ -170,13 +170,13 @@ bool DecAppCfg::parseCfg( int argc, char* argv[] )
    m_outputColourSpaceConvert = stringToInputColourSpaceConvert(outputColourSpaceConvert, false);
    if (m_outputColourSpaceConvert>=NUMBER_INPUT_COLOUR_SPACE_CONVERSIONS)
    {
@@ -209,7 +214,7 @@ diff -aru VTM-11.2_org/source/App/DecoderApp/DecAppCfg.cpp VTM-11.2/source/App/D
      return false;
    }
  
-@@ -190,7 +190,7 @@
+@@ -193,7 +193,7 @@ bool DecAppCfg::parseCfg( int argc, char* argv[] )
          {
            if ( m_targetDecLayerIdSet.size() == 0 )
            {
@@ -218,7 +223,7 @@ diff -aru VTM-11.2_org/source/App/DecoderApp/DecAppCfg.cpp VTM-11.2/source/App/D
            }
            break;
          }
-@@ -201,7 +201,7 @@
+@@ -204,7 +204,7 @@ bool DecAppCfg::parseCfg( int argc, char* argv[] )
          }
          if ( layerIdParsed < 0 || layerIdParsed >= MAX_NUM_LAYER_IDS )
          {
@@ -227,7 +232,7 @@ diff -aru VTM-11.2_org/source/App/DecoderApp/DecAppCfg.cpp VTM-11.2/source/App/D
          }
          else
          {
-@@ -212,13 +212,13 @@
+@@ -215,13 +215,13 @@ bool DecAppCfg::parseCfg( int argc, char* argv[] )
        fclose (targetDecLayerIdSetFile);
        if ( m_targetDecLayerIdSet.size() > 0 && !isLayerIdZeroIncluded )
        {
@@ -243,10 +248,11 @@ diff -aru VTM-11.2_org/source/App/DecoderApp/DecAppCfg.cpp VTM-11.2/source/App/D
      }
    }
    if (m_iMaxTemporalLayer != 500)
-diff -aru VTM-11.2_org/source/App/DecoderApp/decmain.cpp VTM-11.2/source/App/DecoderApp/decmain.cpp
---- VTM-11.2_org/source/App/DecoderApp/decmain.cpp	2021-01-18 04:33:46.000000000 +0900
-+++ VTM-11.2/source/App/DecoderApp/decmain.cpp	2021-04-08 17:10:33.485085100 +0900
-@@ -90,7 +90,7 @@
+diff --git a/source/App/DecoderApp/decmain.cpp b/source/App/DecoderApp/decmain.cpp
+index 94264a0..d4a251b 100644
+--- a/source/App/DecoderApp/decmain.cpp
++++ b/source/App/DecoderApp/decmain.cpp
+@@ -90,7 +90,7 @@ int main(int argc, char* argv[])
  #endif // !_DEBUG
      if( 0 != pcDecApp->decode() )
      {
@@ -255,10 +261,11 @@ diff -aru VTM-11.2_org/source/App/DecoderApp/decmain.cpp VTM-11.2/source/App/Dec
        returnCode = EXIT_FAILURE;
      }
  #ifndef _DEBUG
-diff -aru VTM-11.2_org/source/App/EncoderApp/EncAppCfg.cpp VTM-11.2/source/App/EncoderApp/EncAppCfg.cpp
---- VTM-11.2_org/source/App/EncoderApp/EncAppCfg.cpp	2021-01-18 04:33:46.000000000 +0900
-+++ VTM-11.2/source/App/EncoderApp/EncAppCfg.cpp	2021-04-08 17:10:33.490071700 +0900
-@@ -754,7 +754,7 @@
+diff --git a/source/App/EncoderApp/EncAppCfg.cpp b/source/App/EncoderApp/EncAppCfg.cpp
+index ed0823e..5dc4eea 100644
+--- a/source/App/EncoderApp/EncAppCfg.cpp
++++ b/source/App/EncoderApp/EncAppCfg.cpp
+@@ -761,7 +761,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
    ("SummaryOutFilename",                              m_summaryOutFilename,                          string(), "Filename to use for producing summary output file. If empty, do not produce a file.")
    ("SummaryPicFilenameBase",                          m_summaryPicFilenameBase,                      string(), "Base filename to use for producing summary picture output files. The actual filenames used will have I.txt, P.txt and B.txt appended. If empty, do not produce a file.")
    ("SummaryVerboseness",                              m_summaryVerboseness,                                0u, "Specifies the level of the verboseness of the text output")
@@ -267,7 +274,7 @@ diff -aru VTM-11.2_org/source/App/EncoderApp/EncAppCfg.cpp VTM-11.2/source/App/E
  
  #if JVET_O0756_CONFIG_HDRMETRICS || JVET_O0756_CALCULATE_HDRMETRICS
    ( "WhitePointDeltaE1",                              m_whitePointDeltaE[0],                            100.0, "1st reference white point value")
-@@ -1557,7 +1557,7 @@
+@@ -1656,7 +1656,7 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
  
    for (list<const char*>::const_iterator it = argv_unhandled.begin(); it != argv_unhandled.end(); it++)
    {
@@ -276,7 +283,7 @@ diff -aru VTM-11.2_org/source/App/EncoderApp/EncAppCfg.cpp VTM-11.2/source/App/E
    }
  
    if (argc == 1 || do_help)
-@@ -1730,17 +1730,17 @@
+@@ -1829,17 +1829,17 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
    if (m_costMode != COST_LOSSLESS_CODING && m_mixedLossyLossless)
    {
      m_mixedLossyLossless = 0;
@@ -302,21 +309,21 @@ diff -aru VTM-11.2_org/source/App/EncoderApp/EncAppCfg.cpp VTM-11.2/source/App/E
    }
  
    if (m_costMode == COST_LOSSLESS_CODING && m_mixedLossyLossless)
-@@ -1955,11 +1955,11 @@
+@@ -2061,11 +2061,11 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
        // conformance
        if ((m_confWinLeft == 0) && (m_confWinRight == 0) && (m_confWinTop == 0) && (m_confWinBottom == 0))
        {
 -        msg( ERROR, "Warning: Conformance window enabled, but all conformance window parameters set to zero\n");
 +        msg( VTM_ERROR, "Warning: Conformance window enabled, but all conformance window parameters set to zero\n");
        }
-       if ((m_aiPad[1] != 0) || (m_aiPad[0]!=0))
+       if ((m_sourcePadding[1] != 0) || (m_sourcePadding[0]!=0))
        {
 -        msg( ERROR, "Warning: Conformance window enabled, padding parameters will be ignored\n");
 +        msg( VTM_ERROR, "Warning: Conformance window enabled, padding parameters will be ignored\n");
        }
-       m_aiPad[1] = m_aiPad[0] = 0;
+       m_sourcePadding[1] = m_sourcePadding[0] = 0;
        break;
-@@ -2150,12 +2150,12 @@
+@@ -2273,12 +2273,12 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
    {
      if (!m_horCollocatedChromaFlag)
      {
@@ -331,7 +338,7 @@ diff -aru VTM-11.2_org/source/App/EncoderApp/EncAppCfg.cpp VTM-11.2/source/App/E
        m_verCollocatedChromaFlag = true;
      }
    }
-@@ -2371,16 +2371,16 @@
+@@ -2507,16 +2507,16 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
    {
      std::string sChannelsList;
      g_trace_ctx->getChannelsList( sChannelsList );
@@ -352,7 +359,7 @@ diff -aru VTM-11.2_org/source/App/EncoderApp/EncAppCfg.cpp VTM-11.2/source/App/E
    }
  
  #if ENABLE_QPA_SUB_CTU
-@@ -2403,9 +2403,9 @@
+@@ -2539,9 +2539,9 @@ bool EncAppCfg::parseCfg( int argc, char* argv[] )
    if( ( ( int ) m_fQP < 38 ) && ( m_iGOPSize > 4 ) && m_bUsePerceptQPA && !m_bUseAdaptiveQP && ( m_iSourceHeight <= 1280 ) && ( m_iSourceWidth <= 2048 ) )
   #endif
    {
@@ -365,32 +372,46 @@ diff -aru VTM-11.2_org/source/App/EncoderApp/EncAppCfg.cpp VTM-11.2/source/App/E
  
      m_uiCTUSize = m_uiMaxCUWidth;
      if( ( 1u << m_log2MaxTbSize         ) > m_uiCTUSize ) m_log2MaxTbSize--;
-@@ -2514,7 +2514,7 @@
+@@ -2646,26 +2646,26 @@ int EncAppCfg::xAutoDetermineProfile()
+ 
+ bool EncAppCfg::xCheckParameter()
+ {
+-  msg( NOTICE, "\n" );
++  msg( VTM_NOTICE, "\n" );
    if (m_decodedPictureHashSEIType==HASHTYPE_NONE)
    {
-     msg( DETAILS, "******************************************************************\n");
+-    msg( DETAILS, "******************************************************************\n");
 -    msg( DETAILS, "** WARNING: --SEIDecodedPictureHash is now disabled by default. **\n");
-+    msg( DETAILS, "** VTM_WARNING: --SEIDecodedPictureHash is now disabled by default. **\n");
-     msg( DETAILS, "**          Automatic verification of decoded pictures by a     **\n");
-     msg( DETAILS, "**          decoder requires this option to be enabled.         **\n");
-     msg( DETAILS, "******************************************************************\n");
-@@ -2522,13 +2522,13 @@
+-    msg( DETAILS, "**          Automatic verification of decoded pictures by a     **\n");
+-    msg( DETAILS, "**          decoder requires this option to be enabled.         **\n");
+-    msg( DETAILS, "******************************************************************\n");
++    msg( VTM_DETAILS, "******************************************************************\n");
++    msg( VTM_DETAILS, "** VTM_WARNING: --SEIDecodedPictureHash is now disabled by default. **\n");
++    msg( VTM_DETAILS, "**          Automatic verification of decoded pictures by a     **\n");
++    msg( VTM_DETAILS, "**          decoder requires this option to be enabled.         **\n");
++    msg( VTM_DETAILS, "******************************************************************\n");
+   }
    if( m_profile==Profile::NONE )
    {
-     msg( DETAILS, "***************************************************************************\n");
+-    msg( DETAILS, "***************************************************************************\n");
 -    msg( DETAILS, "** WARNING: For conforming bitstreams a valid Profile value must be set! **\n");
-+    msg( DETAILS, "** VTM_WARNING: For conforming bitstreams a valid Profile value must be set! **\n");
-     msg( DETAILS, "***************************************************************************\n");
+-    msg( DETAILS, "***************************************************************************\n");
++    msg( VTM_DETAILS, "***************************************************************************\n");
++    msg( VTM_DETAILS, "** VTM_WARNING: For conforming bitstreams a valid Profile value must be set! **\n");
++    msg( VTM_DETAILS, "***************************************************************************\n");
    }
    if( m_level==Level::NONE )
    {
-     msg( DETAILS, "***************************************************************************\n");
+-    msg( DETAILS, "***************************************************************************\n");
 -    msg( DETAILS, "** WARNING: For conforming bitstreams a valid Level value must be set!   **\n");
-+    msg( DETAILS, "** VTM_WARNING: For conforming bitstreams a valid Level value must be set!   **\n");
-     msg( DETAILS, "***************************************************************************\n");
+-    msg( DETAILS, "***************************************************************************\n");
++    msg( VTM_DETAILS, "***************************************************************************\n");
++    msg( VTM_DETAILS, "** VTM_WARNING: For conforming bitstreams a valid Level value must be set!   **\n");
++    msg( VTM_DETAILS, "***************************************************************************\n");
    }
  
-@@ -2565,9 +2565,9 @@
+   bool check_failed = false; /* abort if there is a fatal configuration problem */
+@@ -2691,9 +2691,9 @@ bool EncAppCfg::xCheckParameter()
    xConfirmPara( m_bUsePerceptQPA && m_lumaLevelToDeltaQPMapping.mode >= 2, "QPA and SharpDeltaQP mode 2 cannot be used together" );
    if( m_bUsePerceptQPA && m_lumaLevelToDeltaQPMapping.mode == LUMALVL_TO_DQP_AVG_METHOD )
    {
@@ -403,7 +424,7 @@ diff -aru VTM-11.2_org/source/App/EncoderApp/EncAppCfg.cpp VTM-11.2/source/App/E
  
      m_lumaLevelToDeltaQPMapping.mode = LUMALVL_TO_DQP_NUM_MODES; // special QPA mode
    }
-@@ -2598,10 +2598,10 @@
+@@ -2730,10 +2730,10 @@ bool EncAppCfg::xCheckParameter()
  
    if( (m_internalBitDepth[CHANNEL_TYPE_LUMA] < m_inputBitDepth[CHANNEL_TYPE_LUMA]) || (m_internalBitDepth[CHANNEL_TYPE_CHROMA] < m_inputBitDepth[CHANNEL_TYPE_CHROMA]) )
    {
@@ -418,7 +439,7 @@ diff -aru VTM-11.2_org/source/App/EncoderApp/EncAppCfg.cpp VTM-11.2/source/App/E
    }
  
  #if !RExt__HIGH_BIT_DEPTH_SUPPORT
-@@ -2643,16 +2643,16 @@
+@@ -2775,16 +2775,16 @@ bool EncAppCfg::xCheckParameter()
    {
      if (!m_frameFieldInfoSEIEnabled)
      {
@@ -441,7 +462,7 @@ diff -aru VTM-11.2_org/source/App/EncoderApp/EncAppCfg.cpp VTM-11.2/source/App/E
      m_pictureTimingSEIEnabled = false;
    }
  
-@@ -2693,7 +2693,7 @@
+@@ -2825,7 +2825,7 @@ bool EncAppCfg::xCheckParameter()
  #endif
    if (m_lumaLevelToDeltaQPMapping.mode && m_lmcsEnabled)
    {
@@ -450,7 +471,7 @@ diff -aru VTM-11.2_org/source/App/EncoderApp/EncAppCfg.cpp VTM-11.2/source/App/E
      m_lumaLevelToDeltaQPMapping.mode = LUMALVL_TO_DQP_DISABLED;
    }
    if (!m_lmcsEnabled)
-@@ -2736,9 +2736,9 @@
+@@ -2868,9 +2868,9 @@ bool EncAppCfg::xCheckParameter()
    xConfirmPara( m_crQpOffsetDualTree >  12,   "Max. Chroma Cr QP Offset for dual tree is  12" );
    if (m_dualTree && (m_chromaFormatIDC == CHROMA_400))
    {
@@ -463,8 +484,8 @@ diff -aru VTM-11.2_org/source/App/EncoderApp/EncAppCfg.cpp VTM-11.2/source/App/E
      m_dualTree = false;
    }
    if (m_alf)
-@@ -2753,16 +2753,16 @@
-   }  
+@@ -2899,16 +2899,16 @@ bool EncAppCfg::xCheckParameter()
+   }
    if (m_ccalf && (m_chromaFormatIDC == CHROMA_400))
    {
 -    msg( WARNING, "****************************************************************************\n");
@@ -486,7 +507,7 @@ diff -aru VTM-11.2_org/source/App/EncoderApp/EncAppCfg.cpp VTM-11.2/source/App/E
      m_JointCbCrMode = false;
    }
    if (m_JointCbCrMode)
-@@ -2844,7 +2844,7 @@
+@@ -2990,7 +2990,7 @@ bool EncAppCfg::xCheckParameter()
    if ( m_Affine == 0 )
    {
      m_maxNumAffineMergeCand = m_sbTmvpEnableFlag ? 1 : 0;
@@ -495,7 +516,7 @@ diff -aru VTM-11.2_org/source/App/EncoderApp/EncAppCfg.cpp VTM-11.2/source/App/E
      m_PROF = false;
    }
  
-@@ -2987,7 +2987,7 @@
+@@ -3133,7 +3133,7 @@ bool EncAppCfg::xCheckParameter()
      int curPOC = ((checkGOP - 1) / m_iGOPSize)*m_iGOPSize * multipleFactor + m_RPLList0[curGOP].m_POC;
      if (m_RPLList0[curGOP].m_POC < 0 || m_RPLList1[curGOP].m_POC < 0)
      {
@@ -504,7 +525,7 @@ diff -aru VTM-11.2_org/source/App/EncoderApp/EncAppCfg.cpp VTM-11.2/source/App/E
        errorGOP = true;
      }
      else
-@@ -3023,7 +3023,7 @@
+@@ -3169,7 +3169,7 @@ bool EncAppCfg::xCheckParameter()
            }
            if (!found)
            {
@@ -513,7 +534,7 @@ diff -aru VTM-11.2_org/source/App/EncoderApp/EncAppCfg.cpp VTM-11.2/source/App/E
              errorGOP = true;
            }
          }
-@@ -3591,7 +3591,7 @@
+@@ -3737,7 +3737,7 @@ bool EncAppCfg::xCheckParameter()
      {
        if ( m_RCInitialQP == 0 )
        {
@@ -522,7 +543,7 @@ diff -aru VTM-11.2_org/source/App/EncoderApp/EncAppCfg.cpp VTM-11.2/source/App/E
          m_RCForceIntraQP = false;
        }
      }
-@@ -3774,7 +3774,7 @@
+@@ -3920,7 +3920,7 @@ const char *profileToString(const Profile::Name profile)
    }
  
    //if we get here, we didn't find this profile in the list - so there is an error
@@ -531,7 +552,7 @@ diff -aru VTM-11.2_org/source/App/EncoderApp/EncAppCfg.cpp VTM-11.2/source/App/E
    return "";
  }
  
-@@ -3915,163 +3915,163 @@
+@@ -4092,157 +4092,157 @@ void EncAppCfg::xPrintParameter()
    msg( DETAILS, "Max Num IBC Merge Candidates           : %d\n", m_maxNumIBCMergeCand );
    msg( DETAILS, "\n");
  
@@ -597,25 +618,27 @@ diff -aru VTM-11.2_org/source/App/EncoderApp/EncAppCfg.cpp VTM-11.2/source/App/E
 +  msg( VTM_VERBOSE, "WPP:%d ", (int)m_useWeightedPred);
 +  msg( VTM_VERBOSE, "WPB:%d ", (int)m_useWeightedBiPred);
 +  msg( VTM_VERBOSE, "PME:%d ", m_log2ParallelMergeLevel);
-   const int iWaveFrontSubstreams = m_entropyCodingSyncEnabledFlag ? (m_iSourceHeight + m_uiMaxCUHeight - 1) / m_uiMaxCUHeight : 1;
+   const int iWaveFrontSubstreams = m_entropyCodingSyncEnabledFlag ? (m_sourceHeight + m_uiMaxCUHeight - 1) / m_uiMaxCUHeight : 1;
 -  msg( VERBOSE, " WaveFrontSynchro:%d WaveFrontSubstreams:%d", m_entropyCodingSyncEnabledFlag?1:0, iWaveFrontSubstreams);
 -  msg( VERBOSE, " ScalingList:%d ", m_useScalingListId );
 -  msg( VERBOSE, "TMVPMode:%d ", m_TMVPModeId );
 -  msg( VERBOSE, " DQ:%d ", m_depQuantEnabledFlag);
 -  msg( VERBOSE, " SignBitHidingFlag:%d ", m_signDataHidingEnabledFlag);
 -  msg( VERBOSE, "RecalQP:%d ", m_recalculateQPAccordingToLambda ? 1 : 0 );
+-
+-  {
+-    msg( VERBOSE, "\nTOOL CFG: " );
+-    msg( VERBOSE, "LFNST:%d ", m_LFNST );
+-    msg( VERBOSE, "MMVD:%d ", m_MMVD);
+-    msg( VERBOSE, "Affine:%d ", m_Affine );
 +  msg( VTM_VERBOSE, " WaveFrontSynchro:%d WaveFrontSubstreams:%d", m_entropyCodingSyncEnabledFlag?1:0, iWaveFrontSubstreams);
 +  msg( VTM_VERBOSE, " ScalingList:%d ", m_useScalingListId );
 +  msg( VTM_VERBOSE, "TMVPMode:%d ", m_TMVPModeId );
 +  msg( VTM_VERBOSE, " DQ:%d ", m_depQuantEnabledFlag);
 +  msg( VTM_VERBOSE, " SignBitHidingFlag:%d ", m_signDataHidingEnabledFlag);
 +  msg( VTM_VERBOSE, "RecalQP:%d ", m_recalculateQPAccordingToLambda ? 1 : 0 );
- 
-   {
--    msg( VERBOSE, "\nTOOL CFG: " );
--    msg( VERBOSE, "LFNST:%d ", m_LFNST );
--    msg( VERBOSE, "MMVD:%d ", m_MMVD);
--    msg( VERBOSE, "Affine:%d ", m_Affine );
++
++  {
 +    msg( VTM_VERBOSE, "\nTOOL CFG: " );
 +    msg( VTM_VERBOSE, "LFNST:%d ", m_LFNST );
 +    msg( VTM_VERBOSE, "MMVD:%d ", m_MMVD);
@@ -728,7 +751,12 @@ diff -aru VTM-11.2_org/source/App/EncoderApp/EncAppCfg.cpp VTM-11.2/source/App/E
 -      if (m_adpOption > 0) { msg(VERBOSE, " CW:%d", m_initialCW); }
 -      msg(VERBOSE, " CSoffset:%d", m_CSoffset);
 -      msg(VERBOSE, ") ");
--    }
++      msg(VTM_VERBOSE, "(Signal:%s ", m_reshapeSignalType == 0 ? "SDR" : (m_reshapeSignalType == 2 ? "HDR-HLG" : "HDR-PQ"));
++      msg(VTM_VERBOSE, "Opt:%d", m_adpOption);
++      if (m_adpOption > 0) { msg(VTM_VERBOSE, " CW:%d", m_initialCW); }
++      msg(VTM_VERBOSE, " CSoffset:%d", m_CSoffset);
++      msg(VTM_VERBOSE, ") ");
+     }
 -    msg(VERBOSE, "MRL:%d ", m_MRL);
 -    msg(VERBOSE, "MIP:%d ", m_MIP);
 -    msg(VERBOSE, "EncDbOpt:%d ", m_encDbOpt);
@@ -748,12 +776,6 @@ diff -aru VTM-11.2_org/source/App/EncoderApp/EncAppCfg.cpp VTM-11.2/source/App/E
 -  msg( VERBOSE, "MaxNumAlfAlternativesChroma:%d ", m_maxNumAlfAlternativesChroma );
 -  if( m_MIP ) msg(VERBOSE, "FastMIP:%d ", m_useFastMIP);
 -  msg( VERBOSE, "FastLocalDualTree:%d ", m_fastLocalDualTreeMode );
-+      msg(VTM_VERBOSE, "(Signal:%s ", m_reshapeSignalType == 0 ? "SDR" : (m_reshapeSignalType == 2 ? "HDR-HLG" : "HDR-PQ"));
-+      msg(VTM_VERBOSE, "Opt:%d", m_adpOption);
-+      if (m_adpOption > 0) { msg(VTM_VERBOSE, " CW:%d", m_initialCW); }
-+      msg(VTM_VERBOSE, " CSoffset:%d", m_CSoffset);
-+      msg(VTM_VERBOSE, ") ");
-+    }
 +    msg(VTM_VERBOSE, "MRL:%d ", m_MRL);
 +    msg(VTM_VERBOSE, "MIP:%d ", m_MIP);
 +    msg(VTM_VERBOSE, "EncDbOpt:%d ", m_encDbOpt);
@@ -774,18 +796,6 @@ diff -aru VTM-11.2_org/source/App/EncoderApp/EncAppCfg.cpp VTM-11.2/source/App/E
 +  if( m_MIP ) msg(VTM_VERBOSE, "FastMIP:%d ", m_useFastMIP);
 +  msg( VTM_VERBOSE, "FastLocalDualTree:%d ", m_fastLocalDualTreeMode );
  
--  msg( VERBOSE, "NumSplitThreads:%d ", m_numSplitThreads );
-+  msg( VTM_VERBOSE, "NumSplitThreads:%d ", m_numSplitThreads );
-   if( m_numSplitThreads > 1 )
-   {
--    msg( VERBOSE, "ForceSingleSplitThread:%d ", m_forceSplitSequential );
-+    msg( VTM_VERBOSE, "ForceSingleSplitThread:%d ", m_forceSplitSequential );
-   }
--  msg( VERBOSE, "NumWppThreads:%d+%d ", m_numWppThreads, m_numWppExtraLines );
--  msg( VERBOSE, "EnsureWppBitEqual:%d ", m_ensureWppBitEqual );
-+  msg( VTM_VERBOSE, "NumWppThreads:%d+%d ", m_numWppThreads, m_numWppExtraLines );
-+  msg( VTM_VERBOSE, "EnsureWppBitEqual:%d ", m_ensureWppBitEqual );
- 
    if (m_resChangeInClvsEnabled)
    {
 -    msg( VERBOSE, "RPR:(%1.2lfx, %1.2lfx)|%d ", m_scalingRatioHor, m_scalingRatioVer, m_switchPocPeriod );
@@ -805,9 +815,12 @@ diff -aru VTM-11.2_org/source/App/EncoderApp/EncAppCfg.cpp VTM-11.2/source/App/E
 -  msg( VERBOSE, "\n\n");
 +  msg( VTM_VERBOSE, "\n\n");
  
-   msg( NOTICE, "\n");
+-  msg( NOTICE, "\n");
++  msg( VTM_NOTICE, "\n");
  
-@@ -4120,7 +4120,7 @@
+   fflush( stdout );
+ }
+@@ -4289,7 +4289,7 @@ bool confirmPara(bool bflag, const char* message)
      return false;
    }
  
@@ -816,10 +829,11 @@ diff -aru VTM-11.2_org/source/App/EncoderApp/EncAppCfg.cpp VTM-11.2/source/App/E
    return true;
  }
  
-diff -aru VTM-11.2_org/source/App/SEIRemovalApp/seiremovalmain.cpp VTM-11.2/source/App/SEIRemovalApp/seiremovalmain.cpp
---- VTM-11.2_org/source/App/SEIRemovalApp/seiremovalmain.cpp	2021-01-18 04:33:46.000000000 +0900
-+++ VTM-11.2/source/App/SEIRemovalApp/seiremovalmain.cpp	2021-04-08 17:10:33.491069300 +0900
-@@ -90,7 +90,7 @@
+diff --git a/source/App/SEIRemovalApp/seiremovalmain.cpp b/source/App/SEIRemovalApp/seiremovalmain.cpp
+index 309bb72..f797e2f 100644
+--- a/source/App/SEIRemovalApp/seiremovalmain.cpp
++++ b/source/App/SEIRemovalApp/seiremovalmain.cpp
+@@ -90,7 +90,7 @@ int main(int argc, char* argv[])
  #endif // !_DEBUG
      if( 0 != pcDecApp->decode() )
      {
@@ -828,10 +842,11 @@ diff -aru VTM-11.2_org/source/App/SEIRemovalApp/seiremovalmain.cpp VTM-11.2/sour
        returnCode = EXIT_FAILURE;
      }
  #ifndef _DEBUG
-diff -aru VTM-11.2_org/source/App/StreamMergeApp/StreamMergeApp.cpp VTM-11.2/source/App/StreamMergeApp/StreamMergeApp.cpp
---- VTM-11.2_org/source/App/StreamMergeApp/StreamMergeApp.cpp	2021-01-18 04:33:46.000000000 +0900
-+++ VTM-11.2/source/App/StreamMergeApp/StreamMergeApp.cpp	2021-04-08 17:10:33.493063900 +0900
-@@ -229,7 +229,7 @@
+diff --git a/source/App/StreamMergeApp/StreamMergeApp.cpp b/source/App/StreamMergeApp/StreamMergeApp.cpp
+index 2f813ef..bb092e3 100644
+--- a/source/App/StreamMergeApp/StreamMergeApp.cpp
++++ b/source/App/StreamMergeApp/StreamMergeApp.cpp
+@@ -229,7 +229,7 @@ bool StreamMergeApp::isNewPicture(std::ifstream *bitstreamFile, InputByteStream
      byteStreamNALUnit(*bytestream, nalu.getBitstream().getFifo(), stats);
      if (nalu.getBitstream().getFifo().empty())
      {
@@ -840,7 +855,7 @@ diff -aru VTM-11.2_org/source/App/StreamMergeApp/StreamMergeApp.cpp VTM-11.2/sou
      }
      else
      {
-@@ -325,7 +325,7 @@
+@@ -325,7 +325,7 @@ bool StreamMergeApp::isNewAccessUnit(bool newPicture, std::ifstream *bitstreamFi
      byteStreamNALUnit(*bytestream, nalu.getBitstream().getFifo(), stats);
      if (nalu.getBitstream().getFifo().empty())
      {
@@ -849,7 +864,7 @@ diff -aru VTM-11.2_org/source/App/StreamMergeApp/StreamMergeApp.cpp VTM-11.2/sou
      }
      else
      {
-@@ -414,7 +414,7 @@
+@@ -414,7 +414,7 @@ bool StreamMergeApp::preInjectNalu(MergeLayer &layer, InputNALUnit &inNalu, Outp
      layer.psManager.storeVPS(vps, hlsReader.getBitstream()->getFifo());
      hlsWriter.codeVPS(vps);
      outNalu.m_nalUnitType = NAL_UNIT_VPS;
@@ -858,7 +873,7 @@ diff -aru VTM-11.2_org/source/App/StreamMergeApp/StreamMergeApp.cpp VTM-11.2/sou
      return true;
    }
    default:
-@@ -433,7 +433,7 @@
+@@ -433,7 +433,7 @@ void StreamMergeApp::decodeAndRewriteNalu(MergeLayer &layer, InputNALUnit &inNal
    hlsReader.setBitstream(&inNalu.getBitstream());
    hlsWriter.setBitstream(&outNalu.m_Bitstream);
  
@@ -867,7 +882,7 @@ diff -aru VTM-11.2_org/source/App/StreamMergeApp/StreamMergeApp.cpp VTM-11.2/sou
    switch (inNalu.m_nalUnitType)
    {
    case NAL_UNIT_SPS:
-@@ -454,7 +454,7 @@
+@@ -454,7 +454,7 @@ void StreamMergeApp::decodeAndRewriteNalu(MergeLayer &layer, InputNALUnit &inNal
      layer.oldIDsPsManager.storeSPS(oldSps, hlsReader.getBitstream()->getFifo());
      layer.psManager.storeSPS(newSps, hlsReader.getBitstream()->getFifo());
      hlsWriter.codeSPS(newSps);
@@ -876,7 +891,7 @@ diff -aru VTM-11.2_org/source/App/StreamMergeApp/StreamMergeApp.cpp VTM-11.2/sou
      break;
    }
    case NAL_UNIT_PPS:
-@@ -475,7 +475,7 @@
+@@ -475,7 +475,7 @@ void StreamMergeApp::decodeAndRewriteNalu(MergeLayer &layer, InputNALUnit &inNal
      layer.oldIDsPsManager.storePPS(oldPps, hlsReader.getBitstream()->getFifo());
      layer.psManager.storePPS(newPps, hlsReader.getBitstream()->getFifo());
      hlsWriter.codePPS(newPps);
@@ -885,7 +900,7 @@ diff -aru VTM-11.2_org/source/App/StreamMergeApp/StreamMergeApp.cpp VTM-11.2/sou
      break;
    }
    case NAL_UNIT_PREFIX_APS:
-@@ -488,7 +488,7 @@
+@@ -488,7 +488,7 @@ void StreamMergeApp::decodeAndRewriteNalu(MergeLayer &layer, InputNALUnit &inNal
      aps->setAPSId(idIncrement);
      layer.psManager.storeAPS(aps, hlsReader.getBitstream()->getFifo());
      hlsWriter.codeAPS(aps);
@@ -894,7 +909,7 @@ diff -aru VTM-11.2_org/source/App/StreamMergeApp/StreamMergeApp.cpp VTM-11.2/sou
      break;
    }
    case NAL_UNIT_PH:
-@@ -501,24 +501,24 @@
+@@ -501,24 +501,24 @@ void StreamMergeApp::decodeAndRewriteNalu(MergeLayer &layer, InputNALUnit &inNal
      slice.setPOC(ph.getPocLsb());
      ph.setPPSId(layer.ppsIdMapping.at(ph.getPPSId()));
      hlsWriter.codePictureHeader(&ph, true, &slice);
@@ -924,7 +939,7 @@ diff -aru VTM-11.2_org/source/App/StreamMergeApp/StreamMergeApp.cpp VTM-11.2/sou
      // Copy payload from input nalu to output nalu. Code copied from SubpicMergeApp::copyInputNaluToOutputNalu().
      vector<uint8_t> &inFifo  = inNalu.getBitstream().getFifo();
      vector<uint8_t> &outFifo = outNalu.m_Bitstream.getFIFO();
-@@ -526,7 +526,7 @@
+@@ -526,7 +526,7 @@ void StreamMergeApp::decodeAndRewriteNalu(MergeLayer &layer, InputNALUnit &inNal
      break;
    }
    }
@@ -933,7 +948,7 @@ diff -aru VTM-11.2_org/source/App/StreamMergeApp/StreamMergeApp.cpp VTM-11.2/sou
  }
  
  uint32_t StreamMergeApp::mergeStreams()
-@@ -593,7 +593,7 @@
+@@ -593,7 +593,7 @@ uint32_t StreamMergeApp::mergeStreams()
  
          if (inNalu.getBitstream().getFifo().empty())
          {
@@ -942,10 +957,11 @@ diff -aru VTM-11.2_org/source/App/StreamMergeApp/StreamMergeApp.cpp VTM-11.2/sou
            continue;
          }
  
-diff -aru VTM-11.2_org/source/App/StreamMergeApp/StreamMergeMain.cpp VTM-11.2/source/App/StreamMergeApp/StreamMergeMain.cpp
---- VTM-11.2_org/source/App/StreamMergeApp/StreamMergeMain.cpp	2021-01-18 04:33:46.000000000 +0900
-+++ VTM-11.2/source/App/StreamMergeApp/StreamMergeMain.cpp	2021-04-08 17:10:33.495058500 +0900
-@@ -78,7 +78,7 @@
+diff --git a/source/App/StreamMergeApp/StreamMergeMain.cpp b/source/App/StreamMergeApp/StreamMergeMain.cpp
+index ad7c047..fd9c065 100644
+--- a/source/App/StreamMergeApp/StreamMergeMain.cpp
++++ b/source/App/StreamMergeApp/StreamMergeMain.cpp
+@@ -78,7 +78,7 @@ int main(int argc, char* argv[])
    // call decoding function
    if (0 != pStrMergeApp->mergeStreams())
    {
@@ -954,10 +970,11 @@ diff -aru VTM-11.2_org/source/App/StreamMergeApp/StreamMergeMain.cpp VTM-11.2/so
      returnCode = EXIT_FAILURE;
    }
  
-diff -aru VTM-11.2_org/source/App/SubpicMergeApp/SubpicMergeApp.cpp VTM-11.2/source/App/SubpicMergeApp/SubpicMergeApp.cpp
---- VTM-11.2_org/source/App/SubpicMergeApp/SubpicMergeApp.cpp	2021-01-18 04:33:46.000000000 +0900
-+++ VTM-11.2/source/App/SubpicMergeApp/SubpicMergeApp.cpp	2021-04-08 17:10:33.497053200 +0900
-@@ -156,7 +156,7 @@
+diff --git a/source/App/SubpicMergeApp/SubpicMergeApp.cpp b/source/App/SubpicMergeApp/SubpicMergeApp.cpp
+index c590344..89f057c 100644
+--- a/source/App/SubpicMergeApp/SubpicMergeApp.cpp
++++ b/source/App/SubpicMergeApp/SubpicMergeApp.cpp
+@@ -160,7 +160,7 @@ bool SubpicMergeApp::isNewPicture(std::ifstream *bitstreamFile, InputByteStream
      byteStreamNALUnit(*bytestream, nalu.getBitstream().getFifo(), stats);
      if (nalu.getBitstream().getFifo().empty())
      {
@@ -966,7 +983,7 @@ diff -aru VTM-11.2_org/source/App/SubpicMergeApp/SubpicMergeApp.cpp VTM-11.2/sou
      }
      else
      {
-@@ -241,7 +241,7 @@
+@@ -245,7 +245,7 @@ bool SubpicMergeApp::isNewPicture(std::ifstream *bitstreamFile, InputByteStream
  bool SubpicMergeApp::parseDCI(HLSyntaxReader &hlsReader, DCI &dci)
  {
    hlsReader.parseDCI(&dci);
@@ -975,7 +992,7 @@ diff -aru VTM-11.2_org/source/App/SubpicMergeApp/SubpicMergeApp.cpp VTM-11.2/sou
    return true;
  }
  
-@@ -254,7 +254,7 @@
+@@ -258,7 +258,7 @@ int SubpicMergeApp::parseVPS(HLSyntaxReader &hlsReader, ParameterSetManager &psM
    hlsReader.parseVPS(vps);
    int vpsId = vps->getVPSId();
    psManager.storeVPS(vps, hlsReader.getBitstream()->getFifo());
@@ -984,7 +1001,7 @@ diff -aru VTM-11.2_org/source/App/SubpicMergeApp/SubpicMergeApp.cpp VTM-11.2/sou
    return vpsId;
  }
  
-@@ -267,7 +267,7 @@
+@@ -271,7 +271,7 @@ int SubpicMergeApp::parseSPS(HLSyntaxReader &hlsReader, ParameterSetManager &psM
    hlsReader.parseSPS(sps);
    int spsId = sps->getSPSId();
    psManager.storeSPS(sps, hlsReader.getBitstream()->getFifo());
@@ -993,7 +1010,7 @@ diff -aru VTM-11.2_org/source/App/SubpicMergeApp/SubpicMergeApp.cpp VTM-11.2/sou
    return spsId;
  }
  
-@@ -280,7 +280,7 @@
+@@ -284,7 +284,7 @@ int SubpicMergeApp::parsePPS(HLSyntaxReader &hlsReader, ParameterSetManager &psM
    hlsReader.parsePPS(pps);
    int ppsId = pps->getPPSId();
    psManager.storePPS(pps, hlsReader.getBitstream()->getFifo());
@@ -1002,7 +1019,7 @@ diff -aru VTM-11.2_org/source/App/SubpicMergeApp/SubpicMergeApp.cpp VTM-11.2/sou
    return ppsId;
  }
  
-@@ -294,7 +294,7 @@
+@@ -298,7 +298,7 @@ void SubpicMergeApp::parseAPS(HLSyntaxReader &hlsReader, ParameterSetManager &ps
    apsId = aps->getAPSId();
    apsType = (int)aps->getAPSType();
    psManager.storeAPS(aps, hlsReader.getBitstream()->getFifo());
@@ -1011,7 +1028,7 @@ diff -aru VTM-11.2_org/source/App/SubpicMergeApp/SubpicMergeApp.cpp VTM-11.2/sou
  }
  
  /**
-@@ -304,7 +304,7 @@
+@@ -329,7 +329,7 @@ void SubpicMergeApp::parsePictureHeader(HLSyntaxReader &hlsReader, PicHeader &pi
  {
    hlsReader.parsePictureHeader(&picHeader, &psManager, true);
    picHeader.setValid();
@@ -1020,7 +1037,7 @@ diff -aru VTM-11.2_org/source/App/SubpicMergeApp/SubpicMergeApp.cpp VTM-11.2/sou
  }
  
  /**
-@@ -328,7 +328,7 @@
+@@ -353,7 +353,7 @@ void SubpicMergeApp::parseSliceHeader(HLSyntaxReader &hlsReader, InputNALUnit &n
      sliceData.write(inBs.readByte(), 8);
    }
  
@@ -1029,21 +1046,21 @@ diff -aru VTM-11.2_org/source/App/SubpicMergeApp/SubpicMergeApp.cpp VTM-11.2/sou
  }
  
  /**
-@@ -371,11 +371,11 @@
+@@ -409,11 +409,11 @@ void SubpicMergeApp::decodeNalu(Subpicture &subpic, InputNALUnit &nalu, SEI *&de
      }
      else if (nalu.isSei())
      {
--      msg( INFO, "  SEI");
-+      msg( VTM_INFO, "  SEI");
+-      msg( INFO, "  prefix SEI");
++      msg( VTM_INFO, "  prefix SEI");
      }
      else
      {
--      msg( INFO, "  NNN");  // Any other NAL unit that is not handled above
-+      msg( VTM_INFO, "  NNN");  // Any other NAL unit that is not handled above
+-      msg( INFO, "  ignored NALU");  // Any other NAL unit that is not handled above
++      msg( VTM_INFO, "  ignored NALU");  // Any other NAL unit that is not handled above
      }
      break;
    }
-@@ -421,7 +421,7 @@
+@@ -460,7 +460,7 @@ void SubpicMergeApp::parseSubpic(Subpicture &subpic, bool &morePictures)
      {
        subpic.nalus.pop_back();  // Remove empty nalu
        subpic.stats.pop_back();
@@ -1052,7 +1069,7 @@ diff -aru VTM-11.2_org/source/App/SubpicMergeApp/SubpicMergeApp.cpp VTM-11.2/sou
        continue;
      }
  
-@@ -1095,7 +1095,7 @@
+@@ -1159,7 +1159,7 @@ void SubpicMergeApp::mergeStreams(bool mixedNaluFlag)
    ParameterSetManager psManager;  // Parameter sets for merged stream
    int picNum = 0;
  
@@ -1061,7 +1078,7 @@ diff -aru VTM-11.2_org/source/App/SubpicMergeApp/SubpicMergeApp.cpp VTM-11.2/sou
  
    for (auto &subpic : *m_subpics)
    {
-@@ -1107,15 +1107,15 @@
+@@ -1171,15 +1171,15 @@ void SubpicMergeApp::mergeStreams(bool mixedNaluFlag)
    bool morePictures = true;
    while (morePictures)
    {
@@ -1080,7 +1097,7 @@ diff -aru VTM-11.2_org/source/App/SubpicMergeApp/SubpicMergeApp.cpp VTM-11.2/sou
      }
  
      validateSubpics();
-@@ -1194,7 +1194,7 @@
+@@ -1258,7 +1258,7 @@ void SubpicMergeApp::mergeYuvFiles(int bitdepth, int chromaFormat)
          m_outputStream.write(reinterpret_cast<char*>(destPic[cIdx]), cIdx == 0 ? numBytesPerPicY : numBytesPerPicUV);
        }
  
@@ -1089,10 +1106,11 @@ diff -aru VTM-11.2_org/source/App/SubpicMergeApp/SubpicMergeApp.cpp VTM-11.2/sou
      }
  
      picNum++;
-diff -aru VTM-11.2_org/source/Lib/CommonLib/ChromaFormat.h VTM-11.2/source/Lib/CommonLib/ChromaFormat.h
---- VTM-11.2_org/source/Lib/CommonLib/ChromaFormat.h	2021-01-18 04:33:46.000000000 +0900
-+++ VTM-11.2/source/Lib/CommonLib/ChromaFormat.h	2021-04-08 17:10:33.499047800 +0900
-@@ -76,7 +76,7 @@
+diff --git a/source/Lib/CommonLib/ChromaFormat.h b/source/Lib/CommonLib/ChromaFormat.h
+index 141351f..caa2656 100644
+--- a/source/Lib/CommonLib/ChromaFormat.h
++++ b/source/Lib/CommonLib/ChromaFormat.h
+@@ -76,7 +76,7 @@ static inline uint32_t getTotalSamples(const uint32_t width, const uint32_t heig
      case CHROMA_422: return  samplesPerChannel * 2;       break;
      case CHROMA_444: return  samplesPerChannel * 3;       break;
      default:
@@ -1101,7 +1119,7 @@ diff -aru VTM-11.2_org/source/Lib/CommonLib/ChromaFormat.h VTM-11.2/source/Lib/C
        break;
    }
  
-@@ -95,7 +95,7 @@
+@@ -95,7 +95,7 @@ static inline uint64_t getTotalFracBits(const uint32_t width, const uint32_t hei
    case CHROMA_422: bitsPerSampleTimes2 =   2 * (bitDepths[CHANNEL_TYPE_LUMA]   +   bitDepths[CHANNEL_TYPE_CHROMA]);        break;
    case CHROMA_444: bitsPerSampleTimes2 =   2 * (bitDepths[CHANNEL_TYPE_LUMA]   + 2*bitDepths[CHANNEL_TYPE_CHROMA]);        break;
    default:
@@ -1110,10 +1128,11 @@ diff -aru VTM-11.2_org/source/Lib/CommonLib/ChromaFormat.h VTM-11.2/source/Lib/C
      break;
    }
    return uint64_t( width * height * bitsPerSampleTimes2 ) << ( SCALE_BITS - 1 );
-diff -aru VTM-11.2_org/source/Lib/CommonLib/CommonDef.h VTM-11.2/source/Lib/CommonLib/CommonDef.h
---- VTM-11.2_org/source/Lib/CommonLib/CommonDef.h	2021-01-18 04:33:46.000000000 +0900
-+++ VTM-11.2/source/Lib/CommonLib/CommonDef.h	2021-04-08 17:10:33.500045300 +0900
-@@ -497,7 +497,7 @@
+diff --git a/source/Lib/CommonLib/CommonDef.h b/source/Lib/CommonLib/CommonDef.h
+index dfbf098..2635b8d 100644
+--- a/source/Lib/CommonLib/CommonDef.h
++++ b/source/Lib/CommonLib/CommonDef.h
+@@ -503,7 +503,7 @@ template <typename T> inline T ClipPel (const T a, const ClpRng& clpRng)
  
  template <typename T> inline void Check3( T minVal, T maxVal, T a)
  {
@@ -1122,7 +1141,7 @@ diff -aru VTM-11.2_org/source/Lib/CommonLib/CommonDef.h VTM-11.2/source/Lib/Comm
  }  ///< general min/max clip
  
  extern MsgLevel g_verbosity;
-@@ -509,7 +509,7 @@
+@@ -515,7 +515,7 @@ inline void msg( MsgLevel level, const char* fmt, ... )
    {
      va_list args;
      va_start( args, fmt );
@@ -1131,10 +1150,11 @@ diff -aru VTM-11.2_org/source/Lib/CommonLib/CommonDef.h VTM-11.2/source/Lib/Comm
      va_end( args );
    }
  }
-diff -aru VTM-11.2_org/source/Lib/CommonLib/DepQuant.cpp VTM-11.2/source/Lib/CommonLib/DepQuant.cpp
---- VTM-11.2_org/source/Lib/CommonLib/DepQuant.cpp	2021-01-18 04:33:46.000000000 +0900
-+++ VTM-11.2/source/Lib/CommonLib/DepQuant.cpp	2021-04-08 17:10:33.502040000 +0900
-@@ -150,10 +150,10 @@
+diff --git a/source/Lib/CommonLib/DepQuant.cpp b/source/Lib/CommonLib/DepQuant.cpp
+index f3e985d..70d175a 100644
+--- a/source/Lib/CommonLib/DepQuant.cpp
++++ b/source/Lib/CommonLib/DepQuant.cpp
+@@ -152,10 +152,10 @@ namespace DQIntern
  
    void Rom::xInitScanArrays()
    {
@@ -1149,10 +1169,11 @@ diff -aru VTM-11.2_org/source/Lib/CommonLib/DepQuant.cpp VTM-11.2/source/Lib/Com
      ::memset( m_scanId2NbInfoSbbArray, 0, sizeof(m_scanId2NbInfoSbbArray) );
      ::memset( m_scanId2NbInfoOutArray, 0, sizeof(m_scanId2NbInfoOutArray) );
      ::memset( m_tuParameters,          0, sizeof(m_tuParameters) );
-diff -aru VTM-11.2_org/source/Lib/CommonLib/IntraPrediction.cpp VTM-11.2/source/Lib/CommonLib/IntraPrediction.cpp
---- VTM-11.2_org/source/Lib/CommonLib/IntraPrediction.cpp	2021-01-18 04:33:46.000000000 +0900
-+++ VTM-11.2/source/Lib/CommonLib/IntraPrediction.cpp	2021-04-08 17:10:33.504034400 +0900
-@@ -1814,7 +1814,7 @@
+diff --git a/source/Lib/CommonLib/IntraPrediction.cpp b/source/Lib/CommonLib/IntraPrediction.cpp
+index 9a16707..55df275 100644
+--- a/source/Lib/CommonLib/IntraPrediction.cpp
++++ b/source/Lib/CommonLib/IntraPrediction.cpp
+@@ -1814,7 +1814,7 @@ void IntraPrediction::initIntraMip( const PredictionUnit &pu, const CompArea &ar
    CHECK( area.width > MIP_MAX_WIDTH || area.height > MIP_MAX_HEIGHT, "Error: block size not supported for MIP" );
  
    // prepare input (boundary) data for prediction
@@ -1161,10 +1182,11 @@ diff -aru VTM-11.2_org/source/Lib/CommonLib/IntraPrediction.cpp VTM-11.2/source/
    Pel       *ptrSrc     = getPredictorPtr(area.compID);
    const int  srcStride  = m_refBufferStride[area.compID];
    const int  srcHStride = 2;
-diff -aru VTM-11.2_org/source/Lib/CommonLib/MCTS.cpp VTM-11.2/source/Lib/CommonLib/MCTS.cpp
---- VTM-11.2_org/source/Lib/CommonLib/MCTS.cpp	2021-01-18 04:33:46.000000000 +0900
-+++ VTM-11.2/source/Lib/CommonLib/MCTS.cpp	2021-04-08 17:10:33.505032200 +0900
-@@ -181,7 +181,7 @@
+diff --git a/source/Lib/CommonLib/MCTS.cpp b/source/Lib/CommonLib/MCTS.cpp
+index 1690bd4..60e137b 100644
+--- a/source/Lib/CommonLib/MCTS.cpp
++++ b/source/Lib/CommonLib/MCTS.cpp
+@@ -181,7 +181,7 @@ static bool checkMVRange( const Mv& mv, const Area& tileArea, int predXLeft, int
    {
      if( msgFlag )
      {
@@ -1173,7 +1195,7 @@ diff -aru VTM-11.2_org/source/Lib/CommonLib/MCTS.cpp VTM-11.2/source/Lib/CommonL
      }
      return false;
    }
-@@ -189,7 +189,7 @@
+@@ -189,7 +189,7 @@ static bool checkMVRange( const Mv& mv, const Area& tileArea, int predXLeft, int
    {
      if( msgFlag )
      {
@@ -1182,10 +1204,11 @@ diff -aru VTM-11.2_org/source/Lib/CommonLib/MCTS.cpp VTM-11.2/source/Lib/CommonL
      }
      return false;
    }
-diff -aru VTM-11.2_org/source/Lib/CommonLib/ParameterSetManager.cpp VTM-11.2/source/Lib/CommonLib/ParameterSetManager.cpp
---- VTM-11.2_org/source/Lib/CommonLib/ParameterSetManager.cpp	2021-01-18 04:33:46.000000000 +0900
-+++ VTM-11.2/source/Lib/CommonLib/ParameterSetManager.cpp	2021-04-08 17:10:33.507026500 +0900
-@@ -92,7 +92,7 @@
+diff --git a/source/Lib/CommonLib/ParameterSetManager.cpp b/source/Lib/CommonLib/ParameterSetManager.cpp
+index 49975ba..7531194 100644
+--- a/source/Lib/CommonLib/ParameterSetManager.cpp
++++ b/source/Lib/CommonLib/ParameterSetManager.cpp
+@@ -92,7 +92,7 @@ bool ParameterSetManager::activatePPS(int ppsId, bool isIRAP)
          }
          else
          {
@@ -1194,7 +1217,7 @@ diff -aru VTM-11.2_org/source/Lib/CommonLib/ParameterSetManager.cpp VTM-11.2/sou
          }
  
          m_spsMap.clearActive();
-@@ -104,13 +104,13 @@
+@@ -104,13 +104,13 @@ bool ParameterSetManager::activatePPS(int ppsId, bool isIRAP)
        }
        else
        {
@@ -1210,7 +1233,7 @@ diff -aru VTM-11.2_org/source/Lib/CommonLib/ParameterSetManager.cpp VTM-11.2/sou
    }
  
    // Failed to activate if reach here.
-@@ -128,7 +128,7 @@
+@@ -128,7 +128,7 @@ bool ParameterSetManager::activateAPS(int apsId, int apsType)
    }
    else
    {
@@ -1219,10 +1242,11 @@ diff -aru VTM-11.2_org/source/Lib/CommonLib/ParameterSetManager.cpp VTM-11.2/sou
    }
    return false;
  }
-diff -aru VTM-11.2_org/source/Lib/CommonLib/PicYuvMD5.cpp VTM-11.2/source/Lib/CommonLib/PicYuvMD5.cpp
---- VTM-11.2_org/source/Lib/CommonLib/PicYuvMD5.cpp	2021-01-18 04:33:46.000000000 +0900
-+++ VTM-11.2/source/Lib/CommonLib/PicYuvMD5.cpp	2021-04-08 17:10:33.509021100 +0900
-@@ -291,7 +291,7 @@
+diff --git a/source/Lib/CommonLib/PicYuvMD5.cpp b/source/Lib/CommonLib/PicYuvMD5.cpp
+index a15f81a..2be1337 100644
+--- a/source/Lib/CommonLib/PicYuvMD5.cpp
++++ b/source/Lib/CommonLib/PicYuvMD5.cpp
+@@ -291,7 +291,7 @@ int calcAndPrintHashStatus(const CPelUnitBuf& pic, const SEIDecodedPictureHash*
      ok = "(OK)";
      if (recon_digest != pictureHashSEI->m_pictureHash)
      {
@@ -1231,10 +1255,11 @@ diff -aru VTM-11.2_org/source/Lib/CommonLib/PicYuvMD5.cpp VTM-11.2/source/Lib/Co
        mismatch = true;
      }
    }
-diff -aru VTM-11.2_org/source/Lib/CommonLib/Picture.cpp VTM-11.2/source/Lib/CommonLib/Picture.cpp
---- VTM-11.2_org/source/Lib/CommonLib/Picture.cpp	2021-01-18 04:33:46.000000000 +0900
-+++ VTM-11.2/source/Lib/CommonLib/Picture.cpp	2021-04-09 18:46:58.445260300 +0900
-@@ -197,6 +197,10 @@
+diff --git a/source/Lib/CommonLib/Picture.cpp b/source/Lib/CommonLib/Picture.cpp
+index 892477e..94c7849 100644
+--- a/source/Lib/CommonLib/Picture.cpp
++++ b/source/Lib/CommonLib/Picture.cpp
+@@ -73,6 +73,10 @@ Picture::Picture()
    layerId = NOT_VALID;
    numSlices = 1;
    unscaledPic = nullptr;
@@ -1245,7 +1270,7 @@ diff -aru VTM-11.2_org/source/Lib/CommonLib/Picture.cpp VTM-11.2/source/Lib/Comm
  }
  
  void Picture::create( const ChromaFormat &_chromaFormat, const Size &size, const unsigned _maxCUSize, const unsigned _margin, const bool _decoder, const int _layerId, const bool gopBasedTemporalFilterEnabled )
-@@ -221,6 +225,12 @@
+@@ -97,6 +101,12 @@ void Picture::create( const ChromaFormat &_chromaFormat, const Size &size, const
    m_ctuArea = UnitArea( _chromaFormat, Area( Position{ 0, 0 }, Size( _maxCUSize, _maxCUSize ) ) );
  #endif
    m_hashMap.clearAll();
@@ -1258,9 +1283,9 @@ diff -aru VTM-11.2_org/source/Lib/CommonLib/Picture.cpp VTM-11.2/source/Lib/Comm
  }
  
  void Picture::destroy()
-@@ -259,6 +269,13 @@
-       m_spliceIdx = NULL;
-     }
+@@ -130,6 +140,13 @@ void Picture::destroy()
+     delete[] m_spliceIdx;
+     m_spliceIdx = NULL;
    }
 +#if PATCH_BASED_MVP || PCC_ME_EXT
 +  delete m_blockToPatch;
@@ -1272,10 +1297,11 @@ diff -aru VTM-11.2_org/source/Lib/CommonLib/Picture.cpp VTM-11.2/source/Lib/Comm
  }
  
  void Picture::createTempBuffers( const unsigned _maxCUSize )
-diff -aru VTM-11.2_org/source/Lib/CommonLib/Picture.h VTM-11.2/source/Lib/CommonLib/Picture.h
---- VTM-11.2_org/source/Lib/CommonLib/Picture.h	2021-01-18 04:33:46.000000000 +0900
-+++ VTM-11.2/source/Lib/CommonLib/Picture.h	2021-04-09 18:35:06.155607600 +0900
-@@ -181,12 +181,20 @@
+diff --git a/source/Lib/CommonLib/Picture.h b/source/Lib/CommonLib/Picture.h
+index 2f98582..2a0c44d 100644
+--- a/source/Lib/CommonLib/Picture.h
++++ b/source/Lib/CommonLib/Picture.h
+@@ -147,12 +147,20 @@ struct Picture : public UnitArea
                                  const PelUnitBuf& afterScaling, const Window& scalingWindowAfter,
                                  const ChromaFormat chromaFormatIDC, const BitDepths& bitDepths, const bool useLumaFilter, const bool downsampling,
                                  const bool horCollocatedChromaFlag, const bool verCollocatedChromaFlag );
@@ -1296,10 +1322,11 @@ diff -aru VTM-11.2_org/source/Lib/CommonLib/Picture.h VTM-11.2/source/Lib/Common
  
  public:
    bool m_isSubPicBorderSaved;
-diff -aru VTM-11.2_org/source/Lib/CommonLib/RdCost.cpp VTM-11.2/source/Lib/CommonLib/RdCost.cpp
---- VTM-11.2_org/source/Lib/CommonLib/RdCost.cpp	2021-01-18 04:33:46.000000000 +0900
-+++ VTM-11.2/source/Lib/CommonLib/RdCost.cpp	2021-04-08 17:10:33.511015800 +0900
-@@ -3044,7 +3044,7 @@
+diff --git a/source/Lib/CommonLib/RdCost.cpp b/source/Lib/CommonLib/RdCost.cpp
+index 4c8c565..1c5fc8e 100644
+--- a/source/Lib/CommonLib/RdCost.cpp
++++ b/source/Lib/CommonLib/RdCost.cpp
+@@ -3029,7 +3029,7 @@ void RdCost::updateReshapeLumaLevelToWeightTable(SliceReshapeInfo &sliceReshape,
      }
      else
      {
@@ -1308,10 +1335,11 @@ diff -aru VTM-11.2_org/source/Lib/CommonLib/RdCost.cpp VTM-11.2/source/Lib/Commo
      }
    }
    else
-diff -aru VTM-11.2_org/source/Lib/CommonLib/RdCost.h VTM-11.2/source/Lib/CommonLib/RdCost.h
---- VTM-11.2_org/source/Lib/CommonLib/RdCost.h	2021-01-18 04:33:46.000000000 +0900
-+++ VTM-11.2/source/Lib/CommonLib/RdCost.h	2021-04-09 18:19:49.203036300 +0900
-@@ -152,6 +152,9 @@
+diff --git a/source/Lib/CommonLib/RdCost.h b/source/Lib/CommonLib/RdCost.h
+index 5737cdd..998b5fe 100644
+--- a/source/Lib/CommonLib/RdCost.h
++++ b/source/Lib/CommonLib/RdCost.h
+@@ -152,6 +152,9 @@ public:
  #endif
  
    void          setDistortionWeight   ( const ComponentID compID, const double distortionWeight ) { m_distortionWeight[compID] = distortionWeight; }
@@ -1321,10 +1349,11 @@ diff -aru VTM-11.2_org/source/Lib/CommonLib/RdCost.h VTM-11.2/source/Lib/CommonL
    void          setLambda             ( double dLambda, const BitDepths &bitDepths );
  
  #if WCG_EXT
-diff -aru VTM-11.2_org/source/Lib/CommonLib/Rom.cpp VTM-11.2/source/Lib/CommonLib/Rom.cpp
---- VTM-11.2_org/source/Lib/CommonLib/Rom.cpp	2021-01-18 04:33:46.000000000 +0900
-+++ VTM-11.2/source/Lib/CommonLib/Rom.cpp	2021-04-09 18:35:06.163587100 +0900
-@@ -56,7 +56,7 @@
+diff --git a/source/Lib/CommonLib/Rom.cpp b/source/Lib/CommonLib/Rom.cpp
+index 9c11a8a..45bc4f6 100644
+--- a/source/Lib/CommonLib/Rom.cpp
++++ b/source/Lib/CommonLib/Rom.cpp
+@@ -56,7 +56,7 @@ bool g_mctsDecCheckEnabled = false;
  //! \ingroup CommonLib
  //! \{
  
@@ -1333,7 +1362,7 @@ diff -aru VTM-11.2_org/source/Lib/CommonLib/Rom.cpp VTM-11.2/source/Lib/CommonLi
  
  const char* nalUnitTypeToString(NalUnitType type)
  {
-@@ -191,7 +191,7 @@
+@@ -191,7 +191,7 @@ public:
  
        default:
  
@@ -1342,7 +1371,7 @@ diff -aru VTM-11.2_org/source/Lib/CommonLib/Rom.cpp VTM-11.2/source/Lib/CommonLi
          break;
      }
  
-@@ -796,4 +796,13 @@
+@@ -780,4 +780,13 @@ int16_t   g_weightOffset       [GEO_NUM_PARTITION_MODE][GEO_NUM_CU_SIZE][GEO_NUM
  int8_t    g_angle2mask[GEO_NUM_ANGLES] = { 0, -1, 1, 2, 3, 4, -1, -1, 5, -1, -1, 4, 3, 2, 1, -1, 0, -1, 1, 2, 3, 4, -1, -1, 5, -1, -1, 4, 3, 2, 1, -1 };
  int8_t    g_Dis[GEO_NUM_ANGLES] = { 8, 8, 8, 8, 4, 4, 2, 1, 0, -1, -2, -4, -4, -8, -8, -8, -8, -8, -8, -8, -4, -4, -2, -1, 0, 1, 2, 4, 4, 8, 8, 8 };
  int8_t    g_angle2mirror[GEO_NUM_ANGLES] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 2, 2, 2, 2 };
@@ -1356,10 +1385,11 @@ diff -aru VTM-11.2_org/source/Lib/CommonLib/Rom.cpp VTM-11.2/source/Lib/CommonLi
 +bool g_vtmpatchesChange[PCC_ME_EXT_MAX_NUM_PATCHES];
 +#endif
  //! \}
-diff -aru VTM-11.2_org/source/Lib/CommonLib/Rom.h VTM-11.2/source/Lib/CommonLib/Rom.h
---- VTM-11.2_org/source/Lib/CommonLib/Rom.h	2021-01-18 04:33:46.000000000 +0900
-+++ VTM-11.2/source/Lib/CommonLib/Rom.h	2021-04-09 18:35:06.173559700 +0900
-@@ -231,5 +231,13 @@
+diff --git a/source/Lib/CommonLib/Rom.h b/source/Lib/CommonLib/Rom.h
+index 6611edd..bd1430f 100644
+--- a/source/Lib/CommonLib/Rom.h
++++ b/source/Lib/CommonLib/Rom.h
+@@ -232,5 +232,13 @@ extern int16_t   g_weightOffset       [GEO_NUM_PARTITION_MODE][GEO_NUM_CU_SIZE][
  extern int8_t    g_angle2mask         [GEO_NUM_ANGLES];
  extern int8_t    g_Dis[GEO_NUM_ANGLES];
  extern int8_t    g_angle2mirror[GEO_NUM_ANGLES];
@@ -1373,46 +1403,47 @@ diff -aru VTM-11.2_org/source/Lib/CommonLib/Rom.h VTM-11.2/source/Lib/CommonLib/
 +#endif
  #endif  //__TCOMROM__
  
-diff -aru VTM-11.2_org/source/Lib/CommonLib/Slice.cpp VTM-11.2/source/Lib/CommonLib/Slice.cpp
---- VTM-11.2_org/source/Lib/CommonLib/Slice.cpp	2021-01-18 04:33:46.000000000 +0900
-+++ VTM-11.2/source/Lib/CommonLib/Slice.cpp	2021-04-08 17:10:33.515005700 +0900
-@@ -1813,7 +1813,7 @@
+diff --git a/source/Lib/CommonLib/Slice.cpp b/source/Lib/CommonLib/Slice.cpp
+index 5e7da25..8fada11 100644
+--- a/source/Lib/CommonLib/Slice.cpp
++++ b/source/Lib/CommonLib/Slice.cpp
+@@ -1858,7 +1858,7 @@ int Slice::checkThatAllRefPicsAreAvailable(PicList& rcListPic, const ReferencePi
      {
        if (printErrors)
        {
--        msg(ERROR, "\nCurrent picture: %d Long-term reference picture with POC = %3d seems to have been removed or not correctly decoded.", this->getPOC(), notPresentPoc);
-+        msg(VTM_ERROR, "\nCurrent picture: %d Long-term reference picture with POC = %3d seems to have been removed or not correctly decoded.", this->getPOC(), notPresentPoc);
+-        msg(ERROR, "Error: Current picture: %d Long-term reference picture with POC = %3d seems to have been removed or not correctly decoded.\n", this->getPOC(), notPresentPoc);
++        msg(VTM_ERROR, "Error: Current picture: %d Long-term reference picture with POC = %3d seems to have been removed or not correctly decoded.\n", this->getPOC(), notPresentPoc);
        }
        return notPresentPoc;
      }
-@@ -1844,7 +1844,7 @@
+@@ -1891,7 +1891,7 @@ int Slice::checkThatAllRefPicsAreAvailable(PicList& rcListPic, const ReferencePi
      {
        if (printErrors)
        {
--        msg(ERROR, "\nCurrent picture: %d Short-term reference picture with POC = %3d seems to have been removed or not correctly decoded.", this->getPOC(), notPresentPoc);
-+        msg(VTM_ERROR, "\nCurrent picture: %d Short-term reference picture with POC = %3d seems to have been removed or not correctly decoded.", this->getPOC(), notPresentPoc);
+-        msg(ERROR, "Error: Current picture: %d Short-term reference picture with POC = %3d seems to have been removed or not correctly decoded.\n", this->getPOC(), notPresentPoc);
++        msg(VTM_ERROR, "Error: Current picture: %d Short-term reference picture with POC = %3d seems to have been removed or not correctly decoded.\n", this->getPOC(), notPresentPoc);
        }
        return notPresentPoc;
      }
-@@ -1923,7 +1923,7 @@
+@@ -1970,7 +1970,7 @@ int Slice::checkThatAllRefPicsAreAvailable(PicList& rcListPic, const ReferencePi
      {
        if (printErrors)
        {
--        msg(ERROR, "\nCurrent picture: %d Long-term reference picture with POC = %3d seems to have been removed or not correctly decoded.", this->getPOC(), notPresentPoc);
-+        msg(VTM_ERROR, "\nCurrent picture: %d Long-term reference picture with POC = %3d seems to have been removed or not correctly decoded.", this->getPOC(), notPresentPoc);
+-        msg(ERROR, "Error: Current picture: %d Long-term reference picture with POC = %3d seems to have been removed or not correctly decoded.\n", this->getPOC(), notPresentPoc);
++        msg(VTM_ERROR, "Error: Current picture: %d Long-term reference picture with POC = %3d seems to have been removed or not correctly decoded.\n", this->getPOC(), notPresentPoc);
        }
        *refPicIndex = ii;
        return notPresentPoc;
-@@ -1955,7 +1955,7 @@
+@@ -2004,7 +2004,7 @@ int Slice::checkThatAllRefPicsAreAvailable(PicList& rcListPic, const ReferencePi
      {
        if (printErrors)
        {
--        msg(ERROR, "\nCurrent picture: %d Short-term reference picture with POC = %3d seems to have been removed or not correctly decoded.", this->getPOC(), notPresentPoc);
-+        msg(VTM_ERROR, "\nCurrent picture: %d Short-term reference picture with POC = %3d seems to have been removed or not correctly decoded.", this->getPOC(), notPresentPoc);
+-        msg(ERROR, "Error: Current picture: %d Short-term reference picture with POC = %3d seems to have been removed or not correctly decoded.\n", this->getPOC(), notPresentPoc);
++        msg(VTM_ERROR, "Error: Current picture: %d Short-term reference picture with POC = %3d seems to have been removed or not correctly decoded.\n", this->getPOC(), notPresentPoc);
        }
        *refPicIndex = ii;
        return notPresentPoc;
-@@ -2019,17 +2019,17 @@
+@@ -2067,17 +2067,17 @@ void Slice::checkConformanceForDRAP( uint32_t temporalId )
      if (!(getNalUnitType() == NalUnitType::NAL_UNIT_CODED_SLICE_TRAIL ||
            getNalUnitType() == NalUnitType::NAL_UNIT_CODED_SLICE_STSA))
      {
@@ -1433,7 +1464,7 @@ diff -aru VTM-11.2_org/source/Lib/CommonLib/Slice.cpp VTM-11.2/source/Lib/Common
                        "entries of its reference picture lists except the preceding IRAP picture in decoding order.\n");
        }
      }
-@@ -2037,7 +2037,7 @@
+@@ -2085,7 +2085,7 @@ void Slice::checkConformanceForDRAP( uint32_t temporalId )
      {
        if (getRefPic(REF_PIC_LIST_1,i)->getPOC() != getAssociatedIRAPPOC())
        {
@@ -1442,7 +1473,7 @@ diff -aru VTM-11.2_org/source/Lib/CommonLib/Slice.cpp VTM-11.2/source/Lib/Common
                        "entries of its reference picture lists except the preceding IRAP picture in decoding order.\n");
        }
      }
-@@ -2049,7 +2049,7 @@
+@@ -2097,7 +2097,7 @@ void Slice::checkConformanceForDRAP( uint32_t temporalId )
      {
        if (getRefPic(REF_PIC_LIST_0,i)->getPOC() < getLatestDRAPPOC() && getRefPic(REF_PIC_LIST_0,i)->getPOC() != getAssociatedIRAPPOC())
        {
@@ -1451,7 +1482,7 @@ diff -aru VTM-11.2_org/source/Lib/CommonLib/Slice.cpp VTM-11.2/source/Lib/Common
                      "and output order shall not include, in the active entries of its reference picture lists, any picture "
                      "that precedes the DRAP picture in decoding order or output order, with the exception of the preceding "
                      "IRAP picture in decoding order. Problem is POC %d in RPL0.\n", getRefPic(REF_PIC_LIST_0,i)->getPOC());
-@@ -2059,7 +2059,7 @@
+@@ -2107,7 +2107,7 @@ void Slice::checkConformanceForDRAP( uint32_t temporalId )
      {
        if (getRefPic(REF_PIC_LIST_1,i)->getPOC() < getLatestDRAPPOC() && getRefPic(REF_PIC_LIST_1,i)->getPOC() != getAssociatedIRAPPOC())
        {
@@ -1460,7 +1491,7 @@ diff -aru VTM-11.2_org/source/Lib/CommonLib/Slice.cpp VTM-11.2/source/Lib/Common
                      "and output order shall not include, in the active entries of its reference picture lists, any picture "
                      "that precedes the DRAP picture in decoding order or output order, with the exception of the preceding "
                      "IRAP picture in decoding order. Problem is POC %d in RPL1", getRefPic(REF_PIC_LIST_1,i)->getPOC());
-@@ -4008,7 +4008,7 @@
+@@ -4069,7 +4069,7 @@ bool ScalingList::xParseScalingList(const std::string &fileName)
  
    if (fileName.empty())
    {
@@ -1469,7 +1500,7 @@ diff -aru VTM-11.2_org/source/Lib/CommonLib/Slice.cpp VTM-11.2/source/Lib/Common
      outputScalingListHelp(std::cout);
      std::cout << "\n\nExample scaling list file using default values:\n\n";
      outputScalingLists(std::cout);
-@@ -4016,7 +4016,7 @@
+@@ -4077,7 +4077,7 @@ bool ScalingList::xParseScalingList(const std::string &fileName)
    }
    else if ((fp = fopen(fileName.c_str(),"r")) == (FILE*)NULL)
    {
@@ -1478,7 +1509,7 @@ diff -aru VTM-11.2_org/source/Lib/CommonLib/Slice.cpp VTM-11.2/source/Lib/Common
      return true;
    }
  
-@@ -4050,7 +4050,7 @@
+@@ -4111,7 +4111,7 @@ bool ScalingList::xParseScalingList(const std::string &fileName)
            }
            if (!bFound)
            {
@@ -1487,7 +1518,7 @@ diff -aru VTM-11.2_org/source/Lib/CommonLib/Slice.cpp VTM-11.2/source/Lib/Common
              return true;
  
            }
-@@ -4060,12 +4060,12 @@
+@@ -4121,12 +4121,12 @@ bool ScalingList::xParseScalingList(const std::string &fileName)
            int data;
            if (fscanf(fp, "%d,", &data)!=1)
            {
@@ -1502,7 +1533,7 @@ diff -aru VTM-11.2_org/source/Lib/CommonLib/Slice.cpp VTM-11.2/source/Lib/Common
              return true;
            }
            src[i] = data;
-@@ -4091,19 +4091,19 @@
+@@ -4152,19 +4152,19 @@ bool ScalingList::xParseScalingList(const std::string &fileName)
              }
              if (!bFound)
              {
@@ -1525,11 +1556,12 @@ diff -aru VTM-11.2_org/source/Lib/CommonLib/Slice.cpp VTM-11.2/source/Lib/Common
              return true;
            }
            //overwrite DC value when size of matrix is larger than 16x16
-diff -aru VTM-11.2_org/source/Lib/CommonLib/TypeDef.h VTM-11.2/source/Lib/CommonLib/TypeDef.h
---- VTM-11.2_org/source/Lib/CommonLib/TypeDef.h	2021-01-18 04:33:46.000000000 +0900
-+++ VTM-11.2/source/Lib/CommonLib/TypeDef.h	2021-04-09 17:56:58.941486600 +0900
-@@ -52,6 +52,14 @@
- 
+diff --git a/source/Lib/CommonLib/TypeDef.h b/source/Lib/CommonLib/TypeDef.h
+index 7154f52..b0539a7 100644
+--- a/source/Lib/CommonLib/TypeDef.h
++++ b/source/Lib/CommonLib/TypeDef.h
+@@ -54,6 +54,13 @@
+ #define JVET_V0131_CORRECT_TR_HBD                          1 // correcting the 4x4 BDST7/DCT8 transform matrices for high bit-depth coding
  // clang-format off
  
 +#define PCC_ME_EXT                                        1
@@ -1539,11 +1571,10 @@ diff -aru VTM-11.2_org/source/Lib/CommonLib/TypeDef.h VTM-11.2/source/Lib/Common
 +#define PCC_ME_EXT_MAX_NUM_PATCHES                        1000
 +#define PCC_ME_NUM_LAYERS_ACTIVE                          2
 +#endif
-+
- //########### place macros to be removed in next cycle below this line ###############
+ #define JVET_V0078                                        1 // JVET-V0078: QP control for very smooth blocks
  
- #define JVET_S0078_NOOUTPUTPRIORPICFLAG                   0 // JVET-S0078: Handling of NoOutputOfPriorPicsFlag in output process
-@@ -244,7 +252,7 @@
+ //########### place macros to be removed in next cycle below this line ###############
+@@ -257,7 +264,7 @@ typedef std::pair<int, int>  TrCost;
  // ====================================================================================================================
  
  #if ((RExt__HIGH_PRECISION_FORWARD_TRANSFORM != 0) && (RExt__HIGH_BIT_DEPTH_SUPPORT == 0))
@@ -1552,7 +1583,7 @@ diff -aru VTM-11.2_org/source/Lib/CommonLib/TypeDef.h VTM-11.2/source/Lib/Common
  #endif
  
  // ====================================================================================================================
-@@ -1029,13 +1037,13 @@
+@@ -1042,13 +1049,13 @@ public:
  
  enum MsgLevel
  {
@@ -1573,18 +1604,12 @@ diff -aru VTM-11.2_org/source/Lib/CommonLib/TypeDef.h VTM-11.2/source/Lib/Common
  };
  enum RESHAPE_SIGNAL_TYPE
  {
-diff -aru VTM-11.2_org/source/Lib/CommonLib/dtrace.cpp VTM-11.2/source/Lib/CommonLib/dtrace.cpp
---- VTM-11.2_org/source/Lib/CommonLib/dtrace.cpp	2021-01-18 04:33:46.000000000 +0900
-+++ VTM-11.2/source/Lib/CommonLib/dtrace.cpp	2021-04-08 17:10:33.517997300 +0900
-@@ -273,12 +273,12 @@
-   if( m_error_code )
-   {
-     if( m_error_code == -2 )
--      str = ( " - DTrace ERROR: Add tracing rule failed: DECERR_DTRACE_BAD_RULE" );
-+      str = ( " - DTrace VTM_ERROR: Add tracing rule failed: DECERR_DTRACE_BAD_RULE" );
-     else if( m_error_code == -3 )
--      str = ( " - DTrace ERROR: Add tracing rule failed: DECERR_DTRACE_UNKNOWN_CHANNEL" );
-+      str = ( " - DTrace VTM_ERROR: Add tracing rule failed: DECERR_DTRACE_UNKNOWN_CHANNEL" );
+diff --git a/source/Lib/CommonLib/dtrace.cpp b/source/Lib/CommonLib/dtrace.cpp
+index c9b983c..46b70a6 100644
+--- a/source/Lib/CommonLib/dtrace.cpp
++++ b/source/Lib/CommonLib/dtrace.cpp
+@@ -323,7 +323,7 @@ std::string CDTrace::getErrMessage()
+     }
      else
      {
 -      str = " - DTrace ERROR: Undefined error";
@@ -1592,10 +1617,11 @@ diff -aru VTM-11.2_org/source/Lib/CommonLib/dtrace.cpp VTM-11.2/source/Lib/Commo
      }
    }
  
-diff -aru VTM-11.2_org/source/Lib/CommonLib/dtrace_next.h VTM-11.2/source/Lib/CommonLib/dtrace_next.h
---- VTM-11.2_org/source/Lib/CommonLib/dtrace_next.h	2021-01-18 04:33:46.000000000 +0900
-+++ VTM-11.2/source/Lib/CommonLib/dtrace_next.h	2021-04-08 17:10:33.519991800 +0900
-@@ -253,14 +253,14 @@
+diff --git a/source/Lib/CommonLib/dtrace_next.h b/source/Lib/CommonLib/dtrace_next.h
+index 8281ae7..193b551 100644
+--- a/source/Lib/CommonLib/dtrace_next.h
++++ b/source/Lib/CommonLib/dtrace_next.h
+@@ -253,14 +253,14 @@ inline CDTrace* tracing_init( std::string& sTracingFile, std::string& sTracingRu
  
    if( !sTracingFile.empty() || !sTracingRule.empty() )
    {
@@ -1613,10 +1639,11 @@ diff -aru VTM-11.2_org/source/Lib/CommonLib/dtrace_next.h VTM-11.2/source/Lib/Co
      //return NULL;
    }
  
-diff -aru VTM-11.2_org/source/Lib/DecoderLib/DecLib.cpp VTM-11.2/source/Lib/DecoderLib/DecLib.cpp
---- VTM-11.2_org/source/Lib/DecoderLib/DecLib.cpp	2021-01-18 04:33:46.000000000 +0900
-+++ VTM-11.2/source/Lib/DecoderLib/DecLib.cpp	2021-04-08 17:10:33.522984100 +0900
-@@ -99,7 +99,7 @@
+diff --git a/source/Lib/DecoderLib/DecLib.cpp b/source/Lib/DecoderLib/DecLib.cpp
+index b3b4205..a7742ce 100644
+--- a/source/Lib/DecoderLib/DecLib.cpp
++++ b/source/Lib/DecoderLib/DecLib.cpp
+@@ -99,7 +99,7 @@ bool tryDecodePicture( Picture* pcEncPic, const int expectedPoc, const std::stri
        pcDecLib->setAPSMapEnc( apsMap );
  
        bFirstCall = false;
@@ -1625,7 +1652,7 @@ diff -aru VTM-11.2_org/source/Lib/DecoderLib/DecLib.cpp VTM-11.2/source/Lib/Deco
      }
  
      bool goOn = true;
-@@ -128,7 +128,7 @@
+@@ -128,7 +128,7 @@ bool tryDecodePicture( Picture* pcEncPic, const int expectedPoc, const std::stri
           *  - two back-to-back start_code_prefixes
           *  - start_code_prefix immediately followed by EOF
           */
@@ -1634,7 +1661,7 @@ diff -aru VTM-11.2_org/source/Lib/DecoderLib/DecLib.cpp VTM-11.2/source/Lib/Deco
        }
        else
        {
-@@ -251,7 +251,7 @@
+@@ -251,7 +251,7 @@ bool tryDecodePicture( Picture* pcEncPic, const int expectedPoc, const std::stri
              pcDecLib->executeLoopFilters();
            }
  
@@ -1643,7 +1670,7 @@ diff -aru VTM-11.2_org/source/Lib/DecoderLib/DecLib.cpp VTM-11.2/source/Lib/Deco
  
            // write output
            if( ! pcListPic->empty())
-@@ -467,10 +467,10 @@
+@@ -471,10 +471,10 @@ DecLib::DecLib()
    for (int i = 0; i < MAX_VPS_LAYERS; i++)
    {
      m_associatedIRAPType[i] = NAL_UNIT_INVALID;
@@ -1658,7 +1685,7 @@ diff -aru VTM-11.2_org/source/Lib/DecoderLib/DecLib.cpp VTM-11.2/source/Lib/Deco
    }
  }
  
-@@ -764,7 +764,7 @@
+@@ -796,7 +796,7 @@ void DecLib::finishPicture(int &poc, PicList *&rpcListPic, MsgLevel msgl, bool a
      const SEIDecodedPictureHash *hash = ( pictureHashes.size() > 0 ) ? (SEIDecodedPictureHash*) *(pictureHashes.begin()) : NULL;
      if (pictureHashes.size() > 1)
      {
@@ -1666,8 +1693,8 @@ diff -aru VTM-11.2_org/source/Lib/DecoderLib/DecLib.cpp VTM-11.2/source/Lib/Deco
 +      msg( VTM_WARNING, "Warning: Got multiple decoded picture hash SEI messages. Using first.");
      }
      m_numberOfChecksumErrorsDetected += calcAndPrintHashStatus(((const Picture*) m_pcPic)->getRecoBuf(), hash, pcSlice->getSPS()->getBitDepths(), msgl);
-   }
-@@ -854,7 +854,7 @@
+ 
+@@ -936,7 +936,7 @@ void DecLib::xUpdateRasInit(Slice* slice)
  
  void DecLib::xCreateLostPicture( int iLostPoc, const int layerId )
  {
@@ -1676,7 +1703,7 @@ diff -aru VTM-11.2_org/source/Lib/DecoderLib/DecLib.cpp VTM-11.2/source/Lib/Deco
    Picture *cFillPic = xGetNewPicBuffer( *( m_parameterSetManager.getFirstSPS() ), *( m_parameterSetManager.getFirstPPS() ), 0, layerId );
  
    CHECK( !cFillPic->slices.size(), "No slices in picture" );
-@@ -877,7 +877,7 @@
+@@ -959,7 +959,7 @@ void DecLib::xCreateLostPicture( int iLostPoc, const int layerId )
      Picture *rpcPic = *(iterPic++);
      if(abs(rpcPic->getPOC() -iLostPoc)==closestPoc&&rpcPic->getPOC()!=m_apcSlicePilot->getPOC())
      {
@@ -1685,16 +1712,25 @@ diff -aru VTM-11.2_org/source/Lib/DecoderLib/DecLib.cpp VTM-11.2/source/Lib/Deco
        cFillPic->getRecoBuf().copyFrom( rpcPic->getRecoBuf() );
        break;
      }
-@@ -898,7 +898,7 @@
+@@ -980,7 +980,7 @@ void DecLib::xCreateLostPicture( int iLostPoc, const int layerId )
  
  void  DecLib::xCreateUnavailablePicture( const PPS *pps, const int iUnavailablePoc, const bool longTermFlag, const int temporalId, const int layerId, const bool interLayerRefPicFlag )
  {
--  msg(INFO, "\ninserting unavailable poc : %d\n", iUnavailablePoc);
-+  msg(VTM_INFO, "\ninserting unavailable poc : %d\n", iUnavailablePoc);
+-  msg(INFO, "Note: Inserting unavailable POC : %d\n", iUnavailablePoc);
++  msg(VTM_INFO, "Note: Inserting unavailable POC : %d\n", iUnavailablePoc);
    Picture* cFillPic = xGetNewPicBuffer( *( m_parameterSetManager.getFirstSPS() ), *( m_parameterSetManager.getFirstPPS() ), 0, layerId );
  
-   CHECK(!cFillPic->slices.size(), "No slices in picture");
-@@ -1950,7 +1950,7 @@
+   cFillPic->cs = new CodingStructure( g_globalUnitCache.cuCache, g_globalUnitCache.puCache, g_globalUnitCache.tuCache );
+@@ -1053,7 +1053,7 @@ void DecLib::checkLayerIdIncludedInCvss()
+       bool layerIdFind;
+       if ( m_firstAccessUnitPicInfo.size() == 0 )
+       {
+-        msg( NOTICE, "Note: checkIncludedInFirstAu(), m_firstAccessUnitPicInfo.size() is 0.\n");
++        msg( VTM_NOTICE, "Note: checkIncludedInFirstAu(), m_firstAccessUnitPicInfo.size() is 0.\n");
+         continue;
+       }
+       for (auto picFirst = m_firstAccessUnitPicInfo.begin(); picFirst != m_firstAccessUnitPicInfo.end(); picFirst++)
+@@ -2058,7 +2058,7 @@ void DecLib::xCheckParameterSetConstraints(const int layerId)
    else
    {
      CHECK(sps->getProfileTierLevel()->getProfileIdc() != Profile::NONE, "Unknown profile");
@@ -1703,7 +1739,7 @@ diff -aru VTM-11.2_org/source/Lib/DecoderLib/DecLib.cpp VTM-11.2/source/Lib/Deco
    }
    const LevelTierFeatures *levelTierFeatures = ptlFeatures.getLevelTierFeatures();
    if (levelTierFeatures != nullptr)
-@@ -1963,7 +1963,7 @@
+@@ -2071,7 +2071,7 @@ void DecLib::xCheckParameterSetConstraints(const int layerId)
    {
      CHECK(sps->getProfileTierLevel()->getLevelIdc() == Level::LEVEL15_5, "Cannot use level 15.5 with given profile");
      CHECK(sps->getProfileTierLevel()->getLevelIdc() != Level::NONE, "Unknown level");
@@ -1712,7 +1748,7 @@ diff -aru VTM-11.2_org/source/Lib/DecoderLib/DecLib.cpp VTM-11.2/source/Lib/Deco
    }
  }
  
-@@ -1973,7 +1973,7 @@
+@@ -2081,7 +2081,7 @@ void DecLib::xParsePrefixSEIsForUnknownVCLNal()
    while (!m_prefixSEINALUs.empty())
    {
      // do nothing?
@@ -1721,7 +1757,7 @@ diff -aru VTM-11.2_org/source/Lib/DecoderLib/DecLib.cpp VTM-11.2/source/Lib/Deco
      delete m_prefixSEINALUs.front();
    }
    // TODO: discard following suffix SEIs as well?
-@@ -2010,7 +2010,7 @@
+@@ -2118,7 +2118,7 @@ void DecLib::xCheckPrefixSEIMessages( SEIMessages& prefixSEIs )
      SEIFrameFieldInfo *ff = (SEIFrameFieldInfo*) frameFieldSEIs.front();
      if( pt->m_ptDisplayElementalPeriodsMinus1 != ff->m_displayElementalPeriodsMinus1 )
      {
@@ -1730,7 +1766,7 @@ diff -aru VTM-11.2_org/source/Lib/DecoderLib/DecLib.cpp VTM-11.2/source/Lib/Deco
      }
    }
  }
-@@ -2290,7 +2290,7 @@
+@@ -2418,7 +2418,7 @@ bool DecLib::xDecodeSlice(InputNALUnit &nalu, int &iSkipFrame, int iPOCLastDispl
    //we should only get a different poc for a new picture (with CTU address==0)
    if (m_apcSlicePilot->getPOC() != m_prevPOC && !m_firstSliceInSequence[nalu.m_nuhLayerId] && (m_apcSlicePilot->getFirstCtuRsAddrInSlice() != 0))
    {
@@ -1739,7 +1775,7 @@ diff -aru VTM-11.2_org/source/Lib/DecoderLib/DecLib.cpp VTM-11.2/source/Lib/Deco
    }
    m_prevLayerID = nalu.m_nuhLayerId;
  
-@@ -2441,10 +2441,10 @@
+@@ -2582,10 +2582,10 @@ bool DecLib::xDecodeSlice(InputNALUnit &nalu, int &iSkipFrame, int iPOCLastDispl
    pcSlice->getPic()->sliceSubpicIdx.push_back(pps->getSubPicIdxFromSubPicId(pcSlice->getSliceSubPicId()));
    pcSlice->checkCRA(pcSlice->getRPL0(), pcSlice->getRPL1(), m_pocCRA[nalu.m_nuhLayerId], m_cListPic);
    pcSlice->constructRefPicList(m_cListPic);
@@ -1754,7 +1790,7 @@ diff -aru VTM-11.2_org/source/Lib/DecoderLib/DecLib.cpp VTM-11.2/source/Lib/Deco
    pcSlice->checkRPL(pcSlice->getRPL0(), pcSlice->getRPL1(), m_associatedIRAPDecodingOrderNumber[nalu.m_nuhLayerId], m_cListPic);
    pcSlice->checkSTSA(m_cListPic);
    if (m_pcPic->cs->vps && !m_pcPic->cs->vps->getIndependentLayerFlag(m_pcPic->cs->vps->getGeneralLayerIdx(nalu.m_nuhLayerId)) && m_pcPic->cs->pps->getNumSubPics() > 1)
-@@ -2577,7 +2577,7 @@
+@@ -2718,7 +2718,7 @@ bool DecLib::xDecodeSlice(InputNALUnit &nalu, int &iSkipFrame, int iPOCLastDispl
      SEIMessages drapSEIs = getSeisByType(m_pcPic->SEIs, SEI::DEPENDENT_RAP_INDICATION );
      if (!drapSEIs.empty())
      {
@@ -1763,7 +1799,7 @@ diff -aru VTM-11.2_org/source/Lib/DecoderLib/DecLib.cpp VTM-11.2/source/Lib/Deco
        pcSlice->setDRAP(true);
        pcSlice->setLatestDRAPPOC(pcSlice->getPOC());
      }
-@@ -2750,16 +2750,16 @@
+@@ -2911,16 +2911,16 @@ void DecLib::updatePrevIRAPAndGDRSubpic()
      if (pcSlice->getCtuAddrInSlice(0) == m_pcPic->cs->pps->getSubPic(subpicIdx).getFirstCTUInSubPic())
      {
        const NalUnitType subpicType = pcSlice->getNalUnitType();
@@ -1790,7 +1826,16 @@ diff -aru VTM-11.2_org/source/Lib/DecoderLib/DecLib.cpp VTM-11.2/source/Lib/Deco
      }
    }
  }
-@@ -2955,7 +2955,7 @@
+@@ -3106,7 +3106,7 @@ bool DecLib::decode(InputNALUnit& nalu, int& iSkipFrame, int& iPOCLastDisplay, i
+       {
+         if ( m_prevSliceSkipped )
+         {
+-          msg( NOTICE, "Note: received suffix SEI but current picture is skipped.\n");
++          msg( VTM_NOTICE, "Note: received suffix SEI but current picture is skipped.\n");
+           return false;
+         }
+         m_pictureSeiNalus.push_back(new InputNALUnit(nalu));
+@@ -3121,7 +3121,7 @@ bool DecLib::decode(InputNALUnit& nalu, int& iSkipFrame, int& iPOCLastDisplay, i
        }
        else
        {
@@ -1799,22 +1844,22 @@ diff -aru VTM-11.2_org/source/Lib/DecoderLib/DecLib.cpp VTM-11.2/source/Lib/Deco
        }
        return false;
  
-@@ -2974,10 +2974,10 @@
-       m_associatedIRAPType[nalu.m_nuhLayerId] = NAL_UNIT_INVALID;
+@@ -3141,10 +3141,10 @@ bool DecLib::decode(InputNALUnit& nalu, int& iSkipFrame, int& iPOCLastDisplay, i
        m_pocCRA[nalu.m_nuhLayerId] = -MAX_INT;
        m_prevGDRInSameLayerPOC[nalu.m_nuhLayerId] = -MAX_INT;
+       m_prevGDRInSameLayerRecoveryPOC[nalu.m_nuhLayerId] = -MAX_INT;
 -      std::fill_n(m_prevGDRSubpicPOC[nalu.m_nuhLayerId], MAX_NUM_SUB_PICS, -MAX_INT);
 -      std::fill_n(m_prevIRAPSubpicPOC[nalu.m_nuhLayerId], MAX_NUM_SUB_PICS, -MAX_INT);
 -      memset(m_prevIRAPSubpicDecOrderNo[nalu.m_nuhLayerId], 0, sizeof(int)*MAX_NUM_SUB_PICS);
 -      std::fill_n(m_prevIRAPSubpicType[nalu.m_nuhLayerId], MAX_NUM_SUB_PICS, NAL_UNIT_INVALID);
-+//      std::fill_n(m_prevGDRSubpicPOC[nalu.m_nuhLayerId], MAX_NUM_SUB_PICS, -MAX_INT);
-+//      std::fill_n(m_prevIRAPSubpicPOC[nalu.m_nuhLayerId], MAX_NUM_SUB_PICS, -MAX_INT);
-+//      memset(m_prevIRAPSubpicDecOrderNo[nalu.m_nuhLayerId], 0, sizeof(int)*MAX_NUM_SUB_PICS);
-+//      std::fill_n(m_prevIRAPSubpicType[nalu.m_nuhLayerId], MAX_NUM_SUB_PICS, NAL_UNIT_INVALID);
++      // std::fill_n(m_prevGDRSubpicPOC[nalu.m_nuhLayerId], MAX_NUM_SUB_PICS, -MAX_INT);
++      // std::fill_n(m_prevIRAPSubpicPOC[nalu.m_nuhLayerId], MAX_NUM_SUB_PICS, -MAX_INT);
++      // memset(m_prevIRAPSubpicDecOrderNo[nalu.m_nuhLayerId], 0, sizeof(int)*MAX_NUM_SUB_PICS);
++      // std::fill_n(m_prevIRAPSubpicType[nalu.m_nuhLayerId], MAX_NUM_SUB_PICS, NAL_UNIT_INVALID);
        m_pocRandomAccess = MAX_INT;
        m_prevLayerID = MAX_INT;
        m_prevPOC = -MAX_INT;
-@@ -3003,12 +3003,12 @@
+@@ -3170,12 +3170,12 @@ bool DecLib::decode(InputNALUnit& nalu, int& iSkipFrame, int& iPOCLastDisplay, i
        FDReader fdReader;
        uint32_t fdSize;
        fdReader.parseFillerData(&(nalu.getBitstream()), fdSize);
@@ -1829,7 +1874,7 @@ diff -aru VTM-11.2_org/source/Lib/DecoderLib/DecLib.cpp VTM-11.2/source/Lib/Deco
        xParsePrefixSEIsForUnknownVCLNal();
        return false;
      case NAL_UNIT_RESERVED_VCL_4:
-@@ -3016,13 +3016,13 @@
+@@ -3183,13 +3183,13 @@ bool DecLib::decode(InputNALUnit& nalu, int& iSkipFrame, int& iPOCLastDisplay, i
      case NAL_UNIT_RESERVED_VCL_6:
      case NAL_UNIT_RESERVED_NVCL_26:
      case NAL_UNIT_RESERVED_NVCL_27:
@@ -1845,16 +1890,16 @@ diff -aru VTM-11.2_org/source/Lib/DecoderLib/DecLib.cpp VTM-11.2/source/Lib/Deco
        return false;
      default:
        THROW( "Invalid NAL unit type" );
-@@ -3064,7 +3064,7 @@
+@@ -3242,7 +3242,7 @@ bool DecLib::isRandomAccessSkipPicture( int& iSkipFrame, int& iPOCLastDisplay, b
      {
        if(!m_warningMessageSkipPicture)
        {
--        msg( WARNING, "\nWarning: this is not a valid random access point and the data is discarded until the first CRA picture");
-+        msg( VTM_WARNING, "\nWarning: this is not a valid random access point and the data is discarded until the first CRA picture");
+-        msg( WARNING, "Warning: This is not a valid random access point and the data is discarded until the first CRA or GDR picture\n");
++        msg( VTM_WARNING, "Warning: This is not a valid random access point and the data is discarded until the first CRA or GDR picture\n");
          m_warningMessageSkipPicture = true;
        }
-       return true;
-@@ -3191,7 +3191,7 @@
+       iSkipFrame--;
+@@ -3377,7 +3377,7 @@ bool DecLib::isNewPicture(std::ifstream *bitstreamFile, class InputByteStream *b
      byteStreamNALUnit(*bytestream, nalu.getBitstream().getFifo(), stats);
      if (nalu.getBitstream().getFifo().empty())
      {
@@ -1863,7 +1908,7 @@ diff -aru VTM-11.2_org/source/Lib/DecoderLib/DecLib.cpp VTM-11.2/source/Lib/Deco
      }
      else
      {
-@@ -3300,7 +3300,7 @@
+@@ -3486,7 +3486,7 @@ bool DecLib::isNewAccessUnit( bool newPicture, std::ifstream *bitstreamFile, cla
      byteStreamNALUnit(*bytestream, nalu.getBitstream().getFifo(), stats);
      if (nalu.getBitstream().getFifo().empty())
      {
@@ -1872,10 +1917,11 @@ diff -aru VTM-11.2_org/source/Lib/DecoderLib/DecLib.cpp VTM-11.2/source/Lib/Deco
      }
      else
      {
-diff -aru VTM-11.2_org/source/Lib/DecoderLib/DecLib.h VTM-11.2/source/Lib/DecoderLib/DecLib.h
---- VTM-11.2_org/source/Lib/DecoderLib/DecLib.h	2021-01-18 04:33:46.000000000 +0900
-+++ VTM-11.2/source/Lib/DecoderLib/DecLib.h	2021-04-08 17:10:33.524978400 +0900
-@@ -79,10 +79,10 @@
+diff --git a/source/Lib/DecoderLib/DecLib.h b/source/Lib/DecoderLib/DecLib.h
+index d95f4a7..afb9d8e 100644
+--- a/source/Lib/DecoderLib/DecLib.h
++++ b/source/Lib/DecoderLib/DecLib.h
+@@ -80,10 +80,10 @@ private:
    int                     m_decodingOrderCounter;
    int                     m_puCounter;
    bool                    m_seiInclusionFlag;
@@ -1890,7 +1936,7 @@ diff -aru VTM-11.2_org/source/Lib/DecoderLib/DecLib.h VTM-11.2/source/Lib/Decode
    int                     m_pocRandomAccess;   ///< POC number of the random access point (the first IDR or CRA picture)
    int                     m_lastRasPoc;
    bool                    m_prevEOS[MAX_VPS_LAYERS];
-@@ -220,7 +220,7 @@
+@@ -227,7 +227,7 @@ public:
    void  deletePicBuffer();
  
    void  executeLoopFilters();
@@ -1899,10 +1945,11 @@ diff -aru VTM-11.2_org/source/Lib/DecoderLib/DecLib.h VTM-11.2/source/Lib/Decode
    void  finishPictureLight(int& poc, PicList*& rpcListPic );
    void  checkNoOutputPriorPics (PicList* rpcListPic);
    void  checkNalUnitConstraints( uint32_t naluType );
-diff -aru VTM-11.2_org/source/Lib/DecoderLib/NALread.cpp VTM-11.2/source/Lib/DecoderLib/NALread.cpp
---- VTM-11.2_org/source/Lib/DecoderLib/NALread.cpp	2021-01-18 04:33:46.000000000 +0900
-+++ VTM-11.2/source/Lib/DecoderLib/NALread.cpp	2021-04-08 17:10:33.525976100 +0900
-@@ -99,7 +99,7 @@
+diff --git a/source/Lib/DecoderLib/NALread.cpp b/source/Lib/DecoderLib/NALread.cpp
+index ccda006..5620941 100644
+--- a/source/Lib/DecoderLib/NALread.cpp
++++ b/source/Lib/DecoderLib/NALread.cpp
+@@ -99,7 +99,7 @@ static void convertPayloadToRBSP(vector<uint8_t>& nalUnitBuf, InputBitstream *bi
  
      if (n > 0)
      {
@@ -1911,10 +1958,11 @@ diff -aru VTM-11.2_org/source/Lib/DecoderLib/NALread.cpp VTM-11.2/source/Lib/Dec
      }
    }
  
-diff -aru VTM-11.2_org/source/Lib/DecoderLib/SEIread.cpp VTM-11.2/source/Lib/DecoderLib/SEIread.cpp
---- VTM-11.2_org/source/Lib/DecoderLib/SEIread.cpp	2021-01-18 04:33:46.000000000 +0900
-+++ VTM-11.2/source/Lib/DecoderLib/SEIread.cpp	2021-04-08 17:10:33.527970800 +0900
-@@ -190,7 +190,7 @@
+diff --git a/source/Lib/DecoderLib/SEIread.cpp b/source/Lib/DecoderLib/SEIread.cpp
+index 25fc7cb..50e2ba8 100644
+--- a/source/Lib/DecoderLib/SEIread.cpp
++++ b/source/Lib/DecoderLib/SEIread.cpp
+@@ -190,7 +190,7 @@ void SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
        bp = hrd.getBufferingPeriodSEI();
        if (!bp)
        {
@@ -1923,7 +1971,7 @@ diff -aru VTM-11.2_org/source/Lib/DecoderLib/SEIread.cpp VTM-11.2/source/Lib/Dec
        }
        else
        {
-@@ -208,7 +208,7 @@
+@@ -208,7 +208,7 @@ void SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
          bp = hrd.getBufferingPeriodSEI();
          if (!bp)
          {
@@ -1932,7 +1980,7 @@ diff -aru VTM-11.2_org/source/Lib/DecoderLib/SEIread.cpp VTM-11.2/source/Lib/Dec
          }
          else
          {
-@@ -306,7 +306,7 @@
+@@ -306,7 +306,7 @@ void SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
          uint32_t seiByte;
          sei_read_code (NULL, 8, seiByte, "unknown prefix SEI payload byte");
        }
@@ -1941,7 +1989,7 @@ diff -aru VTM-11.2_org/source/Lib/DecoderLib/SEIread.cpp VTM-11.2/source/Lib/Dec
        if (pDecodedMessageOutputStream)
        {
          (*pDecodedMessageOutputStream) << "Unknown prefix SEI message (payloadType = " << payloadType << ") was found!\n";
-@@ -336,7 +336,7 @@
+@@ -336,7 +336,7 @@ void SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
            uint32_t seiByte;
            sei_read_code( NULL, 8, seiByte, "unknown suffix SEI payload byte");
          }
@@ -1950,7 +1998,7 @@ diff -aru VTM-11.2_org/source/Lib/DecoderLib/SEIread.cpp VTM-11.2/source/Lib/Dec
          if (pDecodedMessageOutputStream)
          {
            (*pDecodedMessageOutputStream) << "Unknown suffix SEI message (payloadType = " << payloadType << ") was found!\n";
-@@ -1690,7 +1690,7 @@
+@@ -1690,7 +1690,7 @@ void SeiCfgFileDump::xDumpSEIEquirectangularProjection     (SEIEquirectangularPr
      }
      else
      {
@@ -1959,7 +2007,7 @@ diff -aru VTM-11.2_org/source/Lib/DecoderLib/SEIread.cpp VTM-11.2/source/Lib/Dec
      }
    }
  }
-@@ -1773,7 +1773,7 @@
+@@ -1773,7 +1773,7 @@ void SeiCfgFileDump::xDumpSEIGeneralizedCubemapProjection  (SEIGeneralizedCubema
        }
        else
        {
@@ -1968,10 +2016,11 @@ diff -aru VTM-11.2_org/source/Lib/DecoderLib/SEIread.cpp VTM-11.2/source/Lib/Dec
        }
      }
    }
-diff -aru VTM-11.2_org/source/Lib/DecoderLib/VLCReader.cpp VTM-11.2/source/Lib/DecoderLib/VLCReader.cpp
---- VTM-11.2_org/source/Lib/DecoderLib/VLCReader.cpp	2021-01-18 04:33:46.000000000 +0900
-+++ VTM-11.2/source/Lib/DecoderLib/VLCReader.cpp	2021-04-08 17:10:33.530962400 +0900
-@@ -4046,8 +4046,8 @@
+diff --git a/source/Lib/DecoderLib/VLCReader.cpp b/source/Lib/DecoderLib/VLCReader.cpp
+index 12275fb..529a718 100644
+--- a/source/Lib/DecoderLib/VLCReader.cpp
++++ b/source/Lib/DecoderLib/VLCReader.cpp
+@@ -4062,8 +4062,8 @@ void HLSyntaxReader::parseSliceHeader (Slice* pcSlice, PicHeader* picHeader, Par
      {
        if (pps->getWpInfoInPhFlag())
        {
@@ -1982,7 +2031,7 @@ diff -aru VTM-11.2_org/source/Lib/DecoderLib/VLCReader.cpp VTM-11.2/source/Lib/D
          pcSlice->setWpScaling(picHeader->getWpScalingAll());
        }
        else
-@@ -4609,7 +4609,7 @@
+@@ -4664,7 +4664,7 @@ void HLSyntaxReader::parseRemainingBytes( bool noTrailingBytesExpected )
        uint32_t trailingNullByte=m_pcBitstream->readByte();
        if (trailingNullByte!=0)
        {
@@ -1991,10 +2040,11 @@ diff -aru VTM-11.2_org/source/Lib/DecoderLib/VLCReader.cpp VTM-11.2/source/Lib/D
          THROW("Invalid trailing '0' byte");
        }
      }
-diff -aru VTM-11.2_org/source/Lib/EncoderLib/Analyze.h VTM-11.2/source/Lib/EncoderLib/Analyze.h
---- VTM-11.2_org/source/Lib/EncoderLib/Analyze.h	2021-01-18 04:33:46.000000000 +0900
-+++ VTM-11.2/source/Lib/EncoderLib/Analyze.h	2021-04-08 17:10:33.532957200 +0900
-@@ -206,9 +206,9 @@
+diff --git a/source/Lib/EncoderLib/Analyze.h b/source/Lib/EncoderLib/Analyze.h
+index 1518c26..7bea849 100644
+--- a/source/Lib/EncoderLib/Analyze.h
++++ b/source/Lib/EncoderLib/Analyze.h
+@@ -206,9 +206,9 @@ public:
  #endif
    {
  #if !WCG_WPSNR
@@ -2006,7 +2056,7 @@ diff -aru VTM-11.2_org/source/Lib/EncoderLib/Analyze.h VTM-11.2/source/Lib/Encod
  #endif
      double dFps     =   m_dFrmRate; //--CFG_KDY
      double dScale   = dFps / 1000 / (double)m_uiNumPic;
-@@ -630,7 +630,7 @@
+@@ -630,7 +630,7 @@ public:
          }
          break;
        default:
@@ -2015,7 +2065,7 @@ diff -aru VTM-11.2_org/source/Lib/EncoderLib/Analyze.h VTM-11.2/source/Lib/Encod
          exit(1);
          break;
      }
-@@ -683,7 +683,7 @@
+@@ -683,7 +683,7 @@ public:
          }
  
        default:
@@ -2024,10 +2074,11 @@ diff -aru VTM-11.2_org/source/Lib/EncoderLib/Analyze.h VTM-11.2/source/Lib/Encod
            exit(1);
            break;
      }
-diff -aru VTM-11.2_org/source/Lib/EncoderLib/EncCfg.h VTM-11.2/source/Lib/EncoderLib/EncCfg.h
---- VTM-11.2_org/source/Lib/EncoderLib/EncCfg.h	2021-01-18 04:33:46.000000000 +0900
-+++ VTM-11.2/source/Lib/EncoderLib/EncCfg.h	2021-04-09 18:05:03.052232300 +0900
-@@ -157,6 +157,12 @@
+diff --git a/source/Lib/EncoderLib/EncCfg.h b/source/Lib/EncoderLib/EncCfg.h
+index 657288a..706317f 100644
+--- a/source/Lib/EncoderLib/EncCfg.h
++++ b/source/Lib/EncoderLib/EncCfg.h
+@@ -157,6 +157,12 @@ std::istringstream &operator>>(std::istringstream &in, GOPEntry &entry);     //i
  class EncCfg
  {
  protected:
@@ -2040,7 +2091,7 @@ diff -aru VTM-11.2_org/source/Lib/EncoderLib/EncCfg.h VTM-11.2/source/Lib/Encode
    //==== File I/O ========
    int       m_iFrameRate;
    int       m_FrameSkip;
-@@ -772,6 +778,16 @@
+@@ -799,6 +805,16 @@ public:
  
    virtual ~EncCfg()
    {}
@@ -2057,10 +2108,11 @@ diff -aru VTM-11.2_org/source/Lib/EncoderLib/EncCfg.h VTM-11.2/source/Lib/Encode
    std::map<uint32_t, SEIAnnotatedRegions::AnnotatedRegionObject> m_arObjects;
    void setProfile(Profile::Name profile) { m_profile = profile; }
    void setLevel(Level::Tier tier, Level::Name level) { m_levelTier = tier; m_level = level; }
-diff -aru VTM-11.2_org/source/Lib/EncoderLib/EncGOP.cpp VTM-11.2/source/Lib/EncoderLib/EncGOP.cpp
---- VTM-11.2_org/source/Lib/EncoderLib/EncGOP.cpp	2021-01-18 04:33:46.000000000 +0900
-+++ VTM-11.2/source/Lib/EncoderLib/EncGOP.cpp	2021-04-09 18:32:32.117476400 +0900
-@@ -1250,7 +1250,7 @@
+diff --git a/source/Lib/EncoderLib/EncGOP.cpp b/source/Lib/EncoderLib/EncGOP.cpp
+index 2323c8d..40327f1 100644
+--- a/source/Lib/EncoderLib/EncGOP.cpp
++++ b/source/Lib/EncoderLib/EncGOP.cpp
+@@ -1272,7 +1272,7 @@ validateMinCrRequirements(const ProfileLevelTierFeatures &plt, std::size_t numBy
  
        if (numBytesInVclNalUnits > threshold)
        {
@@ -2069,7 +2121,7 @@ diff -aru VTM-11.2_org/source/Lib/EncoderLib/EncGOP.cpp VTM-11.2/source/Lib/Enco
                        (double) numBytesInVclNalUnits, threshold );
        }
      }
-@@ -1298,11 +1298,11 @@
+@@ -1320,11 +1320,11 @@ cabac_zero_word_padding(const Slice *const pcSlice,
            zeroBytesPadding[i*3+2]=3;  // 00 00 03
          }
          nalUnitData.write(reinterpret_cast<const char*>(&(zeroBytesPadding[0])), numberOfAdditionalCabacZeroBytes);
@@ -2083,7 +2135,7 @@ diff -aru VTM-11.2_org/source/Lib/EncoderLib/EncGOP.cpp VTM-11.2/source/Lib/Enco
        }
        return numberOfAdditionalCabacZeroWords;
      }
-@@ -1462,11 +1462,11 @@
+@@ -1484,11 +1484,11 @@ printHash(const HashType hashType, const std::string &digestStr)
    {
      if (digestStr.empty())
      {
@@ -2097,7 +2149,7 @@ diff -aru VTM-11.2_org/source/Lib/EncoderLib/EncGOP.cpp VTM-11.2/source/Lib/Enco
      }
    }
  }
-@@ -2876,6 +2876,57 @@
+@@ -2979,6 +2979,57 @@ void EncGOP::compressGOP( int iPOCLast, int iNumPicRcvd, PicList& rcListPic,
          }
  
          m_pcSliceEncoder->precompressSlice( pcPic );
@@ -2155,7 +2207,7 @@ diff -aru VTM-11.2_org/source/Lib/EncoderLib/EncGOP.cpp VTM-11.2/source/Lib/Enco
          m_pcSliceEncoder->compressSlice   ( pcPic, false, false );
  
          if(sliceIdx < pcPic->cs->pps->getNumSlicesInPic() - 1)
-@@ -3583,7 +3634,7 @@
+@@ -3777,7 +3828,7 @@ void EncGOP::compressGOP( int iPOCLast, int iNumPicRcvd, PicList& rcListPic,
          if (m_pcRateCtrl->getCpbSaturationEnabled())
          {
            m_pcRateCtrl->updateCpbState(actualTotalBits);
@@ -2164,7 +2216,7 @@ diff -aru VTM-11.2_org/source/Lib/EncoderLib/EncGOP.cpp VTM-11.2/source/Lib/Enco
          }
    #endif
        }
-@@ -3631,7 +3682,7 @@
+@@ -3804,7 +3855,7 @@ void EncGOP::compressGOP( int iPOCLast, int iNumPicRcvd, PicList& rcListPic,
  
        m_AUWriterIf->outputAU( accessUnit );
  
@@ -2173,7 +2225,7 @@ diff -aru VTM-11.2_org/source/Lib/EncoderLib/EncGOP.cpp VTM-11.2/source/Lib/Enco
        fflush( stdout );
      }
  
-@@ -3697,8 +3748,8 @@
+@@ -3870,8 +3921,8 @@ void EncGOP::printOutSummary( uint32_t uiNumAllPicCoded, bool isField, const boo
    const ChromaFormat chFmt = m_pcCfg->getChromaFormatIdc();
  
    //-- all
@@ -2184,13 +2236,13 @@ diff -aru VTM-11.2_org/source/Lib/EncoderLib/EncGOP.cpp VTM-11.2/source/Lib/Enco
  #if JVET_O0756_CALCULATE_HDRMETRICS
    const bool calculateHdrMetrics = m_pcEncLib->getCalcluateHdrMetrics();
  #endif
-@@ -3716,22 +3767,22 @@
+@@ -3889,22 +3940,22 @@ void EncGOP::printOutSummary( uint32_t uiNumAllPicCoded, bool isField, const boo
  #endif
                            );
  #endif
 -  msg( DETAILS, "\n\nI Slices--------------------------------------------------------\n" );
 +  msg( VTM_DETAILS, "\n\nI Slices--------------------------------------------------------\n" );
-   m_gcAnalyzeI.printOut( 'i', chFmt, printMSEBasedSNR, printSequenceMSE, printMSSSIM, 
+   m_gcAnalyzeI.printOut( 'i', chFmt, printMSEBasedSNR, printSequenceMSE, printMSSSIM,
      printHexPsnr, printRprPSNR, bitDepths );
  
 -  msg( DETAILS, "\n\nP Slices--------------------------------------------------------\n" );
@@ -2200,7 +2252,7 @@ diff -aru VTM-11.2_org/source/Lib/EncoderLib/EncGOP.cpp VTM-11.2/source/Lib/Enco
  
 -  msg( DETAILS, "\n\nB Slices--------------------------------------------------------\n" );
 +  msg( VTM_DETAILS, "\n\nB Slices--------------------------------------------------------\n" );
-   m_gcAnalyzeB.printOut( 'b', chFmt, printMSEBasedSNR, printSequenceMSE, printMSSSIM, 
+   m_gcAnalyzeB.printOut( 'b', chFmt, printMSEBasedSNR, printSequenceMSE, printMSSSIM,
      printHexPsnr, printRprPSNR, bitDepths );
  
  #if WCG_WPSNR
@@ -2211,7 +2263,7 @@ diff -aru VTM-11.2_org/source/Lib/EncoderLib/EncGOP.cpp VTM-11.2/source/Lib/Enco
      m_gcAnalyzeWPSNR.printOut( 'w', chFmt, printMSEBasedSNR, printSequenceMSE, printMSSSIM,
        printHexPsnr, printRprPSNR, bitDepths, useLumaWPSNR );
    }
-@@ -3761,7 +3812,7 @@
+@@ -3934,7 +3985,7 @@ void EncGOP::printOutSummary( uint32_t uiNumAllPicCoded, bool isField, const boo
      m_gcAnalyzeAll_in.setBits(m_gcAnalyzeAll.getBits());
      // prior to the above statement, the interlace analyser does not contain the correct total number of bits.
  
@@ -2220,7 +2272,7 @@ diff -aru VTM-11.2_org/source/Lib/EncoderLib/EncGOP.cpp VTM-11.2/source/Lib/Enco
  #if ENABLE_QPA
      m_gcAnalyzeAll_in.printOut( 'a', chFmt, printMSEBasedSNR, printSequenceMSE, printMSSSIM,
        printHexPsnr, printRprPSNR, bitDepths, useWPSNR );
-@@ -3781,7 +3832,7 @@
+@@ -3954,7 +4005,7 @@ void EncGOP::printOutSummary( uint32_t uiNumAllPicCoded, bool isField, const boo
      }
    }
  
@@ -2229,7 +2281,7 @@ diff -aru VTM-11.2_org/source/Lib/EncoderLib/EncGOP.cpp VTM-11.2/source/Lib/Enco
  }
  
  #if W0038_DB_OPT
-@@ -4327,7 +4378,7 @@
+@@ -4530,7 +4581,7 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
      uint32_t numRBSPBytes_nal = uint32_t((*it)->m_nalUnitData.str().size());
      if (m_pcCfg->getSummaryVerboseness() > 0)
      {
@@ -2238,9 +2290,9 @@ diff -aru VTM-11.2_org/source/Lib/EncoderLib/EncGOP.cpp VTM-11.2/source/Lib/Enco
      }
      if( ( *it )->m_nalUnitType != NAL_UNIT_PREFIX_SEI && ( *it )->m_nalUnitType != NAL_UNIT_SUFFIX_SEI )
      {
-@@ -4413,9 +4464,9 @@
+@@ -4619,9 +4670,9 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
+     c = 'D';
    }
-   if (m_pcCfg->getDependentRAPIndicationSEIEnabled() && pcSlice->isDRAP()) c = 'D';
  
 -  if( g_verbosity >= NOTICE )
 +  if( g_verbosity >= VTM_NOTICE )
@@ -2250,7 +2302,7 @@ diff -aru VTM-11.2_org/source/Lib/EncoderLib/EncGOP.cpp VTM-11.2/source/Lib/Enco
           pcSlice->getPOC(),
           pcSlice->getPic()->layerId,
           pcSlice->getTLayer(),
-@@ -4424,10 +4475,10 @@
+@@ -4630,10 +4681,10 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
           pcSlice->getSliceQp(),
           uibits );
  
@@ -2263,7 +2315,7 @@ diff -aru VTM-11.2_org/source/Lib/EncoderLib/EncGOP.cpp VTM-11.2/source/Lib/Enco
  #endif
  
      if (m_pcEncLib->getPrintHexPsnr())
-@@ -4439,25 +4490,25 @@
+@@ -4645,25 +4696,25 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
               reinterpret_cast<uint8_t *>(&dPSNR[i]) + sizeof(dPSNR[i]),
               reinterpret_cast<uint8_t *>(&xPsnr[i]));
        }
@@ -2279,7 +2331,7 @@ diff -aru VTM-11.2_org/source/Lib/EncoderLib/EncGOP.cpp VTM-11.2/source/Lib/Enco
      {
 -      msg( NOTICE, " [MS-SSIM Y %1.6lf    U %1.6lf    V %1.6lf]", msssim[COMPONENT_Y], msssim[COMPONENT_Cb], msssim[COMPONENT_Cr] );
 +      msg( VTM_NOTICE, " [MS-SSIM Y %1.6lf    U %1.6lf    V %1.6lf]", msssim[COMPONENT_Y], msssim[COMPONENT_Cb], msssim[COMPONENT_Cr] );
-     }  
+     }
  
      if( printFrameMSE )
      {
@@ -2294,7 +2346,7 @@ diff -aru VTM-11.2_org/source/Lib/EncoderLib/EncGOP.cpp VTM-11.2/source/Lib/Enco
  
        if (m_pcEncLib->getPrintHexPsnr())
        {
-@@ -4468,7 +4519,7 @@
+@@ -4674,7 +4725,7 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
                 reinterpret_cast<uint8_t *>(&dPSNRWeighted[i]) + sizeof(dPSNRWeighted[i]),
                 reinterpret_cast<uint8_t *>(&xPsnrWeighted[i]));
          }
@@ -2303,7 +2355,7 @@ diff -aru VTM-11.2_org/source/Lib/EncoderLib/EncGOP.cpp VTM-11.2/source/Lib/Enco
        }
      }
  #endif
-@@ -4477,7 +4528,7 @@
+@@ -4683,7 +4734,7 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
      {
        for (int i=0; i<1; i++)
        {
@@ -2312,7 +2364,7 @@ diff -aru VTM-11.2_org/source/Lib/EncoderLib/EncGOP.cpp VTM-11.2/source/Lib/Enco
          if (m_pcEncLib->getPrintHexPsnr())
          {
            int64_t xdeltaE[MAX_NUM_COMPONENT];
-@@ -4487,12 +4538,12 @@
+@@ -4693,12 +4744,12 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
                   reinterpret_cast<uint8_t *>(&deltaE[i]) + sizeof(deltaE[i]),
                   reinterpret_cast<uint8_t *>(&xdeltaE[i]));
            }
@@ -2327,13 +2379,12 @@ diff -aru VTM-11.2_org/source/Lib/EncoderLib/EncGOP.cpp VTM-11.2/source/Lib/Enco
  
          if (m_pcEncLib->getPrintHexPsnr())
          {
-@@ -4503,19 +4554,19 @@
-                  reinterpret_cast<uint8_t *>(&psnrL[i]) + sizeof(psnrL[i]),
+@@ -4710,18 +4761,18 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
                   reinterpret_cast<uint8_t *>(&xpsnrL[i]));
            }
--          msg(NOTICE, " [xPSNRL%d %16" PRIx64 "]", (int)m_pcCfg->getWhitePointDeltaE(i), xpsnrL[0]);
-+          msg(VTM_NOTICE, " [xPSNRL%d %16" PRIx64 "]", (int)m_pcCfg->getWhitePointDeltaE(i), xpsnrL[0]);
  
+-          msg(NOTICE, " [xPSNRL%d %16" PRIx64 "]", (int) m_pcCfg->getWhitePointDeltaE(i), xpsnrL[0]);
++          msg(VTM_NOTICE, " [xPSNRL%d %16" PRIx64 "]", (int) m_pcCfg->getWhitePointDeltaE(i), xpsnrL[0]);
          }
        }
      }
@@ -2350,7 +2401,7 @@ diff -aru VTM-11.2_org/source/Lib/EncoderLib/EncGOP.cpp VTM-11.2/source/Lib/Enco
        for( int iRefIndex = 0; iRefIndex < pcSlice->getNumRefIdx( RefPicList( iRefList ) ); iRefIndex++ )
        {
          const std::pair<int, int>& scaleRatio = pcSlice->getScalingRatio( RefPicList( iRefList ), iRefIndex );
-@@ -4524,38 +4575,38 @@
+@@ -4730,38 +4781,38 @@ void EncGOP::xCalculateAddPSNR(Picture* pcPic, PelUnitBuf cPicD, const AccessUni
          {
            if( scaleRatio.first != 1 << SCALE_RATIO_BITS || scaleRatio.second != 1 << SCALE_RATIO_BITS )
            {
@@ -2397,7 +2448,7 @@ diff -aru VTM-11.2_org/source/Lib/EncoderLib/EncGOP.cpp VTM-11.2/source/Lib/Enco
    {
      std::cout << "\r\t" << pcSlice->getPOC();
      std::cout.flush();
-@@ -4909,14 +4960,14 @@
+@@ -5124,14 +5175,14 @@ void EncGOP::xCalculateInterlacedAddPSNR( Picture* pcPicOrgFirstField, Picture*
  
    *PSNR_Y = dPSNR[COMPONENT_Y];
  
@@ -2414,10 +2465,11 @@ diff -aru VTM-11.2_org/source/Lib/EncoderLib/EncGOP.cpp VTM-11.2/source/Lib/Enco
    }
  
    for(uint32_t fieldNum=0; fieldNum<2; fieldNum++)
-diff -aru VTM-11.2_org/source/Lib/EncoderLib/InterSearch.cpp VTM-11.2/source/Lib/EncoderLib/InterSearch.cpp
---- VTM-11.2_org/source/Lib/EncoderLib/InterSearch.cpp	2021-01-18 04:33:46.000000000 +0900
-+++ VTM-11.2/source/Lib/EncoderLib/InterSearch.cpp	2021-04-09 18:45:08.374636700 +0900
-@@ -3695,6 +3695,107 @@
+diff --git a/source/Lib/EncoderLib/InterSearch.cpp b/source/Lib/EncoderLib/InterSearch.cpp
+index 931943e..be99f1f 100644
+--- a/source/Lib/EncoderLib/InterSearch.cpp
++++ b/source/Lib/EncoderLib/InterSearch.cpp
+@@ -5331,6 +5331,107 @@ void InterSearch::xTZSearch( const PredictionUnit& pu,
    // set rcMv (Median predictor) as start point and as best point
    xTZSearchHelp( cStruct, rcMv.getHor(), rcMv.getVer(), 0, 0 );
  
@@ -2525,10 +2577,11 @@ diff -aru VTM-11.2_org/source/Lib/EncoderLib/InterSearch.cpp VTM-11.2/source/Lib
    // test whether zero Mv is better start point than Median predictor
    if ( bTestZeroVector )
    {
-diff -aru VTM-11.2_org/source/Lib/EncoderLib/RateCtrl.cpp VTM-11.2/source/Lib/EncoderLib/RateCtrl.cpp
---- VTM-11.2_org/source/Lib/EncoderLib/RateCtrl.cpp	2021-01-18 04:33:46.000000000 +0900
-+++ VTM-11.2/source/Lib/EncoderLib/RateCtrl.cpp	2021-04-08 17:10:33.537943900 +0900
-@@ -516,7 +516,7 @@
+diff --git a/source/Lib/EncoderLib/RateCtrl.cpp b/source/Lib/EncoderLib/RateCtrl.cpp
+index 0e33acb..4eb0c3d 100644
+--- a/source/Lib/EncoderLib/RateCtrl.cpp
++++ b/source/Lib/EncoderLib/RateCtrl.cpp
+@@ -516,7 +516,7 @@ void EncRCGOP::create( EncRCSeq* encRCSeq, int numPic )
      }
      else
      {
@@ -2537,7 +2590,7 @@ diff -aru VTM-11.2_org/source/Lib/EncoderLib/RateCtrl.cpp VTM-11.2/source/Lib/En
      }
  
      xCalEquaCoeff( encRCSeq, lambdaRatio, equaCoeffA, equaCoeffB, encRCSeq->getGOPSize() );
-@@ -1753,7 +1753,7 @@
+@@ -1753,7 +1753,7 @@ void RateCtrl::init(int totalFrames, int targetBitrate, int frameRate, int GOPSi
      }
      else
      {
@@ -2546,7 +2599,7 @@ diff -aru VTM-11.2_org/source/Lib/EncoderLib/RateCtrl.cpp VTM-11.2/source/Lib/En
      }
    }
  
-@@ -1944,7 +1944,7 @@
+@@ -1944,7 +1944,7 @@ void RateCtrl::initHrdParam(const GeneralHrdParams* generalHrd, const OlsHrdPara
    m_cpbSize = (olsHrd->getCpbSizeValueMinus1(0, 0) + 1) << (4 + generalHrd->getCpbSizeScale());
    m_cpbState = (uint32_t)(m_cpbSize*fInitialCpbFullness);
    m_bufferingRate = (uint32_t)(((olsHrd->getBitRateValueMinus1(0, 0) + 1) << (6 + generalHrd->getBitRateScale())) / iFrameRate);
@@ -2555,10 +2608,11 @@ diff -aru VTM-11.2_org/source/Lib/EncoderLib/RateCtrl.cpp VTM-11.2/source/Lib/En
  }
  #endif
  
-diff -aru VTM-11.2_org/source/Lib/Utilities/VideoIOYuv.cpp VTM-11.2/source/Lib/Utilities/VideoIOYuv.cpp
---- VTM-11.2_org/source/Lib/Utilities/VideoIOYuv.cpp	2021-01-18 04:33:46.000000000 +0900
-+++ VTM-11.2/source/Lib/Utilities/VideoIOYuv.cpp	2021-04-08 17:10:33.539938700 +0900
-@@ -141,7 +141,7 @@
+diff --git a/source/Lib/Utilities/VideoIOYuv.cpp b/source/Lib/Utilities/VideoIOYuv.cpp
+index 8148d5e..235d9e2 100644
+--- a/source/Lib/Utilities/VideoIOYuv.cpp
++++ b/source/Lib/Utilities/VideoIOYuv.cpp
+@@ -141,7 +141,7 @@ void VideoIOYuv::open( const std::string &fileName, bool bWriteMode, const int f
        }
        else
        {
@@ -2567,7 +2621,7 @@ diff -aru VTM-11.2_org/source/Lib/Utilities/VideoIOYuv.cpp VTM-11.2/source/Lib/U
        }
      }
    }
-@@ -1057,7 +1057,7 @@
+@@ -1057,7 +1057,7 @@ bool VideoIOYuv::write( uint32_t orgWidth, uint32_t orgHeight, const CPelUnitBuf
  
    if ((width444 == 0) || (height444 == 0))
    {
@@ -2576,7 +2630,7 @@ diff -aru VTM-11.2_org/source/Lib/Utilities/VideoIOYuv.cpp VTM-11.2/source/Lib/U
    }
  
    for(uint32_t comp=0; retval && comp < ::getNumberValidComponents(format); comp++)
-@@ -1167,7 +1167,7 @@
+@@ -1167,7 +1167,7 @@ bool VideoIOYuv::write( const CPelUnitBuf& picTop, const CPelUnitBuf& picBottom,
  
      if ((width444 == 0) || (height444 == 0))
      {

@@ -64,7 +64,6 @@ class AtlasSequenceParameterSetRbsp {
       patchSizeQuantizerPresentFlag_( false ),
       mapCountMinus1_( 0 ),
       pixelDeinterleavingFlag_( false ),
-      pixelDeinterleavingMapFlag_( false ),
       eomPatchEnabledFlag_( false ),
       eomFixBitCountMinus1_( 0 ),
       rawPatchEnabledFlag_( false ),
@@ -83,7 +82,7 @@ class AtlasSequenceParameterSetRbsp {
   AtlasSequenceParameterSetRbsp& operator=( const AtlasSequenceParameterSetRbsp& ) = default;
 
   void allocateRefListStruct() { refListStruct_.resize( numRefAtlasFrameListsInAsps_ ); }
-  void allocatePixelDeinterleavingMapFlag() { pixelDeinterleavingMapFlag_.resize( mapCountMinus1_ ); }
+  void allocatePixelDeinterleavingMapFlag() { pixelDeinterleavingMapFlag_.resize( mapCountMinus1_ + 1, false ); }
   void allocatePLRInformation() { plrInformation_.resize( mapCountMinus1_ + 1 ); }
 
   uint8_t            getAtlasSequenceParameterSetId() { return atlasSequenceParameterSetId_; }
@@ -135,7 +134,7 @@ class AtlasSequenceParameterSetRbsp {
   void setLog2PatchPackingBlockSize( uint8_t value ) { log2PatchPackingBlockSize_ = value; }
   void setPatchSizeQuantizerPresentFlag( bool value ) { patchSizeQuantizerPresentFlag_ = value; }
   void setMapCountMinus1( uint8_t value ) { mapCountMinus1_ = value; }
-  void setxelDeinterleavingFlag( bool value ) { pixelDeinterleavingFlag_ = value; }
+  void setPixelDeinterleavingFlag( bool value ) { pixelDeinterleavingFlag_ = value; }
   void setPixelDeinterleavingMapFlag( size_t index, bool value ) { pixelDeinterleavingMapFlag_[index] = value; }
   void setEomPatchEnabledFlag( bool value ) { eomPatchEnabledFlag_ = value; }
   void setEomFixBitCountMinus1( uint8_t value ) { eomFixBitCountMinus1_ = value; }

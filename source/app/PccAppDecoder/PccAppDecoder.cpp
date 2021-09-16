@@ -149,9 +149,9 @@ bool parseParameters( int                       argc,
       decoderParams.nbThread_,
       decoderParams.nbThread_,
     "Number of thread used for parallel processing")
-    ( "postprocessSmoothingFilterType",
-      decoderParams.postprocessSmoothingFilter_,
-      decoderParams.postprocessSmoothingFilter_,
+    ( "attributeTransferFilterType",
+      decoderParams.attrTransferFilterType_,
+      decoderParams.attrTransferFilterType_,
     "Exclude geometry smoothing from attribute transfer")
     ( "keepIntermediateFiles",
       decoderParams.keepIntermediateFiles_,
@@ -273,7 +273,7 @@ bool parseParameters( int                       argc,
   return !err.is_errored;
 }
 
-int decompressVideo( const PCCDecoderParameters& decoderParams,
+int decompressVideo( PCCDecoderParameters&       decoderParams,
                      const PCCMetricsParameters& metricsParams,
                      PCCConformanceParameters&   conformanceParams,
                      StopwatchUserTime&          clock ) {
@@ -287,7 +287,6 @@ int decompressVideo( const PCCDecoderParameters& decoderParams,
 #endif
   if ( !bitstream.initialize( decoderParams.compressedStreamPath_ ) ) { return -1; }
   bitstream.computeMD5();
-  // if ( !bitstream.readHeader() ) { return -1; }
   bitstreamStat.setHeader( bitstream.size() );
   size_t         frameNumber = decoderParams.startFrameNumber_;
   PCCMetrics     metrics;
@@ -314,6 +313,14 @@ int decompressVideo( const PCCDecoderParameters& decoderParams,
     bitstreamReader.setLogger( logger );
 #endif
     if ( bitstreamReader.decode( ssvu, context ) == 0 ) { return 0; }
+#if 1
+    if ( context.checkProfile() != 0 ) {
+      printf( "Profile not correct... \n" );
+      return 0;
+    }
+    decoderParams.setReconstructionParameters( context.getVps().getProfileTierLevel().getProfileReconstructionIdc() );
+    decoder.setReconstructionParameters( decoderParams );
+#endif
 
     // allocate atlas structure
     context.resizeAtlas( context.getVps().getAtlasCountMinus1() + 1 );
@@ -352,7 +359,7 @@ int decompressVideo( const PCCDecoderParameters& decoderParams,
 #endif
 
       if ( !decoderParams.reconstructedDataPath_.empty() ) {
-        reconstructs.write( decoderParams.reconstructedDataPath_, frameNumber );
+        reconstructs.write( decoderParams.reconstructedDataPath_, frameNumber, decoderParams.nbThread_, false );
       } else {
         frameNumber += reconstructs.getFrameCount();
       }
@@ -384,16 +391,13 @@ int main( int argc, char* argv[] ) {
   clockWall.stop();
 
   using namespace std::chrono;
-  using ms       = milliseconds;
-  auto totalWall = duration_cast<ms>( clockWall.count() ).count();
-  std::cout << "Processing time (wall): " << ( ret == 0 ? totalWall / 1000.0 : -1 ) << " s\n";
-
-  auto totalUserSelf = duration_cast<ms>( clockUser.self.count() ).count();
-  std::cout << "Processing time (user.self): " << ( ret == 0 ? totalUserSelf / 1000.0 : -1 ) << " s\n";
-
+  using ms            = milliseconds;
+  auto totalWall      = duration_cast<ms>( clockWall.count() ).count();
+  auto totalUserSelf  = duration_cast<ms>( clockUser.self.count() ).count();
   auto totalUserChild = duration_cast<ms>( clockUser.children.count() ).count();
+  std::cout << "Processing time (wall): " << ( ret == 0 ? totalWall / 1000.0 : -1 ) << " s\n";
+  std::cout << "Processing time (user.self): " << ( ret == 0 ? totalUserSelf / 1000.0 : -1 ) << " s\n";
   std::cout << "Processing time (user.children): " << ( ret == 0 ? totalUserChild / 1000.0 : -1 ) << " s\n";
-
   std::cout << "Peak memory: " << getPeakMemory() << " KB\n";
   return ret;
 }

@@ -47,12 +47,24 @@ bool parseParameters( int argc, char* argv[], PCCConformanceParameters& params )
   // clang-format off
   po::Options opts;
   opts.addOptions()
-     ("help", print_help, false, "This help text")
-     ( "checkConformance", params.checkConformance_, params.checkConformance_, "Check conformance")
-     ( "path", params.path_, params.path_, "Root directory of conformance files + prefix: C:\\Test\\pcc_conformance\\Bin\\S26C03R03_")
-     ( "level", params.levelIdc_, params.levelIdc_, "Level indicator") 
+     ( "help", print_help, false, "This help text")
+     ( "checkConformance", 
+      params.checkConformance_, 
+      params.checkConformance_, 
+      "Check conformance")
+     ( "path", 
+       params.path_, 
+       params.path_, 
+       "Root directory of conformance files + prefix: C:\\Test\\pcc_conformance\\Bin\\S26C03R03_")
+     ( "level", 
+       params.levelIdc_,
+       params.levelIdc_, 
+       "Level indicator") 
      //should be in multiples of 30 i.e. levelIdc of 30 corresponds to level 1, and levelIdc 105 corresponds to level 3.5 of Table A.5
-     ( "fps", params.fps_, params.fps_, "frame per second");
+     ( "fps", 
+       params.fps_, 
+       params.fps_, 
+       "frame per second");
   // clang-format on
   po::setDefaults( opts );
   po::ErrorReporter        err;

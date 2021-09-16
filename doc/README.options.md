@@ -76,7 +76,7 @@ minimumImageWidth                 &  Minimum width of packed patch frame        
 minimumImageHeight                &  Minimum height of packed patch frame               \\ \hline
 maxCandidateCount                 &  Maximum nuber of candidates in list L              \\ \hline
 occupancyPrecision                &  Occupancy map B0 precision                         \\ \hline
-occupancyMapVideoEncoderConfig    &  Occupancy map encoder config file                  \\ \hline
+occupancyMapConfig    &  Occupancy map encoder config file                  \\ \hline
 occupancyMapQP                    &  QP for compression of occupancy map video          \\ \hline
 enhancedOccupancyMapCode          &  Use enhanced-delta-depth code                      \\ \hline
 EOMFixBitCount                    &  enhanced occupancy map fixed bit count             \\ \hline

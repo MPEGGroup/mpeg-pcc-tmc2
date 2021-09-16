@@ -49,7 +49,7 @@ class PCCVideoBitstream {
   size_t                size() { return data_.size(); }
   PCCVideoType          type() { return type_; }
 
-  void trace() { std::cout << toString( type_ ) << " ->" << size() << " B " << std::endl; }
+  void trace() { std::cout << "      " << toString( type_ ) << " ->" << size() << " B " << std::endl; }
 
   std::string getExtension();
   bool        write( const std::string& filename );

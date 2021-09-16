@@ -87,7 +87,7 @@ bool PCCBitstream::write( const std::string& compressedStreamPath ) {
 
 void PCCBitstream::readVideoStream( PCCVideoBitstream& videoBitstream, size_t videoStreamSize ) {
 #ifdef BITSTREAM_TRACE
-  trace( "Code: PCCVideoBitstream \n" );
+  trace( "%s \n", "Code: PCCVideoBitstream" );
   trace( "Code: size = %zu \n", videoStreamSize );
 #endif
   videoBitstream.resize( videoStreamSize );
@@ -98,7 +98,7 @@ void PCCBitstream::readVideoStream( PCCVideoBitstream& videoBitstream, size_t vi
 
 void PCCBitstream::writeVideoStream( PCCVideoBitstream& videoBitstream ) {
 #ifdef BITSTREAM_TRACE
-  trace( "Code: PCCVideoBitstream \n" );
+  trace( "%s \n", "Code: PCCVideoBitstream" );
 #endif
   uint8_t* data = videoBitstream.buffer();
   size_t   size = videoBitstream.size();
@@ -134,8 +134,9 @@ void PCCBitstream::computeMD5() {
   MD5                  md5Hash;
   std::vector<uint8_t> tmp_digest;
   tmp_digest.resize( 16 );
-  TRACE_BITSTRMD5( " BITSTRMD5 = " )
-  md5Hash.update( data_.data(), data_.size() );
+  size_t dataSize = size() == 0 ? data_.size() : size();
+  TRACE_BITSTRMD5( "%s", "BITSTRMD5 = " )
+  md5Hash.update( data_.data(), dataSize );
   md5Hash.finalize( tmp_digest.data() );
   for ( auto& bitStr : tmp_digest ) TRACE_BITSTRMD5( "%02x", bitStr );
   std::cout << std::endl;

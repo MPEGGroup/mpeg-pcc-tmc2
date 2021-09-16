@@ -5,8 +5,6 @@ STRING(REPLACE " " "_" MYNAME ${MYNAME})
 PROJECT(${MYNAME} C CXX)
 
 FILE(GLOB SRC include/*.h source/*.cpp 
-              ${CMAKE_SOURCE_DIR}/dependencies/arithmetic-coding/inc/*.h
-              ${CMAKE_SOURCE_DIR}/dependencies/arithmetic-coding/src/*.cpp
               ${CMAKE_SOURCE_DIR}/dependencies/nanoflann/*.hpp
               ${CMAKE_SOURCE_DIR}/dependencies/nanoflann/*.h )
 
@@ -16,7 +14,6 @@ INCLUDE_DIRECTORIES( include
                      ${CMAKE_SOURCE_DIR}/source/lib/PccLibVideoEncoder/include 
                      ${CMAKE_SOURCE_DIR}/source/lib/PccLibColorConverter/include/
                      ${CMAKE_SOURCE_DIR}/dependencies/tbb/include
-                     ${CMAKE_SOURCE_DIR}/dependencies/arithmetic-coding/inc
                      ${CMAKE_SOURCE_DIR}/dependencies/nanoflann )
 
 SET( LIBS PccLibCommon PccLibBitstreamCommon PccLibVideoEncoder PccLibColorConverter )

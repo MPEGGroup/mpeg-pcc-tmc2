@@ -2,6 +2,6 @@
 
 CURDIR=`dirname $(readlink -f $0)`;
 
-cd ${CURDIR}/../VTM-11.2/
+cd ${CURDIR}/../VTM/
 
-git diff > ${CURDIR}/adaptions_for_vtm_11_2.patch
+git diff > ${CURDIR}/adaptions_for_vtm_13_0.patch
