@@ -4685,15 +4685,20 @@ bool PCCEncoder::generateSegments( const PCCGroupOfFrames& sources, PCCContext& 
   if ( params_.additionalProjectionPlaneMode_ == 0 || params_.additionalProjectionPlaneMode_ == 5 ) {
     params.weightNormal_ = calculateWeightNormal( params.geometryBitDepth3D_, sources[0] );
   }
-  float sumDistanceSrcRec = 0;
-  for ( size_t i = 0; i < frames.size(); i++ ) {
-    float distanceSrcRec = 0;
-    if ( !generateSegments( sources[i], frames[i], params, i, distanceSrcRec ) ) {
-      res = false;
-      break;
-    }
-    sumDistanceSrcRec += distanceSrcRec;
-  }
+  float           sumDistanceSrcRec = 0;
+  tbb::task_arena limited( static_cast<int>( params_.nbThread_ ) );
+  limited.execute( [&] {
+    tbb::parallel_for( size_t( 0 ), frames.size(), [&]( const size_t i ) {
+      // for ( size_t i = 0; i < frames.size(); i++ ) {
+      float distanceSrcRec = 0;
+      if ( !generateSegments( sources[i], frames[i], params, i, distanceSrcRec ) ) {
+        res = false;
+        tbb::task::self().cancel_group_execution();
+        return;
+      }
+      sumDistanceSrcRec += distanceSrcRec;
+    } );
+  } );
   if ( params_.pointLocalReconstruction_ || params_.singleMapPixelInterleaving_ ) {
     const float distanceSrcRec = sumDistanceSrcRec / static_cast<float>( frames.size() );
     if ( distanceSrcRec >= 250.F ) {
@@ -6576,59 +6581,63 @@ bool PCCEncoder::generateAttributeVideo( const PCCGroupOfFrames&     sources,
   } else {
     video.resize( context.size() * ( params.mapCountMinus1_ + 1 ) );
   }
-  bool ret = true;
-  for ( size_t i = 0; i < context.size(); i++ ) {
-    auto&  frame    = context[i].getTitleFrameContext();
-    size_t mapCount = params_.mapCountMinus1_ + 1;
-    sources[i].transferColors(
-        reconstructs[i],                                   // target
-        int32_t( params_.bestColorSearchRange_ ),          // searchRange
-        params_.rawPointsPatch_,                           // losslessAttribute,
-        params_.numNeighborsColorTransferFwd_,             // numNeighborsColorTransferFwd
-        params_.numNeighborsColorTransferBwd_,             // numNeighborsColorTransferBwd
-        params_.useDistWeightedAverageFwd_,                // useDistWeightedAverageFwd
-        params_.useDistWeightedAverageBwd_,                // useDistWeightedAverageBwd
-        params_.skipAvgIfIdenticalSourcePointPresentFwd_,  // skipAvgIfIdenticalSourcePointPresentFwd
-        params_.skipAvgIfIdenticalSourcePointPresentBwd_,  // skipAvgIfIdenticalSourcePointPresentBwd
-        params_.distOffsetFwd_,                            // distOffsetFwd
-        params_.distOffsetBwd_,                            // distOffsetBwd
-        params_.maxGeometryDist2Fwd_,                      // maxGeometryDist2Fwd
-        params_.maxGeometryDist2Bwd_,                      // maxGeometryDist2Bwd
-        params_.maxColorDist2Fwd_,                         // maxColorDist2Fwd
-        params_.maxColorDist2Bwd_,                         // maxColorDist2Bwd
-        params_.excludeColorOutlier_,                      // excludeColorOutlier
-        params_.thresholdColorOutlierDist_                 // thresholdColorOutlierDist
-    );
-    // color pre-smoothing
-    if ( params_.flagColorPreSmoothing_ ) { presmoothPointCloudColor( reconstructs[i], params ); }
-    size_t imageWidth  = frame.getWidth();
-    size_t imageHeight = frame.getHeight();
-    if ( params_.multipleStreams_ ) {
-      auto& image = video.getFrame( i );
-      image.resize( imageWidth, imageHeight, PCCCOLORFORMAT::RGB444 );
-      image.set( 0 );
-      auto& videoT1 = context.getVideoAttributesMultiple()[1];
-      auto& image1  = videoT1.getFrame( i );
-      image1.resize( imageWidth, imageHeight, PCCCOLORFORMAT::RGB444 );
-      image1.set( 0 );
-      size_t accTilePointCount = 0;
-      for ( size_t tileIdx = 0; tileIdx < context[i].getNumTilesInAtlasFrame(); tileIdx++ ) {
-        accTilePointCount =
-            generateAttributeVideo( reconstructs[i], context, i, tileIdx, video, videoT1, mapCount, accTilePointCount );
-      }
-    } else {
-      for ( size_t f = 0; f < mapCount; ++f ) {
-        auto& image = video.getFrame( f + mapCount * i );
+  bool            ret = true;
+  tbb::task_arena limited( static_cast<int>( params_.nbThread_ ) );
+  limited.execute( [&] {
+    tbb::parallel_for( size_t( 0 ), context.size(), [&]( const size_t i ) {
+      // for ( size_t i = 0; i < context.size(); i++ ) {
+      auto&  frame    = context[i].getTitleFrameContext();
+      size_t mapCount = params_.mapCountMinus1_ + 1;
+      sources[i].transferColors(
+          reconstructs[i],                                   // target
+          int32_t( params_.bestColorSearchRange_ ),          // searchRange
+          params_.rawPointsPatch_,                           // losslessAttribute,
+          params_.numNeighborsColorTransferFwd_,             // numNeighborsColorTransferFwd
+          params_.numNeighborsColorTransferBwd_,             // numNeighborsColorTransferBwd
+          params_.useDistWeightedAverageFwd_,                // useDistWeightedAverageFwd
+          params_.useDistWeightedAverageBwd_,                // useDistWeightedAverageBwd
+          params_.skipAvgIfIdenticalSourcePointPresentFwd_,  // skipAvgIfIdenticalSourcePointPresentFwd
+          params_.skipAvgIfIdenticalSourcePointPresentBwd_,  // skipAvgIfIdenticalSourcePointPresentBwd
+          params_.distOffsetFwd_,                            // distOffsetFwd
+          params_.distOffsetBwd_,                            // distOffsetBwd
+          params_.maxGeometryDist2Fwd_,                      // maxGeometryDist2Fwd
+          params_.maxGeometryDist2Bwd_,                      // maxGeometryDist2Bwd
+          params_.maxColorDist2Fwd_,                         // maxColorDist2Fwd
+          params_.maxColorDist2Bwd_,                         // maxColorDist2Bwd
+          params_.excludeColorOutlier_,                      // excludeColorOutlier
+          params_.thresholdColorOutlierDist_                 // thresholdColorOutlierDist
+      );
+      // color pre-smoothing
+      if ( params_.flagColorPreSmoothing_ ) { presmoothPointCloudColor( reconstructs[i], params ); }
+      size_t imageWidth  = frame.getWidth();
+      size_t imageHeight = frame.getHeight();
+      if ( params_.multipleStreams_ ) {
+        auto& image = video.getFrame( i );
         image.resize( imageWidth, imageHeight, PCCCOLORFORMAT::RGB444 );
         image.set( 0 );
+        auto& videoT1 = context.getVideoAttributesMultiple()[1];
+        auto& image1  = videoT1.getFrame( i );
+        image1.resize( imageWidth, imageHeight, PCCCOLORFORMAT::RGB444 );
+        image1.set( 0 );
+        size_t accTilePointCount = 0;
+        for ( size_t tileIdx = 0; tileIdx < context[i].getNumTilesInAtlasFrame(); tileIdx++ ) {
+          accTilePointCount = generateAttributeVideo( reconstructs[i], context, i, tileIdx, video, videoT1, mapCount,
+                                                      accTilePointCount );
+        }
+      } else {
+        for ( size_t f = 0; f < mapCount; ++f ) {
+          auto& image = video.getFrame( f + mapCount * i );
+          image.resize( imageWidth, imageHeight, PCCCOLORFORMAT::RGB444 );
+          image.set( 0 );
+        }
+        size_t accTilePointCount = 0;
+        for ( size_t tileIdx = 0; tileIdx < context[i].getNumTilesInAtlasFrame(); tileIdx++ ) {
+          accTilePointCount =
+              generateAttributeVideo( reconstructs[i], context, i, tileIdx, video, video, mapCount, accTilePointCount );
+        }
       }
-      size_t accTilePointCount = 0;
-      for ( size_t tileIdx = 0; tileIdx < context[i].getNumTilesInAtlasFrame(); tileIdx++ ) {
-        accTilePointCount =
-            generateAttributeVideo( reconstructs[i], context, i, tileIdx, video, video, mapCount, accTilePointCount );
-      }
-    }
-  }
+    } );
+  } );
   return ret;
 }
 
