@@ -1979,6 +1979,7 @@ void PCCEncoder::doGlobalTetrisPacking( PCCContext& context,
       vector<int>      orientationHorizontal;
       int              numOrientations;
       std::vector<int> horizon;
+      horizon.resize( occupancySizeU, 0 );
       orientationHorizontal.resize( 8 );
       if ( params_.packingStrategy_ == 2 ) {
         orientationHorizontal = { PATCH_ORIENTATION_DEFAULT, PATCH_ORIENTATION_SWAP,    PATCH_ORIENTATION_ROT180,
