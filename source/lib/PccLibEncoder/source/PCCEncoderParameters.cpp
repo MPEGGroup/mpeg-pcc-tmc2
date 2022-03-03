@@ -1399,7 +1399,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   afps.setAtlasSequenceParameterSetId( 0 );
   afps.setNumRefIdxDefaultActiveMinus1( static_cast<uint8_t>(
       constrainedPack_ ? ( ( std::max )( 0, static_cast<int>( maxNumRefAtlasFrame_ ) - 1 ) ) : 0 ) );
-  afps.setAdditionalLtAfocLsbLen( 4 );
+  afps.setAdditionalLtAfocLsbLen( asps.getLongTermRefAtlasFramesFlag() ? 4 : 0 );
   afps.setRaw3dOffsetBitCountExplicitModeFlag( false );
   afps.setExtensionFlag( true );
   afps.setExtension8Bits( 0 );
