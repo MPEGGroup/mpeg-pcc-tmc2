@@ -98,7 +98,7 @@ class PCCBitstreamWriter {
   size_t  write( SampleStreamV3CUnit& ssvu, PCCBitstream& bitstream, uint32_t forcedSsvhUnitSizePrecisionBytes = 0 );
   int     encode( PCCHighLevelSyntax& syntax, SampleStreamV3CUnit& ssvu );
 
-#ifdef BITSTREAM_TRACE
+#if defined( BITSTREAM_TRACE ) || defined( CONFORMANCE_TRACE )
   void setLogger( PCCLogger& logger ) { logger_ = &logger; }
 #endif
  private:
@@ -500,7 +500,7 @@ class PCCBitstreamWriter {
   // H.7.3.6.2.2 Atlas camera parameters syntax
   static void atlasCameraParameters( PCCBitstream& bitstream, AtlasCameraParameters& acp );
 
-#ifdef BITSTREAM_TRACE
+#if defined( BITSTREAM_TRACE ) || defined( CONFORMANCE_TRACE )
   PCCLogger* logger_ = nullptr;
 #endif
 };

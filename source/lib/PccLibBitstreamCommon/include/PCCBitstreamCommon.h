@@ -69,7 +69,7 @@ namespace pcc {
 // #define BITSTREAM_TRACE
 // #define CODEC_TRACE
 // #define SEI_TRACE
-// #define CONFORMANCE_TRACE
+ #define CONFORMANCE_TRACE
 
 // ******************************************************************* //
 // Common constants
