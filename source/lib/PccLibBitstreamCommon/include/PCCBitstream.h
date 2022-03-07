@@ -342,6 +342,8 @@ class PCCBitstream {
       logger_->traceStream( pFormat, eArgs... );
     }
   }
+#endif
+#if defined( BITSTREAM_TRACE ) || defined( CONFORMANCE_TRACE )
   void setTrace( bool trace ) { trace_ = trace; }
   void setLogger( PCCLogger& logger ) { logger_ = &logger; }
 #endif
@@ -377,7 +379,7 @@ class PCCBitstream {
   std::vector<uint8_t> data_;
   PCCBistreamPosition  position_;
 
-#ifdef BITSTREAM_TRACE
+#if defined(CONFORMANCE_TRACE) || defined(BITSTREAM_TRACE)
   bool       trace_;
   PCCLogger* logger_ = nullptr;
 #endif

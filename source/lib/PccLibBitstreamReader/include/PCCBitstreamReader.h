@@ -95,7 +95,7 @@ class PCCBitstreamReader {
   static size_t read( PCCBitstream& bitstream, SampleStreamV3CUnit& ssvu );
   int32_t       decode( SampleStreamV3CUnit& ssvu, PCCHighLevelSyntax& syntax );
 
-#ifdef BITSTREAM_TRACE
+#if defined( BITSTREAM_TRACE ) || defined( CONFORMANCE_TRACE )
   void setLogger( PCCLogger& logger ) { logger_ = &logger; }
 #endif
  private:
@@ -500,7 +500,7 @@ class PCCBitstreamReader {
   int32_t predPatchIndex_;
   int32_t prevFrameIndex_;
 
-#ifdef BITSTREAM_TRACE
+#if defined( BITSTREAM_TRACE ) || defined( CONFORMANCE_TRACE )
   PCCLogger* logger_ = nullptr;
 #endif
 };
