@@ -567,6 +567,27 @@ bool PCCBitstreamReader::moreDataInPayload( PCCBitstream& bitstream ) {
 }
 bool PCCBitstreamReader::moreRbspData( PCCBitstream& bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
+  // Return false if there is no more data.
+  if (!bitstream.moreData()) {
+    return false;
+  }
+
+  // Store bitstream state.
+  auto position = bitstream.getPosition();
+
+  // Skip first bit. It may be part of a RBSP or a rbsp_one_stop_bit.
+  bitstream.read( 1 );
+
+  while ( bitstream.moreData() ) {
+    if ( bitstream.read( 1 ) ) {
+      // We found a one bit beyond the first bit. Restore bitstream state and return true.
+      bitstream.setPosition( position );
+      return true;
+    }
+  }
+
+  // We did not found a one bit beyond the first bit. Restore bitstream state and return false.
+  bitstream.setPosition( position );
   return false;
 }
 bool PCCBitstreamReader::moreRbspTrailingData( PCCBitstream& bitstream ) {
@@ -729,6 +750,7 @@ void PCCBitstreamReader::seiRbsp( PCCHighLevelSyntax& syntax,
   // do { seiMessage( syntax, bitstream ); } while ( moreRbspData( bitstream )
   // );
   seiMessage( bitstream, syntax, nalUnitType, sei );
+  rbspTrailingBits( bitstream );
 }
 
 // 8.3.6.5 Access unit delimiter RBSP syntax

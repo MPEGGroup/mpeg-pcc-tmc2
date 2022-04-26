@@ -907,6 +907,7 @@ void PCCBitstreamWriter::seiRbsp( PCCHighLevelSyntax& syntax,
   // do { seiMessage( syntax, bitstream ); } while ( moreRbspData( bitstream )
   // );
   seiMessage( bitstream, syntax, sei, nalUnitType, atglIndex );
+  rbspTrailingBits( bitstream );
 }
 
 // 8.3.6.5 Access unit delimiter RBSP syntax
