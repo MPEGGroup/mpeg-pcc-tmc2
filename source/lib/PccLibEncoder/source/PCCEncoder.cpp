@@ -8601,7 +8601,7 @@ void PCCEncoder::createHashSEI( PCCContext& context, size_t frameIndex, AtlasTil
       atlasPatchCommonByteString( atlasData, atlasPatchIdx, atlasPatchParams );
       atlasPatchApplicationByteString( atlasData, atlasPatchIdx, atlasPatchParams );
     }
-    printf( "**sei** AtlasPatchHash: frame(%d) (#patches %zu)\n", frameIndex, patchCount );
+    printf( "**sei** AtlasPatchHash: frame(%zu) (#patches %zu)\n", frameIndex, patchCount );
     if ( sei.getHashType() == 0 ) {
       std::vector<uint8_t> md5Digest( 16 );
       md5Digest = context.computeMD5( atlasData.data(), atlasData.size() );
@@ -8623,7 +8623,7 @@ void PCCEncoder::createHashSEI( PCCContext& context, size_t frameIndex, AtlasTil
   if ( sei.getDecodedAtlasB2pHashPresentFlag() && !seiHashCancelFlag ) {
     std::vector<uint8_t> atlasB2PData;
     atlasBlockToPatchByteString( atlasB2PData, atlasB2PPatchParams );
-    printf( "**sei** AtlasBlockToPatchHash: frame(%d) \n", frameIndex );
+    printf( "**sei** AtlasBlockToPatchHash: frame(%zu) \n", frameIndex );
     if ( sei.getHashType() == 0 ) {
       std::vector<uint8_t> md5Digest( 16 );
       md5Digest = context.computeMD5( atlasB2PData.data(), atlasB2PData.size() );
@@ -8673,7 +8673,7 @@ void PCCEncoder::createHashSEI( PCCContext& context, size_t frameIndex, AtlasTil
           tilePatchCommonByteString( atlasTileData, tileId, patchIdx, tilePatchParams );
           tilePatchApplicationByteString( atlasTileData, tileId, patchIdx, tilePatchParams );
         }
-        printf( "**sei** TilesPatchHash: frame(%d), tile(tileIdx = %zu, tileId  = %zu)\n", frameIndex, tileIdx,
+        printf( "**sei** TilesPatchHash: frame(%zu), tile(tileIdx = %zu, tileId  = %zu)\n", frameIndex, tileIdx,
                 tileId );
         if ( sei.getHashType() == 0 ) {
           std::vector<uint8_t> md5Digest( 16 );
@@ -8698,7 +8698,7 @@ void PCCEncoder::createHashSEI( PCCContext& context, size_t frameIndex, AtlasTil
       if ( sei.getDecodedAtlasTilesB2pHashPresentFlag() ) {
         std::vector<uint8_t> tileB2PData;
         tileBlockToPatchByteString( tileB2PData, tileId, tileB2PPatchParams );
-        printf( "**sei** TilesB2pPatchHash: frame(%d), tileIdx(%zu)\n", frameIndex, tileIdx );
+        printf( "**sei** TilesB2pPatchHash: frame(%zu), tileIdx(%zu)\n", frameIndex, tileIdx );
         if ( sei.getHashType() == 0 ) {
           std::vector<uint8_t> md5Digest( 16 );
           md5Digest = context.computeMD5( tileB2PData.data(), tileB2PData.size() );

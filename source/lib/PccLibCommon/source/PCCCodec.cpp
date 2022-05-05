@@ -197,12 +197,12 @@ void PCCCodec::colorSmoothing( PCCPointSet3&                       reconstruct,
   colorSmoothingCount_.resize( numBoundaryCells );
   colorSmoothingPartition_.resize( numBoundaryCells );
   colorSmoothingDoSmooth_.resize( numBoundaryCells );
-  std::fill( colorSmoothingCenter_.begin(), colorSmoothingCenter_.end(), 0 );
+  std::fill( colorSmoothingCenter_.begin(), colorSmoothingCenter_.end(), 0.f );
   std::fill( colorSmoothingCount_.begin(), colorSmoothingCount_.end(), 0 );
   std::pair<size_t, size_t> initPair;
   initPair.first = initPair.second = 0;
   std::fill( colorSmoothingPartition_.begin(), colorSmoothingPartition_.end(), initPair );
-  std::fill( colorSmoothingDoSmooth_.begin(), colorSmoothingDoSmooth_.end(), 0 );
+  std::fill( colorSmoothingDoSmooth_.begin(), colorSmoothingDoSmooth_.end(), false );
   colorSmoothingLum_.clear();
   colorSmoothingLum_.resize( numBoundaryCells );
   for ( int k = 0; k < reconstruct.getPointCount(); k++ ) {
@@ -2349,13 +2349,13 @@ void PCCCodec::atlasPatchApplicationByteString( std::vector<uint8_t>&     string
           for ( int j = 0; j < blockCnt; j++ ) {
             val = plrd.getBlockModeMinus1( j ) & 0xFF;
             stringByte.push_back( val );
-            val = ( plrd.getBlockModeMinus1( j ) >> 8 ) & 0xFF;
+            val = (uint8_t)( (int)plrd.getBlockModeMinus1( j ) >> 8 ) & 0xFF;
             stringByte.push_back( val );
           }
         } else {
           val = plrd.getModeMinus1() & 0xFF;
           stringByte.push_back( val );
-          val = ( plrd.getModeMinus1() >> 8 ) & 0xFF;
+          val = (uint8_t)( (int)plrd.getModeMinus1() >> 8 ) & 0xFF;
           stringByte.push_back( val );
         }
       }
@@ -2447,13 +2447,13 @@ void PCCCodec::tilePatchApplicationByteString( std::vector<uint8_t>&            
           for ( int j = 0; j < blockCnt; j++ ) {
             val = tilePatchParams[tileId][p].patchPLRData_.getBlockModeMinus1( j ) & 0xFF;
             stringByte.push_back( val );
-            val = ( tilePatchParams[tileId][p].patchPLRData_.getBlockModeMinus1( j ) >> 8 ) & 0xFF;
+            val = (uint8_t)( (int)tilePatchParams[tileId][p].patchPLRData_.getBlockModeMinus1( j ) >> 8 ) & 0xFF;
             stringByte.push_back( val );
           }
         } else {
           val = tilePatchParams[tileId][p].patchPLRData_.getModeMinus1() & 0xFF;
           stringByte.push_back( val );
-          val = ( tilePatchParams[tileId][p].patchPLRData_.getModeMinus1() >> 8 ) & 0xFF;
+          val = (uint8_t)( (int)tilePatchParams[tileId][p].patchPLRData_.getModeMinus1() >> 8 ) & 0xFF;
           stringByte.push_back( val );
         }
       }
