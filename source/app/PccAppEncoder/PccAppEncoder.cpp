@@ -87,6 +87,9 @@ static std::istream& operator>>( std::istream& in, PCCCodecId& val ) {
 #ifdef USE_VTMLIB_VIDEO_CODEC
   if ( tmp == "VTMLIB" || tmp == "vtmlib" || tmp == "vtm" || tmp == "vvc" ) { val = VTMLIB; }
 #endif
+#ifdef USE_VVLIB_VIDEO_CODEC
+  if ( tmp == "VVLIB" || tmp == "vvlib" || tmp == "vv" || tmp == "vvenc" ) { val = VVLIB; }
+#endif
 #ifdef USE_FFMPEG_VIDEO_CODEC
   if ( tmp == "FFMPEG" || tmp == "ffmpeg" ) { val = FFMPEG; }
 #endif

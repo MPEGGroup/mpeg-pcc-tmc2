@@ -109,8 +109,11 @@ enum PCCCodecId {
 #ifdef USE_VTMLIB_VIDEO_CODEC
   VTMLIB = 5,
 #endif
+#ifdef USE_VVLIB_VIDEO_CODEC
+  VVLIB = 6,
+#endif
 #ifdef USE_FFMPEG_VIDEO_CODEC
-  FFMPEG = 6,
+  FFMPEG = 7,
 #endif
   UNKNOWN_CODEC = 255
 };

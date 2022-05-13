@@ -41,7 +41,7 @@ bool PCCVideo<T, N>::read( const std::string    fileName,
                            const size_t         sizeV0,
                            const PCCCOLORFORMAT format,
                            const size_t         nbyte ) {
-  std::ifstream infile( fileName, std::ios::binary );
+  std::ifstream infile( fileName, std::ios::binary );         
   auto          ret = read( infile, sizeU0, sizeV0, format, nbyte );
   infile.close();
   return ret;

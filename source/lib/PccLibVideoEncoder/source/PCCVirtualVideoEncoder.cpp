@@ -38,6 +38,7 @@
 #include "PCCJMLibVideoEncoder.h"
 #include "PCCHMLibVideoEncoder.h"
 #include "PCCVTMLibVideoEncoder.h"
+#include "PCCVVLibVideoEncoder.h"
 #include "PCCSHMAppVideoEncoder.h"
 #ifdef USE_FFMPEG_VIDEO_CODEC
 #include "PCCFFMPEGLibVideoEncoder.h"
@@ -91,6 +92,9 @@ bool PCCVirtualVideoEncoder<T>::checkCodecId( PCCCodecId codecId ) {
 #ifdef USE_VTMLIB_VIDEO_CODEC
     case VTMLIB: break;
 #endif
+#ifdef USE_VVLIB_VIDEO_CODEC
+    case VVLIB: break;
+#endif
 #ifdef USE_FFMPEG_VIDEO_CODEC
     case FFMPEG: break;
 #endif
@@ -122,6 +126,9 @@ std::shared_ptr<PCCVirtualVideoEncoder<T>> PCCVirtualVideoEncoder<T>::create( PC
 #endif
 #ifdef USE_VTMLIB_VIDEO_CODEC
     case VTMLIB: return std::make_shared<PCCVTMLibVideoEncoder<T>>(); break;
+#endif
+#ifdef USE_VVLIB_VIDEO_CODEC
+    case VVLIB: return std::make_shared<PCCVVLibVideoEncoder<T>>(); break;
 #endif
 #ifdef USE_FFMPEG_VIDEO_CODEC
     case FFMPEG: return std::make_shared<PCCFFMPEGLibVideoEncoder<T>>(); break;

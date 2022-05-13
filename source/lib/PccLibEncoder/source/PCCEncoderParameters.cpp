@@ -1163,7 +1163,7 @@ bool PCCEncoderParameters::check() {
     case CODEC_GROUP_AVC_PROGRESSIVE_HIGH:
 #if defined( USE_JMAPP_VIDEO_CODEC ) && defined( USE_JMLIB_VIDEO_CODEC )
       if ( ( videoEncoderOccupancyCodecId_ != JMLIB && videoEncoderOccupancyCodecId_ != JMAPP ) ||
-           ( videoEncoderGeometryCodecId_ != JMLIB && videoEncoderGeometryCodecId_ != JMAPP ) ||
+           ( videoEncoderGeometryCodecId_  != JMLIB && videoEncoderGeometryCodecId_ != JMAPP ) ||
            ( videoEncoderAttributeCodecId_ != JMLIB && videoEncoderAttributeCodecId_ != JMAPP ) ) {
         std::cerr << "profileCodecGroupIdc_ is CODEC_GROUP_AVC_PROGRESSIVE_HIGH force codecId. \n";
         videoEncoderOccupancyCodecId_ = JMLIB;
@@ -1225,9 +1225,10 @@ bool PCCEncoderParameters::check() {
       break;
 
     case CODEC_GROUP_VVC_MAIN10:
-#if defined( USE_VTMLIB_VIDEO_CODEC )
-      if ( videoEncoderOccupancyCodecId_ != VTMLIB || videoEncoderGeometryCodecId_ != VTMLIB ||
-           videoEncoderAttributeCodecId_ != VTMLIB ) {
+#if defined( USE_VTMLIB_VIDEO_CODEC ) || defined( USE_VVLIB_VIDEO_CODEC )
+      if ( ( videoEncoderOccupancyCodecId_ != VTMLIB && videoEncoderOccupancyCodecId_ != VVLIB ) ||
+           ( videoEncoderGeometryCodecId_ != VTMLIB && videoEncoderGeometryCodecId_ != VVLIB ) ||
+           ( videoEncoderAttributeCodecId_ != VTMLIB && videoEncoderAttributeCodecId_ != VVLIB ) ) {
         std::cerr << "profileCodecGroupIdc_ is VVC_MAIN10 force codecId. \n";
         videoEncoderOccupancyCodecId_ = VTMLIB;
         videoEncoderGeometryCodecId_  = VTMLIB;
@@ -1306,6 +1307,9 @@ uint8_t PCCEncoderParameters::getCodecIdIndex( PCCCodecId codecId ) {
 #endif
 #ifdef USE_VTMLIB_VIDEO_CODEC
     case VTMLIB: return vvcCodecIdIndex_; break;
+#endif
+#ifdef USE_VVLIB_VIDEO_CODEC
+    case VVLIB: return vvcCodecIdIndex_; break;
 #endif
     default:
       printf( "Error: codec id %d not supported \n", (int)codecId );
@@ -1480,8 +1484,9 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
     for ( uint32_t i = 0; i < ai.getAttributeCount(); i++ ) {
       ai.setAttributeCodecId( i, getCodecIdIndex( (PCCCodecId)videoEncoderAttributeCodecId_ ) );
     }
-
-    printf( "CODEC ID SET = geometry: %d occupancy: %d  attributes[0]%d \n", oi.getOccupancyCodecId(),
+    printf( "CODEC ID SET = occupancy: %d geometry: %d attributes: %d \n", videoEncoderOccupancyCodecId_,
+            videoEncoderGeometryCodecId_, videoEncoderAttributeCodecId_ );
+    printf( "CODEC ID SET = occupancy: %d geometry: %d attributes[0]: %d \n", oi.getOccupancyCodecId(),
             gi.getGeometryCodecId(), ai.getAttributeCodecId( 0 ) );
   } else {
     printf( "CODEC ID SET = geometry: %d occupancy: %d \n", oi.getOccupancyCodecId(), gi.getGeometryCodecId() );

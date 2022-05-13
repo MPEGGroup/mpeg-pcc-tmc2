@@ -5,13 +5,14 @@ SET( TMC2_VERSION_MAJOR 18 )
 SET( TMC2_VERSION_MINOR 0 )
 
 # Video encoder and decoder library and application:
-OPTION( USE_JMAPP_VIDEO_CODEC     "Use JM application to encode and decode video"           TRUE  )  # JMAPP  = 0
-OPTION( USE_HMAPP_VIDEO_CODEC     "Use HM application to encode and decode video"           TRUE  )  # HMAPP  = 1
-OPTION( USE_SHMAPP_VIDEO_CODEC    "Use SHM application to encode and decode video"          TRUE  )  # SHMAPP = 2    
-OPTION( USE_JMLIB_VIDEO_CODEC     "Clone, build and use JM video encoder and decoder"       TRUE  )  # JMLIB  = 3
-OPTION( USE_HMLIB_VIDEO_CODEC     "Clone, build and use HM video encoder and decoder"       TRUE  )  # HMLIB  = 4
-OPTION( USE_VTMLIB_VIDEO_CODEC    "Clone, build and use VTM video encoder and decoder"      TRUE  )  # VTMLIB = 5
-OPTION( USE_FFMPEG_VIDEO_CODEC    "Clone, build and use FFMPEG video encoder and decoder"   FALSE )  # FFMPEG = 6                                                                                                 #UNKNOWN_CODEC = 7
+OPTION( USE_JMAPP_VIDEO_CODEC     "Use JM application to encode and decode video"              TRUE  )  # JMAPP  = 0
+OPTION( USE_HMAPP_VIDEO_CODEC     "Use HM application to encode and decode video"              TRUE  )  # HMAPP  = 1
+OPTION( USE_SHMAPP_VIDEO_CODEC    "Use SHM application to encode and decode video"             TRUE  )  # SHMAPP = 2    
+OPTION( USE_JMLIB_VIDEO_CODEC     "Clone, build and use JM video encoder and decoder"          TRUE  )  # JMLIB  = 3
+OPTION( USE_HMLIB_VIDEO_CODEC     "Clone, build and use HM video encoder and decoder"          TRUE  )  # HMLIB  = 4
+OPTION( USE_VTMLIB_VIDEO_CODEC    "Clone, build and use VTM video encoder and decoder"         TRUE )   # VTMLIB = 5
+OPTION( USE_VVLIB_VIDEO_CODEC     "Clone, build and use VVENC/VVDEC video encoder and decoder" TRUE )   # VVENC  = 6  
+OPTION( USE_FFMPEG_VIDEO_CODEC    "Clone, build and use FFMPEG video encoder and decoder"      FALSE )  # FFMPEG = 7   
 
 # Color conversion library:
 OPTION( USE_HDRTOOLS              "Clone, build and use HDRTools for color conversions"     FALSE )
@@ -51,6 +52,9 @@ IF (MSVC)
   ENDIF()
 ENDIF()
 
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
+
 # Include external libraries
 IF( USE_HMLIB_VIDEO_CODEC )
   INCLUDE( ${CMAKE_SOURCE_DIR}/dependencies/cmake/hm.cmake )
@@ -69,6 +73,9 @@ IF( USE_VTMLIB_VIDEO_CODEC )
 ENDIF()
 IF( USE_SHMAPP_VIDEO_CODEC )
   INCLUDE( ${CMAKE_SOURCE_DIR}/dependencies/cmake/shm_app.cmake )
+ENDIF()
+IF( USE_VVLIB_VIDEO_CODEC )  
+  INCLUDE( ${CMAKE_SOURCE_DIR}/dependencies/cmake/vvlib.cmake )
 ENDIF()
 IF( USE_HDRTOOLS )  
   INCLUDE( ${CMAKE_SOURCE_DIR}/dependencies/cmake/hdrtools.cmake )

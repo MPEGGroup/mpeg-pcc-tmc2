@@ -15,6 +15,7 @@
 #cmakedefine USE_HMLIB_VIDEO_CODEC
 #cmakedefine USE_JMLIB_VIDEO_CODEC
 #cmakedefine USE_VTMLIB_VIDEO_CODEC
+#cmakedefine USE_VVLIB_VIDEO_CODEC
 #cmakedefine USE_FFMPEG_VIDEO_CODEC
 
 /* HDR Tools */

@@ -30,57 +30,32 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+#ifndef PCCVVLibVideoDecoder_h
+#define PCCVVLibVideoDecoder_h
 
+#include "PCCCommon.h"
+
+#ifdef USE_VVLIB_VIDEO_CODEC
+#include "PCCVideo.h"
 #include "PCCVirtualVideoDecoder.h"
 
-#include "PCCJMAppVideoDecoder.h"
-#include "PCCHMAppVideoDecoder.h"
-#include "PCCJMLibVideoDecoder.h"
-#include "PCCHMLibVideoDecoder.h"
-#include "PCCVTMLibVideoDecoder.h"
-#include "PCCVVLibVideoDecoder.h"
-#include "PCCSHMAppVideoDecoder.h"
-#ifdef USE_FFMPEG_VIDEO_CODEC
-#include "PCCFFMPEGLibVideoDecoder.h"
-#endif
-using namespace pcc;
+namespace pcc {
 
-template <typename T>
-std::shared_ptr<PCCVirtualVideoDecoder<T>> PCCVirtualVideoDecoder<T>::create( PCCCodecId codecId ) {
-  printf( "PCCVirtualVideoDecoder: create codecId = %d \n", codecId );
-  fflush( stdout );
-  switch ( codecId ) {
-#ifdef USE_JMAPP_VIDEO_CODEC
-    case JMAPP: return std::make_shared<PCCJMAppVideoDecoder<T>>(); break;
-#endif
-#ifdef USE_HMAPP_VIDEO_CODEC
-    case HMAPP: return std::make_shared<PCCHMAppVideoDecoder<T>>(); break;
-#endif
-#ifdef USE_SHMAPP_VIDEO_CODEC
-    case SHMAPP: return std::make_shared<PCCSHMAppVideoDecoder<T>>(); break;
-#endif
-#ifdef USE_JMLIB_VIDEO_CODEC
-    case JMLIB: return std::make_shared<PCCJMLibVideoDecoder<T>>(); break;
-#endif
-#ifdef USE_HMLIB_VIDEO_CODEC
-    case HMLIB: return std::make_shared<PCCHMLibVideoDecoder<T>>(); break;
-#endif
-#ifdef USE_VTMLIB_VIDEO_CODEC
-    case VTMLIB: return std::make_shared<PCCVTMLibVideoDecoder<T>>(); break;
-#endif
-#ifdef USE_VVLIB_VIDEO_CODEC
-    case VVLIB: return std::make_shared<PCCVVLibVideoDecoder<T>>(); break;
-#endif
-#ifdef USE_FFMPEG_VIDEO_CODEC
-    case FFMPEG: return std::make_shared<PCCFFMPEGLibVideoDecoder<T>>(); break;
-#endif
-    default:
-      printf( "Error: codec id not supported \n" );
-      exit( -1 );
-      break;
-  }
-  return nullptr;
-}
+template <class T>
+class PCCVVLibVideoDecoder : public PCCVirtualVideoDecoder<T> {
+ public:
+  PCCVVLibVideoDecoder();
+  ~PCCVVLibVideoDecoder();
 
-template class pcc::PCCVirtualVideoDecoder<uint8_t>;
-template class pcc::PCCVirtualVideoDecoder<uint16_t>;
+  void decode( PCCVideoBitstream& bitstream,
+               PCCVideo<T, 3>&    video,
+               size_t             outputBitDepth = 8,
+               const std::string& decoderPath    = "",
+               const std::string& parameters     = "" );
+};
+
+};  // namespace pcc
+
+#endif
+
+#endif /* PCCVVLibVideoDecoder_h */

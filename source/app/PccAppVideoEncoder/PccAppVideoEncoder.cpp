@@ -74,7 +74,10 @@ bool parseParameters( int          argc,
   po::setDefaults( opts );
   po::ErrorReporter        err;
   const list<const char*>& argv_unhandled = po::scanArgv( opts, argc, (const char**)argv, err );
-  for ( const auto arg : argv_unhandled ) { printf( "Unhandled argument ignored: %s \n", arg ); }
+  for ( const auto arg : argv_unhandled ) {
+    printf( "Unhandled argument ignored: %s \n", arg );
+    fflush( stdout );
+  }
   if ( argc == 1 || print_help ) {
     po::doHelp( std::cout, opts, 78 );
     return false;
@@ -104,12 +107,19 @@ int main( int argc, char* argv[] ) {
   std::string srcVideo, encoderParameters;
   size_t      width = 0, height = 0, nbyte = 0;
   PCCCodecId  codecId = PCCCodecId::UNKNOWN_CODEC;
-  if ( !parseParameters( argc, argv, srcVideo, encoderParameters, width, height, nbyte, codecId ) ) { return -1; }
-  PCCVideoBitstream bitstream( VIDEO_OCCUPANCY );
+  
+  if ( !parseParameters( argc, argv, srcVideo, encoderParameters, width, height, nbyte, codecId ) ) {
+    printf("parseParameters error \n");
+    fflush(stdout);
+    return -1; 
+  }
 
-  PCCVideo<uint8_t, 3> videoSrc, videoRec;
+  typedef uint16_t T;
+  PCCVideo<T, 3> videoSrc, videoRec;
+  auto encoder = PCCVirtualVideoEncoder<T>::create( codecId );
   videoSrc.read( srcVideo, width, height, PCCCOLORFORMAT::YUV420, nbyte );
 
+  PCCVideoBitstream bitstream( VIDEO_OCCUPANCY );
   PCCVideoEncoderParameters params;
   params.encoderPath_             = "EncoderPath";
   params.srcYuvFileName_          = srcVideo;
@@ -119,16 +129,15 @@ int main( int argc, char* argv[] ) {
   params.qp_                      = 0;
   params.inputBitDepth_           = 8;
   params.internalBitDepth_        = 10;
-  params.outputBitDepth_          = 8;
+  params.outputBitDepth_          = 10;
   params.use444CodecIo_           = false;
   params.usePccMotionEstimation_  = false;
   params.inputColourSpaceConvert_ = false;
   params.usePccRDO_               = false;
 
-  auto encoder = PCCVirtualVideoEncoder<uint8_t>::create( codecId );
   encoder->encode( videoSrc, params, bitstream, videoRec );
   bitstream.write( removeFileExtension( srcVideo ) + ".bin" );
-  videoRec.write( removeFileExtension( srcVideo ) + "_rec.yuv", nbyte );
+  videoRec.write( removeFileExtension( srcVideo ) + "_rec.yuv", params.outputBitDepth_ == 8 ? 1 : 2 );
 
-  return 1;
+  return 0;
 }

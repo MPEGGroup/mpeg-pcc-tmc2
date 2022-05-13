@@ -9,20 +9,20 @@ Bash scripts can be use to build mpeg-pcc-tmc2 project:
 ### OSX
 - mkdir build
 - cd build
-- cmake ..  
-- cmake --build . --config Release --parallel 8 
+- cmake .. 
+- cmake --build . --config Release --parallel 8
 
 ### Linux
 - mkdir build
 - cd build
 - cmake .. 
-- cmake --build . --config Release --parallel 8 
+- cmake --build . --config Release --parallel 8
 
 ### Windows
 - md build
 - cd build
 - cmake .. 
-- cmake --build . --config Release --parallel 8 
+- cmake --build . --config Release --parallel 8
 
 
 ### External dependencies

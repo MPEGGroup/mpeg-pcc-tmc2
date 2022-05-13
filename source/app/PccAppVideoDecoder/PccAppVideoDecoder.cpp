@@ -76,7 +76,7 @@ int main( int argc, char* argv[] ) {
   for ( const auto arg : argv_unhandled ) { printf( "Unhandled argument ignored: %s \n", arg ); }
   if ( argc == 1 || print_help ) {
     po::doHelp( std::cout, opts, 78 );
-    return false;
+    return -1;
   }
   printf( "Parameters : \n" );
   printf( "  binFile = %s \n", binFile.c_str() );
@@ -97,5 +97,5 @@ int main( int argc, char* argv[] ) {
   decoder->decode( bitstream, video, nbyte == 1 ? 8 : 10, path, removeFileExtension( binFile ) );
   video[0].trace();
   video.write( removeFileExtension( binFile ) + "_dec.yuv", nbyte );
-  return 1;
+  return 0;
 }

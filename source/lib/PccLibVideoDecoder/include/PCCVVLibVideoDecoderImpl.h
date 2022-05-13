@@ -30,57 +30,35 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+#ifndef PCCVVLibVideoDecoderImpl_h
+#define PCCVVLibVideoDecoderImpl_h
 
-#include "PCCVirtualVideoDecoder.h"
+#include "PCCCommon.h"
 
-#include "PCCJMAppVideoDecoder.h"
-#include "PCCHMAppVideoDecoder.h"
-#include "PCCJMLibVideoDecoder.h"
-#include "PCCHMLibVideoDecoder.h"
-#include "PCCVTMLibVideoDecoder.h"
-#include "PCCVVLibVideoDecoder.h"
-#include "PCCSHMAppVideoDecoder.h"
-#ifdef USE_FFMPEG_VIDEO_CODEC
-#include "PCCFFMPEGLibVideoDecoder.h"
-#endif
-using namespace pcc;
-
-template <typename T>
-std::shared_ptr<PCCVirtualVideoDecoder<T>> PCCVirtualVideoDecoder<T>::create( PCCCodecId codecId ) {
-  printf( "PCCVirtualVideoDecoder: create codecId = %d \n", codecId );
-  fflush( stdout );
-  switch ( codecId ) {
-#ifdef USE_JMAPP_VIDEO_CODEC
-    case JMAPP: return std::make_shared<PCCJMAppVideoDecoder<T>>(); break;
-#endif
-#ifdef USE_HMAPP_VIDEO_CODEC
-    case HMAPP: return std::make_shared<PCCHMAppVideoDecoder<T>>(); break;
-#endif
-#ifdef USE_SHMAPP_VIDEO_CODEC
-    case SHMAPP: return std::make_shared<PCCSHMAppVideoDecoder<T>>(); break;
-#endif
-#ifdef USE_JMLIB_VIDEO_CODEC
-    case JMLIB: return std::make_shared<PCCJMLibVideoDecoder<T>>(); break;
-#endif
-#ifdef USE_HMLIB_VIDEO_CODEC
-    case HMLIB: return std::make_shared<PCCHMLibVideoDecoder<T>>(); break;
-#endif
-#ifdef USE_VTMLIB_VIDEO_CODEC
-    case VTMLIB: return std::make_shared<PCCVTMLibVideoDecoder<T>>(); break;
-#endif
 #ifdef USE_VVLIB_VIDEO_CODEC
-    case VVLIB: return std::make_shared<PCCVVLibVideoDecoder<T>>(); break;
-#endif
-#ifdef USE_FFMPEG_VIDEO_CODEC
-    case FFMPEG: return std::make_shared<PCCFFMPEGLibVideoDecoder<T>>(); break;
-#endif
-    default:
-      printf( "Error: codec id not supported \n" );
-      exit( -1 );
-      break;
-  }
-  return nullptr;
-}
 
-template class pcc::PCCVirtualVideoDecoder<uint8_t>;
-template class pcc::PCCVirtualVideoDecoder<uint16_t>;
+#include "PCCVideo.h"
+#include "PCCVideoBitstream.h"
+
+#include "vvdec/vvdec.h"
+#include "vvdec/version.h"
+
+namespace pcc {
+
+template <class T>
+class PCCVVLibVideoDecoderImpl {
+ public:
+  PCCVVLibVideoDecoderImpl();
+
+  ~PCCVVLibVideoDecoderImpl();
+  void decode( PCCVideoBitstream& bitstream, size_t outputBitDepth, PCCVideo<T, 3>& video );
+
+ private:
+  int storeDecodedFrame( const vvdecFrame* pcFrame, size_t outputBitDepth, PCCVideo<T, 3>& video );
+};
+
+};  // namespace pcc
+
+#endif
+
+#endif /* PCCVirtualVideoDecoder_h */

@@ -30,57 +30,31 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+#include "PCCCommon.h"
 
-#include "PCCVirtualVideoDecoder.h"
+#ifdef USE_VVLIB_VIDEO_CODEC
 
-#include "PCCJMAppVideoDecoder.h"
-#include "PCCHMAppVideoDecoder.h"
-#include "PCCJMLibVideoDecoder.h"
-#include "PCCHMLibVideoDecoder.h"
-#include "PCCVTMLibVideoDecoder.h"
 #include "PCCVVLibVideoDecoder.h"
-#include "PCCSHMAppVideoDecoder.h"
-#ifdef USE_FFMPEG_VIDEO_CODEC
-#include "PCCFFMPEGLibVideoDecoder.h"
-#endif
+#include "PCCVVLibVideoDecoderImpl.h"
+
 using namespace pcc;
 
 template <typename T>
-std::shared_ptr<PCCVirtualVideoDecoder<T>> PCCVirtualVideoDecoder<T>::create( PCCCodecId codecId ) {
-  printf( "PCCVirtualVideoDecoder: create codecId = %d \n", codecId );
-  fflush( stdout );
-  switch ( codecId ) {
-#ifdef USE_JMAPP_VIDEO_CODEC
-    case JMAPP: return std::make_shared<PCCJMAppVideoDecoder<T>>(); break;
-#endif
-#ifdef USE_HMAPP_VIDEO_CODEC
-    case HMAPP: return std::make_shared<PCCHMAppVideoDecoder<T>>(); break;
-#endif
-#ifdef USE_SHMAPP_VIDEO_CODEC
-    case SHMAPP: return std::make_shared<PCCSHMAppVideoDecoder<T>>(); break;
-#endif
-#ifdef USE_JMLIB_VIDEO_CODEC
-    case JMLIB: return std::make_shared<PCCJMLibVideoDecoder<T>>(); break;
-#endif
-#ifdef USE_HMLIB_VIDEO_CODEC
-    case HMLIB: return std::make_shared<PCCHMLibVideoDecoder<T>>(); break;
-#endif
-#ifdef USE_VTMLIB_VIDEO_CODEC
-    case VTMLIB: return std::make_shared<PCCVTMLibVideoDecoder<T>>(); break;
-#endif
-#ifdef USE_VVLIB_VIDEO_CODEC
-    case VVLIB: return std::make_shared<PCCVVLibVideoDecoder<T>>(); break;
-#endif
-#ifdef USE_FFMPEG_VIDEO_CODEC
-    case FFMPEG: return std::make_shared<PCCFFMPEGLibVideoDecoder<T>>(); break;
-#endif
-    default:
-      printf( "Error: codec id not supported \n" );
-      exit( -1 );
-      break;
-  }
-  return nullptr;
+PCCVVLibVideoDecoder<T>::PCCVVLibVideoDecoder() {}
+template <typename T>
+PCCVVLibVideoDecoder<T>::~PCCVVLibVideoDecoder() {}
+
+template <typename T>
+void PCCVVLibVideoDecoder<T>::decode( PCCVideoBitstream& bitstream,
+                                      PCCVideo<T, 3>&    video,
+                                      size_t             outputBitDepth,
+                                      const std::string& decoderPath,
+                                      const std::string& fileName ) {
+  PCCVVLibVideoDecoderImpl<T> decoder;
+  decoder.decode( bitstream, outputBitDepth, video );
 }
 
-template class pcc::PCCVirtualVideoDecoder<uint8_t>;
-template class pcc::PCCVirtualVideoDecoder<uint16_t>;
+template class pcc::PCCVVLibVideoDecoder<uint8_t>;
+template class pcc::PCCVVLibVideoDecoder<uint16_t>;
+
+#endif
