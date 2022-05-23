@@ -6,5 +6,5 @@ set( SHM_APP_SOURCE_DIR  ${SHM_DIR}/source )
 MESSAGE("Clone the SHM source code: ${SHM_DIR}") 
 
 IF( NOT EXISTS "${SHM_DIR}/COPYING" )
-  EXECUTE_PROCESS( COMMAND git clone --depth 1 https://vcgit.hhi.fraunhofer.de/jvet/SHM --branch ${SHM_VERSION} ${SHM_DIR} )
+  EXECUTE_PROCESS( COMMAND git clone --depth 1 https://vcgit.hhi.fraunhofer.de/jvet/SHM.git --branch ${SHM_VERSION} ${SHM_DIR} )
 ENDIF()
