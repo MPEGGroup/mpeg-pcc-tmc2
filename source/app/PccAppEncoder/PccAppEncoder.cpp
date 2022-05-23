@@ -500,6 +500,10 @@ bool parseParameters( int                   argc,
       encoderParams.videoEncoderAttributeCodecId_,
       encoderParams.videoEncoderAttributeCodecId_, 
       "Attribute video encoder codec id" )
+    ( "videoEncoderInternalBitdepth",
+      encoderParams.videoEncoderInternalBitdepth_,
+      encoderParams.videoEncoderInternalBitdepth_, 
+      "Video encoder internal bitdepth" )      
   ( "byteStreamVideoEncoderOccupancy",
     encoderParams.byteStreamVideoCoderOccupancy_,
     encoderParams.byteStreamVideoCoderOccupancy_,

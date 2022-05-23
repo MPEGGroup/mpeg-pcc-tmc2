@@ -63,6 +63,7 @@ class PCCEncoderParameters {
   PCCCodecId        videoEncoderOccupancyCodecId_;
   PCCCodecId        videoEncoderGeometryCodecId_;
   PCCCodecId        videoEncoderAttributeCodecId_;
+  size_t            videoEncoderInternalBitdepth_;
   bool              byteStreamVideoCoderOccupancy_;
   bool              byteStreamVideoCoderGeometry_;
   bool              byteStreamVideoCoderAttribute_;

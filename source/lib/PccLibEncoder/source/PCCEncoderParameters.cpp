@@ -114,6 +114,7 @@ PCCEncoderParameters::PCCEncoderParameters() {
   videoEncoderOccupancyCodecId_            = PCCVirtualVideoEncoder<uint8_t>::getDefaultCodecId();
   videoEncoderGeometryCodecId_             = PCCVirtualVideoEncoder<uint8_t>::getDefaultCodecId();
   videoEncoderAttributeCodecId_            = PCCVirtualVideoEncoder<uint8_t>::getDefaultCodecId();
+  videoEncoderInternalBitdepth_            = 10;
   byteStreamVideoCoderOccupancy_           = true;
   byteStreamVideoCoderGeometry_            = true;
   byteStreamVideoCoderAttribute_           = true;
@@ -337,6 +338,7 @@ void PCCEncoderParameters::print() {
   std::cout << "\t keepIntermediateFiles                      " << keepIntermediateFiles_ << std::endl;
   std::cout << "\t multipleStreams                            " << multipleStreams_ << std::endl;
   std::cout << "\t multipleStreams                            " << multipleStreams_ << std::endl;
+  std::cout << "\t videoEncoderInternalBitdepth               " << videoEncoderInternalBitdepth_ << std::endl;  
   std::cout << "\t forcedSsvhUnitSizePrecisionBytes           " << forcedSsvhUnitSizePrecisionBytes_ << std::endl;
   if ( multipleStreams_ ) {
     std::cout << "\t    deltaQPD0                               " << deltaQPD0_ << std::endl;

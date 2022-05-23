@@ -52,7 +52,7 @@ bool PCCGroupOfFrames::load( const std::string&      uncompressedDataPath,
   if ( endFrameNumber < startFrameNumber ) { return false; }
   const size_t frameCount = endFrameNumber - startFrameNumber;
   frames_.resize( frameCount );
-  
+ 
 #if defined( ENABLE_TBB )
   tbb::task_arena limited( static_cast<int>( nbThread ) );
   limited.execute( [&] {

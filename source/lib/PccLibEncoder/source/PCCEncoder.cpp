@@ -180,7 +180,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   size_t geometryMPVideoBitDepth = gi.getGeometry2dBitdepthMinus1() + 1;
   size_t nbyteGeo                = ( geometryVideoBitDepth <= 8 ) ? 1 : 2;
   size_t nbyteGeoMP              = ( geometryMPVideoBitDepth <= 8 ) ? 1 : 2;
-  size_t internalBitDepth        = 10;
+  size_t internalBitDepth        = params_.videoEncoderInternalBitdepth_;
   if ( params_.rawPointsPatch_ ) { internalBitDepth = geometryVideoBitDepth; }
   auto&       videoBitstreamD0 = params_.multipleStreams_ ? context.createVideoBitstream( VIDEO_GEOMETRY_D0 )
                                                           : context.createVideoBitstream( VIDEO_GEOMETRY );
@@ -341,7 +341,6 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     generateAttributeVideo( sources, reconstructs, context, params_ );
     if ( params_.attributeBGFill_ < 3 ) {
       // ATTRIBUTE IMAGE PADDING
-
 #if defined( ENABLE_TBB )
       tbb::task_arena limited( static_cast<int>( params_.nbThread_ ) );
       limited.execute( [&] {
@@ -438,28 +437,28 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
                                                                : params_.attribute0Config_ )
                               : ( params_.mapCountMinus1_ == 0 ? getEncoderConfig1L( params_.attributeConfig_ )
                                                                : params_.attributeConfig_ );
-    videoEncoder.compress( context.getVideoAttributesMultiple()[0],     // video,
-                           path.str(),                                  // path
-                           params_.attributeQP_ + params_.deltaQPT0_,   // qp
-                           videoBitstream,                              // bitstream
-                           encoderConfig0,                              // encoderConfig
-                           params_.videoEncoderAttributePath_,          // encoderPath
-                           params_.videoEncoderAttributeCodecId_,       // codecId
-                           params_.byteStreamVideoCoderAttribute_,      // byteStreamVideoCoder
-                           context,                                     // context
-                           nbyteAtt,                                    // nbyte
-                           params_.attributeVideo444_,                  // use444CodecIo
-                           params_.use3dmc_,                            // use3dmv
-                           params_.usePccRDO_,                          // usePccRDO
-                           params_.shvcLayerIndex_,                     // SHVC layer index
-                           params_.shvcRateX_,                          // SHVC rate X
-                           params_.shvcRateY_,                          // SHVC rate Y
-                           params_.rawPointsPatch_ ? 8 : 10,            // internalBitDepth
-                           !params_.rawPointsPatch_,                    // useConversion
-                           params_.keepIntermediateFiles_,              // keepIntermediateFiles
-                           params_.colorSpaceConversionConfig_,         // colorSpaceConversionConfig
-                           params_.inverseColorSpaceConversionConfig_,  // inverseColorSpaceConversionConfig
-                           params_.colorSpaceConversionPath_ );         // colorSpaceConversionPath
+    videoEncoder.compress( context.getVideoAttributesMultiple()[0],         // video,
+                           path.str(),                                      // path
+                           params_.attributeQP_ + params_.deltaQPT0_,       // qp
+                           videoBitstream,                                  // bitstream
+                           encoderConfig0,                                  // encoderConfig
+                           params_.videoEncoderAttributePath_,              // encoderPath
+                           params_.videoEncoderAttributeCodecId_,           // codecId
+                           params_.byteStreamVideoCoderAttribute_,          // byteStreamVideoCoder
+                           context,                                         // context
+                           nbyteAtt,                                        // nbyte
+                           params_.attributeVideo444_,                      // use444CodecIo
+                           params_.use3dmc_,                                // use3dmv
+                           params_.usePccRDO_,                              // usePccRDO
+                           params_.shvcLayerIndex_,                         // SHVC layer index
+                           params_.shvcRateX_,                              // SHVC rate X
+                           params_.shvcRateY_,                              // SHVC rate Y
+                           params_.rawPointsPatch_ ? 8 : internalBitDepth,  // internalBitDepth
+                           !params_.rawPointsPatch_,                        // useConversion
+                           params_.keepIntermediateFiles_,                  // keepIntermediateFiles
+                           params_.colorSpaceConversionConfig_,             // colorSpaceConversionConfig
+                           params_.inverseColorSpaceConversionConfig_,      // inverseColorSpaceConversionConfig
+                           params_.colorSpaceConversionPath_ );             // colorSpaceConversionPath
 
     auto sizeAttributeVideo = videoBitstream.size();
     std::cout << "attribute video ->" << sizeAttributeVideo << " B ("
@@ -489,28 +488,28 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
       auto& videoBitstreamT1 = context.createVideoBitstream( VIDEO_ATTRIBUTE_T1 );
       auto  encoderConfig1 =
           params_.mapCountMinus1_ == 0 ? getEncoderConfig1L( params_.attributeConfig_ ) : params_.attribute1Config_;
-      videoEncoder.compress( context.getVideoAttributesMultiple()[1],     // video,
-                             path.str(),                                  // path
-                             params_.attributeQP_ + params_.deltaQPT1_,   // qp
-                             videoBitstreamT1,                            // bitstream
-                             encoderConfig1,                              // encoderConfig
-                             params_.videoEncoderAttributePath_,          // encoderPath
-                             params_.videoEncoderAttributeCodecId_,       // codecId
-                             params_.byteStreamVideoCoderAttribute_,      // byteStreamVideoCoder
-                             context,                                     // context
-                             nbyteAtt,                                    // nbyte
-                             params_.attributeVideo444_,                  // use444CodecIo
-                             params_.use3dmc_,                            // use3dmv
-                             params_.usePccRDO_,                          // usePccRDO
-                             params_.shvcLayerIndex_,                     // SHVC layer index
-                             params_.shvcRateX_,                          // SHVC rate X
-                             params_.shvcRateY_,                          // SHVC rate Y
-                             params_.rawPointsPatch_ ? 8 : 10,            // internalBitDepth
-                             !params_.rawPointsPatch_,                    // useConversion
-                             params_.keepIntermediateFiles_,              // keepIntermediateFiles
-                             params_.colorSpaceConversionConfig_,         // colorSpaceConversionConfig
-                             params_.inverseColorSpaceConversionConfig_,  // inverseColorSpaceConversionConfig
-                             params_.colorSpaceConversionPath_ );         // keepIntermediateFiles
+      videoEncoder.compress( context.getVideoAttributesMultiple()[1],         // video,
+                             path.str(),                                      // path
+                             params_.attributeQP_ + params_.deltaQPT1_,       // qp
+                             videoBitstreamT1,                                // bitstream
+                             encoderConfig1,                                  // encoderConfig
+                             params_.videoEncoderAttributePath_,              // encoderPath
+                             params_.videoEncoderAttributeCodecId_,           // codecId
+                             params_.byteStreamVideoCoderAttribute_,          // byteStreamVideoCoder
+                             context,                                         // context
+                             nbyteAtt,                                        // nbyte
+                             params_.attributeVideo444_,                      // use444CodecIo
+                             params_.use3dmc_,                                // use3dmv
+                             params_.usePccRDO_,                              // usePccRDO
+                             params_.shvcLayerIndex_,                         // SHVC layer index
+                             params_.shvcRateX_,                              // SHVC rate X
+                             params_.shvcRateY_,                              // SHVC rate Y
+                             params_.rawPointsPatch_ ? 8 : internalBitDepth,  // internalBitDepth
+                             !params_.rawPointsPatch_,                        // useConversion
+                             params_.keepIntermediateFiles_,                  // keepIntermediateFiles
+                             params_.colorSpaceConversionConfig_,             // colorSpaceConversionConfig
+                             params_.inverseColorSpaceConversionConfig_,      // inverseColorSpaceConversionConfig
+                             params_.colorSpaceConversionPath_ );             // keepIntermediateFiles
       size_t sizeAttributeVideoT1 = videoBitstreamT1.size();
       std::cout << "attribute video ->" << ( sizeAttributeVideo + sizeAttributeVideoT1 ) << "=" << sizeAttributeVideo
                 << "+" << sizeAttributeVideoT1 << " B ("
@@ -4700,7 +4699,6 @@ bool PCCEncoder::generateSegments( const PCCGroupOfFrames& sources, PCCContext& 
     params.weightNormal_ = calculateWeightNormal( params.geometryBitDepth3D_, sources[0] );
   }
   float           sumDistanceSrcRec = 0;
-
 #if defined( ENABLE_TBB )
   tbb::task_arena limited( static_cast<int>( params_.nbThread_ ) );
   limited.execute( [&] {
@@ -4713,15 +4711,15 @@ bool PCCEncoder::generateSegments( const PCCGroupOfFrames& sources, PCCContext& 
         res = false;
 #if defined( ENABLE_TBB )
         tbb::task::self().cancel_group_execution();
+        return;
 #endif
-        return res;
       }
       sumDistanceSrcRec += distanceSrcRec;
 #if defined( ENABLE_TBB )
     } );
   } );
 #else
-}
+  }
 #endif
   if ( params_.pointLocalReconstruction_ || params_.singleMapPixelInterleaving_ ) {
     const float distanceSrcRec = sumDistanceSrcRec / static_cast<float>( frames.size() );
