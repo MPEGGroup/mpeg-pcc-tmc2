@@ -35,12 +35,14 @@
 #include "PCCVideo.h"
 #include "PCCImage.h"
 #include "PCCPointSet.h"
-#include "tbb/tbb.h"
 #include "PCCKdTree.h"
 #include "PCCContext.h"
 #include "PCCFrameContext.h"
 #include "PCCGroupOfFrames.h"
 #include "PCCPatch.h"
+#if defined( ENABLE_TBB )
+#include <tbb/tbb.h>
+#endif
 
 #include "PCCCodec.h"
 
@@ -1111,9 +1113,13 @@ void PCCCodec::smoothPointCloud( PCCPointSet3&                      reconstruct,
   PCCKdTree    kdtree( reconstruct );
   PCCPointSet3 temp;
   temp.resize( pointCount );
+#if defined( ENABLE_TBB )
   tbb::task_arena limited( static_cast<int>( params.nbThread_ ) );
   limited.execute( [&] {
     tbb::parallel_for( size_t( 0 ), pointCount, [&]( const size_t i ) {
+#else
+  for ( size_t i = 0; i < pointCount; i++ ) {
+#endif
       const size_t clusterindex_ = partition[i];
       PCCNNResult  result;
       kdtree.searchRadius( reconstruct[i], params.neighborCountSmoothing_, params.radius2Smoothing_, result );
@@ -1149,10 +1155,15 @@ void PCCCodec::smoothPointCloud( PCCPointSet3&                      reconstruct,
       } else {
         temp[i] = reconstruct[i];
       }
+#if defined( ENABLE_TBB )
     } );
   } );
   limited.execute(
       [&] { tbb::parallel_for( size_t( 0 ), pointCount, [&]( const size_t i ) { reconstruct[i] = temp[i]; } ); } );
+#else
+  }
+  for ( size_t i = 0; i < pointCount; i++ ) { reconstruct[i] = temp[i]; }
+#endif
   TRACE_CODEC( "%s \n", "smoothPointCloud done" );
 }
 

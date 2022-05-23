@@ -34,8 +34,6 @@
 #include "PCCGroupOfFrames.h"
 #include "PCCPointSet.h"
 #include "PCCKdTree.h"
-#include <tbb/tbb.h>
-
 #include "PCCMetrics.h"
 
 using namespace std;

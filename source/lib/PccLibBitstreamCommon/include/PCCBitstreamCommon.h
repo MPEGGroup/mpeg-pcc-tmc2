@@ -64,14 +64,6 @@
 namespace pcc {
 
 // ******************************************************************* //
-// Trace modes to validate new syntax
-// ******************************************************************* //
-// #define BITSTREAM_TRACE
-// #define CODEC_TRACE
-// #define SEI_TRACE
- #define CONFORMANCE_TRACE
-
-// ******************************************************************* //
 // Common constants
 // ******************************************************************* //
 #define MAX_NUM_ATTR_PARTITIONS 64

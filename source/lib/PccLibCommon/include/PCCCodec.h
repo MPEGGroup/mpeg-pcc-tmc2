@@ -33,7 +33,6 @@
 #ifndef PCCCodec_h
 #define PCCCodec_h
 
-#include "tbb/compat/condition_variable"
 #include "PCCCommon.h"
 #include "PCCImage.h"
 #include "PCCMath.h"

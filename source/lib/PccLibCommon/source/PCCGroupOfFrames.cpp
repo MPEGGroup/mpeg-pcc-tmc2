@@ -33,7 +33,9 @@
 #include "PCCCommon.h"
 #include "PCCPointSet.h"
 #include "PCCGroupOfFrames.h"
-#include "tbb/tbb.h"
+#if defined( ENABLE_TBB )
+#include <tbb/tbb.h>
+#endif
 
 using namespace pcc;
 
@@ -50,9 +52,14 @@ bool PCCGroupOfFrames::load( const std::string&      uncompressedDataPath,
   if ( endFrameNumber < startFrameNumber ) { return false; }
   const size_t frameCount = endFrameNumber - startFrameNumber;
   frames_.resize( frameCount );
+  
+#if defined( ENABLE_TBB )
   tbb::task_arena limited( static_cast<int>( nbThread ) );
   limited.execute( [&] {
     tbb::parallel_for( size_t( startFrameNumber ), endFrameNumber, [&]( const size_t frameNumber ) {
+#else
+  for ( size_t frameNumber = startFrameNumber; frameNumber < endFrameNumber; frameNumber++ ) {
+#endif
       char fileName[4096];
       sprintf( fileName, uncompressedDataPath.c_str(), frameNumber );
       auto& pointSet = frames_[frameNumber - startFrameNumber];
@@ -63,8 +70,12 @@ bool PCCGroupOfFrames::load( const std::string&      uncompressedDataPath,
       } else {
         if ( colorTransform == COLOR_TRANSFORM_RGB_TO_YCBCR ) { pointSet.convertRGBToYUV(); }
       }
+#if defined( ENABLE_TBB )
     } );
   } );
+#else
+  }
+#endif
   return ( startFrameNumber != endFrameNumber );
 }
 
@@ -72,16 +83,24 @@ bool PCCGroupOfFrames::write( const std::string& reconstructedDataPath,
                               size_t&            frameNumber,
                               const size_t       nbThread,
                               const bool         isAscii ) {
-  bool            ret = true;
+  bool ret = true;
+#if defined( ENABLE_TBB )
   tbb::task_arena limited( static_cast<int>( nbThread ) );
   limited.execute( [&] {
     tbb::parallel_for( size_t( 0 ), frames_.size(), [&]( const size_t i ) {
+#else
+  for ( size_t i = 0; i < frames_.size(); i++ ) {
+#endif
       char  fileName[4096];
       auto& pointSet = frames_[i];
       sprintf( fileName, reconstructedDataPath.c_str(), frameNumber + i );
       if ( !pointSet.write( fileName, isAscii ) ) { ret = false; }
+#if defined( ENABLE_TBB )
     } );
   } );
+#else
+  }
+#endif
   frameNumber += frames_.size();
   return ret;
 }

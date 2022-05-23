@@ -39,7 +39,9 @@
 #include "PCCGroupOfFrames.h"
 #include "PCCNormalsGenerator.h"
 #include <program_options_lite.h>
+#if defined( ENABLE_TBB )
 #include <tbb/tbb.h>
+#endif
 
 using namespace std;
 using namespace pcc;
@@ -316,7 +318,9 @@ int main( int argc, char* argv[] ) {
                          nbThread, normalParams ) ) {
     return -1;
   }
+#if defined( ENABLE_TBB )
   if ( nbThread > 0 ) { tbb::task_scheduler_init init( static_cast<int>( nbThread ) ); }
+#endif
   int ret = generateNormal( uncompressedDataPath, reconstructedDataPath, startFrameNumber, frameCount, nbThread,
                             normalParams );
   return ret;

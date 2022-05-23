@@ -31,12 +31,12 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 #include "PCCCommon.h"
-
 #include "PCCKdTree.h"
-#include "tbb/tbb.h"
 #include "PCCNormalsGenerator.h"
-
 #include "PCCImage.h"
+#if defined( ENABLE_TBB )
+#include <tbb/tbb.h>
+#endif
 
 using namespace pcc;
 
@@ -163,17 +163,25 @@ void PCCNormalsGenerator3::computeNormals( const PCCPointSet3&                  
   std::vector<size_t> subRanges;
   const size_t        chunckCount = 64;
   PCCDivideRange( 0, pointCount, chunckCount, subRanges );
+#if defined( ENABLE_TBB )
   tbb::task_arena limited( static_cast<int>( nbThread_ ) );
   limited.execute( [&] {
     tbb::parallel_for( size_t( 0 ), subRanges.size() - 1, [&]( const size_t i ) {
+#else
+  for ( size_t i = 0; i < subRanges.size() - 1; i++ ) {
+#endif
       const size_t start = subRanges[i];
       const size_t end   = subRanges[i + 1];
       PCCNNResult  nNResult;
       for ( size_t ptIndex = start; ptIndex < end; ++ptIndex ) {
         computeNormal( ptIndex, pointCloud, kdtree, params, nNResult );
       }
+#if defined( ENABLE_TBB )
     } );
   } );
+#else
+  }
+#endif
 }
 void PCCNormalsGenerator3::orientNormals( const PCCPointSet3&                   pointCloud,
                                           const PCCKdTree&                      kdtree,
@@ -243,14 +251,22 @@ void PCCNormalsGenerator3::orientNormals( const PCCPointSet3&                   
 #endif
   } else if ( params.orientationStrategy_ == PCC_NORMALS_GENERATOR_ORIENTATION_VIEW_POINT ) {
     const size_t    pointCount = pointCloud.getPointCount();
+#if defined( ENABLE_TBB )
     tbb::task_arena limited( static_cast<int>( nbThread_ ) );
     limited.execute( [&] {
       tbb::parallel_for( size_t( 0 ), pointCount, [&]( const size_t ptIndex ) {
+#else
+  for ( size_t ptIndex = 0; ptIndex < pointCount; ptIndex++ ) {
+#endif
         if ( normals_[ptIndex] * ( params.viewPoint_ - pointCloud[ptIndex] ) < 0.0 ) {
           normals_[ptIndex] = -normals_[ptIndex];
         }
-      } );
+#if defined( ENABLE_TBB )
     } );
+  } );
+#else
+  }
+#endif
 #ifdef DEBUG_NORMAL
     // save mesh
     PCCPointSet3 saveNormal4 = pointCloud;
@@ -544,9 +560,13 @@ void PCCNormalsGenerator3::smoothNormals( const PCCPointSet3&                   
   PCCDivideRange( 0, pointCount, chunckCount, subRanges );
   const double radius = params.radiusNormalSmoothing_ * params.radiusNormalSmoothing_;
   for ( size_t it = 0; it < params.numberOfIterationsInNormalSmoothing_; ++it ) {
+#if defined( ENABLE_TBB )
     tbb::task_arena limited( static_cast<int>( nbThread_ ) );
     limited.execute( [&] {
       tbb::parallel_for( size_t( 0 ), subRanges.size() - 1, [&]( const size_t i ) {
+#else
+    for ( size_t i = 0; i < subRanges.size() - 1; i++ ) {
+#endif
         const size_t start = subRanges[i];
         const size_t end   = subRanges[i + 1];
         PCCNNResult  result;
@@ -567,7 +587,11 @@ void PCCNormalsGenerator3::smoothNormals( const PCCPointSet3&                   
           n1.normalize();
           normals_[ptIndex] = n1;
         }
+#if defined( ENABLE_TBB )
       } );
     } );
+#else
+  }
+#endif
   }
 }

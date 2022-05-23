@@ -17,10 +17,17 @@ OPTION( USE_FFMPEG_VIDEO_CODEC    "Clone, build and use FFMPEG video encoder and
 OPTION( USE_HDRTOOLS              "Clone, build and use HDRTools for color conversions"     FALSE )
 
 # Use HM optimized RDO
-OPTION( USE_HM_PCC_RDO            "Use HM optimized RDO (run \"./clear.sh all\" for each modification)" TRUE )
+OPTION( USE_HM_PCC_RDO            "Use HM optimized RDO (re-run \"./clear.sh all\" )"       TRUE )
 
-# PAPI profiling tools
+# Multi-threading and profiling tools 
+OPTION( ENABLE_TBB                "Enable TBB mutli-threading"                              TRUE )
 OPTION( ENABLE_PAPI_PROFILING     "Enable PAPI profiling"                                   FALSE )
+
+# trace and conformance modes
+OPTION( BITSTREAM_TRACE           "Enable bitstream traces"                                 FALSE )
+OPTION( CODEC_TRACE               "Enable encoder and decoder process traces"               FALSE )
+OPTION( SEI_TRACE                 "Enable SEI bitstream traces"                             FALSE )
+OPTION( CONFORMANCE_TRACE         "Enable conformance traces"                               TRUE  )
 
 ## CLANG-TIDY CHECK
 set( CMAKE_CXX_STANDARD            14 )
@@ -38,8 +45,10 @@ SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin )
 IF (MSVC)
   MESSAGE(STATUS "MSVC OPTIONS")
   ADD_DEFINITIONS("/wd5105")
-  SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /NODEFAULTLIB:tbb_debug.lib")
-  SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /NODEFAULTLIB:tbb.lib")
+  IF ( ENABLE_TBB )
+    SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /NODEFAULTLIB:tbb_debug.lib")
+    SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /NODEFAULTLIB:tbb.lib")
+  ENDIF()
 ENDIF()
 
 # Include external libraries

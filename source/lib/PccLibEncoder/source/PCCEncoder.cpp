@@ -42,10 +42,12 @@
 #include "PCCPointSet.h"
 #include "PCCEncoderParameters.h"
 #include "PCCKdTree.h"
-#include <tbb/tbb.h>
 #include "PCCChrono.h"
 #include "PCCEncoder.h"
 #include "PCCEncoderConstant.h"
+#if defined( ENABLE_TBB )
+#include <tbb/tbb.h>
+#endif
 
 using namespace std;
 using namespace pcc;
@@ -70,7 +72,9 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   size_t pointLocalReconstructionOriginal   = static_cast<size_t>( params_.pointLocalReconstruction_ );
   size_t layerCountMinus1Original           = params_.mapCountMinus1_;
   size_t singleMapPixelInterleavingOriginal = static_cast<size_t>( params_.singleMapPixelInterleaving_ );
+#if defined( ENABLE_TBB )
   if ( params_.nbThread_ > 0 ) { tbb::task_scheduler_init init( static_cast<int>( params_.nbThread_ ) ); }
+#endif
 
   if ( sources.getFrameCount() == 0 ) { return 0; }
   assert( sources.getFrameCount() < 256 );
@@ -337,9 +341,14 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     generateAttributeVideo( sources, reconstructs, context, params_ );
     if ( params_.attributeBGFill_ < 3 ) {
       // ATTRIBUTE IMAGE PADDING
+
+#if defined( ENABLE_TBB )
       tbb::task_arena limited( static_cast<int>( params_.nbThread_ ) );
       limited.execute( [&] {
         tbb::parallel_for( size_t( 0 ), frames.size(), [&]( const size_t f ) {
+#else
+      for ( size_t f = 0; f < frames.size(); f++ ) {
+#endif
           using namespace std::chrono;
           pcc::chrono::Stopwatch<std::chrono::steady_clock> clockPadding;
           clockPadding.start();
@@ -407,8 +416,12 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
           auto totalPaddingTime = duration_cast<ms>( clockPadding.count() ).count();
           std::cout << "Processing time (Padding [T0T1]" << f << "/" << frames.size()
                     << "): " << totalPaddingTime / 1000.0 << " s\n";
+#if defined( ENABLE_TBB )
         } );
       } );
+#else
+      }
+#endif
     }
     // ENCODE ATTRIBUTE IMAGE
     TRACE_PICTURE( "Attribute\n" );
@@ -4687,19 +4700,29 @@ bool PCCEncoder::generateSegments( const PCCGroupOfFrames& sources, PCCContext& 
     params.weightNormal_ = calculateWeightNormal( params.geometryBitDepth3D_, sources[0] );
   }
   float           sumDistanceSrcRec = 0;
+
+#if defined( ENABLE_TBB )
   tbb::task_arena limited( static_cast<int>( params_.nbThread_ ) );
   limited.execute( [&] {
     tbb::parallel_for( size_t( 0 ), frames.size(), [&]( const size_t i ) {
-      // for ( size_t i = 0; i < frames.size(); i++ ) {
+#else
+  for ( size_t i = 0; i < frames.size(); i++ ) {
+#endif
       float distanceSrcRec = 0;
       if ( !generateSegments( sources[i], frames[i], params, i, distanceSrcRec ) ) {
         res = false;
+#if defined( ENABLE_TBB )
         tbb::task::self().cancel_group_execution();
-        return;
+#endif
+        return res;
       }
       sumDistanceSrcRec += distanceSrcRec;
+#if defined( ENABLE_TBB )
     } );
   } );
+#else
+}
+#endif
   if ( params_.pointLocalReconstruction_ || params_.singleMapPixelInterleaving_ ) {
     const float distanceSrcRec = sumDistanceSrcRec / static_cast<float>( frames.size() );
     if ( distanceSrcRec >= 250.F ) {
@@ -6515,10 +6538,13 @@ void PCCEncoder::presmoothPointCloudColor( PCCPointSet3& reconstruct, const PCCE
   std::vector<PCCColor3B> temp;
   temp.resize( pointCount );
   for ( size_t m = 0; m < pointCount; ++m ) { temp[m] = reconstruct.getColor( m ); }
+#if defined( ENABLE_TBB )
   tbb::task_arena limited( static_cast<int>( params.nbThread_ ) );
   limited.execute( [&] {
     tbb::parallel_for( size_t( 0 ), pointCount, [&]( const size_t i ) {
-      //  for (size_t i = 0; i < pointCount; ++i) {
+#else
+  for ( size_t i = 0; i < pointCount; ++i ) {
+#endif
       PCCNNResult result;
       if ( reconstruct.getBoundaryPointType( i ) == 2 ) {
         kdtree.searchRadius( reconstruct[i], params.neighborCountColorPreSmoothing_, params.radius2ColorPreSmoothing_,
@@ -6559,15 +6585,14 @@ void PCCEncoder::presmoothPointCloudColor( PCCPointSet3& reconstruct, const PCCE
           }
         }
       }
+#if defined( ENABLE_TBB )
     } );
   } );
-
-  limited.execute( [&] {
-    tbb::parallel_for( size_t( 0 ), pointCount, [&]( const size_t i ) {
-      // for (size_t i = 0; i < pointCount; ++i) {
-      reconstruct.setColor( i, temp[i] );
-    } );
-  } );
+  limited.execute( [&] { tbb::parallel_for( size_t( 0 ), pointCount, [&]( const size_t i ) {} ); } );
+#else
+  }
+  for ( size_t i = 0; i < pointCount; ++i ) { reconstruct.setColor( i, temp[i] ); }
+#endif
 }
 
 bool PCCEncoder::generateAttributeVideo( const PCCGroupOfFrames&     sources,
@@ -6583,10 +6608,13 @@ bool PCCEncoder::generateAttributeVideo( const PCCGroupOfFrames&     sources,
     video.resize( context.size() * ( params.mapCountMinus1_ + 1 ) );
   }
   bool            ret = true;
+#if defined( ENABLE_TBB )
   tbb::task_arena limited( static_cast<int>( params_.nbThread_ ) );
   limited.execute( [&] {
     tbb::parallel_for( size_t( 0 ), context.size(), [&]( const size_t i ) {
-      // for ( size_t i = 0; i < context.size(); i++ ) {
+#else
+  for ( size_t i = 0; i < context.size(); i++ ) {
+#endif
       auto&  frame    = context[i].getTitleFrameContext();
       size_t mapCount = params_.mapCountMinus1_ + 1;
       sources[i].transferColors(
@@ -6637,8 +6665,12 @@ bool PCCEncoder::generateAttributeVideo( const PCCGroupOfFrames&     sources,
               generateAttributeVideo( reconstructs[i], context, i, tileIdx, video, video, mapCount, accTilePointCount );
         }
       }
+#if defined( ENABLE_TBB )
     } );
   } );
+#else
+  }
+#endif
   return ret;
 }
 
