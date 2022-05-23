@@ -98,7 +98,7 @@ class HrdParameters;
 class HrdSubLayerParameters;
 class MaxCodedVideoResolution;
 class CoordinateSystemParameters;
-
+class PCCSEI;
 
 class PCCBitstreamReader {
  public:
