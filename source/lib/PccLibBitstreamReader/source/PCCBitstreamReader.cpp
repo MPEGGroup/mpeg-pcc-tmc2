@@ -575,6 +575,10 @@ bool PCCBitstreamReader::moreRbspData( PCCBitstream& bitstream ) {
   // Store bitstream state.
   auto position = bitstream.getPosition();
 
+#if defined( CONFORMANCE_TRACE ) || defined( BITSTREAM_TRACE )
+  bitstream.setTrace( false );
+#endif
+
   // Skip first bit. It may be part of a RBSP or a rbsp_one_stop_bit.
   bitstream.read( 1 );
 
@@ -582,12 +586,18 @@ bool PCCBitstreamReader::moreRbspData( PCCBitstream& bitstream ) {
     if ( bitstream.read( 1 ) ) {
       // We found a one bit beyond the first bit. Restore bitstream state and return true.
       bitstream.setPosition( position );
+#if defined( CONFORMANCE_TRACE ) || defined( BITSTREAM_TRACE )
+      bitstream.setTrace( true );
+#endif
       return true;
     }
   }
 
   // We did not found a one bit beyond the first bit. Restore bitstream state and return false.
   bitstream.setPosition( position );
+#if defined( CONFORMANCE_TRACE ) || defined( BITSTREAM_TRACE )
+  bitstream.setTrace( true );
+#endif
   return false;
 }
 bool PCCBitstreamReader::moreRbspTrailingData( PCCBitstream& bitstream ) {
@@ -747,9 +757,7 @@ void PCCBitstreamReader::seiRbsp( PCCHighLevelSyntax& syntax,
                                   NalUnitType         nalUnitType,
                                   PCCSEI&             sei ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
-  // do { seiMessage( syntax, bitstream ); } while ( moreRbspData( bitstream )
-  // );
-  seiMessage( bitstream, syntax, nalUnitType, sei );
+  do { seiMessage( bitstream, syntax, nalUnitType, sei ); } while ( moreRbspData( bitstream ) );  
   rbspTrailingBits( bitstream );
 }
 
@@ -1428,13 +1436,16 @@ void PCCBitstreamReader::sampleStreamNalUnit( PCCHighLevelSyntax&  syntax,
   TRACE_BITSTREAM( "UnitSizePrecisionBytesMinus1 = %lu \n", ssnu.getSizePrecisionBytesMinus1() );
   nalu.setSize( bitstream.read( 8 * ( ssnu.getSizePrecisionBytesMinus1() + 1 ) ) );  // u(v)
   nalu.allocate();
-  nalUnitHeader( bitstream, nalu );
-  printf( "      sampleStreamNalUnit %3zu type = %3zu %s \n", index, (size_t)nalu.getType(),
-          toString( nalu.getType() ).c_str() );
-  fflush( stdout );
+  PCCBitstream ssnuBitstream;
+#if defined( CONFORMANCE_TRACE ) || defined( BITSTREAM_TRACE )
+  ssnuBitstream.setTrace( true );
+  ssnuBitstream.setLogger( *logger_ );
+#endif
+  bitstream.copyTo( ssnuBitstream, nalu.getSize() );
+  nalUnitHeader( ssnuBitstream, nalu );
   switch ( nalu.getType() ) {
-    case NAL_ASPS: atlasSequenceParameterSetRbsp( syntax.addAtlasSequenceParameterSet(), syntax, bitstream ); break;
-    case NAL_AFPS: atlasFrameParameterSetRbsp( syntax.addAtlasFrameParameterSet(), syntax, bitstream ); break;
+    case NAL_ASPS: atlasSequenceParameterSetRbsp( syntax.addAtlasSequenceParameterSet(), syntax, ssnuBitstream ); break;
+    case NAL_AFPS: atlasFrameParameterSetRbsp( syntax.addAtlasFrameParameterSet(), syntax, ssnuBitstream ); break;
     case NAL_TRAIL_N:
     case NAL_TRAIL_R:
     case NAL_TSA_N:
@@ -1448,15 +1459,15 @@ void PCCBitstreamReader::sampleStreamNalUnit( PCCHighLevelSyntax&  syntax,
     case NAL_SKIP_N:
     case NAL_SKIP_R:
     case NAL_IDR_N_LP:
-      atlasTileLayerRbsp( syntax.addAtlasTileLayer(), syntax, nalu.getType(), bitstream );
+      atlasTileLayerRbsp( syntax.addAtlasTileLayer(), syntax, nalu.getType(), ssnuBitstream );      
       syntax.getAtlasTileLayerList().back().getSEI().getSeiPrefix() = prefixSEI.getSeiPrefix();
       prefixSEI.getSeiPrefix().clear();
       break;
     case NAL_PREFIX_ESEI:
-    case NAL_PREFIX_NSEI: seiRbsp( syntax, bitstream, nalu.getType(), prefixSEI ); break;
+    case NAL_PREFIX_NSEI: seiRbsp( syntax, ssnuBitstream, nalu.getType(), prefixSEI ); break;
     case NAL_SUFFIX_ESEI:
     case NAL_SUFFIX_NSEI:
-      seiRbsp( syntax, bitstream, nalu.getType(), syntax.getAtlasTileLayerList().back().getSEI() );
+      seiRbsp( syntax, ssnuBitstream, nalu.getType(), syntax.getAtlasTileLayerList().back().getSEI() );
       break;
     default: fprintf( stderr, "sampleStreamNalUnit type = %d not supported\n", static_cast<int32_t>( nalu.getType() ) );
   }
@@ -1472,7 +1483,7 @@ void PCCBitstreamReader::seiPayload( PCCBitstream&       bitstream,
                                      PCCSEI&             seiList ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
   SEI& sei = seiList.addSei( nalUnitType, payloadType );
-  printf( "        seiMessage: type = %d %s \n", payloadType, toString( payloadType ).c_str() );
+  printf( "        seiMessage: type = %d %s payloadSize = %zu \n", payloadType, toString( payloadType ).c_str(), payloadSize );
   fflush( stdout );
   if ( nalUnitType == NAL_PREFIX_ESEI || nalUnitType == NAL_PREFIX_NSEI ) {
     if ( payloadType == BUFFERING_PERIOD ) {  // 0
