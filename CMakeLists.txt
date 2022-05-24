@@ -10,17 +10,17 @@ OPTION( USE_HMAPP_VIDEO_CODEC     "Use HM application to encode and decode video
 OPTION( USE_SHMAPP_VIDEO_CODEC    "Use SHM application to encode and decode video"          TRUE  )  # SHMAPP = 2    
 OPTION( USE_JMLIB_VIDEO_CODEC     "Clone, build and use JM video encoder and decoder"       TRUE  )  # JMLIB  = 3
 OPTION( USE_HMLIB_VIDEO_CODEC     "Clone, build and use HM video encoder and decoder"       TRUE  )  # HMLIB  = 4
-OPTION( USE_VTMLIB_VIDEO_CODEC    "Clone, build and use VTM video encoder and decoder"      TRUE )   # VTMLIB = 5
+OPTION( USE_VTMLIB_VIDEO_CODEC    "Clone, build and use VTM video encoder and decoder"      TRUE  )  # VTMLIB = 5
 OPTION( USE_FFMPEG_VIDEO_CODEC    "Clone, build and use FFMPEG video encoder and decoder"   FALSE )  # FFMPEG = 6                                                                                                 #UNKNOWN_CODEC = 7
 
 # Color conversion library:
 OPTION( USE_HDRTOOLS              "Clone, build and use HDRTools for color conversions"     FALSE )
 
 # Use HM optimized RDO
-OPTION( USE_HM_PCC_RDO            "Use HM optimized RDO (re-run \"./clear.sh all\" )"       TRUE )
+OPTION( USE_HM_PCC_RDO            "Use HM optimized RDO (re-run \"./clear.sh all\" )"       TRUE  )
 
 # Multi-threading and profiling tools 
-OPTION( ENABLE_TBB                "Enable TBB mutli-threading"                              TRUE )
+OPTION( ENABLE_TBB                "Enable TBB mutli-threading"                              TRUE  )
 OPTION( ENABLE_PAPI_PROFILING     "Enable PAPI profiling"                                   FALSE )
 
 # trace and conformance modes
