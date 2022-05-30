@@ -130,12 +130,13 @@ HDRTools:
 ``` 
 
 The pointcloud metrics can be computed inside the TM2 encoder and decoder according to the input parameters: 
-  * computeMetrics: Compute metrics
-  * uncompressedDataPath: Input pointcloud to encode. Multi-frame sequences may be represented by %04i
-  * normalDataPath:  Input pointcloud to encode. Multi-frame sequences may be represented by %04i
-  * resolution: Specify the intrinsic resolution
-  * dropdups: 0(detect), 1(drop), 2(average) subsequent points with same coordinates
-  * neighborsProc: 0(undefined), 1(average), 2(weighted average), 3(min), 4(max) neighbors with same geometric distance
+
+* computeMetrics: Compute metrics
+* uncompressedDataPath: Input pointcloud to encode. Multi-frame sequences may be represented by %04i
+* normalDataPath:  Input pointcloud to encode. Multi-frame sequences may be represented by %04i
+* resolution: Specify the intrinsic resolution
+* dropdups: 0(detect), 1(drop), 2(average) subsequent points with same coordinates
+* neighborsProc: 0(undefined), 1(average), 2(weighted average), 3(min), 4(max) neighbors with same geometric distance
 
 The computations of the metrics are the same than the distances computed with the pcc_distortion software that can be found in: http://mpegx.int-evry.fr/software/MPEG/PCC/mpeg-pcc-dmetric.git.
 
