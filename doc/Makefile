@@ -1,8 +1,8 @@
 
-all: mpeg-pcc-tmc2-sw-manual.pdf
+all: mpeg-pcc-tm2-sw-manual.pdf
 
 clean:
-	rm -rf *.log mpeg-pcc-tmc2-sw-manual.pdf *.toc *.out *.blg $(patsubst %.md,%.tex,$(MD_SRC))
+	rm -rf *.log mpeg-pcc-tm2-sw-manual.pdf *.toc *.out *.blg $(patsubst %.md,%.tex,$(MD_SRC))
 
 MD_SRC=\
 	README.about.md \
@@ -14,11 +14,11 @@ MD_SRC=\
 	$(NULL)
 
 TEX_SRC=\
-	mpeg-pcc-tmc2-sw-manual.tex \
+	mpeg-pcc-tm2-sw-manual.tex \
 	$(patsubst %.md,%.tex,$(MD_SRC)) \
 	$(NULL)
 
-mpeg-pcc-tmc2-sw-manual.pdf: $(TEX_SRC)
+mpeg-pcc-tm2-sw-manual.pdf: $(TEX_SRC)
 
 LATEX:=$(shell which xelatex || which pdflatex || which latex)
 

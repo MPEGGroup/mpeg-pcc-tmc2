@@ -184,6 +184,10 @@ Occupancy Map video encode/decode using same version of HM encooder/decoder.
 	--SHVCLayerID=2 
 ```
 
+### Software manual
+
+More informations could be found in the [user manuel](doc/mpeg-pcc-tm2-sw-manual.pdf).
+
 ### Contact
 
 Don't hesitate to contact me for any information: 
