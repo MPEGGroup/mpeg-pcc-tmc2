@@ -79,13 +79,19 @@ bool PCCVideoDecoder::decompress( PCCVideo<T, 3>&    video,
   fflush( stdout );
   if ( byteStreamVideoCoder ) {
     bitstream.sampleStreamToByteStream(
-#if defined( USE_JMAPP_VIDEO_CODEC ) || defined( USE_JMLIB_VIDEO_CODEC )
+#if defined( USE_JMAPP_VIDEO_CODEC ) && defined( USE_JMLIB_VIDEO_CODEC )
         codecId == JMAPP || codecId == JMLIB,
+#elif defined( USE_JMAPP_VIDEO_CODEC ) 
+        codecId == JMAPP,
+#elif defined( USE_JMLIB_VIDEO_CODEC ) 
+        codecId == JMLIB,
 #else
         false,
 #endif
 #if defined( USE_VTMLIB_VIDEO_CODEC )
         codecId == VTMLIB
+#else
+        false
 #endif
     );
   }

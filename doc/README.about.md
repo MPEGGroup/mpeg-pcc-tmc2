@@ -2,8 +2,7 @@ General Information
 ===================
 
 Reference software is being made available to provide a reference
-implementation of the V3C standard being developed by MPEG (ISO/IEC SC29
-WG11).  One of the main goals of the reference software is to provide a
+implementation of the V3C standard being developed by MPEG (ISO/IEC JTC 1/SC 29/WG 7).  One of the main goals of the reference software is to provide a
 basis upon which to conduct experiments in order to determine which coding
 tools provide desired coding performance. It is not meant to be a
 particularly efficient implementation of anything, and one may notice its
@@ -17,7 +16,7 @@ improvements are welcome. Such suggestions and general inquiries may be
 sent to the general MPEG 3DGC email reflector at
 <mpeg-3dgc@gti.ssr.upm.es> (registration required).
 
-Bug reporting
+Bug reporting 
 -------------
 Bugs should be reported on the issue tracker set up at
 <http://mpegx.int-evry.fr/software/MPEG/PCC/TM/mpeg-pcc-tmc2/issues>.

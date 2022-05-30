@@ -1231,21 +1231,21 @@ class SEIDecodedAtlasInformationHash : public SEI {
 
   std::vector<uint8_t>& getMD5ByteStrData() {
     uint8_t val;
-    val = cancelFlag_ & 0xFF;
+    val = (uint8_t)cancelFlag_ & 0xFF;
     byteStrData_.push_back( val );
-    val = persistenceFlag_ & 0xFF;
+    val = (uint8_t)persistenceFlag_ & 0xFF;
     byteStrData_.push_back( val );
     val = hashType_ & 0xFF;
     byteStrData_.push_back( val );
-    val = decodedHighLevelHashPresentFlag_ & 0xFF;
+    val = (uint8_t)decodedHighLevelHashPresentFlag_ & 0xFF;
     byteStrData_.push_back( val );
-    val = decodedAtlasHashPresentFlag_ & 0xFF;
+    val = (uint8_t)decodedAtlasHashPresentFlag_ & 0xFF;
     byteStrData_.push_back( val );
-    val = decodedAtlasB2pHashPresentFlag_ & 0xFF;
+    val = (uint8_t)decodedAtlasB2pHashPresentFlag_ & 0xFF;
     byteStrData_.push_back( val );
-    val = decodedAtlasTilesHashPresentFlag_ & 0xFF;
+    val = (uint8_t)decodedAtlasTilesHashPresentFlag_ & 0xFF;
     byteStrData_.push_back( val );
-    val = decodedAtlasTilesB2pHashPresentFlag_ & 0xFF;
+    val = (uint8_t)decodedAtlasTilesB2pHashPresentFlag_ & 0xFF;
     byteStrData_.push_back( val );
     if ( decodedHighLevelHashPresentFlag_ ) {
       switch ( hashType_ ) {
@@ -1491,9 +1491,9 @@ class SEIOccupancySynthesis : public SEI {
 
   std::vector<uint8_t>& getMD5ByteStrData() {
     uint8_t val;
-    val = persistenceFlag_ & 0xFF;
+    val = (uint8_t)persistenceFlag_ & 0xFF;
     byteStrData_.push_back( val );
-    val = resetFlag_ & 0xFF;
+    val = (uint8_t)resetFlag_ & 0xFF;
     byteStrData_.push_back( val );
     val = instancesUpdated_ & 0xFF;
     byteStrData_.push_back( val );
@@ -1501,7 +1501,7 @@ class SEIOccupancySynthesis : public SEI {
       uint8_t k = instanceIndex_[i];
       val       = instanceIndex_[i] & 0xFF;
       byteStrData_.push_back( val );
-      val = instanceCancelFlag_[k] & 0xFF;
+      val = (uint8_t)instanceCancelFlag_[k] & 0xFF;
       byteStrData_.push_back( val );
       val = methodType_[k] & 0xFF;
       byteStrData_.push_back( val );
@@ -1575,9 +1575,9 @@ class SEIGeometrySmoothing : public SEI {
 
   std::vector<uint8_t>& getMD5ByteStrData() {
     uint8_t val;
-    val = persistenceFlag_ & 0xFF;
+    val = (uint8_t)persistenceFlag_ & 0xFF;
     byteStrData_.push_back( val );
-    val = resetFlag_ & 0xFF;
+    val = (uint8_t)resetFlag_ & 0xFF;
     byteStrData_.push_back( val );
     val = instancesUpdated_ & 0xFF;
     byteStrData_.push_back( val );
@@ -1585,13 +1585,13 @@ class SEIGeometrySmoothing : public SEI {
       uint8_t k = instanceIndex_[i];
       val       = instanceIndex_[i] & 0xFF;
       byteStrData_.push_back( val );
-      val = instanceCancelFlag_[k] & 0xFF;
+      val = (uint8_t)instanceCancelFlag_[k] & 0xFF;
       byteStrData_.push_back( val );
       if ( instanceCancelFlag_[k] != 1 ) {
         val = methodType_[k] & 0xFF;
         byteStrData_.push_back( val );
         if ( methodType_[k] == 1 ) {
-          val = filterEomPointsFlag_[k] & 0xFF;
+          val = (uint8_t)filterEomPointsFlag_[k] & 0xFF;
           byteStrData_.push_back( val );
           val = gridSizeMinus2_[k] & 0xFF;
           byteStrData_.push_back( val );
@@ -1700,9 +1700,9 @@ class SEIAttributeSmoothing : public SEI {
 
   std::vector<uint8_t>& getMD5ByteStrData() {
     uint8_t val;
-    val = persistenceFlag_ & 0xFF;
+    val = (uint8_t)persistenceFlag_ & 0xFF;
     byteStrData_.push_back( val );
-    val = resetFlag_ & 0xFF;
+    val = (uint8_t)resetFlag_ & 0xFF;
     byteStrData_.push_back( val );
     val = numAttributesUpdated_ & 0xFF;
     byteStrData_.push_back( val );
@@ -1710,7 +1710,7 @@ class SEIAttributeSmoothing : public SEI {
       val = attributeIdx_[j] & 0xFF;
       byteStrData_.push_back( val );
       uint8_t k = attributeIdx_[j];
-      val       = attributeSmoothingCancelFlag_[k] & 0xFF;
+      val       = (uint8_t)attributeSmoothingCancelFlag_[k] & 0xFF;
       byteStrData_.push_back( val );
       val = instancesUpdated_[k] & 0xFF;
       byteStrData_.push_back( val );
@@ -1718,13 +1718,13 @@ class SEIAttributeSmoothing : public SEI {
         val = instanceIndex_[k][i] & 0xFF;
         byteStrData_.push_back( val );
         uint8_t m = instanceIndex_[k][i];
-        val       = instanceCancelFlag_[k][m] & 0xFF;
+        val       = (uint8_t)instanceCancelFlag_[k][m] & 0xFF;
         byteStrData_.push_back( val );
         if ( instanceCancelFlag_[k][m] != 1 ) {
           val = methodType_[k][m] & 0XFF;
           byteStrData_.push_back( val );
           if ( methodType_[k][m] == 1 ) {
-            val = filterEomPointsFlag_[k][m] & 0XFF;
+            val = (uint8_t)filterEomPointsFlag_[k][m] & 0XFF;
             byteStrData_.push_back( val );
             val = gridSizeMinus2_[k][m] & 0XFF;
             byteStrData_.push_back( val );

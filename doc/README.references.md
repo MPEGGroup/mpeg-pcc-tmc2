@@ -1,6 +1,6 @@
 References
 ======================
  
-  - [1] "Common Test Conditions for PCC", ISO/IEC JTC1/SC29/WG11 MPEG/W19324, Apr. 2020, Aplbach.
+  - [1] "Common Test Conditions for PCC", ISO/IEC JTC1/SC29/WG07 MPEG/N00038, Jul. 2020, Online.
 
-  - [2] "V-PCC Test Model v10", ISO/IEC JTC1/SC29/WG11 MPEG/W19325, Apr. 2020, Aplbach.
+  - [2] "V-PCC Test Model v18", ISO/IEC JTC1/SC29/WG07 MPEG/N00311, Apr. 2022, Online.

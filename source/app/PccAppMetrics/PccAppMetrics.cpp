@@ -39,7 +39,9 @@
 #include "PCCMetrics.h"
 #include "PCCMetricsParameters.h"
 #include <program_options_lite.h>
+#if defined( ENABLE_TBB )
 #include <tbb/tbb.h>
+#endif
 
 using namespace std;
 using namespace pcc;
@@ -162,8 +164,9 @@ int main( int argc, char* argv[] ) {
 
   PCCMetricsParameters metricsParams;
   if ( !parseParameters( argc, argv, metricsParams ) ) { return -1; }
+#if defined( ENABLE_TBB )
   if ( metricsParams.nbThread_ > 0 ) { tbb::task_scheduler_init init( static_cast<int>( metricsParams.nbThread_ ) ); }
-
+#endif
   // Timers to count elapsed wall/user time
   pcc::chrono::Stopwatch<std::chrono::steady_clock> clockWall;
   pcc::chrono::StopwatchUserTime                    clockUser;

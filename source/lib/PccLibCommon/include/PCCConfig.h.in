@@ -4,8 +4,11 @@
 /* Define to 1 if getrusage(2) is present */
 #cmakedefine01 HAVE_GETRUSAGE
 
+/* Multi-threading and profiling tools */
+#cmakedefine ENABLE_TBB
 #cmakedefine ENABLE_PAPI_PROFILING
 
+/* Video codecs */
 #cmakedefine USE_JMAPP_VIDEO_CODEC
 #cmakedefine USE_HMAPP_VIDEO_CODEC
 #cmakedefine USE_SHMAPP_VIDEO_CODEC
@@ -14,7 +17,6 @@
 #cmakedefine USE_VTMLIB_VIDEO_CODEC
 #cmakedefine USE_FFMPEG_VIDEO_CODEC
 
+/* HDR Tools */
 #cmakedefine USE_HDRTOOLS
-
-
 

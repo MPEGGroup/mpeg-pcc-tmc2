@@ -14,12 +14,15 @@ INCLUDE_DIRECTORIES( ${CMAKE_SOURCE_DIR}/source/lib/PccLibCommon/include
                      ${CMAKE_SOURCE_DIR}/source/lib/PccLibBitstreamCommon/include 
                      ${CMAKE_SOURCE_DIR}/source/lib/PccLibBitstreamReader/include
                      ${CMAKE_SOURCE_DIR}/dependencies/program-options-lite
-                     ${CMAKE_SOURCE_DIR}/dependencies/tbb/include 
                      ${CMAKE_SOURCE_DIR}/source/lib/PccLibConformance/include )
+                     
+SET( LIBS PccLibCommon PccLibDecoder PccLibMetrics PccLibConformance PccLibBitstreamCommon PccLibBitstreamReader )
+IF ( ENABLE_TBB ) 
+  INCLUDE_DIRECTORIES( ${CMAKE_SOURCE_DIR}/dependencies/tbb/include )
+  SET( LIBS ${LIBS} tbb_static )   
+ENDIF()
 
 ADD_EXECUTABLE( ${MYNAME} ${SRC} )
-
-SET( LIBS PccLibCommon PccLibDecoder PccLibMetrics PccLibConformance tbb_static PccLibBitstreamCommon PccLibBitstreamReader )
 
 IF( USE_FFMPEG_VIDEO_CODEC )
   IF( WIN32 OR MSVC OR MSYS OR MINGW )

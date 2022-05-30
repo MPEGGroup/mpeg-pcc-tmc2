@@ -114,6 +114,7 @@ PCCEncoderParameters::PCCEncoderParameters() {
   videoEncoderOccupancyCodecId_            = PCCVirtualVideoEncoder<uint8_t>::getDefaultCodecId();
   videoEncoderGeometryCodecId_             = PCCVirtualVideoEncoder<uint8_t>::getDefaultCodecId();
   videoEncoderAttributeCodecId_            = PCCVirtualVideoEncoder<uint8_t>::getDefaultCodecId();
+  videoEncoderInternalBitdepth_            = 10;
   byteStreamVideoCoderOccupancy_           = true;
   byteStreamVideoCoderGeometry_            = true;
   byteStreamVideoCoderAttribute_           = true;
@@ -337,6 +338,7 @@ void PCCEncoderParameters::print() {
   std::cout << "\t keepIntermediateFiles                      " << keepIntermediateFiles_ << std::endl;
   std::cout << "\t multipleStreams                            " << multipleStreams_ << std::endl;
   std::cout << "\t multipleStreams                            " << multipleStreams_ << std::endl;
+  std::cout << "\t videoEncoderInternalBitdepth               " << videoEncoderInternalBitdepth_ << std::endl;  
   std::cout << "\t forcedSsvhUnitSizePrecisionBytes           " << forcedSsvhUnitSizePrecisionBytes_ << std::endl;
   if ( multipleStreams_ ) {
     std::cout << "\t    deltaQPD0                               " << deltaQPD0_ << std::endl;
@@ -1159,10 +1161,26 @@ bool PCCEncoderParameters::check() {
   }
   switch ( profileCodecGroupIdc_ ) {
     case CODEC_GROUP_AVC_PROGRESSIVE_HIGH:
-#if defined( USE_JMAPP_VIDEO_CODEC ) || defined( USE_JMLIB_VIDEO_CODEC )
+#if defined( USE_JMAPP_VIDEO_CODEC ) && defined( USE_JMLIB_VIDEO_CODEC )
       if ( ( videoEncoderOccupancyCodecId_ != JMLIB && videoEncoderOccupancyCodecId_ != JMAPP ) ||
            ( videoEncoderGeometryCodecId_ != JMLIB && videoEncoderGeometryCodecId_ != JMAPP ) ||
            ( videoEncoderAttributeCodecId_ != JMLIB && videoEncoderAttributeCodecId_ != JMAPP ) ) {
+        std::cerr << "profileCodecGroupIdc_ is CODEC_GROUP_AVC_PROGRESSIVE_HIGH force codecId. \n";
+        videoEncoderOccupancyCodecId_ = JMLIB;
+        videoEncoderGeometryCodecId_  = JMLIB;
+        videoEncoderAttributeCodecId_ = JMLIB;
+      }
+#elif defined( USE_JMAPP_VIDEO_CODEC )
+      if ( ( videoEncoderOccupancyCodecId_ != JMAPP ) || ( videoEncoderGeometryCodecId_ != JMAPP ) ||
+           ( videoEncoderAttributeCodecId_ != JMAPP ) ) {
+        std::cerr << "profileCodecGroupIdc_ is CODEC_GROUP_AVC_PROGRESSIVE_HIGH force codecId. \n";
+        videoEncoderOccupancyCodecId_ = JMAPP;
+        videoEncoderGeometryCodecId_  = JMAPP;
+        videoEncoderAttributeCodecId_ = JMAPP;
+      }
+#elif defined( USE_JMLIB_VIDEO_CODEC )
+      if ( ( videoEncoderOccupancyCodecId_ != JMLIB ) || ( videoEncoderGeometryCodecId_ != JMLIB ) ||
+           ( videoEncoderAttributeCodecId_ != JMLIB ) ) {
         std::cerr << "profileCodecGroupIdc_ is CODEC_GROUP_AVC_PROGRESSIVE_HIGH force codecId. \n";
         videoEncoderOccupancyCodecId_ = JMLIB;
         videoEncoderGeometryCodecId_  = JMLIB;
@@ -1175,10 +1193,26 @@ bool PCCEncoderParameters::check() {
       break;
     case CODEC_GROUP_HEVC444:
     case CODEC_GROUP_HEVC_MAIN10:
-#if defined( USE_HMAPP_VIDEO_CODEC ) || defined( USE_HMLIB_VIDEO_CODEC )
+#if defined( USE_HMAPP_VIDEO_CODEC ) & defined( USE_HMLIB_VIDEO_CODEC )
       if ( ( videoEncoderOccupancyCodecId_ != HMLIB && videoEncoderOccupancyCodecId_ != HMAPP ) ||
            ( videoEncoderGeometryCodecId_ != HMLIB && videoEncoderGeometryCodecId_ != HMAPP ) ||
            ( videoEncoderAttributeCodecId_ != HMLIB && videoEncoderAttributeCodecId_ != HMAPP ) ) {
+        std::cerr << "profileCodecGroupIdc_ is HEVC444 or HEVCMAIN10 force codecId. \n";
+        videoEncoderOccupancyCodecId_ = HMLIB;
+        videoEncoderGeometryCodecId_  = HMLIB;
+        videoEncoderAttributeCodecId_ = HMLIB;
+      }
+#elif defined( USE_HMAPP_VIDEO_CODEC )
+      if ( ( videoEncoderOccupancyCodecId_ != HMAPP ) || ( videoEncoderGeometryCodecId_ != HMAPP ) ||
+           ( videoEncoderAttributeCodecId_ != HMAPP ) ) {
+        std::cerr << "profileCodecGroupIdc_ is HEVC444 or HEVCMAIN10 force codecId. \n";
+        videoEncoderOccupancyCodecId_ = HMAPP;
+        videoEncoderGeometryCodecId_  = HMAPP;
+        videoEncoderAttributeCodecId_ = HMAPP;
+      }
+#elif defined( USE_HMAPP_VIDEO_CODEC )
+      if ( ( videoEncoderOccupancyCodecId_ != HMLIB ) || ( videoEncoderGeometryCodecId_ != HMLIB ) ||
+           ( videoEncoderAttributeCodecId_ != HMLIB ) ) {
         std::cerr << "profileCodecGroupIdc_ is HEVC444 or HEVCMAIN10 force codecId. \n";
         videoEncoderOccupancyCodecId_ = HMLIB;
         videoEncoderGeometryCodecId_  = HMLIB;
@@ -1204,10 +1238,11 @@ bool PCCEncoderParameters::check() {
       ret = false;
 #endif
       break;
-
     case CODEC_GROUP_MP4RA: break;
   }
 
+#if defined( USE_SHMAPP_VIDEO_CODEC ) 
+#if defined( USE_HMLIB_VIDEO_CODEC )
   if ( ( rawPointsPatch_ ) && ( videoEncoderOccupancyCodecId_ == SHMAPP || videoEncoderGeometryCodecId_ == SHMAPP ||
                                 videoEncoderAttributeCodecId_ == SHMAPP ) ) {
     videoEncoderOccupancyCodecId_ = HMLIB;
@@ -1221,7 +1256,11 @@ bool PCCEncoderParameters::check() {
     std::cerr << "SHMAPP codec requiered shvcRateX and shvcRateY equal to 2. \n";
     ret = false;
   }
-
+#else
+    std::cerr << "SHMAPP codec requiered USE_HMLIB_VIDEO_CODEC enable. \n";
+    ret = false;
+#endif
+#endif
   return ret;
 }
 

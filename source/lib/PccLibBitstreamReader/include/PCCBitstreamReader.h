@@ -85,7 +85,20 @@ class AspsVpccExtension;
 class AfpsVpccExtension;
 class AtlasAdaptationParameterSetRbsp;
 class AapsVpccExtension;
-class AtlasCameraParameters;
+class AtlasCameraParameters;    
+class SampleStreamV3CUnit;
+class ProfileToolsetConstraintsInformation;
+class AtlasSequenceParameterSetRbsp;
+class SEI;
+class AtlasFrameParameterSetRbsp;
+class AtlasTileLayerRbsp;
+class AtlasTileLayerRbsp;
+class VUIParameters;
+class HrdParameters;
+class HrdSubLayerParameters;
+class MaxCodedVideoResolution;
+class CoordinateSystemParameters;
+class PCCSEI;
 
 class PCCBitstreamReader {
  public:

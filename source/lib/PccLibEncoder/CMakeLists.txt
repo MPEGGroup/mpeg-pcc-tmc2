@@ -13,8 +13,10 @@ INCLUDE_DIRECTORIES( include
                      ${CMAKE_SOURCE_DIR}/source/lib/PccLibBitstreamCommon/include 
                      ${CMAKE_SOURCE_DIR}/source/lib/PccLibVideoEncoder/include 
                      ${CMAKE_SOURCE_DIR}/source/lib/PccLibColorConverter/include/
-                     ${CMAKE_SOURCE_DIR}/dependencies/tbb/include
                      ${CMAKE_SOURCE_DIR}/dependencies/nanoflann )
+IF ( ENABLE_TBB ) 
+  INCLUDE_DIRECTORIES( ${CMAKE_SOURCE_DIR}/dependencies/tbb/include )
+ENDIF()
 
 SET( LIBS PccLibCommon PccLibBitstreamCommon PccLibVideoEncoder PccLibColorConverter )
 

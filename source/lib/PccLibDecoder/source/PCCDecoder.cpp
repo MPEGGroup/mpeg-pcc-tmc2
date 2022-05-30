@@ -39,8 +39,10 @@
 #include "PCCPatch.h"
 #include "PCCVideoDecoder.h"
 #include "PCCGroupOfFrames.h"
-#include <tbb/tbb.h>
 #include "PCCDecoder.h"
+#if defined( ENABLE_TBB )
+#include <tbb/tbb.h>
+#endif
 
 using namespace pcc;
 using namespace std;
@@ -65,7 +67,9 @@ void PCCDecoder::setReconstructionParameters( const PCCDecoderParameters& params
 }
 
 int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int32_t atlasIndex = 0 ) {
+#if defined( ENABLE_TBB )
   if ( params_.nbThread_ > 0 ) { tbb::task_scheduler_init init( static_cast<int>( params_.nbThread_ ) ); }
+#endif
   createPatchFrameDataStructure( context );
 
   PCCVideoDecoder videoDecoder;

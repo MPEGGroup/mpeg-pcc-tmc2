@@ -35,15 +35,19 @@
 
 #include "PCCKdTree.h"
 #include "PCCNormalsGenerator.h"
-#include "tbb/tbb.h"
 #include "PCCPatchSegmenter.h"
 #include "PCCPatch.h"
+#if defined( ENABLE_TBB )
+#include <tbb/tbb.h>
+#endif
 
 using namespace pcc;
 
 void PCCPatchSegmenter3::setNbThread( size_t nbThread ) {
   nbThread_ = nbThread;
+#if defined( ENABLE_TBB )
   if ( nbThread_ > 0 ) { tbb::task_scheduler_init init( static_cast<int>( nbThread ) ); }
+#endif
 }
 
 void PCCPatchSegmenter3::compute( const PCCPointSet3&                 geometry,
@@ -234,9 +238,13 @@ void PCCPatchSegmenter3::initialSegmentation( const PCCPointSet3&         geomet
   weightValue[0] = weightValue[3] = axisWeight[0];
   weightValue[1] = weightValue[4] = axisWeight[1];
   weightValue[2] = weightValue[5] = axisWeight[2];
+#if defined( ENABLE_TBB )
   tbb::task_arena limited( static_cast<int>( nbThread_ ) );
   limited.execute( [&] {
     tbb::parallel_for( size_t( 0 ), pointCount, [&]( const size_t i ) {
+#else
+  for ( size_t i = 0; i < pointCount; i++ ) {
+#endif
       const PCCVector3D normal       = normalsGen.getNormal( i );
       size_t            clusterIndex = 0;
       double            bestScore    = normal * orientations[0];
@@ -248,8 +256,12 @@ void PCCPatchSegmenter3::initialSegmentation( const PCCPointSet3&         geomet
         }
       }
       partition[i] = clusterIndex;
+#if defined( ENABLE_TBB )
     } );
   } );
+#else
+  }
+#endif
 }
 
 void PCCPatchSegmenter3::computeAdjacencyInfo( const PCCPointSet3&               pointCloud,
@@ -258,16 +270,24 @@ void PCCPatchSegmenter3::computeAdjacencyInfo( const PCCPointSet3&              
                                                const size_t                      maxNNCount ) {
   const size_t pointCount = pointCloud.getPointCount();
   adj.resize( pointCount );
+#if defined( ENABLE_TBB )
   tbb::task_arena limited( static_cast<int>( nbThread_ ) );
   limited.execute( [&] {
     tbb::parallel_for( size_t( 0 ), pointCount, [&]( const size_t i ) {
+#else
+  for ( size_t i = 0; i < pointCount; i++ ) {
+#endif
       PCCNNResult result;
       kdtree.search( pointCloud[i], maxNNCount, result );
       std::vector<size_t>& neighbors = adj[i];
       neighbors.resize( result.count() );
       for ( size_t j = 0; j < result.count(); ++j ) { neighbors[j] = result.indices( j ); }
+#if defined( ENABLE_TBB )
+      } );
     } );
-  } );
+#else
+  }
+#endif
 }
 
 void PCCPatchSegmenter3::computeAdjacencyInfoInRadius( const PCCPointSet3&                 pointCloud,
@@ -277,16 +297,24 @@ void PCCPatchSegmenter3::computeAdjacencyInfoInRadius( const PCCPointSet3&      
                                                        const size_t                        radius ) {
   const size_t pointCount = pointCloud.getPointCount();
   adj.resize( pointCount );
+#if defined( ENABLE_TBB )
   tbb::task_arena limited( static_cast<int>( nbThread_ ) );
   limited.execute( [&] {
     tbb::parallel_for( size_t( 0 ), pointCount, [&]( const size_t i ) {
+#else
+  for ( size_t i = 0; i < pointCount; i++ ) {
+#endif
       PCCNNResult result;
       kdtree.searchRadius( pointCloud[i], maxNNCount, radius, result );
       std::vector<uint32_t>& neighbors = adj[i];
       neighbors.resize( result.count() );
       for ( size_t j = 0; j < result.count(); ++j ) { neighbors[j] = result.indices( j ); }
+#if defined( ENABLE_TBB )
+      } );
     } );
-  } );
+#else
+  }
+#endif
 }
 
 void PCCPatchSegmenter3::computeAdjacencyInfoDist( const PCCPointSet3&               pointCloud,
@@ -297,9 +325,13 @@ void PCCPatchSegmenter3::computeAdjacencyInfoDist( const PCCPointSet3&          
   const size_t pointCount = pointCloud.getPointCount();
   adj.resize( pointCount );
   adjDist.resize( pointCount );
+#if defined( ENABLE_TBB )
   tbb::task_arena limited( static_cast<int>( nbThread_ ) );
   limited.execute( [&] {
     tbb::parallel_for( size_t( 0 ), pointCount, [&]( const size_t i ) {
+#else
+  for ( size_t i = 0; i < pointCount; i++ ) {
+#endif
       PCCNNResult result;
       kdtree.search( pointCloud[i], maxNNCount, result );
       std::vector<size_t>& neighbors     = adj[i];
@@ -310,8 +342,12 @@ void PCCPatchSegmenter3::computeAdjacencyInfoDist( const PCCPointSet3&          
         neighbors[j]     = result.indices( j );
         neighborsDist[j] = result.dist( j );
       }
+#if defined( ENABLE_TBB )
     } );
   } );
+#else
+  }
+#endif
 }
 
 void printChunk( const std::vector<std::pair<int, int>>& chunk ) {
@@ -1300,16 +1336,28 @@ void PCCPatchSegmenter3::refineSegmentation( const PCCPointSet3&         pointCl
   std::vector<size_t>              tempPartition( pointCount );
   std::vector<std::vector<size_t>> scoresSmooth( pointCount, std::vector<size_t>( orientationCount ) );
   for ( size_t k = 0; k < iterationCount; ++k ) {
+#if defined( ENABLE_TBB )
     tbb::task_arena limited( static_cast<int>( nbThread_ ) );
     limited.execute( [&] {
       tbb::parallel_for( size_t( 0 ), pointCount, [&]( const size_t i ) {
+#else
+    for ( size_t i = 0; i < pointCount; i++ ) {
+#endif
         auto& scoreSmooth = scoresSmooth[i];
         std::fill( scoreSmooth.begin(), scoreSmooth.end(), 0 );
         for ( auto& neighbor : adj[i] ) { ++scoreSmooth[partition[neighbor]]; }
+#if defined( ENABLE_TBB )
       } );
     } );
+#else
+    }
+#endif
+#if defined( ENABLE_TBB )
     limited.execute( [&] {
       tbb::parallel_for( size_t( 0 ), pointCount, [&]( const size_t i ) {
+#else
+    for ( size_t i = 0; i < pointCount; i++ ) {
+#endif
         const PCCVector3D normal       = normalsGen.getNormal( i );
         size_t            clusterIndex = partition[i];
         double            bestScore    = 0.0;
@@ -1323,8 +1371,12 @@ void PCCPatchSegmenter3::refineSegmentation( const PCCPointSet3&         pointCl
           }
         }
         tempPartition[i] = clusterIndex;
+#if defined( ENABLE_TBB )
       } );
     } );
+#else
+  }
+#endif
     swap( tempPartition, partition );
   }
   for ( auto& vector : scoresSmooth ) { vector.clear(); }
