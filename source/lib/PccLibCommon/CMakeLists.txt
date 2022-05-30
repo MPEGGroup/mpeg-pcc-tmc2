@@ -27,8 +27,10 @@ SOURCE_GROUP( input FILES ${PROJECT_IN_FILES}  )
 INCLUDE_DIRECTORIES( include
                      ${CMAKE_SOURCE_DIR}/source/lib/PccLibBitstreamCommon/include 
                      ${CMAKE_SOURCE_DIR}/dependencies/nanoflann
-                     ${CMAKE_SOURCE_DIR}/dependencies/tbb/include
                      ${CMAKE_SOURCE_DIR}/dependencies/libmd5 )
+IF ( ENABLE_TBB ) 
+  INCLUDE_DIRECTORIES( ${CMAKE_SOURCE_DIR}/dependencies/tbb/include )
+ENDIF()
  
 ADD_LIBRARY( ${MYNAME} ${LINKER} ${SRC} ${PROJECT_INC_FILES} ${PROJECT_CPP_FILES} ${PROJECT_IN_FILES} )
 IF( ENABLE_PAPI_PROFILING )

@@ -108,7 +108,7 @@
 	\IfFileExists{logos/iec}{\includegraphics[height=0.74cm]{logos/iec}}{}
 	\\
 	\textbf{Moving Picture Experts Group (MPEG)}\\[0ex]
-	\textbf{of ITU-T SG16 WP3 and ISO/IEC JTC1/SC29/WG11}
+	\textbf{of ISO/IEC JTC 1/SC 29/WG 7}
 		\hfill Document: MPEG-\@mpegdocnum\\[0ex]
 	\@mpegmeeting
 

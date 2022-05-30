@@ -110,24 +110,19 @@ void PCCBitstream::writeVideoStream( PCCVideoBitstream& videoBitstream ) {
   position_.bytes_ += size;
   videoBitstream.trace();
 }
-void PCCBitstream::copyFrom( PCCBitstream& dataBitstream, const uint64_t startByte, const uint64_t bitstreamSize ) {
-  if ( data_.size() < position_.bytes_ + bitstreamSize ) { data_.resize( position_.bytes_ + bitstreamSize ); }
-  memcpy( data_.data() + position_.bytes_, dataBitstream.buffer() + startByte,
-          bitstreamSize );  // dest, source
-  position_.bytes_ += bitstreamSize;
-  PCCBistreamPosition pos = dataBitstream.getPosition();
-  pos.bytes_ += bitstreamSize;
-  dataBitstream.setPosition( pos );
+void PCCBitstream::copyFrom( PCCBitstream& srcBitstream, const size_t position, const size_t size ) {
+  if ( data_.size() < position_.bytes_ + size ) { data_.resize( position_.bytes_ + size ); }
+  memcpy( data_.data() + position_.bytes_, srcBitstream.buffer() + position, size ); 
+  position_.bytes_ += size; 
+  auto pos = srcBitstream.getPosition();
+  pos.bytes_ += size; 
+  srcBitstream.setPosition( pos );
 }
-void PCCBitstream::copyTo( PCCBitstream& dataBitstream, uint64_t startByte, uint64_t outputSize ) {
-#ifdef BITSTREAM_TRACE
-  trace( "Code copied to: size = %zu \n", outputSize );
-#endif
-  dataBitstream.initialize( outputSize );
-  PCCBistreamPosition pos = dataBitstream.getPosition();
-  memcpy( data_.data() + startByte, dataBitstream.buffer(), outputSize );
-  pos.bytes_ += outputSize;
-  dataBitstream.setPosition( pos );
+
+void PCCBitstream::copyTo( PCCBitstream& dstBitstream, const size_t size ) {
+  dstBitstream.initialize( dstBitstream.position_.bytes_ + size );
+  memcpy( dstBitstream.buffer() + dstBitstream.position_.bytes_, data_.data() + position_.bytes_, size );
+  position_.bytes_ += size;
 }
 
 void PCCBitstream::computeMD5() {

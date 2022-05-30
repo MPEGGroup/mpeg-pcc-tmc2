@@ -4,4 +4,11 @@
 /* Define to 1 if getrusage(2) is present */
 #cmakedefine01 HAVE_GETRUSAGE
 
+/* Enable papi profiling */
 #cmakedefine ENABLE_PAPI_PROFILING
+
+/* Trace and conformance modes */
+#cmakedefine BITSTREAM_TRACE
+#cmakedefine CODEC_TRACE
+#cmakedefine SEI_TRACE
+#cmakedefine CONFORMANCE_TRACE

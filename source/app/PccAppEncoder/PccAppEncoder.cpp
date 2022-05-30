@@ -47,7 +47,9 @@
 #include "PCCBitstreamWriter.h"
 #include "PCCMetricsParameters.h"
 #include <program_options_lite.h>
+#if defined( ENABLE_TBB )
 #include <tbb/tbb.h>
+#endif
 
 using namespace std;
 using namespace pcc;
@@ -498,6 +500,10 @@ bool parseParameters( int                   argc,
       encoderParams.videoEncoderAttributeCodecId_,
       encoderParams.videoEncoderAttributeCodecId_, 
       "Attribute video encoder codec id" )
+    ( "videoEncoderInternalBitdepth",
+      encoderParams.videoEncoderInternalBitdepth_,
+      encoderParams.videoEncoderInternalBitdepth_, 
+      "Video encoder internal bitdepth" )      
   ( "byteStreamVideoEncoderOccupancy",
     encoderParams.byteStreamVideoCoderOccupancy_,
     encoderParams.byteStreamVideoCoderOccupancy_,
@@ -1114,8 +1120,9 @@ int main( int argc, char* argv[] ) {
   PCCEncoderParameters encoderParams;
   PCCMetricsParameters metricsParams;
   if ( !parseParameters( argc, argv, encoderParams, metricsParams ) ) { return -1; }
+#if defined( ENABLE_TBB )
   if ( encoderParams.nbThread_ > 0 ) { tbb::task_scheduler_init init( static_cast<int>( encoderParams.nbThread_ ) ); }
-
+#endif
   // Timers to count elapsed wall/user time
   pcc::chrono::Stopwatch<std::chrono::steady_clock> clockWall;
   pcc::chrono::StopwatchUserTime                    clockUser;

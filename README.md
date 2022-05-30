@@ -9,20 +9,20 @@ Bash scripts can be use to build mpeg-pcc-tmc2 project:
 ### OSX
 - mkdir build
 - cd build
-- cmake .. -G Xcode 
-- open the generated xcode project and build it
+- cmake ..  
+- cmake --build . --config Release --parallel 8 
 
 ### Linux
 - mkdir build
 - cd build
 - cmake .. 
-- make
+- cmake --build . --config Release --parallel 8 
 
 ### Windows
 - md build
 - cd build
-- cmake .. -G "Visual Studio 15 2017 Win64"
-- open the generated visual studio solution and build it
+- cmake .. 
+- cmake --build . --config Release --parallel 8 
 
 
 ### External dependencies
@@ -183,6 +183,10 @@ Occupancy Map video encode/decode using same version of HM encooder/decoder.
 	--reconstructedDataPath=S26C03R03_dec_%04d.ply \
 	--SHVCLayerID=2 
 ```
+
+### Software manual
+
+More informations could be found in the [user manuel](doc/mpeg-pcc-tm2-sw-manual.pdf).
 
 ### Contact
 

@@ -183,7 +183,7 @@ class PCCBitstream {
     return *this;
   }
   void copyFrom( PCCBitstream& dataBitstream, const uint64_t startByte, const uint64_t bitstreamSize );
-  void copyTo( PCCBitstream& dataBitstream, uint64_t startByte, uint64_t outputSize );
+  void copyTo( PCCBitstream& dataBitstream, const size_t size );
   void writeVideoStream( PCCVideoBitstream& videoBitstream );
   void readVideoStream( PCCVideoBitstream& videoBitstream, size_t videoStreamSize );
   bool byteAligned() { return ( position_.bits_ == 0 ); }
