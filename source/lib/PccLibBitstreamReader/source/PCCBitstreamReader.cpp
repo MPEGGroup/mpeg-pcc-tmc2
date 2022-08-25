@@ -1407,7 +1407,7 @@ void PCCBitstreamReader::sampleStreamV3CUnit( PCCBitstream& bitstream, SampleStr
   TRACE_BITSTREAM( "%s \n", __func__ );
   v3cUnit.setSize( bitstream.read( 8 * ( ssvu.getSsvhUnitSizePrecisionBytesMinus1() + 1 ) ) );  // u(v)
   auto pos = bitstream.getPosition();
-  v3cUnit.getBitstream().copyFrom( bitstream, pos.bytes_, v3cUnit.getSize() );
+  v3cUnit.getBitstream().copyFrom( bitstream, (size_t)pos.bytes_, v3cUnit.getSize() );
   uint8_t v3cUnitType8 = v3cUnit.getBitstream().buffer()[0];
   auto    v3cUnitType  = static_cast<V3CUnitType>( v3cUnitType8 >>= 3 );
   v3cUnit.setType( v3cUnitType );
