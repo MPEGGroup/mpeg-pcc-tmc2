@@ -1461,6 +1461,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   gi.setGeometry2dBitdepthMinus1( uint8_t( geometryNominal2dBitdepth_ - 1 ) );
   gi.setGeometryMSBAlignFlag( false );
   gi.setGeometryCodecId( getCodecIdIndex( (PCCCodecId)videoEncoderGeometryCodecId_ ) );
+  gi.setAuxiliaryGeometryCodecId( gi.getGeometryCodecId() );
 
   // Attribute information
   auto& ai = vps.getAttributeInformation( atlasIndex );
@@ -1483,6 +1484,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
     }
     for ( uint32_t i = 0; i < ai.getAttributeCount(); i++ ) {
       ai.setAttributeCodecId( i, getCodecIdIndex( (PCCCodecId)videoEncoderAttributeCodecId_ ) );
+      ai.setAuxiliaryAttributeCodecId( i, ai.getAttributeCodecId( i ) );
     }
     printf( "CODEC ID SET = occupancy: %d geometry: %d attributes: %d \n", videoEncoderOccupancyCodecId_,
             videoEncoderGeometryCodecId_, videoEncoderAttributeCodecId_ );
