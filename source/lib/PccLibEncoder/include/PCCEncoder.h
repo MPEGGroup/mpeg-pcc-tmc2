@@ -275,13 +275,17 @@ class PCCEncoder : public PCCCodec {
                      bool             enablePointCloudPartitioning = false );
   void packTetris( PCCFrameContext& tile, size_t frameWidth, size_t frameHeight, int safeguard = 0 );
   void packMultipleTiles( PCCAtlasFrameContext& frame, int safeguard );
-  void packFlexibleMultipleTiles( PCCAtlasFrameContext& frame, int safeguard );
+  void packFlexibleMultipleTiles( PCCAtlasFrameContext& frame,
+                                  PCCAtlasFrameContext& prevFrame,
+                                  int                   safeguard,
+                                  int                   lastframe_state );
   void spatialConsistencyPackMultipleTiles( PCCAtlasFrameContext& frame,
                                             PCCAtlasFrameContext& prevFrame,
                                             int                   safeguard );
   void spatialConsistencyPackFlexibleMultipleTiles( PCCAtlasFrameContext& frame,
                                                     PCCAtlasFrameContext& prevFrame,
-                                                    int                   safeguard );
+                                                    int                   safeguard,
+                                                    int                   lastframe_state );
 
   size_t packRawPointsPatchSimple( PCCFrameContext& tile, size_t patchStartOffsetX = 0, size_t patchStartOffsetY = 0 );
 

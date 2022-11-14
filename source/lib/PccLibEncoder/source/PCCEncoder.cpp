@@ -2584,7 +2584,10 @@ void PCCEncoder::packMultipleTiles( PCCAtlasFrameContext& atlasFrame, int safegu
             << height << std::endl;
 }
 
-void PCCEncoder::packFlexibleMultipleTiles( PCCAtlasFrameContext& atlasFrame, int safeguard ) {
+void PCCEncoder::packFlexibleMultipleTiles( PCCAtlasFrameContext& atlasFrame,
+                                            PCCAtlasFrameContext& prevFrame,
+                                            int                   safeguard,
+                                            int                   lastframe_state ) {
   auto& frame              = atlasFrame.getTitleFrameContext();
   auto& partitionToTileMap = atlasFrame.getPartitionToTileMap();
   auto& width              = frame.getWidth();
@@ -2626,8 +2629,10 @@ void PCCEncoder::packFlexibleMultipleTiles( PCCAtlasFrameContext& atlasFrame, in
   std::vector<Tile> tilesNotAvailable;
   int               lastOccupiedTileIndex          = -1;
   int               lastOccupiedTileIndexByPrevROI = -1;
+  bool              isCurrent_ROI_empty;
   // loop over ROIs
   for ( int roiIndex = 0; roiIndex < numROIs; ++roiIndex ) {
+    isCurrent_ROI_empty = true;
     // calculate the position which the tile group will start: top left available tile
     int  tileStartPosU = -1;
     int  tileStartPosV = -1;
@@ -2673,7 +2678,10 @@ void PCCEncoder::packFlexibleMultipleTiles( PCCAtlasFrameContext& atlasFrame, in
     }
     // loop over patches of current ROI
     for ( auto& patch : patches ) {
-      if ( roiIndex != patch.getRoiIndex() ) { continue; }
+      if ( roiIndex != patch.getRoiIndex() ) {
+        continue;
+      } else
+        isCurrent_ROI_empty = false;
       assert( patch.getSizeU0() <= occupancySizeU );
       assert( patch.getSizeV0() <= occupancySizeV );
       bool  locationFound = false;
@@ -2759,6 +2767,25 @@ void PCCEncoder::packFlexibleMultipleTiles( PCCAtlasFrameContext& atlasFrame, in
         maxOccupancyRow = (std::max)( maxOccupancyRow, ( patch.getV0() + patch.getSizeU0() ) );
       }
     }  // patch loop
+    if ( isCurrent_ROI_empty ) {
+      if ( lastframe_state ) 
+      { 
+        auto& lastFramePartitionToTileMap = prevFrame.getPartitionToTileMap();
+        for ( int i = 0; i<lastFramePartitionToTileMap.size(); i++ ) { 
+            if ( lastFramePartitionToTileMap[i] == roiIndex ) 
+                partitionToTileMap[i] = roiIndex;
+        }
+      } else {
+        for ( int i = 0; i < partitionToTileMap.size(); i++ ) {
+            if ( partitionToTileMap[i] == -1 ) {
+                partitionToTileMap[i] = roiIndex;
+                break;
+            }
+        }
+      }
+      auto& currentTile=atlasFrame.getTile( roiIndex );
+      currentTile.setTileState( 1 );
+    }
     if ( g_printDetailedInfo ) { printMap( occupancyMap, occupancySizeU, occupancySizeV ); }
   }  // ROI loop
   std::cout << "frame " << atlasFrame.getAtlasFrameIndex() << " packFlexibleMultipleTiles: actualImageSize " << width
@@ -2925,7 +2952,8 @@ void PCCEncoder::spatialConsistencyPackMultipleTiles( PCCAtlasFrameContext& atla
 
 void PCCEncoder::spatialConsistencyPackFlexibleMultipleTiles( PCCAtlasFrameContext& atlasFrame,
                                                               PCCAtlasFrameContext& prevAtlasFrame,
-                                                              int                   safeguard ) {
+                                                              int                   safeguard,
+                                                              int                   lastframe_state ) {
   auto& frame              = atlasFrame.getTitleFrameContext();
   auto& prevFrame          = prevAtlasFrame.getTitleFrameContext();
   auto& width              = frame.getWidth();
@@ -3014,6 +3042,7 @@ void PCCEncoder::spatialConsistencyPackFlexibleMultipleTiles( PCCAtlasFrameConte
   std::vector<bool> occupancyMap;
   occupancyMap.resize( occupancySizeU * occupancySizeV, false );
   // loop over ROIs
+  bool isCurrent_ROI_empty = true;
   for ( size_t roiIndex = 0; roiIndex < numROIs; ++roiIndex ) {
     // calculate the position which the tile group will start: top left available tile
     int  tileStartPosU = -1;
@@ -3060,7 +3089,10 @@ void PCCEncoder::spatialConsistencyPackFlexibleMultipleTiles( PCCAtlasFrameConte
     }
     // loop over patches of current ROI
     for ( auto& patch : patches ) {
-      if ( roiIndex != patch.getRoiIndex() ) { continue; }
+      if ( roiIndex != patch.getRoiIndex() ) {
+        continue;
+      } else
+        isCurrent_ROI_empty = false;
       assert( patch.getSizeU0() <= occupancySizeU );
       assert( patch.getSizeV0() <= occupancySizeV );
       bool  locationFound = false;
@@ -3219,6 +3251,26 @@ void PCCEncoder::spatialConsistencyPackFlexibleMultipleTiles( PCCAtlasFrameConte
         maxOccupancyRow = (std::max)( maxOccupancyRow, ( patch.getV0() + patch.getSizeU0() ) );
       }
     }  // patch loop
+    if ( isCurrent_ROI_empty ) {
+      if ( lastframe_state ) 
+      {
+        auto& lastFramePartitionToTileMap = prevAtlasFrame.getPartitionToTileMap();
+        for ( int i = 0; i < lastFramePartitionToTileMap.size(); i++ ) {
+          if ( lastFramePartitionToTileMap[i] == roiIndex ) partitionToTileMap[i] = roiIndex;
+        }
+      } else {
+        for ( int i = 0; i < partitionToTileMap.size(); i++ ) {
+          if ( partitionToTileMap[i] == -1 ) { 
+              partitionToTileMap[i] = roiIndex; 
+              break;
+          }
+        }
+      }
+      auto& currentTile = atlasFrame.getTile( roiIndex );
+      currentTile.setTileState( 1 );
+    }
+
+    isCurrent_ROI_empty = true;
     if ( g_printDetailedInfo ) { printMap( occupancyMap, occupancySizeU, occupancySizeV ); }
   }  // ROI loop
   if ( g_printDetailedInfo ) { printMap( occupancyMap, occupancySizeU, occupancySizeV ); }
@@ -3717,17 +3769,17 @@ bool PCCEncoder::generateOccupancyMap( PCCContext& context, bool copyToFrame ) {
             entireFrame.getWidth(), entireFrame.getHeight() );
     for ( size_t ti = 0; ti < frame.getNumTilesInAtlasFrame(); ti++ ) {
       auto& tile = frame.getTile( ti );
-      generateOccupancyMap( tile );
-      if ( params_.enhancedOccupancyMapCode_ ) { modifyOccupancyMapEOM( tile ); }
-      if ( copyToFrame ) {
-        for ( size_t y = 0; y < tile.getHeight(); y++ ) {
-          for ( size_t x = 0; x < tile.getWidth(); x++ ) {
-            entireFrame.getOccupancyMap()[( y + tile.getLeftTopYInFrame() ) * entireFrame.getWidth() +
-                                          ( x + tile.getLeftTopXInFrame() )] =
-                frame.getTile( ti ).getOccupancyMap()[y * tile.getWidth() + x];
+        generateOccupancyMap( tile );
+        if ( params_.enhancedOccupancyMapCode_ ) { modifyOccupancyMapEOM( tile ); }
+        if ( copyToFrame ) {
+          for ( size_t y = 0; y < tile.getHeight(); y++ ) {
+            for ( size_t x = 0; x < tile.getWidth(); x++ ) {
+              entireFrame.getOccupancyMap()[( y + tile.getLeftTopYInFrame() ) * entireFrame.getWidth() +
+                                            ( x + tile.getLeftTopXInFrame() )] =
+                  frame.getTile( ti ).getOccupancyMap()[y * tile.getWidth() + x];
+            }
           }
         }
-      }
     }
     if ( !params_.absoluteD1_ || !params_.absoluteT1_ ) {
       frame.getTitleFrameContext().getFullOccupancyMap() = frame.getTitleFrameContext().getOccupancyMap();
@@ -4742,7 +4794,9 @@ bool PCCEncoder::placeSegments( const PCCGroupOfFrames& sources, PCCContext& con
       size_t initTileWidth  = context.getFrame( 0 ).getTile( tileIdx ).getWidth();
       size_t initTileHeight = context.getFrame( 0 ).getTile( tileIdx ).getHeight();
       for ( size_t frameIndex = 0; frameIndex < context.size(); frameIndex++ ) {
-        if ( sources[frameIndex].getPointCount() == 0u ) { return false; }
+        if ( sources[frameIndex].getPointCount() == 0u ) { 
+          std::cout<<"Allow processing a empty frame"<<endl;
+        }
         auto&  tile       = context.getFrame( frameIndex ).getTile( tileIdx );
         size_t tileWidth  = tile.getWidth();
         size_t tileHeight = tile.getHeight();
@@ -4815,6 +4869,7 @@ size_t PCCEncoder::generateTilesFromImage( PCCContext& context ) {
   }
   size_t maxNumTile = 0;
   // place tiles first
+  bool lastFrame_noROI_empty = 0;
   for ( size_t frameIdx = 0; frameIdx < context.getFrames().size(); frameIdx++ ) {
     auto&  frame       = context[frameIdx].getTitleFrameContext();
     size_t frameWidth  = params_.minimumImageWidth_;
@@ -4829,10 +4884,11 @@ size_t PCCEncoder::generateTilesFromImage( PCCContext& context ) {
       }
     } else {
       if ( ( frameIdx == 0 ) || ( !params_.constrainedPack_ ) ) {
-        packFlexibleMultipleTiles( context[frameIdx], params_.safeGuardDistance_ );
+        packFlexibleMultipleTiles( context[frameIdx], context[frameIdx - 1], params_.safeGuardDistance_,
+                                   lastFrame_noROI_empty );
       } else {
         spatialConsistencyPackFlexibleMultipleTiles( context[frameIdx], context[frameIdx - 1],
-                                                     params_.safeGuardDistance_ );
+                                                     params_.safeGuardDistance_, lastFrame_noROI_empty );
       }
     }
     context[frameIdx].setAtlasFrameWidth( frame.getWidth() );
@@ -4849,6 +4905,8 @@ size_t PCCEncoder::generateTilesFromImage( PCCContext& context ) {
       printf( "numTiles at frame %zu = %zu\t params_.numMaxTilePerFrame_ = %zu\n", frameIdx, numTiles,
               params_.numMaxTilePerFrame_ );
       exit( 14 );
+    } else {
+      lastFrame_noROI_empty = 1;
     }
 
     // jkei: titleFrame is generated. patches are moved to tile based on their roiIndex. tileSize and tileLeftTopCorner
@@ -4862,34 +4920,62 @@ size_t PCCEncoder::generateTilesFromImage( PCCContext& context ) {
       size_t tileLeftYinBlock = frame.getHeight();  // bottom
       size_t tileWidth        = 0;
       size_t tileHeight       = 0;
-      for ( size_t pi = 0; pi < frame.getPatches().size(); pi++ ) {
-        auto patch = frame.getPatch( pi );
-        if ( patch.getRoiIndex() == tileIdx ) {
-          tile.getPatches().push_back( patch );
-          auto& curTilePatch = tile.getPatch( tile.getPatches().size() - 1 );
-          curTilePatch.setIndexInFrame( pi );
-          curTilePatch.setTileIndex( tileIdx );
-          tileLeftXinBlock = std::min( tileLeftXinBlock, curTilePatch.getU0() );
-          tileLeftYinBlock = std::min( tileLeftYinBlock, curTilePatch.getV0() );
-          bool nonRotation = curTilePatch.getPatchOrientation() == PATCH_ORIENTATION_DEFAULT ||
-                             curTilePatch.getPatchOrientation() == PATCH_ORIENTATION_ROT180 ||
-                             curTilePatch.getPatchOrientation() == PATCH_ORIENTATION_MIRROR ||
-                             curTilePatch.getPatchOrientation() == PATCH_ORIENTATION_MROT180;
-          size_t patchImageWidthInBlock  = nonRotation ? curTilePatch.getSizeU0() : curTilePatch.getSizeV0();
-          size_t patchImageHeightInBlock = nonRotation ? curTilePatch.getSizeV0() : curTilePatch.getSizeU0();
-          tileWidth                      = std::max(
-              tileWidth, ( curTilePatch.getU0() + patchImageWidthInBlock ) * curTilePatch.getOccupancyResolution() );
-          tileHeight = std::max(
-              tileHeight, ( curTilePatch.getV0() + patchImageHeightInBlock ) * curTilePatch.getOccupancyResolution() );
-        }
-      }  // pi
+      if ( tile.getTileState() == 0 ) {
+        for ( size_t pi = 0; pi < frame.getPatches().size(); pi++ ) {
+          auto patch = frame.getPatch( pi );
+          if ( patch.getRoiIndex() == tileIdx ) {
+            tile.getPatches().push_back( patch );
+            auto& curTilePatch = tile.getPatch( tile.getPatches().size() - 1 );
+            curTilePatch.setIndexInFrame( pi );
+            curTilePatch.setTileIndex( tileIdx );
+            tileLeftXinBlock = std::min( tileLeftXinBlock, curTilePatch.getU0() );
+            tileLeftYinBlock = std::min( tileLeftYinBlock, curTilePatch.getV0() );
+            bool nonRotation = curTilePatch.getPatchOrientation() == PATCH_ORIENTATION_DEFAULT ||
+                               curTilePatch.getPatchOrientation() == PATCH_ORIENTATION_ROT180 ||
+                               curTilePatch.getPatchOrientation() == PATCH_ORIENTATION_MIRROR ||
+                               curTilePatch.getPatchOrientation() == PATCH_ORIENTATION_MROT180;
+            size_t patchImageWidthInBlock  = nonRotation ? curTilePatch.getSizeU0() : curTilePatch.getSizeV0();
+            size_t patchImageHeightInBlock = nonRotation ? curTilePatch.getSizeV0() : curTilePatch.getSizeU0();
+            tileWidth                      = std::max(
+                                     tileWidth, ( curTilePatch.getU0() + patchImageWidthInBlock ) * curTilePatch.getOccupancyResolution() );
+            tileHeight = std::max(
+                tileHeight, ( curTilePatch.getV0() + patchImageHeightInBlock ) * curTilePatch.getOccupancyResolution() );
+          }
+        }  // pi
 
-      for ( auto& curTilePatch : tile.getPatches() ) {
-        curTilePatch.setU0( curTilePatch.getU0() - tileLeftXinBlock );
-        curTilePatch.setV0( curTilePatch.getV0() - tileLeftYinBlock );
+        for ( auto& curTilePatch : tile.getPatches() ) {
+          curTilePatch.setU0( curTilePatch.getU0() - tileLeftXinBlock );
+          curTilePatch.setV0( curTilePatch.getV0() - tileLeftYinBlock );
+        }
+        tileWidth -= tileLeftXinBlock * params_.occupancyResolution_;
+        tileHeight -= tileLeftYinBlock * params_.occupancyResolution_;
+      } else {
+          
+        if ( frameIdx != 0 ) {//empty tile use prevFrameTile's width & height
+          auto& prevFrameTile = context[frameIdx - 1].getTile( tileIdx );
+          tileWidth           = prevFrameTile.getWidth();
+          tileHeight          = prevFrameTile.getHeight();
+          tileLeftXinBlock    = prevFrameTile.getLeftTopXInFrame() / params_.occupancyResolution_;
+          tileLeftYinBlock    = prevFrameTile.getLeftTopYInFrame() / params_.occupancyResolution_;
+        } else {
+          tileWidth  = frame.getWidth()/params_.numTilesHor_;
+          tileHeight          = 64;
+          if ( tileIdx != 0 ) {  //empty tile will be temporarily placed at prevTile's right or bottom
+              auto& prevtile = context[frameIdx].getTile( tileIdx -1);
+            if ( prevtile.getWidth() + tileWidth > frame.getWidth()) {
+              tileLeftXinBlock = 0;
+              tileLeftYinBlock =
+                  ( prevtile.getLeftTopYInFrame() + prevtile.getHeight() ) / params_.occupancyResolution_;
+            } else {
+              tileLeftXinBlock = prevtile.getWidth() / params_.occupancyResolution_;
+              tileLeftYinBlock = prevtile.getLeftTopYInFrame() / params_.occupancyResolution_;
+            }
+          } else { //empty tile #0
+            tileLeftXinBlock = 0;
+            tileLeftYinBlock = 0;
+          }
+        }
       }
-      tileWidth -= tileLeftXinBlock * params_.occupancyResolution_;
-      tileHeight -= tileLeftYinBlock * params_.occupancyResolution_;
       tile.setWidth( tileWidth );
       tile.setHeight( tileHeight );
       tile.setLeftTopXInFrame( tileLeftXinBlock * params_.occupancyResolution_ );
@@ -5599,7 +5685,7 @@ bool PCCEncoder::relocateTileGeometryVideo( PCCContext& context ) {
       assert( tempLeftTopX + tile.getWidth() <= frameWidth );
       frameHeight = std::max( frameHeight, (size_t)tempLeftTopY + tile.getHeight() );
       printf( "tile[%zu] is placed: %zu,%zu %zux%zu in %zux%zu image\n", tileIndex, tile.getLeftTopXInFrame(),
-              tile.getLeftTopYInFrame(), tile.getWidth(), tile.getHeight(), frameWidth, frameHeight );
+        tile.getLeftTopYInFrame(), tile.getWidth(), tile.getHeight(), frameWidth, frameHeight );
     }
     context[frameIdx].setAtlasFrameHeight( frameHeight );
   }
@@ -6681,6 +6767,7 @@ size_t PCCEncoder::generateAttributeVideo( const PCCPointSet3& reconstruct,
                                            const size_t        mapCount,
                                            size_t              accTilePointCount ) {
   auto&  tile                = context[frameIndex].getTile( tileIndex );
+  if ( tile.getTileState() != 0 ) { return accTilePointCount; }
   auto&  pointToPixel        = context[frameIndex].getTitleFrameContext().getPointToPixel();
   size_t regPointCount       = tile.getTotalNumberOfRegularPoints();
   size_t auxPointCount       = tile.getTotalNumberOfEOMPoints() + tile.getTotalNumberOfRawPoints();
@@ -6831,6 +6918,8 @@ void PCCEncoder::performDataAdaptiveGPAMethod( PCCContext& context,
     if ( unionsHeight > ( context[frameIndex].getNumTilesInAtlasFrame() == 1 ? frameHeightIn : tile.getHeight() ) ) {
       badUnionsHeight = true;
     }
+    // empty tile with no patches.
+    if ( unionsHeight == 0 ) badPatchCount = true; 
     if ( g_printDetailedInfo ) {
       std::cout << "badPatchCount: " << badPatchCount << "badUnionsHeight: " << badUnionsHeight << std::endl;
     }
