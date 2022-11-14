@@ -68,6 +68,7 @@ source/lib/PccLibBitstreamCommon/include/PCCConfig.h
 log.txt
 
 /.vscode/
+/.vs/
 /dependencies/HM-16.20+SCM-8.8/
 /dependencies/HDRTools/
 /dependencies/jm19.0_lib/
