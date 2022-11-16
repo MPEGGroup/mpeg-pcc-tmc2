@@ -1225,10 +1225,18 @@ bool PCCEncoderParameters::check() {
       break;
 
     case CODEC_GROUP_VVC_MAIN10:
-#if defined( USE_VTMLIB_VIDEO_CODEC ) || defined( USE_VVLIB_VIDEO_CODEC )
+#if defined( USE_VTMLIB_VIDEO_CODEC ) && defined( USE_VVLIB_VIDEO_CODEC )
       if ( ( videoEncoderOccupancyCodecId_ != VTMLIB && videoEncoderOccupancyCodecId_ != VVLIB ) ||
            ( videoEncoderGeometryCodecId_ != VTMLIB && videoEncoderGeometryCodecId_ != VVLIB ) ||
            ( videoEncoderAttributeCodecId_ != VTMLIB && videoEncoderAttributeCodecId_ != VVLIB ) ) {
+        std::cerr << "profileCodecGroupIdc_ is VVC_MAIN10 force codecId. \n";
+        videoEncoderOccupancyCodecId_ = VTMLIB;
+        videoEncoderGeometryCodecId_  = VTMLIB;
+        videoEncoderAttributeCodecId_ = VTMLIB;
+      }
+#elif defined( USE_VTMLIB_VIDEO_CODEC )
+      if ( ( videoEncoderOccupancyCodecId_ != VTMLIB ) || ( videoEncoderGeometryCodecId_ != VTMLIB ) ||
+           ( videoEncoderAttributeCodecId_ != VTMLIB ) ) {
         std::cerr << "profileCodecGroupIdc_ is VVC_MAIN10 force codecId. \n";
         videoEncoderOccupancyCodecId_ = VTMLIB;
         videoEncoderGeometryCodecId_  = VTMLIB;

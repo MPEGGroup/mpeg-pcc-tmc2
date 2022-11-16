@@ -1120,6 +1120,9 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
 int main( int argc, char* argv[] ) {
   std::cout << "PccAppEncoder v" << TMC2_VERSION_MAJOR << "." << TMC2_VERSION_MINOR << std::endl << std::endl;
 
+  // this is mandatory to print floats with full precision
+  std::cout.precision(std::numeric_limits<float>::max_digits10);
+  
   PCCEncoderParameters encoderParams;
   PCCMetricsParameters metricsParams;
   if ( !parseParameters( argc, argv, encoderParams, metricsParams ) ) { return -1; }

@@ -361,7 +361,7 @@ int decompressVideo( PCCDecoderParameters&       decoderParams,
 #endif
 
       if ( !decoderParams.reconstructedDataPath_.empty() ) {
-        reconstructs.write( decoderParams.reconstructedDataPath_, frameNumber, decoderParams.nbThread_, false );
+        reconstructs.write( decoderParams.reconstructedDataPath_, frameNumber, decoderParams.nbThread_ );
       } else {
         frameNumber += reconstructs.getFrameCount();
       }
@@ -378,6 +378,9 @@ int decompressVideo( PCCDecoderParameters&       decoderParams,
 int main( int argc, char* argv[] ) {
   std::cout << "PccAppDecoder v" << TMC2_VERSION_MAJOR << "." << TMC2_VERSION_MINOR << std::endl << std::endl;
 
+  // this is mandatory to print floats with full precision
+  std::cout.precision(std::numeric_limits<float>::max_digits10);
+  
   PCCDecoderParameters     decoderParams;
   PCCMetricsParameters     metricsParams;
   PCCConformanceParameters conformanceParams;

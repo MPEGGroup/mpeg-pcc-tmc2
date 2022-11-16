@@ -34,6 +34,7 @@
 # Cmake
 /mvsc/
 /build/
+/build_*/
 /bin/
 /lib/
 !dependencies/tbb/build/

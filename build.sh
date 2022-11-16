@@ -39,7 +39,7 @@ done
 CMAKE_FLAGS+=( "-DCMAKE_BUILD_TYPE=$MODE" "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON" );
 
 echo -e "\033[0;32mCmake: ${CURDIR} \033[0m";
-${CMAKE} -H${CURDIR} -B"${CURDIR}/build/${MODE}" "${CMAKE_FLAGS[@]}"
+${CMAKE} -H${CURDIR} -B"${CURDIR}/build/${MODE}" -GNinja "${CMAKE_FLAGS[@]}"
 echo -e "\033[0;32mdone \033[0m";
 
 if [ $FORMAT == 1 ] 
