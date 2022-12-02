@@ -535,7 +535,7 @@ bool PCCPointSet3::read( const std::string& fileName, const bool readNormals ) {
       attributesInfo.resize( attributeIndex + 1 );
       AttributeInfo& attributeInfo = attributesInfo[attributeIndex];
       attributeInfo.name           = propertyName;
-      if ( propertyType == "float64" ) {
+      if ( propertyType == "double" || propertyType == "float64" ) {
         attributeInfo.type      = ATTRIBUTE_TYPE_FLOAT64;
         attributeInfo.byteCount = 8;
       } else if ( propertyType == "float" || propertyType == "float32" ) {

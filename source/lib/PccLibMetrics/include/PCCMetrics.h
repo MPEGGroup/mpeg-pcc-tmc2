@@ -64,27 +64,27 @@ class QualityMetrics {
 
  private:
   // point-2-point ( cloud 2 cloud ), benchmark metric
-  float c2cMse_;
-  float c2cHausdorff_;
-  float c2cPsnr_;
-  float c2cHausdorffPsnr_;
+  double c2cMse_;
+  double c2cHausdorff_;
+  double c2cPsnr_;
+  double c2cHausdorffPsnr_;
 
   // point-2-plane ( cloud 2 plane ), proposed metric
-  float c2pMse_;
-  float c2pHausdorff_;
-  float c2pPsnr_;
-  float c2pHausdorffPsnr_;
+  double c2pMse_;
+  double c2pHausdorff_;
+  double c2pPsnr_;
+  double c2pHausdorffPsnr_;
 
   // Color
-  float colorMse_[3];
-  float colorPsnr_[3];
+  double colorMse_[3];
+  double colorPsnr_[3];
 
   // point 2 plane ( cloud 2 plane ), proposed metric
-  float psnr_;
+  double psnr_;
 
   // reflectance
-  float reflectanceMse_;
-  float reflectancePsnr_;
+  double reflectanceMse_;
+  double reflectancePsnr_;
 
   PCCMetricsParameters params_;
 };

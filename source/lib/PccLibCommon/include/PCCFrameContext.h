@@ -154,6 +154,8 @@ class PCCFrameContext {
   void printBlockToPatch( const size_t occupancyResolution );
   void printPatch();
   void printPatchDecoder();
+  bool getTileState() { return empty; }
+  void setTileState( bool value ) { empty = value; }
 
  private:
   size_t                                       frameIndex_;
@@ -201,6 +203,7 @@ class PCCFrameContext {
   PCCGPAFrameSize                              curPCCGPAFrameSize_;
   PCCFrameOCMInfo                              ocpGPAInfo_;
   std::vector<PCCEomPatch>                     eomPatches_;
+  bool                                         empty;
 };
 
 class PCCAtlasFrameContext {

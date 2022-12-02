@@ -39,9 +39,9 @@
 using namespace std;
 using namespace pcc;
 
-float getPSNR( float dist, float p, float factor = 1.0 ) {
-  float max_energy = p * p;
-  float psnr       = 10 * log10( ( factor * max_energy ) / dist );
+double getPSNR( double dist, double p, double factor = 1.0 ) {
+  double max_energy = p * p;
+  double psnr       = 10 * log10( ( factor * max_energy ) / dist );
   return psnr;
 }
 
@@ -53,19 +53,19 @@ void convertRGBtoYUVBT709( const PCCColor3B& rgb, std::vector<float>& yuv ) {
 }
 
 QualityMetrics::QualityMetrics() :
-    c2cMse_( 0.0F ),
-    c2cHausdorff_( 0.0F ),
-    c2cPsnr_( 0.0F ),
-    c2cHausdorffPsnr_( 0.0F ),
-    c2pMse_( 0.0F ),
-    c2pHausdorff_( 0.0F ),
-    c2pPsnr_( 0.0F ),
-    c2pHausdorffPsnr_( 0.0F ),
-    psnr_( 0.0F ),
-    reflectanceMse_( 0.0F ),
-    reflectancePsnr_( 0.0F ) {
-  colorMse_[0] = colorMse_[0] = colorMse_[0] = 0.0F;
-  colorPsnr_[0] = colorPsnr_[0] = colorPsnr_[0] = 0.0F;
+    c2cMse_( 0.0 ),
+    c2cHausdorff_( 0.0 ),
+    c2cPsnr_( 0.0 ),
+    c2cHausdorffPsnr_( 0.0 ),
+    c2pMse_( 0.0 ),
+    c2pHausdorff_( 0.0 ),
+    c2pPsnr_( 0.0 ),
+    c2pHausdorffPsnr_( 0.0 ),
+    psnr_( 0.0 ),
+    reflectanceMse_( 0.0 ),
+    reflectancePsnr_( 0.0 ) {
+  colorMse_[0] = colorMse_[0] = colorMse_[0] = 0.0;
+  colorPsnr_[0] = colorPsnr_[0] = colorPsnr_[0] = 0.0;
 }
 
 void QualityMetrics::setParameters( const PCCMetricsParameters& params ) { params_ = params; }
@@ -200,31 +200,31 @@ void QualityMetrics::compute( const PCCPointSet3& pointcloudA, const PCCPointSet
   }
 
   if ( params_.computeC2c_ ) {
-    c2cMse_  = float( sseC2c / num );
+    c2cMse_  = sseC2c / num;
     c2cPsnr_ = getPSNR( c2cMse_, psnr_, 3 );
     if ( params_.computeHausdorff_ ) {
-      c2cHausdorff_     = float( maxC2c );
+      c2cHausdorff_     = maxC2c;
       c2cHausdorffPsnr_ = getPSNR( c2cHausdorff_, psnr_, 3 );
     }
   }
 
   if ( params_.computeC2p_ ) {
-    c2pMse_  = float( sseC2p / num );
+    c2pMse_  = sseC2p / num;
     c2pPsnr_ = getPSNR( c2pMse_, psnr_, 3 );
     if ( params_.computeHausdorff_ ) {
-      c2pHausdorff_     = float( maxC2p );
+      c2pHausdorff_     = maxC2p;
       c2pHausdorffPsnr_ = getPSNR( c2pHausdorff_, psnr_, 3 );
     }
   }
   if ( params_.computeColor_ ) {
     for ( size_t i = 0; i < 3; i++ ) {
-      colorMse_[i]  = float( sseColor[i] / num );
+      colorMse_[i]  = sseColor[i] / num;
       colorPsnr_[i] = getPSNR( colorMse_[i], 1.0 );
     }
   }
   if ( params_.computeLidar_ ) {
-    reflectanceMse_  = float( sseReflectance / num );
-    reflectancePsnr_ = getPSNR( float( reflectanceMse_ ), float( ( std::numeric_limits<unsigned short>::max )() ) );
+    reflectanceMse_  = sseReflectance / num;
+    reflectancePsnr_ = getPSNR( reflectanceMse_ , ( std::numeric_limits<unsigned short>::max )() );
   }
 }
 

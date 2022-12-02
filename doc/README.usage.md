@@ -41,7 +41,7 @@ multiple configuration files control different aspects of the test conditions.
 
 NB: parameters set in one configuration file override the same parameter in earlier files.  ie. order matters.
 
-Further help text describing option usage is available using "./bin/PccAppEncoder --help" or "./bin/PccAppDecoder --help".
+Further help text describing option usage is available using `./bin/PccAppEncoder --help` or `./bin/PccAppDecoder --help`.
 
 Examples
 ---------------
@@ -81,12 +81,13 @@ The next command line decodes one streams:
 ```console 
 $ ./bin/PccAppDecoder \
   --startFrameNumber=0000 \
-  --compressedStreamPath=./S22C2AI_queen/S22C2AIR01_queen.bin \
-  --reconstructedDataPath=./S22C2AI_queen/S22C2AIR01_queen_dec_%04d.ply \
+  --compressedStreamPath=./S22C2AIR01_queen.bin \
+  --reconstructedDataPath=./S22C2AIR01_queen_dec_%04d.ply \
   --videoDecoderPath=TAppDecoderHighBitDepthStatic \
   --videoDecoderOccupancyMapPath=TAppDecoderHighBitDepthStatic \
   --colorSpaceConversionPath=./external/HDRTools/bin/HDRConvert \
-  --inverseColorSpaceConversionConfig=./cfg/hdrconvert/yuv420torgb444.cfg \
+  --inverseColorSpaceConversionConfig=\\
+    ./cfg/hdrconvert/yuv420torgb444.cfg \
   --nbThread=1 \
   --colorTransform=0 \
 ```
@@ -95,10 +96,11 @@ To compute the metrics in the decoder, the normal of the source point cloud and
 the source PLY must be given to the decoder. The next parameter must be added 
 to the previous command:
    
-```
-  --config=./cfg/sequence/queen.cfg \
-  --uncompressedDataFolder=./People/ \
-  --normalDataPath=./People/Technicolor/queen_n/frame_%04d_n.ply 
+```console
+--config=./cfg/sequence/queen.cfg \
+--uncompressedDataFolder=./People/ \
+--normalDataPath=\\
+  ./People/Technicolor/queen_n/frame_%04d_n.ply
 ```
 
 
@@ -116,14 +118,17 @@ command line:
 $ ../bin/PccAppMetrics \
   --uncompressedDataPath=longdress_vox10_1051.ply \
   --reconstructedDataPath=./S26C2AIR01_longdress_dec_1051.ply \
-  --normalDataPath=./People/8i/longdress_n/longdress_vox10_1051_n.ply \
+  --normalDataPath=\\
+    ./People/8i/longdress_n/longdress_vox10_1051_n.ply \
   --resolution=1023 \
   --frameCount=1
   
 $ ./mpeg-pcc-demetric/test/pc_error \
-  --fileA=./People/8i/8iVFBv2/longdress/Ply/longdress_vox10_1051.ply  \
+  --fileA=\\
+    ./People/8i/8iVFBv2/longdress/Ply/longdress_vox10_1051.ply  \
   --fileB=S26C2AIR01_longdress_dec_1051.ply \
-  --inputNorm=./People/8i/longdress_n/longdress_vox10_1051_n.ply \ 
+  --inputNorm=\\
+    ./People/8i/longdress_n/longdress_vox10_1051_n.ply \ 
   --color=1 \
   --resolution= 1023  
 ``` 
@@ -166,9 +171,9 @@ $ ./bin/PccAppEncoder \
 	--config=cfg/rate/ctc-r3.cfg \
 	--uncompressedDataFolder=Dynamic_Objects/People/ \
 	--frameCount=1 \
-	--videoEncoderGeometryPath=..\bin\win\TAppEncoder.exe \
-	--videoEncoderAttributePath=..\bin\win\TAppEncoder.exe \
- 	--videoEncoderOccupancyPath=..\bin\win\occupancy\TAppEncoder.exe \
+	--videoEncoderGeometryPath=..\bin\TAppEncoder.exe \
+	--videoEncoderAttributePath=..\bin\TAppEncoder.exe \
+ 	--videoEncoderOccupancyPath=..\bin\occupancy\TAppEncoder.exe \
 	--colorSpaceConversionPath=../external/HDRTools/bin/HDRConvert \
 	--reconstructedDataPath=S26C03R03_rec_%04d.ply \
 	--compressedStreamPath=S26C03R03.bin \
@@ -182,11 +187,12 @@ $ ./bin/PccAppEncoder \
 ```console 
 $ ./bin/PccAppDecoder \
 	--compressedStreamPath=S26C03R03.bin \
-	--videoDecoderGeometryPath=..\bin\win\TAppDecoder.exe \
-	--videoDecoderAttributePath=..\bin\win\TAppDecoder.exe \
-	--videoDecoderOccupancyPath=..\bin\win\occupancy\TAppDecoder.exe \
+	--videoDecoderGeometryPath=..\bin\TAppDecoder.exe \
+	--videoDecoderAttributePath=..\bin\TAppDecoder.exe \
+	--videoDecoderOccupancyPath=..\bin\occupancy\TAppDecoder.exe \
 	--colorSpaceConversionPath=../external/HDRTools/bin/HDRConvert \ 
-	--inverseColorSpaceConversionConfig=cfg/hdrconvert/yuv420torgb444.cfg \
+	--inverseColorSpaceConversionConfig=\\
+    cfg/hdrconvert/yuv420torgb444.cfg \
 	--reconstructedDataPath=S26C03R03_dec_%04d.ply \
 	--SHVCLayerID=2 
 ```
