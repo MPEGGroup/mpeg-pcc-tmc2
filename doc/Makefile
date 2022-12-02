@@ -49,4 +49,5 @@ endif
 
 # convert markdown text to latex for document generation
 %.tex: %.md
+	@echo pandoc -f markdown -t latex -o $@ $<
 	pandoc -f markdown -t latex -o $@ $<
