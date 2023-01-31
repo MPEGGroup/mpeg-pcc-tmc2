@@ -117,7 +117,7 @@ class PCCEncoder : public PCCCodec {
   ~PCCEncoder();
   void setParameters( const PCCEncoderParameters& params );
 
-  int encode( const PCCGroupOfFrames& sources, PCCContext& context, PCCGroupOfFrames& reconstructs );
+  int encode( const PCCGroupOfFrames& sources, PCCContext& context, PCCGroupOfFrames& reconstructs, size_t* viewId = nullptr );
 
   void setPostProcessingSeiParameters( GeneratePointCloudParameters& params, PCCContext& context );
   void setGeneratePointCloudParameters( GeneratePointCloudParameters& gpcParams, PCCContext& context );
@@ -175,12 +175,13 @@ class PCCEncoder : public PCCCodec {
   void   replaceFrameContext( PCCContext& context );
 
   //**patch segmentation**//
-  bool generateSegments( const PCCGroupOfFrames& sources, PCCContext& context );
+  bool generateSegments( const PCCGroupOfFrames& sources, PCCContext& context, size_t* viewId = nullptr );
   bool generateSegments( const PCCPointSet3&                 source,
                          PCCAtlasFrameContext&               frameContext,
                          const PCCPatchSegmenter3Parameters& segmenterParams,
                          size_t                              frameIndex,
-                         float&                              distanceSrcRec );
+                         float&                              distanceSrcRec,
+                         size_t*                             viewId = nullptr );
   bool placeSegments( const PCCGroupOfFrames& sources, PCCContext& context );
 
   //**video/image reneration and resizing**//

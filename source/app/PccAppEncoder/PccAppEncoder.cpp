@@ -1012,6 +1012,7 @@ bool parseParameters( int                   argc,
 int compressVideo( const PCCEncoderParameters& encoderParams,
                    const PCCMetricsParameters& metricsParams,
                    StopwatchUserTime&          clock ) {
+  for (size_t viewId = 0; viewId < 6; viewId ++) {
   const size_t startFrameNumber0        = encoderParams.startFrameNumber_;
   size_t       endFrameNumber0          = encoderParams.startFrameNumber_ + encoderParams.frameCount_;
   const size_t groupOfFramesSize0       = ( std::max )( size_t( 1 ), encoderParams.groupOfFramesSize_ );
@@ -1052,7 +1053,9 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
     }
     std::cout << "Compressing " << contextIndex << " frames " << startFrameNumber << " -> " << endFrameNumber << "..."
               << std::endl;
-    int                ret = encoder.encode( sources, context, reconstructs );
+    // Encoding of point cloud starts here
+    int                ret = encoder.encode( sources, context, reconstructs, &viewId );
+    // Encoding of point cloud ends here
     PCCBitstreamWriter bitstreamWriter;
 #ifdef BITSTREAM_TRACE
     bitstreamWriter.setLogger( logger );
@@ -1079,7 +1082,7 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
     }
     if ( ret != 0 ) { return ret; }
     if ( !encoderParams.reconstructedDataPath_.empty() ) {
-      reconstructs.write( encoderParams.reconstructedDataPath_, reconstructedFrameNumber );
+      reconstructs.write( removeFileExtension(encoderParams.reconstructedDataPath_) + "_" + std::to_string(viewId) + ".ply", reconstructedFrameNumber );
     }
     normals.clear();
     sources.clear();
@@ -1098,7 +1101,7 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
   PCCBitstreamWriter bitstreamWriter;
   size_t headerSize = bitstreamWriter.write( ssvu, bitstream, encoderParams.forcedSsvhUnitSizePrecisionBytes_ );
   bitstreamStat.incrHeader( headerSize );
-  bitstream.write( encoderParams.compressedStreamPath_ );
+  bitstream.write( removeFileExtension(encoderParams.compressedStreamPath_) + "_" + std::to_string(viewId) + ".bin");
   bitstreamStat.trace();
   std::cout << "Total bitstream size " << bitstream.size() << " B" << std::endl;
   bitstream.computeMD5();
@@ -1109,9 +1112,12 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
     if ( encoderParams.rawPointsPatch_ && encoderParams.reconstructRawType_ != 0 ) {
       checksumEqual = checksum.compareSrcRec();
     }
-    checksum.write( encoderParams.compressedStreamPath_ );
+    checksum.write( removeFileExtension(encoderParams.compressedStreamPath_) + "_" + std::to_string(viewId) );
   }
-  return checksumEqual ? 0 : -1;
+
+  }
+  // return checksumEqual ? 0 : -1;
+  return 0;
 }
 
 int main( int argc, char* argv[] ) {

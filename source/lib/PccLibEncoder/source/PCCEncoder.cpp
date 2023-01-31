@@ -68,7 +68,7 @@ PCCEncoder::~PCCEncoder() = default;
 
 void PCCEncoder::setParameters( const PCCEncoderParameters& params ) { params_ = params; }
 
-int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PCCGroupOfFrames& reconstructs ) {
+int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PCCGroupOfFrames& reconstructs, size_t* viewId ) {
   size_t pointLocalReconstructionOriginal   = static_cast<size_t>( params_.pointLocalReconstruction_ );
   size_t layerCountMinus1Original           = params_.mapCountMinus1_;
   size_t singleMapPixelInterleavingOriginal = static_cast<size_t>( params_.singleMapPixelInterleaving_ );
@@ -100,8 +100,8 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     frameContext.setLog2PatchQuantizerSizeY( params_.log2QuantizerSizeY_ );
   }
 
-  // Segmentation
-  generateSegments( sources, context );
+  // Patches are generated here
+  generateSegments( sources, context, viewId );
 
   // Init context and tiles
   params_.initializeContext( context );
@@ -122,6 +122,9 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   auto&             sps        = context.getVps();
   std::stringstream path;
   path << removeFileExtension( params_.compressedStreamPath_ ) << "_GOF" << sps.getV3CParameterSetId() << "_";
+  if (viewId != nullptr) {
+    path << *viewId << "_";
+  }
   sps.setFrameWidth( atlasIndex, static_cast<uint16_t>( frames[0].getAtlasFrameWidth() ) );
   sps.setFrameHeight( atlasIndex, static_cast<uint16_t>( frames[0].getAtlasFrameHeight() ) );
   for ( auto& asps : context.getAtlasSequenceParameterSetList() ) {
@@ -3656,7 +3659,8 @@ bool PCCEncoder::generateSegments( const PCCPointSet3&                 source,
                                    PCCAtlasFrameContext&               frameContext,
                                    const PCCPatchSegmenter3Parameters& segmenterParams,
                                    size_t                              frameIndex,
-                                   float&                              distanceSrcRec ) {
+                                   float&                              distanceSrcRec,
+                                   size_t*                             viewId ) {
   if ( source.getPointCount() == 0u ) { return true; }
   auto& frame = frameContext.getTitleFrameContext();
   if ( segmenterParams.additionalProjectionPlaneMode_ != 5 ) {
@@ -3674,6 +3678,7 @@ bool PCCEncoder::generateSegments( const PCCPointSet3&                 source,
         if (patch.getViewId() == *viewId) {
           filtered_patches.push_back(patch);
         }
+        std::cout << i << std::endl;
       }
       frame.getPatches() = filtered_patches;
     }
@@ -4653,7 +4658,7 @@ void PCCEncoder::generateRawPointsAttributeImage( PCCContext&        context,
   }
 }
 
-bool PCCEncoder::generateSegments( const PCCGroupOfFrames& sources, PCCContext& context ) {
+bool PCCEncoder::generateSegments( const PCCGroupOfFrames& sources, PCCContext& context, size_t* viewId ) {
   PCCPatchSegmenter3Parameters params;
   bool                         res            = true;
   auto&                        frames         = context.getFrames();
@@ -4718,7 +4723,7 @@ bool PCCEncoder::generateSegments( const PCCGroupOfFrames& sources, PCCContext& 
   for ( size_t i = 0; i < frames.size(); i++ ) {
 #endif
       float distanceSrcRec = 0;
-      if ( !generateSegments( sources[i], frames[i], params, i, distanceSrcRec ) ) {
+      if ( !generateSegments( sources[i], frames[i], params, i, distanceSrcRec, viewId ) ) {
         res = false;
 #if defined( ENABLE_TBB )
         tbb::task::self().cancel_group_execution();
@@ -4765,6 +4770,8 @@ bool PCCEncoder::placeSegments( const PCCGroupOfFrames& sources, PCCContext& con
           if ( params_.packingStrategy_ < 2 ) {
             packFlexible( tile, params_.packingStrategy_, tileWidth, tileHeight, params_.safeGuardDistance_,
                           params_.enablePointCloudPartitioning_ );
+            // packViewpoint( tile, params_.packingStrategy_, tileWidth, tileHeight, params_.safeGuardDistance_,
+            //               params_.enablePointCloudPartitioning_ );
           } else if ( params_.packingStrategy_ == 2 ) {
             packTetris( tile, tileWidth, tileHeight, params_.safeGuardDistance_ );
           }
