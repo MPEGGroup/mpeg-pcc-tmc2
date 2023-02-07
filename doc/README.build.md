@@ -8,7 +8,7 @@ repository:
    <http://mpegx.int-evry.fr/software/MPEG/PCC/TM/mpeg-pcc-tmc2>
 
 Each released version may be identified by a version control system tag in
-the form `release-v20.0` [1].
+the form `release-v21.0` [1].
 
 An example:
 
