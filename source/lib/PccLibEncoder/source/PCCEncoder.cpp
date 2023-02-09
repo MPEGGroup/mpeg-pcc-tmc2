@@ -3666,6 +3666,17 @@ bool PCCEncoder::generateSegments( const PCCPointSet3&                 source,
     segmenter.setNbThread( params_.nbThread_ );
     segmenter.compute( source, frame.getFrameIndex(), segmenterParams, patches, frame.getSrcPointCloudByPatch(),
                        distanceSrcRec );
+    if (viewId != nullptr) {
+      std::vector<PCCPatch> filtered_patches;
+      // std::vector<PCCPointSet3> filtered_src_point_cloud; Do we need to update src point cloud? last time i check it has length 0 after segmenter.compute(...)
+      for (auto i = 0; i < patches.size(); i++) {
+        PCCPatch patch = patches[i];
+        if (patch.getViewId() == *viewId) {
+          filtered_patches.push_back(patch);
+        }
+      }
+      frame.getPatches() = filtered_patches;
+    }
   } else {
     segmentationPartiallyAddtinalProjectionPlane( source, frame, segmenterParams, frameIndex, distanceSrcRec );
   }
