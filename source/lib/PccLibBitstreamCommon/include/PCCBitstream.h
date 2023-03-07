@@ -182,7 +182,7 @@ class PCCBitstream {
     position_.bytes_ += size;
     return *this;
   }
-  void copyFrom( PCCBitstream& dataBitstream, const uint64_t startByte, const uint64_t bitstreamSize );
+  void copyFrom( PCCBitstream& dataBitstream, const size_t startByte, const size_t bitstreamSize );
   void copyTo( PCCBitstream& dataBitstream, const size_t size );
   void writeVideoStream( PCCVideoBitstream& videoBitstream );
   void readVideoStream( PCCVideoBitstream& videoBitstream, size_t videoStreamSize );
