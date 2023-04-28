@@ -1057,11 +1057,6 @@ bool PCCEncoderParameters::check() {
       std::cerr << "Pixel Interleaving is built on one layer coding. "
                    "Current mapCountMinus1_ is not 0.\n";
     }
-    if ( pointLocalReconstruction_ ) {
-      ret = false;
-      std::cerr << "Point local reconstruction is built on one layer coding. "
-                   "Current mapCountMinus1_ is not 0.\n";
-    }
   } else {
     if ( multipleStreams_ ) {
       std::cout << " multipleStreams is set 0 when mapCountMinus1 is 0. Force "

@@ -542,7 +542,7 @@ void PCCBitstreamReader::plrInformation( AtlasSequenceParameterSetRbsp& asps,
       plri.setNumberOfModesMinus1( bitstream.read( 4 ) );  // u(4)
       TRACE_BITSTREAM( "  NumberOfModesMinus1 = %u \n", plri.getNumberOfModesMinus1() );
       plri.allocate();
-      for ( size_t i = 0; i < plri.getNumberOfModesMinus1(); i++ ) {
+      for ( size_t i = 0; i < plri.getNumberOfModesMinus1() + 1; i++ ) {
         plri.setInterpolateFlag( i, bitstream.read( 1 ) != 0U );  // u(1)
         plri.setFillingFlag( i, bitstream.read( 1 ) != 0U );      // u(1)
         plri.setMinimumDepth( i, bitstream.read( 2 ) );           // u(2)

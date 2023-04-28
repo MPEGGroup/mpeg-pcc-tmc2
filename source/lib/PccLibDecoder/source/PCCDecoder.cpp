@@ -490,10 +490,9 @@ void PCCDecoder::setPointLocalReconstruction( PCCContext& context ) {
   auto& asps = context.getAtlasSequenceParameterSet( 0 );
   TRACE_PATCH( "PLR = %d \n", asps.getPLREnabledFlag() );
   PointLocalReconstructionMode mode = {false, false, 0, 1};
-  context.addPointLocalReconstructionMode( mode );
   if ( asps.getPLREnabledFlag() ) {
     auto& plri = asps.getPLRInformation( 0 );
-    for ( size_t i = 0; i < plri.getNumberOfModesMinus1(); i++ ) {
+    for ( size_t i = 0; i < plri.getNumberOfModesMinus1() + 1; i++ ) {
       mode.interpolate_ = plri.getInterpolateFlag( i );
       mode.filling_     = plri.getFillingFlag( i );
       mode.minD1_       = plri.getMinimumDepth( i );

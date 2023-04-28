@@ -751,7 +751,7 @@ void PCCBitstreamWriter::plrInformation( AtlasSequenceParameterSetRbsp& asps,
     if ( plri.getMapEnabledFlag() ) {
       bitstream.write( plri.getNumberOfModesMinus1(), 4 );  // u(4)
       TRACE_BITSTREAM( "  NumberOfModesMinus1 = %u \n", plri.getNumberOfModesMinus1() );
-      for ( size_t i = 0; i < plri.getNumberOfModesMinus1(); i++ ) {
+      for ( size_t i = 0; i < plri.getNumberOfModesMinus1()+1; i++ ) {
         bitstream.write( plri.getInterpolateFlag( i ), 1 );  // u(1)
         bitstream.write( plri.getFillingFlag( i ), 1 );      // u(1)
         bitstream.write( plri.getMinimumDepth( i ), 2 );     // u(2)

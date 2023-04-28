@@ -103,6 +103,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
   // Segmentation
   generateSegments( sources, context );
 
+  printf("pointLocalReconstruction = %d / %zu \n", params_.pointLocalReconstruction_, pointLocalReconstructionOriginal );
   // Init context and tiles
   params_.initializeContext( context );
 
@@ -7893,7 +7894,7 @@ void PCCEncoder::setPointLocalReconstruction( PCCContext& context ) {
   plri.setBlockThresholdPerPatchMinus1( params_.patchSize_ - 1 );
   plri.allocate();
   for ( size_t i = 0; i < plri.getNumberOfModesMinus1() + 1; i++ ) {
-    auto& mode = context.getPointLocalReconstructionMode( i + 1 );
+    auto& mode = context.getPointLocalReconstructionMode( i );
     plri.setInterpolateFlag( i, mode.interpolate_ );
     plri.setFillingFlag( i, mode.filling_ );
     plri.setMinimumDepth( i, mode.minD1_ );
