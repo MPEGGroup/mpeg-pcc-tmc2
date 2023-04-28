@@ -2418,7 +2418,7 @@ void PCCBitstreamReader::aspsVpccExtension( PCCBitstream&                  bitst
   TRACE_BITSTREAM( "%s \n", __func__ );
   ext.setRemoveDuplicatePointEnableFlag( bitstream.read( 1 ) );
   if ( asps.getPixelDeinterleavingFlag() || asps.getPLREnabledFlag() ) {
-    ext.setSurfaceThicknessMinus1( bitstream.read( 7 ) );
+    ext.setSurfaceThicknessMinus1( bitstream.readUvlc() );  //ue(v)
   }
 }
 

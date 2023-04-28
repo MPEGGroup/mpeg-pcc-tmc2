@@ -2108,9 +2108,7 @@ void PCCBitstreamWriter::decodedAtlasInformationHash( PCCBitstream& bitstream, S
       for ( size_t t = 0; t <= sei.getNumTilesMinus1(); t++ ) {
         bitstream.write( sei.getTileId( t ), sei.getTileIdLenMinus1() + 1 );  // u(v)
       }
-      while ( !bitstream.byteAligned() ) {
-        bitstream.write( 1, 1 );  // f(1): equal to 1
-      }
+      byteAlignment( bitstream );
       for ( size_t t = 0; t <= sei.getNumTilesMinus1(); t++ ) {
         size_t j = sei.getTileId( t );
         if ( sei.getDecodedAtlasTilesHashPresentFlag() ) { decodedAtlasTilesHash( bitstream, sei, j ); }
@@ -2459,7 +2457,7 @@ void PCCBitstreamWriter::aspsVpccExtension( PCCBitstream&                  bitst
   TRACE_BITSTREAM( "%s \n", __func__ );
   bitstream.write( ext.getRemoveDuplicatePointEnableFlag(), 1 );  // u(1)
   if ( asps.getPixelDeinterleavingFlag() || asps.getPLREnabledFlag() ) {
-    bitstream.write( ext.getSurfaceThicknessMinus1(), 7 );  // u(?)
+    bitstream.writeUvlc( ext.getSurfaceThicknessMinus1() );  // ue(v)
   }
 }
 
