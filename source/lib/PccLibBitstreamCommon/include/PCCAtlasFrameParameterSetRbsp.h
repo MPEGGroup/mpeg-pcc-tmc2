@@ -34,7 +34,7 @@
 #define PCC_BITSTREAM_ATLASFRAMEPARAMETERSETRBSP_H
 
 #include "PCCBitstreamCommon.h"
-#include "PCCAtlasFrameTileInformation.h"
+#include "PCCAtlasFrameTileInformationRbsp.h"
 
 namespace pcc {
 
@@ -63,7 +63,7 @@ class AtlasFrameParameterSetRbsp {
     raw3doffsetBitCountExplicitModeFlag_ = refAfps.getRaw3dOffsetBitCountExplicitModeFlag();
     extensionFlag_                       = refAfps.getExtensionFlag();
     extension8Bits_                      = refAfps.getExtension8Bits();
-    atlasFrameTileInformation_           = refAfps.getAtlasFrameTileInformation();
+    atlasFrameTileInformationRbsp_           = refAfps.getAtlasFrameTileInformationRbsp();
   }
 
   uint8_t                    getAtlasFrameParameterSetId() { return atlasFrameParameterSetId_; }
@@ -74,7 +74,7 @@ class AtlasFrameParameterSetRbsp {
   bool                       getRaw3dOffsetBitCountExplicitModeFlag() { return raw3doffsetBitCountExplicitModeFlag_; }
   bool                       getExtensionFlag() { return extensionFlag_; }
   uint8_t                    getExtension8Bits() { return extension8Bits_; }
-  AtlasFrameTileInformation& getAtlasFrameTileInformation() { return atlasFrameTileInformation_; }
+  AtlasFrameTileInformationRbsp& getAtlasFrameTileInformationRbsp() { return atlasFrameTileInformationRbsp_; }
   bool                       getLodModeEnableFlag() { return lodModeEnableFlag_; }
   AfpsVpccExtension&         getAfpsVpccExtension() { return afpsVpccExtension_; }
 
@@ -87,12 +87,12 @@ class AtlasFrameParameterSetRbsp {
   void setExtensionFlag( bool value ) { extensionFlag_ = value; }
   void setExtension8Bits( uint8_t value ) { extension8Bits_ = value; }
   void setLodModeEnableFlag( bool value ) { lodModeEnableFlag_ = value; }
-  void setAtlasFrameTileInformation( AtlasFrameTileInformation& value ) { atlasFrameTileInformation_ = value; }
+  void setAtlasFrameTileInformationRbsp( AtlasFrameTileInformationRbsp& value ) { atlasFrameTileInformationRbsp_ = value; }
 
  private:
   uint8_t                   atlasFrameParameterSetId_;
   uint8_t                   atlasSequenceParameterSetId_;
-  AtlasFrameTileInformation atlasFrameTileInformation_;
+  AtlasFrameTileInformationRbsp atlasFrameTileInformationRbsp_;
   bool                      outputFlagPresentFlag_;
   uint8_t                   numRefIdxDefaultActiveMinus1_;
   uint8_t                   additionalLtAfocLsbLen_;

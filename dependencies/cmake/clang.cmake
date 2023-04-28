@@ -8,11 +8,14 @@ find_program(CLANG_FORMAT "clang-format")
 if(CLANG_FORMAT)
   add_custom_target(
     clang-format
-    COMMAND clang-format
+    COMMAND clang-format-15
     -i
     -style=file
     ${ALL_CXX_SOURCE_FILES}
     )
+    message( "add CLANG_FORMAT command" )
+else ()
+message( "CLANG_FORMAT can't be found" )
 endif()
 
 # clang-tidy

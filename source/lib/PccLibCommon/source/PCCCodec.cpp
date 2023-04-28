@@ -1774,7 +1774,7 @@ void PCCCodec::generateBlockToPatchFromOccupancyMapVideo( PCCContext&           
 }
 
 void PCCCodec::generateAfti( PCCContext& context, size_t frameIndex,
-                             AtlasFrameTileInformation& afti ) {  // encoder
+                             AtlasFrameTileInformationRbsp& afti ) {  // encoder
   auto&partitionInfoPerFrame = context[frameIndex];
   afti.setSingleTileInAtlasFrameFlag( partitionInfoPerFrame.getNumTilesInAtlasFrame() == 1 );
   if ( partitionInfoPerFrame.getNumTilesInAtlasFrame() == 1 ) {
@@ -1907,7 +1907,7 @@ void PCCCodec::getHashPatchParams( PCCContext&                            contex
   auto&       ath           = atl.getHeader();
   auto&       afps          = context.getAtlasFrameParameterSet( ath.getAtlasFrameParameterSetId() );
   auto&       asps          = context.getAtlasSequenceParameterSet( afps.getAtlasSequenceParameterSetId() );
-  auto&       afti          = afps.getAtlasFrameTileInformation();
+  auto&       afti          = afps.getAtlasFrameTileInformationRbsp();
   size_t      topLeftColumn = afti.getTopLeftPartitionIdx( tileIndex ) % ( afti.getNumPartitionColumnsMinus1() + 1 );
   size_t      topLeftRow    = afti.getTopLeftPartitionIdx( tileIndex ) / ( afti.getNumPartitionColumnsMinus1() + 1 );
   size_t      tileOffsetX   = context[frameIndex].getPartitionPosX( topLeftColumn );
@@ -2009,7 +2009,7 @@ void PCCCodec::getB2PHashPatchParams( PCCContext&                               
   size_t aspsIndex                  = context.getAtlasFrameParameterSet( afpsIndex ).getAtlasSequenceParameterSetId();
   auto&  asps                       = context.getAtlasSequenceParameterSet( aspsIndex );
   auto&  afps                       = context.getAtlasFrameParameterSet( afpsIndex );
-  auto&  afti                       = afps.getAtlasFrameTileInformation();
+  auto&  afti                       = afps.getAtlasFrameTileInformationRbsp();
   size_t numTilesInPatchFrame       = context[frameIndex].getNumTilesInAtlasFrame();
   size_t patchPackingBlockSize      = size_t( 1 ) << asps.getLog2PatchPackingBlockSize();
   size_t offset                     = patchPackingBlockSize - 1;
@@ -2163,7 +2163,7 @@ void PCCCodec::aspsApplicationByteString( std::vector<uint8_t>&          stringB
     stringByte.push_back( val );
   }
   if ( asps.getAuxiliaryVideoEnabledFlag() && ( asps.getRawPatchEnabledFlag() || asps.getEomPatchEnabledFlag() ) ) {
-    auto&   afti            = afps.getAtlasFrameTileInformation();
+    auto&   afti            = afps.getAtlasFrameTileInformationRbsp();
     size_t  auxVideoWidthNF = ( afti.getAuxiliaryVideoTileRowWidthMinus1() + 1 ) * 64;
     uint8_t val             = auxVideoWidthNF & 0xFF;
     stringByte.push_back( val );
@@ -2216,7 +2216,7 @@ void PCCCodec::afpsCommonByteString( std::vector<uint8_t>& stringByte,
                                      size_t                afpsIndex,
                                      size_t                frameIndex ) {
   auto    afps = context.getAtlasFrameParameterSet( afpsIndex );
-  auto    afti = afps.getAtlasFrameTileInformation();
+  auto    afti = afps.getAtlasFrameTileInformationRbsp();
   uint8_t val  = afti.getNumTilesInAtlasFrameMinus1() & 0xFF;
   stringByte.push_back( val );
   std::vector<size_t> hashAuxTileHeight;
@@ -2271,10 +2271,10 @@ void PCCCodec::afpsCommonByteString( std::vector<uint8_t>& stringByte,
     stringByte.push_back( val );
     val = ( auxTileHeight >> 8 ) & 0xFF;
     stringByte.push_back( val );
-    if ( afps.getAtlasFrameTileInformation().getSignalledTileIdFlag() ) {
-      val = afps.getAtlasFrameTileInformation().getTileId( i ) & 0xFF;  //
+    if ( afps.getAtlasFrameTileInformationRbsp().getSignalledTileIdFlag() ) {
+      val = afps.getAtlasFrameTileInformationRbsp().getTileId( i ) & 0xFF;  //
       stringByte.push_back( val );
-      val = ( afps.getAtlasFrameTileInformation().getTileId( i ) >> 8 ) & 0xFF;
+      val = ( afps.getAtlasFrameTileInformationRbsp().getTileId( i ) >> 8 ) & 0xFF;
       stringByte.push_back( val );
     } else {
       val = i & 0xFF;

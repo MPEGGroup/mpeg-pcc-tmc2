@@ -834,7 +834,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
   auto&  ath                = atlu.getHeader();
   auto&  afps               = context.getAtlasFrameParameterSet( ath.getAtlasFrameParameterSetId() );
   auto&  asps               = context.getAtlasSequenceParameterSet( afps.getAtlasSequenceParameterSetId() );
-  auto&  afti               = afps.getAtlasFrameTileInformation();
+  auto&  afti               = afps.getAtlasFrameTileInformationRbsp();
   auto&  atgdu              = atlu.getDataUnit();
   auto   geometryBitDepth2D = asps.getGeometry2dBitdepthMinus1() + 1;
   auto   geometryBitDepth3D = asps.getGeometry3dBitdepthMinus1() + 1;
@@ -1372,7 +1372,7 @@ void PCCDecoder::createHashSEI( PCCContext& context, int frameIndex, SEIDecodedA
       size_t      tileId   = ath.getId();
       PCCTileType tileType = ath.getType();
       auto&       afps     = context.getAtlasFrameParameterSet( ath.getAtlasFrameParameterSetId() );
-      auto&       afti     = afps.getAtlasFrameTileInformation();
+      auto&       afti     = afps.getAtlasFrameTileInformationRbsp();
       if ( sei.getDecodedAtlasTilesHashPresentFlag() ) {
         std::vector<uint8_t> atlasTileData;
         for ( size_t patchIdx = 0; patchIdx < atlu.getDataUnit().getPatchCount(); patchIdx++ ) {
@@ -1536,7 +1536,7 @@ void PCCDecoder::createHlsAtlasTileLogFiles( PCCContext& context, int frameIndex
       vps.getAttributeInformation( 0 ).getAttributeCount() > 0
           ? vps.getAttributeInformation( 0 ).getAttributeDimensionMinus1( 0 ) + 1
           : 0,
-      afps.getAtlasFrameTileInformation().getNumTilesInAtlasFrameMinus1() + 1, numProjPatches, numRawPatches,
+      afps.getAtlasFrameTileInformationRbsp().getNumTilesInAtlasFrameMinus1() + 1, numProjPatches, numRawPatches,
       numEomPatches );
   std::vector<uint8_t> atlasData;
   size_t               patchCount = atlasPatchParams.size();
@@ -1566,7 +1566,7 @@ void PCCDecoder::createHlsAtlasTileLogFiles( PCCContext& context, int frameIndex
     size_t      tileId        = ath.getId();
     PCCTileType tileType      = ath.getType();
     auto&       afps          = context.getAtlasFrameParameterSet( ath.getAtlasFrameParameterSetId() );
-    auto&       afti          = afps.getAtlasFrameTileInformation();
+    auto&       afti          = afps.getAtlasFrameTileInformationRbsp();
     size_t      topLeftColumn = afti.getTopLeftPartitionIdx( tileIdx ) % ( afti.getNumPartitionColumnsMinus1() + 1 );
     size_t      topLeftRow    = afti.getTopLeftPartitionIdx( tileIdx ) / ( afti.getNumPartitionColumnsMinus1() + 1 );
     size_t      tileOffsetX   = context[frameIndex].getPartitionPosX( topLeftColumn );
@@ -1615,7 +1615,7 @@ void PCCDecoder::setTilePartitionSizeAfti( PCCContext& context ) {  // decoder
   for ( size_t afpsIdx = 0; afpsIdx < context.getAtlasFrameParameterSetList().size(); afpsIdx++ ) {
     auto&  afps             = context.getAtlasFrameParameterSet( afpsIdx );
     auto&  asps             = context.getAtlasSequenceParameterSet( afps.getAtlasSequenceParameterSetId() );
-    auto&  afti             = afps.getAtlasFrameTileInformation();
+    auto&  afti             = afps.getAtlasFrameTileInformationRbsp();
     size_t frameWidth       = asps.getFrameWidth();
     size_t frameHeight      = asps.getFrameHeight();
     size_t numPartitionCols = afti.getNumPartitionColumnsMinus1() + 1;
@@ -1694,7 +1694,7 @@ size_t PCCDecoder::setTileSizeAndLocation( PCCContext& context, size_t frameInde
   size_t afpsIdx   = ath.getAtlasFrameParameterSetId();
   auto&  afps      = context.getAtlasFrameParameterSet( afpsIdx );
   auto&  asps      = context.getAtlasSequenceParameterSet( afps.getAtlasSequenceParameterSetId() );
-  auto&  afti      = afps.getAtlasFrameTileInformation();
+  auto&  afti      = afps.getAtlasFrameTileInformationRbsp();
   size_t tileIndex = 0;
   printf( "setTileSizeAndLocation frameIndex = %zu \n", frameIndex );
   fflush( stdout );

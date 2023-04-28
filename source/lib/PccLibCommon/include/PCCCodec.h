@@ -251,7 +251,7 @@ class PCCCodec {
                                           const bool                           filling     = 0,
                                           const size_t                         minD1       = 0,
                                           const size_t                         neighbor    = 0 );
-  void                    generateAfti( PCCContext& context, size_t frameIndex, AtlasFrameTileInformation& afti );
+  void                    generateAfti( PCCContext& context, size_t frameIndex, AtlasFrameTileInformationRbsp& afti );
 
   inline double entropy( std::vector<uint8_t>& Data, int N ) {
     std::vector<size_t> count;

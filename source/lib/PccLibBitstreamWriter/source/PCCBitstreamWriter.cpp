@@ -791,7 +791,7 @@ void PCCBitstreamWriter::atlasFrameParameterSetRbsp( AtlasFrameParameterSetRbsp&
   bitstream.writeUvlc( afps.getAtlasFrameParameterSetId() );     // ue(v)
   bitstream.writeUvlc( afps.getAtlasSequenceParameterSetId() );  // ue(v)
   auto& asps = syntax.getAtlasSequenceParameterSet( afps.getAtlasSequenceParameterSetId() );
-  atlasFrameTileInformation( afps.getAtlasFrameTileInformation(), asps, bitstream );
+  atlasFrameTileInformationRbsp( afps.getAtlasFrameTileInformationRbsp(), asps, bitstream );
   bitstream.write( afps.getOutputFlagPresentFlag(), 1 );                // u(1)
   bitstream.writeUvlc( afps.getNumRefIdxDefaultActiveMinus1() );        // ue(v)
   bitstream.writeUvlc( afps.getAdditionalLtAfocLsbLen() );              // ue(v)
@@ -807,8 +807,8 @@ void PCCBitstreamWriter::atlasFrameParameterSetRbsp( AtlasFrameParameterSetRbsp&
   rbspTrailingBits( bitstream );
 }
 
-// 8.3.6.2.2 Atlas frame tile information syntax
-void PCCBitstreamWriter::atlasFrameTileInformation( AtlasFrameTileInformation&     afti,
+// 8.3.6.2.2 Atlas frame tile information RBSP syntax
+void PCCBitstreamWriter::atlasFrameTileInformationRbsp( AtlasFrameTileInformationRbsp&     afti,
                                                     AtlasSequenceParameterSetRbsp& asps,
                                                     PCCBitstream&                  bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
@@ -968,7 +968,7 @@ void PCCBitstreamWriter::atlasTileHeader( AtlasTileHeader&    ath,
   AtlasFrameParameterSetRbsp&    afps   = syntax.getAtlasFrameParameterSet( afpsId );
   size_t                         aspsId = afps.getAtlasSequenceParameterSetId();
   AtlasSequenceParameterSetRbsp& asps   = syntax.getAtlasSequenceParameterSet( aspsId );
-  AtlasFrameTileInformation&     afti   = afps.getAtlasFrameTileInformation();
+  AtlasFrameTileInformationRbsp&     afti   = afps.getAtlasFrameTileInformationRbsp();
   if ( nalUnitType >= NAL_BLA_W_LP && nalUnitType <= NAL_RSV_IRAP_ACL_29 ) {
     bitstream.write( ath.getNoOutputOfPriorAtlasFramesFlag(), 1 );  // u(1)
   }
@@ -1326,7 +1326,7 @@ void PCCBitstreamWriter::rawPatchDataUnit( RawPatchDataUnit&   rpdu,
   int32_t bitCount = ath.getRaw3dOffsetAxisBitCountMinus1() + 1;
   TRACE_BITSTREAM( " AtghRaw3dOffsetAxisBitCountMinus1 = %zu => bitcount = %d \n",
                    ath.getRaw3dOffsetAxisBitCountMinus1(), bitCount );
-  auto& afti   = syntax.getAtlasFrameParameterSet( ath.getAtlasFrameParameterSetId() ).getAtlasFrameTileInformation();
+  auto& afti   = syntax.getAtlasFrameParameterSet( ath.getAtlasFrameParameterSetId() ).getAtlasFrameTileInformationRbsp();
   auto  ath_id = ath.getId();
   auto  tileIdToIndex = afti.getTileId( ath_id );
   if ( afti.getAuxiliaryVideoTileRowHeight( tileIdToIndex ) ) {
@@ -1353,7 +1353,7 @@ void PCCBitstreamWriter::eomPatchDataUnit( EOMPatchDataUnit&   epdu,
                                            PCCHighLevelSyntax& syntax,
                                            PCCBitstream&       bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
-  auto& afti   = syntax.getAtlasFrameParameterSet( ath.getAtlasFrameParameterSetId() ).getAtlasFrameTileInformation();
+  auto& afti   = syntax.getAtlasFrameParameterSet( ath.getAtlasFrameParameterSetId() ).getAtlasFrameTileInformationRbsp();
   auto  ath_id = ath.getId();
   auto  tileIdToIndex = afti.getTileId( ath_id );
   if ( afti.getAuxiliaryVideoTileRowHeight( tileIdToIndex ) ) {

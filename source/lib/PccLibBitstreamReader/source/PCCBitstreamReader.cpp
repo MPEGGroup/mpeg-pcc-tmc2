@@ -622,7 +622,7 @@ void PCCBitstreamReader::atlasFrameParameterSetRbsp( AtlasFrameParameterSetRbsp&
   afps.setAtlasFrameParameterSetId( bitstream.readUvlc() );     // ue(v)
   afps.setAtlasSequenceParameterSetId( bitstream.readUvlc() );  // ue(v)
   auto& asps = syntax.getAtlasSequenceParameterSet( afps.getAtlasSequenceParameterSetId() );
-  atlasFrameTileInformation( afps.getAtlasFrameTileInformation(), asps, bitstream );
+  atlasFrameTileInformationRbsp( afps.getAtlasFrameTileInformationRbsp(), asps, bitstream );
   afps.setOutputFlagPresentFlag( bitstream.read( 1 ) );                // u(1)
   afps.setNumRefIdxDefaultActiveMinus1( bitstream.readUvlc() );        // ue(v)
   afps.setAdditionalLtAfocLsbLen( bitstream.readUvlc() );              // ue(v)
@@ -639,7 +639,7 @@ void PCCBitstreamReader::atlasFrameParameterSetRbsp( AtlasFrameParameterSetRbsp&
 }
 
 // 8.3.6.2.2 Atlas frame tile information syntax
-void PCCBitstreamReader::atlasFrameTileInformation( AtlasFrameTileInformation&     afti,
+void PCCBitstreamReader::atlasFrameTileInformationRbsp( AtlasFrameTileInformationRbsp&     afti,
                                                     AtlasSequenceParameterSetRbsp& asps,
                                                     PCCBitstream&                  bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
@@ -822,7 +822,7 @@ void PCCBitstreamReader::atlasTileHeader( AtlasTileHeader&    ath,
   AtlasFrameParameterSetRbsp&    afps   = syntax.getAtlasFrameParameterSet( afpsId );
   size_t                         aspsId = afps.getAtlasSequenceParameterSetId();
   AtlasSequenceParameterSetRbsp& asps   = syntax.getAtlasSequenceParameterSet( aspsId );
-  AtlasFrameTileInformation&     afti   = afps.getAtlasFrameTileInformation();
+  AtlasFrameTileInformationRbsp&     afti   = afps.getAtlasFrameTileInformationRbsp();
   if ( afti.getSignalledTileIdFlag() ) {
     ath.setId( bitstream.read( afti.getSignalledTileIdLengthMinus1() + 1 ) );  // u(v)
   } else {
@@ -1257,7 +1257,7 @@ void PCCBitstreamReader::rawPatchDataUnit( RawPatchDataUnit&   rpdu,
   int32_t bitCount = ath.getRaw3dOffsetAxisBitCountMinus1() + 1;
   TRACE_BITSTREAM( " AtghRaw3dOffsetAxisBitCountMinus1 = %zu => bitcount = %d \n",
                    ath.getRaw3dOffsetAxisBitCountMinus1(), bitCount );
-  auto& afti   = syntax.getAtlasFrameParameterSet( ath.getAtlasFrameParameterSetId() ).getAtlasFrameTileInformation();
+  auto& afti   = syntax.getAtlasFrameParameterSet( ath.getAtlasFrameParameterSetId() ).getAtlasFrameTileInformationRbsp();
   auto  ath_id = ath.getId();
   auto  tileIdToIndex = afti.getTileId( ath_id );
   if ( afti.getAuxiliaryVideoTileRowHeight( tileIdToIndex ) ) {
@@ -1287,7 +1287,7 @@ void PCCBitstreamReader::eomPatchDataUnit( EOMPatchDataUnit&   epdu,
                                            PCCHighLevelSyntax& syntax,
                                            PCCBitstream&       bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
-  auto& afti   = syntax.getAtlasFrameParameterSet( ath.getAtlasFrameParameterSetId() ).getAtlasFrameTileInformation();
+  auto& afti   = syntax.getAtlasFrameParameterSet( ath.getAtlasFrameParameterSetId() ).getAtlasFrameTileInformationRbsp();
   auto  ath_id = ath.getId();
   auto  tileIdToIndex = afti.getTileId( ath_id );
   if ( afti.getAuxiliaryVideoTileRowHeight( tileIdToIndex ) ) {

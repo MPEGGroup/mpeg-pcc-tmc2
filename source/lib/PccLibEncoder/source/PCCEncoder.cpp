@@ -8067,14 +8067,14 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
     size_t atlasFrameParameterSetId = 0;
     // partition information
     if ( frameIndex == 0 ) {
-      AtlasFrameTileInformation& afti = context.getAtlasFrameParameterSet( 0 ).getAtlasFrameTileInformation();
+      AtlasFrameTileInformationRbsp& afti = context.getAtlasFrameParameterSet( 0 ).getAtlasFrameTileInformationRbsp();
       generateAfti( context, 0, afti );
     } else {
-      AtlasFrameTileInformation aftiUpdated;
+      AtlasFrameTileInformationRbsp aftiUpdated;
       bool                      bPersistance = false;
       generateAfti( context, frameIndex, aftiUpdated );
       for ( size_t afpsId = 0; afpsId < context.getAtlasFrameParameterSetList().size(); afpsId++ ) {
-        if ( aftiUpdated == context.getAtlasFrameParameterSet( afpsId ).getAtlasFrameTileInformation() ) {
+        if ( aftiUpdated == context.getAtlasFrameParameterSet( afpsId ).getAtlasFrameTileInformationRbsp() ) {
           atlasFrameParameterSetId = afpsId;
           bPersistance             = true;
           break;
@@ -8082,7 +8082,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
       }
       if ( bPersistance == false ) {
         context.addAtlasFrameParameterSet( context.getAtlasFrameParameterSet( 0 ) )
-            .setAtlasFrameTileInformation( aftiUpdated );
+            .setAtlasFrameTileInformationRbsp( aftiUpdated );
         atlasFrameParameterSetId = context.getAtlasFrameParameterSetList().size() - 1;
       }
     }
@@ -8465,7 +8465,7 @@ void PCCEncoder::createHlsAtlasTileLogFiles( PCCContext& context, int frameIndex
     size_t patchCount    = tileDataUnit.getPatchCount() - 1;  // not the last I_END or P_END
     size_t tileId        = ath.getId();
     auto&  afps          = context.getAtlasFrameParameterSet( afpsId );
-    auto&  afti          = afps.getAtlasFrameTileInformation();
+    auto&  afti          = afps.getAtlasFrameTileInformationRbsp();
     size_t topLeftColumn = afti.getTopLeftPartitionIdx( tileIdx ) % ( afti.getNumPartitionColumnsMinus1() + 1 );
     size_t topLeftRow    = afti.getTopLeftPartitionIdx( tileIdx ) / ( afti.getNumPartitionColumnsMinus1() + 1 );
     size_t tileOffsetX   = context[frameIndex].getPartitionPosX( topLeftColumn );
@@ -8777,11 +8777,11 @@ void PCCEncoder::createHashSEI( PCCContext& context, size_t frameIndex, AtlasTil
       size_t patchCount   = tileDataUnit.getPatchCount() - 1;  // not the last I_END or P_END
       size_t tileId       = tileHeader.getId();
       auto&  afps         = context.getAtlasFrameParameterSet( tileHeader.getAtlasFrameParameterSetId() );
-      auto&  afti         = afps.getAtlasFrameTileInformation();
+      auto&  afti         = afps.getAtlasFrameTileInformationRbsp();
       sei.setTileId( tileIdx, tileId );
       if ( tileIdx == 0 ) {
         auto& tileInfo = context.getAtlasFrameParameterSet( tileHeader.getAtlasFrameParameterSetId() )
-                             .getAtlasFrameTileInformation();
+                             .getAtlasFrameTileInformationRbsp();
         uint8_t bitCount = tileInfo.getSignalledTileIdFlag()
                                ? ( tileInfo.getSignalledTileIdLengthMinus1() + 1 )
                                : ( ceilLog2( tileInfo.getNumTilesInAtlasFrameMinus1() + 1 ) );

@@ -74,7 +74,7 @@ class AttributeFrameParams;
 class PLRInformation;
 class PLRData;
 class SeiMessage;
-class AtlasFrameTileInformation;
+class AtlasFrameTileInformationRbsp;
 class SampleStreamNalUnit;
 class NalUnit;
 class AccessUnitDelimiterRbsp;
@@ -172,7 +172,7 @@ class PCCBitstreamWriter {
                                    PCCBitstream&               bitstream );
 
   // 8.3.6.2.2 Atlas frame tile information syntax
-  static void atlasFrameTileInformation( AtlasFrameTileInformation&     afti,
+  static void atlasFrameTileInformationRbsp( AtlasFrameTileInformationRbsp&     afti,
                                          AtlasSequenceParameterSetRbsp& asps,
                                          PCCBitstream&                  bitstream );
 
