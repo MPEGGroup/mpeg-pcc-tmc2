@@ -50,7 +50,7 @@ class VpsVpccExtension {
 // H.7.3.6.1.1	ASPS V-PCC extension syntax
 class AspsVpccExtension {
  public:
-  AspsVpccExtension() : removeDuplicatePointEnableFlag_( false ), surfaceThicknessMinus1_( 0 ) {}
+  AspsVpccExtension() : removeDuplicatePointEnableFlag_( true ), surfaceThicknessMinus1_( 3 ) {}
   ~AspsVpccExtension() {}
   AspsVpccExtension& operator=( const AspsVpccExtension& ) = default;
 
