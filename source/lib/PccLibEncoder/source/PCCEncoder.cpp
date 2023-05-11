@@ -92,8 +92,7 @@ int PCCEncoder::encode( const PCCGroupOfFrames& sources, PCCContext& context, PC
     frameContext.setFrameIndex( i );
     frameContext.setRawPatchEnabledFlag( params_.rawPointsPatch_ || params_.lossyRawPointsPatch_ );
     frameContext.setUseRawPointsSeparateVideo( params_.useRawPointsSeparateVideo_ );
-    frameContext.setGeometry3dCoordinatesBitdepth( params_.geometry3dCoordinatesBitdepth_ +
-                                                   ( params_.additionalProjectionPlaneMode_ > 0 ) );
+    frameContext.setGeometry3dCoordinatesBitdepth( params_.geometry3dCoordinatesBitdepth_ + 1 );
     frameContext.setGeometry2dBitdepth( params_.geometryNominal2dBitdepth_ );
     frameContext.setMaxDepth( ( 1 << params_.geometryNominal2dBitdepth_ ) - 1 );
     frameContext.setLog2PatchQuantizerSizeX( params_.log2QuantizerSizeX_ );
@@ -1063,8 +1062,6 @@ double PCCEncoder::adjustReferenceAtlasFrame( PCCContext&            context,
   auto bitMaxD1 = uint8_t( ceilLog2( uint32_t( maxD1 ) ) );
   auto bitMaxDD = uint8_t( ceilLog2( uint32_t( maxDD ) ) );
 
-  const size_t max3DCoordinate =
-      size_t( 1 ) << ( params_.geometry3dCoordinatesBitdepth_ + ( params_.additionalProjectionPlaneMode_ > 0 ) );
   for ( size_t curId = 0; curId < curPatchCount; curId++ ) {
     auto& curPatch = curPatches[curId];
     // intra
@@ -1107,18 +1104,7 @@ double PCCEncoder::adjustReferenceAtlasFrame( PCCContext&            context,
       size_t        prevQDD  = refPatch.getSizeD() == 0 ? 0 : ( ( refPatch.getSizeD() - 1 ) / params_.minLevel_ + 1 );
       const int64_t delta_dd = ( static_cast<int64_t>( quantDD ) ) - ( static_cast<int64_t>( prevQDD ) );
       tempBitStream.writeSvlc( int32_t( delta_dd ) );  // se(v)
-      int32_t delta_d1 = 0;
-      if ( curPatch.getProjectionMode() == 0 || !params_.absoluteD1_ ) {
-        delta_d1 = ( ( curPatch.getD1() / params_.minLevel_ ) - ( refPatch.getD1() / params_.minLevel_ ) );
-      } else {
-        if ( curPatch.getAxisOfAdditionalPlane() == 0 ) {
-          delta_d1 = ( max3DCoordinate - curPatch.getD1() ) / params_.minLevel_ -
-                     ( max3DCoordinate - refPatch.getD1() ) / params_.minLevel_;
-        } else {
-          delta_d1 = ( ( max3DCoordinate << 1 ) - curPatch.getD1() ) / params_.minLevel_ -
-                     ( ( max3DCoordinate << 1 ) - refPatch.getD1() ) / params_.minLevel_;
-        }
-      }
+      int32_t delta_d1 = ( ( curPatch.getD1() / params_.minLevel_ ) - ( refPatch.getD1() / params_.minLevel_ ) );
       tempBitStream.writeSvlc( delta_d1 );
     }
 #ifdef CODEC_TRACE
@@ -1159,18 +1145,7 @@ double PCCEncoder::adjustReferenceAtlasFrame( PCCContext&            context,
           size_t prevQDD = refPatch.getSizeD() == 0 ? 0 : ( ( refPatch.getSizeD() - 1 ) / params_.minLevel_ + 1 );
           const int64_t delta_dd = ( static_cast<int64_t>( quantDD ) ) - ( static_cast<int64_t>( prevQDD ) );
           tempBitStream.writeSvlc( int32_t( delta_dd ) );  // se(v)
-          int32_t delta_d1 = 0;
-          if ( curPatch.getProjectionMode() == 0 || !params_.absoluteD1_ ) {
-            delta_d1 = ( ( curPatch.getD1() / params_.minLevel_ ) - ( refPatch.getD1() / params_.minLevel_ ) );
-          } else {
-            if ( curPatch.getAxisOfAdditionalPlane() == 0 ) {
-              delta_d1 = ( max3DCoordinate - curPatch.getD1() ) / params_.minLevel_ -
-                         ( max3DCoordinate - refPatch.getD1() ) / params_.minLevel_;
-            } else {
-              delta_d1 = ( ( max3DCoordinate << 1 ) - curPatch.getD1() ) / params_.minLevel_ -
-                         ( ( max3DCoordinate << 1 ) - refPatch.getD1() ) / params_.minLevel_;
-            }
-          }
+          int32_t delta_d1 = ( curPatch.getD1() / params_.minLevel_ ) - ( refPatch.getD1() / params_.minLevel_ );
           tempBitStream.writeSvlc( delta_d1 );
           float bitCostInter = tempBitStream.size() - initSize;
           float iou          = 1 / bitCostInter;
@@ -4170,8 +4145,7 @@ void PCCEncoder::generateRawPointsPatch( const PCCPointSet3& source,
                                          PCCFrameContext&    frame,
                                          bool                useEnhancedOccupancyMapCode ) {
   auto&        patches = frame.getPatches();
-  const size_t geometry3dCoordinatesBitdepth =
-      params_.geometry3dCoordinatesBitdepth_ + ( params_.additionalProjectionPlaneMode_ > 0 );
+  const size_t geometry3dCoordinatesBitdepth = params_.geometry3dCoordinatesBitdepth_ + 1;
   PCCPointSet3 pointsToBeProjected;
   for ( const auto& patch : patches ) {
     for ( size_t v = 0; v < patch.getSizeV(); ++v ) {
@@ -4728,7 +4702,7 @@ bool PCCEncoder::generateSegments( const PCCGroupOfFrames& sources, PCCContext& 
   params.partialAdditionalProjectionPlane_    = params_.partialAdditionalProjectionPlane_;
   params.maxAllowedDepth_                     = ( size_t( 1 ) << params_.geometryNominal2dBitdepth_ ) - 1;
   params.geometryBitDepth2D_                  = params_.geometryNominal2dBitdepth_;
-  params.geometryBitDepth3D_ = params_.geometry3dCoordinatesBitdepth_ + ( params_.additionalProjectionPlaneMode_ > 0 );
+  params.geometryBitDepth3D_                  = params_.geometry3dCoordinatesBitdepth_ + 1;
   params.EOMFixBitCount_     = params_.EOMFixBitCount_;
   params.EOMSingleLayerMode_ = params_.enhancedOccupancyMapCode_ && ( params_.mapCountMinus1_ == 0 );
   params.patchExpansion_     = params_.patchExpansion_;
@@ -7979,12 +7953,11 @@ void PCCEncoder::setPostProcessingSeiParameters( GeneratePointCloudParameters& p
   params.pointLocalReconstruction_   = params_.pointLocalReconstructionType_ != 0 && params_.pointLocalReconstruction_;
   params.mapCountMinus1_             = params_.mapCountMinus1_;
   params.singleMapPixelInterleaving_ = params_.pixelDeinterleavingType_ != 0 && params_.singleMapPixelInterleaving_;
-  params.geometry3dCoordinatesBitdepth_ =
-      params_.geometry3dCoordinatesBitdepth_ + ( params_.additionalProjectionPlaneMode_ > 0 );
+  params.geometry3dCoordinatesBitdepth_ = params_.geometry3dCoordinatesBitdepth_ + 1;
   params.useAdditionalPointsPatch_ =
       params_.reconstructRawType_ != 0 && ( params_.rawPointsPatch_ || params_.lossyRawPointsPatch_ );
   params.plrlNumberOfModes_  = params_.plrlNumberOfModes_;
-  params.geometryBitDepth3D_ = params_.geometry3dCoordinatesBitdepth_ + ( params_.additionalProjectionPlaneMode_ > 0 );
+  params.geometryBitDepth3D_ = params_.geometry3dCoordinatesBitdepth_ + 1;
   params.EOMFixBitCount_     = params_.EOMFixBitCount_;
   params.pbfEnableFlag_      = params_.applyOccupanySynthesisType_ != 0 && params_.pbfEnableFlag_;
   params.pbfPassesCount_     = params_.pbfPassesCount_;
@@ -8020,12 +7993,11 @@ void PCCEncoder::setGeneratePointCloudParameters( GeneratePointCloudParameters& 
   params.pointLocalReconstruction_   = params_.pointLocalReconstructionType_ != 0 && params_.pointLocalReconstruction_;
   params.mapCountMinus1_             = params_.mapCountMinus1_;
   params.singleMapPixelInterleaving_ = params_.pixelDeinterleavingType_ != 0 && params_.singleMapPixelInterleaving_;
-  params.geometry3dCoordinatesBitdepth_ =
-      params_.geometry3dCoordinatesBitdepth_ + ( params_.additionalProjectionPlaneMode_ > 0 );
+  params.geometry3dCoordinatesBitdepth_ = params_.geometry3dCoordinatesBitdepth_ + 1;
   params.useAdditionalPointsPatch_ =
       params_.reconstructRawType_ != 0 && ( params_.rawPointsPatch_ || params_.lossyRawPointsPatch_ );
   params.plrlNumberOfModes_  = params_.plrlNumberOfModes_;
-  params.geometryBitDepth3D_ = params_.geometry3dCoordinatesBitdepth_ + ( params_.additionalProjectionPlaneMode_ > 0 );
+  params.geometryBitDepth3D_ = params_.geometry3dCoordinatesBitdepth_ + 1;
   params.EOMFixBitCount_     = params_.EOMFixBitCount_;
   params.pbfEnableFlag_      = false;
   params.pbfPassesCount_     = 0;
@@ -8102,8 +8074,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext& context ) {
       if ( afps.getRaw3dOffsetBitCountExplicitModeFlag() ) {
         atgh.setRaw3dOffsetAxisBitCountMinus1( 0 );  // Note. need to be an encoder parameter
       } else {
-        atgh.setRaw3dOffsetAxisBitCountMinus1( params_.geometry3dCoordinatesBitdepth_ +
-                                               ( params_.additionalProjectionPlaneMode_ > 0 ) -
+        atgh.setRaw3dOffsetAxisBitCountMinus1( params_.geometry3dCoordinatesBitdepth_ + 1 -
                                                params_.geometryNominal2dBitdepth_ - 1 );
       }
       atgh.setNumRefIdxActiveOverrideFlag( false );
@@ -8224,13 +8195,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&         context,
       }
       ipdu.set3dOffsetU( patch.getU1() - refPatch.getU1() );
       ipdu.set3dOffsetV( patch.getV1() - refPatch.getV1() );
-      const size_t max3DCoordinate = geometryBitDepth3D;
-      if ( patch.getProjectionMode() == 0 ) {
-        ipdu.set3dOffsetD( ( patch.getD1() / minLevel ) - ( refPatch.getD1() / minLevel ) );
-      } else {
-        ipdu.set3dOffsetD( ( max3DCoordinate - patch.getD1() ) / minLevel -
-                           ( max3DCoordinate - refPatch.getD1() ) / minLevel );
-      }
+      ipdu.set3dOffsetD( ( patch.getD1() / minLevel ) - ( refPatch.getD1() / minLevel ) );
       int64_t diffDD  = (int64_t)patch.getSizeDPixel() - (int64_t)refPatch.getSizeD();
       int64_t quantDD = diffDD == 0 ? 0 : ( diffDD + 1 ) / (int64_t)minLevel;
       ipdu.set3dRangeD( quantDD );
@@ -8293,12 +8258,7 @@ void PCCEncoder::createPatchFrameDataStructure( PCCContext&         context,
         pdu.set2dSizeYMinus1( patch.getSizeV0() - 1 );
       }
       pdu.setOrientationIndex( patch.getPatchOrientation() );
-      const size_t max3DCoordinate = size_t( 1 ) << ( geometryBitDepth3D );
-      if ( patch.getProjectionMode() == 0 ) {
-        pdu.set3dOffsetD( patch.getD1() / minLevel );
-      } else {
-        pdu.set3dOffsetD( ( max3DCoordinate - patch.getD1() ) / minLevel );
-      }
+      pdu.set3dOffsetD( patch.getD1() / minLevel );
       // Note: quantDD cannot cover up to the maximum depth by this equation. (e.g.getSizeD=255)
       size_t quantDD = patch.getSizeD() == 0 ? 0 : ( ( patch.getSizeD() + 1 ) / minLevel );
       pdu.set3dRangeD( quantDD );

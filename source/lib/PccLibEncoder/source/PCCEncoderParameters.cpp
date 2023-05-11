@@ -1326,7 +1326,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   size_t  numAtlas   = 1;
   size_t  atlasIndex = 0;
   auto&   vps        = context.getVps();
-  uint8_t bitdepth3D = uint8_t( geometry3dCoordinatesBitdepth_ + ( additionalProjectionPlaneMode_ > 0 ) );
+  uint8_t bitdepth3D = uint8_t( geometry3dCoordinatesBitdepth_ + 1 );
 
   // Allocation
   context.resizeAtlas( numAtlas );  // single atlas for V3C
