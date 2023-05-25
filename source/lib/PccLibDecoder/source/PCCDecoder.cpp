@@ -923,12 +923,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
       patch.setPatchOrientation( pdu.getOrientationIndex() );
       patch.setViewId( pdu.getProjectionId() );
       TRACE_PATCH( "patch %zu / %zu: Intra \n", patchIndex, patchCount );
-      const size_t max3DCoordinate = size_t( 1 ) << geometryBitDepth3D;
-      if ( patch.getProjectionMode() == 0 ) {
-        patch.setD1( static_cast<int32_t>( pdu.get3dOffsetD() ) * minLevel );
-      } else {
-        patch.setD1( max3DCoordinate - static_cast<int32_t>( pdu.get3dOffsetD() ) * minLevel );
-      }
+      patch.setD1( static_cast<int32_t>( pdu.get3dOffsetD() ) * minLevel );
       if ( patch.getNormalAxis() == 0 ) {
         patch.setTangentAxis( 2 );
         patch.setBitangentAxis( 1 );
@@ -995,13 +990,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
       patch.setTangentAxis( refPatch.getTangentAxis() );
       patch.setBitangentAxis( refPatch.getBitangentAxis() );
       patch.setAxisOfAdditionalPlane( refPatch.getAxisOfAdditionalPlane() );
-      const size_t max3DCoordinate = size_t( 1 ) << geometryBitDepth3D;
-      if ( patch.getProjectionMode() == 0 ) {
-        patch.setD1( ( ipdu.get3dOffsetD() + ( refPatch.getD1() / minLevel ) ) * minLevel );
-      } else {
-        patch.setD1( max3DCoordinate -
-                     ( ipdu.get3dOffsetD() + ( ( max3DCoordinate - refPatch.getD1() ) / minLevel ) ) * minLevel );
-      }
+      patch.setD1( ( ipdu.get3dOffsetD() + ( refPatch.getD1() / minLevel ) ) * minLevel );
       const int64_t delta_DD = ipdu.get3dRangeD() == 0 ? 0 : ( ipdu.get3dRangeD() * minLevel - 1 );
       patch.setSizeD( refPatch.getSizeD() + delta_DD );
       patch.setLodScaleX( refPatch.getLodScaleX() );
@@ -1025,7 +1014,6 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
       patch.setOccupancyResolution( size_t( 1 ) << asps.getLog2PatchPackingBlockSize() );
       auto&        mpdu            = pid.getMergePatchDataUnit();
       bool         overridePlrFlag = false;
-      const size_t max3DCoordinate = size_t( 1 ) << geometryBitDepth3D;
       TRACE_PATCH( "patch %zu / %zu: Inter \n", patchIndex, patchCount );
       TRACE_PATCH(
           "MPDU: refAtlasFrame= %d refPatchIdx = ?? pos2DXY = %ld %ld pos3DXYZW = %ld %ld %ld %ld size2D = %ld %ld \n",
@@ -1055,12 +1043,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
         if ( mpdu.getOverride3dParamsFlag() ) {
           patch.setU1( mpdu.get3dOffsetU() + refPatch.getU1() );
           patch.setV1( mpdu.get3dOffsetV() + refPatch.getV1() );
-          if ( patch.getProjectionMode() == 0 ) {
-            patch.setD1( ( mpdu.get3dOffsetD() + ( refPatch.getD1() / minLevel ) ) * minLevel );
-          } else {
-            patch.setD1( max3DCoordinate -
-                         ( mpdu.get3dOffsetD() + ( ( max3DCoordinate - refPatch.getD1() ) / minLevel ) ) * minLevel );
-          }
+          patch.setD1( ( mpdu.get3dOffsetD() + ( refPatch.getD1() / minLevel ) ) * minLevel );
           const int64_t delta_DD = mpdu.get3dRangeD() == 0 ? 0 : ( mpdu.get3dRangeD() * minLevel - 1 );
           patch.setSizeD( refPatch.getSizeD() + delta_DD );
           if ( asps.getPLREnabledFlag() ) { overridePlrFlag = ( mpdu.getOverridePlrFlag() != 0 ); }
