@@ -1432,9 +1432,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
     ext.setRemoveDuplicatePointEnableFlag( removeDuplicatePoints_ );
     if ( asps.getPixelDeinterleavingFlag() || asps.getPLREnabledFlag() ) {
       ext.setSurfaceThicknessMinus1( surfaceThickness_ - 1 );
-    } else {
-      ext.setSurfaceThicknessMinus1( 0 );
-    }
+    } // else keep the default value defined in the AspsVpccExtension constructor
   }
   asps.setEomFixBitCountMinus1( EOMFixBitCount_ - 1 );
   asps.setGeometry2dBitdepthMinus1( uint8_t( geometryNominal2dBitdepth_ - 1 ) );

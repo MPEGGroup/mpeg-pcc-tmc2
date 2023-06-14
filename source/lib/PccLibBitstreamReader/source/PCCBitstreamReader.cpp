@@ -2070,9 +2070,7 @@ void PCCBitstreamReader::decodedAtlasInformationHash( PCCBitstream& bitstream, S
       for ( size_t t = 0; t <= sei.getNumTilesMinus1(); t++ ) {
         sei.setTileId( t, bitstream.read( sei.getTileIdLenMinus1() + 1 ) );  // u(v)
       }
-      while ( !bitstream.byteAligned() ) {
-        bitstream.read( 1 );  // f(1): equal to 1
-      }
+      byteAlignment( bitstream );
       for ( size_t t = 0; t <= sei.getNumTilesMinus1(); t++ ) {
         size_t j = sei.getTileId( t );
         if ( sei.getDecodedAtlasTilesHashPresentFlag() ) { decodedAtlasTilesHash( bitstream, sei, j ); }
