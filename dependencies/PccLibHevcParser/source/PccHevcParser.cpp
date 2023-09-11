@@ -185,6 +185,7 @@ void PccHevcParser::getVideoSize( const std::vector<uint8_t>& buffer,
           is444    = decCavlc->getSPS()->getIs444();
           break;        
       }
+      createNalu( currentPoc, buffer, index, i - index );
       nalNumber++;
       if( i < size ) {
         startCodeSize = data[ i + 2 ] == 0 ? 4 : 3;
