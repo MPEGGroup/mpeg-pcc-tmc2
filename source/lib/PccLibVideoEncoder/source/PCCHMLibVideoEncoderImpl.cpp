@@ -99,16 +99,17 @@ Void PCCHMLibVideoEncoderImpl<T>::encode( PCCVideo<T, 3>&    videoSrc,
     printf( "\nReading the aux info files\n" );
     FILE* patchFile = NULL;
     patchFile       = fopen( m_patchInfoFileName.c_str(), "rb" );
+    memset(g_numPatches, 0, sizeof(long long)*PCC_ME_EXT_MAX_NUM_FRAMES);
     for ( Int i = 0; i < PCC_ME_EXT_MAX_NUM_FRAMES; i++ ) {
       long long readSize = fread( &g_numPatches[i], sizeof( long long ), 1, patchFile );
-      if ( readSize != 1 && readSize != 0 ) { printf( "error: Wrong Patch data group file" ); }
+      if ( readSize != 1 && readSize != 0 ) { printf( "error: frame[%d] Wrong Patch data group file\n", i ); }
       for ( Int patchIdx = 0; patchIdx < g_numPatches[i]; patchIdx++ ) {
         readSize = fread( &g_projectionIndex[i][patchIdx], sizeof( long long ), 1, patchFile );
-        if ( readSize != 1 ) { printf( "error: Wrong Auxiliary data format" ); }
+        if ( readSize != 1 ) { printf( "error: frame[%d] Wrong Auxiliary data format(projection)\n", i ); }
         readSize = fread( g_patch2DInfo[i][patchIdx], sizeof( long long ), 4, patchFile );
-        if ( readSize != 4 ) { printf( "error: Wrong Auxiliary data format" ); }
+        if ( readSize != 4 ) { printf( "error: frame[%d] Wrong Auxiliary data format(2dInfo)\n", i ); }
         readSize = fread( g_patch3DInfo[i][patchIdx], sizeof( long long ), 3, patchFile );
-        if ( readSize != 3 ) { printf( "error: Wrong Auxiliary data format" ); }
+        if ( readSize != 3 ) { printf( "error: frame[%d] Wrong Auxiliary data format(3dInfo)\n", i ); }
       }
     }
     fclose( patchFile );

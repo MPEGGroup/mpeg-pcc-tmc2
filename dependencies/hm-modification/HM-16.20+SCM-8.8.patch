@@ -327,14 +327,14 @@ index 71ef375..17215fe 100644
 +	  printf("\nReading the aux info files\n");
 +	  FILE* patchFile = NULL;
 +	  patchFile = fopen(m_patchInfoFileName.c_str(), "rb");
-+
++    memset(g_numPatches, 0, sizeof(long long)*PCC_ME_EXT_MAX_NUM_FRAMES);
 +	  for (Int i = 0; i < PCC_ME_EXT_MAX_NUM_FRAMES; i++)
 +	  {
 +		  long long readSize = fread(&g_numPatches[i], sizeof(long long), 1, patchFile);
 +
 +		  if (readSize != 1 && readSize != 0)
 +		  {
-+			  printf("error: Wrong Patch data group file");
++			  printf( "error: frame[%d] Wrong Patch data group file\n", i );
 +		  }
 +
 +		  for (Int patchIdx = 0; patchIdx < g_numPatches[i]; patchIdx++)
@@ -343,21 +343,21 @@ index 71ef375..17215fe 100644
 +
 +			  if (readSize != 1)
 +			  {
-+				  printf("error: Wrong Auxiliary data format");
++				  printf( "error: frame[%d] Wrong Auxiliary data format(projection)\n", i );
 +			  }
 +
 +			  readSize = fread(g_patch2DInfo[i][patchIdx], sizeof(long long), 4, patchFile);
 +
 +			  if (readSize != 4)
 +			  {
-+				  printf("error: Wrong Auxiliary data format");
++				  printf( "error: frame[%d] Wrong Auxiliary data format(2dInfo)\n", i );
 +			  }
 +
 +			  readSize = fread(g_patch3DInfo[i][patchIdx], sizeof(long long), 3, patchFile);
 +
 +			  if (readSize != 3)
 +			  {
-+				  printf("error: Wrong Auxiliary data format");
++				  printf( "error: frame[%d] Wrong Auxiliary data format(3dInfo)\n", i );
 +			  }
 +		  }
 +	  }
