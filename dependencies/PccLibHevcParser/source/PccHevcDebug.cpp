@@ -43,7 +43,8 @@
 //#include "TComYuv.h"
 using namespace std;
 using namespace std;
-using namespace pcc_hevc;
+namespace pcc_hevc
+{
 
 static const UInt settingNameWidth  = 66;
 static const UInt settingHelpWidth  = 84;
@@ -286,7 +287,6 @@ UInt getZScanIndex(const UInt x, const UInt y)
 
 //String manipulation functions for aligning and wrapping printed text
 
-
 std::string splitOnSettings(const std::string &input)
 {
   std::string result = input;
@@ -493,3 +493,4 @@ Void DebugInterPredResiReco(std::string &sDebug, TComYuv &pred, TComYuv &resi, T
   }
 }
 #endif
+}  // namespace pcc_hevc
