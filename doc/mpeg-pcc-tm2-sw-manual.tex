@@ -68,33 +68,44 @@
 % Handling of figure ranges using \cref
 %\usepackage{cleveref}
 
+% Fixing tightlist from md
+\providecommand{\tightlist}{\setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+
 % some abbreviations
 \makeatletter
 \newcommand\eg{\emph{e.g\@ifnextchar.{}{.\@}}}
 \newcommand\ie{\emph{i.e\@ifnextchar.{}{.\@}}}
 \makeatother
 
-\title{V3C/V-PCC test model v23.0 user manual}
+\title{V3C/V-PCC test model v24.0 user manual}
 \author{%
-	Julien Ricard
-	\email{julien.ricard@interdigital.com}
+	XX YY
+	\email{xx.yy@zz.com}
 }
 
-\mpegmeeting{January 2023, Online}
+\mpegmeeting{Month YYYY, Location}
 \mpegdocnum{wXXXXX}
 \mpegdocstatus{Draft}
 \mpegdocsource{3DG}
 \mpegdocpurpose{User manual}
 
 \begin{document}
-\maketitle
+
+%\maketitle % removed if no correespoinding document registered
+
+\titlespacing{\section}{0pt}{4ex}{3ex}
+\titlespacing{\subsection}{0pt}{3ex}{2ex}
+\titlespacing{\subsubsection}{0pt}{1ex}{1ex}
+
 \begin{abstract}
 This document is a user manual describing usage of reference software
-for the V3C/V-PCC project. It applies to version 23.0 of the software.
+for the V3C/V-PCC project. It applies to version 24.0 of the software [1].
 \end{abstract}
 
 \tableofcontents
 %\listoftables
+
+\pagebreak
 
 \input{README.about.tex}
 \input{README.build.tex}
@@ -109,7 +120,7 @@ for the V3C/V-PCC project. It applies to version 23.0 of the software.
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%
-\bibliographystyle{IEEEtran}
+%\bibliographystyle{IEEEtran}
 %\bibliography{manual}
 
 \end{document}

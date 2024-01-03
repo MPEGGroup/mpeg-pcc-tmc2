@@ -5,16 +5,16 @@ Clone
 ---------------
 The authoritative location of the software is the following git
 repository:
-   <http://mpegx.int-evry.fr/software/MPEG/PCC/TM/mpeg-pcc-tmc2>
+   <https://git.mpeg.expert/MPEG/3dgh/v-pcc/software/mpeg-pcc-tmc2>
 
 Each released version may be identified by a version control system tag in
-the form `release-v23.0` [1].
+the form `release-v24.0` [1].
 
 An example:
 
 ```console 
 $ git clone \
-   http://mpegx.int-evry.fr/software/MPEG/PCC/mpeg-pcc-tmc2.git
+   https://git.mpeg.expert/MPEG/3dgh/v-pcc/software/mpeg-pcc-tmc2.git
 $ cd mpeg-pcc-tmc2
 ```
 
@@ -138,7 +138,7 @@ The pointcloud metrics can be computed inside the TM2 encoder and decoder accord
 * dropdups: 0(detect), 1(drop), 2(average) subsequent points with same coordinates
 * neighborsProc: 0(undefined), 1(average), 2(weighted average), 3(min), 4(max) neighbors with same geometric distance
 
-The computations of the metrics are the same than the distances computed with the pcc_distortion software that can be found in: http://mpegx.int-evry.fr/software/MPEG/PCC/mpeg-pcc-dmetric.git.
+The computations of the metrics are the same than the distances computed with the pcc_distortion software that can be found in: https://git.mpeg.expert/MPEG/3dgh/v-pcc/software/mpeg-pcc-dmetric.git.
 
 
 

@@ -36,8 +36,8 @@ line parameter value will be used.
 Common test condition configurations
 ---------------
 
-Configuration files are provided in the cfg directory to aid configuring the encoder.  The general pattern of usage is illustrated below, where
-multiple configuration files control different aspects of the test conditions.
+The configuration files stored in the `./cfg/` sub-folder could be used to perform the V-PCC common test conditions (CTC) experiments [2].
+The general pattern of usage is illustrated below, where multiple configuration files control different aspects of the test conditions.
 
 NB: parameters set in one configuration file override the same parameter in earlier files.  ie. order matters.
 
@@ -107,8 +107,8 @@ to the previous command:
 ### Metrics
 
 PccAppMetrics could be used to test the PccLibMetrics. For CTC experiments, 
-it's sugested to used mpeg-pcc-dmetrics:
-http://mpegx.int-evry.fr/software/MPEG/PCC/mpeg-pcc-dmetric.git. 
+it's sugested to use mpeg-pcc-dmetrics:
+https://git.mpeg.expert/MPEG/3dgh/v-pcc/software/mpeg-pcc-dmetric.git. 
 
 
 For example, mpeg-pcc-dmetric and PccAppMetric could be used with the next 

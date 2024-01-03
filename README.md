@@ -86,7 +86,7 @@ The pointcloud metrics can be computed inside the TM2 encoder and decoder accord
     - dropdups: 0(detect), 1(drop), 2(average) subsequent points with same coordinates
     - neighborsProc: 0(undefined), 1(average), 2(weighted average), 3(min), 4(max) neighbors with same geometric distance
 
-The computations of the metrics are the same than the distances computed with the pcc_distortion software that can be found in: http://mpegx.int-evry.fr/software/MPEG/PCC/mpeg-pcc-dmetric.git.
+The computations of the metrics are the same than the distances computed with the pcc_distortion software that can be found in: https://git.mpeg.expert/MPEG/3dgh/v-pcc/software/mpeg-pcc-dmetric.git.
 
 	
 ## Running
@@ -187,11 +187,6 @@ Occupancy Map video encode/decode using same version of HM encooder/decoder.
 ### Software manual
 
 More informations could be found in the [user manuel](doc/mpeg-pcc-tm2-sw-manual.pdf).
-
-### Contact
-
-Don't hesitate to contact me for any information: 
-- Julien Ricard - MPEG-3DG-VPCC software coordinator (julien.ricard@interdigital.com). 
 
 
 ###
