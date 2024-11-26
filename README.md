@@ -1,4 +1,4 @@
-# Video Point Cloud Compression - VPCC - mpeg-pcc-tmc2 test model candidate software
+# Video-based Point Cloud Compression - V-PCC - mpeg-pcc-tmc2 test model candidate software
 
 ## Building
 
