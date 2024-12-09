@@ -110,6 +110,7 @@ void PCCBitstream::writeVideoStream( PCCVideoBitstream& videoBitstream ) {
   position_.bytes_ += size;
   videoBitstream.trace();
 }
+
 void PCCBitstream::copyFrom( PCCBitstream& srcBitstream, const size_t position, const size_t size ) {
   if ( data_.size() < position_.bytes_ + size ) { data_.resize( position_.bytes_ + size ); }
   memcpy( data_.data() + position_.bytes_, srcBitstream.buffer() + position, size ); 
