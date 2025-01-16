@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.17 FATAL_ERROR)
 
 PROJECT (TMC2 CXX C )
-SET( TMC2_VERSION_MAJOR 24 )
+SET( TMC2_VERSION_MAJOR 25 )
 SET( TMC2_VERSION_MINOR 0 )
 
 # Video encoder and decoder library and application:

@@ -70,7 +70,9 @@
 #undef OPTIONAL
 
 namespace pcc {
-
+#define COLOR_SMOOTHING_ALIGNMENT 1
+#define CELLID_UNORDERED_MAP 1
+#define PLR_FIX 1
 // ******************************************************************* //
 // Version information
 // ******************************************************************* //

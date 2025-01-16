@@ -972,6 +972,11 @@ void PatchBlockFiltering::patchBorderFiltering( size_t imageWidth,
   }
   // Filtering;
   for ( auto& patch : *patches_ ) { patch.filtering( passesCount, filterSize, log2Threshold, *patches_ ); }
+#if PLR_FIX
+  std::cout << "remove clearing function" << std::endl;
+#else
   for ( auto& patch : *patches_ ) { patch.clearPatchBlockFilteringData(); }
+#endif
+
 }
 

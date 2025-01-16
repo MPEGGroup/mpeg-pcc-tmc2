@@ -4751,9 +4751,13 @@ bool PCCEncoder::generateSegments( const PCCGroupOfFrames& sources, PCCContext& 
   if ( params_.pointLocalReconstruction_ || params_.singleMapPixelInterleaving_ ) {
     const float distanceSrcRec = sumDistanceSrcRec / static_cast<float>( frames.size() );
     if ( distanceSrcRec >= 250.F ) {
+#if PLR_FIX
+      printf("Warning - the distortion based automatic handling of encoder parameters mapCountMinus and pointLocalReconstruction is removed to give full control to encoder parameters");
+#else
       params_.pointLocalReconstruction_   = false;
       params_.mapCountMinus1_             = 1;
       params_.singleMapPixelInterleaving_ = false;
+#endif
     }
   }
   return res;
@@ -5494,6 +5498,10 @@ void PCCEncoder::pointLocalReconstructionSearch( PCCContext&                    
                 blockSrcPointCloud.addPoint( srcPointCloudPatch[i] );
               }
             }
+#if PLR_FIX
+            if (blockSrcPointCloud.getPointCount() == 0)
+                continue;
+#endif
             std::vector<PCCPointSet3> reconstruct;
             std::vector<float>        distance;
             reconstruct.resize( nbOfOptimizationMode );
@@ -8881,7 +8889,11 @@ void PCCEncoder::segmentationPartiallyAddtinalProjectionPlane( const PCCPointSet
     segmenter.compute( source, frame.getFrameIndex(), local, Orthogonal, frame.getSrcPointCloudByPatch(),
                        distanceSrcRecA );
     distanceSrcRec                  = distanceSrcRecA;
+#if PLR_FIX
+    std::cout << "Removed frame.getSrcPointCloudByPatch() = tmp;" << std::endl;
+#else
     frame.getSrcPointCloudByPatch() = tmp;
+#endif
   }
 
   if ( partial.getPointCount() != 0u ) {
@@ -8895,10 +8907,16 @@ void PCCEncoder::segmentationPartiallyAddtinalProjectionPlane( const PCCPointSet
     Additional.reserve( 256 );
     float distanceSrcRecA;
     segmenter.setNbThread( params_.nbThread_ );
+#if PLR_FIX
+    segmenter.compute(partial, frame.getFrameIndex(), local, Additional, tmp,
+        distanceSrcRecA);
+    distanceSrcRec = distanceSrcRecA;
+#else
     segmenter.compute( partial, frame.getFrameIndex(), local, Additional, frame.getSrcPointCloudByPatch(),
                        distanceSrcRecA );
     distanceSrcRec                  = distanceSrcRecA;
     frame.getSrcPointCloudByPatch() = tmp;
+#endif
 
     // remove
     const size_t        patchCount = Additional.size();
@@ -8911,6 +8929,21 @@ void PCCEncoder::segmentationPartiallyAddtinalProjectionPlane( const PCCPointSet
     }
     // erace
     for ( auto& itr : remove ) { Additional.erase( Additional.begin() + itr ); }
+#if PLR_FIX
+    if (params_.pointLocalReconstruction_ || params_.singleMapPixelInterleaving_) {
+        // erasing the point clouds that were not used
+        for (auto& itr : remove) { tmp.erase(tmp.begin() + itr); }
+        // adding the tmp to frame
+        auto& srcPointCloudByPatch = frame.getSrcPointCloudByPatch();
+        for (auto& patch : tmp)
+            srcPointCloudByPatch.push_back(patch);
+    }
+    // changing the index of the Additional structure
+    for (int i = 0; i < Additional.size(); i++) {
+        auto& patch = Additional[i];
+        patch.setIndex(i + Orthogonal.size());
+    }
+#endif
   }
   auto& patches = frame.getPatches();
   patches.reserve( Orthogonal.size() + Additional.size() );

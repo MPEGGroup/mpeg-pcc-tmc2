@@ -348,7 +348,11 @@ class PCCCodec {
                              const std::vector<uint32_t>&        partition,
                              const GeneratePointCloudParameters& params,
                              uint16_t                            gridWidth,
+#if CELLID_UNORDERED_MAP
+                             std::unordered_map<size_t, int64_t>& cellIndex);
+#else
                              std::vector<int>&                   cellIndex );
+#endif
 
   void addGridCentroid( PCCPoint3D&                     point,
                         uint32_t                        patchIdx,
@@ -358,7 +362,11 @@ class PCCCodec {
                         std::vector<bool>&              doSmooth,
                         uint8_t                         gridSize,
                         uint16_t                        gridWidth,
+#if CELLID_UNORDERED_MAP
+                        int64_t                         cellId );
+#else
                         int                             cellId );
+#endif
 
   void addGridColorCentroid( PCCPoint3D&                             point,
                              PCCVector3D&                            color,
@@ -370,7 +378,11 @@ class PCCCodec {
                              uint8_t                                 colorGrid,
                              std::vector<std::vector<uint16_t>>&     colorLum,
                              const GeneratePointCloudParameters&     params,
+#if CELLID_UNORDERED_MAP
+                             int64_t                                 cellId );
+#else
                              int                                     cellId );
+#endif
 
   bool gridFilteringColor( PCCPoint3D&                         curPos,
                            PCCVector3D&                        colorCentroid,
@@ -378,14 +390,25 @@ class PCCCodec {
                            std::vector<uint16_t>&              colorGridCount,
                            std::vector<PCCVector3<float>>&     colorCenterGrid,
                            std::vector<bool>&                  colorDoSmooth,
+#if COLOR_SMOOTHING_ALIGNMENT
+                           size_t                              w,
+#endif
                            uint8_t                             gridSize,
                            PCCVector3D&                        curPosColor,
                            const GeneratePointCloudParameters& params,
+#if CELLID_UNORDERED_MAP
+                           std::unordered_map<size_t, int64_t>& cellIndex );
+#else
                            std::vector<int>&                   cellIndex );
+#endif
 
   void smoothPointCloudColorLC( PCCPointSet3&                       reconstruct,
                                 const GeneratePointCloudParameters& params,
+#if CELLID_UNORDERED_MAP
+                                std::unordered_map<size_t, int64_t>& cellIndex);
+#else
                                 std::vector<int>&                   cellIndex );
+#endif
 
   bool gridFiltering( const std::vector<uint32_t>&    partition,
                       PCCPointSet3&                   pointCloud,
@@ -397,7 +420,11 @@ class PCCCodec {
                       std::vector<bool>&              doSmooth,
                       uint8_t                         gridSize,
                       uint16_t                        gridWidth,
-                      std::vector<int>&               cellIndex );
+#if CELLID_UNORDERED_MAP
+                      std::unordered_map<size_t, int64_t>& cellIndex );
+#else
+                      std::vector<int>&                cellIndex );
+#endif
 
   void identifyBoundaryPoints( const std::vector<uint32_t>& occupancyMap,
                                const size_t                 x,
