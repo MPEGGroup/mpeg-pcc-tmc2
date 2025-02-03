@@ -9,7 +9,7 @@ SRCDIR=${MAINDIR}/../ply/ # note: this directory must containt: http://mpegfs.in
 CFGDIR=${MAINDIR}/cfg/
 
 SEQ=25;       # in [22;26]
-COND=2;       # in [C2AI, C2LD, CWAI, CWRA]
+COND=C2AI;       # in [C2AI, C2LD, CWAI, CWRA]
 RATE=2;       # in [1;5]
 FRAMECOUNT=1;
 THREAD=1;
@@ -48,7 +48,7 @@ if [ ! -f $HMENCODER  ] ; then echo "Can't find TAppEncoderStatic, please set. (
 if [ ! -f $HMDECODER  ] ; then echo "Can't find TAppDecoderStatic, please set. ($HMDECODER)";  exit -1; fi
 
 ## Set Configuration based on sequence, condition and rate
-if [ $COND == "C2AI" -o $COND == "C2RA" ] 
+if [ $COND = "C2AI" -o $COND = "C2RA" ] 
 then
   case $SEQ in
       22) CFGSEQUENCE="sequence/queen.cfg";;
@@ -56,7 +56,7 @@ then
       24) CFGSEQUENCE="sequence/redandblack_vox10.cfg";;
       25) CFGSEQUENCE="sequence/soldier_vox10.cfg";;
       26) CFGSEQUENCE="sequence/longdress_vox10.cfg";;
-      27) CFGSEQUENCE="sequence/basketball_player_vox11";;
+      27) CFGSEQUENCE="sequence/basketball_player_vox11.cfg";;
       28) CFGSEQUENCE="sequence/dancer_vox11.cfg";;
       *) echo "sequence not correct ($SEQ)";   exit -1;;
   esac
