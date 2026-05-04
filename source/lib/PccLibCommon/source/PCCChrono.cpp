@@ -53,7 +53,7 @@ namespace detail {
 using hundredns = std::chrono::duration<int64_t, std::ratio<1, 10000000>>;
 
 // global state to emulate getrusage(RUSAGE_CHILDREN).
-hundredns g_cumulative_time_children{0};
+hundredns g_cumulative_time_children{ 0 };
 }  // namespace detail
 }  // namespace chrono
 }  // namespace pcc

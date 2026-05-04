@@ -39,6 +39,7 @@
 /lib/
 !dependencies/tbb/build/
 /dependencies/papi
+/dependencies/lapack
 Debug
 Release
 CMakeFiles
@@ -69,7 +70,7 @@ source/lib/PccLibBitstreamCommon/include/PCCConfig.h
 log.txt
 
 /.vscode/
-/.vs/
+.vscode/
 /dependencies/HM-16.20+SCM-8.8/
 /dependencies/HDRTools/
 /dependencies/jm19.0_lib/
@@ -79,3 +80,12 @@ log.txt
 /dependencies/vvdec/
 /dependencies/vvenc/
 
+/cmake-build-debug/
+/cmake-build-release/
+
+/out/build/
+/CMakeSettings.json
+
+__pycache__/
+/venv/
+/.venv/

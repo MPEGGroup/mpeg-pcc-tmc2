@@ -104,9 +104,13 @@ bool PCCDecoderParameters::check() {
     ret = false;
     std::cerr << "compressedStreamPath not set or exist\n";
   }
-  if ( inverseColorSpaceConversionConfig_.empty() || !exist( inverseColorSpaceConversionConfig_ ) ) {
-    ret = false;
-    std::cerr << "inverseColorSpaceConversionConfig not set or exist\n";
+  // the decoding process allows for empty color space conversion config file
+  // (no color space conversion)
+  if ( !inverseColorSpaceConversionConfig_.empty() ) {
+    if ( !exist( inverseColorSpaceConversionConfig_ ) ) {
+      ret = false;
+      std::cerr << "inverseColorSpaceConversionConfig not set or exist\n";
+    }
   }
   return ret;
 }

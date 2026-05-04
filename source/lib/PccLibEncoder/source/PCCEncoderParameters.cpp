@@ -38,8 +38,8 @@
 using namespace pcc;
 
 const std::vector<PointLocalReconstructionMode> g_pointLocalReconstructionMode = {
-    {false, false, 0, 1}, {true, false, 0, 1}, {true, true, 0, 1}, {true, false, 0, 2}, {true, true, 0, 2},
-    {false, false, 1, 1}, {true, false, 1, 1}, {true, true, 1, 1}, {true, false, 1, 2}, {true, true, 1, 2},
+    { false, false, 0, 1 }, { true, false, 0, 1 }, { true, true, 0, 1 }, { true, false, 0, 2 }, { true, true, 0, 2 },
+    { false, false, 1, 1 }, { true, false, 1, 1 }, { true, true, 1, 1 }, { true, false, 1, 2 }, { true, true, 1, 2 },
 };
 
 PCCEncoderParameters::PCCEncoderParameters() {
@@ -162,6 +162,9 @@ PCCEncoderParameters::PCCEncoderParameters() {
   prefilterLossyOM_                        = false;
   patchColorSubsampling_                   = false;
   mapCountMinus1_                          = 1;
+  geometryDF_                              = 1;
+  attributeDF_                             = 1;
+  scalerConfig_                            = {};
 
   // reconstruction
   removeDuplicatePoints_      = true;
@@ -338,7 +341,7 @@ void PCCEncoderParameters::print() {
   std::cout << "\t keepIntermediateFiles                      " << keepIntermediateFiles_ << std::endl;
   std::cout << "\t multipleStreams                            " << multipleStreams_ << std::endl;
   std::cout << "\t multipleStreams                            " << multipleStreams_ << std::endl;
-  std::cout << "\t videoEncoderInternalBitdepth               " << videoEncoderInternalBitdepth_ << std::endl;  
+  std::cout << "\t videoEncoderInternalBitdepth               " << videoEncoderInternalBitdepth_ << std::endl;
   std::cout << "\t forcedSsvhUnitSizePrecisionBytes           " << forcedSsvhUnitSizePrecisionBytes_ << std::endl;
   if ( multipleStreams_ ) {
     std::cout << "\t    deltaQPD0                               " << deltaQPD0_ << std::endl;
@@ -429,6 +432,9 @@ void PCCEncoderParameters::print() {
   std::cout << "\t   colorSpaceConversionConfig               " << colorSpaceConversionConfig_ << std::endl;
   std::cout << "\t   inverseColorSpaceConversionConfig        " << inverseColorSpaceConversionConfig_ << std::endl;
   std::cout << "\t   apply3dMotionCompensation                " << use3dmc_ << std::endl;
+  std::cout << "\t   geometry down-scaling factor             " << geometryDF_ << std::endl;
+  std::cout << "\t   attribute down-scaling factor            " << attributeDF_ << std::endl;
+  std::cout << "\t   scaling configuration file               " << scalerConfig_ << std::endl;
   std::cout << "\t Dilation" << std::endl;
   std::cout << "\t   GroupDilation                            " << groupDilation_ << std::endl;
   std::cout << "\t Occupancy map encoding " << std::endl;
@@ -542,7 +548,7 @@ void PCCEncoderParameters::print() {
   std::cout << "\t Point cloud partitions and tiles           " << std::endl;
   std::cout << "\t   enablePointCloudPartitioning             " << enablePointCloudPartitioning_ << std::endl;
   if ( enablePointCloudPartitioning_ ) {
-    auto printVector = []( std::vector<int>& vec ) {
+    auto printVector = []( std::vector<int> &vec ) {
       for ( int i = 0; i < vec.size(); ++i ) {
         std::cout << vec[i];
         if ( i < vec.size() - 1 ) { std::cout << ","; }
@@ -566,8 +572,9 @@ void PCCEncoderParameters::print() {
     std::cout << "\t   numCutsAlong1stLongestAxis               " << numCutsAlong1stLongestAxis_ << std::endl;
     std::cout << "\t   numCutsAlong2ndLongestAxis               " << numCutsAlong2ndLongestAxis_ << std::endl;
     std::cout << "\t   numCutsAlong3rdLongestAxis               " << numCutsAlong3rdLongestAxis_ << std::endl;
-    std::vector<size_t> vecSizes = {roiBoundingBoxMinX_.size(), roiBoundingBoxMaxX_.size(), roiBoundingBoxMinY_.size(),
-                                    roiBoundingBoxMaxY_.size(), roiBoundingBoxMinZ_.size(), roiBoundingBoxMaxZ_.size()};
+    std::vector<size_t> vecSizes = { roiBoundingBoxMinX_.size(), roiBoundingBoxMaxX_.size(),
+                                     roiBoundingBoxMinY_.size(), roiBoundingBoxMaxY_.size(),
+                                     roiBoundingBoxMinZ_.size(), roiBoundingBoxMaxZ_.size() };
     for ( int i = 0; i < vecSizes.size(); ++i ) {
       if ( vecSizes[i] != vecSizes[0] ) {
         std::cerr << "All the 6 arrays roiBoundingBox[Min-Max][X-Y-Z] must "
@@ -1158,7 +1165,7 @@ bool PCCEncoderParameters::check() {
     case CODEC_GROUP_AVC_PROGRESSIVE_HIGH:
 #if defined( USE_JMAPP_VIDEO_CODEC ) && defined( USE_JMLIB_VIDEO_CODEC )
       if ( ( videoEncoderOccupancyCodecId_ != JMLIB && videoEncoderOccupancyCodecId_ != JMAPP ) ||
-           ( videoEncoderGeometryCodecId_  != JMLIB && videoEncoderGeometryCodecId_ != JMAPP ) ||
+           ( videoEncoderGeometryCodecId_ != JMLIB && videoEncoderGeometryCodecId_ != JMAPP ) ||
            ( videoEncoderAttributeCodecId_ != JMLIB && videoEncoderAttributeCodecId_ != JMAPP ) ) {
         std::cerr << "profileCodecGroupIdc_ is CODEC_GROUP_AVC_PROGRESSIVE_HIGH force codecId. \n";
         videoEncoderOccupancyCodecId_ = JMLIB;
@@ -1245,7 +1252,7 @@ bool PCCEncoderParameters::check() {
     case CODEC_GROUP_MP4RA: break;
   }
 
-#if defined( USE_SHMAPP_VIDEO_CODEC ) 
+#if defined( USE_SHMAPP_VIDEO_CODEC )
 #if defined( USE_HMLIB_VIDEO_CODEC )
   if ( ( rawPointsPatch_ ) && ( videoEncoderOccupancyCodecId_ == SHMAPP || videoEncoderGeometryCodecId_ == SHMAPP ||
                                 videoEncoderAttributeCodecId_ == SHMAPP ) ) {
@@ -1261,15 +1268,15 @@ bool PCCEncoderParameters::check() {
     ret = false;
   }
 #else
-    std::cerr << "SHMAPP codec requiered USE_HMLIB_VIDEO_CODEC enable. \n";
-    ret = false;
+  std::cerr << "SHMAPP codec requiered USE_HMLIB_VIDEO_CODEC enable. \n";
+  ret = false;
 #endif
 #endif
   return ret;
 }
 
-void PCCEncoderParameters::constructAspsRefListStruct( PCCContext& context, size_t aspsIdx, size_t afpsIdx ) {
-  auto& asps = context.getAtlasSequenceParameterSet( aspsIdx );
+void PCCEncoderParameters::constructAspsRefListStruct( PCCContext &context, size_t aspsIdx, size_t afpsIdx ) {
+  auto &asps = context.getAtlasSequenceParameterSet( aspsIdx );
   for ( size_t list = 0; list < context.getNumOfRefAtlasFrameList(); list++ ) {
     RefListStruct refList;
     refList.setNumRefEntries( context.getMaxNumRefAtlasFrame( list ) );
@@ -1322,10 +1329,10 @@ uint8_t PCCEncoderParameters::getCodecIdIndex( PCCCodecId codecId ) {
   return 0;
 }
 
-void PCCEncoderParameters::initializeContext( PCCContext& context ) {
+void PCCEncoderParameters::initializeContext( PCCContext &context ) {
   size_t  numAtlas   = 1;
   size_t  atlasIndex = 0;
-  auto&   vps        = context.getVps();
+  auto   &vps        = context.getVps();
   uint8_t bitdepth3D = uint8_t( geometry3dCoordinatesBitdepth_ + 1 );
 
   // Allocation
@@ -1358,8 +1365,8 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
     }
   }
   size_t numPlrm = pointLocalReconstruction_
-                       ? ( std::max )( static_cast<size_t>( 1 ),
-                                       ( std::min )( plrlNumberOfModes_, g_pointLocalReconstructionMode.size() ) )
+                       ? (std::max)( static_cast<size_t>( 1 ),
+                                     (std::min)( plrlNumberOfModes_, g_pointLocalReconstructionMode.size() ) )
                        : 1;
   for ( size_t i = 0; i < numPlrm; i++ ) {
     context.addPointLocalReconstructionMode( g_pointLocalReconstructionMode[i] );
@@ -1383,7 +1390,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   }
 
   // V3C profile/tier/level related parameters
-  auto& ptl = vps.getProfileTierLevel();
+  auto &ptl = vps.getProfileTierLevel();
   ptl.setTierFlag( tierFlag_ );
   ptl.setProfileCodecGroupIdc( profileCodecGroupIdc_ );
   ptl.setProfileToolsetIdc( profileToolsetIdc_ );
@@ -1391,7 +1398,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   ptl.setLevelIdc( levelIdc_ );
 
   // V3C Profile toolset constraints information syntax
-  auto& ptci = ptl.getProfileToolsetConstraintsInformation();
+  auto &ptci = ptl.getProfileToolsetConstraintsInformation();
   ptci.setOneFrameOnlyFlag( oneV3CFrameOnlyFlag_ );
   ptci.setEOMContraintFlag( EOMContraintFlag_ );
   ptci.setPLRConstraintFlag( PLRConstraintFlag_ );
@@ -1399,7 +1406,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   ptci.setNo45DegreeProjectionPatchConstraintFlag( no45DegreeProjectionPatchConstraintFlag_ );
 
   // Atlas sequence parameter set
-  auto& asps = context.addAtlasSequenceParameterSet( 0 );
+  auto &asps = context.addAtlasSequenceParameterSet( 0 );
   asps.setLog2PatchPackingBlockSize( std::log2( occupancyResolution_ ) );
   asps.setLog2MaxAtlasFrameOrderCntLsbMinus4( log2MaxAtlasFrameOrderCntLsb_ - 4 );
   asps.setMaxDecAtlasFrameBufferingMinus1( 0 );
@@ -1408,7 +1415,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   asps.setLongTermRefAtlasFramesFlag( false );
   asps.setUseEightOrientationsFlag( useEightOrientations_ );
   asps.setExtendedProjectionEnabledFlag( additionalProjectionPlaneMode_ > 0 );
-  asps.setMaxNumberProjectionsMinus1( 5 + 4 * ( std::min )( additionalProjectionPlaneMode_, 3 ) );
+  asps.setMaxNumberProjectionsMinus1( 5 + 4 * (std::min)( additionalProjectionPlaneMode_, 3 ) );
   asps.setNormalAxisLimitsQuantizationEnabledFlag( true );
   asps.setNormalAxisMaxDeltaValueEnabledFlag( true );
   asps.setPixelDeinterleavingFlag( singleMapPixelInterleaving_ );
@@ -1428,21 +1435,21 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   asps.setAuxiliaryVideoEnabledFlag( useRawPointsSeparateVideo_ );
   asps.setRawPatchEnabledFlag( rawPointsPatch_ || lossyRawPointsPatch_ );
   if ( asps.getVpccExtensionFlag() ) {
-    auto& ext = asps.getAspsVpccExtension();
+    auto &ext = asps.getAspsVpccExtension();
     ext.setRemoveDuplicatePointEnableFlag( removeDuplicatePoints_ );
     if ( asps.getPixelDeinterleavingFlag() || asps.getPLREnabledFlag() ) {
       ext.setSurfaceThicknessMinus1( surfaceThickness_ - 1 );
-    } // else keep the default value defined in the AspsVpccExtension constructor
+    }  // else keep the default value defined in the AspsVpccExtension constructor
   }
   asps.setEomFixBitCountMinus1( EOMFixBitCount_ - 1 );
   asps.setGeometry2dBitdepthMinus1( uint8_t( geometryNominal2dBitdepth_ - 1 ) );
   asps.setGeometry3dBitdepthMinus1( bitdepth3D - 1 );
 
   // Atlas frame parameter set
-  auto& afps = context.addAtlasFrameParameterSet( 0 );
+  auto &afps = context.addAtlasFrameParameterSet( 0 );
   afps.setAtlasSequenceParameterSetId( 0 );
   afps.setNumRefIdxDefaultActiveMinus1( static_cast<uint8_t>(
-      constrainedPack_ ? ( ( std::max )( 0, static_cast<int>( maxNumRefAtlasFrame_ ) - 1 ) ) : 0 ) );
+      constrainedPack_ ? ( (std::max)( 0, static_cast<int>( maxNumRefAtlasFrame_ ) - 1 ) ) : 0 ) );
   afps.setAdditionalLtAfocLsbLen( asps.getLongTermRefAtlasFramesFlag() ? 4 : 0 );
   afps.setRaw3dOffsetBitCountExplicitModeFlag( false );
   afps.setExtensionFlag( true );
@@ -1450,14 +1457,14 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   constructAspsRefListStruct( context, 0, 0 );
 
   // occupancy information
-  auto& oi = vps.getOccupancyInformation( atlasIndex );
+  auto &oi = vps.getOccupancyInformation( atlasIndex );
   oi.setLossyOccupancyCompressionThreshold( thresholdLossyOM_ );
   oi.setOccupancy2DBitdepthMinus1( 7 );
   oi.setOccupancyMSBAlignFlag( false );
   oi.setOccupancyCodecId( getCodecIdIndex( (PCCCodecId)videoEncoderOccupancyCodecId_ ) );
 
   // geometry information
-  auto& gi = vps.getGeometryInformation( atlasIndex );
+  auto &gi = vps.getGeometryInformation( atlasIndex );
   gi.setGeometry3dCoordinatesBitdepthMinus1( bitdepth3D - 1 );
   gi.setGeometry2dBitdepthMinus1( uint8_t( geometryNominal2dBitdepth_ - 1 ) );
   gi.setGeometryMSBAlignFlag( false );
@@ -1465,7 +1472,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   gi.setAuxiliaryGeometryCodecId( gi.getGeometryCodecId() );
 
   // Attribute information
-  auto& ai = vps.getAttributeInformation( atlasIndex );
+  auto &ai = vps.getAttributeInformation( atlasIndex );
   ai.setAttributeCount( noAttributes_ ? 0 : 1 );
   if ( !noAttributes_ ) {
     ai.allocate();
@@ -1498,10 +1505,10 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
   context.getAtlas( atlasIndex ).allocateVideoFrames( context, 0 );
 
   // Tiles
-  auto& frames = context.getFrames();
+  auto &frames = context.getFrames();
   for ( size_t i = 0; i < frames.size(); i++ ) {
-    auto& atlas = frames[i];
-    auto& frame = atlas.getTitleFrameContext();
+    auto &atlas = frames[i];
+    auto &frame = atlas.getTitleFrameContext();
     frame.setFrameIndex( i );
     frame.setRawPatchEnabledFlag( rawPointsPatch_ || lossyRawPointsPatch_ );
     frame.setUseRawPointsSeparateVideo( useRawPointsSeparateVideo_ );
@@ -1512,7 +1519,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
     frame.setLog2PatchQuantizerSizeY( context.getLog2PatchQuantizerSizeY() );
     frame.setAtlasFrmOrderCntLsb( context.calculateAFOCLsb( i ) );
     frame.setAtlasFrmOrderCntVal( i );
-    frame.setNumRefIdxActive( i == 0 ? 0 : ( constrainedPack_ ? ( std::min )( i, maxNumRefAtlasFrame_ ) : 0 ) );
+    frame.setNumRefIdxActive( i == 0 ? 0 : ( constrainedPack_ ? (std::min)( i, maxNumRefAtlasFrame_ ) : 0 ) );
     frame.setRefAfocList( context, 0 );
     if ( useRawPointsSeparateVideo_ ) {
       context[i].setAuxVideoWidth( attributeRawSeparateVideoWidth_ );
@@ -1524,7 +1531,7 @@ void PCCEncoderParameters::initializeContext( PCCContext& context ) {
     atlas.initPartitionInfoPerFrame( i, minimumImageWidth_, minimumImageHeight_, numMaxTilePerFrame_,
                                      uniformPartitionSpacing_, tilePartitionWidth_, tilePartitionHeight_ );
     for ( size_t ti = 0; ti < numMaxTilePerFrame_; ti++ ) {
-      auto& tile = atlas[ti];
+      auto &tile = atlas[ti];
       tile.setRawPatchEnabledFlag( frame.getRawPatchEnabledFlag() );
       tile.setUseRawPointsSeparateVideo( frame.getUseRawPointsSeparateVideo() );
       tile.setGeometry3dCoordinatesBitdepth( frame.getGeometry3dCoordinatesBitdepth() );

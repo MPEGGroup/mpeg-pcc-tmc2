@@ -46,10 +46,10 @@ PCCHDRToolsAppColorConverter<T>::~PCCHDRToolsAppColorConverter() {}
 
 template <typename T>
 void PCCHDRToolsAppColorConverter<T>::convert( std::string        configFile,
-                                               PCCVideo<T, 3>&    videoSrc,
-                                               PCCVideo<T, 3>&    videoDst,
-                                               const std::string& externalPath,
-                                               const std::string& fileName ) {
+                                               PCCVideo<T, 3>    &videoSrc,
+                                               PCCVideo<T, 3>    &videoDst,
+                                               const std::string &externalPath,
+                                               const std::string &fileName ) {
   if ( externalPath.empty() ) {
     printf(
         "PCCHDRToolsAppColorConverter error: hdrTools path must be be defined "
@@ -74,9 +74,9 @@ void PCCHDRToolsAppColorConverter<T>::convert( std::string        configFile,
   const size_t  height             = videoSrc.getHeight();
   const size_t  frameCount         = videoSrc.getFrameCount();
   const std::string sourceFile     = addVideoFormat( fileName, width, height, sourceColorSpace == 0,
-                                                 sourceChromaFormat == 1, sourceBitDepth == 8 ? "8" : "10" );
+                                                     sourceChromaFormat == 1, sourceBitDepth == 8 ? "8" : "10" );
   const std::string outputFile     = addVideoFormat( fileName, width, height, outputColorSpace == 0,
-                                                 outputChromaFormat == 1, outputColorSpace == 8 ? "8" : "10" );
+                                                     outputChromaFormat == 1, outputBitDepth == 8 ? "8" : "16" );
   videoSrc.write( sourceFile, sourceBitDepth == 8 ? 1 : 2 );
   std::stringstream cmd;
   cmd << externalPath << " -f " << configFile << " -p SourceFile=\"" << sourceFile << "\""
@@ -87,11 +87,76 @@ void PCCHDRToolsAppColorConverter<T>::convert( std::string        configFile,
     std::cout << "Error: can't run system command!" << std::endl;
     exit( -1 );
   }
-  PCCCOLORFORMAT format = outputChromaFormat == 1
-                              ? PCCCOLORFORMAT::YUV420
-                              : outputColorSpace == 0 ? PCCCOLORFORMAT::YUV444 : PCCCOLORFORMAT::RGB444;
+  PCCCOLORFORMAT format = outputChromaFormat == 1 ? PCCCOLORFORMAT::YUV420
+                          : outputColorSpace == 0 ? PCCCOLORFORMAT::YUV444
+                                                  : PCCCOLORFORMAT::RGB444;
   videoDst.clear();
   videoDst.read( outputFile, width, height, format, outputBitDepth == 8 ? 1 : 2 );
+  removeFile( sourceFile );
+  removeFile( outputFile );
+}
+
+template <typename T>
+void PCCHDRToolsAppColorConverter<T>::scale( std::string        configFile,
+                                             PCCVideo<T, 3>    &videoSrc,
+                                             PCCVideo<T, 3>    &videoDst,
+                                             int                bitDepth,
+                                             int                chromaFormat,
+                                             int                colorSpace,
+                                             int                outputWidth,
+                                             int                outputHeight,
+                                             const std::string &externalPath,
+                                             const std::string &fileName ) {
+  if ( externalPath.empty() ) {
+    printf(
+        "PCCHDRToolsAppColorConverter error: hdrTools path must be be defined "
+        "\n" );
+    exit( -1 );
+  }
+  if ( fileName.empty() ) {
+    printf(
+        "PCCHDRToolsAppColorConverter error: fileName path must be be defined "
+        "\n" );
+    exit( -1 );
+  }
+  std::ifstream ifs( configFile );
+  std::string   config = std::string( ( std::istreambuf_iterator<char>( ifs ) ), ( std::istreambuf_iterator<char>() ) );
+  int32_t       sourceBitDepth     = bitDepth;      // std::stoi(getParameter(config, "SourceBitDepthCmp0="));
+  int32_t       sourceChromaFormat = chromaFormat;  // std::stoi(getParameter(config, "SourceChromaFormat="));
+  int32_t       sourceColorSpace   = colorSpace;    // std::stoi(getParameter(config, "SourceColorSpace="));
+  int32_t       outputBitDepth     = bitDepth;      // std::stoi( getParameter( config, "OutputBitDepthCmp0=" ) );
+  int32_t       outputChromaFormat = chromaFormat;  // std::stoi(getParameter(config, "OutputChromaFormat="));
+  int32_t       outputColorSpace   = colorSpace;    // std::stoi(getParameter(config, "OutputColorSpace="));
+  const size_t  width              = videoSrc.getWidth();
+  const size_t  height             = videoSrc.getHeight();
+  outputWidth                      = outputWidth == 0 ? videoSrc.getWidth() : outputWidth;
+  outputHeight                     = outputHeight == 0 ? videoSrc.getHeight() : outputHeight;
+  const size_t      frameCount     = videoSrc.getFrameCount();
+  const std::string sourceFile     = addVideoFormat( fileName, width, height, sourceColorSpace == 0,
+                                                     sourceChromaFormat == 1, sourceBitDepth == 8 ? "8" : "10" );
+  const std::string outputFile     = addVideoFormat( fileName, outputWidth, outputHeight, outputColorSpace == 0,
+                                                     outputChromaFormat == 1, outputBitDepth == 8 ? "8" : "16" );
+  videoSrc.write( sourceFile, sourceBitDepth == 8 ? 1 : 2 );
+  std::stringstream cmd;
+  cmd << externalPath << " -f " << configFile << " -p SourceFile=\"" << sourceFile << "\""
+      << " -p OutputFile=\"" << outputFile << "\""
+      << " -p OutputWidth=" << outputWidth << " -p OutputHeight=" << outputHeight
+      << " -p SourceChromaFormat=" << chromaFormat << " -p OutputChromaFormat=" << chromaFormat
+      << " -p SourceColorSpace=" << colorSpace << " -p OutputColorSpace=" << colorSpace
+      << " -p SourceBitDepthCmp0=" << sourceBitDepth << " -p SourceBitDepthCmp1=" << sourceBitDepth
+      << " -p SourceBitDepthCmp2=" << sourceBitDepth << " -p OutputBitDepthCmp0=" << outputBitDepth
+      << " -p OutputBitDepthCmp1=" << outputBitDepth << " -p OutputBitDepthCmp2=" << outputBitDepth
+      << " -p SourceWidth=" << width << " -p SourceHeight=" << height << " -p NumberOfFrames=" << frameCount;
+  std::cout << cmd.str() << '\n';
+  if ( pcc::system( cmd.str().c_str() ) ) {
+    std::cout << "Error: can't run system command!" << std::endl;
+    exit( -1 );
+  }
+  PCCCOLORFORMAT format = outputChromaFormat == 1 ? PCCCOLORFORMAT::YUV420
+                          : outputColorSpace == 0 ? PCCCOLORFORMAT::YUV444
+                                                  : PCCCOLORFORMAT::RGB444;
+  videoDst.clear();
+  videoDst.read( outputFile, outputWidth, outputHeight, format, outputBitDepth == 8 ? 1 : 2 );
   removeFile( sourceFile );
   removeFile( outputFile );
 }

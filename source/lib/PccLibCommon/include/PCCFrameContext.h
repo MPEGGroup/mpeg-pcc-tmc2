@@ -56,24 +56,24 @@ class PCCFrameContext {
  public:
   PCCFrameContext();
   ~PCCFrameContext();
-  std::vector<PCCVector3<size_t>>& getPointToPixel() { return pointToPixel_; }
-  size_t                           appendPointToPixel( std::vector<PCCVector3<size_t>>& value ) {
+  std::vector<PCCVector3<size_t>> &getPointToPixel() { return pointToPixel_; }
+  size_t                           appendPointToPixel( std::vector<PCCVector3<size_t>> &value ) {
     for ( size_t i = 0; i < value.size(); i++ ) pointToPixel_.push_back( value[i] );
     return pointToPixel_.size();
   }
-  std::vector<size_t>&            getBlockToPatch() { return blockToPatch_; }
-  std::vector<uint32_t>&          getOccupancyMap() { return occupancyMap_; }
-  std::vector<uint32_t>&          getFullOccupancyMap() { return fullOccupancyMap_; }
-  std::vector<PCCPatch>&          getPatches() { return patches_; }
-  PCCPatch&                       getPatch( size_t index ) { return patches_[index]; }
-  const PCCPatch&                 getPatch( size_t index ) const { return patches_[index]; }
-  std::vector<PCCRawPointsPatch>& getRawPointsPatches() { return rawPointsPatches_; }
-  PCCRawPointsPatch&              getRawPointsPatch( size_t index ) { return rawPointsPatches_[index]; }
-  std::vector<size_t>&            getNumberOfRawPoints() { return numberOfRawPoints_; };
-  std::vector<PCCColor3B>&        getRawPointsAttribute() { return rawAttributes_; };
-  std::vector<PCCColor3B>&        getEOMAttribute() { return eomAttributes_; };
-  size_t&                         getWidth() { return width_; }
-  size_t&                         getHeight() { return height_; }
+  std::vector<size_t>            &getBlockToPatch() { return blockToPatch_; }
+  std::vector<uint32_t>          &getOccupancyMap() { return occupancyMap_; }
+  std::vector<uint32_t>          &getFullOccupancyMap() { return fullOccupancyMap_; }
+  std::vector<PCCPatch>          &getPatches() { return patches_; }
+  PCCPatch                       &getPatch( size_t index ) { return patches_[index]; }
+  const PCCPatch                 &getPatch( size_t index ) const { return patches_[index]; }
+  std::vector<PCCRawPointsPatch> &getRawPointsPatches() { return rawPointsPatches_; }
+  PCCRawPointsPatch              &getRawPointsPatch( size_t index ) { return rawPointsPatches_[index]; }
+  std::vector<size_t>            &getNumberOfRawPoints() { return numberOfRawPoints_; };
+  std::vector<PCCColor3B>        &getRawPointsAttribute() { return rawAttributes_; };
+  std::vector<PCCColor3B>        &getEOMAttribute() { return eomAttributes_; };
+  size_t                         &getWidth() { return width_; }
+  size_t                         &getHeight() { return height_; }
   const size_t                    getFrameIndex() { return frameIndex_; }
   const size_t                    getTileIndex() { return tileIndex_; }
   const size_t                    getAtlIndex() { return atlIndex_; }
@@ -88,14 +88,14 @@ class PCCFrameContext {
   const size_t                    getMaxDepth() { return maxDepth_; }
   void                            setMaxDepth( size_t value ) { maxDepth_ = value; }
   size_t                          getGeometry2dBitdepth() { return geometry2dBitdepth_; }
-  std::vector<PCCPointSet3>&      getSrcPointCloudByPatch() { return srcPointCloudByPatch_; }
-  PCCPointSet3&              getSrcPointCloudByPatch( size_t patchIndex ) { return srcPointCloudByPatch_[patchIndex]; }
-  std::vector<PCCPointSet3>& getSrcPointCloudByBlock() { return srcPointCloudByBlock_; }
-  uint8_t&                   getPointLocalReconstructionNumber() { return pointLocalReconstructionNumber_; }
-  PCCGPAFrameSize&           getPrePCCGPAFrameSize() { return prePCCGPAFrameSize_; }
-  PCCGPAFrameSize&           getCurPCCGPAFrameSize() { return curPCCGPAFrameSize_; }
-  PCCFrameOCMInfo&           getPCCOCPGPAInfo() { return ocpGPAInfo_; }
-  size_t&                    getGlobalPatchCount() { return globalPatchCount_; }
+  std::vector<PCCPointSet3>      &getSrcPointCloudByPatch() { return srcPointCloudByPatch_; }
+  PCCPointSet3              &getSrcPointCloudByPatch( size_t patchIndex ) { return srcPointCloudByPatch_[patchIndex]; }
+  std::vector<PCCPointSet3> &getSrcPointCloudByBlock() { return srcPointCloudByBlock_; }
+  uint8_t                   &getPointLocalReconstructionNumber() { return pointLocalReconstructionNumber_; }
+  PCCGPAFrameSize           &getPrePCCGPAFrameSize() { return prePCCGPAFrameSize_; }
+  PCCGPAFrameSize           &getCurPCCGPAFrameSize() { return curPCCGPAFrameSize_; }
+  PCCFrameOCMInfo           &getPCCOCPGPAInfo() { return ocpGPAInfo_; }
+  size_t                    &getGlobalPatchCount() { return globalPatchCount_; }
   size_t                     getGeometry3dCoordinatesBitdepth() { return geometry3dCoordinatesBitdepth_; }
   void                       setFrameIndex( size_t value ) { frameIndex_ = value; }
   void                       setTileIndex( size_t value ) { tileIndex_ = value; }
@@ -114,8 +114,8 @@ class PCCFrameContext {
   void setNumMatchedPatches( size_t value ) { numMatchedPatches_ = value; }
 
   void                      setEomPatches( PCCEomPatch value, size_t idx ) { eomPatches_[idx] = value; }
-  std::vector<PCCEomPatch>& getEomPatches() { return eomPatches_; }
-  PCCEomPatch&              getEomPatch( size_t idx ) { return eomPatches_[idx]; }
+  std::vector<PCCEomPatch> &getEomPatches() { return eomPatches_; }
+  PCCEomPatch              &getEomPatch( size_t idx ) { return eomPatches_[idx]; }
 
   uint8_t getLog2PatchQuantizerSizeX() { return log2PatchQuantizerSizeX_; }
   uint8_t getLog2PatchQuantizerSizeY() { return log2PatchQuantizerSizeY_; }
@@ -133,10 +133,10 @@ class PCCFrameContext {
   size_t getAtlasFrmOrderCntMsb() { return atlasFrmOrderCntMsb_; }
   size_t getAtlasFrmOrderCntLsb() { return atlasFrmOrderCntLsb_; }
 
-  void    constructAtghRefListStruct( PCCContext& context, AtlasTileHeader& ath );
+  void    constructAtghRefListStruct( PCCContext &context, AtlasTileHeader &ath );
   void    setNumRefIdxActive( size_t value ) { numRefIdxActive_ = value; }
-  void    setRefAfocList( PCCContext& context, AtlasTileHeader& ath, size_t afpsIndex );
-  void    setRefAfocList( PCCContext& context, size_t refListIdx );
+  void    setRefAfocList( PCCContext &context, AtlasTileHeader &ath, size_t afpsIndex );
+  void    setRefAfocList( PCCContext &context, size_t refListIdx );
   int32_t getRefAfoc( size_t refIndex ) { return refAFOCList_[refIndex]; }
   size_t  getRefAfocListSize() { return refAFOCList_.size(); }
   size_t  getBestRefListIndexInAsps() { return bestRefListIndexInAsps_; }
@@ -228,9 +228,9 @@ class PCCAtlasFrameContext {
     tileContexts_.clear();
   };
 
-  PCCFrameContext& operator[]( int index ) { return tileContexts_[index]; }
+  PCCFrameContext &operator[]( int index ) { return tileContexts_[index]; }
   void             initNumTiles( size_t value ) { return tileContexts_.resize( value ); }
-  void             addTile( PCCFrameContext& tile ) { tileContexts_.push_back( tile ); }
+  void             addTile( PCCFrameContext &tile ) { tileContexts_.push_back( tile ); }
 
   size_t getAtlasFrameWidth() { return atlasFrameWidth_; }
   size_t getAtlasFrameHeight() { return atlasFrameHeight_; }
@@ -240,10 +240,10 @@ class PCCAtlasFrameContext {
   size_t getNumPartitionRows() { return numPartitionRows_; }
   bool   getSignalledTileId() { return signalledTileId_; }
 
-  std::vector<size_t>& getPartitionWidth() { return partitionWidth_; }
-  std::vector<size_t>& getPartitionHeight() { return partitionHeight_; }
-  std::vector<size_t>& getPartitionPosX() { return partitionPosX_; }
-  std::vector<size_t>& getPartitionPosY() { return partitionPosY_; }
+  std::vector<size_t> &getPartitionWidth() { return partitionWidth_; }
+  std::vector<size_t> &getPartitionHeight() { return partitionHeight_; }
+  std::vector<size_t> &getPartitionPosX() { return partitionPosX_; }
+  std::vector<size_t> &getPartitionPosY() { return partitionPosY_; }
 
   size_t getPartitionWidth( size_t index ) const {
     assert( index < partitionWidth_.size() );
@@ -266,9 +266,9 @@ class PCCAtlasFrameContext {
   size_t getNumPartitionPosX() const { return partitionPosX_.size(); }
   size_t geNumtPartitionPosY() const { return partitionPosY_.size(); }
 
-  std::vector<size_t>&          getTileId() { return tileId_; }
-  std::vector<PCCFrameContext>& getTiles() { return tileContexts_; }
-  PCCFrameContext&              getTile( size_t index ) {
+  std::vector<size_t>          &getTileId() { return tileId_; }
+  std::vector<PCCFrameContext> &getTiles() { return tileContexts_; }
+  PCCFrameContext              &getTile( size_t index ) {
     if ( numTilesInAtlasFrame_ == 1 ) {
       assert( index == 0 );
       return titleFrameContext_;
@@ -292,10 +292,10 @@ class PCCAtlasFrameContext {
   void setNumPartitionRows( size_t value ) { numPartitionRows_ = value; }
   void setSignalledTileId( bool value ) { signalledTileId_ = value; }
 
-  void setPartitionWidth( std::vector<size_t>& value ) { partitionWidth_ = value; }
-  void setPartitionHeight( std::vector<size_t>& value ) { partitionHeight_ = value; }
-  void setPartitionPosX( std::vector<size_t>& value ) { partitionPosX_ = value; }
-  void setPartitionPosY( std::vector<size_t>& value ) { partitionPosY_ = value; }
+  void setPartitionWidth( std::vector<size_t> &value ) { partitionWidth_ = value; }
+  void setPartitionHeight( std::vector<size_t> &value ) { partitionHeight_ = value; }
+  void setPartitionPosX( std::vector<size_t> &value ) { partitionPosX_ = value; }
+  void setPartitionPosY( std::vector<size_t> &value ) { partitionPosY_ = value; }
   void setPartitionWidth( size_t value, size_t index ) {
     assert( index < partitionWidth_.size() );
     partitionWidth_[index] = value;
@@ -324,15 +324,15 @@ class PCCAtlasFrameContext {
   size_t getAuxVideoWidth() { return auxVideWidth_; }
   size_t getAuxVideoHeight() {
     size_t videoHeight = 0;
-    for ( auto& height : auxTileHeight_ ) { videoHeight += height; }
+    for ( auto &height : auxTileHeight_ ) { videoHeight += height; }
     return videoHeight;
   }
 
-  void setTileId( std::vector<size_t>& value ) { tileId_ = value; }
-  void setTiles( std::vector<PCCFrameContext>& value ) { tileContexts_ = value; }
+  void setTileId( std::vector<size_t> &value ) { tileId_ = value; }
+  void setTiles( std::vector<PCCFrameContext> &value ) { tileContexts_ = value; }
 
-  void             setTitleFrameContext( PCCFrameContext& value ) { titleFrameContext_ = value; }
-  PCCFrameContext& getTitleFrameContext() { return titleFrameContext_; }
+  void             setTitleFrameContext( PCCFrameContext &value ) { titleFrameContext_ = value; }
+  PCCFrameContext &getTitleFrameContext() { return titleFrameContext_; }
 
   void setSinglePartitionPerTile( bool value ) { singlePartitionPerTile_ = value; }
   bool getSinglePartitionPerTile() { return singlePartitionPerTile_; }
@@ -558,7 +558,7 @@ class PCCAtlasFrameContext {
     signalledTileId_        = signalledTileId;
   }
 
-  std::vector<int>& getPartitionToTileMap() { return partitionToTileMap_; }
+  std::vector<int> &getPartitionToTileMap() { return partitionToTileMap_; }
 
  private:
   size_t                       atlasFrameIndex_;

@@ -1,18 +1,18 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 3.2)
+cmake_minimum_required(VERSION 3.2)
 
-GET_FILENAME_COMPONENT(MYNAME ${CMAKE_CURRENT_LIST_DIR} NAME)
-STRING(REPLACE " " "_" MYNAME ${MYNAME})
-SET( MYNAME ${MYNAME}${CMAKE_DEBUG_POSTFIX} )
-PROJECT(${MYNAME} C CXX)
+get_filename_component(MYNAME ${CMAKE_CURRENT_LIST_DIR} NAME)
+string(REPLACE " " "_" MYNAME ${MYNAME})
+set(MYNAME ${MYNAME}${CMAKE_DEBUG_POSTFIX})
+project(${MYNAME} C CXX)
 
-FILE(GLOB SRC include/*.h source/*.cpp )
+file(GLOB SRC include/*.h source/*.cpp)
 
-INCLUDE_DIRECTORIES( include
-                     ${CMAKE_SOURCE_DIR}/source/lib/PccLibCommon/include
-                     ${CMAKE_SOURCE_DIR}/source/lib/PccLibBitstreamCommon/include )
+include_directories(
+  include ${CMAKE_SOURCE_DIR}/source/lib/PccLibCommon/include
+  ${CMAKE_SOURCE_DIR}/source/lib/PccLibBitstreamCommon/include)
 
-ADD_LIBRARY( ${MYNAME} ${LINKER} ${SRC} )
+add_library(${MYNAME} ${LINKER} ${SRC})
 
-TARGET_LINK_LIBRARIES(${MYNAME} )
+target_link_libraries(${MYNAME})
 
-SET_TARGET_PROPERTIES( ${MYNAME} PROPERTIES LINKER_LANGUAGE CXX)
+set_target_properties(${MYNAME} PROPERTIES LINKER_LANGUAGE CXX)

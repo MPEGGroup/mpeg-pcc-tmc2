@@ -67,8 +67,8 @@ class AtlasTileHeader {
     additionalAfocLsbPresentFlag_.clear();
     additionalAfocLsbVal_.clear();
   };
-  AtlasTileHeader&      operator=( const AtlasTileHeader& ) = default;
-  RefListStruct&        getRefListStruct() { return refListStruct_; }  // only 1 refList
+  AtlasTileHeader      &operator=( const AtlasTileHeader & ) = default;
+  RefListStruct        &getRefListStruct() { return refListStruct_; }  // only 1 refList
   void                  setRefListStruct( RefListStruct value ) { refListStruct_ = value; }
   uint8_t               getFrameIndex() { return frameIndex_; }
   void                  setFrameIndex( uint8_t value ) { frameIndex_ = value; }
@@ -88,8 +88,8 @@ class AtlasTileHeader {
   uint8_t               getRaw3dOffsetAxisBitCountMinus1() { return raw3dOffsetAxisBitCountMinus1_; }
   bool                  getNumRefIdxActiveOverrideFlag() { return numRefIdxActiveOverrideFlag_; }
   uint8_t               getNumRefIdxActiveMinus1() { return numRefIdxActiveMinus1_; }
-  std::vector<bool>&    getAdditionalAfocLsbPresentFlag() { return additionalAfocLsbPresentFlag_; }
-  std::vector<uint8_t>& getAdditionalAfocLsbVal() { return additionalAfocLsbVal_; }
+  std::vector<bool>    &getAdditionalAfocLsbPresentFlag() { return additionalAfocLsbPresentFlag_; }
+  std::vector<uint8_t> &getAdditionalAfocLsbVal() { return additionalAfocLsbVal_; }
   bool                  getAdditionalAfocLsbPresentFlag( size_t idx ) { return additionalAfocLsbPresentFlag_[idx]; }
   uint8_t               getAdditionalAfocLsbVal( size_t idx ) { return additionalAfocLsbVal_[idx]; }
   uint8_t               getTileNaluTypeInfo() { return tileNaluTypeInfo_; }
@@ -110,8 +110,8 @@ class AtlasTileHeader {
   void setRaw3dOffsetAxisBitCountMinus1( uint8_t value ) { raw3dOffsetAxisBitCountMinus1_ = value; }
   void setNumRefIdxActiveOverrideFlag( bool value ) { numRefIdxActiveOverrideFlag_ = value; }
   void setNumRefIdxActiveMinus1( uint8_t value ) { numRefIdxActiveMinus1_ = value; }
-  void setAdditionalAfocLsbPresentFlag( std::vector<bool>& value ) { additionalAfocLsbPresentFlag_ = value; }
-  void setAdditionalAfocLsbVal( std::vector<uint8_t>& value ) { additionalAfocLsbVal_ = value; }
+  void setAdditionalAfocLsbPresentFlag( std::vector<bool> &value ) { additionalAfocLsbPresentFlag_ = value; }
+  void setAdditionalAfocLsbVal( std::vector<uint8_t> &value ) { additionalAfocLsbVal_ = value; }
   void setAdditionalAfocLsbPresentFlag( size_t idx, bool value ) { additionalAfocLsbPresentFlag_[idx] = value; }
   void setAdditionalAfocLsbVal( size_t idx, uint8_t value ) { additionalAfocLsbVal_[idx] = value; }
   void setTileNaluTypeInfo( uint8_t value ) { tileNaluTypeInfo_ = value; }

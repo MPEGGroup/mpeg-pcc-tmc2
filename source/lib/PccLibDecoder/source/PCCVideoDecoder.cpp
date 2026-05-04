@@ -57,19 +57,131 @@ PCCVideoDecoder::PCCVideoDecoder()  = default;
 PCCVideoDecoder::~PCCVideoDecoder() = default;
 
 template <typename T>
-bool PCCVideoDecoder::decompress( PCCVideo<T, 3>&    video,
-                                  PCCContext&        contexts,
-                                  const std::string& path,
-                                  PCCVideoBitstream& bitstream,
+void PCCVideoDecoder::patchBasedUpsample( PCCVideo<T, 3> &video,
+                                          PCCVideo<T, 3> &upsampledVideo,
+                                          const size_t    newWidth,
+                                          const size_t    newHeight,
+                                          PCCContext     &contexts ) {
+  printf( "Decoder convert : patchBasedUpsampling\n" );
+  // perform color-subsampling based on patch information
+  upsampledVideo.resize( video.getFrameCount() );
+  for ( size_t frNum = 0; frNum < video.getFrameCount(); frNum++ ) {
+    // context variable, contains the patch information
+    auto &context = contexts[(int)( frNum / 2 )];  // this is only valid for coding with 2 maps, OK for now
+    // low resolution image
+    auto &refImage = video.getFrame( frNum );
+    // image that will contain the per-patch upsampled image
+    auto &destImage = upsampledVideo.getFrame( frNum );
+    destImage.resize( newWidth, newHeight, video.getColorFormat() );
+    // create the full resolution block to patch image
+    int ratioH = newHeight / refImage.getHeight();
+    int ratioW = newWidth / refImage.getWidth();
+
+    std::vector<PCCPatch> &patches      = context.getTitleFrameContext().getPatches();
+    std::vector<size_t>   &blockToPatch = context.getTitleFrameContext().getBlockToPatch();
+    std::vector<size_t>    pixelToPatchHighRes;
+    pixelToPatchHighRes.resize( newWidth * newHeight, 0 );
+    int occRes = patches[0].getOccupancyResolution();  // is this the correct value? CHECK!!!
+    for ( int patchIdx = 0; patchIdx <= patches.size(); patchIdx++ ) {
+      size_t occupancyResolution;
+      size_t patch_left;
+      size_t patch_top;
+      size_t patch_width;
+      size_t patch_height;
+      if ( patchIdx == 0 ) {
+        // background, does not have a corresponding patch
+        auto &patch         = patches[0];
+        occupancyResolution = patch.getOccupancyResolution();
+        patch_left          = 0;
+        patch_top           = 0;
+        patch_width         = newWidth;
+        patch_height        = newHeight;
+      } else {
+        auto &patch         = patches[patchIdx - 1];
+        occupancyResolution = patch.getOccupancyResolution();
+        patch_left          = patch.getU0() * occupancyResolution;
+        patch_top           = patch.getV0() * occupancyResolution;
+        if ( !( patch.isPatchDimensionSwitched() ) ) {
+          patch_width  = patch.getSizeU0() * occupancyResolution;
+          patch_height = patch.getSizeV0() * occupancyResolution;
+        } else {
+          patch_width  = patch.getSizeV0() * occupancyResolution;
+          patch_height = patch.getSizeU0() * occupancyResolution;
+        }
+      }
+      for ( size_t i = patch_top; i < patch_top + patch_height; i++ ) {
+        for ( size_t j = patch_left; j < patch_left + patch_width; j++ ) {
+          if ( blockToPatch[( i / occupancyResolution ) * ( newWidth / occupancyResolution ) +
+                            ( j / occupancyResolution )] == patchIdx ) {
+            pixelToPatchHighRes[i * newWidth + j] = patchIdx;
+          }
+        }
+      }
+    }
+    // now downsample the pixelToPatchHighRes
+    std::vector<size_t> pixelToPatchLowRes;
+    pixelToPatchLowRes.resize( ( newWidth / ratioW ) * ( newHeight / ratioH ), 0 );
+    for ( int h = 0; h < newHeight; h++ ) {
+      for ( int w = 0; w < newWidth; w++ ) {
+        pixelToPatchLowRes[( h / ratioW ) * ( newWidth / ratioW ) + w / ratioW] = pixelToPatchHighRes[h * newWidth + w];
+      }
+    }
+    // now performing up-sampling according to the patch index
+    for ( size_t i = 0; i < newHeight; i++ ) {
+      for ( size_t j = 0; j < newWidth; j++ ) {
+        int lowResI = ( 2 * i + ratioH ) / ( 2 * ratioH );
+        if ( lowResI > ( newHeight / ratioH ) - 1 ) lowResI = ( newHeight / ratioH ) - 1;
+        int lowResJ = ( 2 * j + ratioW ) / ( 2 * ratioW );
+        if ( lowResJ > ( newWidth / ratioW ) - 1 ) lowResJ = ( newWidth / ratioW ) - 1;
+        int refIndex = pixelToPatchLowRes[lowResI * ( newWidth / ratioW ) + lowResJ];
+        int curIndex = pixelToPatchHighRes[i * newWidth + j];
+        if ( refIndex == curIndex ) {
+          // just copy the value
+          for ( int c = 0; c < 3; c++ ) {
+            int posY = lowResI;
+            int posX = lowResJ;
+            destImage.setValue( c, j, i, refImage.getValue( c, posX, posY ) );
+          }
+        } else {
+          // search the index that contains the same patchIndex
+          int searchIndex = -1;
+          for ( int ii = -1; ii < 2; ii++ ) {
+            for ( int jj = -1; jj < 2; jj++ ) {
+              int posY = lowResI + ii;
+              if ( posY < 0 ) posY = 0;
+              if ( posY > ( newHeight / ratioH ) - 1 ) posY = ( newHeight / ratioH ) - 1;
+              int posX = lowResJ + jj;
+              if ( posX < 0 ) posX = 0;
+              if ( posX > ( newWidth / ratioW ) - 1 ) posX = ( newWidth / ratioW ) - 1;
+              searchIndex = pixelToPatchLowRes[posY * ( newWidth / ratioW ) + posX];
+              if ( searchIndex == curIndex ) {
+                // copy the value from position (lowResI+ii),(lowResJ+jj)
+                for ( int c = 0; c < 3; c++ ) { destImage.setValue( c, j, i, refImage.getValue( c, posX, posY ) ); }
+                break;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+template <typename T>
+bool PCCVideoDecoder::decompress( PCCVideo<T, 3>    &video,
+                                  PCCContext        &contexts,
+                                  const std::string &path,
+                                  PCCVideoBitstream &bitstream,
                                   bool               byteStreamVideoCoder,
                                   PCCCodecId         codecId,
-                                  const std::string& decoderPath,
+                                  const std::string &decoderPath,
                                   size_t             outputBitDepth,
+                                  const std::string &scalerConfigPath,
                                   const bool         keepIntermediateFiles,
                                   const size_t       shvcLayerIndex,
                                   const bool         patchColorSubsampling,
-                                  const std::string& inverseColorSpaceConversionConfig,
-                                  const std::string& colorSpaceConversionPath,
+                                  const std::string &inverseColorSpaceConversionConfig,
+                                  const std::string &colorSpaceConversionPath,
                                   const size_t       upsamplingFilter ) {
   const std::string type        = bitstream.getExtension();
   const std::string fileName    = path + type;
@@ -81,9 +193,9 @@ bool PCCVideoDecoder::decompress( PCCVideo<T, 3>&    video,
     bitstream.sampleStreamToByteStream(
 #if defined( USE_JMAPP_VIDEO_CODEC ) && defined( USE_JMLIB_VIDEO_CODEC )
         codecId == JMAPP || codecId == JMLIB,
-#elif defined( USE_JMAPP_VIDEO_CODEC ) 
+#elif defined( USE_JMAPP_VIDEO_CODEC )
         codecId == JMAPP,
-#elif defined( USE_JMLIB_VIDEO_CODEC ) 
+#elif defined( USE_JMLIB_VIDEO_CODEC )
         codecId == JMLIB,
 #else
         false,
@@ -112,7 +224,7 @@ bool PCCVideoDecoder::decompress( PCCVideo<T, 3>&    video,
   size_t height     = video.getHeight();
   bool   is444      = video.is444();
   size_t frameIndex = 0;
-  for ( auto& image : video ) {
+  for ( auto &image : video ) {
     TRACE_PICTURE( " IdxOutOrderCntVal = %d, ", frameIndex++ );
     TRACE_PICTURE( " MD5checksumChan0 = %s, ", image.computeMD5( 0 ).c_str() );
     TRACE_PICTURE( " MD5checksumChan1 = %s, ", image.computeMD5( 1 ).c_str() );
@@ -130,7 +242,7 @@ bool PCCVideoDecoder::decompress( PCCVideo<T, 3>&    video,
   // Convert dec video
   std::shared_ptr<PCCVirtualColorConverter<T>> converter;
   std::string                                  configInverseColorSpace;
-  if ( colorSpaceConversionPath.empty() ) {
+  if ( colorSpaceConversionPath.empty() || inverseColorSpaceConversionConfig.empty() ) {
     converter               = std::make_shared<PCCInternalColorConverter<T>>();
     configInverseColorSpace = stringFormat( "YUV420ToYUV444_%zu_%zu", outputBitDepth, upsamplingFilter );
   } else {
@@ -156,15 +268,15 @@ bool PCCVideoDecoder::decompress( PCCVideo<T, 3>&    video,
       // perform color-upsampling based on patch information
       for ( size_t frNum = 0; frNum < video.getFrameCount(); frNum++ ) {
         // context variable, contains the patch information
-        auto& context = contexts[frNum / 2];
+        auto &context = contexts[frNum / 2];
         // full resolution image (already filled by previous dilation
-        auto& refImage = video444.getFrame( frNum );
+        auto &refImage = video444.getFrame( frNum );
         // image that will contain the per-patch chroma sub-sampled image
-        auto& destImage = video.getFrame( frNum );
+        auto &destImage = video.getFrame( frNum );
         destImage.resize( width, height, PCCCOLORFORMAT::YUV444 );
         // iterate the patch information and perform chroma down-sampling on each patch individually
-        std::vector<PCCPatch>& patches      = context.getTitleFrameContext().getPatches();
-        std::vector<size_t>&   blockToPatch = context.getTitleFrameContext().getBlockToPatch();
+        std::vector<PCCPatch> &patches      = context.getTitleFrameContext().getPatches();
+        std::vector<size_t>   &blockToPatch = context.getTitleFrameContext().getBlockToPatch();
         for ( int patchIdx = 0; patchIdx <= patches.size(); patchIdx++ ) {
           size_t occupancyResolution;
           size_t patch_left;
@@ -173,14 +285,14 @@ bool PCCVideoDecoder::decompress( PCCVideo<T, 3>&    video,
           size_t patch_height;
           if ( patchIdx == 0 ) {
             // background, does not have a corresponding patch
-            auto& patch         = patches[0];
+            auto &patch         = patches[0];
             occupancyResolution = patch.getOccupancyResolution();
             patch_left          = 0;
             patch_top           = 0;
             patch_width         = width;
             patch_height        = height;
           } else {
-            auto& patch         = patches[patchIdx - 1];
+            auto &patch         = patches[patchIdx - 1];
             occupancyResolution = patch.getOccupancyResolution();
             patch_left          = patch.getU0() * occupancyResolution;
             patch_top           = patch.getV0() * occupancyResolution;
@@ -261,11 +373,11 @@ bool PCCVideoDecoder::decompress( PCCVideo<T, 3>&    video,
                   searchIndex++;
                 }
                 // check if the candidate was found
-                assert( *( std::max )( neighborIdx.begin(), neighborIdx.end() ) > 0 );
+                assert( *(std::max)( neighborIdx.begin(), neighborIdx.end() ) > 0 );
                 // now fill in the block with the edge value coming from the
                 // nearest neighbor
                 direction =
-                    ( std::min_element )( neighborDistance.begin(), neighborDistance.end() ) - neighborDistance.begin();
+                    (std::min_element)( neighborDistance.begin(), neighborDistance.end() ) - neighborDistance.begin();
                 if ( direction == 0 ) {
                   // copying from left neighboring block
                   for ( size_t iBlk = 0; iBlk < occupancyResolution; iBlk++ ) {
@@ -372,35 +484,79 @@ bool PCCVideoDecoder::decompress( PCCVideo<T, 3>&    video,
       if ( keepIntermediateFiles ) { video.write( video.addFormat( fileName + "_rec", "16" ), 2 ); }
     }
   }
+
+  // annex-b: Scale if necessary
+  auto &asps                = contexts.getAtlasSequenceParameterSet( 0 );
+  auto  expectedFrameWidth  = asps.getFrameWidth();
+  auto  expectedFrameHeight = asps.getFrameHeight();
+
+  if ( ( type != "occupancy" && ( type.find( "packedT" ) == std::string::npos ) ) &&
+       ( width != expectedFrameWidth || height != expectedFrameHeight ) ) {
+    PCCVideo<T, 3>                               scaledVideo;
+    std::shared_ptr<PCCVirtualColorConverter<T>> upscaler;
+#ifdef USE_HDRTOOLS
+    if ( scalerConfigPath != "" ) {
+      upscaler = std::make_shared<PCCHDRToolsLibColorConverter<T>>();
+#else
+    if ( !scalerConfigPath.empty() && !colorSpaceConversionPath.empty() ) {
+      upscaler = std::make_shared<PCCHDRToolsAppColorConverter<T>>();
+#endif
+      upscaler->scale( scalerConfigPath, video, scaledVideo,
+                       ( inverseColorSpaceConversionConfig.empty() || is444 ) ? 8 : 16 /*bitdepth*/,
+                       3 /*chromaFormat=444*/, 0 /*colorSpace=YUV*/, expectedFrameWidth, expectedFrameHeight,
+                       colorSpaceConversionPath, fileName + "_rec_US" );
+    } else {
+      patchBasedUpsample( video, scaledVideo, expectedFrameWidth, expectedFrameHeight, contexts );
+    }
+    video = scaledVideo;
+    if ( keepIntermediateFiles ) {
+      video.write( video.addFormat( fileName + "_rec", outputBitDepth == 8 ? "8" : "10" ),
+                   outputBitDepth == 8 ? 1 : 2 );
+    }
+  }
   return true;
 }
 
-template bool pcc::PCCVideoDecoder::decompress<uint8_t>( PCCVideo<uint8_t, 3>& video,
-                                                         PCCContext&           contexts,
-                                                         const std::string&    path,
-                                                         PCCVideoBitstream&    bitstream,
+template void pcc::PCCVideoDecoder::patchBasedUpsample( PCCVideo<uint8_t, 3> &video,
+                                                        PCCVideo<uint8_t, 3> &upsampledVideo,
+                                                        const size_t          newWidth,
+                                                        const size_t          newHeight,
+                                                        PCCContext           &contexts );
+
+template void pcc::PCCVideoDecoder::patchBasedUpsample( PCCVideo<uint16_t, 3> &video,
+                                                        PCCVideo<uint16_t, 3> &upsampledVideo,
+                                                        const size_t           newWidth,
+                                                        const size_t           newHeight,
+                                                        PCCContext            &contexts );
+
+template bool pcc::PCCVideoDecoder::decompress<uint8_t>( PCCVideo<uint8_t, 3> &video,
+                                                         PCCContext           &contexts,
+                                                         const std::string    &path,
+                                                         PCCVideoBitstream    &bitstream,
                                                          bool                  byteStreamVideoCoder,
                                                          PCCCodecId            codecId,
-                                                         const std::string&    decoderPath,
+                                                         const std::string    &decoderPath,
                                                          size_t                outputBitDepth,
+                                                         const std::string    &scalerConfigPath,
                                                          const bool            keepIntermediateFiles,
                                                          const size_t          shvcLayerIndex,
                                                          const bool            patchColorSubsampling,
-                                                         const std::string&    inverseColorSpaceConversionConfig,
-                                                         const std::string&    colorSpaceConversionPath,
+                                                         const std::string    &inverseColorSpaceConversionConfig,
+                                                         const std::string    &colorSpaceConversionPath,
                                                          const size_t          upsamplingFilter );
 
-template bool pcc::PCCVideoDecoder::decompress<uint16_t>( PCCVideo<uint16_t, 3>& video,
-                                                          PCCContext&            contexts,
-                                                          const std::string&     path,
-                                                          PCCVideoBitstream&     bitstream,
+template bool pcc::PCCVideoDecoder::decompress<uint16_t>( PCCVideo<uint16_t, 3> &video,
+                                                          PCCContext            &contexts,
+                                                          const std::string     &path,
+                                                          PCCVideoBitstream     &bitstream,
                                                           bool                   byteStreamVideoCoder,
                                                           PCCCodecId             codecId,
-                                                          const std::string&     decoderPath,
+                                                          const std::string     &decoderPath,
                                                           size_t                 outputBitDepth,
+                                                          const std::string     &scalerConfigPath,
                                                           const bool             keepIntermediateFiles,
                                                           const size_t           shvcLayerIndex,
                                                           const bool             patchColorSubsampling,
-                                                          const std::string&     inverseColorSpaceConversionConfig,
-                                                          const std::string&     colorSpaceConversionPath,
+                                                          const std::string     &inverseColorSpaceConversionConfig,
+                                                          const std::string     &colorSpaceConversionPath,
                                                           const size_t           upsamplingFilter );

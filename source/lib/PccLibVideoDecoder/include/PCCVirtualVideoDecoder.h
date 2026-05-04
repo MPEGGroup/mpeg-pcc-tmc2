@@ -47,11 +47,11 @@ class PCCVirtualVideoDecoder {
 
   static std::shared_ptr<PCCVirtualVideoDecoder<T>> create( PCCCodecId codecId );
 
-  virtual void decode( PCCVideoBitstream& bitstream,
-                       PCCVideo<T, 3>&    video,
+  virtual void decode( PCCVideoBitstream &bitstream,
+                       PCCVideo<T, 3>    &video,
                        size_t             outputBitDepth = 8,
-                       const std::string& decoderPath    = "",
-                       const std::string& parameters     = "" ) = 0;
+                       const std::string &decoderPath    = "",
+                       const std::string &parameters     = "" ) = 0;
 
  public:
 };

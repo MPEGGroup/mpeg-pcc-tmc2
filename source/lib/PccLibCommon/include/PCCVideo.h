@@ -41,33 +41,33 @@ namespace pcc {
 template <typename T, size_t N>
 class PCCVideo {
  public:
-  PCCVideo()                  = default;
-  PCCVideo( const PCCVideo& ) = default;
-  PCCVideo& operator=( const PCCVideo& rhs ) = default;
+  PCCVideo()                                 = default;
+  PCCVideo( const PCCVideo & )               = default;
+  PCCVideo &operator=( const PCCVideo &rhs ) = default;
   ~PCCVideo()                                = default;
   void resize( const size_t frameCount ) { frames_.resize( frameCount ); }
   void clear() {
-    for ( auto& frame : frames_ ) { frame.clear(); }
+    for ( auto &frame : frames_ ) { frame.clear(); }
     frames_.clear();
   }
 
   typename std::vector<PCCImage<T, N> >::iterator begin() { return frames_.begin(); }
   typename std::vector<PCCImage<T, N> >::iterator end() { return frames_.end(); }
   const size_t                                    size() { return frames_.size(); }
-  PCCImage<T, N>&                                 operator[]( int index ) { return frames_[index]; }
+  PCCImage<T, N>                                 &operator[]( int index ) { return frames_[index]; }
   void                                            setDeprecatedColorFormat( size_t value ) {
-    for ( auto& f : frames_ ) f.setDeprecatedColorFormat( value );
+    for ( auto &f : frames_ ) f.setDeprecatedColorFormat( value );
   }
-  std::vector<PCCImage<T, N> >& getFrames() { return frames_; }
-  PCCImage<T, N>&               getFrame( const size_t index ) {
+  std::vector<PCCImage<T, N> > &getFrames() { return frames_; }
+  PCCImage<T, N>               &getFrame( const size_t index ) {
     assert( index < frames_.size() );
     return frames_[index];
   }
-  const PCCImage<T, N>& getFrame( const size_t index ) const {
+  const PCCImage<T, N> &getFrame( const size_t index ) const {
     assert( index < frames_.size() );
     return frames_[index];
   }
-  void   swap( PCCVideo<T, N>& video ) { frames_.swap( video.frames_ ); }
+  void   swap( PCCVideo<T, N> &video ) { frames_.swap( video.frames_ ); }
   size_t getWidth() const { return frames_.empty() ? 0 : frames_[0].getWidth(); }
   size_t getHeight() const { return frames_.empty() ? 0 : frames_[0].getHeight(); }
   bool   is420() const { return getColorFormat() == PCCCOLORFORMAT::YUV420; }
@@ -102,15 +102,15 @@ class PCCVideo {
   void        convertYUV420ToYUV444();
   void        convertYUV444ToYUV420();
   bool        allPixelsEqualToZero();
-  std::string addFormat( std::string filename, const char* bitdepth ) {
+  std::string addFormat( std::string filename, const char *bitdepth ) {
     return addVideoFormat( filename, getWidth(), getHeight(), isYUV(), is420(), bitdepth );
   }
 
   void upsample( size_t rate );
 
  private:
-  bool write( std::ofstream& outfile, const size_t nbyte );
-  bool read( std::ifstream&       infile,
+  bool write( std::ofstream &outfile, const size_t nbyte );
+  bool read( std::ifstream       &infile,
              const size_t         sizeU0,
              const size_t         sizeV0,
              const PCCCOLORFORMAT format,

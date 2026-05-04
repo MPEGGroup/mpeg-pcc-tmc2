@@ -53,7 +53,7 @@ class ProfileToolsetConstraintsInformation {
       No45DegreeProjectionPatchConstraintFlag_( true ),
       NumReservedConstraintBytes_( 0 ) {}
   ~ProfileToolsetConstraintsInformation() { reservedConstraintByte_.clear(); }
-  ProfileToolsetConstraintsInformation& operator=( const ProfileToolsetConstraintsInformation& ) = default;
+  ProfileToolsetConstraintsInformation &operator=( const ProfileToolsetConstraintsInformation & ) = default;
 
   void allocate() { reservedConstraintByte_.resize( NumReservedConstraintBytes_, 0 ); }
 

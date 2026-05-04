@@ -46,12 +46,28 @@ PCCHDRToolsLibColorConverter<T>::~PCCHDRToolsLibColorConverter() {}
 
 template <typename T>
 void PCCHDRToolsLibColorConverter<T>::convert( std::string        configFile,
-                                               PCCVideo<T, 3>&    videoSrc,
-                                               PCCVideo<T, 3>&    videoDst,
-                                               const std::string& externalPath,
-                                               const std::string& fileName ) {
+                                               PCCVideo<T, 3>    &videoSrc,
+                                               PCCVideo<T, 3>    &videoDst,
+                                               const std::string &externalPath,
+                                               const std::string &fileName ) {
   PCCHDRToolsLibColorConverterImpl<T> converter;
   converter.convert( configFile, videoSrc, videoDst );
+}
+
+template <typename T>
+void PCCHDRToolsLibColorConverter<T>::scale( std::string        configuration,
+                                             PCCVideo<T, 3>    &videoSrc,
+                                             PCCVideo<T, 3>    &videoDst,
+                                             int                bitDepth,
+                                             int                chromaFormat,
+                                             int                colorSpace,
+                                             int                outputWidth,
+                                             int                outputHeight,
+                                             const std::string &externalPath,
+                                             const std::string &fileName ) {
+  PCCHDRToolsLibColorConverterImpl<T> converter;
+  converter.scale( configuration, videoSrc, videoDst, bitDepth, chromaFormat, colorSpace, outputWidth, outputHeight,
+                   externalPath, fileName );
 }
 
 template class pcc::PCCHDRToolsLibColorConverter<uint8_t>;

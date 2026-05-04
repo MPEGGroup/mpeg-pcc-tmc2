@@ -62,15 +62,15 @@ using namespace pcc;
 vvencMsgLevel g_verbosityEnc = VVENC_VERBOSE;
 
 struct StoreFrame {
-  void* m_videoRec;
-  void* m_config;
+  void *m_videoRec;
+  void *m_config;
 };
 
-void msgFnc( void*, int level, const char* fmt, va_list args ) {
+void msgFnc( void *, int level, const char *fmt, va_list args ) {
   if ( g_verbosityEnc >= level ) { vfprintf( level == 1 ? stderr : stdout, fmt, args ); }
 }
 
-void msgApp( int level, const char* fmt, ... ) {
+void msgApp( int level, const char *fmt, ... ) {
   va_list args;
   va_start( args, fmt );
   msgFnc( nullptr, level, fmt, args );
@@ -78,8 +78,7 @@ void msgApp( int level, const char* fmt, ... ) {
 }
 
 template <typename T>
-PCCVVLibVideoEncoderImpl<T>::PCCVVLibVideoEncoderImpl() :
-    m_essentialBytes( 0 ), m_totalBytes( 0 ) {
+PCCVVLibVideoEncoderImpl<T>::PCCVVLibVideoEncoderImpl() : m_essentialBytes( 0 ), m_totalBytes( 0 ) {
   vvenc_config_default( &m_vvenc_config );
   m_cEncAppCfg.setPresetChangeCallback( changePreset );
 }
@@ -88,23 +87,23 @@ template <typename T>
 PCCVVLibVideoEncoderImpl<T>::~PCCVVLibVideoEncoderImpl() {}
 
 template <typename T>
-void PCCVVLibVideoEncoderImpl<T>::encode( PCCVideo<T, 3>&    videoSrc,
+void PCCVVLibVideoEncoderImpl<T>::encode( PCCVideo<T, 3>    &videoSrc,
                                           std::string        arguments,
-                                          PCCVideoBitstream& bitstream,
-                                          PCCVideo<T, 3>&    videoRec ) {
-  std::ostringstream oss( std::ostringstream::binary | std::ostringstream::out );
-  std::ostream&      cOutBitstream = oss;
-  std::istringstream iss( arguments );
-  std::string        token;
-  std::vector<char*> args;
+                                          PCCVideoBitstream &bitstream,
+                                          PCCVideo<T, 3>    &videoRec ) {
+  std::ostringstream  oss( std::ostringstream::binary | std::ostringstream::out );
+  std::ostream       &cOutBitstream = oss;
+  std::istringstream  iss( arguments );
+  std::string         token;
+  std::vector<char *> args;
   while ( iss >> token ) {
-    char* arg = new char[token.size() + 1];
+    char *arg = new char[token.size() + 1];
     copy( token.begin(), token.end(), arg );
     arg[token.size()] = '\0';
     args.push_back( arg );
   }
   videoRec.clear();
-  vvenc_set_logging_callback( nullptr, msgFnc ); 
+  vvenc_set_logging_callback( nullptr, msgFnc );
   std::string                                 simdOpt;
   apputils::df::program_options_lite::Options opts;
   opts.addOptions()                                                     //
@@ -112,21 +111,21 @@ void PCCVVLibVideoEncoderImpl<T>::encode( PCCVideo<T, 3>&    videoSrc,
       ( "SIMD", simdOpt, "" );
 
   apputils::df::program_options_lite::SilentReporter err;
-  apputils::df::program_options_lite::scanArgv( opts, args.size(), (const char**)&args[0], err );
+  apputils::df::program_options_lite::scanArgv( opts, args.size(), (const char **)&args[0], err );
   vvenc_set_SIMD_extension( simdOpt.c_str() );
 
   if ( !parseCfg( args.size(), &args[0] ) ) { return; }
-  int ret = encode( videoSrc, cOutBitstream, videoRec );
+  int  ret    = encode( videoSrc, cOutBitstream, videoRec );
   auto buffer = oss.str();
   bitstream.resize( buffer.size() );
   std::copy( buffer.data(), buffer.data() + buffer.size(), bitstream.vector().begin() );
 }
 
 template <typename T>
-bool PCCVVLibVideoEncoderImpl<T>::parseCfg( int argc, char* argv[] ) {
-  vvenc_set_msg_callback( &m_vvenc_config, this, &::msgFnc );  
+bool PCCVVLibVideoEncoderImpl<T>::parseCfg( int argc, char *argv[] ) {
+  vvenc_set_msg_callback( &m_vvenc_config, this, &::msgFnc );
   std::stringstream cParserStr;
-  bool ret = true;
+  bool              ret = true;
   if ( argc ) {
     argc--;
     argv++;
@@ -159,7 +158,7 @@ bool PCCVVLibVideoEncoderImpl<T>::parseCfg( int argc, char* argv[] ) {
               m_cEncAppCfg.m_additionalSettings.c_str() );
       return false;
     }
-    for ( auto& d : dict ) {
+    for ( auto &d : dict ) {
       std::string key   = std::get<0>( d );
       std::string value = std::get<1>( d );
       msgApp( VVENC_DETAILS, "additional params: set option key:'%s' value:'%s'\n", key.c_str(), value.c_str() );
@@ -196,26 +195,26 @@ bool PCCVVLibVideoEncoderImpl<T>::parseCfg( int argc, char* argv[] ) {
 }
 
 template <typename T>
-void PCCVVLibVideoEncoderImpl<T>::outputAU( const vvencAccessUnit& au, std::ostream& bitstream ) {
-  bitstream.write( reinterpret_cast<const char*>( au.payload ), au.payloadUsedSize );
+void PCCVVLibVideoEncoderImpl<T>::outputAU( const vvencAccessUnit &au, std::ostream &bitstream ) {
+  bitstream.write( reinterpret_cast<const char *>( au.payload ), au.payloadUsedSize );
   m_totalBytes += au.payloadUsedSize;
   m_essentialBytes += au.essentialBytes;
 }
 
 template <typename T>
-void PCCVVLibVideoEncoderImpl<T>::outputYuv( void* ctx, vvencYUVBuffer* yuvOutBuf ) {
-  StoreFrame* pStoreFrame = ctx ? (StoreFrame*)ctx : nullptr;
+void PCCVVLibVideoEncoderImpl<T>::outputYuv( void *ctx, vvencYUVBuffer *yuvOutBuf ) {
+  StoreFrame *pStoreFrame = ctx ? (StoreFrame *)ctx : nullptr;
   if ( pStoreFrame ) {
-    PCCVideo<T, 3>* pVideo  = (PCCVideo<T, 3>*)pStoreFrame->m_videoRec;
-    vvenc_config*   pConfig = (vvenc_config*)pStoreFrame->m_config;
+    PCCVideo<T, 3> *pVideo  = (PCCVideo<T, 3> *)pStoreFrame->m_videoRec;
+    vvenc_config   *pConfig = (vvenc_config *)pStoreFrame->m_config;
     storeRecFrame( yuvOutBuf, *pConfig, *pVideo );
   }
 }
 
 template <typename T>
-int PCCVVLibVideoEncoderImpl<T>::encode( PCCVideo<T, 3>& videoSrc, std::ostream& bitstream, PCCVideo<T, 3>& videoRec ) {
-  apputils::VVEncAppCfg& appCfg   = m_cEncAppCfg;
-  vvenc_config&          vvencCfg = m_vvenc_config;
+int PCCVVLibVideoEncoderImpl<T>::encode( PCCVideo<T, 3> &videoSrc, std::ostream &bitstream, PCCVideo<T, 3> &videoRec ) {
+  apputils::VVEncAppCfg &appCfg   = m_cEncAppCfg;
+  vvenc_config          &vvencCfg = m_vvenc_config;
 
   // initialize encoder lib
   m_encCtx = vvenc_encoder_create();
@@ -236,7 +235,7 @@ int PCCVVLibVideoEncoderImpl<T>::encode( PCCVideo<T, 3>& videoSrc, std::ostream&
   msgApp( VVENC_INFO, "%s", css.str().c_str() );
   printChromaFormat();
   if ( !strcmp( appCfg.m_inputFileName.c_str(), "-" ) ) { msgApp( VVENC_INFO, " trying to read from stdin" ); }
-  StoreFrame storeFrame = { (void*)&videoRec, (void*)&vvencCfg };
+  StoreFrame storeFrame = { (void *)&videoRec, (void *)&vvencCfg };
   vvenc_encoder_set_RecYUVBufferCallback( m_encCtx, &storeFrame, outputYuv );
 
   // create buffer for input YUV pic
@@ -305,7 +304,7 @@ int PCCVVLibVideoEncoderImpl<T>::encode( PCCVideo<T, 3>& videoSrc, std::ostream&
         }
       }
       // encode picture
-      vvencYUVBuffer* inputPacket = nullptr;
+      vvencYUVBuffer *inputPacket = nullptr;
       if ( !inputDone ) { inputPacket = &yuvInBuf; }
       iRet = vvenc_encode( m_encCtx, inputPacket, &au, &encDone );
       if ( 0 != iRet ) {
@@ -365,9 +364,9 @@ void PCCVVLibVideoEncoderImpl<T>::printChromaFormat() {
 }
 
 template <typename T>
-int PCCVVLibVideoEncoderImpl<T>::getSrcFrame( PCCVideo<T, 3>& videoSrc, vvencYUVBuffer& pic, int frameIndex ) {
+int PCCVVLibVideoEncoderImpl<T>::getSrcFrame( PCCVideo<T, 3> &videoSrc, vvencYUVBuffer &pic, int frameIndex ) {
   if ( frameIndex < videoSrc.size() ) {
-    auto& image  = videoSrc.getFrame( frameIndex );
+    auto &image  = videoSrc.getFrame( frameIndex );
     pic.cts      = 0;
     pic.ctsValid = false;
     // printf( "Read frame %3d: m_internalBitDepth = %d m_outputBitDepth = %d size(T) = %zu \n", frameIndex,
@@ -390,7 +389,9 @@ int PCCVVLibVideoEncoderImpl<T>::getSrcFrame( PCCVideo<T, 3>& videoSrc, vvencYUV
 }
 
 template <typename T>
-int PCCVVLibVideoEncoderImpl<T>::storeRecFrame( const vvencYUVBuffer* pcFrame, vvenc_config& config, PCCVideo<T, 3>& videoRec ) {
+int PCCVVLibVideoEncoderImpl<T>::storeRecFrame( const vvencYUVBuffer *pcFrame,
+                                                vvenc_config         &config,
+                                                PCCVideo<T, 3>       &videoRec ) {
   int chromaSubsample = pcFrame->planes[0].width == pcFrame->planes[1].width ? 1 : 2;
   // printf(
   //     "storeRecFrame: write output frame %3zu size = %d %d %d / %d %d %d bit depth = %d - %d = %d in %zu "
@@ -403,7 +404,7 @@ int PCCVVLibVideoEncoderImpl<T>::storeRecFrame( const vvencYUVBuffer* pcFrame, v
   //     sizeof( T ), chromaSubsample );
   // fflush( stdout );
   videoRec.resize( videoRec.getFrameCount() + 1 );
-  auto&          image  = videoRec.getFrames().back();
+  auto          &image  = videoRec.getFrames().back();
   PCCCOLORFORMAT format = chromaSubsample > 1 ? PCCCOLORFORMAT::YUV420 : PCCCOLORFORMAT::RGB444;
   image.set( pcFrame->planes[0].ptr,                                     // Y ptr
              pcFrame->planes[1].ptr,                                     // U ptr

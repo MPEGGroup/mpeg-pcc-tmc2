@@ -57,13 +57,13 @@ PCCHMLibVideoDecoderImpl<T>::~PCCHMLibVideoDecoderImpl() {
 }
 
 template <typename T>
-void PCCHMLibVideoDecoderImpl<T>::decode( PCCVideoBitstream& bitstream, size_t outputBitDepth, PCCVideo<T, 3>& video ) {
-  std::string                         s( reinterpret_cast<char*>( bitstream.buffer() ), bitstream.size() );
-  std::istringstream                  iss( s );
-  std::istream&                       bitstreamFile = iss;
-  Int                                 poc;
-  pcc_hm::TComList<pcc_hm::TComPic*>* pcListPic = NULL;
-  pcc_hm::InputByteStream             bytestream( bitstreamFile );
+void PCCHMLibVideoDecoderImpl<T>::decode( PCCVideoBitstream &bitstream, size_t outputBitDepth, PCCVideo<T, 3> &video ) {
+  std::string                          s( reinterpret_cast<char *>( bitstream.buffer() ), bitstream.size() );
+  std::istringstream                   iss( s );
+  std::istream                        &bitstreamFile = iss;
+  Int                                  poc;
+  pcc_hm::TComList<pcc_hm::TComPic *> *pcListPic = NULL;
+  pcc_hm::InputByteStream              bytestream( bitstreamFile );
   if ( outputBitDepth ) {
     m_outputBitDepth[CHANNEL_TYPE_LUMA]   = outputBitDepth;
     m_outputBitDepth[CHANNEL_TYPE_CHROMA] = outputBitDepth;
@@ -170,8 +170,8 @@ void PCCHMLibVideoDecoderImpl<T>::decode( PCCVideoBitstream& bitstream, size_t o
 }
 
 template <typename T>
-void PCCHMLibVideoDecoderImpl<T>::setVideoSize( const pcc_hm::TComSPS* sps ) {
-  auto& window        = sps->getConformanceWindow();
+void PCCHMLibVideoDecoderImpl<T>::setVideoSize( const pcc_hm::TComSPS *sps ) {
+  auto &window        = sps->getConformanceWindow();
   int   width         = sps->getPicWidthInLumaSamples();
   int   height        = sps->getPicHeightInLumaSamples();
   m_outputWidth       = width - window.getWindowLeftOffset() - window.getWindowRightOffset();
@@ -181,21 +181,21 @@ void PCCHMLibVideoDecoderImpl<T>::setVideoSize( const pcc_hm::TComSPS* sps ) {
 }
 
 template <typename T>
-void PCCHMLibVideoDecoderImpl<T>::xWriteOutput( pcc_hm::TComList<pcc_hm::TComPic*>* pcListPic,
-                                                UInt                                tId,
-                                                PCCVideo<T, 3>&                     video ) {
+void PCCHMLibVideoDecoderImpl<T>::xWriteOutput( pcc_hm::TComList<pcc_hm::TComPic *> *pcListPic,
+                                                UInt                                 tId,
+                                                PCCVideo<T, 3>                      &video ) {
   if ( pcListPic->empty() ) { return; }
-  pcc_hm::TComList<pcc_hm::TComPic*>::iterator iterPic                = pcListPic->begin();
-  Int                                          numPicsNotYetDisplayed = 0;
-  Int                                          dpbFullness            = 0;
-  const TComSPS*                               activeSPS              = &( pcListPic->front()->getPicSym()->getSPS() );
-  UInt                                         numReorderPicsHighestTid;
-  UInt                                         maxDecPicBufferingHighestTid;
-  UInt                                         maxNrSublayers = activeSPS->getMaxTLayers();
-  numReorderPicsHighestTid                                    = activeSPS->getNumReorderPics( maxNrSublayers - 1 );
-  maxDecPicBufferingHighestTid                                = activeSPS->getMaxDecPicBuffering( maxNrSublayers - 1 );
+  pcc_hm::TComList<pcc_hm::TComPic *>::iterator iterPic                = pcListPic->begin();
+  Int                                           numPicsNotYetDisplayed = 0;
+  Int                                           dpbFullness            = 0;
+  const TComSPS                                *activeSPS              = &( pcListPic->front()->getPicSym()->getSPS() );
+  UInt                                          numReorderPicsHighestTid;
+  UInt                                          maxDecPicBufferingHighestTid;
+  UInt                                          maxNrSublayers = activeSPS->getMaxTLayers();
+  numReorderPicsHighestTid                                     = activeSPS->getNumReorderPics( maxNrSublayers - 1 );
+  maxDecPicBufferingHighestTid                                 = activeSPS->getMaxDecPicBuffering( maxNrSublayers - 1 );
   while ( iterPic != pcListPic->end() ) {
-    TComPic* pcPic = *( iterPic );
+    TComPic *pcPic = *( iterPic );
     if ( pcPic->getOutputMark() && pcPic->getPOC() > m_iPOCLastDisplay ) {
       numPicsNotYetDisplayed++;
       dpbFullness++;
@@ -206,15 +206,15 @@ void PCCHMLibVideoDecoderImpl<T>::xWriteOutput( pcc_hm::TComList<pcc_hm::TComPic
   }
   iterPic = pcListPic->begin();
   if ( numPicsNotYetDisplayed > 2 ) { iterPic++; }
-  TComPic* pcPic = *( iterPic );
+  TComPic *pcPic = *( iterPic );
   if ( numPicsNotYetDisplayed > 2 && pcPic->isField() ) {  // Field Decoding
-    TComList<TComPic*>::iterator endPic = pcListPic->end();
+    TComList<TComPic *>::iterator endPic = pcListPic->end();
     endPic--;
     iterPic = pcListPic->begin();
     while ( iterPic != endPic ) {
-      TComPic* pcPicTop = *( iterPic );
+      TComPic *pcPicTop = *( iterPic );
       iterPic++;
-      TComPic* pcPicBottom = *( iterPic );
+      TComPic *pcPicBottom = *( iterPic );
       if ( pcPicTop->getOutputMark() && pcPicBottom->getOutputMark() &&
            ( numPicsNotYetDisplayed > numReorderPicsHighestTid ||
              dpbFullness > maxDecPicBufferingHighestTid - m_pTDecTop->getTwoVersionsOfCurrDecPicFlag() ) &&
@@ -269,13 +269,14 @@ void PCCHMLibVideoDecoderImpl<T>::xWriteOutput( pcc_hm::TComList<pcc_hm::TComPic
 }
 
 template <typename T>
-void PCCHMLibVideoDecoderImpl<T>::xFlushOutput( pcc_hm::TComList<pcc_hm::TComPic*>* pcListPic, PCCVideo<T, 3>& video ) {
+void PCCHMLibVideoDecoderImpl<T>::xFlushOutput( pcc_hm::TComList<pcc_hm::TComPic *> *pcListPic,
+                                                PCCVideo<T, 3>                      &video ) {
   if ( !pcListPic || pcListPic->empty() ) { return; }
-  pcc_hm::TComList<pcc_hm::TComPic*>::iterator iterPic = pcListPic->begin();
-  iterPic                                              = pcListPic->begin();
-  pcc_hm::TComPic* pcPic                               = *( iterPic );
+  pcc_hm::TComList<pcc_hm::TComPic *>::iterator iterPic = pcListPic->begin();
+  iterPic                                               = pcListPic->begin();
+  pcc_hm::TComPic *pcPic                                = *( iterPic );
   if ( pcPic->isField() ) {  // Field Decoding
-    pcc_hm::TComList<pcc_hm::TComPic*>::iterator endPic = pcListPic->end();
+    pcc_hm::TComList<pcc_hm::TComPic *>::iterator endPic = pcListPic->end();
     endPic--;
     TComPic *pcPicTop, *pcPicBottom = NULL;
     while ( iterPic != endPic ) {
@@ -345,7 +346,7 @@ void PCCHMLibVideoDecoderImpl<T>::xFlushOutput( pcc_hm::TComList<pcc_hm::TComPic
 }
 
 template <typename T>
-void PCCHMLibVideoDecoderImpl<T>::xWritePicture( const pcc_hm::TComPicYuv* pic, PCCVideo<T, 3>& video ) {
+void PCCHMLibVideoDecoderImpl<T>::xWritePicture( const pcc_hm::TComPicYuv *pic, PCCVideo<T, 3> &video ) {
   int chromaSubsample = pic->getWidth( COMPONENT_Y ) / pic->getWidth( COMPONENT_Cb );
   printf(
       "write output frame %zu size = %d %d bit depth = %d - %d = %d in %zd "
@@ -354,9 +355,10 @@ void PCCHMLibVideoDecoderImpl<T>::xWritePicture( const pcc_hm::TComPicYuv* pic, 
       m_outputBitDepth[0], m_internalBitDepths - m_outputBitDepth[0], sizeof( T ), chromaSubsample );
   fflush( stdout );
   video.resize( video.getFrameCount() + 1 );
-  auto&          image = video.getFrames().back();
-  PCCCOLORFORMAT format =
-      chromaSubsample > 1 ? PCCCOLORFORMAT::YUV420 : m_bRGB2GBR ? PCCCOLORFORMAT::RGB444 : PCCCOLORFORMAT::YUV444;
+  auto          &image  = video.getFrames().back();
+  PCCCOLORFORMAT format = chromaSubsample > 1 ? PCCCOLORFORMAT::YUV420
+                          : m_bRGB2GBR        ? PCCCOLORFORMAT::RGB444
+                                              : PCCCOLORFORMAT::YUV444;
   image.set( pic->getAddr( COMPONENT_Y ), pic->getAddr( COMPONENT_Cb ), pic->getAddr( COMPONENT_Cr ), m_outputWidth,
              m_outputHeight, pic->getStride( COMPONENT_Y ), m_outputWidth / chromaSubsample,
              m_outputHeight / chromaSubsample, pic->getStride( COMPONENT_Cb ),

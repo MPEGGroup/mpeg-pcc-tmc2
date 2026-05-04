@@ -45,10 +45,10 @@ template <typename T>
 PCCHMLibVideoEncoder<T>::~PCCHMLibVideoEncoder() {}
 
 template <typename T>
-void PCCHMLibVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
-                                      PCCVideoEncoderParameters& params,
-                                      PCCVideoBitstream&         bitstream,
-                                      PCCVideo<T, 3>&            videoRec ) {
+void PCCHMLibVideoEncoder<T>::encode( PCCVideo<T, 3>            &videoSrc,
+                                      PCCVideoEncoderParameters &params,
+                                      PCCVideoBitstream         &bitstream,
+                                      PCCVideo<T, 3>            &videoRec ) {
   const size_t      width      = videoSrc.getWidth();
   const size_t      height     = videoSrc.getHeight();
   const size_t      frameCount = videoSrc.getFrameCount();

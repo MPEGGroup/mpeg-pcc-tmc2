@@ -42,7 +42,7 @@ class EndOfSequenceRbsp {
  public:
   EndOfSequenceRbsp() {}
   ~EndOfSequenceRbsp() {}
-  EndOfSequenceRbsp& operator=( const EndOfSequenceRbsp& ) = default;
+  EndOfSequenceRbsp &operator=( const EndOfSequenceRbsp & ) = default;
 
  private:
 };

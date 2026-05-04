@@ -45,7 +45,7 @@
 #include <fstream>
 #include <limits>
 
-//#include "program_options_lite.h"
+// #include "program_options_lite.h"
 #include "CommonLib/Rom.h"
 #include "EncoderLib/RateCtrl.h"
 
@@ -62,7 +62,8 @@ namespace po = df::program_options_lite;
 
 enum ExtendedProfileName  // this is used for determining profile strings, where multiple profiles map to a single
                           // profile idc with various constraint flag combinations
-{ NONE,
+{
+  NONE,
   MAIN_10,
   MAIN_10_STILL_PICTURE,
   MAIN_10_444,
@@ -71,7 +72,8 @@ enum ExtendedProfileName  // this is used for determining profile strings, where
   MULTILAYER_MAIN_10_STILL_PICTURE,
   MULTILAYER_MAIN_10_444,
   MULTILAYER_MAIN_10_444_STILL_PICTURE,
-  AUTO = -1 };
+  AUTO = -1
+};
 
 //! \ingroup EncoderApp
 //! \{
@@ -105,7 +107,7 @@ void PCCVTMLibVideoEncoderCfg::create() {}
 
 void PCCVTMLibVideoEncoderCfg::destroy() {}
 
-std::istringstream& operator>>( std::istringstream& in, GOPEntry& entry )  // input
+std::istringstream &operator>>( std::istringstream &in, GOPEntry &entry )  // input
 {
   in >> entry.m_sliceType;
   in >> entry.m_POC;
@@ -136,7 +138,7 @@ std::istringstream& operator>>( std::istringstream& in, GOPEntry& entry )  // in
   return in;
 }
 
-bool confirmPara( bool bflag, const char* message );
+bool confirmPara( bool bflag, const char *message );
 
 static inline ChromaFormat numberToChromaFormat( const int val ) {
   switch ( val ) {
@@ -149,78 +151,78 @@ static inline ChromaFormat numberToChromaFormat( const int val ) {
 }
 
 static const struct MapStrToProfile {
-  const char*   str;
+  const char   *str;
   Profile::Name value;
 } strToProfile[] = {
-    {"none", Profile::NONE},
-    {"main_10", Profile::MAIN_10},
-    {"main_10_444", Profile::MAIN_10_444},
-    {"main_10_still_picture", Profile::MAIN_10_STILL_PICTURE},
-    {"main_10_444_still_picture", Profile::MAIN_10_444_STILL_PICTURE},
-    {"multilayer_main_10", Profile::MULTILAYER_MAIN_10},
-    {"multilayer_main_10_444", Profile::MULTILAYER_MAIN_10_444},
-    {"multilayer_main_10_still_picture", Profile::MULTILAYER_MAIN_10_STILL_PICTURE},
-    {"multilayer_main_10_444_still_picture", Profile::MULTILAYER_MAIN_10_444_STILL_PICTURE},
+    { "none", Profile::NONE },
+    { "main_10", Profile::MAIN_10 },
+    { "main_10_444", Profile::MAIN_10_444 },
+    { "main_10_still_picture", Profile::MAIN_10_STILL_PICTURE },
+    { "main_10_444_still_picture", Profile::MAIN_10_444_STILL_PICTURE },
+    { "multilayer_main_10", Profile::MULTILAYER_MAIN_10 },
+    { "multilayer_main_10_444", Profile::MULTILAYER_MAIN_10_444 },
+    { "multilayer_main_10_still_picture", Profile::MULTILAYER_MAIN_10_STILL_PICTURE },
+    { "multilayer_main_10_444_still_picture", Profile::MULTILAYER_MAIN_10_444_STILL_PICTURE },
 };
 
 static const struct MapStrToExtendedProfile {
-  const char*         str;
+  const char         *str;
   ExtendedProfileName value;
 } strToExtendedProfile[] = {
-    {"none", NONE},
-    {"main_10", MAIN_10},
-    {"main_10_444", MAIN_10_444},
-    {"main_10_still_picture", MAIN_10_STILL_PICTURE},
-    {"main_10_444_still_picture", MAIN_10_444_STILL_PICTURE},
-    {"multilayer_main_10", MULTILAYER_MAIN_10},
-    {"multilayer_main_10_444", MULTILAYER_MAIN_10_444},
-    {"multilayer_main_10_still_picture", MULTILAYER_MAIN_10_STILL_PICTURE},
-    {"multilayer_main_10_444_still_picture", MULTILAYER_MAIN_10_444_STILL_PICTURE},
-    {"auto", AUTO},
+    { "none", NONE },
+    { "main_10", MAIN_10 },
+    { "main_10_444", MAIN_10_444 },
+    { "main_10_still_picture", MAIN_10_STILL_PICTURE },
+    { "main_10_444_still_picture", MAIN_10_444_STILL_PICTURE },
+    { "multilayer_main_10", MULTILAYER_MAIN_10 },
+    { "multilayer_main_10_444", MULTILAYER_MAIN_10_444 },
+    { "multilayer_main_10_still_picture", MULTILAYER_MAIN_10_STILL_PICTURE },
+    { "multilayer_main_10_444_still_picture", MULTILAYER_MAIN_10_444_STILL_PICTURE },
+    { "auto", AUTO },
 };
 
 static const struct MapStrToTier {
-  const char* str;
+  const char *str;
   Level::Tier value;
 } strToTier[] = {
-    {"main", Level::MAIN},
-    {"high", Level::HIGH},
+    { "main", Level::MAIN },
+    { "high", Level::HIGH },
 };
 
 static const struct MapStrToLevel {
-  const char* str;
+  const char *str;
   Level::Name value;
 } strToLevel[] = {
-    {"none", Level::NONE},    {"1", Level::LEVEL1},     {"2", Level::LEVEL2},     {"2.1", Level::LEVEL2_1},
-    {"3", Level::LEVEL3},     {"3.1", Level::LEVEL3_1}, {"4", Level::LEVEL4},     {"4.1", Level::LEVEL4_1},
-    {"5", Level::LEVEL5},     {"5.1", Level::LEVEL5_1}, {"5.2", Level::LEVEL5_2}, {"6", Level::LEVEL6},
-    {"6.1", Level::LEVEL6_1}, {"6.2", Level::LEVEL6_2}, {"6.3", Level::LEVEL6_3}, {"15.5", Level::LEVEL15_5},
+    { "none", Level::NONE },    { "1", Level::LEVEL1 },     { "2", Level::LEVEL2 },     { "2.1", Level::LEVEL2_1 },
+    { "3", Level::LEVEL3 },     { "3.1", Level::LEVEL3_1 }, { "4", Level::LEVEL4 },     { "4.1", Level::LEVEL4_1 },
+    { "5", Level::LEVEL5 },     { "5.1", Level::LEVEL5_1 }, { "5.2", Level::LEVEL5_2 }, { "6", Level::LEVEL6 },
+    { "6.1", Level::LEVEL6_1 }, { "6.2", Level::LEVEL6_2 }, { "6.3", Level::LEVEL6_3 }, { "15.5", Level::LEVEL15_5 },
 };
 
 #if U0132_TARGET_BITS_SATURATION
 uint32_t g_uiMaxCpbSize[2][21] = {
     //         LEVEL1,        LEVEL2,LEVEL2_1,     LEVEL3, LEVEL3_1,      LEVEL4, LEVEL4_1,       LEVEL5,  LEVEL5_1,
     //         LEVEL5_2,    LEVEL6,  LEVEL6_1,  LEVEL6_2
-    {0, 0,        0,        350000, 0,        0,        1500000,  3000000,  0,         6000000,  10000000,
-     0, 12000000, 20000000, 0,      25000000, 40000000, 60000000, 60000000, 120000000, 240000000},
-    {0, 0,        0,        0, 0,         0,         0,         0,         0,         0,        0,
-     0, 30000000, 50000000, 0, 100000000, 160000000, 240000000, 240000000, 480000000, 800000000}};
+    { 0, 0,        0,        350000, 0,        0,        1500000,  3000000,  0,         6000000,  10000000,
+      0, 12000000, 20000000, 0,      25000000, 40000000, 60000000, 60000000, 120000000, 240000000 },
+    { 0, 0,        0,        0, 0,         0,         0,         0,         0,         0,        0,
+      0, 30000000, 50000000, 0, 100000000, 160000000, 240000000, 240000000, 480000000, 800000000 } };
 #endif
 
 static const struct MapStrToCostMode {
-  const char* str;
+  const char *str;
   CostMode    value;
-} strToCostMode[] = {{"lossy", COST_STANDARD_LOSSY},
-                     {"sequence_level_lossless", COST_SEQUENCE_LEVEL_LOSSLESS},
-                     {"lossless", COST_LOSSLESS_CODING},
-                     {"mixed_lossless_lossy", COST_MIXED_LOSSLESS_LOSSY_CODING}};
+} strToCostMode[] = { { "lossy", COST_STANDARD_LOSSY },
+                      { "sequence_level_lossless", COST_SEQUENCE_LEVEL_LOSSLESS },
+                      { "lossless", COST_LOSSLESS_CODING },
+                      { "mixed_lossless_lossy", COST_MIXED_LOSSLESS_LOSSY_CODING } };
 
 static const struct MapStrToScalingListMode {
-  const char*     str;
+  const char     *str;
   ScalingListMode value;
-} strToScalingListMode[] = {{"0", SCALING_LIST_OFF},           {"1", SCALING_LIST_DEFAULT},
-                            {"2", SCALING_LIST_FILE_READ},     {"off", SCALING_LIST_OFF},
-                            {"default", SCALING_LIST_DEFAULT}, {"file", SCALING_LIST_FILE_READ}};
+} strToScalingListMode[] = { { "0", SCALING_LIST_OFF },           { "1", SCALING_LIST_DEFAULT },
+                             { "2", SCALING_LIST_FILE_READ },     { "off", SCALING_LIST_OFF },
+                             { "default", SCALING_LIST_DEFAULT }, { "file", SCALING_LIST_FILE_READ } };
 
 template <typename T, typename P>
 static std::string enumToString( P map[], uint32_t mapLen, const T val ) {
@@ -231,7 +233,7 @@ static std::string enumToString( P map[], uint32_t mapLen, const T val ) {
 }
 
 template <typename T, typename P>
-static istream& readStrToEnum( P map[], uint32_t mapLen, istream& in, T& val ) {
+static istream &readStrToEnum( P map[], uint32_t mapLen, istream &in, T &val ) {
   string str;
   in >> str;
 
@@ -249,26 +251,26 @@ found:
 
 // inline to prevent compiler warnings for "unused static function"
 
-static inline istream& operator>>( istream& in, ExtendedProfileName& profile ) {
+static inline istream &operator>>( istream &in, ExtendedProfileName &profile ) {
   return readStrToEnum( strToExtendedProfile, sizeof( strToExtendedProfile ) / sizeof( *strToExtendedProfile ), in,
                         profile );
 }
 
 namespace Level {
-static inline istream& operator>>( istream& in, Tier& tier ) {
+static inline istream &operator>>( istream &in, Tier &tier ) {
   return readStrToEnum( strToTier, sizeof( strToTier ) / sizeof( *strToTier ), in, tier );
 }
 
-static inline istream& operator>>( istream& in, Name& level ) {
+static inline istream &operator>>( istream &in, Name &level ) {
   return readStrToEnum( strToLevel, sizeof( strToLevel ) / sizeof( *strToLevel ), in, level );
 }
 }  // namespace Level
 
-static inline istream& operator>>( istream& in, CostMode& mode ) {
+static inline istream &operator>>( istream &in, CostMode &mode ) {
   return readStrToEnum( strToCostMode, sizeof( strToCostMode ) / sizeof( *strToCostMode ), in, mode );
 }
 
-static inline istream& operator>>( istream& in, ScalingListMode& mode ) {
+static inline istream &operator>>( istream &in, ScalingListMode &mode ) {
   return readStrToEnum( strToScalingListMode, sizeof( strToScalingListMode ) / sizeof( *strToScalingListMode ), in,
                         mode );
 }
@@ -283,14 +285,10 @@ struct SMultiValueInput {
   const std::size_t maxNumValuesIncl;  // Use 0 for unlimited
   std::vector<T>    values;
   SMultiValueInput() : minValIncl( 0 ), maxValIncl( 0 ), minNumValuesIncl( 0 ), maxNumValuesIncl( 0 ), values() {}
-  SMultiValueInput( std::vector<T>& defaults ) :
-      minValIncl( 0 ),
-      maxValIncl( 0 ),
-      minNumValuesIncl( 0 ),
-      maxNumValuesIncl( 0 ),
-      values( defaults ) {}
-  SMultiValueInput( const T&    minValue,
-                    const T&    maxValue,
+  SMultiValueInput( std::vector<T> &defaults ) :
+      minValIncl( 0 ), maxValIncl( 0 ), minNumValuesIncl( 0 ), maxNumValuesIncl( 0 ), values( defaults ) {}
+  SMultiValueInput( const T    &minValue,
+                    const T    &maxValue,
                     std::size_t minNumberValues = 0,
                     std::size_t maxNumberValues = 0 ) :
       minValIncl( minValue ),
@@ -298,38 +296,38 @@ struct SMultiValueInput {
       minNumValuesIncl( minNumberValues ),
       maxNumValuesIncl( maxNumberValues ),
       values() {}
-  SMultiValueInput( const T&       minValue,
-                    const T&       maxValue,
+  SMultiValueInput( const T       &minValue,
+                    const T       &maxValue,
                     std::size_t    minNumberValues,
                     std::size_t    maxNumberValues,
-                    const T*       defValues,
+                    const T       *defValues,
                     const uint32_t numDefValues ) :
       minValIncl( minValue ),
       maxValIncl( maxValue ),
       minNumValuesIncl( minNumberValues ),
       maxNumValuesIncl( maxNumberValues ),
       values( defValues, defValues + numDefValues ) {}
-  SMultiValueInput<T>& operator=( const std::vector<T>& userValues ) {
+  SMultiValueInput<T> &operator=( const std::vector<T> &userValues ) {
     values = userValues;
     return *this;
   }
-  SMultiValueInput<T>& operator=( const SMultiValueInput<T>& userValues ) {
+  SMultiValueInput<T> &operator=( const SMultiValueInput<T> &userValues ) {
     values = userValues.values;
     return *this;
   }
 
-  T readValue( const char*& pStr, bool& bSuccess );
+  T readValue( const char *&pStr, bool &bSuccess );
 
-  istream& readValues( std::istream& in );
+  istream &readValues( std::istream &in );
 };
 
 template <class T>
-static inline istream& operator>>( std::istream& in, SMultiValueInput<T>& values ) {
+static inline istream &operator>>( std::istream &in, SMultiValueInput<T> &values ) {
   return values.readValues( in );
 }
 
 template <class T>
-T SMultiValueInput<T>::readValue( const char*& pStr, bool& bSuccess ) {
+T SMultiValueInput<T>::readValue( const char *&pStr, bool &bSuccess ) {
   T           val = T();
   std::string s( pStr );
   std::replace( s.begin(), s.end(), ',', ' ' );  // make comma separated into space separated
@@ -344,7 +342,7 @@ T SMultiValueInput<T>::readValue( const char*& pStr, bool& bSuccess ) {
 }
 
 template <class T>
-istream& SMultiValueInput<T>::readValues( std::istream& in ) {
+istream &SMultiValueInput<T>::readValues( std::istream &in ) {
   values.clear();
   string str;
   while ( !in.eof() ) {
@@ -353,10 +351,9 @@ istream& SMultiValueInput<T>::readValues( std::istream& in ) {
     str += " " + tmp;
   }
   if ( !str.empty() ) {
-    const char* pStr = str.c_str();
+    const char *pStr = str.c_str();
     // soak up any whitespace
-    for ( ; isspace( *pStr ); pStr++ )
-      ;
+    for ( ; isspace( *pStr ); pStr++ );
 
     while ( *pStr != 0 ) {
       bool bSuccess = true;
@@ -372,11 +369,9 @@ istream& SMultiValueInput<T>::readValues( std::istream& in ) {
       }
       values.push_back( val );
       // soak up any whitespace and up to 1 comma.
-      for ( ; isspace( *pStr ); pStr++ )
-        ;
+      for ( ; isspace( *pStr ); pStr++ );
       if ( *pStr == ',' ) { pStr++; }
-      for ( ; isspace( *pStr ); pStr++ )
-        ;
+      for ( ; isspace( *pStr ); pStr++ );
     }
   }
   if ( values.size() < minNumValuesIncl ) { in.setstate( ios::failbit ); }
@@ -385,7 +380,7 @@ istream& SMultiValueInput<T>::readValues( std::istream& in ) {
 
 #if QP_SWITCHING_FOR_PARALLEL
 template <class T>
-static inline istream& operator>>( std::istream& in, PCCVTMLibVideoEncoderCfg::OptionalValue<T>& value ) {
+static inline istream &operator>>( std::istream &in, PCCVTMLibVideoEncoderCfg::OptionalValue<T> &value ) {
   in >> std::ws;
   if ( in.eof() ) {
     value.bPresent = false;
@@ -398,7 +393,7 @@ static inline istream& operator>>( std::istream& in, PCCVTMLibVideoEncoderCfg::O
 #endif
 
 template <class T1, class T2>
-static inline istream& operator>>( std::istream& in, std::map<T1, T2>& map ) {
+static inline istream &operator>>( std::istream &in, std::map<T1, T2> &map ) {
   T1 key;
   T2 value;
   try {
@@ -478,7 +473,7 @@ static uint32_t getMaxSlicesByLevel( Level::Name level ) {
     \param  argv        array of arguments
     \retval             true when success
  */
-bool PCCVTMLibVideoEncoderCfg::parseCfg( int argc, char* argv[] ) {
+bool PCCVTMLibVideoEncoderCfg::parseCfg( int argc, char *argv[] ) {
   bool do_help = false;
 
   int                 tmpChromaFormat;
@@ -516,8 +511,8 @@ bool PCCVTMLibVideoEncoderCfg::parseCfg( int argc, char* argv[] ) {
                      ///< use [temporalLayer], else if size>0, use [size()-1], else use m_adLambdaModifier.
   SMultiValueInput<uint16_t> cfgSliceLosslessArray( 0, std::numeric_limits<uint16_t>::max(), 0, MAX_SLICES );
 #if SHARP_LUMA_DELTA_QP
-  const int             defaultLumaLevelTodQp_QpChangePoints[]   = {-3, -2, -1, 0, 1, 2, 3, 4, 5, 6};
-  const int             defaultLumaLevelTodQp_LumaChangePoints[] = {0, 301, 367, 434, 501, 567, 634, 701, 767, 834};
+  const int             defaultLumaLevelTodQp_QpChangePoints[]   = { -3, -2, -1, 0, 1, 2, 3, 4, 5, 6 };
+  const int             defaultLumaLevelTodQp_LumaChangePoints[] = { 0, 301, 367, 434, 501, 567, 634, 701, 767, 834 };
   SMultiValueInput<int> cfg_lumaLeveltoDQPMappingQP( -MAX_QP, MAX_QP, 0, LUMA_LEVEL_TO_DQP_LUT_MAXSIZE,
                                                      defaultLumaLevelTodQp_QpChangePoints,
                                                      sizeof( defaultLumaLevelTodQp_QpChangePoints ) / sizeof( int ) );
@@ -526,54 +521,54 @@ bool PCCVTMLibVideoEncoderCfg::parseCfg( int argc, char* argv[] ) {
       sizeof( defaultLumaLevelTodQp_LumaChangePoints ) / sizeof( int ) );
   uint32_t lumaLevelToDeltaQPMode;
 #endif
-  const int qpInVals[]  = {25, 33, 43};  // qpInVal values used to derive the chroma QP mapping table used in VTM-5.0
-  const int qpOutVals[] = {25, 32, 37};  // qpOutVal values used to derive the chroma QP mapping table used in VTM-5.0
+  const int qpInVals[]  = { 25, 33, 43 };  // qpInVal values used to derive the chroma QP mapping table used in VTM-5.0
+  const int qpOutVals[] = { 25, 32, 37 };  // qpOutVal values used to derive the chroma QP mapping table used in VTM-5.0
   SMultiValueInput<int> cfg_qpInValCb( MIN_QP_VALUE_FOR_16_BIT, MAX_QP, 0, MAX_NUM_QP_VALUES, qpInVals,
                                        sizeof( qpInVals ) / sizeof( int ) );
   SMultiValueInput<int> cfg_qpOutValCb( MIN_QP_VALUE_FOR_16_BIT, MAX_QP, 0, MAX_NUM_QP_VALUES, qpOutVals,
                                         sizeof( qpOutVals ) / sizeof( int ) );
-  const int             zeroVector[] = {0};
+  const int             zeroVector[] = { 0 };
   SMultiValueInput<int> cfg_qpInValCr( MIN_QP_VALUE_FOR_16_BIT, MAX_QP, 0, MAX_NUM_QP_VALUES, zeroVector, 1 );
   SMultiValueInput<int> cfg_qpOutValCr( MIN_QP_VALUE_FOR_16_BIT, MAX_QP, 0, MAX_NUM_QP_VALUES, zeroVector, 1 );
   SMultiValueInput<int> cfg_qpInValCbCr( MIN_QP_VALUE_FOR_16_BIT, MAX_QP, 0, MAX_NUM_QP_VALUES, zeroVector, 1 );
   SMultiValueInput<int> cfg_qpOutValCbCr( MIN_QP_VALUE_FOR_16_BIT, MAX_QP, 0, MAX_NUM_QP_VALUES, zeroVector, 1 );
-  const int             cQpOffsets[] = {6};
+  const int             cQpOffsets[] = { 6 };
   SMultiValueInput<int> cfg_cbQpOffsetList( -12, 12, 0, 6, cQpOffsets, 0 );
   SMultiValueInput<int> cfg_crQpOffsetList( -12, 12, 0, 6, cQpOffsets, 0 );
   SMultiValueInput<int> cfg_cbCrQpOffsetList( -12, 12, 0, 6, cQpOffsets, 0 );
 
-  const uint32_t             defaultInputKneeCodes[3]  = {600, 800, 900};
-  const uint32_t             defaultOutputKneeCodes[3] = {100, 250, 450};
+  const uint32_t             defaultInputKneeCodes[3]  = { 600, 800, 900 };
+  const uint32_t             defaultOutputKneeCodes[3] = { 100, 250, 450 };
   SMultiValueInput<uint32_t> cfg_kneeSEIInputKneePointValue( 1, 999, 0, 999, defaultInputKneeCodes,
                                                              sizeof( defaultInputKneeCodes ) / sizeof( uint32_t ) );
   SMultiValueInput<uint32_t> cfg_kneeSEIOutputKneePointValue( 0, 1000, 0, 999, defaultOutputKneeCodes,
                                                               sizeof( defaultOutputKneeCodes ) / sizeof( uint32_t ) );
-  const int                  defaultPrimaryCodes[6]   = {0, 50000, 0, 0, 50000, 0};
-  const int                  defaultWhitePointCode[2] = {16667, 16667};
+  const int                  defaultPrimaryCodes[6]   = { 0, 50000, 0, 0, 50000, 0 };
+  const int                  defaultWhitePointCode[2] = { 16667, 16667 };
   SMultiValueInput<int>      cfg_DisplayPrimariesCode( 0, 50000, 6, 6, defaultPrimaryCodes,
-                                                  sizeof( defaultPrimaryCodes ) / sizeof( int ) );
+                                                       sizeof( defaultPrimaryCodes ) / sizeof( int ) );
   SMultiValueInput<int>      cfg_DisplayWhitePointCode( 0, 50000, 2, 2, defaultWhitePointCode,
-                                                   sizeof( defaultWhitePointCode ) / sizeof( int ) );
+                                                        sizeof( defaultWhitePointCode ) / sizeof( int ) );
 
-  SMultiValueInput<bool>     cfg_timeCodeSeiTimeStampFlag( 0, 1, 0, MAX_TIMECODE_SEI_SETS );
-  SMultiValueInput<bool>     cfg_timeCodeSeiNumUnitFieldBasedFlag( 0, 1, 0, MAX_TIMECODE_SEI_SETS );
-  SMultiValueInput<int>      cfg_timeCodeSeiCountingType( 0, 6, 0, MAX_TIMECODE_SEI_SETS );
-  SMultiValueInput<bool>     cfg_timeCodeSeiFullTimeStampFlag( 0, 1, 0, MAX_TIMECODE_SEI_SETS );
-  SMultiValueInput<bool>     cfg_timeCodeSeiDiscontinuityFlag( 0, 1, 0, MAX_TIMECODE_SEI_SETS );
-  SMultiValueInput<bool>     cfg_timeCodeSeiCntDroppedFlag( 0, 1, 0, MAX_TIMECODE_SEI_SETS );
-  SMultiValueInput<int>      cfg_timeCodeSeiNumberOfFrames( 0, 511, 0, MAX_TIMECODE_SEI_SETS );
-  SMultiValueInput<int>      cfg_timeCodeSeiSecondsValue( 0, 59, 0, MAX_TIMECODE_SEI_SETS );
-  SMultiValueInput<int>      cfg_timeCodeSeiMinutesValue( 0, 59, 0, MAX_TIMECODE_SEI_SETS );
-  SMultiValueInput<int>      cfg_timeCodeSeiHoursValue( 0, 23, 0, MAX_TIMECODE_SEI_SETS );
-  SMultiValueInput<bool>     cfg_timeCodeSeiSecondsFlag( 0, 1, 0, MAX_TIMECODE_SEI_SETS );
-  SMultiValueInput<bool>     cfg_timeCodeSeiMinutesFlag( 0, 1, 0, MAX_TIMECODE_SEI_SETS );
-  SMultiValueInput<bool>     cfg_timeCodeSeiHoursFlag( 0, 1, 0, MAX_TIMECODE_SEI_SETS );
-  SMultiValueInput<int>      cfg_timeCodeSeiTimeOffsetLength( 0, 31, 0, MAX_TIMECODE_SEI_SETS );
-  SMultiValueInput<int>      cfg_timeCodeSeiTimeOffsetValue( std::numeric_limits<int>::min(),
-                                                             std::numeric_limits<int>::max(), 0, MAX_TIMECODE_SEI_SETS );
-  SMultiValueInput<int>      cfg_omniViewportSEIAzimuthCentre( -11796480, 11796479, 0, 15 );
-  SMultiValueInput<int>      cfg_omniViewportSEIElevationCentre( -5898240, 5898240, 0, 15 );
-  SMultiValueInput<int>      cfg_omniViewportSEITiltCentre( -11796480, 11796479, 0, 15 );
+  SMultiValueInput<bool> cfg_timeCodeSeiTimeStampFlag( 0, 1, 0, MAX_TIMECODE_SEI_SETS );
+  SMultiValueInput<bool> cfg_timeCodeSeiNumUnitFieldBasedFlag( 0, 1, 0, MAX_TIMECODE_SEI_SETS );
+  SMultiValueInput<int>  cfg_timeCodeSeiCountingType( 0, 6, 0, MAX_TIMECODE_SEI_SETS );
+  SMultiValueInput<bool> cfg_timeCodeSeiFullTimeStampFlag( 0, 1, 0, MAX_TIMECODE_SEI_SETS );
+  SMultiValueInput<bool> cfg_timeCodeSeiDiscontinuityFlag( 0, 1, 0, MAX_TIMECODE_SEI_SETS );
+  SMultiValueInput<bool> cfg_timeCodeSeiCntDroppedFlag( 0, 1, 0, MAX_TIMECODE_SEI_SETS );
+  SMultiValueInput<int>  cfg_timeCodeSeiNumberOfFrames( 0, 511, 0, MAX_TIMECODE_SEI_SETS );
+  SMultiValueInput<int>  cfg_timeCodeSeiSecondsValue( 0, 59, 0, MAX_TIMECODE_SEI_SETS );
+  SMultiValueInput<int>  cfg_timeCodeSeiMinutesValue( 0, 59, 0, MAX_TIMECODE_SEI_SETS );
+  SMultiValueInput<int>  cfg_timeCodeSeiHoursValue( 0, 23, 0, MAX_TIMECODE_SEI_SETS );
+  SMultiValueInput<bool> cfg_timeCodeSeiSecondsFlag( 0, 1, 0, MAX_TIMECODE_SEI_SETS );
+  SMultiValueInput<bool> cfg_timeCodeSeiMinutesFlag( 0, 1, 0, MAX_TIMECODE_SEI_SETS );
+  SMultiValueInput<bool> cfg_timeCodeSeiHoursFlag( 0, 1, 0, MAX_TIMECODE_SEI_SETS );
+  SMultiValueInput<int>  cfg_timeCodeSeiTimeOffsetLength( 0, 31, 0, MAX_TIMECODE_SEI_SETS );
+  SMultiValueInput<int>  cfg_timeCodeSeiTimeOffsetValue( std::numeric_limits<int>::min(),
+                                                         std::numeric_limits<int>::max(), 0, MAX_TIMECODE_SEI_SETS );
+  SMultiValueInput<int>  cfg_omniViewportSEIAzimuthCentre( -11796480, 11796479, 0, 15 );
+  SMultiValueInput<int>  cfg_omniViewportSEIElevationCentre( -5898240, 5898240, 0, 15 );
+  SMultiValueInput<int>  cfg_omniViewportSEITiltCentre( -11796480, 11796479, 0, 15 );
   SMultiValueInput<uint32_t> cfg_omniViewportSEIHorRange( 1, 23592960, 0, 15 );
   SMultiValueInput<uint32_t> cfg_omniViewportSEIVerRange( 1, 11796480, 0, 15 );
   SMultiValueInput<uint32_t> cfg_rwpSEIRwpTransformType( 0, 7, 0, std::numeric_limits<uint8_t>::max() );
@@ -611,8 +606,8 @@ bool PCCVTMLibVideoEncoderCfg::parseCfg( int argc, char* argv[] ) {
   SMultiValueInput<double>   cfg_gcmpSEIFunctionCoeffV( 0.0, 1.0, 5, 6 );
   SMultiValueInput<uint32_t> cfg_gcmpSEIFunctionVAffectedByUFlag( 0, 1, 5, 6 );
 #if LUMA_ADAPTIVE_DEBLOCKING_FILTER_QP_OFFSET
-  const int             defaultLadfQpOffset[3]           = {1, 0, 1};
-  const int             defaultLadfIntervalLowerBound[2] = {350, 833};
+  const int             defaultLadfQpOffset[3]           = { 1, 0, 1 };
+  const int             defaultLadfIntervalLowerBound[2] = { 350, 833 };
   SMultiValueInput<int> cfg_LadfQpOffset( -MAX_QP, MAX_QP, 2, MAX_LADF_INTERVALS, defaultLadfQpOffset, 3 );
   SMultiValueInput<int> cfg_LadfIntervalLowerBound( 0, std::numeric_limits<int>::max(), 1, MAX_LADF_INTERVALS - 1,
                                                     defaultLadfIntervalLowerBound, 2 );
@@ -1434,8 +1429,8 @@ bool PCCVTMLibVideoEncoderCfg::parseCfg( int argc, char* argv[] ) {
   }
 
   po::setDefaults( opts );
-  po::ErrorReporter        err;
-  const list<const char*>& argv_unhandled = po::scanArgv( opts, argc, (const char**)argv, err );
+  po::ErrorReporter         err;
+  const list<const char *> &argv_unhandled = po::scanArgv( opts, argc, (const char **)argv, err );
 
   m_resChangeInClvsEnabled = m_scalingRatioHor != 1.0 || m_scalingRatioVer != 1.0;
   m_resChangeInClvsEnabled = m_resChangeInClvsEnabled && m_rprEnabledFlag;
@@ -1569,7 +1564,7 @@ bool PCCVTMLibVideoEncoderCfg::parseCfg( int argc, char* argv[] ) {
     }
   }
 
-  for ( list<const char*>::const_iterator it = argv_unhandled.begin(); it != argv_unhandled.end(); it++ ) {
+  for ( list<const char *>::const_iterator it = argv_unhandled.begin(); it != argv_unhandled.end(); it++ ) {
     msg( VTM_ERROR, "Unhandled argument ignored: `%s'\n", *it );
   }
 
@@ -1851,7 +1846,7 @@ bool PCCVTMLibVideoEncoderCfg::parseCfg( int argc, char* argv[] ) {
         ( tmpConstraintChromaFormat == 0 ) ? m_chromaFormatIDC : numberToChromaFormat( tmpConstraintChromaFormat );
     if ( m_bitDepthConstraint == 0 ) {
       if ( m_profile != Profile::NONE ) {
-        const ProfileFeatures* features = ProfileFeatures::getProfileFeatures( m_profile );
+        const ProfileFeatures *features = ProfileFeatures::getProfileFeatures( m_profile );
         CHECK( features->profile != m_profile, "Profile not found" );
         m_bitDepthConstraint = features->maxBitDepth;
       } else  // m_profile == Profile::NONE
@@ -2021,12 +2016,12 @@ bool PCCVTMLibVideoEncoderCfg::parseCfg( int argc, char* argv[] ) {
   if ( m_useIdentityTableForNon420Chroma && m_chromaFormatIDC != CHROMA_420 ) {
     m_chromaQpMappingTableParams.m_sameCQPTableForAllChromaFlag = true;
 
-    cfg_qpInValCb.values    = {26};
-    cfg_qpInValCr.values    = {26};
-    cfg_qpInValCbCr.values  = {26};
-    cfg_qpOutValCb.values   = {26};
-    cfg_qpOutValCr.values   = {26};
-    cfg_qpOutValCbCr.values = {26};
+    cfg_qpInValCb.values    = { 26 };
+    cfg_qpInValCr.values    = { 26 };
+    cfg_qpInValCbCr.values  = { 26 };
+    cfg_qpOutValCb.values   = { 26 };
+    cfg_qpOutValCr.values   = { 26 };
+    cfg_qpOutValCbCr.values = { 26 };
   }
 
   // Need to have at least 2 points in the set. Add second one if only one given
@@ -2213,7 +2208,7 @@ bool PCCVTMLibVideoEncoderCfg::parseCfg( int argc, char* argv[] ) {
 
   // reading external dQP description from file
   if ( !m_dQPFileName.empty() ) {
-    FILE* fpt = fopen( m_dQPFileName.c_str(), "r" );
+    FILE *fpt = fopen( m_dQPFileName.c_str(), "r" );
     if ( fpt ) {
       int iValue;
       int iPOC = 0;
@@ -2654,7 +2649,7 @@ bool PCCVTMLibVideoEncoderCfg::xCheckParameter() {
   xConfirmPara( m_onePictureOnlyConstraintFlag && m_framesToBeEncoded != 1,
                 "When onePictureOnlyConstraintFlag is true, the number of frames to be encoded must be 1" );
   if ( m_profile != Profile::NONE ) {
-    const ProfileFeatures* features = ProfileFeatures::getProfileFeatures( m_profile );
+    const ProfileFeatures *features = ProfileFeatures::getProfileFeatures( m_profile );
     CHECK( features->profile != m_profile, "Profile not found" );
     xConfirmPara( m_level == Level::LEVEL15_5 && !features->canUseLevel15p5, "Profile does not support level 15.5" );
   }
@@ -2963,7 +2958,7 @@ bool PCCVTMLibVideoEncoderCfg::xCheckParameter() {
   bool errorGOP                      = false;
   int  checkGOP                      = 1;
   int  numRefs                       = m_isField ? 2 : 1;
-  int  refList[MAX_NUM_REF_PICS + 1] = {0};
+  int  refList[MAX_NUM_REF_PICS + 1] = { 0 };
   if ( m_isField ) { refList[1] = 1; }
   bool isOK[MAX_GOP];
   for ( int i = 0; i < MAX_GOP; i++ ) { isOK[i] = false; }
@@ -3336,13 +3331,13 @@ bool PCCVTMLibVideoEncoderCfg::xCheckParameter() {
             uint32_t startCtuX  = pps.getTileColumnBd( startTileX );
             uint32_t startCtuY  = pps.getTileRowBd( startTileY );
             uint32_t stopCtuX   = ( startTileX + m_rectSliceFixedWidth ) >= pps.getNumTileColumns()
-                                    ? pps.getPicWidthInCtu() - 1
-                                    : pps.getTileColumnBd( startTileX + m_rectSliceFixedWidth ) - 1;
-            uint32_t stopCtuY = ( startTileY + m_rectSliceFixedHeight ) >= pps.getNumTileRows()
-                                    ? pps.getPicHeightInCtu() - 1
-                                    : pps.getTileRowBd( startTileY + m_rectSliceFixedHeight ) - 1;
-            uint32_t stopTileX = pps.ctuToTileCol( stopCtuX );
-            uint32_t stopTileY = pps.ctuToTileRow( stopCtuY );
+                                      ? pps.getPicWidthInCtu() - 1
+                                      : pps.getTileColumnBd( startTileX + m_rectSliceFixedWidth ) - 1;
+            uint32_t stopCtuY   = ( startTileY + m_rectSliceFixedHeight ) >= pps.getNumTileRows()
+                                      ? pps.getPicHeightInCtu() - 1
+                                      : pps.getTileRowBd( startTileY + m_rectSliceFixedHeight ) - 1;
+            uint32_t stopTileX  = pps.ctuToTileCol( stopCtuX );
+            uint32_t stopTileY  = pps.ctuToTileRow( stopCtuY );
 
             // add rectangular slice to list
             m_rectSlicePos.push_back( startCtuY * pps.getPicWidthInCtu() + startCtuX );
@@ -3367,7 +3362,7 @@ bool PCCVTMLibVideoEncoderCfg::xCheckParameter() {
           m_rectSlicePos.push_back( 0 );
           m_rectSlicePos.push_back( pps.getPicWidthInCtu() * pps.getPicHeightInCtu() - 1 );
         }
-        pps.setNumSlicesInPic( ( uint32_t )( m_rectSlicePos.size() >> 1 ) );
+        pps.setNumSlicesInPic( (uint32_t)( m_rectSlicePos.size() >> 1 ) );
         xConfirmPara( pps.getNumSlicesInPic() > getMaxSlicesByLevel( m_level ),
                       "Number of rectangular slices exceeds maximum number allowed according to specified level" );
         pps.initRectSlices();
@@ -3539,7 +3534,7 @@ bool PCCVTMLibVideoEncoderCfg::xCheckParameter() {
 #if U0132_TARGET_BITS_SATURATION
     if ( ( m_RCCpbSaturationEnabled ) && ( m_level != Level::NONE ) && ( m_profile != Profile::NONE ) ) {
       uint32_t uiLevelIdx =
-          ( m_level / 10 ) + ( uint32_t )( ( m_level % 10 ) / 3 );  // (m_level / 30)*3 + ((m_level % 10) / 3);
+          ( m_level / 10 ) + (uint32_t)( ( m_level % 10 ) / 3 );  // (m_level / 30)*3 + ((m_level % 10) / 3);
       xConfirmPara( m_RCCpbSize > g_uiMaxCpbSize[m_levelTier][uiLevelIdx],
                     "RCCpbSize should be smaller than or equal to Max CPB size according to tier and level" );
       xConfirmPara( m_RCInitialCpbFullness > 1, "RCInitialCpbFullness should be smaller than or equal to 1" );
@@ -3719,7 +3714,7 @@ bool PCCVTMLibVideoEncoderCfg::xCheckParameter() {
   return check_failed;
 }
 
-const char* profileToString( const Profile::Name profile ) {
+const char *profileToString( const Profile::Name profile ) {
   static const uint32_t numberOfProfiles = sizeof( strToProfile ) / sizeof( *strToProfile );
 
   for ( uint32_t profileIndex = 0; profileIndex < numberOfProfiles; profileIndex++ ) {
@@ -4077,7 +4072,7 @@ bool PCCVTMLibVideoEncoderCfg::xHasLeadingPicture() {
   return false;
 }
 
-bool confirmPara( bool bflag, const char* message ) {
+bool confirmPara( bool bflag, const char *message ) {
   if ( !bflag ) { return false; }
 
   msg( VTM_ERROR, "Error: %s\n", message );

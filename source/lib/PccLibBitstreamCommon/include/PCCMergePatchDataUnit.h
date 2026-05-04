@@ -56,9 +56,9 @@ class MergePatchDataUnit {
       pos3dRangeD_( 0 ),
       patchIndex_( 0 ),
       frameIndex_( 0 ),
-      tileOrder_( 0 ){};
-  ~MergePatchDataUnit(){};
-  MergePatchDataUnit& operator=( const MergePatchDataUnit& ) = default;
+      tileOrder_( 0 ) {};
+  ~MergePatchDataUnit() {};
+  MergePatchDataUnit &operator=( const MergePatchDataUnit & ) = default;
 
   bool     getOverride2dParamsFlag() { return override2dParamsFlag_; }
   bool     getOverride3dParamsFlag() { return override3dParamsFlag_; }
@@ -75,7 +75,7 @@ class MergePatchDataUnit {
   size_t   getPatchIndex() { return patchIndex_; }
   size_t   getFrameIndex() { return frameIndex_; }
   size_t   getTileOrder() { return tileOrder_; }
-  PLRData& getPLRData() { return plrData_; }
+  PLRData &getPLRData() { return plrData_; }
 
   void setOverride2dParamsFlag( bool value ) { override2dParamsFlag_ = value; }
   void setOverride3dParamsFlag( bool value ) { override3dParamsFlag_ = value; }

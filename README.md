@@ -88,6 +88,41 @@ The pointcloud metrics can be computed inside the TM2 encoder and decoder accord
 
 The computations of the metrics are the same than the distances computed with the pcc_distortion software that can be found in: https://git.mpeg.expert/MPEG/3dgh/v-pcc/software/mpeg-pcc-dmetric.git.
 
+## Software checks
+
+To run the software checks, set-up a Python virtual environment and run the checks:
+
+### POSIX
+
+```shell
+python3 -m venv venv
+. venv/bin/activate     
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+### Windows
+
+```shell
+python -m venv venv
+venv\Scripts\activate  
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+### Running the checks
+
+For Microsoft Visual Studio first open a x64 Native Tools Command Prompt or call `vcvars64.bat` to
+add the C++ compiler toolchain to the environment.
+
+Build with Ninja, and then run the checks:
+
+```shell
+cmake -G Ninja -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+ninja -C build
+python checks/format.py
+python checks/static_analysis.py
+```
 	
 ## Running
 
@@ -184,9 +219,23 @@ Occupancy Map video encode/decode using same version of HM encooder/decoder.
 	--SHVCLayerID=2 
 ```
 
+### PccGs4AppEncoder
+
+```
+./bin/PccGs4AppEncoder \
+	--uncompressedDataPath=/path/to/ply_file.ply \
+   	--configurationFolder=./mpeg-pcc-tmc2/cfg/gs4/ \
+   	--config=./mpeg-pcc-tmc2/cfg/gs4/gs-main10-common.cfg \
+	--config=./mpeg-pcc-tmc2/cfg/gs4/gs-pack-none.cfg \
+  	--config=./mpeg-pcc-tmc2/cfg/gs4/rate/r04/encoder.cfg \
+	--compressedStreamPath=/path/to/compressed_file.v3c \
+```
+
+more information you can find [here](source/app/PccGs4AppEncoder/README.md) 
+
 ### Software manual
 
-More informations could be found in the [user manuel](doc/mpeg-pcc-tm2-sw-manual.pdf).
+More informations can be found in the [user manuel](doc/mpeg-pcc-tm2-sw-manual.pdf).
 
 
 ###

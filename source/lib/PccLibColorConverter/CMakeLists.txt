@@ -1,26 +1,24 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 3.2)
+cmake_minimum_required(VERSION 3.2)
 
-GET_FILENAME_COMPONENT(MYNAME ${CMAKE_CURRENT_LIST_DIR} NAME)
-STRING(REPLACE " " "_" MYNAME ${MYNAME})
-PROJECT(${MYNAME} C CXX)
+get_filename_component(MYNAME ${CMAKE_CURRENT_LIST_DIR} NAME)
+string(REPLACE " " "_" MYNAME ${MYNAME})
+project(${MYNAME} C CXX)
 
-FILE(GLOB SRC  include/*.h 
-               source/*.cpp  
-               ${HDRTOOLS_DIR}/projects/HDRConvert/inc/ProjectParameters.h
-               ${HDRTOOLS_DIR}/projects/HDRConvert/src/ProjectParameters.cpp )
+file(GLOB SRC include/*.h source/*.cpp
+     ${HDRTOOLS_DIR}/projects/HDRConvert/inc/ProjectParameters.h
+     ${HDRTOOLS_DIR}/projects/HDRConvert/src/ProjectParameters.cpp)
 
-INCLUDE_DIRECTORIES( include 
-                     ${CMAKE_SOURCE_DIR}/source/lib/PccLibCommon/include/
-                     ${CMAKE_SOURCE_DIR}/source/lib/PccLibBitstreamCommon/include/
-                     ${HDRTOOLS_DIR}/common/inc
-                     ${HDRTOOLS_DIR}/projects/HDRConvert/inc )
+include_directories(
+  include ${CMAKE_SOURCE_DIR}/source/lib/PccLibCommon/include/
+  ${CMAKE_SOURCE_DIR}/source/lib/PccLibBitstreamCommon/include/
+  ${HDRTOOLS_DIR}/common/inc ${HDRTOOLS_DIR}/projects/HDRConvert/inc)
 
-SET( LIBS PccLibCommon )
-IF( USE_HDRTOOLS )
-SET( LIBS ${LIBS} HDRLib )
-ENDIF()
-ADD_LIBRARY( ${MYNAME} ${LINKER} ${SRC} )
+set(LIBS PccLibCommon)
+if(USE_HDRTOOLS)
+  set(LIBS ${LIBS} HDRLib)
+endif()
+add_library(${MYNAME} ${LINKER} ${SRC})
 
-TARGET_LINK_LIBRARIES( ${MYNAME} ${LIBS} )
+target_link_libraries(${MYNAME} ${LIBS})
 
-SET_TARGET_PROPERTIES( ${MYNAME} PROPERTIES LINKER_LANGUAGE CXX)
+set_target_properties(${MYNAME} PROPERTIES LINKER_LANGUAGE CXX)

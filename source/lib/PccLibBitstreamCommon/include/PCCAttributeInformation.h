@@ -48,12 +48,12 @@ class AttributeInformation {
     attributeDimensionMinus1_.clear();
     attributeDimensionPartitionsMinus1_.clear();
     Attribute2dBitdepthMinus1_.clear();
-    for ( auto& value : attributePartitionChannelsMinus1_ ) { value.clear(); }
+    for ( auto &value : attributePartitionChannelsMinus1_ ) { value.clear(); }
     attributePartitionChannelsMinus1_.clear();
     attributeMapAbsoluteCodingPersistenceFlagList_.clear();
     attributeMSBAlignFlag_.clear();
   }
-  AttributeInformation& operator=( const AttributeInformation& ) = default;
+  AttributeInformation &operator=( const AttributeInformation & ) = default;
 
   void allocate() {
     attributeTypeId_.resize( attributeCount_, 0 );
@@ -80,7 +80,7 @@ class AttributeInformation {
     }
     return attributePartitionChannelsMinus1_[index][j];
   }
-  std::vector<bool>& getAttributeMapAbsoluteCodingPersistenceFlagList() {
+  std::vector<bool> &getAttributeMapAbsoluteCodingPersistenceFlagList() {
     return attributeMapAbsoluteCodingPersistenceFlagList_;
   }
   uint8_t getAttributeMapAbsoluteCodingPersistenceFlag( size_t attIdx ) {

@@ -33,6 +33,7 @@
 #ifndef PCCDecoder_h
 #define PCCDecoder_h
 
+#include "PCCAdaptation.h"
 #include "PCCCommon.h"
 #include "PCCDecoderParameters.h"
 #include "PCCCodec.h"
@@ -59,32 +60,51 @@ class PCCDecoder : public PCCCodec {
   PCCDecoder();
   ~PCCDecoder();
 
-  int decode( PCCContext& context, PCCGroupOfFrames& reconstruct, int32_t atlasIndex );
+  int decode( PCCContext &context, PCCGroupOfFrames &reconstruct, int32_t atlasIndex );
 
-  void setParameters( const PCCDecoderParameters& params );
-  void setReconstructionParameters( const PCCDecoderParameters& params );
-  void setPostProcessingSeiParameters( GeneratePointCloudParameters& gpcParams, PCCContext& context, size_t atglIndex );
-  void setGeneratePointCloudParameters( GeneratePointCloudParameters& gpcParams,
-                                        PCCContext&                   context,
+  void setParameters( const PCCDecoderParameters &params );
+  void setReconstructionParameters( const PCCDecoderParameters &params );
+  void setPostProcessingSeiParameters( GeneratePointCloudParameters &gpcParams, PCCContext &context, size_t atglIndex );
+  void setGeneratePointCloudParameters( GeneratePointCloudParameters &gpcParams,
+                                        PCCContext                   &context,
                                         size_t                        atglIndex );
-  void createPatchFrameDataStructure( PCCContext& context );
-  void createPatchFrameDataStructure( PCCContext& context, size_t atglIndex );
+  void createPatchFrameDataStructure( PCCContext &context );
+  void createPatchFrameDataStructure( PCCContext &context, size_t atglIndex );
+
+  PCCAdaptationParameters &getAdaptationParams( size_t frameIndex ) {
+    if ( frameIndex < adaptationParams_.size() ) {
+      return adaptationParams_[frameIndex];
+    } else {
+      std::cout << "Error: adaptation_ size " << adaptationParams_.size() << " frameIndex " << frameIndex << std::endl;
+      exit( 0 );
+    }
+  }
 
  private:
-  void       setPointLocalReconstruction( PCCContext& context );
-  void       setPLRData( PCCFrameContext& tile, PCCPatch& patch, PLRData& plrd, size_t occupancyPackingBlockSize );
-  void       setTilePartitionSizeAfti( PCCContext& context );
-  size_t     setTileSizeAndLocation( PCCContext& context, size_t frameIndex, AtlasTileHeader& atgh );
-  bool       compareHashSEIMD5( std::vector<uint8_t>& encMD5, std::vector<uint8_t>& decMD5 );
+  void       setPointLocalReconstruction( PCCContext &context );
+  void       setPLRData( PCCFrameContext &tile, PCCPatch &patch, PLRData &plrd, size_t occupancyPackingBlockSize );
+  void       setTilePartitionSizeAfti( PCCContext &context );
+  size_t     setTileSizeAndLocation( PCCContext &context, size_t frameIndex, AtlasTileHeader &atgh );
+  bool       compareHashSEIMD5( std::vector<uint8_t> &encMD5, std::vector<uint8_t> &decMD5 );
   bool       compareHashSEICrc( uint16_t encCrc, uint16_t decCrc );
   bool       compareHashSEICheckSum( uint32_t encCheckSum, uint32_t decCheckSum );
-  void       createHashSEI( PCCContext& context, int frameIndex, SEIDecodedAtlasInformationHash& sei );
-  void       createHlsAtlasTileLogFiles( PCCContext& context, int frameIndex );
-  void       setConsitantFourCCCode( PCCContext& context, size_t atglIndex );
-  PCCCodecId getCodedCodecId( PCCContext& context, const uint8_t codecCodecId, const std::string& videoDecoderPath );
+  void       createHashSEI( PCCContext &context, int frameIndex, SEIDecodedAtlasInformationHash &sei );
+  void       createHlsAtlasTileLogFiles( PCCContext &context, int frameIndex );
+  void       setConsitantFourCCCode( PCCContext &context, size_t atglIndex );
+  PCCCodecId getCodedCodecId( PCCContext &context, const uint8_t codecCodecId, const std::string &videoDecoderPath );
 
-  PCCDecoderParameters     params_;
-  std::vector<std::string> consitantFourCCCode_;
+  template <typename T, size_t N>
+  void unpackRegion( const PCCVideoPacked &packedVideo,
+                     PCCVideo<T, N>       &outputVideo,
+                     const PackedRegion   &region,
+                     size_t                frameCount );
+
+  int ReconstructIdc0Idc1Idc2Idc255( PCCContext &context, PCCGroupOfFrames &reconstructs, int32_t atlasIndex = 0 );
+  int ReconstructIdc3( PCCContext &context, PCCGroupOfFrames &reconstructs, int32_t atlasIndex = 0 );
+
+  PCCDecoderParameters                 params_;
+  std::vector<std::string>             consitantFourCCCode_;
+  std::vector<PCCAdaptationParameters> adaptationParams_;
 };
 
 };  // namespace pcc

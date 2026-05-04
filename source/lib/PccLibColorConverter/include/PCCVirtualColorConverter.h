@@ -44,14 +44,25 @@ class PCCVirtualColorConverter {
   ~PCCVirtualColorConverter() {}
 
   virtual void convert( std::string        configFile,
-                        PCCVideo<T, 3>&    videoSrc,
-                        PCCVideo<T, 3>&    videoDst,
-                        const std::string& externalPath = "",
-                        const std::string& fileName     = "" ) = 0;
+                        PCCVideo<T, 3>    &videoSrc,
+                        PCCVideo<T, 3>    &videoDst,
+                        const std::string &externalPath = "",
+                        const std::string &fileName     = "" ) = 0;
   virtual void convert( std::string        configFile,
-                        PCCVideo<T, 3>&    videoSrc,
-                        const std::string& externalPath = "",
-                        const std::string& fileName     = "" ) = 0;
+                        PCCVideo<T, 3>    &videoSrc,
+                        const std::string &externalPath = "",
+                        const std::string &fileName     = "" ) = 0;
+
+  virtual void scale( std::string        configFile,
+                      PCCVideo<T, 3>    &videoSrc,
+                      PCCVideo<T, 3>    &videoDst,
+                      int                bitDepth,
+                      int                chromaFormat,
+                      int                colorSpace,
+                      int                outputWidth,
+                      int                outputHeight,
+                      const std::string &externalPath = "",
+                      const std::string &fileName     = "" ) = 0;
 
  private:
 };

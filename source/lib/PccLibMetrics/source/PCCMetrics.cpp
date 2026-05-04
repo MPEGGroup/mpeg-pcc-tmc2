@@ -45,7 +45,7 @@ double getPSNR( double dist, double p, double factor = 1.0 ) {
   return psnr;
 }
 
-void convertRGBtoYUVBT709( const PCCColor3B& rgb, std::vector<float>& yuv ) {
+void convertRGBtoYUVBT709( const PCCColor3B &rgb, std::vector<float> &yuv ) {
   yuv.resize( 3 );
   yuv[0] = float( ( 0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2] ) / 255.0 );
   yuv[1] = float( ( -0.1146 * rgb[0] - 0.3854 * rgb[1] + 0.5000 * rgb[2] ) / 255.0 + 0.5000 );
@@ -68,16 +68,16 @@ QualityMetrics::QualityMetrics() :
   colorPsnr_[0] = colorPsnr_[0] = colorPsnr_[0] = 0.0;
 }
 
-void QualityMetrics::setParameters( const PCCMetricsParameters& params ) { params_ = params; }
+void QualityMetrics::setParameters( const PCCMetricsParameters &params ) { params_ = params; }
 
-void QualityMetrics::compute( const PCCPointSet3& pointcloudA, const PCCPointSet3& pointcloudB ) {
+void QualityMetrics::compute( const PCCPointSet3 &pointcloudA, const PCCPointSet3 &pointcloudB ) {
   double maxC2c         = ( std::numeric_limits<double>::min )();
   double maxC2p         = ( std::numeric_limits<double>::min )();
   double sseC2p         = 0;
   double sseC2c         = 0;
   double sseReflectance = 0;
   size_t num            = 0;
-  double sseColor[3]    = {0.0, 0.0, 0.0};
+  double sseColor[3]    = { 0.0, 0.0, 0.0 };
 
   psnr_ = params_.resolution_;
 
@@ -86,7 +86,7 @@ void QualityMetrics::compute( const PCCPointSet3& pointcloudA, const PCCPointSet
   const size_t num_results_max  = 30;
   const size_t num_results_incr = 5;
 
-  auto& normalsB = pointcloudB.getNormals();
+  auto &normalsB = pointcloudB.getNormals();
   for ( size_t indexA = 0; indexA < pointcloudA.getPointCount(); indexA++ ) {
     // For point 'i' in A, find its nearest neighbor in B. store it in 'j'
     size_t num_results = 0;
@@ -110,7 +110,7 @@ void QualityMetrics::compute( const PCCPointSet3& pointcloudA, const PCCPointSet
     // Compute point-to-plane, normals in B will be used for point-to-plane
     double distProjC2p = 0.0;
     if ( params_.computeC2p_ && pointcloudB.hasNormals() && pointcloudA.hasNormals() ) {
-      for ( auto& indexB : sameDistList ) {
+      for ( auto &indexB : sameDistList ) {
         std::vector<double> errVector( 3 );
         for ( size_t j = 0; j < 3; j++ ) { errVector[j] = pointcloudA[indexA][j] - pointcloudB[indexB][j]; }
         double dist = pow( errVector[0] * normalsB[indexB][0] + errVector[1] * normalsB[indexB][1] +
@@ -224,7 +224,7 @@ void QualityMetrics::compute( const PCCPointSet3& pointcloudA, const PCCPointSet
   }
   if ( params_.computeLidar_ ) {
     reflectanceMse_  = sseReflectance / num;
-    reflectancePsnr_ = getPSNR( reflectanceMse_ , ( std::numeric_limits<unsigned short>::max )() );
+    reflectancePsnr_ = getPSNR( reflectanceMse_, ( std::numeric_limits<unsigned short>::max )() );
   }
 }
 
@@ -279,51 +279,48 @@ void QualityMetrics::print( char code ) {
   }
 }
 PCCMetrics::PCCMetrics() :
-    sourcePoints_( 0 ),
-    sourceDuplicates_( 0 ),
-    reconstructPoints_( 0 ),
-    reconstructDuplicates_( 0 ) {}
+    sourcePoints_( 0 ), sourceDuplicates_( 0 ), reconstructPoints_( 0 ), reconstructDuplicates_( 0 ) {}
 PCCMetrics::~PCCMetrics() = default;
-void PCCMetrics::setParameters( const PCCMetricsParameters& params ) { params_ = params; }
+void PCCMetrics::setParameters( const PCCMetricsParameters &params ) { params_ = params; }
 
-QualityMetrics QualityMetrics::operator+( const QualityMetrics& metric ) const {
+QualityMetrics QualityMetrics::operator+( const QualityMetrics &metric ) const {
   QualityMetrics result;
   // Derive the final symmetric metric
   if ( params_.computeC2c_ ) {
-    result.c2cMse_  = ( std::max )( c2cMse_, metric.c2cMse_ );
-    result.c2cPsnr_ = ( std::min )( c2cPsnr_, metric.c2cPsnr_ );
+    result.c2cMse_  = (std::max)( c2cMse_, metric.c2cMse_ );
+    result.c2cPsnr_ = (std::min)( c2cPsnr_, metric.c2cPsnr_ );
   }
   if ( params_.computeC2p_ ) {
-    result.c2pMse_  = ( std::max )( c2pMse_, metric.c2pMse_ );
-    result.c2pPsnr_ = ( std::min )( c2pPsnr_, metric.c2pPsnr_ );
+    result.c2pMse_  = (std::max)( c2pMse_, metric.c2pMse_ );
+    result.c2pPsnr_ = (std::min)( c2pPsnr_, metric.c2pPsnr_ );
   }
 
   if ( params_.computeHausdorff_ ) {
     if ( params_.computeC2c_ ) {
-      result.c2cHausdorff_     = ( std::max )( c2cHausdorff_, metric.c2cHausdorff_ );
-      result.c2cHausdorffPsnr_ = ( std::min )( c2cHausdorffPsnr_, metric.c2cHausdorffPsnr_ );
+      result.c2cHausdorff_     = (std::max)( c2cHausdorff_, metric.c2cHausdorff_ );
+      result.c2cHausdorffPsnr_ = (std::min)( c2cHausdorffPsnr_, metric.c2cHausdorffPsnr_ );
     }
     if ( params_.computeC2p_ ) {
-      result.c2pHausdorff_     = ( std::max )( c2pHausdorff_, metric.c2pHausdorff_ );
-      result.c2pHausdorffPsnr_ = ( std::min )( c2pHausdorffPsnr_, metric.c2pHausdorffPsnr_ );
+      result.c2pHausdorff_     = (std::max)( c2pHausdorff_, metric.c2pHausdorff_ );
+      result.c2pHausdorffPsnr_ = (std::min)( c2pHausdorffPsnr_, metric.c2pHausdorffPsnr_ );
     }
   }
   if ( params_.computeColor_ ) {
     for ( size_t i = 0; i < 3; i++ ) {
-      result.colorMse_[i]  = ( std::max )( colorMse_[i], metric.colorMse_[i] );
-      result.colorPsnr_[i] = ( std::min )( colorPsnr_[i], metric.colorPsnr_[i] );
+      result.colorMse_[i]  = (std::max)( colorMse_[i], metric.colorMse_[i] );
+      result.colorPsnr_[i] = (std::min)( colorPsnr_[i], metric.colorPsnr_[i] );
     }
   }
   if ( params_.computeReflectance_ ) {
-    result.reflectanceMse_  = ( std::max )( reflectanceMse_, metric.reflectanceMse_ );
-    result.reflectancePsnr_ = ( std::min )( reflectancePsnr_, metric.reflectancePsnr_ );
+    result.reflectanceMse_  = (std::max)( reflectanceMse_, metric.reflectanceMse_ );
+    result.reflectancePsnr_ = (std::min)( reflectancePsnr_, metric.reflectancePsnr_ );
   }
   return result;
 }
 
-void PCCMetrics::compute( const PCCGroupOfFrames& sources,
-                          const PCCGroupOfFrames& reconstructs,
-                          const PCCGroupOfFrames& normals ) {
+void PCCMetrics::compute( const PCCGroupOfFrames &sources,
+                          const PCCGroupOfFrames &reconstructs,
+                          const PCCGroupOfFrames &normals ) {
   PCCPointSet3 normalEmpty;
   if ( normals.getFrameCount() != 0 && sources.getFrameCount() != normals.getFrameCount() ) {
     params_.computeC2p_ = false;
@@ -336,8 +333,8 @@ void PCCMetrics::compute( const PCCGroupOfFrames& sources,
     exit( -1 );
   }
   for ( size_t i = 0; i < sources.getFrameCount(); i++ ) {
-    const PCCPointSet3& sourceOrg      = sources[i];
-    const PCCPointSet3& reconstructOrg = reconstructs[i];
+    const PCCPointSet3 &sourceOrg      = sources[i];
+    const PCCPointSet3 &reconstructOrg = reconstructs[i];
     sourcePoints_.push_back( sourceOrg.getPointCount() );
     reconstructPoints_.push_back( reconstructOrg.getPointCount() );
     PCCPointSet3 source;
@@ -358,7 +355,7 @@ void PCCMetrics::compute( const PCCGroupOfFrames& sources,
   }
 }
 
-void PCCMetrics::compute( PCCPointSet3& source, PCCPointSet3& reconstruct, const PCCPointSet3& normalSource ) {
+void PCCMetrics::compute( PCCPointSet3 &source, PCCPointSet3 &reconstruct, const PCCPointSet3 &normalSource ) {
   if ( normalSource.getPointCount() > 0 ) {
     source.copyNormals( normalSource );
     reconstruct.scaleNormals( normalSource );

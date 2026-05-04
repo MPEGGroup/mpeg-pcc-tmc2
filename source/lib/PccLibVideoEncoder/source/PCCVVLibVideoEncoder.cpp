@@ -46,11 +46,11 @@ template <typename T>
 PCCVVLibVideoEncoder<T>::~PCCVVLibVideoEncoder() {}
 
 template <typename T>
-void PCCVVLibVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
-                                      PCCVideoEncoderParameters& params,
-                                      PCCVideoBitstream&         bitstream,
-                                      PCCVideo<T, 3>&            videoRec ) {
-   std::stringstream cmd;
+void PCCVVLibVideoEncoder<T>::encode( PCCVideo<T, 3>            &videoSrc,
+                                      PCCVideoEncoderParameters &params,
+                                      PCCVideoBitstream         &bitstream,
+                                      PCCVideo<T, 3>            &videoRec ) {
+  std::stringstream cmd;
   cmd << "./bin/Release/vvencFFapp";
   cmd << " -c " << params.encoderConfig_;
   cmd << " --InputFile=" << params.srcYuvFileName_;
@@ -61,7 +61,7 @@ void PCCVVLibVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
   cmd << " --OutputBitDepth=" << params.outputBitDepth_;
   cmd << " --FramesToBeEncoded=" << videoSrc.getFrameCount();
   cmd << " --fps=30";
-  cmd << " --frameskip=0";  
+  cmd << " --frameskip=0";
   cmd << " --bitrate=0";  // constant qp
   cmd << " --QP=" << params.qp_;
   if ( params.internalBitDepth_ != 0 ) { cmd << " --InternalBitDepth=" << params.internalBitDepth_; }

@@ -59,7 +59,7 @@ namespace po = df::program_options_lite;
 /** \param argc number of arguments
     \param argv array of arguments
  */
-bool PCCVTMLibVideoDecoderCfg::parseCfg( int argc, char* argv[] ) {
+bool PCCVTMLibVideoDecoderCfg::parseCfg( int argc, char *argv[] ) {
   bool   do_help = false;
   string cfg_TargetDecLayerIdSetFile;
   string outputColourSpaceConvert;
@@ -153,10 +153,10 @@ bool PCCVTMLibVideoDecoderCfg::parseCfg( int argc, char* argv[] ) {
                                               "UpscaledOutput", m_upscaledOutput, 0, "Upscaled output for RPR" );
 
   po::setDefaults( opts );
-  po::ErrorReporter        err;
-  const list<const char*>& argv_unhandled = po::scanArgv( opts, argc, (const char**)argv, err );
+  po::ErrorReporter         err;
+  const list<const char *> &argv_unhandled = po::scanArgv( opts, argc, (const char **)argv, err );
 
-  for ( list<const char*>::const_iterator it = argv_unhandled.begin(); it != argv_unhandled.end(); it++ ) {
+  for ( list<const char *>::const_iterator it = argv_unhandled.begin(); it != argv_unhandled.end(); it++ ) {
     msg( VTM_ERROR, "Unhandled argument ignored: `%s'\n", *it );
   }
 
@@ -199,7 +199,7 @@ bool PCCVTMLibVideoDecoderCfg::parseCfg( int argc, char* argv[] ) {
   }
 
   if ( !cfg_TargetDecLayerIdSetFile.empty() ) {
-    FILE* targetDecLayerIdSetFile = fopen( cfg_TargetDecLayerIdSetFile.c_str(), "r" );
+    FILE *targetDecLayerIdSetFile = fopen( cfg_TargetDecLayerIdSetFile.c_str(), "r" );
     if ( targetDecLayerIdSetFile ) {
       bool isLayerIdZeroIncluded = false;
       while ( !feof( targetDecLayerIdSetFile ) ) {

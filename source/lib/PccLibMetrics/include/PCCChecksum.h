@@ -46,21 +46,21 @@ class PCCChecksum {
  public:
   PCCChecksum();
   ~PCCChecksum();
-  void setParameters( const PCCMetricsParameters& params );
+  void setParameters( const PCCMetricsParameters &params );
 
-  void read( const std::string& compressedStreamPath );
-  void write( const std::string& compressedStreamPath );
+  void read( const std::string &compressedStreamPath );
+  void write( const std::string &compressedStreamPath );
 
-  void computeSource( PCCGroupOfFrames& groupOfFrames );
-  void computeReordered( PCCGroupOfFrames& groupOfFrames );
-  void computeReconstructed( PCCGroupOfFrames& groupOfFrames );
-  void computeDecoded( PCCGroupOfFrames& groupOfFrames );
+  void computeSource( PCCGroupOfFrames &groupOfFrames );
+  void computeReordered( PCCGroupOfFrames &groupOfFrames );
+  void computeReconstructed( PCCGroupOfFrames &groupOfFrames );
+  void computeDecoded( PCCGroupOfFrames &groupOfFrames );
 
   bool compareSrcRec();
   bool compareRecDec();
 
  private:
-  bool compare( std::vector<std::vector<uint8_t>>& checksumsA, std::vector<std::vector<uint8_t>>& checksumsB );
+  bool compare( std::vector<std::vector<uint8_t>> &checksumsA, std::vector<std::vector<uint8_t>> &checksumsB );
 
   PCCMetricsParameters              params_;
   std::vector<std::vector<uint8_t>> checksumsSrc_;

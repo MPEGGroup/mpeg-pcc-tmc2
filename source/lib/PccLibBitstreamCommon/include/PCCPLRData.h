@@ -54,7 +54,7 @@ class PLRData {
     blockModeMinus1_.clear();
   };
 
-  PLRData& operator=( const PLRData& ) = default;
+  PLRData &operator=( const PLRData & ) = default;
 
   void allocate( size_t blockToPatchMapWidth, size_t blockToPatchMapHeight ) {
     blockToPatchMapWidth_  = blockToPatchMapWidth;

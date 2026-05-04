@@ -106,7 +106,7 @@ class Stopwatch {
 
  private:
   typename Clock::time_point start_time_;
-  duration                   cumulative_time_{duration::zero()};
+  duration                   cumulative_time_{ duration::zero() };
 };
 
 //---------------------------------------------------------------------------
@@ -155,7 +155,7 @@ void pcc::chrono::Stopwatch<Clock>::start() {
 
 template <typename Clock>
 typename pcc::chrono::Stopwatch<Clock>::duration pcc::chrono::Stopwatch<Clock>::stop() {
-  const auto& delta = duration( Clock::now() - start_time_ );
+  const auto &delta = duration( Clock::now() - start_time_ );
   cumulative_time_ += delta;
   return delta;
 }

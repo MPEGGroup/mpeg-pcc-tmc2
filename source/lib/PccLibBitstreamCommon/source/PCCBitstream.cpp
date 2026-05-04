@@ -48,7 +48,7 @@ PCCBitstream::PCCBitstream() {
 
 PCCBitstream::~PCCBitstream() { data_.clear(); }
 
-bool PCCBitstream::initialize( const PCCBitstream& bitstream ) {
+bool PCCBitstream::initialize( const PCCBitstream &bitstream ) {
   position_.bytes_ = 0;
   position_.bits_  = 0;
   data_.resize( bitstream.data_.size(), 0 );
@@ -56,7 +56,7 @@ bool PCCBitstream::initialize( const PCCBitstream& bitstream ) {
   return true;
 }
 
-bool PCCBitstream::initialize( std::vector<uint8_t>& data ) {
+bool PCCBitstream::initialize( std::vector<uint8_t> &data ) {
   position_.bytes_ = 0;
   position_.bits_  = 0;
   data_.resize( data.size(), 0 );
@@ -64,28 +64,28 @@ bool PCCBitstream::initialize( std::vector<uint8_t>& data ) {
   return true;
 }
 
-bool PCCBitstream::initialize( const std::string& compressedStreamPath ) {
+bool PCCBitstream::initialize( const std::string &compressedStreamPath ) {
   std::ifstream fin( compressedStreamPath, std::ios::binary );
   if ( !fin.is_open() ) { return false; }
   fin.seekg( 0, std::ios::end );
   uint64_t bitStreamSize = fin.tellg();
   fin.seekg( 0, std::ios::beg );
   initialize( bitStreamSize );
-  fin.read( reinterpret_cast<char*>( data_.data() ), bitStreamSize );
+  fin.read( reinterpret_cast<char *>( data_.data() ), bitStreamSize );
   if ( !fin ) { return false; }
   fin.close();
   return true;
 }
 
-bool PCCBitstream::write( const std::string& compressedStreamPath ) {
+bool PCCBitstream::write( const std::string &compressedStreamPath ) {
   std::ofstream fout( compressedStreamPath, std::ios::binary );
   if ( !fout.is_open() ) { return false; }
-  fout.write( reinterpret_cast<const char*>( data_.data() ), size() );
+  fout.write( reinterpret_cast<const char *>( data_.data() ), size() );
   fout.close();
   return true;
 }
 
-void PCCBitstream::readVideoStream( PCCVideoBitstream& videoBitstream, size_t videoStreamSize ) {
+void PCCBitstream::readVideoStream( PCCVideoBitstream &videoBitstream, size_t videoStreamSize ) {
 #ifdef BITSTREAM_TRACE
   trace( "%s \n", "Code: PCCVideoBitstream" );
   trace( "Code: size = %zu \n", videoStreamSize );
@@ -96,11 +96,11 @@ void PCCBitstream::readVideoStream( PCCVideoBitstream& videoBitstream, size_t vi
   position_.bytes_ += videoStreamSize;
 }
 
-void PCCBitstream::writeVideoStream( PCCVideoBitstream& videoBitstream ) {
+void PCCBitstream::writeVideoStream( PCCVideoBitstream &videoBitstream ) {
 #ifdef BITSTREAM_TRACE
   trace( "%s \n", "Code: PCCVideoBitstream" );
 #endif
-  uint8_t* data = videoBitstream.buffer();
+  uint8_t *data = videoBitstream.buffer();
   size_t   size = videoBitstream.size();
   realloc( size );
 #ifdef BITSTREAM_TRACE
@@ -110,16 +110,16 @@ void PCCBitstream::writeVideoStream( PCCVideoBitstream& videoBitstream ) {
   position_.bytes_ += size;
   videoBitstream.trace();
 }
-void PCCBitstream::copyFrom( PCCBitstream& srcBitstream, const size_t position, const size_t size ) {
+void PCCBitstream::copyFrom( PCCBitstream &srcBitstream, const size_t position, const size_t size ) {
   if ( data_.size() < position_.bytes_ + size ) { data_.resize( position_.bytes_ + size ); }
-  memcpy( data_.data() + position_.bytes_, srcBitstream.buffer() + position, size ); 
-  position_.bytes_ += size; 
+  memcpy( data_.data() + position_.bytes_, srcBitstream.buffer() + position, size );
+  position_.bytes_ += size;
   auto pos = srcBitstream.getPosition();
-  pos.bytes_ += size; 
+  pos.bytes_ += size;
   srcBitstream.setPosition( pos );
 }
 
-void PCCBitstream::copyTo( PCCBitstream& dstBitstream, const size_t size ) {
+void PCCBitstream::copyTo( PCCBitstream &dstBitstream, const size_t size ) {
   dstBitstream.initialize( dstBitstream.position_.bytes_ + size );
   memcpy( dstBitstream.buffer() + dstBitstream.position_.bytes_, data_.data() + position_.bytes_, size );
   position_.bytes_ += size;
@@ -133,7 +133,7 @@ void PCCBitstream::computeMD5() {
   TRACE_BITSTRMD5( "%s", "BITSTRMD5 = " )
   md5Hash.update( data_.data(), dataSize );
   md5Hash.finalize( tmp_digest.data() );
-  for ( auto& bitStr : tmp_digest ) TRACE_BITSTRMD5( "%02x", bitStr );
+  for ( auto &bitStr : tmp_digest ) TRACE_BITSTRMD5( "%02x", bitStr );
   std::cout << std::endl;
   return;
 }

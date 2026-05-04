@@ -51,10 +51,10 @@ class PCCVVLibVideoDecoderImpl {
   PCCVVLibVideoDecoderImpl();
 
   ~PCCVVLibVideoDecoderImpl();
-  void decode( PCCVideoBitstream& bitstream, size_t outputBitDepth, PCCVideo<T, 3>& video );
+  void decode( PCCVideoBitstream &bitstream, size_t outputBitDepth, PCCVideo<T, 3> &video );
 
  private:
-  int storeDecodedFrame( const vvdecFrame* pcFrame, size_t outputBitDepth, PCCVideo<T, 3>& video );
+  int storeDecodedFrame( const vvdecFrame *pcFrame, size_t outputBitDepth, PCCVideo<T, 3> &video );
 };
 
 };  // namespace pcc

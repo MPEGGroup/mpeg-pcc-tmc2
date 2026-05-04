@@ -50,25 +50,33 @@ class PCCVideoDecoder {
   ~PCCVideoDecoder();
 
   template <typename T>
-  bool decompress( PCCVideo<T, 3>&    video,
-                   PCCContext&        contexts,
-                   const std::string& path,
-                   PCCVideoBitstream& bitstream,
+  void patchBasedUpsample( PCCVideo<T, 3> &video,
+                           PCCVideo<T, 3> &upsampledVideo,
+                           const size_t    newWidth,
+                           const size_t    newHeight,
+                           PCCContext     &contexts );
+
+  template <typename T>
+  bool decompress( PCCVideo<T, 3>    &video,
+                   PCCContext        &contexts,
+                   const std::string &path,
+                   PCCVideoBitstream &bitstream,
                    bool               byteStreamVideoCoder,
                    PCCCodecId         codecId,
-                   const std::string& decoderPath,
+                   const std::string &decoderPath,
                    size_t             outputBitDepth,
+                   const std::string &scalerConfigPath,
                    const bool         keepIntermediateFiles             = false,
                    const size_t       shvcLayerIndex                    = 8,
                    const bool         patchColorSubsampling             = false,
-                   const std::string& inverseColorSpaceConversionConfig = "",
-                   const std::string& colorSpaceConversionPath          = "",
+                   const std::string &inverseColorSpaceConversionConfig = "",
+                   const std::string &colorSpaceConversionPath          = "",
                    const size_t       upsamplingFilter                  = 0 );
 
-  void setLogger( PCCLogger& logger ) { logger_ = &logger; }
+  void setLogger( PCCLogger &logger ) { logger_ = &logger; }
 
  private:
-  PCCLogger* logger_ = nullptr;
+  PCCLogger *logger_ = nullptr;
 };
 
 };  // namespace pcc

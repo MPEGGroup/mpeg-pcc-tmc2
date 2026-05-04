@@ -46,11 +46,11 @@ template <typename T>
 PCCHMAppVideoDecoder<T>::~PCCHMAppVideoDecoder() {}
 
 template <typename T>
-void PCCHMAppVideoDecoder<T>::decode( PCCVideoBitstream& bitstream,
-                                      PCCVideo<T, 3>&    video,
+void PCCHMAppVideoDecoder<T>::decode( PCCVideoBitstream &bitstream,
+                                      PCCVideo<T, 3>    &video,
                                       size_t             outputBitDepth,
-                                      const std::string& decoderPath,
-                                      const std::string& fileName ) {
+                                      const std::string &decoderPath,
+                                      const std::string &fileName ) {
   if ( decoderPath.empty() || !exist( decoderPath ) ) {
     std::cerr << "decoderPath not set\n";
     exit( 1 );

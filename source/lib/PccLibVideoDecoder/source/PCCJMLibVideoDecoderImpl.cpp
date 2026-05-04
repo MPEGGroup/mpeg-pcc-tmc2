@@ -40,10 +40,10 @@ extern "C" {
 #include "global.h"
 #include "h264decoder.h"
 
-void Configure( InputParameters* p_Inp, int ac, char* av[] );
-int  OpenDecoder( InputParameters* p_Inp );
-int  DecodeOneFrame( DecodedPicList** ppDecPicList );
-int  WriteOneFrame( DecodedPicList* pDecPic, int hFileOutput0, int hFileOutput1, int bOutputAllFrames );
+void Configure( InputParameters *p_Inp, int ac, char *av[] );
+int  OpenDecoder( InputParameters *p_Inp );
+int  DecodeOneFrame( DecodedPicList **ppDecPicList );
+int  WriteOneFrame( DecodedPicList *pDecPic, int hFileOutput0, int hFileOutput1, int bOutputAllFrames );
 }
 
 using namespace pcc;
@@ -55,11 +55,11 @@ template <typename T>
 PCCJMLibVideoDecoderImpl<T>::~PCCJMLibVideoDecoderImpl() {}
 
 template <typename T>
-void PCCJMLibVideoDecoderImpl<T>::decode( PCCVideoBitstream& bitstream,
-                                          PCCVideo<T, 3>&    video,
+void PCCJMLibVideoDecoderImpl<T>::decode( PCCVideoBitstream &bitstream,
+                                          PCCVideo<T, 3>    &video,
                                           size_t             outputBitDepth,
-                                          const std::string& decoderPath,
-                                          const std::string& fileName ) {
+                                          const std::string &decoderPath,
+                                          const std::string &fileName ) {
   // std::string        s( reinterpret_cast<char*>( bitstream.buffer() ), bitstream.size() );
   // std::istringstream iss( s );
   // std::istream&      bitstreamFile = iss;
@@ -67,24 +67,24 @@ void PCCJMLibVideoDecoderImpl<T>::decode( PCCVideoBitstream& bitstream,
   std::string binName = fileName + ".bin";
   std::string decName = fileName + ".yuv";
   bitstream.write( binName );
-  std::string        arguments = "JMDEC -i " + binName + " -o " + decName;
-  std::istringstream aiss( arguments );
-  std::string        token;
-  std::vector<char*> args;
+  std::string         arguments = "JMDEC -i " + binName + " -o " + decName;
+  std::istringstream  aiss( arguments );
+  std::string         token;
+  std::vector<char *> args;
   while ( aiss >> token ) {
-    char* arg = new char[token.size() + 1];
+    char *arg = new char[token.size() + 1];
     copy( token.begin(), token.end(), arg );
     arg[token.size()] = '\0';
     args.push_back( arg );
   }
   int    argc = args.size();
-  char** argv = &args[0];
+  char **argv = &args[0];
   std::cout << "[JM Dec args " << argc << "]: " << arguments << std::endl;
 
   // === from decoder_test.ce
   // jmdecmain(argc, argv);
   int             iRet;
-  DecodedPicList* pDecPicList;
+  DecodedPicList *pDecPicList;
   int             hFileDecOutput0 = -1, hFileDecOutput1 = -1;
   int             iFramesDecoded = 0;
   InputParameters InputParams;

@@ -61,48 +61,58 @@ class PCCInternalColorConverter : public PCCVirtualColorConverter<T> {
   ~PCCInternalColorConverter();
 
   void convert( std::string        configuration,
-                PCCVideo<T, 3>&    videoSrc,
-                const std::string& externalPath = "",
-                const std::string& fileName     = "" ) {
+                PCCVideo<T, 3>    &videoSrc,
+                const std::string &externalPath = "",
+                const std::string &fileName     = "" ) {
     PCCVideo<T, 3> videoDst;
     convert( configuration, videoSrc, videoDst, externalPath, fileName );
     videoSrc = videoDst;
   }
 
   void convert( std::string        configuration,
-                PCCVideo<T, 3>&    videoSrc,
-                PCCVideo<T, 3>&    videoDst,
-                const std::string& externalPath = "",
-                const std::string& fileName     = "" );
+                PCCVideo<T, 3>    &videoSrc,
+                PCCVideo<T, 3>    &videoDst,
+                const std::string &externalPath = "",
+                const std::string &fileName     = "" );
+  void scale( std::string        configFile,
+              PCCVideo<T, 3>    &videoSrc,
+              PCCVideo<T, 3>    &videoDst,
+              int                bitDepth,
+              int                chromaFormat,
+              int                colorSpace,
+              int                outputWidth,
+              int                outputHeight,
+              const std::string &externalPath = "",
+              const std::string &fileName     = "" );
 
-  void upsample( PCCVideo<T, 3>& video, size_t rate, size_t nbyte, size_t filter );
-  void upsample( PCCImage<T, 3>& image, size_t rate, size_t nbyte, size_t filter );
+  void upsample( PCCVideo<T, 3> &video, size_t rate, size_t nbyte, size_t filter );
+  void upsample( PCCImage<T, 3> &image, size_t rate, size_t nbyte, size_t filter );
 
  private:
-  void extractParameters( std::string& configuration, std::string& config, int32_t& bitdepth, int32_t& filter );
-  void convertRGB44ToYUV420( PCCVideo<T, 3>& videoSrc, PCCVideo<T, 3>& videoDst, size_t nbyte, size_t filter );
-  void convertRGB44ToYUV420( PCCImage<T, 3>& imageSrc, PCCImage<T, 3>& imageDst, size_t nbyte, size_t filter );
+  void extractParameters( std::string &configuration, std::string &config, int32_t &bitdepth, int32_t &filter );
+  void convertRGB44ToYUV420( PCCVideo<T, 3> &videoSrc, PCCVideo<T, 3> &videoDst, size_t nbyte, size_t filter );
+  void convertRGB44ToYUV420( PCCImage<T, 3> &imageSrc, PCCImage<T, 3> &imageDst, size_t nbyte, size_t filter );
 
-  void convertRGB44ToYUV444( PCCVideo<T, 3>& videoSrc, PCCVideo<T, 3>& videoDst, size_t nbyte, size_t filter );
-  void convertRGB44ToYUV444( PCCImage<T, 3>& imageSrc, PCCImage<T, 3>& imageDst, size_t nbyte, size_t filter );
+  void convertRGB44ToYUV444( PCCVideo<T, 3> &videoSrc, PCCVideo<T, 3> &videoDst, size_t nbyte, size_t filter );
+  void convertRGB44ToYUV444( PCCImage<T, 3> &imageSrc, PCCImage<T, 3> &imageDst, size_t nbyte, size_t filter );
 
-  void convertYUV420ToYUV444( PCCVideo<T, 3>& videoSrc, PCCVideo<T, 3>& videoDst, size_t nbyte, size_t filter );
-  void convertYUV420ToYUV444( PCCImage<T, 3>& imageSrc, PCCImage<T, 3>& imageDst, size_t nbyte, size_t filter );
+  void convertYUV420ToYUV444( PCCVideo<T, 3> &videoSrc, PCCVideo<T, 3> &videoDst, size_t nbyte, size_t filter );
+  void convertYUV420ToYUV444( PCCImage<T, 3> &imageSrc, PCCImage<T, 3> &imageDst, size_t nbyte, size_t filter );
 
-  void convertYUV420ToRGB444( PCCVideo<T, 3>& videoSrc, PCCVideo<T, 3>& videoDst, size_t nbyte, size_t filter );
-  void convertYUV420ToRGB444( PCCImage<T, 3>& imageSrc, PCCImage<T, 3>& imageDst, size_t nbyte, size_t filter );
+  void convertYUV420ToRGB444( PCCVideo<T, 3> &videoSrc, PCCVideo<T, 3> &videoDst, size_t nbyte, size_t filter );
+  void convertYUV420ToRGB444( PCCImage<T, 3> &imageSrc, PCCImage<T, 3> &imageDst, size_t nbyte, size_t filter );
 
-  void convertYUV444ToRGB444( PCCVideo<T, 3>& videoSrc, PCCVideo<T, 3>& videoDst, size_t nbyte, size_t filter );
-  void convertYUV444ToRGB444( PCCImage<T, 3>& imageSrc, PCCImage<T, 3>& imageDst, size_t nbyte, size_t filter );
+  void convertYUV444ToRGB444( PCCVideo<T, 3> &videoSrc, PCCVideo<T, 3> &videoDst, size_t nbyte, size_t filter );
+  void convertYUV444ToRGB444( PCCImage<T, 3> &imageSrc, PCCImage<T, 3> &imageDst, size_t nbyte, size_t filter );
 
-  void RGBtoFloatRGB( const std::vector<T>& src, std::vector<float>& dst, const size_t nbyte ) const;
+  void RGBtoFloatRGB( const std::vector<T> &src, std::vector<float> &dst, const size_t nbyte ) const;
 
-  void convertRGBToYUV( const std::vector<float>& R,
-                        const std::vector<float>& G,
-                        const std::vector<float>& B,
-                        std::vector<float>&       Y,
-                        std::vector<float>&       U,
-                        std::vector<float>&       V ) const;
+  void convertRGBToYUV( const std::vector<float> &R,
+                        const std::vector<float> &G,
+                        const std::vector<float> &B,
+                        std::vector<float>       &Y,
+                        std::vector<float>       &U,
+                        std::vector<float>       &V ) const;
 
   T                   clamp( T v, T a, T b ) const { return ( ( v < a ) ? a : ( ( v > b ) ? b : v ) ); }
   int                 clamp( int v, int a, int b ) const { return ( ( v < a ) ? a : ( ( v > b ) ? b : v ) ); }
@@ -114,44 +124,44 @@ class PCCInternalColorConverter : public PCCVirtualColorConverter<T> {
   static inline float fClip( float x, float low, float high ) { return fMin( fMax( x, low ), high ); }
 
   // TODO: This currently can't handle 10-bit. A new parameter is needed.
-  void floatYUVToYUV( const std::vector<float>& src, std::vector<T>& dst, const bool chroma, const size_t nbyte ) const;
+  void floatYUVToYUV( const std::vector<float> &src, std::vector<T> &dst, const bool chroma, const size_t nbyte ) const;
 
-  void YUVtoFloatYUV( const std::vector<T>& src,
-                      std::vector<float>&   dst,
+  void YUVtoFloatYUV( const std::vector<T> &src,
+                      std::vector<float>   &dst,
                       const bool            chroma,
                       const size_t          nbBytes ) const;
 
-  void convertYUVToRGB( const std::vector<float>& Y,
-                        const std::vector<float>& U,
-                        const std::vector<float>& V,
-                        std::vector<float>&       R,
-                        std::vector<float>&       G,
-                        std::vector<float>&       B ) const;
+  void convertYUVToRGB( const std::vector<float> &Y,
+                        const std::vector<float> &U,
+                        const std::vector<float> &V,
+                        std::vector<float>       &R,
+                        std::vector<float>       &G,
+                        std::vector<float>       &B ) const;
 
-  void floatRGBToRGB( const std::vector<float>& src, std::vector<T>& dst, const size_t nbyte ) const;
+  void floatRGBToRGB( const std::vector<float> &src, std::vector<T> &dst, const size_t nbyte ) const;
 
-  void downsampling( const std::vector<float>& chroma_in,
-                     std::vector<float>&       chroma_out,
+  void downsampling( const std::vector<float> &chroma_in,
+                     std::vector<float>       &chroma_out,
                      const int                 widthIn,
                      const int                 heightIn,
                      const int                 maxValue,
                      const size_t              filter ) const;
 
-  void upsampling( const std::vector<float>& chromaIn,
-                   std::vector<float>&       chromaOut,
+  void upsampling( const std::vector<float> &chromaIn,
+                   std::vector<float>       &chromaOut,
                    const int                 widthIn,
                    const int                 heightIn,
                    const int                 maxValue,
                    const size_t              filter ) const;
 
-  inline void copy( const std::vector<float>& src, std::vector<float>& dst ) const {
+  inline void copy( const std::vector<float> &src, std::vector<float> &dst ) const {
     size_t count = src.size();
     dst.resize( count );
     for ( size_t i = 0; i < count; i++ ) { dst[i] = src[i]; }
   }
 
-  inline float downsamplingHorizontal( const Filter444to420&     filter,
-                                       const std::vector<float>& im,
+  inline float downsamplingHorizontal( const Filter444to420     &filter,
+                                       const std::vector<float> &im,
                                        const int                 width,
                                        const int                 height,
                                        const int                 i0,
@@ -167,8 +177,8 @@ class PCCInternalColorConverter : public PCCVirtualColorConverter<T> {
     return (float)( ( value + (double)offset ) * (double)scale );
   }
 
-  inline float downsamplingVertical( const Filter444to420&     filter,
-                                     const std::vector<float>& im,
+  inline float downsamplingVertical( const Filter444to420     &filter,
+                                     const std::vector<float> &im,
                                      const int                 width,
                                      const int                 height,
                                      const int                 i0,
@@ -184,8 +194,8 @@ class PCCInternalColorConverter : public PCCVirtualColorConverter<T> {
     return (float)( ( value + (double)offset ) * (double)scale );
   }
 
-  inline float upsamplingVertical0( const Filter420to444&     filter,
-                                    const std::vector<float>& im,
+  inline float upsamplingVertical0( const Filter420to444     &filter,
+                                    const std::vector<float> &im,
                                     const int                 width,
                                     const int                 height,
                                     const int                 i0,
@@ -200,8 +210,8 @@ class PCCInternalColorConverter : public PCCVirtualColorConverter<T> {
     return (float)( ( value + (float)offset ) * (float)scale );
   }
 
-  inline float upsamplingVertical1( const Filter420to444&     filter,
-                                    const std::vector<float>& im,
+  inline float upsamplingVertical1( const Filter420to444     &filter,
+                                    const std::vector<float> &im,
                                     int                       width,
                                     int                       height,
                                     int                       i0,
@@ -216,8 +226,8 @@ class PCCInternalColorConverter : public PCCVirtualColorConverter<T> {
     return (float)( ( value + (float)offset ) * (float)scale );
   }
 
-  inline float upsamplingHorizontal0( const Filter420to444&     filter,
-                                      const std::vector<float>& im,
+  inline float upsamplingHorizontal0( const Filter420to444     &filter,
+                                      const std::vector<float> &im,
                                       int                       width,
                                       int                       height,
                                       int                       i0,
@@ -232,8 +242,8 @@ class PCCInternalColorConverter : public PCCVirtualColorConverter<T> {
     return (float)( ( value + (float)offset ) * (float)scale );
   }
 
-  inline float upsamplingHorizontal1( const Filter420to444&     filter,
-                                      const std::vector<float>& im,
+  inline float upsamplingHorizontal1( const Filter420to444     &filter,
+                                      const std::vector<float> &im,
                                       int                       width,
                                       int                       height,
                                       int                       i0,

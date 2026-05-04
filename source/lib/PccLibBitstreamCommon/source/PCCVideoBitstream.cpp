@@ -49,37 +49,68 @@ std::string PCCVideoBitstream::getExtension() {
   } else if ( typeIndex == (size_t)VIDEO_ATTRIBUTE ) {
     return std::string( "attribute" );
   } else if ( typeIndex >= (size_t)VIDEO_ATTRIBUTE_T0 && typeIndex <= (size_t)VIDEO_ATTRIBUTE_T15 ) {
-    return std::string( "attributeT" ) + std::to_string( typeIndex - ( size_t )( VIDEO_ATTRIBUTE_T0 ) );
+    return std::string( "attributeT" ) + std::to_string( typeIndex - (size_t)( VIDEO_ATTRIBUTE_T0 ) );
   } else if ( typeIndex == (size_t)VIDEO_ATTRIBUTE_RAW ) {
     return std::string( "attributeRaw" );
+  } else if ( typeIndex == (size_t)VIDEO_SPHERICAL_HARMONIC ) {
+    return std::string( "sphericalHarmonic" );
+  } else if ( typeIndex >= (size_t)VIDEO_SPHERICAL_HARMONIC_T0 && typeIndex <= (size_t)VIDEO_SPHERICAL_HARMONIC_T15 ) {
+    return std::string( "sphericalHarmonicT" ) +
+           std::to_string( ( typeIndex - (size_t)( VIDEO_SPHERICAL_HARMONIC_T0 ) ) / 64 );
+  } else if ( typeIndex >= (size_t)VIDEO_SPHERICAL_HARMONIC_RAW &&
+              typeIndex <= (size_t)( VIDEO_SPHERICAL_HARMONIC_RAW + MAX_NUM_ATTR_PARTITIONS - 1 ) ) {
+    return std::string( "sphericalHarmonicRawT" ) +
+           std::to_string( typeIndex - (size_t)( VIDEO_SPHERICAL_HARMONIC_RAW ) );
+  } else if ( typeIndex == (size_t)VIDEO_ROTATION ) {
+    return std::string( "rotation" );
+  } else if ( typeIndex >= (size_t)VIDEO_ROTATION_T0 && typeIndex <= (size_t)VIDEO_ROTATION_T15 ) {
+    return std::string( "rotationT" ) + std::to_string( ( typeIndex - (size_t)( VIDEO_ROTATION_T0 ) ) / 64 );
+  } else if ( typeIndex >= (size_t)VIDEO_ROTATION_RAW &&
+              typeIndex <= (size_t)( VIDEO_ROTATION_RAW + MAX_NUM_ATTR_PARTITIONS - 1 ) ) {
+    return std::string( "rotationRawT" ) + std::to_string( typeIndex - (size_t)( VIDEO_ROTATION_RAW ) );
+  } else if ( typeIndex == (size_t)VIDEO_SCALE ) {
+    return std::string( "scale" );
+  } else if ( typeIndex >= (size_t)VIDEO_SCALE_T0 && typeIndex <= (size_t)VIDEO_SCALE_T15 ) {
+    return std::string( "scaleT" ) + std::to_string( typeIndex - (size_t)( VIDEO_SCALE_T0 ) );
+  } else if ( typeIndex == (size_t)VIDEO_SCALE_RAW ) {
+    return std::string( "scaleRaw" );
+  } else if ( typeIndex == (size_t)VIDEO_OPACITY ) {
+    return std::string( "opacity" );
+  } else if ( typeIndex >= (size_t)VIDEO_OPACITY_T0 && typeIndex <= (size_t)VIDEO_OPACITY_T15 ) {
+    return std::string( "opacityT" ) + std::to_string( typeIndex - (size_t)( VIDEO_OPACITY_T0 ) );
+  } else if ( typeIndex == (size_t)VIDEO_OPACITY_RAW ) {
+    return std::string( "opacityRaw" );
+  } else if ( typeIndex >= (size_t)VIDEO_PACKED &&
+              typeIndex <= (size_t)( VIDEO_PACKED + MAX_NUM_ATTR_PARTITIONS - 1 ) ) {
+    return std::string( "packedT" ) + std::to_string( typeIndex - (size_t)( VIDEO_PACKED ) );
   } else {
     return std::string( "unknown" );
   }
 }
 
-bool PCCVideoBitstream::write( const std::string& filename ) {
+bool PCCVideoBitstream::write( const std::string &filename ) {
   std::ofstream file( filename, std::ios::binary );
   if ( !file.good() ) { return false; }
-  file.write( reinterpret_cast<char*>( data_.data() ), data_.size() );
+  file.write( reinterpret_cast<char *>( data_.data() ), data_.size() );
   file.close();
   return true;
 }
 
-bool PCCVideoBitstream::read( const std::string& filename ) {
+bool PCCVideoBitstream::read( const std::string &filename ) {
   std::ifstream file( filename, std::ios::binary | std::ios::ate );
   if ( !file.good() ) { return false; }
   const uint64_t fileSize = file.tellg();
   resize( (size_t)fileSize );
   file.clear();
   file.seekg( 0 );
-  file.read( reinterpret_cast<char*>( data_.data() ), data_.size() );
+  file.read( reinterpret_cast<char *>( data_.data() ), data_.size() );
   file.close();
   return true;
 }
 
 #if defined( WIN32 )
-bool PCCVideoBitstream::_read( const std::string& filename ) { return read( filename ); }
-bool PCCVideoBitstream::_write( const std::string& filename ) { return write( filename ); }
+bool PCCVideoBitstream::_read( const std::string &filename ) { return read( filename ); }
+bool PCCVideoBitstream::_write( const std::string &filename ) { return write( filename ); }
 #endif
 
 void PCCVideoBitstream::byteStreamToSampleStream( size_t precision, bool emulationPreventionBytes ) {

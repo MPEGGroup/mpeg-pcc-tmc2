@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2017, ISO/IEC
+ * Copyright (c) 2010-2025, ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,22 +39,18 @@
 #include "PCCOccupancyInformation.h"
 #include "PCCAttributeInformation.h"
 #include "PCCVpccExtension.h"
+#include "PCCPackedVideoExtension.h"
 
 namespace pcc {
 
 // 8.3.4.1  General V3C Sequence parameter set syntax
 class V3CParameterSet {
  public:
-  V3CParameterSet() :
-      v3cParameterSetId_( 0 ),
-      atlasCountMinus1_( 0 ),
-      extensionPresentFlag_( false ),
-      extension8Bits_( 0 ),
-      extensionLengthMinus1_( 0 ) {}
+  V3CParameterSet() : v3cParameterSetId_( 0 ), atlasCountMinus1_( 0 ), extensionPresentFlag_( false ) {}
   ~V3CParameterSet() {
-    for ( auto& data : mapAbsoluteCodingEnableFlag_ ) { data.clear(); }
+    for ( auto &data : mapAbsoluteCodingEnableFlag_ ) { data.clear(); }
     mapAbsoluteCodingEnableFlag_.clear();
-    for ( auto& data : mapPredictorIndexDiff_ ) { data.clear(); }
+    for ( auto &data : mapPredictorIndexDiff_ ) { data.clear(); }
     mapPredictorIndexDiff_.clear();
     frameWidth_.clear();
     frameHeight_.clear();
@@ -64,10 +60,9 @@ class V3CParameterSet {
     occupancyVideoPresentFlag_.clear();
     geometryVideoPresentFlag_.clear();
     attributeVideoPresentFlag_.clear();
-    extensionDataByte_.clear();
   }
 
-  V3CParameterSet& operator=( const V3CParameterSet& ) = default;
+  V3CParameterSet &operator=( const V3CParameterSet & ) = default;
   void             init( uint32_t v3cParameterSetId,
                          uint16_t atlasId,
                          uint16_t frameWidth,
@@ -113,7 +108,6 @@ class V3CParameterSet {
     mapAbsoluteCodingEnableFlag_[index].resize( mapCountMinus1_[index] + 1, 1 );
     mapPredictorIndexDiff_[index].resize( mapCountMinus1_[index] + 1 );
   }
-  void              allocateExtensionDataByte() { extensionDataByte_.resize( extensionLengthMinus1_ + 1 ); }
   uint32_t          getV3CParameterSetId() { return v3cParameterSetId_; }
   uint32_t          getAtlasCountMinus1() { return atlasCountMinus1_; }
   uint16_t          getAtlasId( size_t index ) { return atlasId_[index]; }
@@ -127,16 +121,14 @@ class V3CParameterSet {
   bool              getAttributeVideoPresentFlag( size_t index ) { return attributeVideoPresentFlag_[index]; }
   size_t            getMapPredictorIndexDiff( size_t i, size_t j ) { return mapPredictorIndexDiff_[i][j]; }
   bool              getMapAbsoluteCodingEnableFlag( size_t i, size_t j ) { return mapAbsoluteCodingEnableFlag_[i][j]; }
-  ProfileTierLevel& getProfileTierLevel() { return profileTierLevel_; }
-  GeometryInformation&  getGeometryInformation( size_t index ) { return geometryInformation_[index]; }
-  OccupancyInformation& getOccupancyInformation( size_t index ) { return occupancyInformation_[index]; }
-  AttributeInformation& getAttributeInformation( size_t index ) { return attributeInformation_[index]; }
-  bool                  getExtensionPresentFlag() { return extensionPresentFlag_; }
-  uint8_t               getExtension8Bits() { return extension8Bits_; }
-  size_t                getExtensionLengthMinus1() { return extensionLengthMinus1_; }
-  std::vector<uint8_t>& getExtensionDataByte() { return extensionDataByte_; }
-  uint8_t               getExtensionDataByte( size_t index ) { return extensionDataByte_[index]; }
-  VpsVpccExtension&     getVpsVpccExtension() { return vpsVpccExtension_; }
+  ProfileTierLevel &getProfileTierLevel() { return profileTierLevel_; }
+  GeometryInformation     &getGeometryInformation( size_t index ) { return geometryInformation_[index]; }
+  OccupancyInformation    &getOccupancyInformation( size_t index ) { return occupancyInformation_[index]; }
+  AttributeInformation    &getAttributeInformation( size_t index ) { return attributeInformation_[index]; }
+  bool                     getExtensionPresentFlag() { return extensionPresentFlag_; }
+  uint8_t                  getExtensionCount() { return uint8_t( vpsExtensionType_.size() ); }
+  uint8_t                  getExtensionType( uint8_t index ) { return vpsExtensionType_[index]; }
+  VpsPackedVideoExtension &getVpsPackedVideoExtension() { return vpsPackedVideoExtension_; }
 
   void setV3CParameterSetId( uint32_t value ) { v3cParameterSetId_ = value; }
   void setAtlasCountMinus1( uint32_t value ) { atlasCountMinus1_ = value; }
@@ -163,10 +155,9 @@ class V3CParameterSet {
     mapAbsoluteCodingEnableFlag_[index].push_back( value );
   }
   void addMapPredictorIndexDiff( size_t index, bool value ) { mapPredictorIndexDiff_[index].push_back( value ); }
-  void setExtensionDataByte( size_t index, uint8_t value ) { extensionDataByte_[index] = value; }
   void setExtensionPresentFlag( bool value ) { extensionPresentFlag_ = value; }
-  void setExtension8Bits( uint8_t value ) { extension8Bits_ = value; }
-  void setExtensionLengthMinus1( size_t value ) { extensionLengthMinus1_ = value; }
+  void setExtensionCount( uint8_t value ) { vpsExtensionType_.resize( value ); }
+  void setExtensionType( uint8_t index, uint8_t value ) { vpsExtensionType_[index] = value; }
 
  private:
   ProfileTierLevel                  profileTierLevel_;
@@ -187,10 +178,8 @@ class V3CParameterSet {
   std::vector<GeometryInformation>  geometryInformation_;
   std::vector<AttributeInformation> attributeInformation_;
   bool                              extensionPresentFlag_;
-  uint8_t                           extension8Bits_;
-  size_t                            extensionLengthMinus1_;
-  std::vector<uint8_t>              extensionDataByte_;
-  VpsVpccExtension                  vpsVpccExtension_;
+  std::vector<std::uint8_t>         vpsExtensionType_;
+  VpsPackedVideoExtension           vpsPackedVideoExtension_;
 };
 
 };  // namespace pcc

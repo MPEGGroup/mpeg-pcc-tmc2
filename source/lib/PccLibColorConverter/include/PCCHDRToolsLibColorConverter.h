@@ -48,19 +48,29 @@ class PCCHDRToolsLibColorConverter : public PCCVirtualColorConverter<T> {
   PCCHDRToolsLibColorConverter();
   ~PCCHDRToolsLibColorConverter();
   void convert( std::string        configuration,
-                PCCVideo<T, 3>&    videoSrc,
-                const std::string& externalPath = "",
-                const std::string& fileName     = "" ) {
+                PCCVideo<T, 3>    &videoSrc,
+                const std::string &externalPath = "",
+                const std::string &fileName     = "" ) {
     PCCVideo<T, 3> videoDst;
     convert( configuration, videoSrc, videoDst, externalPath, fileName );
     videoSrc = videoDst;
   }
 
   void convert( std::string        configuration,
-                PCCVideo<T, 3>&    videoSrc,
-                PCCVideo<T, 3>&    videoDst,
-                const std::string& externalPath = "",
-                const std::string& fileName     = "" );
+                PCCVideo<T, 3>    &videoSrc,
+                PCCVideo<T, 3>    &videoDst,
+                const std::string &externalPath = "",
+                const std::string &fileName     = "" );
+  void scale( std::string        configuration,
+              PCCVideo<T, 3>    &videoSrc,
+              PCCVideo<T, 3>    &videoDst,
+              int                bitDepth,
+              int                chromaFormat,
+              int                colorSpace,
+              int                outputWidth,
+              int                outputHeight,
+              const std::string &externalPath = "",
+              const std::string &fileName     = "" );
 };
 
 };  // namespace pcc

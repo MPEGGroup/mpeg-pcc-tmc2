@@ -42,7 +42,7 @@ class AccessUnitDelimiterRbsp {
  public:
   AccessUnitDelimiterRbsp() : aframeType_( 0 ) {}
   ~AccessUnitDelimiterRbsp() {}
-  AccessUnitDelimiterRbsp& operator=( const AccessUnitDelimiterRbsp& ) = default;
+  AccessUnitDelimiterRbsp &operator=( const AccessUnitDelimiterRbsp & ) = default;
   uint8_t                  getAframeType() { return aframeType_; }
   void                     setAframeType( uint8_t value ) { aframeType_ = value; }
 

@@ -114,10 +114,10 @@ class PCCPatch {
   size_t                      getPatchSize2DXInPixel() const { return size2DXInPixel_; }
   size_t                      getPatchSize2DYInPixel() const { return size2DYInPixel_; }
   size_t                      getAxisOfAdditionalPlane() const { return axisOfAdditionalPlane_; }
-  const std::vector<int16_t>& getDepth( size_t i ) const { return depth_[i]; }
-  const std::vector<bool>&    getOccupancy() const { return occupancy_; }
-  const std::vector<int16_t>& getDepthEOM() const { return depthEOM_; }
-  const std::vector<int64_t>& getDepth0PccIdx() const { return depth0PCidx_; }
+  const std::vector<int16_t> &getDepth( size_t i ) const { return depth_[i]; }
+  const std::vector<bool>    &getOccupancy() const { return occupancy_; }
+  const std::vector<int16_t> &getDepthEOM() const { return depthEOM_; }
+  const std::vector<int64_t> &getDepth0PccIdx() const { return depth0PCidx_; }
   const int16_t               getDepth( size_t i, size_t j ) const { return depth_[i][j]; }
   const bool                  getOccupancy( size_t i ) const { return occupancy_[i]; }
   const int16_t               getDepthEOM( size_t i ) const { return depthEOM_[i]; }
@@ -141,8 +141,8 @@ class PCCPatch {
   void setNormalAxis( size_t value ) { normalAxis_ = value; }
   void setTangentAxis( size_t value ) { tangentAxis_ = value; }
   void setBitangentAxis( size_t value ) { bitangentAxis_ = value; }
-  void setOccupancy( const std::vector<bool>& occupancy ) { occupancy_ = occupancy; }
-  void setDepth( size_t i, const std::vector<int16_t>& depth ) { depth_[i] = depth; }
+  void setOccupancy( const std::vector<bool> &occupancy ) { occupancy_ = occupancy; }
+  void setDepth( size_t i, const std::vector<int16_t> &depth ) { depth_[i] = depth; }
   void setDepth( size_t i, size_t j, int16_t value ) { depth_[i][j] = value; }
   void setOccupancy( size_t i, bool value ) { occupancy_[i] = value; }
   void setDepth0PccIdx( size_t i, int64_t value ) { depth0PCidx_[i] = value; }
@@ -209,7 +209,7 @@ class PCCPatch {
   PCCPoint3D canvasTo3D( const size_t x, const size_t y, const uint16_t depth ) const;
 
   size_t patch2Canvas( const size_t u, const size_t v, size_t canvasStride, size_t canvasHeight );
-  size_t patch2Canvas( const size_t u, const size_t v, size_t canvasStride, size_t canvasHeight, size_t& x, size_t& y );
+  size_t patch2Canvas( const size_t u, const size_t v, size_t canvasStride, size_t canvasHeight, size_t &x, size_t &y );
   int    patchBlock2CanvasBlock( const size_t uBlk,
                                  const size_t vBlk,
                                  size_t       canvasStrideBlk,
@@ -223,31 +223,31 @@ class PCCPatch {
                             int               safeguard = 0,
                             const Tile        tile      = Tile() );
 
-  bool        smallerRefFirst( const PCCPatch& rhs );
-  bool        gt( const PCCPatch& rhs );
+  bool        smallerRefFirst( const PCCPatch &rhs );
+  bool        gt( const PCCPatch &rhs );
   void        print() const;
   void        printDecoder() const;
-  friend bool operator<( const PCCPatch& lhs, const PCCPatch& rhs ) {
+  friend bool operator<( const PCCPatch &lhs, const PCCPatch &rhs ) {
     return lhs.sizeV_ != rhs.sizeV_ ? lhs.sizeV_ > rhs.sizeV_
                                     : ( lhs.sizeU_ != rhs.sizeU_ ? lhs.sizeU_ > rhs.sizeU_ : lhs.index_ < rhs.index_ );
   }
 
-  void getPatchHorizons( std::vector<int>& topHorizon,
-                         std::vector<int>& bottomHorizon,
-                         std::vector<int>& rightHorizon,
-                         std::vector<int>& leftHorizon );
+  void getPatchHorizons( std::vector<int> &topHorizon,
+                         std::vector<int> &bottomHorizon,
+                         std::vector<int> &rightHorizon,
+                         std::vector<int> &leftHorizon );
 
-  int calculateWastedSpace( std::vector<int>& horizon,
-                            std::vector<int>& topHorizon,
-                            std::vector<int>& bottomHorizon,
-                            std::vector<int>& rightHorizon,
-                            std::vector<int>& leftHorizon );
+  int calculateWastedSpace( std::vector<int> &horizon,
+                            std::vector<int> &topHorizon,
+                            std::vector<int> &bottomHorizon,
+                            std::vector<int> &rightHorizon,
+                            std::vector<int> &leftHorizon );
 
-  bool isPatchLocationAboveHorizon( std::vector<int>& horizon,
-                                    std::vector<int>& topHorizon,
-                                    std::vector<int>& bottomHorizon,
-                                    std::vector<int>& rightHorizon,
-                                    std::vector<int>& leftHorizon );
+  bool isPatchLocationAboveHorizon( std::vector<int> &horizon,
+                                    std::vector<int> &topHorizon,
+                                    std::vector<int> &bottomHorizon,
+                                    std::vector<int> &rightHorizon,
+                                    std::vector<int> &leftHorizon );
 
   bool isPatchDimensionSwitched() {
     return !( ( getPatchOrientation() == PATCH_ORIENTATION_DEFAULT ) ||
@@ -255,15 +255,15 @@ class PCCPatch {
               ( getPatchOrientation() == PATCH_ORIENTATION_MIRROR ) ||
               ( getPatchOrientation() == PATCH_ORIENTATION_MROT180 ) );
   }
-  void updateHorizon( std::vector<int>& horizon,
-                      std::vector<int>& topHorizon,
-                      std::vector<int>& bottomHorizon,
-                      std::vector<int>& rightHorizon,
-                      std::vector<int>& leftHorizon );
+  void updateHorizon( std::vector<int> &horizon,
+                      std::vector<int> &topHorizon,
+                      std::vector<int> &bottomHorizon,
+                      std::vector<int> &rightHorizon,
+                      std::vector<int> &leftHorizon );
 
-  GPAPatchData& getPreGPAPatchData() { return preGPAPatchData_; }
+  GPAPatchData &getPreGPAPatchData() { return preGPAPatchData_; }
   GPAPatchData  getPreGPAPatchData() const { return preGPAPatchData_; }
-  GPAPatchData& getCurGPAPatchData() { return curGPAPatchData_; }
+  GPAPatchData &getCurGPAPatchData() { return curGPAPatchData_; }
   GPAPatchData  getCurGPAPatchData() const { return curGPAPatchData_; }
 
   int patchBlock2CanvasBlockForGPA( const size_t uBlk,
@@ -278,7 +278,7 @@ class PCCPatch {
                                   int               safeguard = 0 );
 
   void     allocOneLayerData();
-  uint8_t& getPointLocalReconstructionLevel() { return pointLocalReconstructionLevel_; }
+  uint8_t &getPointLocalReconstructionLevel() { return pointLocalReconstructionLevel_; }
   uint8_t  getPointLocalReconstructionLevel() const { return pointLocalReconstructionLevel_; }
   uint8_t  getPointLocalReconstructionMode( const size_t u = 0, const size_t v = 0 ) const {
     if ( pointLocalReconstructionLevel_ == 1 ) {
@@ -290,17 +290,17 @@ class PCCPatch {
 
   inline void   setIndexCopy( size_t index ) { indexCopy_ = index; }
   inline size_t getIndexCopy() { return indexCopy_; }
-  void          setDepthFromGeometryVideo( const std::vector<uint16_t>& geometryVideo,
+  void          setDepthFromGeometryVideo( const std::vector<uint16_t> &geometryVideo,
                                            const int32_t                u2,
                                            const int32_t                v2,
                                            int32_t                      width,
                                            int32_t                      height,
                                            int32_t                      occupancyPrecision,
-                                           int16_t*                     depth );
+                                           int16_t                     *depth );
 
-  void setLocalData( const std::vector<uint8_t>&  occupancyMapVideo,
-                     const std::vector<uint16_t>& geometryVideo,
-                     std::vector<size_t>&         blockToPatch,
+  void setLocalData( const std::vector<uint8_t>  &occupancyMapVideo,
+                     const std::vector<uint16_t> &geometryVideo,
+                     std::vector<size_t>         &blockToPatch,
                      const int32_t                width,
                      const int32_t                height,
                      const int32_t                occupancyPrecision,
@@ -325,19 +325,19 @@ class PCCPatch {
   inline int16_t               getDepthMapWidth() { return depthMapWidth_; }
   inline int16_t               getDepthMapHeight() { return depthMapHeight_; }
   inline int16_t               getBorder() { return border_; }
-  inline std::vector<uint8_t>& getOccupancyMap() { return occupancyMap_; }
-  inline std::vector<size_t>&  getNeighboringPatches() { return neighboringPatches_; }
+  inline std::vector<uint8_t> &getOccupancyMap() { return occupancyMap_; }
+  inline std::vector<size_t>  &getNeighboringPatches() { return neighboringPatches_; }
   inline const int16_t         getDepthMap( size_t u, size_t v ) const {
     return depthMap_[( v + border_ ) * depthMapWidth_ + u + border_];
   }
   inline const int16_t getOccupancyMap( size_t u, size_t v ) const {
     return occupancyMap_[( v + border_ ) * depthMapWidth_ + u + border_];
   }
-  const bool isBorder( size_t u, size_t v );
+  const bool     isBorder( size_t u, size_t v );
   inline int16_t generateDepth( PCCPoint3D point ) const {
     return projectionMode_ == 0 ? point[normalAxis_] - d1_ : d1_ - point[normalAxis_];
   }
-  inline bool intersects( PCCPatch& other ) { return boundingBox_.intersects( other.boundingBox_ ); }
+  inline bool intersects( PCCPatch &other ) { return boundingBox_.intersects( other.boundingBox_ ); }
   inline void clearPatchBlockFilteringData() {
     borderPoints_.clear();
     neighboringPatches_.clear();
@@ -347,7 +347,7 @@ class PCCPatch {
   void filtering( const int8_t           passesCount,
                   const int8_t           filterSize,
                   const int8_t           log2Threshold,
-                  std::vector<PCCPatch>& patches );
+                  std::vector<PCCPatch> &patches );
 
  private:
   size_t                  index_;          // patch index
@@ -398,7 +398,7 @@ class PCCPatch {
   bool                    isRoiPatch_;
   size_t                  roiIndex_;
   size_t                  indexCopy_;           // patch index
-  PCCInt16Box3D           boundingBox_;         // 3D bouding box of patch
+  PCCInt32Box3D           boundingBox_;         // 3D bouding box of patch
   int16_t                 border_;              // Size of the depht Map (width + 2 border)
   int16_t                 depthMapWidth_;       // Size of the depht Map (width + 2 border)
   int16_t                 depthMapHeight_;      // Size of the depht Map (width + 2 border)
@@ -413,11 +413,11 @@ class PatchBlockFiltering {
   PatchBlockFiltering() {}
   ~PatchBlockFiltering() {}
 
-  inline void setPatches( std::vector<PCCPatch>* patches ) { patches_ = patches; }
-  inline void setBlockToPatch( std::vector<size_t>* value ) { blockToPatch_ = value; }
-  inline void setOccupancyMapEncoder( std::vector<uint32_t>* value ) { occupancyMapEncoder_ = value; }
-  inline void setOccupancyMapVideo( const std::vector<uint8_t>* value ) { occupancyMapVideo_ = value; }
-  inline void setGeometryVideo( const std::vector<uint16_t>* value ) { geometryVideo_ = value; }
+  inline void setPatches( std::vector<PCCPatch> *patches ) { patches_ = patches; }
+  inline void setBlockToPatch( std::vector<size_t> *value ) { blockToPatch_ = value; }
+  inline void setOccupancyMapEncoder( std::vector<uint32_t> *value ) { occupancyMapEncoder_ = value; }
+  inline void setOccupancyMapVideo( const std::vector<uint8_t> *value ) { occupancyMapVideo_ = value; }
+  inline void setGeometryVideo( const std::vector<uint16_t> *value ) { geometryVideo_ = value; }
 
   void patchBorderFiltering( size_t imageWidth,
                              size_t imageHeight,
@@ -429,11 +429,11 @@ class PatchBlockFiltering {
                              int8_t log2Threshold );
 
  private:
-  std::vector<PCCPatch>*       patches_;
-  std::vector<size_t>*         blockToPatch_;
-  std::vector<uint32_t>*       occupancyMapEncoder_;
-  const std::vector<uint8_t>*  occupancyMapVideo_;
-  const std::vector<uint16_t>* geometryVideo_;
+  std::vector<PCCPatch>       *patches_;
+  std::vector<size_t>         *blockToPatch_;
+  std::vector<uint32_t>       *occupancyMapEncoder_;
+  const std::vector<uint8_t>  *occupancyMapVideo_;
+  const std::vector<uint16_t> *geometryVideo_;
 };
 
 struct PCCEomPatch {
@@ -488,7 +488,7 @@ struct PCCRawPointsPatch {
   }
 
   void         setNumberOfRawPoints( size_t numberOfRawPoints ) { numberOfRawPoints_ = numberOfRawPoints; }
-  const size_t getNumberOfRawPoints() { return numberOfRawPoints_; }
+  const size_t getNumberOfRawPoints() const { return numberOfRawPoints_; }
   void         resizeColor( const size_t size ) {
     r_.resize( size );
     g_.resize( size );

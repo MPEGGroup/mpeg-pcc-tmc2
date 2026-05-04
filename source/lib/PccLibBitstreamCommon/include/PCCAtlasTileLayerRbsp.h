@@ -50,11 +50,11 @@ class AtlasTileLayerRbsp {
       encTileIndex_( -1 ) {}
   ~AtlasTileLayerRbsp() {}
 
-  AtlasTileLayerRbsp& operator=( const AtlasTileLayerRbsp& ) = default;
+  AtlasTileLayerRbsp &operator=( const AtlasTileLayerRbsp & ) = default;
 
   size_t             getTileOrder() { return tileOrder_; }
-  AtlasTileHeader&   getHeader() { return header_; }
-  AtlasTileDataUnit& getDataUnit() { return dataUnit_; }
+  AtlasTileHeader   &getHeader() { return header_; }
+  AtlasTileDataUnit &getDataUnit() { return dataUnit_; }
   size_t             getAtlasFrmOrderCntVal() { return atlasFrmOrderCntVal_; }
   size_t             getAtlasFrmOrderCntMsb() { return atlasFrmOrderCntMsb_; }
   size_t             getEncFrameIndex() { return encFrameIndex_; }
@@ -66,7 +66,7 @@ class AtlasTileLayerRbsp {
   void               setDataUnit( AtlasTileDataUnit value ) { dataUnit_ = value; }
   void               setEncFrameIndex( size_t value ) { encFrameIndex_ = value; }
   void               setEncTileIndex( size_t value ) { encTileIndex_ = value; }
-  PCCSEI&            getSEI() { return sei_; }
+  PCCSEI            &getSEI() { return sei_; }
 
  private:
   AtlasTileHeader   header_;

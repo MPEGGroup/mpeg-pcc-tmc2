@@ -44,10 +44,10 @@ template <typename T>
 PCCHMAppVideoEncoder<T>::~PCCHMAppVideoEncoder() {}
 
 template <typename T>
-void PCCHMAppVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
-                                      PCCVideoEncoderParameters& params,
-                                      PCCVideoBitstream&         bitstream,
-                                      PCCVideo<T, 3>&            videoRec ) {
+void PCCHMAppVideoEncoder<T>::encode( PCCVideo<T, 3>            &videoSrc,
+                                      PCCVideoEncoderParameters &params,
+                                      PCCVideoBitstream         &bitstream,
+                                      PCCVideo<T, 3>            &videoRec ) {
   const size_t width          = videoSrc.getWidth();
   const size_t height         = videoSrc.getHeight();
   const size_t frameCount     = videoSrc.getFrameCount();
@@ -105,7 +105,7 @@ void PCCHMAppVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
 }
 
 template <typename T>
-PCCCOLORFORMAT PCCHMAppVideoEncoder<T>::getColorFormat( std::string& name ) {
+PCCCOLORFORMAT PCCHMAppVideoEncoder<T>::getColorFormat( std::string &name ) {
   if ( ( name.find( "_p444.rgb" ) ) != std::string::npos ) {
     return PCCCOLORFORMAT::RGB444;
   } else if ( ( name.find( "_p444.yuv" ) ) != std::string::npos ) {

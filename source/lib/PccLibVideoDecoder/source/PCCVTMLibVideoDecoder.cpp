@@ -45,11 +45,11 @@ template <typename T>
 PCCVTMLibVideoDecoder<T>::~PCCVTMLibVideoDecoder() {}
 
 template <typename T>
-void PCCVTMLibVideoDecoder<T>::decode( PCCVideoBitstream& bitstream,
-                                       PCCVideo<T, 3>&    video,
+void PCCVTMLibVideoDecoder<T>::decode( PCCVideoBitstream &bitstream,
+                                       PCCVideo<T, 3>    &video,
                                        size_t             outputBitDepth,
-                                       const std::string& decoderPath,
-                                       const std::string& fileName ) {
+                                       const std::string &decoderPath,
+                                       const std::string &fileName ) {
   // print information
   fprintf( stdout, "\n" );
   fprintf( stdout, "VVCSoftware: VTM Decoder Version %s ", VTM_VERSION );
@@ -75,7 +75,7 @@ void PCCVTMLibVideoDecoder<T>::decode( PCCVideoBitstream& bitstream,
       printf( "\n\n***ERROR*** A decoding mismatch occured: signalled md5sum does not match\n" );
     }
 #ifndef _DEBUG
-  } catch ( Exception& e ) { std::cerr << e.what() << std::endl; } catch ( const std::bad_alloc& e ) {
+  } catch ( Exception &e ) { std::cerr << e.what() << std::endl; } catch ( const std::bad_alloc &e ) {
     std::cout << "Memory allocation failed: " << e.what() << std::endl;
   }
 #endif

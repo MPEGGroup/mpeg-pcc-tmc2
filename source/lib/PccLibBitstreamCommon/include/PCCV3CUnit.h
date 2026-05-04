@@ -47,16 +47,16 @@ class V3CUnit {
   void          allocate() { bitstream_.initialize( size_ ); }
   size_t        getSize() { return size_; }
   V3CUnitType   getType() { return type_; }
-  PCCBitstream& getBitstream() {
+  PCCBitstream &getBitstream() {
     bitstream_.beginning();
     return bitstream_;
   }
   void setSize( size_t value ) { size_ = value; }
   void setSize() { size_ = bitstream_.size(); }
   void setType( V3CUnitType value ) { type_ = value; }
-  void setBitstream( PCCBitstream&& bitstream, V3CUnitType unitType ) {
+  void setBitstream( PCCBitstream bitstream, V3CUnitType unitType ) {
     bitstream_ = std::move( bitstream );
-    size_      = bitstream.size();
+    size_      = bitstream_.size();
     type_      = unitType;
   }
 

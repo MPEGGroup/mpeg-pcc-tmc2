@@ -48,10 +48,10 @@ class PCCHMLibVideoEncoder : public PCCVirtualVideoEncoder<T> {
   PCCHMLibVideoEncoder();
   ~PCCHMLibVideoEncoder();
 
-  void encode( PCCVideo<T, 3>&            videoSrc,
-               PCCVideoEncoderParameters& params,
-               PCCVideoBitstream&         bitstream,
-               PCCVideo<T, 3>&            videoRec );
+  void encode( PCCVideo<T, 3>            &videoSrc,
+               PCCVideoEncoderParameters &params,
+               PCCVideoBitstream         &bitstream,
+               PCCVideo<T, 3>            &videoRec );
 };
 
 }  // namespace pcc

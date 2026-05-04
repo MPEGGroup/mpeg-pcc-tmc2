@@ -48,23 +48,35 @@ class PCCVideoEncoder {
   PCCVideoEncoder();
   ~PCCVideoEncoder();
   template <typename T>
-  void patchColorSubsmple( PCCVideo<T, 3>&    video,
-                           PCCContext&        contexts,
+  void patchColorSubsmple( PCCVideo<T, 3>    &video,
+                           PCCContext        &contexts,
                            const size_t       width,
                            const size_t       height,
-                           const std::string& configColorSpace,
-                           const std::string& colorSpaceConversionPath,
-                           const std::string& fileName );
+                           const std::string &configColorSpace,
+                           const std::string &colorSpaceConversionPath,
+                           const std::string &fileName );
   template <typename T>
-  bool compress( PCCVideo<T, 3>&    video,
-                 const std::string& path,
+  void patchBasedDownsample( PCCVideo<T, 3> &video,
+                             PCCVideo<T, 3> &downsampledVideo,
+                             const size_t    width,
+                             const size_t    height,
+                             PCCContext     &contexts );
+  template <typename T>
+  void patchBasedUpsample( PCCVideo<T, 3> &video,
+                           PCCVideo<T, 3> &upsampledVideo,
+                           const size_t    width,
+                           const size_t    height,
+                           PCCContext     &contexts );
+  template <typename T>
+  bool compress( PCCVideo<T, 3>    &video,
+                 const std::string &path,
                  const int          qp,
-                 PCCVideoBitstream& bitstream,
-                 const std::string& encoderConfig,
-                 const std::string& encoderPath,
+                 PCCVideoBitstream &bitstream,
+                 const std::string &encoderConfig,
+                 const std::string &encoderPath,
                  PCCCodecId         codecId,
                  bool               byteStreamVideoCoder,
-                 PCCContext&        contexts,
+                 PCCContext        &contexts,
                  const size_t       nbyte,
                  const bool         use444CodecIo,
                  const bool         use3dmv,
@@ -74,18 +86,20 @@ class PCCVideoEncoder {
                  const size_t       shvcRateY,
                  const size_t       internalBitDepth,
                  const bool         useConversion,
+                 const size_t       scaling                           = 1,
+                 const std::string &scalerConfigPath                  = "",
                  const bool         keepIntermediateFiles             = false,
-                 const std::string& colorSpaceConversionConfig        = "",
-                 const std::string& inverseColorSpaceConversionConfig = "",
-                 const std::string& colorSpaceConversionPath          = "",
+                 const std::string &colorSpaceConversionConfig        = "",
+                 const std::string &inverseColorSpaceConversionConfig = "",
+                 const std::string &colorSpaceConversionPath          = "",
                  const size_t       downsamplingFilter                = 4,
                  const size_t       upsamplingFilter                  = 0,
                  const bool         patchColorSubsampling             = false );
 
-  void setLogger( PCCLogger& logger ) { logger_ = &logger; }
+  void setLogger( PCCLogger &logger ) { logger_ = &logger; }
 
  private:
-  PCCLogger* logger_ = nullptr;
+  PCCLogger *logger_ = nullptr;
 };
 
 };  // namespace pcc

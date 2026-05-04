@@ -43,12 +43,12 @@ class AtlasTileDataUnit {
  public:
   AtlasTileDataUnit() {}
   ~AtlasTileDataUnit() { patchInformationData_.clear(); }
-  AtlasTileDataUnit& operator=( const AtlasTileDataUnit& ) = default;
+  AtlasTileDataUnit &operator=( const AtlasTileDataUnit & ) = default;
   void               init() { patchInformationData_.clear(); }
   void               allocate( size_t size ) { patchInformationData_.resize( size ); }
 
-  void addPatchInformationData( PatchInformationData& value ) { patchInformationData_.push_back( value ); }
-  PatchInformationData& addPatchInformationData( uint8_t patchMode ) {
+  void addPatchInformationData( PatchInformationData &value ) { patchInformationData_.push_back( value ); }
+  PatchInformationData &addPatchInformationData( uint8_t patchMode ) {
     PatchInformationData pid;
     pid.setPatchMode( patchMode );
     patchInformationData_.push_back( pid );
@@ -57,18 +57,18 @@ class AtlasTileDataUnit {
   size_t                getTileOrder() { return tileOrder_; }
   uint8_t               getPatchMode( size_t index ) { return patchInformationData_[index].getPatchMode(); }
   size_t                getPatchCount() { return patchInformationData_.size(); }
-  PatchInformationData& getPatchInformationData( size_t index ) { return patchInformationData_[index]; }
-  std::vector<PatchInformationData>& getPatchInformationData() { return patchInformationData_; }
+  PatchInformationData &getPatchInformationData( size_t index ) { return patchInformationData_[index]; }
+  std::vector<PatchInformationData> &getPatchInformationData() { return patchInformationData_; }
   size_t                             getMatchedPatchCount() {
     size_t matchedPatchCount = 0;
-    for ( auto& v : patchInformationData_ ) {
+    for ( auto &v : patchInformationData_ ) {
       if ( v.getPatchMode() == P_INTER ) { matchedPatchCount++; }
     }
     return matchedPatchCount;
   }
   void setTileOrder( size_t value ) { tileOrder_ = value; }
   // void setPatchCount( size_t value ) { patchCount_ = value; }
-  void setPatchInformationData( size_t index, PatchInformationData& value ) { patchInformationData_[index] = value; }
+  void setPatchInformationData( size_t index, PatchInformationData &value ) { patchInformationData_[index] = value; }
 
  private:
   size_t tileOrder_;

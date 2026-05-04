@@ -34,6 +34,7 @@
 #define PCC_BITSTREAM_SEI_H
 
 #include "PCCBitstreamCommon.h"
+#include <array>
 
 namespace pcc {
 
@@ -49,7 +50,7 @@ class SEI {
   virtual ~SEI() { byteStrData_.clear(); }
   virtual SeiPayloadType getPayloadType() = 0;
 
-  virtual std::vector<uint8_t>& getMD5ByteStrData() { return byteStrData_; }
+  virtual std::vector<uint8_t> &getMD5ByteStrData() { return byteStrData_; }
 
   size_t getPayloadSize() { return payloadSize_; }
   void   setPayloadSize( size_t value ) { payloadSize_ = value; }
@@ -67,13 +68,13 @@ class SEIUserDataRegisteredItuTT35 : public SEI {
   SEIUserDataRegisteredItuTT35() : countryCode_( 0 ), countryCodeExtensionByte_( 0 ) {}
 
   ~SEIUserDataRegisteredItuTT35() { payloadByte_.clear(); }
-  SEIUserDataRegisteredItuTT35& operator=( const SEIUserDataRegisteredItuTT35& ) = default;
+  SEIUserDataRegisteredItuTT35 &operator=( const SEIUserDataRegisteredItuTT35 & ) = default;
 
   SeiPayloadType getPayloadType() { return USER_DATAREGISTERED_ITUTT35; }
 
   uint8_t               getCountryCode() { return countryCode_; }
   uint8_t               getCountryCodeExtensionByte() { return countryCodeExtensionByte_; }
-  std::vector<uint8_t>& getPayloadByte() { return payloadByte_; }
+  std::vector<uint8_t> &getPayloadByte() { return payloadByte_; }
   void                  setCountryCode( uint8_t value ) { countryCode_ = value; }
   void                  setCountryCodeExtensionByte( uint8_t value ) { countryCodeExtensionByte_ = value; }
 
@@ -91,14 +92,14 @@ class SEIUserDataUnregistered : public SEI {
   }
 
   ~SEIUserDataUnregistered() { userDataPayloadByte_.clear(); }
-  SEIUserDataUnregistered& operator=( const SEIUserDataUnregistered& ) = default;
+  SEIUserDataUnregistered &operator=( const SEIUserDataUnregistered & ) = default;
 
   SeiPayloadType getPayloadType() { return USER_DATA_UNREGISTERED; }
 
-  uint8_t*              getUuidIsoIec11578() { return uuidIsoIec11578_; }
+  uint8_t              *getUuidIsoIec11578() { return uuidIsoIec11578_; }
   uint8_t               getUuidIsoIec11578( size_t i ) { return uuidIsoIec11578_[i]; }
-  std::vector<uint8_t>& getUserDataPayloadByte() { return userDataPayloadByte_; }
-  uint8_t&              getUserDataPayloadByte( size_t i ) { return userDataPayloadByte_[i]; }
+  std::vector<uint8_t> &getUserDataPayloadByte() { return userDataPayloadByte_; }
+  uint8_t              &getUserDataPayloadByte( size_t i ) { return userDataPayloadByte_[i]; }
   void                  setUuidIsoIec11578( size_t i, uint8_t value ) { uuidIsoIec11578_[i] = value; }
   void                  setUserDataPayloadByte( size_t i, uint8_t value ) { userDataPayloadByte_[i] = value; }
 
@@ -113,7 +114,7 @@ class SEIRecoveryPoint : public SEI {
   SEIRecoveryPoint() : recoveryAfocCnt_( 0 ), exactMatchFlag_( 0 ), brokenLinkFlag_( 0 ) {}
 
   ~SEIRecoveryPoint() {}
-  SEIRecoveryPoint& operator=( const SEIRecoveryPoint& ) = default;
+  SEIRecoveryPoint &operator=( const SEIRecoveryPoint & ) = default;
 
   SeiPayloadType getPayloadType() { return RECOVERY_POINT; }
 
@@ -135,7 +136,7 @@ class SEINoDisplay : public SEI {
  public:
   SEINoDisplay() {}
   ~SEINoDisplay() {}
-  SEINoDisplay& operator=( const SEINoDisplay& ) = default;
+  SEINoDisplay &operator=( const SEINoDisplay & ) = default;
 
   SeiPayloadType getPayloadType() { return NO_RECONSTRUCTION; }
 
@@ -147,11 +148,11 @@ class SEIReservedSeiMessage : public SEI {
  public:
   SEIReservedSeiMessage() {}
   ~SEIReservedSeiMessage() { payloadByte_.clear(); }
-  SEIReservedSeiMessage& operator=( const SEIReservedSeiMessage& ) = default;
+  SEIReservedSeiMessage &operator=( const SEIReservedSeiMessage & ) = default;
 
-  SeiPayloadType getPayloadType() { return RESERVED_SEI_MESSAGE; }
+  SeiPayloadType getPayloadType() { return RESERVED_MESSAGE; }
 
-  std::vector<uint8_t>& getPayloadByte() { return payloadByte_; }
+  std::vector<uint8_t> &getPayloadByte() { return payloadByte_; }
   uint8_t               getPayloadByte( size_t i ) { return payloadByte_[i]; }
 
   void setPayloadByte( size_t i, uint8_t value ) { payloadByte_[i] = value; }
@@ -168,7 +169,7 @@ class SEIManifest : public SEI {
     seiPayloadType_.clear();
     seiDescription_.clear();
   }
-  SEIManifest& operator=( const SEIManifest& ) = default;
+  SEIManifest &operator=( const SEIManifest & ) = default;
 
   SeiPayloadType getPayloadType() { return SEI_MANIFEST; }
 
@@ -177,8 +178,8 @@ class SEIManifest : public SEI {
     seiDescription_.resize( numSeiMsgTypes_, 0 );
   }
   uint16_t               getNumSeiMsgTypes() { return numSeiMsgTypes_; }
-  std::vector<uint16_t>& getSeiPayloadType() { return seiPayloadType_; }
-  std::vector<uint8_t>&  getSeiDescription() { return seiDescription_; }
+  std::vector<uint16_t> &getSeiPayloadType() { return seiPayloadType_; }
+  std::vector<uint8_t>  &getSeiDescription() { return seiDescription_; }
   uint16_t               getSeiPayloadType( size_t i ) { return seiPayloadType_[i]; }
   uint8_t                getSeiDescription( size_t i ) { return seiDescription_[i]; }
   void                   setNumSeiMsgTypes( uint16_t value ) { numSeiMsgTypes_ = value; }
@@ -198,17 +199,17 @@ class SEIPrefixIndication : public SEI {
 
   ~SEIPrefixIndication() {
     numBitsInPrefixIndicationMinus1_.clear();
-    for ( auto& element : seiPrefixDataBit_ ) { element.clear(); }
+    for ( auto &element : seiPrefixDataBit_ ) { element.clear(); }
     seiPrefixDataBit_.clear();
   }
-  SEIPrefixIndication& operator=( const SEIPrefixIndication& ) = default;
+  SEIPrefixIndication &operator=( const SEIPrefixIndication & ) = default;
 
   SeiPayloadType getPayloadType() { return SEI_PREFIX_INDICATION; }
 
   uint16_t                        getPrefixSeiPayloadType() { return prefixSeiPayloadType_; }
   uint8_t                         getNumSeiPrefixIndicationsMinus1() { return numSeiPrefixIndicationsMinus1_; }
-  std::vector<uint16_t>&          getNumBitsInPrefixIndicationMinus1() { return numBitsInPrefixIndicationMinus1_; }
-  std::vector<std::vector<bool>>& getSeiPrefixDataBit() { return seiPrefixDataBit_; }
+  std::vector<uint16_t>          &getNumBitsInPrefixIndicationMinus1() { return numBitsInPrefixIndicationMinus1_; }
+  std::vector<std::vector<bool>> &getSeiPrefixDataBit() { return seiPrefixDataBit_; }
   uint16_t          getNumBitsInPrefixIndicationMinus1( size_t i ) { return numBitsInPrefixIndicationMinus1_[i]; }
   std::vector<bool> getSeiPrefixDataBit( size_t i ) { return seiPrefixDataBit_[i]; }
   bool              getSeiPrefixDataBit( size_t i, size_t j ) { return seiPrefixDataBit_[i][j]; }
@@ -233,16 +234,16 @@ class SEIAttributeTransformationParams : public SEI {
   ~SEIAttributeTransformationParams() {
     attributeIdx_.clear();
     dimensionMinus1_.clear();
-    for ( auto& element : scaleParamsEnabledFlag_ ) { element.clear(); }
-    for ( auto& element : offsetParamsEnabledFlag_ ) { element.clear(); }
-    for ( auto& element : attributeScale_ ) { element.clear(); }
-    for ( auto& element : attributeOffset_ ) { element.clear(); }
+    for ( auto &element : scaleParamsEnabledFlag_ ) { element.clear(); }
+    for ( auto &element : offsetParamsEnabledFlag_ ) { element.clear(); }
+    for ( auto &element : attributeScale_ ) { element.clear(); }
+    for ( auto &element : attributeOffset_ ) { element.clear(); }
     scaleParamsEnabledFlag_.clear();
     offsetParamsEnabledFlag_.clear();
     attributeScale_.clear();
     attributeOffset_.clear();
   }
-  SEIAttributeTransformationParams& operator=( const SEIAttributeTransformationParams& ) = default;
+  SEIAttributeTransformationParams &operator=( const SEIAttributeTransformationParams & ) = default;
 
   SeiPayloadType getPayloadType() { return ATTRIBUTE_TRANSFORMATION_PARAMS; }
   void           allocate() {
@@ -261,12 +262,12 @@ class SEIAttributeTransformationParams : public SEI {
   }
   bool                                getCancelFlag() { return cancelFlag_; }
   int32_t                             getNumAttributeUpdates() { return numAttributeUpdates_; }
-  std::vector<uint8_t>&               AttributeIdx() { return attributeIdx_; }
-  std::vector<uint8_t>&               getDimensionMinus() { return dimensionMinus1_; }
-  std::vector<std::vector<bool>>&     getScaleParamsEnabledFlag() { return scaleParamsEnabledFlag_; }
-  std::vector<std::vector<bool>>&     getOffsetParamsEnabledFlag() { return offsetParamsEnabledFlag_; }
-  std::vector<std::vector<uint32_t>>& getAttributeScale() { return attributeScale_; }
-  std::vector<std::vector<int32_t>>&  getAttributeOffset() { return attributeOffset_; }
+  std::vector<uint8_t>               &AttributeIdx() { return attributeIdx_; }
+  std::vector<uint8_t>               &getDimensionMinus() { return dimensionMinus1_; }
+  std::vector<std::vector<bool>>     &getScaleParamsEnabledFlag() { return scaleParamsEnabledFlag_; }
+  std::vector<std::vector<bool>>     &getOffsetParamsEnabledFlag() { return offsetParamsEnabledFlag_; }
+  std::vector<std::vector<uint32_t>> &getAttributeScale() { return attributeScale_; }
+  std::vector<std::vector<int32_t>>  &getAttributeOffset() { return attributeOffset_; }
   bool                                getPersistenceFlag() { return persistenceFlag_; }
   uint8_t                             getAttributeIdx( size_t i ) { return attributeIdx_[i]; }
   uint8_t                             getDimensionMinus1( size_t i ) { return dimensionMinus1_[i]; }
@@ -313,7 +314,7 @@ class SEIActiveSubBitstreams : public SEI {
     activeAttributeIdx_.clear();
     activeMapIdx_.clear();
   }
-  SEIActiveSubBitstreams& operator=( const SEIActiveSubBitstreams& ) = default;
+  SEIActiveSubBitstreams &operator=( const SEIActiveSubBitstreams & ) = default;
 
   SeiPayloadType        getPayloadType() { return ACTIVE_SUB_BITSTREAMS; }
   bool                  getActiveSubBitstreamsCancelFlag() { return activeSubBitstreamsCancelFlag_; }
@@ -324,8 +325,8 @@ class SEIActiveSubBitstreams : public SEI {
   bool                  getAllMapsActiveFlag() { return allMapsActiveFlag_; }
   uint8_t               getActiveAttributeCountMinus1() { return activeAttributeCountMinus1_; }
   uint8_t               getActiveMapCountMinus1() { return activeMapCountMinus1_; }
-  std::vector<uint8_t>& getActiveAttributeIdx() { return activeAttributeIdx_; }
-  std::vector<uint8_t>& getActiveMapIdx() { return activeMapIdx_; }
+  std::vector<uint8_t> &getActiveAttributeIdx() { return activeAttributeIdx_; }
+  std::vector<uint8_t> &getActiveMapIdx() { return activeMapIdx_; }
   uint8_t               getActiveAttributeIdx( size_t i ) { return activeAttributeIdx_[i]; }
   uint8_t               getActiveMapIdx( size_t i ) { return activeMapIdx_[i]; }
 
@@ -361,7 +362,7 @@ class SEIComponentCodecMapping : public SEI {
     codecId_.clear();
     codec4cc_.clear();
   }
-  SEIComponentCodecMapping& operator=( const SEIComponentCodecMapping& ) = default;
+  SEIComponentCodecMapping &operator=( const SEIComponentCodecMapping & ) = default;
 
   SeiPayloadType getPayloadType() { return COMPONENT_CODEC_MAPPING; }
 
@@ -379,7 +380,7 @@ class SEIComponentCodecMapping : public SEI {
   void setCodecId( size_t i, uint8_t value ) { codecId_[i] = value; }
   void setCodec4cc( size_t i, std::string value ) { codec4cc_[i] = value; }
 
-  std::vector<uint8_t>& getMD5ByteStrData() {
+  std::vector<uint8_t> &getMD5ByteStrData() {
     uint8_t val;
     val = componentCodecCancelFlag_ & 0xFF;
     byteStrData_.push_back( val );
@@ -390,7 +391,7 @@ class SEIComponentCodecMapping : public SEI {
       byteStrData_.push_back( val );
     }
     for ( int i = 0; i < codecId_.size(); i++ ) {
-      char const* strByte = codec4cc_[i].c_str();
+      char const *strByte = codec4cc_[i].c_str();
       for ( int j = 0; j < codec4cc_[i].length(); j++ ) {
         val = strByte[j] & 0xFF;
         byteStrData_.push_back( val );
@@ -411,7 +412,7 @@ class SEISceneObjectInformation : public SEI {
  public:
   SEISceneObjectInformation() : persistenceFlag_( true ), resetFlag_( true ) {}
   ~SEISceneObjectInformation() {}
-  SEISceneObjectInformation& operator=( const SEISceneObjectInformation& ) = default;
+  SEISceneObjectInformation &operator=( const SEISceneObjectInformation & ) = default;
   void                       allocateObjectIdx() { objectIdx_.resize( numObjectUpdates_ ); }
   void                       allocateObjectNumDependencies( size_t i, size_t objectNumDependencies ) {
     objectDependencyIdx_[i].resize( objectNumDependencies );
@@ -468,7 +469,7 @@ class SEISceneObjectInformation : public SEI {
   uint8_t                get3dBoundingBoxPrecisionMinus8() { return boundingBoxPrecisionMinus8_; }
   uint8_t                getLog2MaxObjectIdxUpdated() { return log2MaxObjectIdxUpdated_; }
   uint8_t                getLog2MaxObjectDependencyIdx() { return log2MaxObjectDependencyIdx_; }
-  std::vector<uint32_t>& getObjectIdx() { return objectIdx_; }
+  std::vector<uint32_t> &getObjectIdx() { return objectIdx_; }
   uint32_t               getObjectIdx( size_t i ) { return objectIdx_[i]; }
   bool                   getObjectCancelFlag( size_t i ) { return objectCancelFlag_[i]; }
   bool                   getObjectLabelUpdateFlag( size_t i ) { return objectLabelUpdateFlag_[i]; }
@@ -602,18 +603,18 @@ class SEIObjectLabelInformation : public SEI {
  public:
   SEIObjectLabelInformation() : cancelFlag_( false ) {}
   ~SEIObjectLabelInformation() {}
-  SEIObjectLabelInformation& operator=( const SEIObjectLabelInformation& ) = default;
+  SEIObjectLabelInformation &operator=( const SEIObjectLabelInformation & ) = default;
 
   SeiPayloadType getPayloadType() { return OBJECT_LABEL_INFORMATION; }
   void           allocate() { labelIdx_.resize( numLabelUpdates_, 0 ); }
   bool           getCancelFlag() { return cancelFlag_; }
   bool           getLabelLanguagePresentFlag() { return labelLanguagePresentFlag_; }
-  std::string&   getLabelLanguage() { return labelLanguage_; }
+  std::string   &getLabelLanguage() { return labelLanguage_; }
   uint32_t       getNumLabelUpdates() { return numLabelUpdates_; }
   uint32_t       getLabelIdx( size_t i ) { return labelIdx_[i]; }
   bool           getLabelCancelFlag() { return labelCancelFlag_; }
   bool           getBitEqualToZero() { return bitEqualToZero_; }
-  std::string&   getLabel( size_t i ) { return label_[i]; }
+  std::string   &getLabel( size_t i ) { return label_[i]; }
   bool           getPersistenceFlag() { return persistenceFlag_; }
 
   void setCancelFlag( bool value ) { cancelFlag_ = value; }
@@ -646,7 +647,7 @@ class SEIPatchInformation : public SEI {
  public:
   SEIPatchInformation() {}
   ~SEIPatchInformation() {}
-  SEIPatchInformation& operator=( const SEIPatchInformation& ) = default;
+  SEIPatchInformation &operator=( const SEIPatchInformation & ) = default;
   SeiPayloadType       getPayloadType() { return PATCH_INFORMATION; }
 
   void     allocate() {}  // TODO: allocate data
@@ -698,7 +699,7 @@ class SEIVolumetricRectangleInformation : public SEI {
  public:
   SEIVolumetricRectangleInformation() {}
   ~SEIVolumetricRectangleInformation() {}
-  SEIVolumetricRectangleInformation& operator=( const SEIVolumetricRectangleInformation& ) = default;
+  SEIVolumetricRectangleInformation &operator=( const SEIVolumetricRectangleInformation & ) = default;
   void                               allocate( size_t size ) {
     boundingBoxUpdateFlag_.resize( size );
     boundingBoxTop_.resize( size );
@@ -769,14 +770,14 @@ class SEIBufferingPeriod : public SEI {
       atlasCabRemovalDelayDeltaMinus1_( 0 ),
       maxSubLayersMinus1_( 0 ) {}
   ~SEIBufferingPeriod() {
-    for ( auto& element : nalInitialCabRemovalDelay_ ) { element.clear(); }
-    for ( auto& element : nalInitialCabRemovalOffset_ ) { element.clear(); }
-    for ( auto& element : aclInitialCabRemovalDelay_ ) { element.clear(); }
-    for ( auto& element : aclInitialCabRemovalOffset_ ) { element.clear(); }
-    for ( auto& element : nalInitialAltCabRemovalDelay_ ) { element.clear(); }
-    for ( auto& element : nalInitialAltCabRemovalOffset_ ) { element.clear(); }
-    for ( auto& element : aclInitialAltCabRemovalDelay_ ) { element.clear(); }
-    for ( auto& element : aclInitialAltCabRemovalOffset_ ) { element.clear(); }
+    for ( auto &element : nalInitialCabRemovalDelay_ ) { element.clear(); }
+    for ( auto &element : nalInitialCabRemovalOffset_ ) { element.clear(); }
+    for ( auto &element : aclInitialCabRemovalDelay_ ) { element.clear(); }
+    for ( auto &element : aclInitialCabRemovalOffset_ ) { element.clear(); }
+    for ( auto &element : nalInitialAltCabRemovalDelay_ ) { element.clear(); }
+    for ( auto &element : nalInitialAltCabRemovalOffset_ ) { element.clear(); }
+    for ( auto &element : aclInitialAltCabRemovalDelay_ ) { element.clear(); }
+    for ( auto &element : aclInitialAltCabRemovalOffset_ ) { element.clear(); }
     hrdCabCntMinus1_.clear();
     nalInitialCabRemovalDelay_.clear();
     nalInitialCabRemovalOffset_.clear();
@@ -787,7 +788,7 @@ class SEIBufferingPeriod : public SEI {
     aclInitialAltCabRemovalDelay_.clear();
     aclInitialAltCabRemovalOffset_.clear();
   }
-  SEIBufferingPeriod& operator=( const SEIBufferingPeriod& ) = default;
+  SEIBufferingPeriod &operator=( const SEIBufferingPeriod & ) = default;
 
   SeiPayloadType getPayloadType() { return BUFFERING_PERIOD; }
   void           allocate() {
@@ -824,15 +825,15 @@ class SEIBufferingPeriod : public SEI {
   uint32_t               getDabDelayOffset() { return dabDelayOffset_; }
   uint32_t               getAtlasCabRemovalDelayDeltaMinus1() { return atlasCabRemovalDelayDeltaMinus1_; }
   uint32_t               getMaxSubLayersMinus1() { return maxSubLayersMinus1_; }
-  std::vector<uint32_t>& getHrdCabCntMinus1() { return hrdCabCntMinus1_; }
-  std::vector<std::vector<uint32_t>>& getNalInitialCabRemovalDelay() { return nalInitialCabRemovalDelay_; }
-  std::vector<std::vector<uint32_t>>& getNalInitialCabRemovalOffse() { return nalInitialCabRemovalOffset_; }
-  std::vector<std::vector<uint32_t>>& getNalInitialAltCabRemovalDelay() { return nalInitialAltCabRemovalDelay_; }
-  std::vector<std::vector<uint32_t>>& getNalInitialAltCabRemovalOffset() { return nalInitialAltCabRemovalOffset_; }
-  std::vector<std::vector<uint32_t>>& getAclInitialCabRemovalDelay() { return aclInitialCabRemovalDelay_; }
-  std::vector<std::vector<uint32_t>>& getAclInitialCabRemovalOffset() { return aclInitialCabRemovalOffset_; }
-  std::vector<std::vector<uint32_t>>& getAclInitialAltCabRemovalDelay() { return aclInitialAltCabRemovalDelay_; }
-  std::vector<std::vector<uint32_t>>& getAclInitialAltCabRemovalOffset() { return aclInitialAltCabRemovalOffset_; }
+  std::vector<uint32_t> &getHrdCabCntMinus1() { return hrdCabCntMinus1_; }
+  std::vector<std::vector<uint32_t>> &getNalInitialCabRemovalDelay() { return nalInitialCabRemovalDelay_; }
+  std::vector<std::vector<uint32_t>> &getNalInitialCabRemovalOffse() { return nalInitialCabRemovalOffset_; }
+  std::vector<std::vector<uint32_t>> &getNalInitialAltCabRemovalDelay() { return nalInitialAltCabRemovalDelay_; }
+  std::vector<std::vector<uint32_t>> &getNalInitialAltCabRemovalOffset() { return nalInitialAltCabRemovalOffset_; }
+  std::vector<std::vector<uint32_t>> &getAclInitialCabRemovalDelay() { return aclInitialCabRemovalDelay_; }
+  std::vector<std::vector<uint32_t>> &getAclInitialCabRemovalOffset() { return aclInitialCabRemovalOffset_; }
+  std::vector<std::vector<uint32_t>> &getAclInitialAltCabRemovalDelay() { return aclInitialAltCabRemovalDelay_; }
+  std::vector<std::vector<uint32_t>> &getAclInitialAltCabRemovalOffset() { return aclInitialAltCabRemovalOffset_; }
   uint32_t                            getHrdCabCntMinus1( size_t i ) { return hrdCabCntMinus1_[i]; }
   uint32_t getNalInitialCabRemovalDelay( size_t i, size_t j ) { return nalInitialCabRemovalDelay_[i][j]; }
   uint32_t getNalInitialCabRemovalOffset( size_t i, size_t j ) { return nalInitialCabRemovalOffset_[i][j]; }
@@ -842,14 +843,14 @@ class SEIBufferingPeriod : public SEI {
   uint32_t getNalInitialAltCabRemovalOffset( size_t i, size_t j ) { return nalInitialAltCabRemovalOffset_[i][j]; }
   uint32_t getAclInitialAltCabRemovalDelay( size_t i, size_t j ) { return aclInitialAltCabRemovalDelay_[i][j]; }
   uint32_t getAclInitialAltCabRemovalOffset( size_t i, size_t j ) { return aclInitialAltCabRemovalOffset_[i][j]; }
-  std::vector<uint32_t>& getNalInitialCabRemovalDelay( size_t i ) { return nalInitialCabRemovalDelay_[i]; }
-  std::vector<uint32_t>& getNalInitialCabRemovalOffsey( size_t i ) { return nalInitialCabRemovalOffset_[i]; }
-  std::vector<uint32_t>& getAclInitialCabRemovalDelay( size_t i ) { return aclInitialCabRemovalDelay_[i]; }
-  std::vector<uint32_t>& getAclInitialCabRemovalOffset( size_t i ) { return aclInitialCabRemovalOffset_[i]; }
-  std::vector<uint32_t>& getNalInitialAltCabRemovalDelay( size_t i ) { return nalInitialAltCabRemovalDelay_[i]; }
-  std::vector<uint32_t>& getNalInitialAltCabRemovalOffset( size_t i ) { return nalInitialAltCabRemovalOffset_[i]; }
-  std::vector<uint32_t>& getAclInitialAltCabRemovalDelay( size_t i ) { return aclInitialAltCabRemovalDelay_[i]; }
-  std::vector<uint32_t>& getAclInitialAltCabRemovalOffset( size_t i ) { return aclInitialAltCabRemovalOffset_[i]; }
+  std::vector<uint32_t> &getNalInitialCabRemovalDelay( size_t i ) { return nalInitialCabRemovalDelay_[i]; }
+  std::vector<uint32_t> &getNalInitialCabRemovalOffsey( size_t i ) { return nalInitialCabRemovalOffset_[i]; }
+  std::vector<uint32_t> &getAclInitialCabRemovalDelay( size_t i ) { return aclInitialCabRemovalDelay_[i]; }
+  std::vector<uint32_t> &getAclInitialCabRemovalOffset( size_t i ) { return aclInitialCabRemovalOffset_[i]; }
+  std::vector<uint32_t> &getNalInitialAltCabRemovalDelay( size_t i ) { return nalInitialAltCabRemovalDelay_[i]; }
+  std::vector<uint32_t> &getNalInitialAltCabRemovalOffset( size_t i ) { return nalInitialAltCabRemovalOffset_[i]; }
+  std::vector<uint32_t> &getAclInitialAltCabRemovalDelay( size_t i ) { return aclInitialAltCabRemovalDelay_[i]; }
+  std::vector<uint32_t> &getAclInitialAltCabRemovalOffset( size_t i ) { return aclInitialAltCabRemovalOffset_[i]; }
 
   void setNalHrdParamsPresentFlag( bool value ) { nalHrdParamsPresentFlag_ = value; }
   void setAclHrdParamsPresentFlag( bool value ) { aclHrdParamsPresentFlag_ = value; }
@@ -905,7 +906,7 @@ class SEIAtlasFrameTiming : public SEI {
     cabRemovalDelayMinus1_.clear();
     dabOutputDelay_.clear();
   }
-  SEIAtlasFrameTiming& operator=( const SEIAtlasFrameTiming& ) = default;
+  SEIAtlasFrameTiming &operator=( const SEIAtlasFrameTiming & ) = default;
 
   SeiPayloadType getPayloadType() { return ATLAS_FRAME_TIMING; }
 
@@ -913,8 +914,8 @@ class SEIAtlasFrameTiming : public SEI {
     cabRemovalDelayMinus1_.resize( size, 0 );
     dabOutputDelay_.resize( size, 0 );
   }
-  std::vector<uint32_t>& getAftCabRemovalDelayMinus1() { return cabRemovalDelayMinus1_; }
-  std::vector<uint32_t>& getAftDabOutputDelay() { return dabOutputDelay_; }
+  std::vector<uint32_t> &getAftCabRemovalDelayMinus1() { return cabRemovalDelayMinus1_; }
+  std::vector<uint32_t> &getAftDabOutputDelay() { return dabOutputDelay_; }
   uint32_t               getAftCabRemovalDelayMinus1( uint32_t i ) { return cabRemovalDelayMinus1_[i]; }
   uint32_t               getAftDabOutputDelay( uint32_t i ) { return dabOutputDelay_[i]; }
   void setAftCabRemovalDelayMinus1( uint32_t i, uint32_t value ) { cabRemovalDelayMinus1_[i] = value; }
@@ -937,10 +938,10 @@ class SEIAtlasInformation : public SEI {
   ~SEIAtlasInformation() {
     atlasId_.clear();
     objectIdx_.clear();
-    for ( auto& element : objectInAtlasPresentFlag_ ) { element.clear(); }
+    for ( auto &element : objectInAtlasPresentFlag_ ) { element.clear(); }
     objectInAtlasPresentFlag_.clear();
   }
-  SEIAtlasInformation& operator=( const SEIAtlasInformation& ) = default;
+  SEIAtlasInformation &operator=( const SEIAtlasInformation & ) = default;
 
   SeiPayloadType getPayloadType() { return ATLAS_OBJECT_INFORMATION; }
 
@@ -948,7 +949,7 @@ class SEIAtlasInformation : public SEI {
   void allocateObjectIdx() {
     objectIdx_.resize( numUpdates_, 0 );
     objectInAtlasPresentFlag_.resize( numUpdates_ );
-    for ( auto& element : objectInAtlasPresentFlag_ ) { element.resize( numAtlasesMinus1_ + 1, false ); }
+    for ( auto &element : objectInAtlasPresentFlag_ ) { element.resize( numAtlasesMinus1_ + 1, false ); }
   }
 
   bool     getPersistenceFlag() { return persistenceFlag_; }
@@ -997,7 +998,7 @@ class SEIViewportCameraParameters : public SEI {
       clippingNearPlane_( 0.f ),
       clippingFarPlane_( 0.f ) {}
   ~SEIViewportCameraParameters() {}
-  SEIViewportCameraParameters& operator=( const SEIViewportCameraParameters& ) = default;
+  SEIViewportCameraParameters &operator=( const SEIViewportCameraParameters & ) = default;
 
   SeiPayloadType getPayloadType() { return VIEWPORT_CAMERA_PARAMETERS; }
 
@@ -1051,14 +1052,14 @@ class SEIViewportPosition : public SEI {
       CameraId_( 0 ),
       cancelFlag_( false ),
       persistenceFlag_( false ),
-      position_{0.0f, 0.0f, 0.0f},
+      position_{ 0.0f, 0.0f, 0.0f },
       rotationQX_( 0.0f ),
       rotationQY_( 0.0f ),
       rotationQZ_( 0.0f ),
       centerViewFlag_( false ),
       leftViewFlag_( false ) {}
   ~SEIViewportPosition() {}
-  SEIViewportPosition& operator=( const SEIViewportPosition& ) = default;
+  SEIViewportPosition &operator=( const SEIViewportPosition & ) = default;
 
   SeiPayloadType getPayloadType() { return VIEWPORT_POSITION; }
 
@@ -1132,8 +1133,8 @@ class SEIDecodedAtlasInformationHash : public SEI {
     atlasTilesB2pCrc_.resize( numTilesMinus1_ + 1 );
     atlasTilesB2pChecksum_.resize( numTilesMinus1_ + 1 );
     atlasTilesB2pMd5_.resize( numTilesMinus1_ + 1 );
-    for ( auto& element : atlasTilesMd5_ ) { element.resize( 16 ); }
-    for ( auto& element : atlasTilesB2pMd5_ ) { element.resize( 16 ); }
+    for ( auto &element : atlasTilesMd5_ ) { element.resize( 16 ); }
+    for ( auto &element : atlasTilesB2pMd5_ ) { element.resize( 16 ); }
   }
 
   ~SEIDecodedAtlasInformationHash() {
@@ -1145,12 +1146,12 @@ class SEIDecodedAtlasInformationHash : public SEI {
     atlasTilesChecksum_.clear();
     atlasTilesB2pCrc_.clear();
     atlasTilesB2pChecksum_.clear();
-    for ( auto& element : atlasTilesMd5_ ) { element.clear(); }
-    for ( auto& element : atlasTilesB2pMd5_ ) { element.clear(); }
+    for ( auto &element : atlasTilesMd5_ ) { element.clear(); }
+    for ( auto &element : atlasTilesB2pMd5_ ) { element.clear(); }
     atlasTilesMd5_.clear();
     atlasTilesB2pMd5_.clear();
   }
-  SEIDecodedAtlasInformationHash& operator=( const SEIDecodedAtlasInformationHash& ) = default;
+  SEIDecodedAtlasInformationHash &operator=( const SEIDecodedAtlasInformationHash & ) = default;
 
   SeiPayloadType getPayloadType() { return DECODED_ATLAS_INFORMATION_HASH; }
 
@@ -1167,10 +1168,10 @@ class SEIDecodedAtlasInformationHash : public SEI {
     atlasTilesB2pMd5_.resize( numTiles );
     atlasTilesB2pCrc_.resize( numTiles );
     atlasTilesB2pChecksum_.resize( numTiles );
-    for ( auto& element : atlasTilesMd5_ ) {
+    for ( auto &element : atlasTilesMd5_ ) {
       if ( element.size() == 0 ) element.resize( 16 );
     }
-    for ( auto& element : atlasTilesB2pMd5_ ) {
+    for ( auto &element : atlasTilesB2pMd5_ ) {
       if ( element.size() == 0 ) element.resize( 16 );
     }
   }
@@ -1229,7 +1230,7 @@ class SEIDecodedAtlasInformationHash : public SEI {
   void setAtlasTilesMd5( size_t i, size_t j, uint32_t value ) { atlasTilesMd5_[i][j] = value; }
   void setAtlasTilesB2pMd5( size_t i, size_t j, uint32_t value ) { atlasTilesB2pMd5_[i][j] = value; }
 
-  std::vector<uint8_t>& getMD5ByteStrData() {
+  std::vector<uint8_t> &getMD5ByteStrData() {
     uint8_t val;
     val = (uint8_t)cancelFlag_ & 0xFF;
     byteStrData_.push_back( val );
@@ -1457,7 +1458,7 @@ class SEIOccupancySynthesis : public SEI {
     pbfPassesCountMinus1_.clear();
     pbfFilterSizeMinus1_.clear();
   }
-  SEIOccupancySynthesis& operator=( const SEIOccupancySynthesis& ) = default;
+  SEIOccupancySynthesis &operator=( const SEIOccupancySynthesis & ) = default;
 
   SeiPayloadType getPayloadType() { return OCCUPANCY_SYNTHESIS; }
   void           allocate() {
@@ -1489,7 +1490,7 @@ class SEIOccupancySynthesis : public SEI {
   void setPbfPassesCountMinus1( size_t i, uint8_t value ) { pbfPassesCountMinus1_[i] = value; }
   void setPbfFilterSizeMinus1( size_t i, uint8_t value ) { pbfFilterSizeMinus1_[i] = value; }
 
-  std::vector<uint8_t>& getMD5ByteStrData() {
+  std::vector<uint8_t> &getMD5ByteStrData() {
     uint8_t val;
     val = (uint8_t)persistenceFlag_ & 0xFF;
     byteStrData_.push_back( val );
@@ -1541,7 +1542,7 @@ class SEIGeometrySmoothing : public SEI {
     gridSizeMinus2_.clear();
     threshold_.clear();
   }
-  SEIGeometrySmoothing& operator=( const SEIGeometrySmoothing& ) = default;
+  SEIGeometrySmoothing &operator=( const SEIGeometrySmoothing & ) = default;
 
   SeiPayloadType getPayloadType() { return GEOMETRY_SMOOTHING; }
   void           allocate() {
@@ -1573,7 +1574,7 @@ class SEIGeometrySmoothing : public SEI {
   void setGridSizeMinus2( size_t i, uint8_t value ) { gridSizeMinus2_[i] = value; }
   void setThreshold( size_t i, uint8_t value ) { threshold_[i] = value; }
 
-  std::vector<uint8_t>& getMD5ByteStrData() {
+  std::vector<uint8_t> &getMD5ByteStrData() {
     uint8_t val;
     val = (uint8_t)persistenceFlag_ & 0xFF;
     byteStrData_.push_back( val );
@@ -1623,13 +1624,13 @@ class SEIAttributeSmoothing : public SEI {
     attributeIdx_.clear();
     attributeSmoothingCancelFlag_.clear();
     instancesUpdated_.clear();
-    for ( auto& element : instanceIndex_ ) { element.clear(); }
-    for ( auto& element : instanceCancelFlag_ ) { element.clear(); }
-    for ( auto& element : methodType_ ) { element.clear(); }
-    for ( auto& element : gridSizeMinus2_ ) { element.clear(); }
-    for ( auto& element : threshold_ ) { element.clear(); }
-    for ( auto& element : thresholdVariation_ ) { element.clear(); }
-    for ( auto& element : thresholdDifference_ ) { element.clear(); }
+    for ( auto &element : instanceIndex_ ) { element.clear(); }
+    for ( auto &element : instanceCancelFlag_ ) { element.clear(); }
+    for ( auto &element : methodType_ ) { element.clear(); }
+    for ( auto &element : gridSizeMinus2_ ) { element.clear(); }
+    for ( auto &element : threshold_ ) { element.clear(); }
+    for ( auto &element : thresholdVariation_ ) { element.clear(); }
+    for ( auto &element : thresholdDifference_ ) { element.clear(); }
     instanceIndex_.clear();
     instanceCancelFlag_.clear();
     methodType_.clear();
@@ -1639,7 +1640,7 @@ class SEIAttributeSmoothing : public SEI {
     thresholdVariation_.clear();
     thresholdDifference_.clear();
   }
-  SEIAttributeSmoothing& operator=( const SEIAttributeSmoothing& ) = default;
+  SEIAttributeSmoothing &operator=( const SEIAttributeSmoothing & ) = default;
 
   SeiPayloadType getPayloadType() { return ATTRIBUTE_SMOOTHING; }
 
@@ -1698,7 +1699,7 @@ class SEIAttributeSmoothing : public SEI {
   void setThresholdVariation( size_t i, size_t j, uint8_t value ) { thresholdVariation_[i][j] = value; }
   void setThresholdDifference( size_t i, size_t j, uint8_t value ) { thresholdDifference_[i][j] = value; }
 
-  std::vector<uint8_t>& getMD5ByteStrData() {
+  std::vector<uint8_t> &getMD5ByteStrData() {
     uint8_t val;
     val = (uint8_t)persistenceFlag_ & 0xFF;
     byteStrData_.push_back( val );
@@ -1758,6 +1759,153 @@ class SEIAttributeSmoothing : public SEI {
   std::vector<std::vector<uint8_t>> thresholdDifference_;
 };
 
+// ISO/IEC 23090-5:H.20.2.17 V-PCC registered SEI message syntax
+class SEIVPCCRegistered : public SEI {
+ public:
+  SEIVPCCRegistered() {}
+  ~SEIVPCCRegistered() {}
+  SEIVPCCRegistered &operator=( const SEIVPCCRegistered & ) = default;
+
+  SeiPayloadType             getPayloadType() { return VPCC_REGISTERED; }
+  virtual VpccSeiPayloadType getVpccPayloadType() { return RESERVED_MESSAGE_VPCC; };
+
+  auto  getPayloadTypeByte() const { return payloadTypeByte_; }
+  auto &getPayloadTypeByte() { return payloadTypeByte_; }
+
+ private:
+  uint8_t payloadTypeByte_ = 0;
+  size_t  vpccPayloadType_ = 0;
+  size_t  headerSize_      = 0;
+};
+
+// H.20.19	GS camera pose info SEI messages syntax
+class SEIGsCameraModelInfo : public SEIVPCCRegistered {
+ public:
+  SEIGsCameraModelInfo() : cameraNum_( 0 ), sameIntrinsicsFlag_( false ) {}
+  ~SEIGsCameraModelInfo() = default;
+
+  VpccSeiPayloadType getVpccPayloadType() override { return GS_CAMERA_POSE_INFO; }
+
+  void allocate() {
+    // std::cout << "allocate this=" << this << std::endl;
+    cameraId_.resize( cameraNum_ );
+    cancelFlag_.resize( cameraNum_, false );
+    persistenceFlag_.resize( cameraNum_, false );
+    imageWidth_.resize( cameraNum_ );
+    imageHeight_.resize( cameraNum_ );
+    fx_.resize( cameraNum_ );
+    fy_.resize( cameraNum_ );
+    cx_.resize( cameraNum_ );
+    cy_.resize( cameraNum_ );
+    quaternion_.resize( cameraNum_ );
+    translation_.resize( cameraNum_ );
+  }
+
+  void allocate( size_t size ) {
+    if ( cameraId_.size() < size ) {
+      cameraId_.resize( size );
+      cancelFlag_.resize( size );
+      persistenceFlag_.resize( size );
+      imageWidth_.resize( size );
+      imageHeight_.resize( size );
+      fx_.resize( size );
+      fy_.resize( size );
+      cx_.resize( size );
+      cx_.resize( size );
+      quaternion_.resize( size );
+      translation_.resize( size );
+    }
+  }
+
+  uint32_t &getCameraNum() { return cameraNum_; }
+  bool      getSameIntrinsicsFlag() { return sameIntrinsicsFlag_; }
+  uint32_t  getCameraId( size_t i ) { return cameraId_[i]; }
+  bool      getCancelFlag( size_t i ) { return cancelFlag_[i]; }
+  bool      getPersistenceFlag( size_t i ) { return persistenceFlag_[i]; }
+  uint16_t  getImageWidth( size_t i ) { return imageWidth_[i]; }
+  uint16_t  getImageHeight( size_t i ) { return imageHeight_[i]; }
+  float     getHorFocalLength( size_t i ) { return fx_[i]; }
+  float     getVerFocalLength( size_t i ) { return fy_[i]; }
+  float     getHorPrincipalPoint( size_t i ) { return cx_[i]; }
+  float     getVerPrincipalPoint( size_t i ) { return cy_[i]; }
+  float     getQuaternion( size_t i, size_t j ) { return quaternion_[i][j]; }
+  float     getTranslation( size_t i, size_t j ) { return translation_[i][j]; }
+
+  void setCameraNum( uint32_t value ) { cameraNum_ = value; }
+  void setSameIntrinsicsFlag( bool value ) { sameIntrinsicsFlag_ = value; }
+  void setCameraId( size_t i, uint32_t value ) { cameraId_[i] = value; }
+  void setCancelFlag( size_t i, uint8_t value ) { cancelFlag_[i] = value ? 1 : 0; }
+  void setPersistenceFlag( size_t i, uint8_t value ) { persistenceFlag_[i] = value ? 1 : 0; }
+  void setImageWidth( size_t i, uint16_t value ) { imageWidth_[i] = value; }
+  void setImageHeight( size_t i, uint16_t value ) { imageHeight_[i] = value; }
+  void setHorFocalLength( size_t i, float value ) { fx_[i] = value; }
+  void setVerFocalLength( size_t i, float value ) { fy_[i] = value; }
+  void setHorPrincipalPoint( size_t i, float value ) { cx_[i] = value; }
+  void setVerPrincipalPoint( size_t i, float value ) { cy_[i] = value; }
+  void setQuaternion( size_t i, size_t j, float value ) { quaternion_[i][j] = value; }
+  void setTranslation( size_t i, size_t j, float value ) { translation_[i][j] = value; }
+
+  std::vector<uint8_t> &getMD5ByteStrData() {
+    uint8_t  val;
+    uint32_t tmp = static_cast<uint32_t>( cameraNum_ );
+    for ( int k = 0; k < 4; ++k ) byteStrData_.push_back( static_cast<uint8_t>( ( tmp >> ( 8 * k ) ) & 0xFF ) );
+    val = (uint8_t)sameIntrinsicsFlag_ & 0xFF;
+    byteStrData_.push_back( val );
+    for ( size_t i = 0; i < cameraNum_; i++ ) {
+      tmp = static_cast<uint32_t>( cameraId_[i] );
+      for ( int k = 0; k < 4; ++k ) byteStrData_.push_back( ( tmp >> ( 8 * k ) ) & 0xFF );
+      val = (uint8_t)( cancelFlag_[i] & 0xFF );
+      byteStrData_.push_back( val );
+      if ( !cancelFlag_[i] ) {
+        val = (uint8_t)( persistenceFlag_[i] & 0xFF );
+        byteStrData_.push_back( val );
+        if ( ( i == 0 ) || ( !sameIntrinsicsFlag_ ) ) {
+          val = (uint8_t)( imageWidth_[i] & 0xFF );
+          byteStrData_.push_back( val );
+          val = (uint8_t)( ( imageWidth_[i] >> 8 ) & 0xFF );
+          byteStrData_.push_back( val );
+          val = (uint8_t)( imageHeight_[i] & 0xFF );
+          byteStrData_.push_back( val );
+          val = (uint8_t)( ( imageHeight_[i] >> 8 ) & 0xFF );
+          byteStrData_.push_back( val );
+          std::memcpy( &tmp, &fx_[i], sizeof( float ) );
+          for ( int k = 0; k < 4; ++k ) byteStrData_.push_back( ( tmp >> ( 8 * k ) ) & 0xFF );
+          std::memcpy( &tmp, &fy_[i], sizeof( float ) );
+          for ( int k = 0; k < 4; ++k ) byteStrData_.push_back( ( tmp >> ( 8 * k ) ) & 0xFF );
+          std::memcpy( &tmp, &cx_[i], sizeof( float ) );
+          for ( int k = 0; k < 4; ++k ) byteStrData_.push_back( ( tmp >> ( 8 * k ) ) & 0xFF );
+          std::memcpy( &tmp, &cy_[i], sizeof( float ) );
+          for ( int k = 0; k < 4; ++k ) byteStrData_.push_back( ( tmp >> ( 8 * k ) ) & 0xFF );
+        }
+        for ( int j = 0; j < 4; ++j ) {
+          std::memcpy( &tmp, &quaternion_[i][j], sizeof( float ) );
+          for ( int k = 0; k < 4; ++k ) byteStrData_.push_back( ( tmp >> ( 8 * k ) ) & 0xFF );
+        }
+        for ( int j = 0; j < 3; ++j ) {
+          std::memcpy( &tmp, &translation_[i][j], sizeof( float ) );
+          for ( int k = 0; k < 4; ++k ) byteStrData_.push_back( ( tmp >> ( 8 * k ) ) & 0xFF );
+        }
+      }
+    }
+    return byteStrData_;
+  }
+
+ private:
+  uint32_t                          cameraNum_;
+  bool                              sameIntrinsicsFlag_;
+  std::vector<uint32_t>             cameraId_;
+  std::vector<bool>                 cancelFlag_;
+  std::vector<bool>                 persistenceFlag_;
+  std::vector<uint16_t>             imageWidth_;
+  std::vector<uint16_t>             imageHeight_;
+  std::vector<float>                fx_;
+  std::vector<float>                fy_;
+  std::vector<float>                cx_;
+  std::vector<float>                cy_;
+  std::vector<std::array<float, 4>> quaternion_;
+  std::vector<std::array<float, 3>> translation_;
+};
+
 // F.2.17 Time code SEI message syntax
 class SEITimeCode : public SEI {
  public:
@@ -1778,7 +1926,7 @@ class SEITimeCode : public SEI {
       timeOffsetLength_( 0 ),
       timeOffsetValue_( 0 ) {}
   ~SEITimeCode() {}
-  SEITimeCode& operator=( const SEITimeCode& ) = default;
+  SEITimeCode &operator=( const SEITimeCode & ) = default;
 
   SeiPayloadType getPayloadType() { return TIME_CODE; }
 
@@ -1843,7 +1991,7 @@ class PCCSEI {
     seiSuffix_.clear();
   }
 
-  SEI& addSei( NalUnitType nalUnitType, SeiPayloadType payloadType ) {
+  SEI &addSei( NalUnitType nalUnitType, SeiPayloadType payloadType ) {
     std::shared_ptr<SEI> sharedPtr;
     switch ( payloadType ) {
       case BUFFERING_PERIOD: sharedPtr = std::make_shared<SEIBufferingPeriod>(); break;
@@ -1870,7 +2018,29 @@ class PCCSEI {
       case OCCUPANCY_SYNTHESIS: sharedPtr = std::make_shared<SEIOccupancySynthesis>(); break;
       case GEOMETRY_SMOOTHING: sharedPtr = std::make_shared<SEIGeometrySmoothing>(); break;
       case ATTRIBUTE_SMOOTHING: sharedPtr = std::make_shared<SEIAttributeSmoothing>(); break;
-      case RESERVED_SEI_MESSAGE: sharedPtr = std::make_shared<SEIReservedSeiMessage>(); break;
+      case VPCC_REGISTERED: sharedPtr = std::make_shared<SEIVPCCRegistered>(); break;
+      case RESERVED_MESSAGE: sharedPtr = std::make_shared<SEIReservedSeiMessage>(); break;
+      default:
+        fprintf( stderr, "SEI payload type not supported \n" );
+        exit( -1 );
+        break;
+    }
+    if ( nalUnitType == NAL_PREFIX_ESEI || nalUnitType == NAL_PREFIX_NSEI ) {
+      seiPrefix_.push_back( sharedPtr );
+      return *( seiPrefix_.back().get() );
+    } else if ( nalUnitType == NAL_SUFFIX_ESEI || nalUnitType == NAL_SUFFIX_NSEI ) {
+      seiSuffix_.push_back( sharedPtr );
+      return *( seiSuffix_.back().get() );
+    } else {
+      fprintf( stderr, "Nal unit type of SEI not correct\n" );
+      exit( -1 );
+    }
+    return *( sharedPtr );
+  }
+  SEI &addSei( NalUnitType nalUnitType, VpccSeiPayloadType payloadType ) {
+    std::shared_ptr<SEI> sharedPtr;
+    switch ( payloadType ) {
+      case GS_CAMERA_POSE_INFO: sharedPtr = std::make_shared<SEIGsCameraModelInfo>(); break;
       default:
         fprintf( stderr, "SEI payload type not supported \n" );
         exit( -1 );
@@ -1893,42 +2063,48 @@ class PCCSEI {
          nalUnitType != NAL_SUFFIX_NSEI ) {
       return false;
     }
-    for ( auto& sei : nalUnitType == NAL_PREFIX_ESEI || nalUnitType == NAL_PREFIX_NSEI ? seiPrefix_ : seiSuffix_ ) {
+    for ( auto &sei : nalUnitType == NAL_PREFIX_ESEI || nalUnitType == NAL_PREFIX_NSEI ? seiPrefix_ : seiSuffix_ ) {
       if ( sei->getPayloadType() == payloadType ) { return true; }
     }
     return false;
   }
-  SEI* getSei( NalUnitType nalUnitType, SeiPayloadType payloadType ) {
-    auto& seis = ( nalUnitType == NAL_PREFIX_ESEI || nalUnitType == NAL_PREFIX_NSEI ) ? seiPrefix_ : seiSuffix_;
-    for ( auto& sei : seis ) {
+  SEI *getSei( NalUnitType nalUnitType, SeiPayloadType payloadType ) {
+    auto &seis = ( nalUnitType == NAL_PREFIX_ESEI || nalUnitType == NAL_PREFIX_NSEI ) ? seiPrefix_ : seiSuffix_;
+    for ( auto &sei : seis ) {
       if ( sei->getPayloadType() == payloadType ) { return sei.get(); }
     }
     assert( 0 );
-    return (SEI*)nullptr;
+    return (SEI *)nullptr;
   }
 
-  SEI* getLastSei( NalUnitType nalUnitType, SeiPayloadType payloadType ) {
-    auto& seis = ( nalUnitType == NAL_PREFIX_ESEI || nalUnitType == NAL_PREFIX_NSEI ) ? seiPrefix_ : seiSuffix_;
+  SEI *getLastSei( NalUnitType nalUnitType, SeiPayloadType payloadType ) {
+    auto &seis = ( nalUnitType == NAL_PREFIX_ESEI || nalUnitType == NAL_PREFIX_NSEI ) ? seiPrefix_ : seiSuffix_;
     for ( auto sei = seis.rbegin(); sei != seis.rend(); ++sei ) {
       if ( sei->get()->getPayloadType() == payloadType ) { return sei->get(); }
     }
     assert( 0 );
-    return (SEI*)nullptr;
+    return (SEI *)nullptr;
   }
-  SEI& addSeiPrefix( SeiPayloadType payloadType, bool essensial ) {
+  SEI &addSeiPrefix( SeiPayloadType payloadType, bool essensial ) {
     return addSei( essensial ? NAL_PREFIX_ESEI : NAL_PREFIX_NSEI, payloadType );
   }
-  SEI& addSeiSuffix( SeiPayloadType payloadType, bool essensial ) {
+  SEI &addSeiPrefix( VpccSeiPayloadType payloadType, bool essensial ) {
+    return addSei( essensial ? NAL_PREFIX_ESEI : NAL_PREFIX_NSEI, payloadType );
+  }
+  SEI &addSeiSuffix( SeiPayloadType payloadType, bool essensial ) {
     return addSei( essensial ? NAL_SUFFIX_ESEI : NAL_SUFFIX_NSEI, payloadType );
   }
-  void addSeiToSeiSuffix( SeiPayloadType payloadType, bool essensial, SEIDecodedAtlasInformationHash& seiContext ) {
+  void addSeiToSeiSuffix( SeiPayloadType payloadType, bool essensial, SEIDecodedAtlasInformationHash &seiContext ) {
     seiSuffix_.push_back( std::make_shared<SEIDecodedAtlasInformationHash>( seiContext ) );
   }
+  SEI &addSeiSuffix( VpccSeiPayloadType payloadType, bool essensial ) {
+    return addSei( essensial ? NAL_SUFFIX_ESEI : NAL_SUFFIX_NSEI, payloadType );
+  }
 
-  std::vector<std::shared_ptr<SEI>>& getSeiPrefix() { return seiPrefix_; }
-  std::vector<std::shared_ptr<SEI>>& getSeiSuffix() { return seiSuffix_; }
-  SEI&                               getSeiPrefix( size_t index ) { return *( seiPrefix_[index] ); }
-  SEI&                               getSeiSuffix( size_t index ) { return *( seiSuffix_[index] ); }
+  std::vector<std::shared_ptr<SEI>> &getSeiPrefix() { return seiPrefix_; }
+  std::vector<std::shared_ptr<SEI>> &getSeiSuffix() { return seiSuffix_; }
+  SEI                               &getSeiPrefix( size_t index ) { return *( seiPrefix_[index] ); }
+  SEI                               &getSeiSuffix( size_t index ) { return *( seiSuffix_[index] ); }
 
  private:
   std::vector<std::shared_ptr<SEI>> seiPrefix_;

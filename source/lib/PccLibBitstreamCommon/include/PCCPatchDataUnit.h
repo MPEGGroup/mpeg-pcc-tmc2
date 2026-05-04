@@ -60,7 +60,7 @@ class PatchDataUnit {
       tileOrder_( 0 ) {}
   ~PatchDataUnit() {}
 
-  PatchDataUnit& operator=( const PatchDataUnit& ) = default;
+  PatchDataUnit &operator=( const PatchDataUnit & ) = default;
   size_t         get2dPosX() { return pos2dX_; }
   size_t         get2dPosY() { return pos2dY_; }
   int64_t        get2dSizeXMinus1() { return size2dXMinus1_; }
@@ -74,7 +74,7 @@ class PatchDataUnit {
   bool           getLodEnableFlag() { return lodEnableFlag_; }
   uint8_t        getLodScaleXMinus1() { return lodScaleXminus1_; }
   uint8_t        getLodScaleYIdc() { return lodScaleYIdc_; }
-  PLRData&       getPLRData() { return pointLocalReconstructionData_; }
+  PLRData       &getPLRData() { return pointLocalReconstructionData_; }
   size_t         getTileOrder() { return tileOrder_; }
   size_t         getPatchIndex() { return patchIndex_; }
   size_t         getFrameIndex() { return frameIndex_; }

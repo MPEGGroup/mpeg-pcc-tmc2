@@ -74,11 +74,11 @@ class PCCHMLibVideoEncoderImpl : public PCCHMLibVideoEncoderCfg {
 
   ~PCCHMLibVideoEncoderImpl();
 
-  Void encode( PCCVideo<T, 3>&    videoSrc,
+  Void encode( PCCVideo<T, 3>    &videoSrc,
                std::string        arguments,
-               PCCVideoBitstream& bitstream,
+               PCCVideoBitstream &bitstream,
 
-               PCCVideo<T, 3>& videoRec );
+               PCCVideo<T, 3> &videoRec );
   // #if PCC_CF_EXT
   // void setLogger( PCCLogger& logger ) { logger_ = &logger; }
   // #endif
@@ -90,25 +90,25 @@ class PCCHMLibVideoEncoderImpl : public PCCHMLibVideoEncoderCfg {
 
  private:
   Void xInitLibCfg();
-  Void xGetBuffer( TComPicYuv*& rpcPicYuvRec );
+  Void xGetBuffer( TComPicYuv *&rpcPicYuvRec );
   Void xDeleteBuffer();
-  Void xWriteOutput( std::ostream&                bitstreamFile,
+  Void xWriteOutput( std::ostream                &bitstreamFile,
                      Int                          iNumEncoded,
-                     const std::list<AccessUnit>& accessUnits,
-                     PCCVideo<T, 3>&              videoRec );
-  Void rateStatsAccum( const AccessUnit& au, const std::vector<UInt>& annexBsizes );
+                     const std::list<AccessUnit> &accessUnits,
+                     PCCVideo<T, 3>              &videoRec );
+  Void rateStatsAccum( const AccessUnit &au, const std::vector<UInt> &annexBsizes );
   Void printRateSummary();
   Void printChromaFormat();
-  void xWritePicture( const TComPicYuv* pic, PCCVideo<T, 3>& video );
-  void xReadPicture( TComPicYuv* pic, PCCVideo<T, 3>& video, int frameIndex );
+  void xWritePicture( const TComPicYuv *pic, PCCVideo<T, 3> &video );
+  void xReadPicture( TComPicYuv *pic, PCCVideo<T, 3> &video, int frameIndex );
 
-  TEncTop               m_cTEncTop;
-  TComList<TComPicYuv*> m_cListPicYuvRec;
-  Int                   m_iFrameRcvd;
-  UInt                  m_essentialBytes;
-  UInt                  m_totalBytes;
-  int                   m_outputWidth;
-  int                   m_outputHeight;
+  TEncTop                m_cTEncTop;
+  TComList<TComPicYuv *> m_cListPicYuvRec;
+  Int                    m_iFrameRcvd;
+  UInt                   m_essentialBytes;
+  UInt                   m_totalBytes;
+  int                    m_outputWidth;
+  int                    m_outputHeight;
 };
 
 }  // namespace pcc

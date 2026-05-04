@@ -227,7 +227,7 @@ class PCCHMLibVideoEncoderCfg {
                                                    /// use an increased internal
                                                    /// QP.
 #else
-  Double m_fQP;                            ///< QP value of key-picture (floating point)
+  Double m_fQP;  ///< QP value of key-picture (floating point)
 #endif
   Int m_iQP;  ///< QP value of key-picture (integer)
 #if X0038_LAMBDA_FROM_QP_CAPABILITY
@@ -236,7 +236,7 @@ class PCCHMLibVideoEncoderCfg {
 #endif
   std::string m_dQPFileName;         ///< QP offset for each slice (initialized from
                                      /// external file)
-  Int* m_aidQP;                      ///< array of slice QP values
+  Int *m_aidQP;                      ///< array of slice QP values
   Int  m_iMaxDeltaQP;                ///< max. |delta QP|
   UInt m_uiDeltaQpRD;                ///< dQP range for multi-pass slice QP optimization
   Int  m_iMaxCuDQPDepth;             ///< Max. depth for a minimum CuDQPSize (0:default)
@@ -320,8 +320,8 @@ class PCCHMLibVideoEncoderCfg {
   Bool m_resetEncoderStateAfterIRAP;  ///< When true, encoder state will be
                                       /// reset following an IRAP.
 #else
-  Bool   m_saoResetEncoderStateAfterIRAP;  ///< When true, SAO encoder state will
-                                           /// be reset following an IRAP.
+  Bool m_saoResetEncoderStateAfterIRAP;  ///< When true, SAO encoder state will
+                                         /// be reset following an IRAP.
 #endif
   // coding tools (loop filter)
   Bool m_bLoopFilterDisable;       ///< flag for using deblocking filter
@@ -420,9 +420,9 @@ class PCCHMLibVideoEncoderCfg {
   Int  m_nominalBlackLevelLumaCodeValue;
   Int  m_nominalWhiteLevelLumaCodeValue;
   Int  m_extendedWhiteLevelLumaCodeValue;
-  Int* m_startOfCodedInterval;
-  Int* m_codedPivotValue;
-  Int* m_targetPivotValue;
+  Int *m_startOfCodedInterval;
+  Int *m_codedPivotValue;
+  Int *m_targetPivotValue;
   Bool m_framePackingSEIEnabled;
   Int  m_framePackingSEIType;
   Int  m_framePackingSEIId;
@@ -712,7 +712,7 @@ class PCCHMLibVideoEncoderCfg {
  public:
   Void create();                             ///< create option handling class
   Void destroy();                            ///< destroy option handling class
-  Bool parseCfg( Int argc, TChar* argv[] );  ///< parse configuration file to fill
+  Bool parseCfg( Int argc, TChar *argv[] );  ///< parse configuration file to fill
                                              /// member variables
 #if PCC_CF_EXT
 

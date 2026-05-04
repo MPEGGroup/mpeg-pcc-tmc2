@@ -41,19 +41,19 @@ extern "C" {
 #include "mbuffer.h"
 #include "global.h"
 
-void alloc_encoder( EncoderParams** p_Enc );
-void init_encoder( VideoParameters* p_Vid, InputParameters* p_Inp );
-void encode_sequence( VideoParameters* p_Vid, InputParameters* p_Inp );
-void populate_frm_struct( VideoParameters* p_Vid,
-                          InputParameters* p_Inp,
-                          SeqStructure*    p_seq_struct,
+void alloc_encoder( EncoderParams **p_Enc );
+void init_encoder( VideoParameters *p_Vid, InputParameters *p_Inp );
+void encode_sequence( VideoParameters *p_Vid, InputParameters *p_Inp );
+void populate_frm_struct( VideoParameters *p_Vid,
+                          InputParameters *p_Inp,
+                          SeqStructure    *p_seq_struct,
                           int              num_to_populate,
                           int              init_frames_to_code );
-void prepare_frame_params( VideoParameters* p_Vid, InputParameters* p_Inp, int curr_frame_to_code );
-int  encode_one_frame( VideoParameters* p_Vid, InputParameters* p_Inp );
-void report_frame_statistic( VideoParameters* p_Vid, InputParameters* p_Inp );
-void img2buf( imgpel**       imgX,
-              unsigned char* buf,
+void prepare_frame_params( VideoParameters *p_Vid, InputParameters *p_Inp, int curr_frame_to_code );
+int  encode_one_frame( VideoParameters *p_Vid, InputParameters *p_Inp );
+void report_frame_statistic( VideoParameters *p_Vid, InputParameters *p_Inp );
+void img2buf( imgpel       **imgX,
+              unsigned char *buf,
               int            size_x,
               int            size_y,
               int            symbol_size_in_bytes,
@@ -63,9 +63,9 @@ void img2buf( imgpel**       imgX,
               int            crop_bottom );
 
 // void free_encoder_memory(VideoParameters *p_Vid, InputParameters *p_Inp);
-void free_params( InputParameters* p_Inp );
-void free_encoder( EncoderParams* p_Enc );
-void Configure( VideoParameters* p_Vid, InputParameters* p_Inp, int ac, char* av[] );
+void free_params( InputParameters *p_Inp );
+void free_encoder( EncoderParams *p_Enc );
+void Configure( VideoParameters *p_Vid, InputParameters *p_Inp, int ac, char *av[] );
 }
 
 using namespace pcc;
@@ -79,21 +79,21 @@ template <typename T>
 PCCJMLibVideoEncoderImpl<T>::~PCCJMLibVideoEncoderImpl() {}
 
 template <typename T>
-void PCCJMLibVideoEncoderImpl<T>::encode( PCCVideo<T, 3>&    videoSrc,
+void PCCJMLibVideoEncoderImpl<T>::encode( PCCVideo<T, 3>    &videoSrc,
                                           std::string        arguments,
-                                          PCCVideoBitstream& bitstream,
-                                          PCCVideo<T, 3>&    videoRec ) {
-  std::istringstream iss( arguments );
-  std::string        token;
-  std::vector<char*> args;
+                                          PCCVideoBitstream &bitstream,
+                                          PCCVideo<T, 3>    &videoRec ) {
+  std::istringstream  iss( arguments );
+  std::string         token;
+  std::vector<char *> args;
   while ( iss >> token ) {
-    char* arg = new char[token.size() + 1];
+    char *arg = new char[token.size() + 1];
     copy( token.begin(), token.end(), arg );
     arg[token.size()] = '\0';
     args.push_back( arg );
   }
   int    argc = args.size();
-  char** argv = &args[0];
+  char **argv = &args[0];
   std::cout << "[JM Enc args " << argc << "]: " << arguments << std::endl;
   const size_t   srcWidth           = videoSrc.getWidth();
   const size_t   srcHeight          = videoSrc.getHeight();

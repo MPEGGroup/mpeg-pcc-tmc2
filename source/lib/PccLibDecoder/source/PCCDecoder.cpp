@@ -30,6 +30,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 #include "PCCCommon.h"
 #include "PCCHighLevelSyntax.h"
 #include "PCCBitstream.h"
@@ -46,6 +47,7 @@
 
 using namespace pcc;
 using namespace std;
+using namespace std::chrono;
 
 PCCDecoder::PCCDecoder() {
 #ifdef ENABLE_PAPI_PROFILING
@@ -53,8 +55,8 @@ PCCDecoder::PCCDecoder() {
 #endif
 }
 PCCDecoder::~PCCDecoder() = default;
-void PCCDecoder::setParameters( const PCCDecoderParameters& params ) { params_ = params; }
-void PCCDecoder::setReconstructionParameters( const PCCDecoderParameters& params ) {
+void PCCDecoder::setParameters( const PCCDecoderParameters &params ) { params_ = params; }
+void PCCDecoder::setReconstructionParameters( const PCCDecoderParameters &params ) {
   params_.pixelDeinterleavingType_      = params.pixelDeinterleavingType_;
   params_.pointLocalReconstructionType_ = params.pointLocalReconstructionType_;
   params_.reconstructEomType_           = params.reconstructEomType_;
@@ -66,22 +68,23 @@ void PCCDecoder::setReconstructionParameters( const PCCDecoderParameters& params
   params_.applyOccupanySynthesisType_   = params.applyOccupanySynthesisType_;
 }
 
-int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int32_t atlasIndex = 0 ) {
+int PCCDecoder::decode( PCCContext &context, PCCGroupOfFrames &reconstructs, int32_t atlasIndex = 0 ) {
 #if defined( ENABLE_TBB )
   if ( params_.nbThread_ > 0 ) { tbb::task_scheduler_init init( static_cast<int>( params_.nbThread_ ) ); }
 #endif
   createPatchFrameDataStructure( context );
+  adaptationParams_.clear();
 
   PCCVideoDecoder videoDecoder;
   videoDecoder.setLogger( *logger_ );
   std::stringstream path;
-  auto&             sps              = context.getVps();
-  auto&             ai               = sps.getAttributeInformation( atlasIndex );
-  auto&             oi               = sps.getOccupancyInformation( atlasIndex );
-  auto&             gi               = sps.getGeometryInformation( atlasIndex );
-  auto&             asps             = context.getAtlasSequenceParameterSet( 0 );
+  auto             &sps              = context.getVps();
+  auto             &ai               = sps.getAttributeInformation( atlasIndex );
+  auto             &oi               = sps.getOccupancyInformation( atlasIndex );
+  auto             &gi               = sps.getGeometryInformation( atlasIndex );
+  auto             &asps             = context.getAtlasSequenceParameterSet( 0 );
   size_t            frameCount       = context.size();
-  auto&             plt              = sps.getProfileTierLevel();
+  auto             &plt              = sps.getProfileTierLevel();
   const size_t      mapCount         = sps.getMapCountMinus1( atlasIndex ) + 1;
   int               geometryBitDepth = gi.getGeometry2dBitdepthMinus1() + 1;
   setConsitantFourCCCode( context, 0 );  //
@@ -89,28 +92,132 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
   auto geometryCodecId  = getCodedCodecId( context, gi.getGeometryCodecId(), params_.videoDecoderGeometryPath_ );
   path << removeFileExtension( params_.compressedStreamPath_ ) << "_dec_GOF" << sps.getV3CParameterSetId() << "_";
 
-  printf( "CodecCodecId: ProfileCodecGroupIdc = %u occupancyCodecId = %u geometry = %u auxGeo = %u \n",
-          plt.getProfileCodecGroupIdc(), oi.getOccupancyCodecId(), gi.getGeometryCodecId(),
-          gi.getAuxiliaryGeometryCodecId() );
-  printf( "=> Video decoder : occupancy = %d geometry = %d \n", (int)occupancyCodecId, (int)geometryCodecId );
-  printf( " Decode 0 size = %zu \n", context.getVideoBitstream( VIDEO_OCCUPANCY ).size() );
-  fflush( stdout );
-  TRACE_PICTURE( "Occupancy\n" );
-  TRACE_PICTURE( "MapIdx = 0, AuxiliaryVideoFlag = 0\n" );
-  videoDecoder.decompress( context.getVideoOccupancyMap(),                // video
-                           context,                                       // contexts
-                           path.str(),                                    // path
-                           context.getVideoBitstream( VIDEO_OCCUPANCY ),  // bitstream
-                           params_.byteStreamVideoCoderOccupancy_,        // byte stream video coder
-                           occupancyCodecId,                              // codecId
-                           params_.videoDecoderOccupancyPath_,            // decoder path
-                           8,                                             // output bit depth
-                           params_.keepIntermediateFiles_ );              // keep intermediate files
+  // Step 1: Decompress packed video if present
+  auto                       &pve = sps.getVpsPackedVideoExtension();
+  std::vector<PCCVideoPacked> packedVideos;
+  if ( pve.isPresent() && pve.getPackedVideoPresentFlag( atlasIndex ) ) {
+    auto   &packingInfo          = pve.getPackingInformation( atlasIndex );
+    uint8_t packedMapCountMinus1 = packingInfo.getPackedMapCountMinus1();
 
-  // converting the decoded bitdepth to the nominal bitdepth
-  context.getVideoOccupancyMap().convertBitdepth( 8, oi.getOccupancy2DBitdepthMinus1() + 1,
-                                                  oi.getOccupancyMSBAlignFlag() );
+    packedVideos.resize( packedMapCountMinus1 + 1 );
 
+    for ( uint8_t packedMapIndex = 0; packedMapIndex <= packedMapCountMinus1; ++packedMapIndex ) {
+      std::cout << "*******Video Decoding: Packed Video [" << static_cast<int>( packedMapIndex ) << "] ********"
+                << std::endl;
+      auto  videoType      = PCCVideoType( VIDEO_PACKED + packedMapIndex );
+      auto &videoBitstream = context.getVideoBitstream( videoType );
+      auto  packedCodecId  = getCodedCodecId( context, packingInfo.getCodecId(), params_.videoDecoderAttributePath_ );
+
+      printf( " Decode Packed Video size = %zu \n", videoBitstream.size() );
+      fflush( stdout );
+      auto start = steady_clock::now();
+
+      // Compute the actual bit depth needed for the packed video from the VPS metadata
+      uint8_t outputBitDepth = packingInfo.getBitDepth( sps, atlasIndex );
+
+      videoDecoder.decompress( packedVideos[packedMapIndex],            // video
+                               context,                                 // contexts
+                               path.str(),                              // path
+                               videoBitstream,                          // bitstream
+                               params_.byteStreamVideoCoderAttribute_,  // byte stream video coder
+                               packedCodecId,                           // codecId
+                               params_.videoDecoderAttributePath_,      // decoder path
+                               outputBitDepth,                          // output bit depth
+                               params_.scalerConfig_,                   // scaler config
+                               params_.keepIntermediateFiles_ );        // keep intermediate files
+
+      auto stop         = steady_clock::now();
+      auto avg_duration = duration_cast<microseconds>( stop - start ).count();
+      std::cout << "Execution time Packed Video [" << static_cast<int>( packedMapIndex ) << "]: " << avg_duration
+                << " microseconds" << std::endl;
+      std::cout << "packed video [" << static_cast<int>( packedMapIndex ) << "] ->" << videoBitstream.size() << " B"
+                << std::endl;
+    }
+  }
+
+  // Step 2: Decompress or unpack occupancy video
+  if ( sps.getOccupancyVideoPresentFlag( atlasIndex ) ) {
+    printf( "=> Video decoder : occupancy = %d geometry = %d \n", (int)occupancyCodecId, (int)geometryCodecId );
+    printf( " Decode 0 size = %zu \n", context.getVideoBitstream( VIDEO_OCCUPANCY ).size() );
+
+    TRACE_PICTURE( "Occupancy\n" );
+    TRACE_PICTURE( "MapIdx = 0, AuxiliaryVideoFlag = 0\n" );
+
+    // Check if occupancy is in packed video
+    bool occupancyPacked = false;
+
+    if ( pve.isPresent() && pve.getPackedVideoPresentFlag( atlasIndex ) ) {
+      auto &packingInfo = pve.getPackingInformation( atlasIndex );
+      if ( packingInfo.getOccupancyPresentFlag() ) {
+        // Find the occupancy region
+        for ( size_t regionIndex = 0; regionIndex <= packingInfo.getRegionsCountMinus1(); ++regionIndex ) {
+          auto &region = packingInfo.getRegion( regionIndex );
+          if ( region.getRegionTypeId() == V3C_OVD && !region.getAuxiliaryDataFlag() ) {
+            // Unpack occupancy from packed video
+            std::cout << "*******Video Unpacking: Occupancy from Packed Video ["
+                      << static_cast<int>( region.getPackedMapIndex() ) << "] ********" << std::endl;
+            auto start = steady_clock::now();
+            unpackRegion( packedVideos[region.getPackedMapIndex()], context.getVideoOccupancyMap(), region,
+                          frameCount );
+            auto stop         = steady_clock::now();
+            auto avg_duration = duration_cast<microseconds>( stop - start ).count();
+            std::cout << "Execution time Occupancy Unpack: " << avg_duration << " microseconds" << std::endl;
+
+            // Write unpacked occupancy video to disk if keeping intermediate files
+            if ( params_.keepIntermediateFiles_ ) {
+              std::string unpackFileName = path.str() + "occupancy_unpacked";
+              context.getVideoOccupancyMap().write( context.getVideoOccupancyMap().addFormat( unpackFileName, "8" ),
+                                                    1 );
+              std::cout << "Written unpacked occupancy video to: " << unpackFileName << std::endl;
+            }
+
+            occupancyPacked = true;
+            break;
+          }
+        }
+      }
+    }
+
+    if ( !occupancyPacked ) {
+      // Traditional decompression from separate occupancy stream
+      printf( " Decode 0 size = %zu \n", context.getVideoBitstream( VIDEO_OCCUPANCY ).size() );
+      fflush( stdout );
+
+      videoDecoder.decompress( context.getVideoOccupancyMap(),                // video
+                               context,                                       // contexts
+                               path.str(),                                    // path
+                               context.getVideoBitstream( VIDEO_OCCUPANCY ),  // bitstream
+                               params_.byteStreamVideoCoderOccupancy_,        // byte stream video coder
+                               occupancyCodecId,                              // codecId
+                               params_.videoDecoderOccupancyPath_,            // decoder path
+                               8,                                             // output bit depth
+                               params_.scalerConfig_,                         // scaler config
+                               params_.keepIntermediateFiles_ );              // keep intermediate files
+
+      // converting the decoded bitdepth to the nominal bitdepth
+      context.getVideoOccupancyMap().convertBitdepth( 8, oi.getOccupancy2DBitdepthMinus1() + 1,
+                                                      oi.getOccupancyMSBAlignFlag() );
+    }
+    // setting the occupancy precision for reconstruction
+    context.setOccupancyPrecision( sps.getFrameWidth( atlasIndex ) / context.getVideoOccupancyMap().getWidth() );
+    // generating blockToPatch structure
+    for ( size_t frameIdx = 0; frameIdx < frameCount; frameIdx++ ) {
+      std::vector<uint32_t> partition;
+      for ( size_t tileIdx = 0; tileIdx < context[frameIdx].getNumTilesInAtlasFrame(); tileIdx++ ) {
+        auto  atglIndex = context.getAtlasHighLevelSyntax().getAtlasTileLayerIndex( frameIdx, tileIdx );
+        auto &tile      = context[frameIdx].getTile( tileIdx );
+        if ( context[frameIdx].getNumTilesInAtlasFrame() > 1 ) {
+          generateTileBlockToPatchFromOccupancyMapVideo(
+              context, tile, frameIdx, context.getVideoOccupancyMap().getFrame( frameIdx ),
+              size_t( 1 ) << asps.getLog2PatchPackingBlockSize(), context.getOccupancyPrecision() );
+        } else {
+          generateBlockToPatchFromOccupancyMapVideo(
+              context, tile, frameIdx, context.getVideoOccupancyMap().getFrame( frameIdx ),
+              size_t( 1 ) << asps.getLog2PatchPackingBlockSize(), context.getOccupancyPrecision() );
+        }
+      }
+    }
+  }
   if ( sps.getMultipleMapStreamsPresentFlag( atlasIndex ) ) {
     context.getVideoGeometryMultiple().resize( sps.getMapCountMinus1( atlasIndex ) + 1 );
     size_t totalGeoSize = 0;
@@ -118,54 +225,140 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
       TRACE_PICTURE( "Geometry\n" );
       TRACE_PICTURE( "MapIdx = %d, AuxiliaryVideoFlag = 0\n", mapIndex );
       std::cout << "*******Video Decoding: Geometry[" << mapIndex << "] ********" << std::endl;
-      auto  geometryIndex  = static_cast<PCCVideoType>( VIDEO_GEOMETRY_D0 + mapIndex );
-      auto& videoBitstream = context.getVideoBitstream( geometryIndex );
-      videoDecoder.decompress( context.getVideoGeometryMultiple( mapIndex ),  // video
-                               context,                                       // contexts
-                               path.str(),                                    // path
-                               videoBitstream,                                // bitstream
-                               params_.byteStreamVideoCoderGeometry_,         // byte stream video coder
-                               geometryCodecId,                               // codecId
-                               params_.videoDecoderGeometryPath_,             // decoder path
-                               geometryBitDepth,                              // output bit depth
-                               params_.keepIntermediateFiles_,                // keep intermediate files
-                               0 );                                           // SHVC layer index
 
-      context.getVideoGeometryMultiple()[mapIndex].convertBitdepth(
-          geometryBitDepth, gi.getGeometry2dBitdepthMinus1() + 1, gi.getGeometryMSBAlignFlag() );
-      std::cout << "geometry D" << mapIndex << " video ->" << videoBitstream.size() << " B" << std::endl;
-      totalGeoSize += videoBitstream.size();
+      // Check if this geometry map is in packed video
+      bool geometryPacked = false;
+      if ( pve.isPresent() && pve.getPackedVideoPresentFlag( atlasIndex ) ) {
+        auto &packingInfo = pve.getPackingInformation( atlasIndex );
+        if ( packingInfo.getGeometryPresentFlag() ) {
+          // Find the geometry region for this map index
+          for ( size_t regionIndex = 0; regionIndex <= packingInfo.getRegionsCountMinus1(); ++regionIndex ) {
+            auto &region = packingInfo.getRegion( regionIndex );
+            if ( region.getRegionTypeId() == V3C_GVD && !region.getAuxiliaryDataFlag() &&
+                 region.getMapIndex() == mapIndex ) {
+              // Unpack geometry from packed video
+              std::cout << "*******Video Unpacking: Geometry[" << mapIndex << "] from Packed Video ["
+                        << static_cast<int>( region.getPackedMapIndex() ) << "] ********" << std::endl;
+              auto start = steady_clock::now();
+              unpackRegion( packedVideos[region.getPackedMapIndex()], context.getVideoGeometryMultiple( mapIndex ),
+                            region, frameCount );
+              auto stop         = steady_clock::now();
+              auto avg_duration = duration_cast<microseconds>( stop - start ).count();
+              std::cout << "Execution time Geometry[" << mapIndex << "] Unpack: " << avg_duration << " microseconds"
+                        << std::endl;
+
+              // Write unpacked geometry video to disk if keeping intermediate files
+              if ( params_.keepIntermediateFiles_ ) {
+                std::string unpackFileName = path.str() + "geometry_d" + std::to_string( mapIndex ) + "_unpacked";
+                context.getVideoGeometryMultiple( mapIndex )
+                    .write( context.getVideoGeometryMultiple( mapIndex ).addFormat( unpackFileName, "10" ), 2 );
+                std::cout << "Written unpacked geometry[" << mapIndex << "] video to: " << unpackFileName << std::endl;
+              }
+
+              geometryPacked = true;
+              break;
+            }
+          }
+        }
+      }
+
+      if ( !geometryPacked ) {
+        // Traditional decompression from separate geometry stream
+        auto  geometryIndex  = static_cast<PCCVideoType>( VIDEO_GEOMETRY_D0 + mapIndex );
+        auto &videoBitstream = context.getVideoBitstream( geometryIndex );
+        videoDecoder.decompress( context.getVideoGeometryMultiple( mapIndex ),  // video
+                                 context,                                       // contexts
+                                 path.str(),                                    // path
+                                 videoBitstream,                                // bitstream
+                                 params_.byteStreamVideoCoderGeometry_,         // byte stream video coder
+                                 geometryCodecId,                               // codecId
+                                 params_.videoDecoderGeometryPath_,             // decoder path
+                                 geometryBitDepth,                              // output bit depth
+                                 params_.scalerConfig_,                         // scaler config
+                                 params_.keepIntermediateFiles_,                // keep intermediate files
+                                 0,                                             // SHVC layer index
+                                 "",                                            // patch color subsampling
+                                 "",                                            // inverse color space conversion
+                                 params_.colorSpaceConversionPath_ );           // color space conversion path
+
+        context.getVideoGeometryMultiple()[mapIndex].convertBitdepth(
+            geometryBitDepth, gi.getGeometry2dBitdepthMinus1() + 1, gi.getGeometryMSBAlignFlag() );
+        std::cout << "geometry D" << mapIndex << " video ->" << videoBitstream.size() << " B" << std::endl;
+        totalGeoSize += videoBitstream.size();
+      }
     }
     std::cout << "total geometry video ->" << totalGeoSize << " B" << std::endl;
   } else {
     TRACE_PICTURE( "Geometry\n" );
     TRACE_PICTURE( "MapIdx = 0, AuxiliaryVideoFlag = 0\n" );
     std::cout << "*******Video Decoding: Geometry ********" << std::endl;
-    auto& videoBitstream = context.getVideoBitstream( VIDEO_GEOMETRY );
 
-    printf( " Decode G size = %zu \n", videoBitstream.size() );
-    fflush( stdout );
-    videoDecoder.decompress( context.getVideoGeometryMultiple( 0 ),  // video
-                             context,                                // contexts
-                             path.str(),                             // path
-                             videoBitstream,                         // bitstream
-                             params_.byteStreamVideoCoderGeometry_,  // byte stream video coder
-                             geometryCodecId,                        // codecId
-                             params_.videoDecoderGeometryPath_,      // decoder path
-                             geometryBitDepth,                       // output bit depth
-                             params_.keepIntermediateFiles_,         // keep intermediate files
-                             params_.shvcLayerIndex_ );              // SHVC layer index
+    // Check if single geometry is in packed video
+    bool geometryPacked = false;
+    if ( pve.isPresent() && pve.getPackedVideoPresentFlag( atlasIndex ) ) {
+      auto &packingInfo = pve.getPackingInformation( atlasIndex );
+      if ( packingInfo.getGeometryPresentFlag() ) {
+        // Find the geometry region for map index 0
+        for ( size_t regionIndex = 0; regionIndex <= packingInfo.getRegionsCountMinus1(); ++regionIndex ) {
+          auto &region = packingInfo.getRegion( regionIndex );
+          if ( region.getRegionTypeId() == V3C_GVD && !region.getAuxiliaryDataFlag() && region.getMapIndex() == 0 ) {
+            // Unpack geometry from packed video
+            std::cout << "*******Video Unpacking: Geometry from Packed Video ["
+                      << static_cast<int>( region.getPackedMapIndex() ) << "] ********" << std::endl;
+            auto start = steady_clock::now();
+            unpackRegion( packedVideos[region.getPackedMapIndex()], context.getVideoGeometryMultiple( 0 ), region,
+                          frameCount );
+            auto stop         = steady_clock::now();
+            auto avg_duration = duration_cast<microseconds>( stop - start ).count();
+            std::cout << "Execution time Geometry Unpack: " << avg_duration << " microseconds" << std::endl;
 
-    context.getVideoGeometryMultiple()[0].convertBitdepth( geometryBitDepth, gi.getGeometry2dBitdepthMinus1() + 1,
-                                                           gi.getGeometryMSBAlignFlag() );
-    std::cout << "geometry video ->" << videoBitstream.size() << " B" << std::endl;
+            // Write unpacked geometry video to disk if keeping intermediate files
+            if ( params_.keepIntermediateFiles_ ) {
+              std::string unpackFileName = path.str() + "geometry_unpacked";
+              context.getVideoGeometryMultiple( 0 ).write(
+                  context.getVideoGeometryMultiple( 0 ).addFormat( unpackFileName, "10" ), 2 );
+              std::cout << "Written unpacked geometry video to: " << unpackFileName << std::endl;
+            }
+
+            geometryPacked = true;
+            break;
+          }
+        }
+      }
+    }
+
+    if ( !geometryPacked ) {
+      // Traditional decompression from separate geometry stream
+      auto &videoBitstream = context.getVideoBitstream( VIDEO_GEOMETRY );
+
+      printf( " Decode G size = %zu \n", videoBitstream.size() );
+      fflush( stdout );
+      videoDecoder.decompress( context.getVideoGeometryMultiple( 0 ),  // video
+                               context,                                // contexts
+                               path.str(),                             // path
+                               videoBitstream,                         // bitstream
+                               params_.byteStreamVideoCoderGeometry_,  // byte stream video coder
+                               geometryCodecId,                        // codecId
+                               params_.videoDecoderGeometryPath_,      // decoder path
+                               geometryBitDepth,                       // output bit depth
+                               params_.scalerConfig_,                  // scaler config
+                               params_.keepIntermediateFiles_,         // keep intermediate files
+                               params_.shvcLayerIndex_,                // SHVC layer index
+                               "",                                     // patch color subsampling
+                               "",                                     // inverse color space conversion
+                               params_.colorSpaceConversionPath_ );    // color space conversion path
+
+      context.getVideoGeometryMultiple()[0].convertBitdepth( geometryBitDepth, gi.getGeometry2dBitdepthMinus1() + 1,
+                                                             gi.getGeometryMSBAlignFlag() );
+      std::cout << "geometry video ->" << videoBitstream.size() << " B" << std::endl;
+    }
   }
 
   if ( asps.getRawPatchEnabledFlag() && asps.getAuxiliaryVideoEnabledFlag() &&
        sps.getAuxiliaryVideoPresentFlag( atlasIndex ) ) {
     TRACE_PICTURE( "MapIdx = 0, AuxiliaryVideoFlag = 1\n" );
     std::cout << "*******Video Decoding: Aux Geometry ********" << std::endl;
-    auto& videoBitstreamMP = context.getVideoBitstream( VIDEO_GEOMETRY_RAW );
+    auto &videoBitstreamMP = context.getVideoBitstream( VIDEO_GEOMETRY_RAW );
     auto  auxGeometryCodecId =
         getCodedCodecId( context, gi.getAuxiliaryGeometryCodecId(), params_.videoDecoderGeometryPath_ );
     videoDecoder.decompress( context.getVideoRawPointsGeometry(),    // video
@@ -176,8 +369,12 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
                              auxGeometryCodecId,                     // codecId
                              params_.videoDecoderGeometryPath_,      // decoder path
                              geometryBitDepth,                       // output bit depth
+                             params_.scalerConfig_,                  // scaler config
                              params_.keepIntermediateFiles_,         // keep intermediate files
-                             params_.shvcLayerIndex_ );              // SHVC layer index
+                             params_.shvcLayerIndex_,                // SHVC layer index
+                             "",                                     // patch color subsampling
+                             "",                                     // inverse color space conversion
+                             params_.colorSpaceConversionPath_ );    // color space conversion path
 
     context.getVideoRawPointsGeometry().convertBitdepth( geometryBitDepth, gi.getGeometry2dBitdepthMinus1() + 1,
                                                          gi.getGeometryMSBAlignFlag() );
@@ -203,24 +400,75 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
             TRACE_PICTURE( "AttrIdx = %d, AttrPartIdx = %d, AttrTypeID = %d, MapIdx = %d, AuxiliaryVideoFlag = 0\n",
                            attrIndex, attrPartitionIndex, attributeTypeId, mapIndex );
             std::cout << "*******Video Decoding: Attribute [" << mapIndex << "] ********" << std::endl;
-            auto  attributeIndex = static_cast<PCCVideoType>( VIDEO_ATTRIBUTE_T0 + attrPartitionIndex +
-                                                             MAX_NUM_ATTR_PARTITIONS * mapIndex );
-            auto& videoBitstream = context.getVideoBitstream( attributeIndex );
-            videoDecoder.decompress( context.getVideoAttributesMultiple( mapIndex ),  // video
-                                     context,                                         // contexts
-                                     path.str(),                                      // path
-                                     videoBitstream,                                  // bitstream
-                                     params_.byteStreamVideoCoderAttribute_,          // byte stream video coder
-                                     attributeCodecId,                                // codecId
-                                     params_.videoDecoderAttributePath_,              // decoder path
-                                     attributeBitDepth,                               // output bit depth
-                                     params_.keepIntermediateFiles_,                  // keep intermediate files
-                                     params_.shvcLayerIndex_,                         // SHVC layer index
-                                     params_.patchColorSubsampling_,                  // patch color subsampling
-                                     params_.inverseColorSpaceConversionConfig_,      // inverse color space conversion
-                                     params_.colorSpaceConversionPath_ );             // color space conversion path
-            std::cout << "attribute T" << mapIndex << " video ->" << videoBitstream.size() << " B" << std::endl;
-            sizeAttributeVideo += videoBitstream.size();
+
+            // Check if this attribute is in packed video
+            bool attributePacked = false;
+            if ( pve.isPresent() && pve.getPackedVideoPresentFlag( atlasIndex ) ) {
+              auto &packingInfo = pve.getPackingInformation( atlasIndex );
+              if ( packingInfo.getAttributePresentFlag() ) {
+                // Find the attribute region for this map, attribute index, and partition
+                for ( size_t regionIndex = 0; regionIndex <= packingInfo.getRegionsCountMinus1(); ++regionIndex ) {
+                  auto &region = packingInfo.getRegion( regionIndex );
+                  if ( region.getRegionTypeId() == V3C_AVD && !region.getAuxiliaryDataFlag() &&
+                       region.getMapIndex() == mapIndex && region.getAttrIndex() == attrIndex &&
+                       region.getAttrPartitionIndex() == attrPartitionIndex ) {
+                    // Unpack attribute from packed video
+                    std::cout << "*******Video Unpacking: Attribute [" << mapIndex << "] from Packed Video ["
+                              << static_cast<int>( region.getPackedMapIndex() ) << "] ********" << std::endl;
+                    auto start = steady_clock::now();
+                    unpackRegion( packedVideos[region.getPackedMapIndex()],
+                                  context.getVideoAttributesMultiple( mapIndex ), region, frameCount );
+                    auto stop         = steady_clock::now();
+                    auto avg_duration = duration_cast<microseconds>( stop - start ).count();
+                    std::cout << "Execution time Attribute [" << mapIndex << "] Unpack: " << avg_duration
+                              << " microseconds" << std::endl;
+
+                    // Write unpacked attribute video to disk if keeping intermediate files
+                    if ( params_.keepIntermediateFiles_ ) {
+                      std::string unpackFileName = path.str() + "attribute_t" + std::to_string( mapIndex ) + "_attr" +
+                                                   std::to_string( attrIndex ) + "_part" +
+                                                   std::to_string( attrPartitionIndex ) + "_unpacked";
+                      context.getVideoAttributesMultiple( mapIndex )
+                          .write( context.getVideoAttributesMultiple( mapIndex ).addFormat( unpackFileName, "10" ), 2 );
+                      std::cout << "Written unpacked attribute[" << mapIndex << "] video to: " << unpackFileName
+                                << std::endl;
+                    }
+
+                    attributePacked = true;
+                    break;
+                  }
+                }
+              }
+            }
+
+            if ( !attributePacked ) {
+              // Traditional decompression from separate attribute stream
+              auto  attributeIndex = static_cast<PCCVideoType>( VIDEO_ATTRIBUTE_T0 + attrPartitionIndex +
+                                                                MAX_NUM_ATTR_PARTITIONS * mapIndex );
+              auto &videoBitstream = context.getVideoBitstream( attributeIndex );
+              // auto  start          = steady_clock::now();
+              videoDecoder.decompress( context.getVideoAttributesMultiple( mapIndex ),  // video
+                                       context,                                         // contexts
+                                       path.str(),                                      // path
+                                       videoBitstream,                                  // bitstream
+                                       params_.byteStreamVideoCoderAttribute_,          // byte stream video coder
+                                       attributeCodecId,                                // codecId
+                                       params_.videoDecoderAttributePath_,              // decoder path
+                                       attributeBitDepth,                               // output bit depth
+                                       params_.scalerConfig_,                           // scaler config
+                                       params_.keepIntermediateFiles_,                  // keep intermediate files
+                                       params_.shvcLayerIndex_,                         // SHVC layer index
+                                       params_.patchColorSubsampling_,                  // patch color subsampling
+                                       params_.inverseColorSpaceConversionConfig_,  // inverse color space conversion
+                                       params_.colorSpaceConversionPath_ );         // color space conversion path
+              // auto stop         = steady_clock::now();
+              // auto avg_duration = duration_cast<microseconds>( stop - start ).count();
+              // std::cout << "Execution time Attribute T" << mapIndex << " video : " << avg_duration << " microseconds"
+              //           << std::endl;
+
+              std::cout << "attribute T" << mapIndex << " video ->" << videoBitstream.size() << " B" << std::endl;
+              sizeAttributeVideo += videoBitstream.size();
+            }
           }
           std::cout << "attribute    video ->" << sizeAttributeVideo << " B" << std::endl;
         } else {
@@ -228,24 +476,75 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
           TRACE_PICTURE( "AttrIdx = 0, AttrPartIdx = %d, AttrTypeID = %d, MapIdx = 0, AuxiliaryVideoFlag = 0\n",
                          attrPartitionIndex, attributeTypeId );
           std::cout << "*******Video Decoding: Attribute ********" << std::endl;
-          auto  attributeIndex = static_cast<PCCVideoType>( VIDEO_ATTRIBUTE + attrPartitionIndex );
-          auto& videoBitstream = context.getVideoBitstream( attributeIndex );
-          printf( " Decode T size = %zu \n", videoBitstream.size() );
-          fflush( stdout );
-          videoDecoder.decompress( context.getVideoAttributesMultiple( 0 ),     // video
-                                   context,                                     // contexts
-                                   path.str(),                                  // path
-                                   videoBitstream,                              // bitstream
-                                   params_.byteStreamVideoCoderAttribute_,      // byte stream video coder
-                                   attributeCodecId,                            // codecId
-                                   params_.videoDecoderAttributePath_,          // decoder path
-                                   attributeBitDepth,                           // output bit depth
-                                   params_.keepIntermediateFiles_,              // keep intermediate files
-                                   params_.shvcLayerIndex_,                     // SHVC layer index
-                                   params_.patchColorSubsampling_,              // patch color subsampling
-                                   params_.inverseColorSpaceConversionConfig_,  // inverse color space conversionConfig
-                                   params_.colorSpaceConversionPath_ );         // color space conversion path
-          std::cout << "attribute video  ->" << videoBitstream.size() << " B" << std::endl;
+
+          // Check if this single attribute is in packed video
+          bool attributePacked = false;
+          if ( pve.isPresent() && pve.getPackedVideoPresentFlag( atlasIndex ) ) {
+            auto &packingInfo = pve.getPackingInformation( atlasIndex );
+            if ( packingInfo.getAttributePresentFlag() ) {
+              // Find the attribute region for map 0, this attribute index, and partition
+              for ( size_t regionIndex = 0; regionIndex <= packingInfo.getRegionsCountMinus1(); ++regionIndex ) {
+                auto &region = packingInfo.getRegion( regionIndex );
+                if ( region.getRegionTypeId() == V3C_AVD && !region.getAuxiliaryDataFlag() &&
+                     region.getMapIndex() == 0 && region.getAttrIndex() == attrIndex &&
+                     region.getAttrPartitionIndex() == attrPartitionIndex ) {
+                  // Unpack attribute from packed video
+                  std::cout << "*******Video Unpacking: Attribute from Packed Video ["
+                            << static_cast<int>( region.getPackedMapIndex() ) << "] ********" << std::endl;
+                  auto start = steady_clock::now();
+                  unpackRegion( packedVideos[region.getPackedMapIndex()],
+                                context.getVideoAttributesMultiple( attrIndex, attrPartitionIndex )[0], region,
+                                frameCount );
+                  auto stop         = steady_clock::now();
+                  auto avg_duration = duration_cast<microseconds>( stop - start ).count();
+                  std::cout << "Execution time Attribute Unpack: " << avg_duration << " microseconds" << std::endl;
+
+                  // Write unpacked attribute video to disk if keeping intermediate files
+                  if ( params_.keepIntermediateFiles_ ) {
+                    std::string unpackFileName = path.str() + "attribute_attr" + std::to_string( attrIndex ) + "_part" +
+                                                 std::to_string( attrPartitionIndex ) + "_unpacked";
+                    context.getVideoAttributesMultiple( attrIndex, attrPartitionIndex )[0].write(
+                        context.getVideoAttributesMultiple( attrIndex, attrPartitionIndex )[0].addFormat(
+                            unpackFileName, "10" ),
+                        2 );
+                    std::cout << "Written unpacked attribute video to: " << unpackFileName << std::endl;
+                  }
+
+                  attributePacked = true;
+                  break;
+                }
+              }
+            }
+          }
+
+          if ( !attributePacked ) {
+            // Traditional decompression from separate attribute stream
+            auto attributeIndex = static_cast<PCCVideoType>( VIDEO_ATTRIBUTE + attrPartitionIndex );
+            // TODO: LK Hack for now
+            if ( sps.getProfileTierLevel().getProfileToolsetIdc() == 2 ) {
+              attributeIndex = getAttributeType( attributeTypeId, attrPartitionIndex );
+            }
+
+            auto &videoBitstream = context.getVideoBitstream( attributeIndex );
+            printf( " Decode T size = %zu \n", videoBitstream.size() );
+            fflush( stdout );
+            videoDecoder.decompress(
+                context.getVideoAttributesMultiple( 0, attrIndex, attrPartitionIndex )[0],  // video
+                context,                                                                    // contexts
+                path.str(),                                                                 // path
+                videoBitstream,                                                             // bitstream
+                params_.byteStreamVideoCoderAttribute_,                                     // byte stream video coder
+                attributeCodecId,                                                           // codecId
+                params_.videoDecoderAttributePath_,                                         // decoder path
+                attributeBitDepth,                                                          // output bit depth
+                params_.scalerConfig_,                                                      // scaler config
+                params_.keepIntermediateFiles_,                                             // keep intermediate files
+                params_.shvcLayerIndex_,                                                    // SHVC layer index
+                params_.patchColorSubsampling_,                                             // patch color subsampling
+                params_.inverseColorSpaceConversionConfig_,  // inverse color space conversionConfig
+                params_.colorSpaceConversionPath_ );         // color space conversion path
+            std::cout << "attribute video  ->" << videoBitstream.size() << " B" << std::endl;
+          }
         }
 
         if ( asps.getRawPatchEnabledFlag() && asps.getAuxiliaryVideoEnabledFlag() &&
@@ -255,9 +554,9 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
           TRACE_PICTURE( "Attribute\n" );
           TRACE_PICTURE( "AttrIdx = 0, AttrPartIdx = %d, AttrTypeID = %d, MapIdx = 0, AuxiliaryVideoFlag = 1\n",
                          attrPartitionIndex, attributeTypeId );
-          auto& videoBitstreamMP    = context.getVideoBitstream( attributeIndex );
+          auto &videoBitstreamMP    = context.getVideoBitstream( attributeIndex );
           auto  auxAttributeCodecId = getCodedCodecId( context, ai.getAuxiliaryAttributeCodecId( attrIndex ),
-                                                      params_.videoDecoderAttributePath_ );
+                                                       params_.videoDecoderAttributePath_ );
           printf( "CodecId auxAttributeCodecId = %d \n", (int)auxAttributeCodecId );
           videoDecoder.decompress( context.getVideoRawPointsAttribute(),        // video
                                    context,                                     // contexts
@@ -267,6 +566,7 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
                                    auxAttributeCodecId,                         // codecId
                                    params_.videoDecoderAttributePath_,          // decoder path
                                    attributeBitDepth,                           // output bit depth
+                                   params_.scalerConfig_,                       // scaler config
                                    params_.keepIntermediateFiles_,              // keep intermediate files
                                    params_.shvcLayerIndex_,                     // SHVC layer index
                                    false,                                       // patch color subsampling
@@ -278,238 +578,15 @@ int PCCDecoder::decode( PCCContext& context, PCCGroupOfFrames& reconstructs, int
       }
     }
   }
-
-  reconstructs.setFrameCount( frameCount );
-  // recreating the prediction list per attribute (either the attribute is coded absolute, or follows the geometry)
-  // see contribution m52529
-  std::vector<std::vector<bool>> absoluteT1List;
-  absoluteT1List.resize( ai.getAttributeCount() );
-  for ( int attrIdx = 0; attrIdx < ai.getAttributeCount(); ++attrIdx ) {
-    absoluteT1List[attrIdx].resize( sps.getMapCountMinus1( atlasIndex ) + 1 );
-    if ( ai.getAttributeMapAbsoluteCodingPersistenceFlag( attrIdx ) != 0u ) {
-      for ( uint32_t mapIdx = 0; mapIdx < sps.getMapCountMinus1( atlasIndex ) + 1; ++mapIdx ) {
-        absoluteT1List[attrIdx][mapIdx] = true;
-      }
-    } else {
-      // follow geometry
-      for ( uint32_t mapIdx = 0; mapIdx < sps.getMapCountMinus1( atlasIndex ) + 1; ++mapIdx ) {
-        absoluteT1List[attrIdx][mapIdx] = sps.getMapAbsoluteCodingEnableFlag( atlasIndex, mapIdx );
-      }
-    }
-  }
-  printf( "generate point cloud of %zu frames \n", frameCount );
-  fflush( stdout );
-  for ( size_t frameIdx = 0; frameIdx < frameCount; frameIdx++ ) {
-    // All video have been decoded, start reconsctruction processes
-    if ( asps.getRawPatchEnabledFlag() && asps.getAuxiliaryVideoEnabledFlag() &&
-         sps.getAuxiliaryVideoPresentFlag( atlasIndex ) ) {
-      for ( int attrIndex = 0; attrIndex < ai.getAttributeCount(); attrIndex++ ) {
-        int attributeDimensionPartitions = ai.getAttributeDimensionPartitionsMinus1( attrIndex ) + 1;
-        for ( int attrPartitionIndex = 0; attrPartitionIndex < attributeDimensionPartitions; attrPartitionIndex++ ) {
-          printf( "generateRawPointsAttributefromVideo attrIndex = %d attrPartitionIndex = %d \n", attrIndex,
-                  attrPartitionIndex );
-          fflush( stdout );
-          generateRawPointsAttributefromVideo( context, frameIdx );
-        }
-      }
-    }  // getAuxiliaryVideoEnabledFlag()
-
-    context.setOccupancyPrecision( sps.getFrameWidth( atlasIndex ) / context.getVideoOccupancyMap().getWidth() );
-    GeneratePointCloudParameters gpcParams;
-    GeneratePointCloudParameters ppSEIParams;
-
-    auto&                 reconstruct = reconstructs[frameIdx];
-    std::vector<uint32_t> partition;
-    // Decode point cloud
-    printf( "call generatePointCloud() \n" );
-    std::vector<size_t> accTilePointCount;
-    accTilePointCount.resize( ai.getAttributeCount(), 0 );
-    for ( size_t tileIdx = 0; tileIdx < context[frameIdx].getNumTilesInAtlasFrame(); tileIdx++ ) {
-      auto atglIndex = context.getAtlasHighLevelSyntax().getAtlasTileLayerIndex( frameIdx, tileIdx );
-      setGeneratePointCloudParameters( gpcParams, context, atglIndex );
-      setPostProcessingSeiParameters( ppSEIParams, context, atglIndex );
-      // std::cout << "Processing frame " << frameIdx << " tile " << tileIdx << std::endl;
-      auto& tile = context[frameIdx].getTile( tileIdx );
-      if ( !ppSEIParams.pbfEnableFlag_ ) {
-        generateOccupancyMap( tile, context.getVideoOccupancyMap().getFrame( tile.getFrameIndex() ),
-                              context.getOccupancyPrecision(), oi.getLossyOccupancyCompressionThreshold(),
-                              asps.getEomPatchEnabledFlag() );
-      }
-      if ( context[frameIdx].getNumTilesInAtlasFrame() > 1 ) {
-        generateTileBlockToPatchFromOccupancyMapVideo(
-            context, tile, frameIdx, context.getVideoOccupancyMap().getFrame( frameIdx ),
-            size_t( 1 ) << asps.getLog2PatchPackingBlockSize(), context.getOccupancyPrecision() );
-
-      } else {
-        generateBlockToPatchFromOccupancyMapVideo(
-            context, tile, frameIdx, context.getVideoOccupancyMap().getFrame( frameIdx ),
-            size_t( 1 ) << asps.getLog2PatchPackingBlockSize(), context.getOccupancyPrecision() );
-      }
-
-      printf( "call generatePointCloud() \n" );
-      PCCPointSet3 tileReconstrct;
-      generatePointCloud( tileReconstrct, context, frameIdx, tileIdx, gpcParams, partition, true );
-      reconstruct.appendPointSet( tileReconstrct );
-      if ( context[frameIdx].getNumTilesInAtlasFrame() > 1 )
-        context[frameIdx].getTitleFrameContext().appendPointToPixel(
-            context[frameIdx].getTile( tileIdx ).getPointToPixel() );
-      if ( ai.getAttributeCount() > 0 ) {
-        reconstruct.addColors();
-        reconstruct.addColors16bit();
-        for ( size_t attIdx = 0; attIdx < ai.getAttributeCount(); attIdx++ ) {
-          printf( "start colorPointCloud attIdx = %zu / %u ] \n", attIdx, ai.getAttributeCount() );
-          fflush( stdout );
-          size_t updatedPointCount  = colorPointCloud( reconstruct, context, tile, absoluteT1List[attIdx],
-                                                      sps.getMultipleMapStreamsPresentFlag( atlasIndex ),
-                                                      ai.getAttributeCount(), accTilePointCount[attIdx], gpcParams );
-          accTilePointCount[attIdx] = updatedPointCount;
-        }
-      }
-    }  // tile
-
-#ifdef CONFORMANCE_TRACE
-    size_t numProjPoints = 0, numRawPoints = 0, numEomPoints = 0;
-    for ( size_t tileIdx = 0; tileIdx < context[frameIdx].getNumTilesInAtlasFrame(); tileIdx++ ) {
-      auto& tile = context[frameIdx].getTile( tileIdx );
-      numProjPoints += tile.getTotalNumberOfRegularPoints();
-      numEomPoints += tile.getTotalNumberOfEOMPoints();
-      numRawPoints += tile.getTotalNumberOfRawPoints();
-    }  // tile
-    if ( ai.getAttributeCount() == 0 ) {
-      reconstructs[frameIdx].removeColors();
-      reconstructs[frameIdx].removeColors16bit();
-    } else {
-      bool isAttributes444 = context.getVideoAttributesMultiple( 0 ).getColorFormat() == PCCCOLORFORMAT::RGB444;
-      if ( !isAttributes444 ) {  // lossy: convert 16-bit yuv444 to 8-bit RGB444
-        reconstructs[frameIdx].convertYUV16ToRGB8();
-      } else {
-        reconstructs[frameIdx].copyRGB16ToRGB8();
-      }
-    }
-    TRACE_PCFRAME( "AtlasFrameIndex = %d\n", frameIdx );
-    TRACE_PCFRAME( "PointCloudFrameOrderCntVal = %d, NumProjPoints = %zu, NumRawPoints = %zu, NumEomPoints = %zu,",
-                   frameIdx, numProjPoints, numRawPoints, numEomPoints );
-    auto checksumFrame = reconstructs[frameIdx].computeChecksum( true );
-    TRACE_PCFRAME( " MD5 checksum = " );
-    for ( auto& c : checksumFrame ) { TRACE_PCFRAME( "%02x", c ); }
-    TRACE_PCFRAME( "\n" );
-#endif
-
-    // Post-Processing
-    TRACE_PATCH( "Post-Processing: postprocessSmoothing = %zu pbfEnableFlag = %d \n", params_.attrTransferFilterType_,
-                 ppSEIParams.pbfEnableFlag_ );
-    if ( params_.applyGeoSmoothingType_ != 0 && ppSEIParams.flagGeometrySmoothing_ ) {
-      PCCPointSet3 tempFrameBuffer = reconstruct;
-      if ( ppSEIParams.gridSmoothing_ ) {
-        smoothPointCloudPostprocess( reconstruct, params_.colorTransform_, ppSEIParams, partition );
-      }
-      if ( ai.getAttributeCount() > 0 ) {
-        bool isAttributes444 = context.getVideoAttributesMultiple( 0 ).getColorFormat() == PCCCOLORFORMAT::RGB444;
-        printf( "isAttributes444 = %d Format = %d \n", isAttributes444,
-                context.getVideoAttributesMultiple( 0 ).getColorFormat() );
-        fflush( stdout );
-
-        if ( !ppSEIParams.pbfEnableFlag_ ) {
-          // These are different attribute transfer functions
-          if ( params_.attrTransferFilterType_ == 1 || params_.attrTransferFilterType_ == 5 ) {
-            TRACE_PATCH( " transferColors16bitBP \n" );
-            tempFrameBuffer.transferColors16bitBP( reconstruct,                      // target
-                                                   params_.attrTransferFilterType_,  // filterType
-                                                   int32_t( 0 ),                     // searchRange
-                                                   isAttributes444,                  // losslessAttribute
-                                                   8,                                // numNeighborsColorTransferFwd
-                                                   1,                                // numNeighborsColorTransferBwd
-                                                   true,                             // useDistWeightedAverageFwd
-                                                   true,                             // useDistWeightedAverageBwd
-                                                   true,        // skipAvgIfIdenticalSourcePointPresentFwd
-                                                   false,       // skipAvgIfIdenticalSourcePointPresentBwd
-                                                   4,           // distOffsetFwd
-                                                   4,           // distOffsetBwd
-                                                   1000,        // maxGeometryDist2Fwd
-                                                   1000,        // maxGeometryDist2Bwd
-                                                   1000 * 256,  // maxColorDist2Fwd
-                                                   1000 * 256   // maxColorDist2Bwd
-            );
-          } else if ( params_.attrTransferFilterType_ == 2 ) {
-            TRACE_PATCH( " transferColorWeight \n" );
-            tempFrameBuffer.transferColorWeight( reconstruct, 0.1 );
-          } else if ( params_.attrTransferFilterType_ == 3 ) {
-            TRACE_PATCH( " transferColorsFilter3 \n" );
-            tempFrameBuffer.transferColorsFilter3( reconstruct, int32_t( 0 ), isAttributes444 );
-          } else if ( params_.attrTransferFilterType_ == 7 || params_.attrTransferFilterType_ == 9 ) {
-            TRACE_PATCH( " transferColorsFilter3 \n" );
-            tempFrameBuffer.transferColorsBackward16bitBP( reconstruct,                      //  target
-                                                           params_.attrTransferFilterType_,  //  filterType
-                                                           int32_t( 0 ),                     //  searchRange
-                                                           isAttributes444,                  //  losslessAttribute
-                                                           8,           //  numNeighborsColorTransferFwd
-                                                           1,           //  numNeighborsColorTransferBwd
-                                                           true,        //  useDistWeightedAverageFwd
-                                                           true,        //  useDistWeightedAverageBwd
-                                                           true,        //  skipAvgIfIdenticalSourcePointPresentFwd
-                                                           false,       //  skipAvgIfIdenticalSourcePointPresentBwd
-                                                           4,           //  distOffsetFwd
-                                                           4,           //  distOffsetBwd
-                                                           1000,        //  maxGeometryDist2Fwd
-                                                           1000,        //  maxGeometryDist2Bwd
-                                                           1000 * 256,  //  maxColorDist2Fwd
-                                                           1000 * 256   //  maxColorDist2Bwd
-            );
-          }
-        }
-      }  // if ( ai.getAttributeCount() > 0 )
-    }
-    if ( ai.getAttributeCount() > 0 ) {
-      if ( params_.applyAttrSmoothingType_ != 0 && ppSEIParams.flagColorSmoothing_ ) {
-        TRACE_PATCH( " colorSmoothing \n" );
-        colorSmoothing( reconstruct, params_.colorTransform_, ppSEIParams );
-      }
-      if ( context.getVideoAttributesMultiple( 0 ).getColorFormat() !=
-           PCCCOLORFORMAT::RGB444 ) {  // lossy: convert 16-bit yuv444 to 8-bit RGB444
-        TRACE_PATCH( "lossy: convert 16-bit yuv444 to 8-bit RGB444 (convertYUV16ToRGB8) \n" );
-        reconstruct.convertYUV16ToRGB8();
-      } else {  // lossless: copy 16-bit RGB to 8-bit RGB
-        TRACE_PATCH( "lossy: lossless: copy 16-bit RGB to 8-bit RGB (copyRGB16ToRGB8) \n" );
-        reconstruct.copyRGB16ToRGB8();
-      }
-    }
-    /*auto tmp = reconstruct.computeChecksum();
-    TRACE_PCFRAME( " MD5 checksum = " );
-    for ( auto& c : tmp ) { TRACE_PCFRAME( "%02x", c ); }
-    TRACE_PCFRAME( "\n" );*/
-    TRACE_RECFRAME( "AtlasFrameIndex = %d\n", frameIdx );
-    auto checksum = reconstructs[frameIdx].computeChecksum( true );
-    TRACE_RECFRAME( " MD5 checksum = " );
-    for ( auto& c : checksum ) { TRACE_RECFRAME( "%02x", c ); }
-    TRACE_RECFRAME( "\n" );
-  }
-  return 0;
-}
-
-void PCCDecoder::setPointLocalReconstruction( PCCContext& context ) {
-  auto& asps = context.getAtlasSequenceParameterSet( 0 );
-  TRACE_PATCH( "PLR = %d \n", asps.getPLREnabledFlag() );
-  PointLocalReconstructionMode mode = {false, false, 0, 1};
-  if ( asps.getPLREnabledFlag() ) {
-    auto& plri = asps.getPLRInformation( 0 );
-    for ( size_t i = 0; i < plri.getNumberOfModesMinus1() + 1; i++ ) {
-      mode.interpolate_ = plri.getInterpolateFlag( i );
-      mode.filling_     = plri.getFillingFlag( i );
-      mode.minD1_       = plri.getMinimumDepth( i );
-      mode.neighbor_    = plri.getNeighbourMinus1( i ) + 1;
-      context.addPointLocalReconstructionMode( mode );
-    }
-#ifdef CODEC_TRACE
-    for ( size_t i = 0; i < context.getPointLocalReconstructionModeNumber(); i++ ) {
-      auto& mode = context.getPointLocalReconstructionMode( i );
-      TRACE_PATCH( "Plrm[%zu]: Inter = %d Fill = %d minD1 = %u neighbor = %u \n", i, mode.interpolate_, mode.filling_,
-                   mode.minD1_, mode.neighbor_ );
-    }
-#endif
+  ////////////////////////// RECONSTRUCTION  //////////////////////////
+  if ( sps.getProfileTierLevel().getProfileReconstructionIdc() == 3 ) {
+    return ReconstructIdc3( context, reconstructs, atlasIndex );
+  } else {
+    return ReconstructIdc0Idc1Idc2Idc255( context, reconstructs, atlasIndex );
   }
 }
 
-void PCCDecoder::setPLRData( PCCFrameContext& tile, PCCPatch& patch, PLRData& plrd, size_t occupancyPackingBlockSize ) {
+void PCCDecoder::setPLRData( PCCFrameContext &tile, PCCPatch &patch, PLRData &plrd, size_t occupancyPackingBlockSize ) {
   patch.allocOneLayerData();
   TRACE_PATCH( "WxH = %zu x %zu \n", plrd.getBlockToPatchMapWidth(), plrd.getBlockToPatchMapHeight() );
   patch.getPointLocalReconstructionLevel() = static_cast<uint8_t>( plrd.getLevelFlag() );
@@ -550,15 +627,15 @@ void PCCDecoder::setPLRData( PCCFrameContext& tile, PCCPatch& patch, PLRData& pl
 #endif
 }
 
-void PCCDecoder::setPostProcessingSeiParameters( GeneratePointCloudParameters& params,
-                                                 PCCContext&                   context,
+void PCCDecoder::setPostProcessingSeiParameters( GeneratePointCloudParameters &params,
+                                                 PCCContext                   &context,
                                                  size_t                        atglIndex ) {
-  auto&   sps                   = context.getVps();
+  auto   &sps                   = context.getVps();
   int32_t atlasIndex            = 0;
-  auto&   oi                    = sps.getOccupancyInformation( atlasIndex );
-  auto&   gi                    = sps.getGeometryInformation( atlasIndex );
-  auto&   asps                  = context.getAtlasSequenceParameterSet( 0 );
-  auto&   plt                   = sps.getProfileTierLevel();
+  auto   &oi                    = sps.getOccupancyInformation( atlasIndex );
+  auto   &gi                    = sps.getGeometryInformation( atlasIndex );
+  auto   &asps                  = context.getAtlasSequenceParameterSet( 0 );
+  auto   &plt                   = sps.getProfileTierLevel();
   params.flagGeometrySmoothing_ = false;
   params.gridSmoothing_         = false;
   params.gridSize_              = 0;
@@ -569,7 +646,7 @@ void PCCDecoder::setPostProcessingSeiParameters( GeneratePointCloudParameters& p
   params.pbfLog2Threshold_      = 0;
   if ( params_.applyGeoSmoothingType_ != 0 &&
        context.seiIsPresentInReceivedData( NAL_PREFIX_ESEI, GEOMETRY_SMOOTHING, atglIndex ) ) {
-    auto* sei = static_cast<SEIGeometrySmoothing*>(
+    auto *sei = static_cast<SEIGeometrySmoothing *>(
         context.getSeiInReceivedData( NAL_PREFIX_ESEI, GEOMETRY_SMOOTHING, atglIndex ) );
     for ( size_t i = 0; i < sei->getInstancesUpdated(); i++ ) {
       size_t k = sei->getInstanceIndex( i );
@@ -585,7 +662,7 @@ void PCCDecoder::setPostProcessingSeiParameters( GeneratePointCloudParameters& p
   }
   if ( params_.applyOccupanySynthesisType_ != 0 &&
        context.seiIsPresentInReceivedData( NAL_PREFIX_ESEI, OCCUPANCY_SYNTHESIS, atglIndex ) ) {
-    auto* sei = static_cast<SEIOccupancySynthesis*>(
+    auto *sei = static_cast<SEIOccupancySynthesis *>(
         context.getSeiInReceivedData( NAL_PREFIX_ESEI, OCCUPANCY_SYNTHESIS, atglIndex ) );
     for ( size_t i = 0; i < sei->getInstancesUpdated(); i++ ) {
       size_t k = sei->getInstanceIndex( i );
@@ -616,7 +693,7 @@ void PCCDecoder::setPostProcessingSeiParameters( GeneratePointCloudParameters& p
   params.thresholdColorVariation_  = 0;
   if ( params_.applyAttrSmoothingType_ != 0 &&
        context.seiIsPresentInReceivedData( NAL_PREFIX_ESEI, ATTRIBUTE_SMOOTHING, atglIndex ) ) {
-    auto* sei = static_cast<SEIAttributeSmoothing*>(
+    auto *sei = static_cast<SEIAttributeSmoothing *>(
         context.getSeiInReceivedData( NAL_PREFIX_ESEI, ATTRIBUTE_SMOOTHING, atglIndex ) );
     for ( size_t j = 0; j < sei->getNumAttributesUpdated(); j++ ) {
       size_t k = sei->getAttributeIdx( j );
@@ -647,15 +724,15 @@ void PCCDecoder::setPostProcessingSeiParameters( GeneratePointCloudParameters& p
   params.geometryBitDepth3D_            = gi.getGeometry3dCoordinatesBitdepthMinus1() + 1;
 }
 
-void PCCDecoder::setGeneratePointCloudParameters( GeneratePointCloudParameters& params,
-                                                  PCCContext&                   context,
+void PCCDecoder::setGeneratePointCloudParameters( GeneratePointCloudParameters &params,
+                                                  PCCContext                   &context,
                                                   size_t                        atglIndex ) {
-  auto&   sps                   = context.getVps();
+  auto   &sps                   = context.getVps();
   int32_t atlasIndex            = 0;
-  auto&   oi                    = sps.getOccupancyInformation( atlasIndex );
-  auto&   gi                    = sps.getGeometryInformation( atlasIndex );
-  auto&   asps                  = context.getAtlasSequenceParameterSet( 0 );
-  auto&   plt                   = sps.getProfileTierLevel();
+  auto   &oi                    = sps.getOccupancyInformation( atlasIndex );
+  auto   &gi                    = sps.getGeometryInformation( atlasIndex );
+  auto   &asps                  = context.getAtlasSequenceParameterSet( 0 );
+  auto   &plt                   = sps.getProfileTierLevel();
   params.flagGeometrySmoothing_ = false;
   params.gridSmoothing_         = false;
   params.gridSize_              = 0;
@@ -666,7 +743,7 @@ void PCCDecoder::setGeneratePointCloudParameters( GeneratePointCloudParameters& 
   params.pbfLog2Threshold_      = 0;
   if ( params_.applyGeoSmoothingType_ != 0 &&
        context.seiIsPresentInReceivedData( NAL_PREFIX_ESEI, GEOMETRY_SMOOTHING, atglIndex ) ) {
-    auto* sei = static_cast<SEIGeometrySmoothing*>(
+    auto *sei = static_cast<SEIGeometrySmoothing *>(
         context.getSeiInReceivedData( NAL_PREFIX_ESEI, GEOMETRY_SMOOTHING, atglIndex ) );
     for ( size_t i = 0; i < sei->getInstancesUpdated(); i++ ) {
       size_t k = sei->getInstanceIndex( i );
@@ -682,7 +759,7 @@ void PCCDecoder::setGeneratePointCloudParameters( GeneratePointCloudParameters& 
   }
   if ( params_.applyOccupanySynthesisType_ != 0 &&
        context.seiIsPresentInReceivedData( NAL_PREFIX_ESEI, OCCUPANCY_SYNTHESIS, atglIndex ) ) {
-    auto* sei = static_cast<SEIOccupancySynthesis*>(
+    auto *sei = static_cast<SEIOccupancySynthesis *>(
         context.getSeiInReceivedData( NAL_PREFIX_ESEI, OCCUPANCY_SYNTHESIS, atglIndex ) );
     for ( size_t i = 0; i < sei->getInstancesUpdated(); i++ ) {
       size_t k = sei->getInstanceIndex( i );
@@ -713,7 +790,7 @@ void PCCDecoder::setGeneratePointCloudParameters( GeneratePointCloudParameters& 
   params.thresholdColorVariation_  = 0;
   if ( params_.applyAttrSmoothingType_ != 0 &&
        context.seiIsPresentInReceivedData( NAL_PREFIX_ESEI, ATTRIBUTE_SMOOTHING, atglIndex ) ) {
-    auto* sei = static_cast<SEIAttributeSmoothing*>(
+    auto *sei = static_cast<SEIAttributeSmoothing *>(
         context.getSeiInReceivedData( NAL_PREFIX_ESEI, ATTRIBUTE_SMOOTHING, atglIndex ) );
     for ( size_t j = 0; j < sei->getNumAttributesUpdated(); j++ ) {
       size_t k = sei->getAttributeIdx( j );
@@ -747,10 +824,10 @@ void PCCDecoder::setGeneratePointCloudParameters( GeneratePointCloudParameters& 
   params.geometryBitDepth3D_            = gi.getGeometry3dCoordinatesBitdepthMinus1() + 1;
 }
 
-void PCCDecoder::createPatchFrameDataStructure( PCCContext& context ) {
+void PCCDecoder::createPatchFrameDataStructure( PCCContext &context ) {
   TRACE_PATCH( "createPatchFrameDataStructure GOP start \n" );
   size_t frameCount = 0;
-  auto&  atlList    = context.getAtlasTileLayerList();
+  auto  &atlList    = context.getAtlasTileLayerList();
 
   // partition information derivation
   setTilePartitionSizeAfti( context );
@@ -762,19 +839,19 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context ) {
   context.resize( frameCount );
   setPointLocalReconstruction( context );
   for ( size_t atglIndex = 0; atglIndex < atlList.size(); atglIndex++ ) {
-    auto& atgl = atlList[atglIndex];
+    auto &atgl = atlList[atglIndex];
     if ( atglIndex == 0 || atgl.getAtlasFrmOrderCntVal() != atlList[atglIndex - 1].getAtlasFrmOrderCntVal() ) {
       setTileSizeAndLocation( context, atgl.getHeader().getFrameIndex(), atgl.getHeader() );
     }
-    auto&  atlu       = context.getAtlasTileLayer( atglIndex );
-    auto&  ath        = atlu.getHeader();
+    auto  &atlu       = context.getAtlasTileLayer( atglIndex );
+    auto  &ath        = atlu.getHeader();
     size_t frameIndex = ath.getFrameIndex();
     createPatchFrameDataStructure( context, atglIndex );
 
 #ifdef CONFORMANCE_TRACE
     if ( atgl.getSEI().seiIsPresent( NAL_PREFIX_ESEI, GEOMETRY_SMOOTHING ) ) {
-      auto* sei = static_cast<SEIGeometrySmoothing*>( atgl.getSEI().getSei( NAL_PREFIX_ESEI, GEOMETRY_SMOOTHING ) );
-      auto& vec = sei->getMD5ByteStrData();
+      auto *sei = static_cast<SEIGeometrySmoothing *>( atgl.getSEI().getSei( NAL_PREFIX_ESEI, GEOMETRY_SMOOTHING ) );
+      auto &vec = sei->getMD5ByteStrData();
       if ( vec.size() > 0 ) {
         TRACE_HLS( "**********GEOMETRY_SMOOTHING_ESEI***********\n" );
         TRACE_HLS( "SEI%02dMD5 = ", sei->getPayloadType() );
@@ -782,8 +859,8 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context ) {
       }
     }
     if ( atgl.getSEI().seiIsPresent( NAL_PREFIX_ESEI, OCCUPANCY_SYNTHESIS ) ) {
-      auto* sei = static_cast<SEIOccupancySynthesis*>( atgl.getSEI().getSei( NAL_PREFIX_ESEI, OCCUPANCY_SYNTHESIS ) );
-      auto& vec = sei->getMD5ByteStrData();
+      auto *sei = static_cast<SEIOccupancySynthesis *>( atgl.getSEI().getSei( NAL_PREFIX_ESEI, OCCUPANCY_SYNTHESIS ) );
+      auto &vec = sei->getMD5ByteStrData();
       if ( vec.size() > 0 ) {
         TRACE_HLS( "**********OCCUPANCY_SYNTHESIS_ESEI***********\n" );
         TRACE_HLS( "SEI%02dMD5 = ", sei->getPayloadType() );
@@ -791,8 +868,8 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context ) {
       }
     }
     if ( atgl.getSEI().seiIsPresent( NAL_PREFIX_ESEI, ATTRIBUTE_SMOOTHING ) ) {
-      auto* sei = static_cast<SEIAttributeSmoothing*>( atgl.getSEI().getSei( NAL_PREFIX_ESEI, ATTRIBUTE_SMOOTHING ) );
-      auto& vec = sei->getMD5ByteStrData();
+      auto *sei = static_cast<SEIAttributeSmoothing *>( atgl.getSEI().getSei( NAL_PREFIX_ESEI, ATTRIBUTE_SMOOTHING ) );
+      auto &vec = sei->getMD5ByteStrData();
       if ( vec.size() > 0 ) {
         TRACE_HLS( "**********ATTRIBUTE_SMOOTHING_ESEI***********\n" );
         TRACE_HLS( "SEI%02dMD5 = ", sei->getPayloadType() );
@@ -800,9 +877,9 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context ) {
       }
     }
     if ( atgl.getSEI().seiIsPresent( NAL_PREFIX_ESEI, COMPONENT_CODEC_MAPPING ) ) {
-      auto* sei =
-          static_cast<SEIOccupancySynthesis*>( atgl.getSEI().getSei( NAL_PREFIX_ESEI, COMPONENT_CODEC_MAPPING ) );
-      auto& temp = sei->getMD5ByteStrData();
+      auto *sei =
+          static_cast<SEIOccupancySynthesis *>( atgl.getSEI().getSei( NAL_PREFIX_ESEI, COMPONENT_CODEC_MAPPING ) );
+      auto &temp = sei->getMD5ByteStrData();
       if ( temp.size() > 0 ) {
         TRACE_HLS( "**********CODEC_COMPONENT_MAPPING_ESEI***********\n" );
         TRACE_HLS( "SEI%02dMD5 = ", sei->getPayloadType() );
@@ -813,11 +890,11 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context ) {
     bool isLastTileOfTheFrames = atglIndex + 1 == atlList.size() ||
                                  atgl.getAtlasFrmOrderCntVal() != atlList[atglIndex + 1].getAtlasFrmOrderCntVal();
     if ( isLastTileOfTheFrames && atgl.getSEI().seiIsPresent( NAL_SUFFIX_NSEI, DECODED_ATLAS_INFORMATION_HASH ) ) {
-      auto* sei = static_cast<SEIDecodedAtlasInformationHash*>(
+      auto *sei = static_cast<SEIDecodedAtlasInformationHash *>(
           atgl.getSEI().getSei( NAL_SUFFIX_NSEI, DECODED_ATLAS_INFORMATION_HASH ) );
       TRACE_PATCH( "create Hash SEI \n" );
-      auto& atlu = context.getAtlasTileLayer( atglIndex );
-      auto& ath  = atlu.getHeader();
+      auto &atlu = context.getAtlasTileLayer( atglIndex );
+      auto &ath  = atlu.getHeader();
       createHashSEI( context, ath.getFrameIndex(), *sei );
     }
 #ifdef CONFORMANCE_TRACE
@@ -826,16 +903,16 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context ) {
   }
 }
 
-void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atglIndex ) {
+void PCCDecoder::createPatchFrameDataStructure( PCCContext &context, size_t atglIndex ) {
   TRACE_PATCH( "createPatchFrameDataStructure Tile %zu \n", atglIndex );
-  auto&  sps                = context.getVps();
+  auto  &sps                = context.getVps();
   size_t atlasIndex         = context.getAtlasIndex();
-  auto&  atlu               = context.getAtlasTileLayer( atglIndex );
-  auto&  ath                = atlu.getHeader();
-  auto&  afps               = context.getAtlasFrameParameterSet( ath.getAtlasFrameParameterSetId() );
-  auto&  asps               = context.getAtlasSequenceParameterSet( afps.getAtlasSequenceParameterSetId() );
-  auto&  afti               = afps.getAtlasFrameTileInformationRbsp();
-  auto&  atgdu              = atlu.getDataUnit();
+  auto  &atlu               = context.getAtlasTileLayer( atglIndex );
+  auto  &ath                = atlu.getHeader();
+  auto  &afps               = context.getAtlasFrameParameterSet( ath.getAtlasFrameParameterSetId() );
+  auto  &asps               = context.getAtlasSequenceParameterSet( afps.getAtlasSequenceParameterSetId() );
+  auto  &afti               = afps.getAtlasFrameTileInformationRbsp();
+  auto  &atgdu              = atlu.getDataUnit();
   auto   geometryBitDepth2D = asps.getGeometry2dBitdepthMinus1() + 1;
   auto   geometryBitDepth3D = asps.getGeometry3dBitdepthMinus1() + 1;
   size_t frameIndex         = ath.getFrameIndex();
@@ -844,7 +921,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
   printf( "createPatchFrameDataStructure Frame = %zu Tiles = %zu atlasIndex = %zu atglIndex %zu \n", frameIndex,
           tileIndex, context.getAtlasIndex(), atglIndex );
   fflush( stdout );
-  PCCFrameContext& tile = context[frameIndex].getTile( tileIndex );
+  PCCFrameContext &tile = context[frameIndex].getTile( tileIndex );
   tile.setFrameIndex( frameIndex );
   tile.setAtlasFrmOrderCntVal( atlu.getAtlasFrmOrderCntVal() );
   tile.setAtlasFrmOrderCntMsb( atlu.getAtlasFrmOrderCntMsb() );
@@ -861,9 +938,9 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
   }
 
   // local variable initialization
-  auto&        patches        = tile.getPatches();
-  auto&        rawPatches     = tile.getRawPointsPatches();
-  auto&        eomPatches     = tile.getEomPatches();
+  auto        &patches        = tile.getPatches();
+  auto        &rawPatches     = tile.getRawPointsPatches();
+  auto        &eomPatches     = tile.getEomPatches();
   int64_t      predIndex      = 0;
   const size_t minLevel       = pow( 2., ath.getPosMinDQuantizer() );
   size_t       numRawPatches  = 0;
@@ -892,11 +969,11 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
   tile.setLog2PatchQuantizerSizeX( ath.getPatchSizeXinfoQuantizer() );
   tile.setLog2PatchQuantizerSizeY( ath.getPatchSizeYinfoQuantizer() );
   for ( patchIndex = 0; patchIndex < patchCount; patchIndex++ ) {
-    auto&        pid           = atgdu.getPatchInformationData( patchIndex );
+    auto        &pid           = atgdu.getPatchInformationData( patchIndex );
     PCCPatchType currPatchType = getPatchType( tileType, atgdu.getPatchMode( patchIndex ) );
     if ( currPatchType == INTRA_PATCH ) {
       PCCPatch patch;
-      auto&    pdu = pid.getPatchDataUnit();
+      auto    &pdu = pid.getPatchDataUnit();
       patch.setOccupancyResolution( size_t( 1 ) << asps.getLog2PatchPackingBlockSize() );
       patch.setU0( pdu.get2dPosX() );
       patch.setV0( pdu.get2dPosY() );
@@ -950,7 +1027,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
     } else if ( currPatchType == INTER_PATCH ) {
       PCCPatch patch;
       patch.setOccupancyResolution( size_t( 1 ) << asps.getLog2PatchPackingBlockSize() );
-      auto& ipdu = pid.getInterPatchDataUnit();
+      auto &ipdu = pid.getInterPatchDataUnit();
       TRACE_PATCH( "patch %zu / %zu: Inter \n", patchIndex, patchCount );
       TRACE_PATCH(
           "\tIPDU: refAtlasFrame= %d refPatchIdx = %d pos2DXY = %ld %ld pos3DXYZW = %ld %ld %ld %ld size2D = %ld %ld "
@@ -962,7 +1039,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
       predIndex += ipdu.getRefPatchIndex() + 1;
       patch.setRefAtlasFrameIndex( ipdu.getRefIndex() );
       size_t      refPOC   = (size_t)tile.getRefAfoc( patch.getRefAtlasFrameIndex() );
-      const auto& refPatch = context.getFrame( refPOC ).getTile( tileIndex ).getPatches()[patch.getBestMatchIdx()];
+      const auto &refPatch = context.getFrame( refPOC ).getTile( tileIndex ).getPatches()[patch.getBestMatchIdx()];
       TRACE_PATCH(
           "\trefPatch: refIndex = %zu, refFrame = %zu, Idx = %zu/%zu UV0 = %zu %zu  UV1 = %zu %zu Size = %zu %zu %zu "
           "Lod = %u,%u\n",
@@ -1012,8 +1089,8 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
       assert( -2 );
       PCCPatch patch;
       patch.setOccupancyResolution( size_t( 1 ) << asps.getLog2PatchPackingBlockSize() );
-      auto&        mpdu            = pid.getMergePatchDataUnit();
-      bool         overridePlrFlag = false;
+      auto &mpdu            = pid.getMergePatchDataUnit();
+      bool  overridePlrFlag = false;
       TRACE_PATCH( "patch %zu / %zu: Inter \n", patchIndex, patchCount );
       TRACE_PATCH(
           "MPDU: refAtlasFrame= %d refPatchIdx = ?? pos2DXY = %ld %ld pos3DXYZW = %ld %ld %ld %ld size2D = %ld %ld \n",
@@ -1024,7 +1101,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
       predIndex = patchIndex;
       patch.setRefAtlasFrameIndex( mpdu.getRefIndex() );
       size_t      refPOC   = (size_t)tile.getRefAfoc( patch.getRefAtlasFrameIndex() );
-      const auto& refPatch = context.getFrame( refPOC ).getTile( tileIndex ).getPatches()[patch.getBestMatchIdx()];
+      const auto &refPatch = context.getFrame( refPOC ).getTile( tileIndex ).getPatches()[patch.getBestMatchIdx()];
       if ( mpdu.getOverride2dParamsFlag() ) {
         patch.setU0( mpdu.get2dPosX() + refPatch.getU0() );
         patch.setV0( mpdu.get2dPosY() + refPatch.getV0() );
@@ -1080,7 +1157,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
       predIndex += patchIndex;
       patch.setRefAtlasFrameIndex( 0 );
       size_t      refPOC   = (size_t)tile.getRefAfoc( patch.getRefAtlasFrameIndex() );
-      const auto& refPatch = context.getFrame( refPOC ).getTile( tileIndex ).getPatches()[patch.getBestMatchIdx()];
+      const auto &refPatch = context.getFrame( refPOC ).getTile( tileIndex ).getPatches()[patch.getBestMatchIdx()];
       TRACE_PATCH( "\trefPatch: Idx = %zu UV0 = %zu %zu  UV1 = %zu %zu Size = %zu %zu %zu  Lod = %u,%u \n",
                    patch.getBestMatchIdx(), refPatch.getU0(), refPatch.getV0(), refPatch.getU1(), refPatch.getV1(),
                    refPatch.getSizeU0(), refPatch.getSizeV0(), refPatch.getSizeD(), refPatch.getLodScaleX(),
@@ -1116,7 +1193,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
       patches.push_back( patch );
     } else if ( currPatchType == RAW_PATCH ) {
       TRACE_PATCH( "patch %zu / %zu: raw \n", patchIndex, patchCount );
-      auto&             rpdu = pid.getRawPatchDataUnit();
+      auto             &rpdu = pid.getRawPatchDataUnit();
       PCCRawPointsPatch rawPointsPatch;
       rawPointsPatch.isPatchInAuxVideo_ = rpdu.getPatchInAuxiliaryVideoFlag();
       rawPointsPatch.u0_                = rpdu.get2dPosX();
@@ -1143,8 +1220,8 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
                    rawPointsPatch.occupancyResolution_ );
     } else if ( currPatchType == EOM_PATCH ) {
       TRACE_PATCH( "patch %zu / %zu: EOM \n", patchIndex, patchCount );
-      auto&       epdu       = pid.getEomPatchDataUnit();
-      auto&       eomPatches = tile.getEomPatches();
+      auto       &epdu       = pid.getEomPatchDataUnit();
+      auto       &eomPatches = tile.getEomPatches();
       PCCEomPatch eomPatch;
       eomPatch.isPatchInAuxVideo_ = epdu.getPatchInAuxiliaryVideoFlag();
       eomPatch.u0_                = epdu.get2dPosX();
@@ -1180,7 +1257,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext& context, size_t atgl
   tile.setTotalNumberOfEOMPoints( totalNumberOfEomPoints );
 }
 
-bool PCCDecoder::compareHashSEIMD5( std::vector<uint8_t>& encMD5, std::vector<uint8_t>& decMD5 ) {
+bool PCCDecoder::compareHashSEIMD5( std::vector<uint8_t> &encMD5, std::vector<uint8_t> &decMD5 ) {
   bool equal = true;
   for ( size_t i = 0; i < 16; i++ ) {
     if ( encMD5[i] != decMD5[i] ) {
@@ -1188,9 +1265,9 @@ bool PCCDecoder::compareHashSEIMD5( std::vector<uint8_t>& encMD5, std::vector<ui
       break;
     }
   }
-  for ( auto& e : encMD5 ) TRACE_SEI( "%02x", e );
+  for ( auto &e : encMD5 ) TRACE_SEI( "%02x", e );
   TRACE_SEI( ", " );
-  for ( auto& d : decMD5 ) TRACE_SEI( "%02x", d );
+  for ( auto &d : decMD5 ) TRACE_SEI( "%02x", d );
   return equal;
 }
 bool PCCDecoder::compareHashSEICrc( uint16_t encCrc, uint16_t decCrc ) {
@@ -1211,7 +1288,7 @@ bool PCCDecoder::compareHashSEICheckSum( uint32_t encCheckSum, uint32_t decCheck
   return equal;
 }
 
-void PCCDecoder::createHashSEI( PCCContext& context, int frameIndex, SEIDecodedAtlasInformationHash& sei ) {
+void PCCDecoder::createHashSEI( PCCContext &context, int frameIndex, SEIDecodedAtlasInformationHash &sei ) {
   bool                                           seiHashCancelFlag = sei.getCancelFlag();
   std::vector<PatchParams>                       atlasPatchParams;
   std::vector<std::vector<PatchParams>>          tilePatchParams;
@@ -1221,11 +1298,11 @@ void PCCDecoder::createHashSEI( PCCContext& context, int frameIndex, SEIDecodedA
 
   if ( !seiHashCancelFlag && sei.getDecodedHighLevelHashPresentFlag() ) {
     size_t               atlIdx     = context[frameIndex].getTile( 0 ).getAtlIndex();
-    auto&                tileHeader = context.getAtlasTileLayerList()[atlIdx].getHeader();
+    auto                &tileHeader = context.getAtlasTileLayerList()[atlIdx].getHeader();
     size_t               afpsIndex  = tileHeader.getAtlasFrameParameterSetId();
     size_t               aspsIndex  = context.getAtlasFrameParameterSet( afpsIndex ).getAtlasSequenceParameterSetId();
-    auto&                asps       = context.getAtlasSequenceParameterSet( aspsIndex );
-    auto&                afps       = context.getAtlasFrameParameterSet( afpsIndex );
+    auto                &asps       = context.getAtlasSequenceParameterSet( aspsIndex );
+    auto                &afps       = context.getAtlasFrameParameterSet( afpsIndex );
     std::vector<uint8_t> highLevelAtlasData;
     aspsCommonByteString( highLevelAtlasData, asps );
     aspsApplicationByteString( highLevelAtlasData, asps, afps );
@@ -1349,13 +1426,13 @@ void PCCDecoder::createHashSEI( PCCContext& context, int frameIndex, SEIDecodedA
     size_t numTilesInPatchFrame = context[frameIndex].getNumTilesInAtlasFrame();
     printf( "**sei** AtlasTilesHash: frame(%d) (#Tiles %zu)", frameIndex, numTilesInPatchFrame );
     for ( size_t tileIdx = 0; tileIdx < numTilesInPatchFrame; tileIdx++ ) {
-      auto&       tile     = context[frameIndex].getTile( tileIdx );
-      auto&       atlu     = context.getAtlasTileLayer( tile.getAtlIndex() );
-      auto&       ath      = atlu.getHeader();
+      auto       &tile     = context[frameIndex].getTile( tileIdx );
+      auto       &atlu     = context.getAtlasTileLayer( tile.getAtlIndex() );
+      auto       &ath      = atlu.getHeader();
       size_t      tileId   = ath.getId();
       PCCTileType tileType = ath.getType();
-      auto&       afps     = context.getAtlasFrameParameterSet( ath.getAtlasFrameParameterSetId() );
-      auto&       afti     = afps.getAtlasFrameTileInformationRbsp();
+      auto       &afps     = context.getAtlasFrameParameterSet( ath.getAtlasFrameParameterSetId() );
+      auto       &afti     = afps.getAtlasFrameTileInformationRbsp();
       if ( sei.getDecodedAtlasTilesHashPresentFlag() ) {
         std::vector<uint8_t> atlasTileData;
         for ( size_t patchIdx = 0; patchIdx < atlu.getDataUnit().getPatchCount(); patchIdx++ ) {
@@ -1430,16 +1507,16 @@ void PCCDecoder::createHashSEI( PCCContext& context, int frameIndex, SEIDecodedA
       if ( tilePatchParams[ti].size() != 0 ) tilePatchParams[ti].clear();
   }
   tilePatchParams.clear();
-  for ( auto& e : atlasB2PPatchParams ) e.clear();
+  for ( auto &e : atlasB2PPatchParams ) e.clear();
   atlasB2PPatchParams.clear();
-  for ( auto& e : tileB2PPatchParams ) {
+  for ( auto &e : tileB2PPatchParams ) {
     for ( auto d : e ) d.clear();
     e.clear();
   }
   tileB2PPatchParams.clear();
 
 #ifdef CONFORMANCE_TRACE
-  auto& temp = sei.getMD5ByteStrData();
+  auto &temp = sei.getMD5ByteStrData();
   if ( temp.size() > 0 ) {  // ajt:: An example of how to generate md5 checksum for hash SEI message - could be computed
                             // different ways!
     TRACE_HLS( "**********DECODED_ATLAS_INFORMATION_HASH_NSEI***********\n" );
@@ -1449,15 +1526,15 @@ void PCCDecoder::createHashSEI( PCCContext& context, int frameIndex, SEIDecodedA
 #endif
 }
 
-void PCCDecoder::createHlsAtlasTileLogFiles( PCCContext& context, int frameIndex ) {
+void PCCDecoder::createHlsAtlasTileLogFiles( PCCContext &context, int frameIndex ) {
   size_t atlIdx     = context[frameIndex].getTile( 0 ).getAtlIndex();
-  auto&  tileHeader = context.getAtlasTileLayerList()[atlIdx].getHeader();
-  auto&  atlu       = context.getAtlasTileLayer( atlIdx );
+  auto  &tileHeader = context.getAtlasTileLayerList()[atlIdx].getHeader();
+  auto  &atlu       = context.getAtlasTileLayer( atlIdx );
   size_t afpsIndex  = tileHeader.getAtlasFrameParameterSetId();
   size_t aspsIndex  = context.getAtlasFrameParameterSet( afpsIndex ).getAtlasSequenceParameterSetId();
-  auto&  asps       = context.getAtlasSequenceParameterSet( aspsIndex );
-  auto&  afps       = context.getAtlasFrameParameterSet( afpsIndex );
-  auto&  vps        = context.getVps();
+  auto  &asps       = context.getAtlasSequenceParameterSet( aspsIndex );
+  auto  &afps       = context.getAtlasFrameParameterSet( afpsIndex );
+  auto  &vps        = context.getVps();
 
   TRACE_HLS( "AtlasFrameIndex = %d\n", frameIndex );
   /*TRACE_HLS( "Atlas Frame Parameter Set Index = %d\n", afpsIndex );*/
@@ -1500,7 +1577,7 @@ void PCCDecoder::createHlsAtlasTileLogFiles( PCCContext& context, int frameIndex
   size_t numProjPoints = 0, numRawPoints = 0, numEomPoints = 0;
   int    atlasFrameOrderCnt = atlu.getAtlasFrmOrderCntVal();
   for ( size_t tileIdx = 0; tileIdx < numTilesInPatchFrame; tileIdx++ ) {
-    auto& tile = context[frameIndex].getTile( tileIdx );
+    auto &tile = context[frameIndex].getTile( tileIdx );
     numProjPatches += tile.getPatches().size();
     numEomPatches += tile.getEomPatches().size();
     numRawPatches += tile.getRawPointsPatches().size();
@@ -1543,13 +1620,13 @@ void PCCDecoder::createHlsAtlasTileLogFiles( PCCContext& context, int frameIndex
   // for tiles
   TRACE_TILE( "AtlasFrameIndex = %d\n", frameIndex );
   for ( size_t tileIdx = 0; tileIdx < numTilesInPatchFrame; tileIdx++ ) {
-    auto&       tile          = context[frameIndex].getTile( tileIdx );
-    auto&       atlu          = context.getAtlasTileLayer( tile.getAtlIndex() );  // ajt::why atlIdx?
-    auto&       ath           = atlu.getHeader();
+    auto       &tile          = context[frameIndex].getTile( tileIdx );
+    auto       &atlu          = context.getAtlasTileLayer( tile.getAtlIndex() );  // ajt::why atlIdx?
+    auto       &ath           = atlu.getHeader();
     size_t      tileId        = ath.getId();
     PCCTileType tileType      = ath.getType();
-    auto&       afps          = context.getAtlasFrameParameterSet( ath.getAtlasFrameParameterSetId() );
-    auto&       afti          = afps.getAtlasFrameTileInformationRbsp();
+    auto       &afps          = context.getAtlasFrameParameterSet( ath.getAtlasFrameParameterSetId() );
+    auto       &afti          = afps.getAtlasFrameTileInformationRbsp();
     size_t      topLeftColumn = afti.getTopLeftPartitionIdx( tileIdx ) % ( afti.getNumPartitionColumnsMinus1() + 1 );
     size_t      topLeftRow    = afti.getTopLeftPartitionIdx( tileIdx ) / ( afti.getNumPartitionColumnsMinus1() + 1 );
     size_t      tileOffsetX   = context[frameIndex].getPartitionPosX( topLeftColumn );
@@ -1584,29 +1661,29 @@ void PCCDecoder::createHlsAtlasTileLogFiles( PCCContext& context, int frameIndex
     }
   }
   tilePatchParams.clear();
-  for ( auto& e : atlasB2PPatchParams ) { e.clear(); }
+  for ( auto &e : atlasB2PPatchParams ) { e.clear(); }
   atlasB2PPatchParams.clear();
-  for ( auto& e : tileB2PPatchParams ) {
+  for ( auto &e : tileB2PPatchParams ) {
     for ( auto d : e ) { d.clear(); }
     e.clear();
   }
   tileB2PPatchParams.clear();
 }
 
-void PCCDecoder::setTilePartitionSizeAfti( PCCContext& context ) {  // decoder
+void PCCDecoder::setTilePartitionSizeAfti( PCCContext &context ) {  // decoder
 
   for ( size_t afpsIdx = 0; afpsIdx < context.getAtlasFrameParameterSetList().size(); afpsIdx++ ) {
-    auto&  afps             = context.getAtlasFrameParameterSet( afpsIdx );
-    auto&  asps             = context.getAtlasSequenceParameterSet( afps.getAtlasSequenceParameterSetId() );
-    auto&  afti             = afps.getAtlasFrameTileInformationRbsp();
+    auto  &afps             = context.getAtlasFrameParameterSet( afpsIdx );
+    auto  &asps             = context.getAtlasSequenceParameterSet( afps.getAtlasSequenceParameterSetId() );
+    auto  &afti             = afps.getAtlasFrameTileInformationRbsp();
     size_t frameWidth       = asps.getFrameWidth();
     size_t frameHeight      = asps.getFrameHeight();
     size_t numPartitionCols = afti.getNumPartitionColumnsMinus1() + 1;
     size_t numPartitionRows = afti.getNumPartitionRowsMinus1() + 1;
-    auto&  partitionWidth   = afti.getPartitionWidth();  // ajt::should be
-    auto&  partitionHeight  = afti.getPartitionHeight();
-    auto&  partitionPosX    = afti.getPartitionPosX();
-    auto&  partitionPosY    = afti.getPartitionPosY();
+    auto  &partitionWidth   = afti.getPartitionWidth();  // ajt::should be
+    auto  &partitionHeight  = afti.getPartitionHeight();
+    auto  &partitionPosX    = afti.getPartitionPosX();
+    auto  &partitionPosY    = afti.getPartitionPosY();
     partitionWidth.resize( numPartitionCols );
     partitionHeight.resize( numPartitionRows );
     partitionPosX.resize( numPartitionCols );
@@ -1673,11 +1750,11 @@ void PCCDecoder::setTilePartitionSizeAfti( PCCContext& context ) {  // decoder
   }  // afpsIdx
 }
 
-size_t PCCDecoder::setTileSizeAndLocation( PCCContext& context, size_t frameIndex, AtlasTileHeader& ath ) {  // decoder
+size_t PCCDecoder::setTileSizeAndLocation( PCCContext &context, size_t frameIndex, AtlasTileHeader &ath ) {  // decoder
   size_t afpsIdx   = ath.getAtlasFrameParameterSetId();
-  auto&  afps      = context.getAtlasFrameParameterSet( afpsIdx );
-  auto&  asps      = context.getAtlasSequenceParameterSet( afps.getAtlasSequenceParameterSetId() );
-  auto&  afti      = afps.getAtlasFrameTileInformationRbsp();
+  auto  &afps      = context.getAtlasFrameParameterSet( afpsIdx );
+  auto  &asps      = context.getAtlasSequenceParameterSet( afps.getAtlasSequenceParameterSetId() );
+  auto  &afti      = afps.getAtlasFrameTileInformationRbsp();
   size_t tileIndex = 0;
   printf( "setTileSizeAndLocation frameIndex = %zu \n", frameIndex );
   fflush( stdout );
@@ -1701,7 +1778,7 @@ size_t PCCDecoder::setTileSizeAndLocation( PCCContext& context, size_t frameInde
       assert( context[frameIndex].getAtlasFrameHeight() == ( asps.getFrameHeight() ) );
       assert( context[frameIndex].getNumTilesInAtlasFrame() == 1 );
     }
-    auto& tile = context[frameIndex].getTile( 0 );
+    auto &tile = context[frameIndex].getTile( 0 );
     tile.setTileIndex( tileIndex );
     tile.setLeftTopXInFrame( 0 );
     tile.setLeftTopYInFrame( 0 );
@@ -1715,7 +1792,7 @@ size_t PCCDecoder::setTileSizeAndLocation( PCCContext& context, size_t frameInde
     context[frameIndex].initNumTiles( context[frameIndex].getNumTilesInAtlasFrame() );
     for ( size_t tileId = 0; tileId <= afti.getNumTilesInAtlasFrameMinus1(); tileId++ ) {  // tileId = ath.getId()
       tileIndex   = afti.getSignalledTileIdFlag() ? afti.getTileId( tileId ) : tileId;  // ajt:: tileId vs. tileIndex?
-      auto&  tile = context[frameIndex].getTile( tileIndex );
+      auto  &tile = context[frameIndex].getTile( tileIndex );
       size_t TopLeftPartitionColumn =
           afti.getTopLeftPartitionIdx( tileIndex ) % ( afti.getNumPartitionColumnsMinus1() + 1 );
       size_t TopLeftPartitionRow =
@@ -1748,7 +1825,7 @@ size_t PCCDecoder::setTileSizeAndLocation( PCCContext& context, size_t frameInde
       assert( tile.getLeftTopXInFrame() < asps.getFrameWidth() );
       assert( tile.getLeftTopYInFrame() < asps.getFrameHeight() );
 
-      auto& atlasFrame = context[frameIndex];
+      auto &atlasFrame = context[frameIndex];
       printf( "dec:%zu frame %zu tile:(%zu,%zu), %zux%zu -> leftIdx(%zu,%zu), bottom(%zu,%zu) -> %u,%u,%u\n",
               frameIndex, tileIndex, atlasFrame.getTile( tileIndex ).getLeftTopXInFrame(),
               atlasFrame.getTile( tileIndex ).getLeftTopYInFrame(), atlasFrame.getTile( tileIndex ).getWidth(),
@@ -1770,7 +1847,7 @@ size_t PCCDecoder::setTileSizeAndLocation( PCCContext& context, size_t frameInde
             ti + 1, context[frameIndex].getAuxTileLeftTopY( ti ) + context[frameIndex].getAuxTileHeight( ti ) );
     }
     for ( size_t ti = 0; ti <= afti.getNumTilesInAtlasFrameMinus1(); ti++ ) {
-      auto& atlasFrame = context[frameIndex];
+      auto &atlasFrame = context[frameIndex];
       printf( "decAux:%zu frame %zu tile:(%zu,%zu), %zux%zu\n", frameIndex, ti, size_t( 0 ),
               atlasFrame.getAuxTileLeftTopY( ti ), atlasFrame.getAuxVideoWidth(), atlasFrame.getAuxTileHeight( ti ) );
     }
@@ -1778,9 +1855,9 @@ size_t PCCDecoder::setTileSizeAndLocation( PCCContext& context, size_t frameInde
   return tileIndex;
 }
 
-void PCCDecoder::setConsitantFourCCCode( PCCContext& context, size_t atglIndex ) {
+void PCCDecoder::setConsitantFourCCCode( PCCContext &context, size_t atglIndex ) {
   if ( context.seiIsPresentInReceivedData( NAL_PREFIX_ESEI, COMPONENT_CODEC_MAPPING, atglIndex ) ) {
-    auto* sei = static_cast<SEIComponentCodecMapping*>(
+    auto *sei = static_cast<SEIComponentCodecMapping *>(
         context.getSeiInReceivedData( NAL_PREFIX_ESEI, COMPONENT_CODEC_MAPPING, atglIndex ) );
     consitantFourCCCode_.resize( 256, std::string( "" ) );
     for ( size_t i = 0; i <= sei->getCodecMappingsCountMinus1(); i++ ) {
@@ -1792,11 +1869,11 @@ void PCCDecoder::setConsitantFourCCCode( PCCContext& context, size_t atglIndex )
   }
 }
 
-PCCCodecId PCCDecoder::getCodedCodecId( PCCContext&        context,
+PCCCodecId PCCDecoder::getCodedCodecId( PCCContext        &context,
                                         const uint8_t      codecCodecId,
-                                        const std::string& videoDecoderPath ) {
-  auto& sps = context.getVps();
-  auto& plt = sps.getProfileTierLevel();
+                                        const std::string &videoDecoderPath ) {
+  auto &sps = context.getVps();
+  auto &plt = sps.getProfileTierLevel();
   printf( "getCodedCodecId profileCodecGroupIdc = %d codecCodecId = %u \n", plt.getProfileCodecGroupIdc(),
           codecCodecId );
   fflush( stdout );
@@ -1910,4 +1987,421 @@ PCCCodecId PCCDecoder::getCodedCodecId( PCCContext&        context,
       break;
   }
   return PCCCodecId::UNKNOWN_CODEC;
+}
+
+template <typename T, size_t N>
+void PCCDecoder::unpackRegion( const PCCVideoPacked &packedVideo,
+                               PCCVideo<T, N>       &outputVideo,
+                               const PackedRegion   &region,
+                               size_t                frameCount ) {
+  size_t srcWidth  = packedVideo.getWidth();
+  size_t srcHeight = packedVideo.getHeight();
+  size_t dstWidth  = region.getPackedRegionWidth();
+  size_t dstHeight = region.getPackedRegionHeight();
+  size_t srcTop    = region.getPackedRegionTop();
+  size_t srcLeft   = region.getPackedRegionLeft();
+
+  outputVideo.resize( frameCount );
+
+  for ( size_t frameIndex = 0; frameIndex < frameCount; ++frameIndex ) {
+    auto &srcFrame = packedVideo.getFrame( frameIndex );
+    outputVideo.getFrame( frameIndex ).resize( dstWidth, dstHeight, PCCCOLORFORMAT::YUV420 );
+    auto &dstFrame = outputVideo.getFrame( frameIndex );
+
+    // Copy the region from packed video to output video
+    for ( size_t plane = 0; plane < 3; ++plane ) {
+      size_t planeScaleY = ( plane == 0 ) ? 1 : 2;
+      size_t planeScaleX = ( plane == 0 ) ? 1 : 2;
+      size_t planeTop    = srcTop / planeScaleY;
+      size_t planeLeft   = srcLeft / planeScaleX;
+      size_t planeWidth  = dstWidth / planeScaleX;
+      size_t planeHeight = dstHeight / planeScaleY;
+
+      for ( size_t v = 0; v < planeHeight; ++v ) {
+        for ( size_t u = 0; u < planeWidth; ++u ) {
+          dstFrame.getValue( plane, u, v ) = static_cast<T>( srcFrame.getValue( plane, u + planeLeft, v + planeTop ) );
+        }
+      }
+    }
+  }
+}
+
+// Explicit instantiations
+template void PCCDecoder::unpackRegion<uint8_t, 3>( const PCCVideoPacked &,
+                                                    PCCVideo<uint8_t, 3> &,
+                                                    const PackedRegion &,
+                                                    size_t );
+template void PCCDecoder::unpackRegion<uint16_t, 3>( const PCCVideoPacked &,
+                                                     PCCVideo<uint16_t, 3> &,
+                                                     const PackedRegion &,
+                                                     size_t );
+
+int PCCDecoder::ReconstructIdc3( PCCContext &context, PCCGroupOfFrames &reconstructs, int32_t atlasIndex ) {
+  size_t frameCount = context.size();
+  reconstructs.setFrameCount( frameCount );
+  auto &vps = context.getVps();
+  auto &ai  = vps.getAttributeInformation( atlasIndex );
+
+  std::cout << "generate point cloud of " << frameCount << " frames" << std::endl << std::flush;
+
+  for ( size_t frameIdx = 0; frameIdx < frameCount; frameIdx++ ) {
+    auto  athl   = context.getAtlasTileLayer( frameIdx, 0 );
+    auto  aapsId = athl.getHeader().getAtlasAdaptationParameterSetId();
+    auto  afpsId = athl.getHeader().getAtlasFrameParameterSetId();
+    auto  aspsId = context.getAtlasFrameParameterSet( afpsId ).getAtlasSequenceParameterSetId();
+    auto &asps   = context.getAtlasSequenceParameterSet( aspsId );
+
+    // Sanity check if raw pacthes are enabled
+    if ( asps.getRawPatchEnabledFlag() ) {
+      auto &pointCloud = reconstructs[frameIdx];
+      // geometry from video
+      generateRawPointsGeometryfromVideoRecGS( context, frameIdx, pointCloud );
+
+      // TODO: do that based on attribute information
+      pointCloud.addOpacities();
+      pointCloud.addSphericalHarmonics();
+      pointCloud.addScales();
+      pointCloud.addRotations();
+
+      for ( int attrIndex = 0; attrIndex < ai.getAttributeCount(); attrIndex++ ) {
+        int attributeDimensionPartitions = ai.getAttributeDimensionPartitionsMinus1( attrIndex ) + 1;
+        for ( int attrPartitionIndex = 0; attrPartitionIndex < attributeDimensionPartitions; attrPartitionIndex++ ) {
+          std::cout << "generateRawPointsAttributefromVideo attrIndex = " << attrIndex
+                    << " attrPartitionIndex = " << attrPartitionIndex << "\n"
+                    << std::endl
+                    << std::flush;
+          generateRawPointsAttributefromVideoRecGS( context, frameIdx, attrIndex, attrPartitionIndex, pointCloud );
+        }
+      }
+
+      PCCAdaptationParameters adaptationParams;
+      auto                   &aaps                    = context.getAtlasAdaptationParameterSet( aapsId );
+      auto                   &ext                     = aaps.getAapsVpccGsExtension();
+      bool                    addAdaptationParameters = false;
+      if ( ext.getDequantizationPresentFlag() ) {
+        addAdaptationParameters = true;
+        auto &dequant           = ext.getGsDequantization();
+
+        if ( dequant.getDequantizationType() == 1 ) {
+          adaptationParams.enablePositionQuantization_ = true;
+          adaptationParams.enableOpacityQuantization_  = dequant.getOpacityPresentFlag();
+          adaptationParams.enableShQuantization_       = dequant.getShPresentFlag();
+          adaptationParams.enableScaleQuantization_    = dequant.getScalePresentFlag();
+          adaptationParams.enableRotationQuantization_ = dequant.getRotationPresentFlag();
+
+          if ( adaptationParams.enablePositionQuantization_ ) {
+            for ( size_t i = 0; i < 3; i++ ) {
+              adaptationParams.computedPositionMin_[i] = dequant.getMinPosition( i );
+              adaptationParams.computedPositionMax_[i] = dequant.getMaxPosition( i );
+            }
+          }
+
+          if ( adaptationParams.enableOpacityQuantization_ ) {
+            adaptationParams.computedOpacityMin_ = dequant.getMinOpacity();
+            adaptationParams.computedOpacityMax_ = dequant.getMaxOpacity();
+          }
+
+          if ( adaptationParams.enableShQuantization_ ) {
+            adaptationParams.shCoefficientCount_ = dequant.getShNumLvl();
+            for ( size_t i = 0; i < adaptationParams.shCoefficientCount_; i++ ) {
+              for ( size_t j = 0; j < 3; j++ ) {
+                adaptationParams.computedShMin_[i][j] = dequant.getMinSh( i, j );
+                adaptationParams.computedShMax_[i][j] = dequant.getMaxSh( i, j );
+
+                uint32_t M = dequant.getNumQuantRegionsMinus1( i, j );
+                adaptationParams.shNumRegionsMinus1_.push_back( M );
+                adaptationParams.shNumBitsForTransitionPoint_.push_back( dequant.getNumBitsForTransitionPoint( i, j ) );
+                if ( M > 0 ) {
+                  adaptationParams.enableShNonUniformQuantization_ = true;
+                  for ( uint32_t m = 0; m < M; m++ ) {
+                    adaptationParams.shTransitionPoints_.push_back( dequant.getQuantRegionTransitionPoint( i, j, m ) );
+                  }
+                  for ( uint32_t m = 0; m < M + 1; m++ ) {
+                    adaptationParams.shStepSizes_.push_back( dequant.getRegionStepSize( i, j, m ) );
+                  }
+                }
+              }
+            }
+          }
+
+          if ( adaptationParams.enableScaleQuantization_ ) {
+            for ( size_t i = 0; i < 3; i++ ) {
+              adaptationParams.computedScaleMin_[i] = dequant.getMinScale( i );
+              adaptationParams.computedScaleMax_[i] = dequant.getMaxScale( i );
+            }
+          }
+
+          if ( adaptationParams.enableRotationQuantization_ ) {
+            for ( size_t i = 0; i < 4; i++ ) {
+              adaptationParams.computedRotationMin_[i] = dequant.getMinRotation( i );
+              adaptationParams.computedRotationMax_[i] = dequant.getMaxRotation( i );
+            }
+          }
+        }
+      }
+      if ( ext.getShPropertyPresentFlag() ) {
+        auto &shProp                    = ext.getGsShProperty();
+        adaptationParams.shMappingMode_ = shProp.getShMappingMethod();
+
+        if ( ext.getTransform2DPresentFlag() ) {
+          addAdaptationParameters                     = true;
+          adaptationParams.gsdTransform2dPresentFlag_ = true;
+          auto &tr2d                                  = ext.getGs2DTransform();
+          int   numGroups                             = tr2d.getTrRowNumGroups();
+          for ( int i = 0; i < numGroups; ++i ) {
+            int              size = tr2d.getRowTrSizeMinus1( i ) + 1;
+            std::vector<int> group( size );
+            for ( int j = 0; j < size; ++j ) { group[j] = tr2d.getTrRowGroupIdx( i, j ); }
+            adaptationParams.shTrGrpRow_.push_back( group );
+            adaptationParams.shKltFlag_.push_back( tr2d.getKltFlag( i ) );
+            adaptationParams.shTrTypeRow_.push_back( tr2d.getTrRowType( i ) );
+
+            if ( tr2d.getKltFlag( i ) ) {
+              PCCAdaptationParameters::PCCKltParameters klt;
+              klt.eigvec.resize( 3 * size, std::vector<double>( 3 * size ) );
+              klt.mean.resize( 3 * size );
+              klt.sigma.resize( 3 * size );
+              for ( int m = 0; m < 3 * size; m++ ) {
+                for ( int n = 0; n < 3 * size; n++ ) { klt.eigvec[m][n] = tr2d.getKltCoeff( i, m, n ); }
+                klt.sigma[m] = tr2d.getKltStdDev( i, m );
+                klt.mean[m]  = tr2d.getKltMean( i, m );
+              }
+              adaptationParams.shKltParams_.push_back( klt );
+            }
+          }
+          for ( int i = 0; i < 16; ++i ) { adaptationParams.shTrTypeCol_.push_back( tr2d.getTrColType( i ) ); }
+        }
+      }
+
+      if ( addAdaptationParameters ) adaptationParams_.push_back( adaptationParams );
+    }
+  }  // frameIdx
+
+  return 0;
+}
+
+int PCCDecoder::ReconstructIdc0Idc1Idc2Idc255( PCCContext       &context,
+                                               PCCGroupOfFrames &reconstructs,
+                                               int32_t           atlasIndex ) {
+  size_t frameCount = context.size();
+  reconstructs.setFrameCount( frameCount );
+  auto &sps  = context.getVps();
+  auto &ai   = sps.getAttributeInformation( atlasIndex );
+  auto &oi   = sps.getOccupancyInformation( atlasIndex );
+  auto &asps = context.getAtlasSequenceParameterSet( 0 );
+  // recreating the prediction list per attribute (either the attribute is coded absolute, or follows the geometry)
+  // see contribution m52529
+  std::vector<std::vector<bool>> absoluteT1List;
+  absoluteT1List.resize( ai.getAttributeCount() );
+  for ( int attrIdx = 0; attrIdx < ai.getAttributeCount(); ++attrIdx ) {
+    absoluteT1List[attrIdx].resize( sps.getMapCountMinus1( atlasIndex ) + 1 );
+    if ( ai.getAttributeMapAbsoluteCodingPersistenceFlag( attrIdx ) != 0u ) {
+      for ( uint32_t mapIdx = 0; mapIdx < sps.getMapCountMinus1( atlasIndex ) + 1; ++mapIdx ) {
+        absoluteT1List[attrIdx][mapIdx] = true;
+      }
+    } else {
+      // follow geometry
+      for ( uint32_t mapIdx = 0; mapIdx < sps.getMapCountMinus1( atlasIndex ) + 1; ++mapIdx ) {
+        absoluteT1List[attrIdx][mapIdx] = sps.getMapAbsoluteCodingEnableFlag( atlasIndex, mapIdx );
+      }
+    }
+  }
+  printf( "generate point cloud of %zu frames \n", frameCount );
+  fflush( stdout );
+  for ( size_t frameIdx = 0; frameIdx < frameCount; frameIdx++ ) {
+    // All video have been decoded, start reconsctruction processes
+    if ( asps.getRawPatchEnabledFlag() && asps.getAuxiliaryVideoEnabledFlag() &&
+         sps.getAuxiliaryVideoPresentFlag( atlasIndex ) ) {
+      for ( int attrIndex = 0; attrIndex < ai.getAttributeCount(); attrIndex++ ) {
+        int attributeDimensionPartitions = ai.getAttributeDimensionPartitionsMinus1( attrIndex ) + 1;
+        for ( int attrPartitionIndex = 0; attrPartitionIndex < attributeDimensionPartitions; attrPartitionIndex++ ) {
+          printf( "generateRawPointsAttributefromVideo attrIndex = %d attrPartitionIndex = %d \n", attrIndex,
+                  attrPartitionIndex );
+          fflush( stdout );
+          generateRawPointsAttributefromVideo( context, frameIdx );
+        }
+      }
+    }  // getAuxiliaryVideoEnabledFlag()
+
+    GeneratePointCloudParameters gpcParams;
+    GeneratePointCloudParameters ppSEIParams;
+
+    auto                 &reconstruct = reconstructs[frameIdx];
+    std::vector<uint32_t> partition;
+    // Decode point cloud
+    printf( "call generatePointCloud() \n" );
+    std::vector<size_t> accTilePointCount;
+    accTilePointCount.resize( ai.getAttributeCount(), 0 );
+    for ( size_t tileIdx = 0; tileIdx < context[frameIdx].getNumTilesInAtlasFrame(); tileIdx++ ) {
+      auto atglIndex = context.getAtlasHighLevelSyntax().getAtlasTileLayerIndex( frameIdx, tileIdx );
+      setGeneratePointCloudParameters( gpcParams, context, atglIndex );
+      setPostProcessingSeiParameters( ppSEIParams, context, atglIndex );
+      // std::cout << "Processing frame " << frameIdx << " tile " << tileIdx << std::endl;
+      auto &tile = context[frameIdx].getTile( tileIdx );
+      if ( !ppSEIParams.pbfEnableFlag_ ) {
+        generateOccupancyMap( tile, context.getVideoOccupancyMap().getFrame( tile.getFrameIndex() ),
+                              context.getOccupancyPrecision(), oi.getLossyOccupancyCompressionThreshold(),
+                              asps.getEomPatchEnabledFlag() );
+      }
+      printf( "call generatePointCloud() \n" );
+      PCCPointSet3 tileReconstrct;
+      generatePointCloud( tileReconstrct, context, frameIdx, tileIdx, gpcParams, partition, true );
+      reconstruct.appendPointSet( tileReconstrct );
+      if ( context[frameIdx].getNumTilesInAtlasFrame() > 1 )
+        context[frameIdx].getTitleFrameContext().appendPointToPixel(
+            context[frameIdx].getTile( tileIdx ).getPointToPixel() );
+      if ( ai.getAttributeCount() > 0 ) {
+        reconstruct.addColors();
+        reconstruct.addColors16bit();
+        for ( size_t attIdx = 0; attIdx < ai.getAttributeCount(); attIdx++ ) {
+          printf( "start colorPointCloud attIdx = %zu / %u ] \n", attIdx, ai.getAttributeCount() );
+          fflush( stdout );
+          size_t updatedPointCount  = colorPointCloud( reconstruct, context, tile, absoluteT1List[attIdx],
+                                                       sps.getMultipleMapStreamsPresentFlag( atlasIndex ),
+                                                       ai.getAttributeCount(), accTilePointCount[attIdx], gpcParams );
+          accTilePointCount[attIdx] = updatedPointCount;
+        }
+      }
+    }  // tile
+
+#ifdef CONFORMANCE_TRACE
+    size_t numProjPoints = 0, numRawPoints = 0, numEomPoints = 0;
+    for ( size_t tileIdx = 0; tileIdx < context[frameIdx].getNumTilesInAtlasFrame(); tileIdx++ ) {
+      auto &tile = context[frameIdx].getTile( tileIdx );
+      numProjPoints += tile.getTotalNumberOfRegularPoints();
+      numEomPoints += tile.getTotalNumberOfEOMPoints();
+      numRawPoints += tile.getTotalNumberOfRawPoints();
+    }  // tile
+    if ( ai.getAttributeCount() == 0 ) {
+      reconstructs[frameIdx].removeColors();
+      reconstructs[frameIdx].removeColors16bit();
+    } else {
+      bool isAttributes444 = context.getVideoAttributesMultiple( 0 ).getColorFormat() == PCCCOLORFORMAT::RGB444;
+      if ( !isAttributes444 ) {  // lossy: convert 16-bit yuv444 to 8-bit RGB444
+        reconstructs[frameIdx].convertYUV16ToRGB8();
+      } else {
+        reconstructs[frameIdx].copyRGB16ToRGB8();
+      }
+    }
+    TRACE_PCFRAME( "AtlasFrameIndex = %d\n", frameIdx );
+    TRACE_PCFRAME( "PointCloudFrameOrderCntVal = %d, NumProjPoints = %zu, NumRawPoints = %zu, NumEomPoints = %zu,",
+                   frameIdx, numProjPoints, numRawPoints, numEomPoints );
+    auto checksumFrame = reconstructs[frameIdx].computeChecksum( true );
+    TRACE_PCFRAME( " MD5 checksum = " );
+    for ( auto &c : checksumFrame ) { TRACE_PCFRAME( "%02x", c ); }
+    TRACE_PCFRAME( "\n" );
+#endif
+
+    // Post-Processing
+    TRACE_PATCH( "Post-Processing: postprocessSmoothing = %zu pbfEnableFlag = %d \n", params_.attrTransferFilterType_,
+                 ppSEIParams.pbfEnableFlag_ );
+    if ( params_.applyGeoSmoothingType_ != 0 && ppSEIParams.flagGeometrySmoothing_ ) {
+      PCCPointSet3 tempFrameBuffer = reconstruct;
+      if ( ppSEIParams.gridSmoothing_ ) {
+        smoothPointCloudPostprocess( reconstruct, params_.colorTransform_, ppSEIParams, partition );
+      }
+      if ( ai.getAttributeCount() > 0 ) {
+        bool isAttributes444 = context.getVideoAttributesMultiple( 0 ).getColorFormat() == PCCCOLORFORMAT::RGB444;
+        printf( "isAttributes444 = %d Format = %d \n", isAttributes444,
+                context.getVideoAttributesMultiple( 0 ).getColorFormat() );
+        fflush( stdout );
+
+        if ( !ppSEIParams.pbfEnableFlag_ ) {
+          // These are different attribute transfer functions
+          if ( params_.attrTransferFilterType_ == 1 || params_.attrTransferFilterType_ == 5 ) {
+            TRACE_PATCH( " transferColors16bitBP \n" );
+            tempFrameBuffer.transferColors16bitBP( reconstruct,                      // target
+                                                   params_.attrTransferFilterType_,  // filterType
+                                                   int32_t( 0 ),                     // searchRange
+                                                   isAttributes444,                  // losslessAttribute
+                                                   8,                                // numNeighborsColorTransferFwd
+                                                   1,                                // numNeighborsColorTransferBwd
+                                                   true,                             // useDistWeightedAverageFwd
+                                                   true,                             // useDistWeightedAverageBwd
+                                                   true,        // skipAvgIfIdenticalSourcePointPresentFwd
+                                                   false,       // skipAvgIfIdenticalSourcePointPresentBwd
+                                                   4,           // distOffsetFwd
+                                                   4,           // distOffsetBwd
+                                                   1000,        // maxGeometryDist2Fwd
+                                                   1000,        // maxGeometryDist2Bwd
+                                                   1000 * 256,  // maxColorDist2Fwd
+                                                   1000 * 256   // maxColorDist2Bwd
+            );
+          } else if ( params_.attrTransferFilterType_ == 2 ) {
+            TRACE_PATCH( " transferColorWeight \n" );
+            tempFrameBuffer.transferColorWeight( reconstruct, 0.1 );
+          } else if ( params_.attrTransferFilterType_ == 3 ) {
+            TRACE_PATCH( " transferColorsFilter3 \n" );
+            tempFrameBuffer.transferColorsFilter3( reconstruct, int32_t( 0 ), isAttributes444 );
+          } else if ( params_.attrTransferFilterType_ == 7 || params_.attrTransferFilterType_ == 9 ) {
+            TRACE_PATCH( " transferColorsFilter3 \n" );
+            tempFrameBuffer.transferColorsBackward16bitBP( reconstruct,                      //  target
+                                                           params_.attrTransferFilterType_,  //  filterType
+                                                           int32_t( 0 ),                     //  searchRange
+                                                           isAttributes444,                  //  losslessAttribute
+                                                           8,           //  numNeighborsColorTransferFwd
+                                                           1,           //  numNeighborsColorTransferBwd
+                                                           true,        //  useDistWeightedAverageFwd
+                                                           true,        //  useDistWeightedAverageBwd
+                                                           true,        //  skipAvgIfIdenticalSourcePointPresentFwd
+                                                           false,       //  skipAvgIfIdenticalSourcePointPresentBwd
+                                                           4,           //  distOffsetFwd
+                                                           4,           //  distOffsetBwd
+                                                           1000,        //  maxGeometryDist2Fwd
+                                                           1000,        //  maxGeometryDist2Bwd
+                                                           1000 * 256,  //  maxColorDist2Fwd
+                                                           1000 * 256   //  maxColorDist2Bwd
+            );
+          }
+        }
+      }  // if ( ai.getAttributeCount() > 0 )
+    }
+    if ( ai.getAttributeCount() > 0 ) {
+      if ( params_.applyAttrSmoothingType_ != 0 && ppSEIParams.flagColorSmoothing_ ) {
+        TRACE_PATCH( " colorSmoothing \n" );
+        colorSmoothing( reconstruct, params_.colorTransform_, ppSEIParams );
+      }
+      if ( context.getVideoAttributesMultiple( 0 ).getColorFormat() !=
+           PCCCOLORFORMAT::RGB444 ) {  // lossy: convert 16-bit yuv444 to 8-bit RGB444
+        TRACE_PATCH( "lossy: convert 16-bit yuv444 to 8-bit RGB444 (convertYUV16ToRGB8) \n" );
+        reconstruct.convertYUV16ToRGB8();
+      } else {  // lossless: copy 16-bit RGB to 8-bit RGB
+        TRACE_PATCH( "lossy: lossless: copy 16-bit RGB to 8-bit RGB (copyRGB16ToRGB8) \n" );
+        reconstruct.copyRGB16ToRGB8();
+      }
+    }
+    /*auto tmp = reconstruct.computeChecksum();
+    TRACE_PCFRAME( " MD5 checksum = " );
+    for ( auto& c : tmp ) { TRACE_PCFRAME( "%02x", c ); }
+    TRACE_PCFRAME( "\n" );*/
+    TRACE_RECFRAME( "AtlasFrameIndex = %d\n", frameIdx );
+    auto checksum = reconstructs[frameIdx].computeChecksum( true );
+    TRACE_RECFRAME( " MD5 checksum = " );
+    for ( auto &c : checksum ) { TRACE_RECFRAME( "%02x", c ); }
+    TRACE_RECFRAME( "\n" );
+  }
+  return 0;
+}
+
+void PCCDecoder::setPointLocalReconstruction( PCCContext &context ) {
+  auto &asps = context.getAtlasSequenceParameterSet( 0 );
+  TRACE_PATCH( "PLR = %d \n", asps.getPLREnabledFlag() );
+  PointLocalReconstructionMode mode = { false, false, 0, 1 };
+  if ( asps.getPLREnabledFlag() ) {
+    auto &plri = asps.getPLRInformation( 0 );
+    for ( size_t i = 0; i < plri.getNumberOfModesMinus1() + 1; i++ ) {
+      mode.interpolate_ = plri.getInterpolateFlag( i );
+      mode.filling_     = plri.getFillingFlag( i );
+      mode.minD1_       = plri.getMinimumDepth( i );
+      mode.neighbor_    = plri.getNeighbourMinus1( i ) + 1;
+      context.addPointLocalReconstructionMode( mode );
+    }
+#ifdef CODEC_TRACE
+    for ( size_t i = 0; i < context.getPointLocalReconstructionModeNumber(); i++ ) {
+      auto &mode = context.getPointLocalReconstructionMode( i );
+      TRACE_PATCH( "Plrm[%zu]: Inter = %d Fill = %d minD1 = %u neighbor = %u \n", i, mode.interpolate_, mode.filling_,
+                   mode.minD1_, mode.neighbor_ );
+    }
+#endif
+  }
 }

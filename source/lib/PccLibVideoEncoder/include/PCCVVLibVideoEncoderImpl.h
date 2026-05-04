@@ -64,26 +64,26 @@ class PCCVVLibVideoEncoderImpl {
  public:
   PCCVVLibVideoEncoderImpl();
   ~PCCVVLibVideoEncoderImpl();
-  void encode( PCCVideo<T, 3>&    videoSrc,
+  void encode( PCCVideo<T, 3>    &videoSrc,
                std::string        arguments,
-               PCCVideoBitstream& bitstream,
-               PCCVideo<T, 3>&    videoRec );
+               PCCVideoBitstream &bitstream,
+               PCCVideo<T, 3>    &videoRec );
 
  private:
-  bool        parseCfg( int argc, char* argv[] );
-  int         encode( PCCVideo<T, 3>& videoSrc, std::ostream& bitstream, PCCVideo<T, 3>& videoRec );
-  void        outputAU( const vvencAccessUnit& au, std::ostream& bitstream );
-  static void outputYuv( void*, vvencYUVBuffer* );
-  int         getSrcFrame( PCCVideo<T, 3>& videoSrc, vvencYUVBuffer& pic, int frameIndex );
-  static int  storeRecFrame( const vvencYUVBuffer* pcFrame, vvenc_config& config, PCCVideo<T, 3>& videoRec );
+  bool        parseCfg( int argc, char *argv[] );
+  int         encode( PCCVideo<T, 3> &videoSrc, std::ostream &bitstream, PCCVideo<T, 3> &videoRec );
+  void        outputAU( const vvencAccessUnit &au, std::ostream &bitstream );
+  static void outputYuv( void *, vvencYUVBuffer * );
+  int         getSrcFrame( PCCVideo<T, 3> &videoSrc, vvencYUVBuffer &pic, int frameIndex );
+  static int  storeRecFrame( const vvencYUVBuffer *pcFrame, vvenc_config &config, PCCVideo<T, 3> &videoRec );
   void        printRateSummary( int framesRcvd );
   void        printChromaFormat();
-  static void changePreset( vvenc_config* c, vvencPresetMode preset ) {
+  static void changePreset( vvenc_config *c, vvencPresetMode preset ) {
     if ( c ) { vvenc_init_preset( c, (vvencPresetMode)preset ); }
   }
-  apputils::VVEncAppCfg m_cEncAppCfg;  
+  apputils::VVEncAppCfg m_cEncAppCfg;
   vvenc_config          m_vvenc_config;
-  vvencEncoder*         m_encCtx; 
+  vvencEncoder         *m_encCtx;
   unsigned              m_essentialBytes;
   unsigned              m_totalBytes;
 };

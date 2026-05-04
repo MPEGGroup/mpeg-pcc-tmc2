@@ -45,11 +45,11 @@ template <typename T>
 PCCHMLibVideoDecoder<T>::~PCCHMLibVideoDecoder() {}
 
 template <typename T>
-void PCCHMLibVideoDecoder<T>::decode( PCCVideoBitstream& bitstream,
-                                      PCCVideo<T, 3>&    video,
+void PCCHMLibVideoDecoder<T>::decode( PCCVideoBitstream &bitstream,
+                                      PCCVideo<T, 3>    &video,
                                       size_t             outputBitDepth,
-                                      const std::string& decoderPath,
-                                      const std::string& fileName ) {
+                                      const std::string &decoderPath,
+                                      const std::string &fileName ) {
   PCCHMLibVideoDecoderImpl<T> decoder;
   decoder.decode( bitstream, outputBitDepth, video );
 }

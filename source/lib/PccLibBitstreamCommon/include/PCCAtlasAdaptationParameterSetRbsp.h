@@ -44,27 +44,42 @@ class AtlasAdaptationParameterSetRbsp {
       atlasAdaptationParameterSetId_( 0 ),
       extensionFlag_( false ),
       vpccExtensionFlag_( false ),
-      extension7Bits_( 0 ){};
-  ~AtlasAdaptationParameterSetRbsp(){};
-  AtlasAdaptationParameterSetRbsp& operator=( const AtlasAdaptationParameterSetRbsp& ) = default;
+      vpccGsExtensionFlag_( false ),
+      extension6Bits_( 0 ) {};
+  ~AtlasAdaptationParameterSetRbsp() {};
+  AtlasAdaptationParameterSetRbsp &operator=( const AtlasAdaptationParameterSetRbsp & ) = default;
+  void                             copyFrom( AtlasAdaptationParameterSetRbsp &refAaps ) {
+    atlasAdaptationParameterSetId_ = refAaps.getAtlasAdaptationParameterSetId();
+    vpccExtensionFlag_             = refAaps.getVpccExtensionFlag();
+    vpccGsExtensionFlag_           = refAaps.getVpccGsExtensionFlag();
+    extensionFlag_                 = refAaps.getExtensionFlag();
+    extension6Bits_                = refAaps.getExtension6Bits();
+    aapsVpccExtension_             = refAaps.getAapsVpccExtension();
+    aapsVpccGsExtension_           = refAaps.getAapsVpccGsExtension();
+  }
 
   uint8_t getAtlasAdaptationParameterSetId() { return atlasAdaptationParameterSetId_; }
   bool    getExtensionFlag() { return extensionFlag_; }
   bool    getVpccExtensionFlag() { return vpccExtensionFlag_; }
-  bool    getExtension7Bits() { return extension7Bits_; }
+  bool    getVpccGsExtensionFlag() { return vpccGsExtensionFlag_; }
+  bool    getExtension6Bits() { return extension6Bits_; }
 
-  void               setAtlasAdaptationParameterSetId( uint8_t value ) { atlasAdaptationParameterSetId_ = value; }
-  void               setExtensionFlag( bool value ) { extensionFlag_ = value; }
-  void               setVpccExtensionFlag( bool value ) { vpccExtensionFlag_ = value; }
-  void               setExtension7Bits( bool value ) { extension7Bits_ = value; }
-  AapsVpccExtension& getAapsVpccExtension() { return aapsVpccExtension_; }
+  void                 setAtlasAdaptationParameterSetId( uint8_t value ) { atlasAdaptationParameterSetId_ = value; }
+  void                 setExtensionFlag( bool value ) { extensionFlag_ = value; }
+  void                 setVpccExtensionFlag( bool value ) { vpccExtensionFlag_ = value; }
+  void                 setVpccGsExtensionFlag( bool value ) { vpccGsExtensionFlag_ = value; }
+  void                 setExtension6Bits( bool value ) { extension6Bits_ = value; }
+  AapsVpccExtension   &getAapsVpccExtension() { return aapsVpccExtension_; }
+  AapsVpccGsExtension &getAapsVpccGsExtension() { return aapsVpccGsExtension_; }
 
  private:
-  uint8_t           atlasAdaptationParameterSetId_;
-  bool              extensionFlag_;
-  bool              vpccExtensionFlag_;
-  uint8_t           extension7Bits_;
-  AapsVpccExtension aapsVpccExtension_;
+  uint8_t             atlasAdaptationParameterSetId_;
+  bool                extensionFlag_;
+  bool                vpccExtensionFlag_;
+  bool                vpccGsExtensionFlag_;
+  uint8_t             extension6Bits_;
+  AapsVpccExtension   aapsVpccExtension_;
+  AapsVpccGsExtension aapsVpccGsExtension_;
 };
 
 };  // namespace pcc

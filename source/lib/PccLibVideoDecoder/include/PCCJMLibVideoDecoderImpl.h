@@ -49,11 +49,11 @@ class PCCJMLibVideoDecoderImpl {
 
   ~PCCJMLibVideoDecoderImpl();
 
-  void decode( PCCVideoBitstream& bitstream,
-               PCCVideo<T, 3>&    video,
+  void decode( PCCVideoBitstream &bitstream,
+               PCCVideo<T, 3>    &video,
                size_t             outputBitDepth,
-               const std::string& decoderPath,
-               const std::string& fileName );
+               const std::string &decoderPath,
+               const std::string &fileName );
 };
 
 };  // namespace pcc

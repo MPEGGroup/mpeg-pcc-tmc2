@@ -54,7 +54,7 @@ class RawPatchDataUnit {
       frameIndex_( 0 ),
       tileOrder_( 0 ) {}
   ~RawPatchDataUnit() {}
-  RawPatchDataUnit& operator=( const RawPatchDataUnit& ) = default;
+  RawPatchDataUnit &operator=( const RawPatchDataUnit & ) = default;
 
   bool     getPatchInAuxiliaryVideoFlag() { return patchInAuxiliaryVideoFlag_; }
   size_t   get2dPosX() { return pos2dX_; }

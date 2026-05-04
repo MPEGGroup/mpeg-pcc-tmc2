@@ -44,15 +44,15 @@ class SampleStreamV3CUnit {
  public:
   SampleStreamV3CUnit() : ssvhUnitSizePrecisionBytesMinus1_( 0 ) {}
   ~SampleStreamV3CUnit() { v3cUnits_.clear(); }
-  V3CUnit& addV3CUnit() {
+  V3CUnit &addV3CUnit() {
     v3cUnits_.resize( v3cUnits_.size() + 1 );
     return v3cUnits_.back();
   }
   void                  popFront() { v3cUnits_.erase( v3cUnits_.begin(), v3cUnits_.begin() + 1 ); }
-  V3CUnit&              front() { return *( v3cUnits_.begin() ); }
-  std::vector<V3CUnit>& getV3CUnit() { return v3cUnits_; }
+  V3CUnit              &front() { return *( v3cUnits_.begin() ); }
+  std::vector<V3CUnit> &getV3CUnit() { return v3cUnits_; }
   size_t                getV3CUnitCount() { return v3cUnits_.size(); }
-  V3CUnit&              getLastV3CUnit() { return v3cUnits_.back(); }
+  V3CUnit              &getLastV3CUnit() { return v3cUnits_.back(); }
   uint32_t              getSsvhUnitSizePrecisionBytesMinus1() { return ssvhUnitSizePrecisionBytesMinus1_; }
 
   void setSsvhUnitSizePrecisionBytesMinus1( uint32_t value ) { ssvhUnitSizePrecisionBytesMinus1_ = value; }

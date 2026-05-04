@@ -73,10 +73,10 @@ class PCCVirtualVideoEncoder {
   static PCCCodecId                                 getDefaultCodecId();
   static bool                                       checkCodecId( PCCCodecId codecId );
 
-  virtual void encode( PCCVideo<T, 3>&            videoSrc,
-                       PCCVideoEncoderParameters& params,
-                       PCCVideoBitstream&         bitstream,
-                       PCCVideo<T, 3>&            videoRec ) = 0;
+  virtual void encode( PCCVideo<T, 3>            &videoSrc,
+                       PCCVideoEncoderParameters &params,
+                       PCCVideoBitstream         &bitstream,
+                       PCCVideo<T, 3>            &videoRec ) = 0;
 };
 
 };  // namespace pcc

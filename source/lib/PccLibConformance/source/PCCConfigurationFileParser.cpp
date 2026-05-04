@@ -35,7 +35,7 @@
 using namespace std;
 using namespace pcc;
 
-ostream& PCCErrorMessage::error( const std::string& errMessage, const std::string& where ) {
+ostream &PCCErrorMessage::error( const std::string &errMessage, const std::string &where ) {
   is_errored_ = true;
   if ( !where.empty() ) {
     cerr << "\n\nError: " << errMessage << "\n" << where << endl;
@@ -45,7 +45,7 @@ ostream& PCCErrorMessage::error( const std::string& errMessage, const std::strin
   return cerr;
 }
 
-std::ostream& PCCErrorMessage::warn( const std::string& warningMessage, const string& where ) {
+std::ostream &PCCErrorMessage::warn( const std::string &warningMessage, const string &where ) {
   if ( !where.empty() ) {
     cerr << " Warning:" << warningMessage << "\n" << where << endl;
   } else {
@@ -54,11 +54,11 @@ std::ostream& PCCErrorMessage::warn( const std::string& warningMessage, const st
   return cerr;
 }
 
-void PCCConfigurationFileParser::scanLine( std::string& line, KeyValMaps& key_val_maps ) {
+void PCCConfigurationFileParser::scanLine( std::string &line, KeyValMaps &key_val_maps ) {
   // Ignore comment lines starting with "**********"
   if ( line.rfind( "**********", 0 ) == 0 ) { return; }
   std::map<std::string, std::string> key_val_map;
-  std::string                        spKey[3] = {"Occupancy", "Geometry", "Attribute"};
+  std::string                        spKey[3] = { "Occupancy", "Geometry", "Attribute" };
   if ( line.find( "#" ) != std::string::npos ) { return; }  // skip comment line
   size_t start = line.find_first_not_of( " \t\n\r" );
   if ( start == string::npos ) { return; }  // blank line
@@ -70,7 +70,7 @@ void PCCConfigurationFileParser::scanLine( std::string& line, KeyValMaps& key_va
     if ( curPos != std::string::npos ) {
       keyName = line.substr( 0, curPos );
     } else {
-      for ( auto& e : spKey ) {
+      for ( auto &e : spKey ) {
         size_t found = line.find( e );
         if ( found != std::string::npos ) {
           key_val_map.insert( std::pair<std::string, std::string>( e, "" ) );
@@ -97,7 +97,7 @@ void PCCConfigurationFileParser::scanLine( std::string& line, KeyValMaps& key_va
   key_val_maps.push_back( key_val_map );
 }
 
-void PCCConfigurationFileParser::scanStream( std::istream& in, KeyValMaps& key_val_maps ) {
+void PCCConfigurationFileParser::scanStream( std::istream &in, KeyValMaps &key_val_maps ) {
   do {
     linenum_++;
     std::string line;
@@ -106,7 +106,7 @@ void PCCConfigurationFileParser::scanStream( std::istream& in, KeyValMaps& key_v
   } while ( !!in );
 }
 
-bool PCCConfigurationFileParser::parseFile( std::string& fileName, KeyValMaps& key_val_maps ) {
+bool PCCConfigurationFileParser::parseFile( std::string &fileName, KeyValMaps &key_val_maps ) {
   name_    = fileName;
   linenum_ = 0;
   std::ifstream cfrStream( name_.c_str(), std::ifstream::in );
@@ -118,7 +118,7 @@ bool PCCConfigurationFileParser::parseFile( std::string& fileName, KeyValMaps& k
   return true;
 }
 
-bool PCCConfigurationFileParser::validKey( std::string& name ) {
+bool PCCConfigurationFileParser::validKey( std::string &name ) {
   bool found = false;
   for ( auto key : keyList_ ) {
     if ( !name.compare( key ) ) { found = true; }

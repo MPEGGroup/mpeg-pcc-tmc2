@@ -49,9 +49,6 @@ AllowShortBlocksOnASingleLine: true
 AllowShortCaseLabelsOnASingleLine: true
 AllowShortFunctionsOnASingleLine: true
 SpacesInParentheses: true
-ConstructorInitializerAllOnOneLineOrOnePerLine: false
-DerivePointerAlignment: false
-PointerAlignment: Left
 IndentFunctionDeclarationAfterType: true
 BreakConstructorInitializers: AfterColon
 ConstructorInitializerAllOnOneLineOrOnePerLine: true

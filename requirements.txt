@@ -1,0 +1,11 @@
+black==26.3.1
+clang-format==22.1.1
+clang-tidy==22.1.0
+cmake==3.31.10
+cmake-format==0.6.13
+ImageIO==2.37.3
+mypy==1.19.1
+numpy==2.2.6
+openpyxl==3.1.5
+types-openpyxl==3.1.5.20260316
+vulture==2.15

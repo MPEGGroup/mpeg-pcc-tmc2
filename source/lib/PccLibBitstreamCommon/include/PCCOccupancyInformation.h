@@ -46,7 +46,7 @@ class OccupancyInformation {
       Occupancy2DBitdepthMinus1_( 10 ),
       occupancyMSBAlignFlag_( false ) {}
   ~OccupancyInformation() {}
-  OccupancyInformation& operator=( const OccupancyInformation& ) = default;
+  OccupancyInformation &operator=( const OccupancyInformation & ) = default;
   void                  init( uint8_t codecId, uint8_t threshold, uint8_t nominal2DBitdepth, bool msbAlignFlag ) {
     occupancyCodecId_                   = codecId;
     LossyOccupancyCompressionThreshold_ = threshold;

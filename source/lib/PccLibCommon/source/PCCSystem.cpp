@@ -58,7 +58,7 @@ extern hundredns g_cumulative_time_children;
 //===========================================================================
 
 #if _WIN32
-int pcc::system( const char* command ) noexcept {
+int pcc::system( const char *command ) noexcept {
   // Windows doesn't directly support an equivalent of RUSAGE_CHILDREN in
   // GetProcessTimes().  To fully emulate the support is complicated.
   // However, a first order approximation may be made if a process
@@ -75,7 +75,7 @@ int pcc::system( const char* command ) noexcept {
   si.cb = sizeof( si );
 
   size_t                     cmd_size = strlen( command ) + 1;
-  std::unique_ptr<wchar_t[]> cmd{new wchar_t[cmd_size]};
+  std::unique_ptr<wchar_t[]> cmd{ new wchar_t[cmd_size] };
   size_t                     num_converted = 0;
   mbstowcs_s( &num_converted, cmd.get(), cmd_size, command, _TRUNCATE );
 

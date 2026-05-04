@@ -43,9 +43,8 @@ using namespace pcc;
 /// encoder application class
 
 template <typename T>
-PCCVTMLibVideoEncoderImpl<T>::PCCVTMLibVideoEncoderImpl( ostream& bitStream, EncLibCommon* encLibCommon ) :
-    m_cEncLib( encLibCommon ),
-    m_bitstream( bitStream ) {
+PCCVTMLibVideoEncoderImpl<T>::PCCVTMLibVideoEncoderImpl( ostream &bitStream, EncLibCommon *encLibCommon ) :
+    m_cEncLib( encLibCommon ), m_bitstream( bitStream ) {
   m_iFrameRcvd     = 0;
   m_totalBytes     = 0;
   m_essentialBytes = 0;
@@ -60,10 +59,10 @@ template <typename T>
 PCCVTMLibVideoEncoderImpl<T>::~PCCVTMLibVideoEncoderImpl() {}
 
 template <typename T>
-bool PCCVTMLibVideoEncoderImpl<T>::encode( PCCVideo<T, 3>&    videoSrc,
+bool PCCVTMLibVideoEncoderImpl<T>::encode( PCCVideo<T, 3>    &videoSrc,
                                            std::string        arguments,
-                                           PCCVideoBitstream& bitstream,
-                                           PCCVideo<T, 3>&    videoRec ) {
+                                           PCCVideoBitstream &bitstream,
+                                           PCCVideo<T, 3>    &videoRec ) {
   const InputColourSpaceConversion snrCSC =
       ( !m_snrInternalColourSpace ) ? m_inputColourSpaceConvert : IPCOLOURSPACE_UNCHANGED;
 
@@ -89,10 +88,10 @@ bool PCCVTMLibVideoEncoderImpl<T>::encode( PCCVideo<T, 3>&    videoSrc,
 }
 
 template <typename T>
-bool PCCVTMLibVideoEncoderImpl<T>::encodePrep( bool&           eos,
-                                               PCCVideo<T, 3>& videoSrc,
+bool PCCVTMLibVideoEncoderImpl<T>::encodePrep( bool           &eos,
+                                               PCCVideo<T, 3> &videoSrc,
                                                std::string     arguments,
-                                               PCCVideo<T, 3>& videoRec ) {
+                                               PCCVideo<T, 3> &videoRec ) {
   const InputColourSpaceConversion ipCSC = m_inputColourSpaceConvert;
   const InputColourSpaceConversion snrCSC =
       ( !m_snrInternalColourSpace ) ? m_inputColourSpaceConvert : IPCOLOURSPACE_UNCHANGED;
@@ -126,14 +125,14 @@ bool PCCVTMLibVideoEncoderImpl<T>::encodePrep( bool&           eos,
 }
 
 template <typename T>
-void PCCVTMLibVideoEncoderImpl<T>::outputAU( const AccessUnit& au ) {
-  const vector<uint32_t>& stats = writeAnnexBAccessUnit( m_bitstream, au );
+void PCCVTMLibVideoEncoderImpl<T>::outputAU( const AccessUnit &au ) {
+  const vector<uint32_t> &stats = writeAnnexBAccessUnit( m_bitstream, au );
   rateStatsAccum( au, stats );
   m_bitstream.flush();
 }
 
 template <typename T>
-void PCCVTMLibVideoEncoderImpl<T>::rateStatsAccum( const AccessUnit& au, const std::vector<uint32_t>& annexBsizes ) {
+void PCCVTMLibVideoEncoderImpl<T>::rateStatsAccum( const AccessUnit &au, const std::vector<uint32_t> &annexBsizes ) {
   AccessUnit::const_iterator       it_au    = au.begin();
   vector<uint32_t>::const_iterator it_stats = annexBsizes.begin();
 
@@ -188,7 +187,7 @@ void PCCVTMLibVideoEncoderImpl<T>::createLib( const int layerIdx ) {
   if ( m_usePCCExt ) {
     // Note JR: must be given from the function parameters
     printf( "\nReading the aux info files\n" );
-    FILE* patchFile = NULL;
+    FILE *patchFile = NULL;
     patchFile       = fopen( m_patchInfoFileName.c_str(), "rb" );
     for ( int i = 0; i < PCC_ME_EXT_MAX_NUM_FRAMES; i++ ) {
       size_t readSize = fread( &g_vtmnumPatches[i], sizeof( long long ), 1, patchFile );
@@ -222,7 +221,7 @@ void PCCVTMLibVideoEncoderImpl<T>::createLib( const int layerIdx ) {
 
 template <typename T>
 void PCCVTMLibVideoEncoderImpl<T>::xInitLibCfg() {
-  VPS& vps = *m_cEncLib.getVPS();
+  VPS &vps = *m_cEncLib.getVPS();
   if ( m_targetOlsIdx != 500 ) {
     vps.m_targetOlsIdx = m_targetOlsIdx;
   } else {
@@ -1255,27 +1254,27 @@ void PCCVTMLibVideoEncoderImpl<T>::xInitLib() {
  */
 
 template <typename T>
-void PCCVTMLibVideoEncoderImpl<T>::xWriteOutput( std::ostream&           bitstreamFile,
-                                                 int                     iNumEncoded,
-                                                 std::list<PelUnitBuf*>& recBufList,
-                                                 PCCVideo<T, 3>&         videoRec ) {
+void PCCVTMLibVideoEncoderImpl<T>::xWriteOutput( std::ostream            &bitstreamFile,
+                                                 int                      iNumEncoded,
+                                                 std::list<PelUnitBuf *> &recBufList,
+                                                 PCCVideo<T, 3>          &videoRec ) {
   const InputColourSpaceConversion ipCSC =
       ( !m_outputInternalColourSpace ) ? m_inputColourSpaceConvert : IPCOLOURSPACE_UNCHANGED;
-  std::list<PelUnitBuf*>::iterator iterPicYuvRec = recBufList.end();
-  int                              i;
+  std::list<PelUnitBuf *>::iterator iterPicYuvRec = recBufList.end();
+  int                               i;
 
   for ( i = 0; i < iNumEncoded; i++ ) { --iterPicYuvRec; }
 
   if ( m_isField ) {
     // Reinterlace fields
     for ( i = 0; i < iNumEncoded / 2; i++ ) {
-      const PelUnitBuf* pcPicYuvRecTop = *( iterPicYuvRec++ );
+      const PelUnitBuf *pcPicYuvRecTop = *( iterPicYuvRec++ );
       iterPicYuvRec++;
       if ( !m_reconFileName.empty() ) { xWritePicture( pcPicYuvRecTop, videoRec ); }
     }
   } else {
     for ( i = 0; i < iNumEncoded; i++ ) {
-      const PelUnitBuf* pcPicYuvRec = *( iterPicYuvRec++ );
+      const PelUnitBuf *pcPicYuvRec = *( iterPicYuvRec++ );
       if ( !m_reconFileName.empty() ) {
         if ( m_cEncLib.isResChangeInClvsEnabled() && m_cEncLib.getUpscaledOutput() ) {
           xWritePicture( pcPicYuvRec, videoRec );
@@ -1296,7 +1295,7 @@ void PCCVTMLibVideoEncoderImpl<T>::destroyLib() {
   // delete used buffers in encoder class
   m_cEncLib.deletePicBuffer();
 
-  for ( auto& p : m_recBufList ) { delete p; }
+  for ( auto &p : m_recBufList ) { delete p; }
   m_recBufList.clear();
 
   xDestroyLib();
@@ -1358,15 +1357,15 @@ void PCCVTMLibVideoEncoderImpl<T>::printChromaFormat() {
 }
 
 template <typename T>
-void PCCVTMLibVideoEncoderImpl<T>::xWritePicture( const PelUnitBuf* pic, PCCVideo<T, 3>& video ) {
+void PCCVTMLibVideoEncoderImpl<T>::xWritePicture( const PelUnitBuf *pic, PCCVideo<T, 3> &video ) {
   video.resize( video.getFrameCount() + 1 );
-  auto&          image           = video.getFrames().back();
+  auto          &image           = video.getFrames().back();
   int            chromaSubsample = pic->get( COMPONENT_Y ).width / pic->get( COMPONENT_Cb ).width;
   int            width           = m_sourceWidth - m_confWinLeft - m_confWinRight;
   int            height          = m_sourceHeight - m_confWinTop - m_confWinBottom;
-  PCCCOLORFORMAT format          = m_cEncLib.getChromaFormatIdc() == CHROMA_420
-                              ? PCCCOLORFORMAT::YUV420
-                              : m_rgbFormat ? PCCCOLORFORMAT::RGB444 : PCCCOLORFORMAT::YUV444;
+  PCCCOLORFORMAT format          = m_cEncLib.getChromaFormatIdc() == CHROMA_420 ? PCCCOLORFORMAT::YUV420
+                                   : m_rgbFormat                                ? PCCCOLORFORMAT::RGB444
+                                                                                : PCCCOLORFORMAT::YUV444;
   image.set( pic->get( COMPONENT_Y ).bufAt( 0, 0 ), pic->get( COMPONENT_Cb ).bufAt( 0, 0 ),
              pic->get( COMPONENT_Cr ).bufAt( 0, 0 ), width, height, pic->get( COMPONENT_Y ).stride,
              width / chromaSubsample, height / chromaSubsample, pic->get( COMPONENT_Cb ).stride,
@@ -1374,8 +1373,8 @@ void PCCVTMLibVideoEncoderImpl<T>::xWritePicture( const PelUnitBuf* pic, PCCVide
 }
 
 template <typename T>
-void PCCVTMLibVideoEncoderImpl<T>::xReadPicture( PelUnitBuf* pic, PCCVideo<T, 3>& video, int frameIndex ) {
-  auto& image = video.getFrame( frameIndex );
+void PCCVTMLibVideoEncoderImpl<T>::xReadPicture( PelUnitBuf *pic, PCCVideo<T, 3> &video, int frameIndex ) {
+  auto &image = video.getFrame( frameIndex );
   image.get( pic->get( COMPONENT_Y ).bufAt( 0, 0 ), pic->get( COMPONENT_Cb ).bufAt( 0, 0 ),
              pic->get( COMPONENT_Cr ).bufAt( 0, 0 ), pic->get( COMPONENT_Y ).width, pic->get( COMPONENT_Y ).height,
              pic->get( COMPONENT_Y ).stride, pic->get( COMPONENT_Cb ).width, pic->get( COMPONENT_Cb ).height,

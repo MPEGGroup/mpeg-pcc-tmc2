@@ -41,7 +41,7 @@
 using namespace pcc;
 using namespace std;
 
-bool parseParameters( int argc, char* argv[], PCCConformanceParameters& params ) {
+bool parseParameters( int argc, char *argv[], PCCConformanceParameters &params ) {
   namespace po    = df::program_options_lite;
   bool print_help = false;
   // clang-format off
@@ -67,8 +67,8 @@ bool parseParameters( int argc, char* argv[], PCCConformanceParameters& params )
        "frame per second");
   // clang-format on
   po::setDefaults( opts );
-  po::ErrorReporter        err;
-  const list<const char*>& argv_unhandled = po::scanArgv( opts, argc, (const char**)argv, err );
+  po::ErrorReporter         err;
+  const list<const char *> &argv_unhandled = po::scanArgv( opts, argc, (const char **)argv, err );
   for ( const auto arg : argv_unhandled ) { printf( "Unhandled argument ignored: %s \n", arg ); }
 
   params.print();
@@ -84,7 +84,7 @@ bool parseParameters( int argc, char* argv[], PCCConformanceParameters& params )
   return true;
 }
 
-int main( int argc, char* argv[] ) {
+int main( int argc, char *argv[] ) {
   std::cout << "PccAppConformance v" << TMC2_VERSION_MAJOR << "." << TMC2_VERSION_MINOR << std::endl << std::endl;
   PCCConformanceParameters params;
   if ( !parseParameters( argc, argv, params ) ) { return -1; }

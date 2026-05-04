@@ -47,10 +47,10 @@ template <typename T>
 PCCVTMLibVideoEncoder<T>::~PCCVTMLibVideoEncoder() {}
 
 template <typename T>
-void PCCVTMLibVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
-                                       PCCVideoEncoderParameters& params,
-                                       PCCVideoBitstream&         bitstream,
-                                       PCCVideo<T, 3>&            videoRec ) {
+void PCCVTMLibVideoEncoder<T>::encode( PCCVideo<T, 3>            &videoSrc,
+                                       PCCVideoEncoderParameters &params,
+                                       PCCVideoBitstream         &bitstream,
+                                       PCCVideo<T, 3>            &videoRec ) {
   const size_t      width      = videoSrc.getWidth();
   const size_t      height     = videoSrc.getHeight();
   const size_t      frameCount = videoSrc.getFrameCount();
@@ -90,7 +90,7 @@ void PCCVTMLibVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
   fprintf( stdout, "\n" );
 
   std::ostringstream oss( ostringstream::binary | ostringstream::out );
-  std::ostream&      bitstreamFile = oss;
+  std::ostream      &bitstreamFile = oss;
   EncLibCommon       encLibCommon;
 
   initROM();
@@ -98,11 +98,11 @@ void PCCVTMLibVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
 
   PCCVTMLibVideoEncoderImpl<T> encoder( bitstreamFile, &encLibCommon );
 
-  std::istringstream iss( arguments );
-  std::string        token;
-  std::vector<char*> args;
+  std::istringstream  iss( arguments );
+  std::string         token;
+  std::vector<char *> args;
   while ( iss >> token ) {
-    char* arg = new char[token.size() + 1];
+    char *arg = new char[token.size() + 1];
     copy( token.begin(), token.end(), arg );
     arg[token.size()] = '\0';
     args.push_back( arg );
@@ -117,7 +117,7 @@ void PCCVTMLibVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
 #endif
       return;
     }
-  } catch ( df::program_options_lite::ParseFailure& e ) {
+  } catch ( df::program_options_lite::ParseFailure &e ) {
     std::cerr << "Error parsing option \"" << e.arg << "\" with argument \"" << e.val << "\"." << std::endl;
     return;
   }
@@ -141,10 +141,10 @@ void PCCVTMLibVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
 #endif
         keepLoop = encoder.encodePrep( eos, videoSrc, arguments, videoRec );
 #ifndef _DEBUG
-      } catch ( Exception& e ) {
+      } catch ( Exception &e ) {
         std::cerr << e.what() << std::endl;
         return;
-      } catch ( const std::bad_alloc& e ) {
+      } catch ( const std::bad_alloc &e ) {
         std::cout << "Memory allocation failed: " << e.what() << std::endl;
         return;
       }
@@ -159,10 +159,10 @@ void PCCVTMLibVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
 #endif
         keepLoop = encoder.encode( videoSrc, arguments, bitstream, videoRec );
 #ifndef _DEBUG
-      } catch ( Exception& e ) {
+      } catch ( Exception &e ) {
         std::cerr << e.what() << std::endl;
         return;
-      } catch ( const std::bad_alloc& e ) {
+      } catch ( const std::bad_alloc &e ) {
         std::cout << "Memory allocation failed: " << e.what() << std::endl;
         return;
       }

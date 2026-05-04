@@ -42,20 +42,20 @@ PCCHighLevelSyntax::~PCCHighLevelSyntax() {
   atlasHLS_.clear();
 }
 
-size_t PCCAtlasHighLevelSyntax::getNumRefIdxActive( AtlasTileHeader& ath ) {
+size_t PCCAtlasHighLevelSyntax::getNumRefIdxActive( AtlasTileHeader &ath ) {
   size_t afpsId          = ath.getAtlasFrameParameterSetId();
-  auto&  afps            = getAtlasFrameParameterSet( afpsId );
+  auto  &afps            = getAtlasFrameParameterSet( afpsId );
   size_t numRefIdxActive = 0;
   if ( ath.getType() == P_TILE || ath.getType() == SKIP_TILE ) {
     if ( ath.getNumRefIdxActiveOverrideFlag() ) {
       numRefIdxActive = ath.getNumRefIdxActiveMinus1() + 1;
     } else {
-      auto& asps    = getAtlasSequenceParameterSet( afps.getAtlasSequenceParameterSetId() );
-      auto& refList = ath.getRefAtlasFrameListSpsFlag() ? asps.getRefListStruct( ath.getRefAtlasFrameListIdx() )
+      auto &asps    = getAtlasSequenceParameterSet( afps.getAtlasSequenceParameterSetId() );
+      auto &refList = ath.getRefAtlasFrameListSpsFlag() ? asps.getRefListStruct( ath.getRefAtlasFrameListIdx() )
                                                         : ath.getRefListStruct();
       numRefIdxActive =
-          static_cast<size_t>( ( std::min )( static_cast<int>( refList.getNumRefEntries() ),
-                                             static_cast<int>( afps.getNumRefIdxDefaultActiveMinus1() ) + 1 ) );
+          static_cast<size_t>( (std::min)( static_cast<int>( refList.getNumRefEntries() ),
+                                           static_cast<int>( afps.getNumRefIdxDefaultActiveMinus1() ) + 1 ) );
     }
   }
   return numRefIdxActive;
@@ -64,7 +64,7 @@ size_t PCCAtlasHighLevelSyntax::getNumRefIdxActive( AtlasTileHeader& ath ) {
 void PCCAtlasHighLevelSyntax::printVideoBitstream() {
   size_t index = 0;
   printf( "VideoBitstream list: \n" );
-  for ( auto& value : videoBitstream_ ) {
+  for ( auto &value : videoBitstream_ ) {
     printf( "  * %zu / %zu: ", index, videoBitstream_.size() );
     value.trace();
     index++;
@@ -76,8 +76,8 @@ PCCAtlasHighLevelSyntax::PCCAtlasHighLevelSyntax() {}
 
 PCCAtlasHighLevelSyntax::~PCCAtlasHighLevelSyntax() { videoBitstream_.clear(); }
 
-V3CParameterSet& PCCHighLevelSyntax::getActiveVpccParameterSets() {
-  for ( auto& vps : vpccParameterSets_ ) {
+V3CParameterSet &PCCHighLevelSyntax::getActiveVpccParameterSets() {
+  for ( auto &vps : vpccParameterSets_ ) {
     if ( vps.getV3CParameterSetId() == activeVPS_ ) { return vps; }
   }
   fprintf( stderr, "Error: the VPS of index: %u can't find in the VPS list\n", activeVPS_ );
@@ -92,15 +92,15 @@ size_t PCCHighLevelSyntax::checkProfile() {
     std::cout << "ProfileToolsetConstraint Violation(1) : number of atlas should be 1\n";
     return 1;
   }
-  auto& vps = getActiveVpccParameterSets();
-  auto& ptl = vps.getProfileTierLevel();
+  auto &vps = getActiveVpccParameterSets();
+  auto &ptl = vps.getProfileTierLevel();
   printf( " ptl.getToolConstraintsPresentFlag() = %zu \n", (size_t)ptl.getToolConstraintsPresentFlag() );
   if ( ptl.getToolConstraintsPresentFlag() == false ) {
     printf( "checkProfile return 0 \n" );
     fflush( stdout );
     return 0;
   }
-  auto& ptci                                    = ptl.getProfileToolsetConstraintsInformation();
+  auto &ptci                                    = ptl.getProfileToolsetConstraintsInformation();
   auto  EOMContraintFlag                        = ptci.getEOMContraintFlag();
   auto  maxMapCountMinus1                       = ptci.getMaxMapCountMinus1();
   auto  maxAtlasCountMinus1                     = ptci.getMaxAtlasCountMinus1();
@@ -133,10 +133,10 @@ size_t PCCHighLevelSyntax::checkProfile() {
   }
   if ( vps.getMapCountMinus1( 0 ) > maxMapCountMinus1 ) {
     std::cout << "ProfileToolsetConstraint Violation(7) : mapCountMinus1 is set to " << vps.getMapCountMinus1( 0 )
-              << " wherea ptci.maxMapCountMinus1_ is " << maxMapCountMinus1 << ". \n";
+              << " wherea ptci.maxMapCountMinus1_ is " << static_cast<unsigned>( maxMapCountMinus1 ) << ". \n";
     ret = 7;
   }
-  for ( auto& asps : atlasHLS_[0].getAtlasSequenceParameterSetList() ) {
+  for ( auto &asps : atlasHLS_[0].getAtlasSequenceParameterSetList() ) {
     if ( EOMContraintFlag ) {
       if ( asps.getEomPatchEnabledFlag() != false ) {
         std::cout
@@ -170,7 +170,7 @@ size_t PCCHighLevelSyntax::checkProfile() {
   // profile.reconstruction setting
   auto profileToolsetIdc        = ptl.getProfileToolsetIdc();
   auto profileReconstructionIdc = ptl.getProfileReconstructionIdc();
-  for ( auto& asps : atlasHLS_[0].getAtlasSequenceParameterSetList() ) {
+  for ( auto &asps : atlasHLS_[0].getAtlasSequenceParameterSetList() ) {
     // Profile Tools set idc
     // Basic
     if ( profileToolsetIdc == 0 ) {
@@ -200,6 +200,6 @@ size_t PCCHighLevelSyntax::checkProfile() {
         ret = 15;
       }
     }  // profile
-  }    // asps
+  }  // asps
   return ret;
 }

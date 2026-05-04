@@ -36,7 +36,6 @@
 
 #include "PCCBitstreamCommon.h"
 #include <string>
-
 namespace pcc {
 
 enum PCCLoggerType {
@@ -92,7 +91,7 @@ class PCCVirtualLogger {
  public:
   PCCVirtualLogger() : file_( NULL ), disable_( false ) {}
   ~PCCVirtualLogger() { close(); }
-  bool initialize( PCCLoggerType type, std::string& filename, bool encoder, size_t atlasId = 0 ) {
+  bool initialize( PCCLoggerType type, std::string &filename, bool encoder, size_t atlasId = 0 ) {
     std::string str = get( type );
     // size_t pos = str.find_last_of( "." );  //ajt::disables adding the atlasID to the file name based on Danillo's
     // comment if ( pos != std::string::npos ) str.insert( pos, std::to_string( atlasId ) );
@@ -102,7 +101,7 @@ class PCCVirtualLogger {
   inline void disable() { disable_ = true; }
   inline void enable() { disable_ = false; }
   template <typename... Args>
-  inline void trace( const char* format, Args... eArgs ) {
+  inline void trace( const char *format, Args... eArgs ) {
     if ( file_ && !disable_ ) { fprintf( file_, format, eArgs... ); }
   }
   inline void flush() {
@@ -118,7 +117,7 @@ class PCCVirtualLogger {
     close();
     return ( ( file_ = fopen( name.c_str(), "w+" ) ) != NULL );
   }
-  FILE* file_;
+  FILE *file_;
   bool  disable_;
 };
 
@@ -132,10 +131,16 @@ class PCCLogger {
   }
   void         enable( PCCLoggerType type ) { logger_[type].enable(); }
   void         disable( PCCLoggerType type ) { logger_[type].disable(); }
-  std::string& getLoggerBaseFileName() { return filename_; }
+  std::string &getLoggerBaseFileName() { return filename_; }
+
+  uint32_t getIndent() const { return indent_; }
+  void     indentIn() { indent_ += 2; }
+  void     indentOut() {
+    if ( indent_ > 1 ) indent_ -= 2;
+  }
 
   template <typename... Args>
-  inline void trace( PCCLoggerType type, const char* format, Args... args ) {
+  inline void trace( PCCLoggerType type, const char *format, Args... args ) {
     if ( !logger_[type].isInitialized() ) { logger_[type].initialize( type, filename_, encoder_ ); }
     if ( logger_[type].isInitialized() ) {
       logger_[type].trace( format, args... );
@@ -143,60 +148,61 @@ class PCCLogger {
     }
   }
   template <typename... Args>
-  inline void traceDescr( const char* format, Args... args ) {
+  inline void traceDescr( const char *format, Args... args ) {
     trace( LOG_DESCR, format, args... );
   }
   template <typename... Args>
-  inline void traceTrace( const char* format, Args... args ) {
+  inline void traceTrace( const char *format, Args... args ) {
     trace( LOG_TRACE, format, args... );
   }
   template <typename... Args>
-  inline void traceHLS( const char* format, Args... args ) {
+  inline void traceHLS( const char *format, Args... args ) {
     trace( LOG_HLS, format, args... );
   }
   template <typename... Args>
-  inline void traceAtlas( const char* format, Args... args ) {
+  inline void traceAtlas( const char *format, Args... args ) {
     trace( LOG_ATLAS, format, args... );
   }
   template <typename... Args>
-  inline void traceTiles( const char* format, Args... args ) {
+  inline void traceTiles( const char *format, Args... args ) {
     trace( LOG_TILES, format, args... );
   }
   template <typename... Args>
-  inline void tracePCFrame( const char* format, Args... args ) {
+  inline void tracePCFrame( const char *format, Args... args ) {
     trace( LOG_PCFRAME, format, args... );
   }
   template <typename... Args>
-  inline void traceRecFrame( const char* format, Args... args ) {
+  inline void traceRecFrame( const char *format, Args... args ) {
     trace( LOG_RECFRAME, format, args... );
   }
   template <typename... Args>
-  inline void tracePicture( const char* format, Args... args ) {
+  inline void tracePicture( const char *format, Args... args ) {
     trace( LOG_PICTURE, format, args... );
   }
   template <typename... Args>
-  inline void traceBitStreamMD5( const char* format, Args... args ) {
+  inline void traceBitStreamMD5( const char *format, Args... args ) {
     trace( LOG_BITSTRMD5, format, args... );
   }
 #ifdef BITSTREAM_TRACE
   template <typename... Args>
-  inline void traceStream( const char* format, Args... args ) {
+  inline void traceStream( const char *format, Args... args ) {
     trace( LOG_STREAM, format, args... );
   }
+  void traceStreamIndent() { trace( LOG_STREAM, "%*s", indent_, "" ); }
 #endif
 #ifdef CODEC_TRACE
   template <typename... Args>
-  inline void traceCodec( const char* format, Args... args ) {
+  inline void traceCodec( const char *format, Args... args ) {
     trace( LOG_CODEC, format, args... );
   }
   template <typename... Args>
-  inline void tracePatch( const char* format, Args... args ) {
+  inline void tracePatch( const char *format, Args... args ) {
     trace( LOG_PATCH, format, args... );
   }
 #endif
 #ifdef SEI_TRACE
   template <typename... Args>
-  inline void traceSei( const char* format, Args... args ) {
+  inline void traceSei( const char *format, Args... args ) {
     trace( LOG_SEI, format, args... );
   }
 #endif
@@ -220,12 +226,17 @@ class PCCLogger {
   std::vector<PCCVirtualLogger> logger_;
   std::string                   filename_;
   bool                          encoder_;
+  uint32_t                      indent_ = 0;
 };
 
 #ifdef BITSTREAM_TRACE
 #define TRACE_BITSTREAM( fmt, ... ) bitstream.trace( fmt, ##__VA_ARGS__ );
+#define TRACE_BITSTREAM_IN( fmt, ... ) bitstream.traceIn( fmt, ##__VA_ARGS__ );
+#define TRACE_BITSTREAM_OUT( fmt, ... ) bitstream.traceOut( fmt, ##__VA_ARGS__ );
 #else
 #define TRACE_BITSTREAM( fmt, ... )
+#define TRACE_BITSTREAM_IN( fmt, ... )
+#define TRACE_BITSTREAM_OUT( fmt, ... )
 #endif
 
 #ifdef CODEC_TRACE

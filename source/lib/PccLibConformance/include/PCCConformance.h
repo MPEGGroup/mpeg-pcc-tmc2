@@ -42,6 +42,7 @@
 #include <map>
 #include <vector>
 #include <utility>
+#include <cstdint>
 
 namespace pcc {
 
@@ -52,15 +53,15 @@ class PCCConformance {
  public:
   PCCConformance();
   ~PCCConformance();
-  void check( const PCCConformanceParameters& params );
+  void check( const PCCConformanceParameters &params );
 
  private:
-  bool compareLogFiles( std::string&, std::string&, const std::vector<std::string>&, KeyValMaps&, KeyValMaps& );
-  void checkLevelLimits( uint8_t, double, KeyValMaps&, bool );
+  bool compareLogFiles( std::string &, std::string &, const std::vector<std::string> &, KeyValMaps &, KeyValMaps & );
+  void checkLevelLimits( uint8_t, double, KeyValMaps &, bool );
   template <typename T>
-  inline bool checkLimit( const std::string& keyVal, T&, T& );
+  inline bool checkLimit( const std::string &keyVal, T &, T & );
   template <typename T>
-  inline void convertString( const std::string& keyValue, T& val );
+  inline void convertString( const std::string &keyValue, T &val );
 
   size_t levelLimitsCount_;
   size_t levelLimitsExceedCount_;

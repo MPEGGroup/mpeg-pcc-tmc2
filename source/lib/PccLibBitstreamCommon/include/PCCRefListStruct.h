@@ -52,7 +52,7 @@ class RefListStruct {
     stRefAtlasFrameFlag_.clear();
     strpfEntrySignFlag_.clear();
   }
-  RefListStruct& operator=( const RefListStruct& ) = default;
+  RefListStruct &operator=( const RefListStruct & ) = default;
 
   void allocate() {
     absDeltaAfocSt_.resize( numRefEntries_, 0 );

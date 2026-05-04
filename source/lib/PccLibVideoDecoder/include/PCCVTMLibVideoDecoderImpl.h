@@ -54,15 +54,15 @@ class PCCVTMLibVideoDecoderImpl : public PCCVTMLibVideoDecoderCfg {
   PCCVTMLibVideoDecoderImpl();
 
   ~PCCVTMLibVideoDecoderImpl();
-  uint32_t decode( PCCVideoBitstream& bitstream, size_t outputBitDepth, PCCVideo<T, 3>& video );
+  uint32_t decode( PCCVideoBitstream &bitstream, size_t outputBitDepth, PCCVideo<T, 3> &video );
 
  private:
   void   xCreateDecLib();
   void   xDestroyDecLib();
-  void   setVideoSize( const SPS* sps );
-  void   xWriteOutput( PicList* pcListPic, uint32_t tId, PCCVideo<T, 3>& video );
-  void   xFlushOutput( PicList* pcListPic, PCCVideo<T, 3>& video, const int layerId = NOT_VALID );
-  void   xWritePicture( const Picture* pic, PCCVideo<T, 3>& video );
+  void   setVideoSize( const SPS *sps );
+  void   xWriteOutput( PicList *pcListPic, uint32_t tId, PCCVideo<T, 3> &video );
+  void   xFlushOutput( PicList *pcListPic, PCCVideo<T, 3> &video, const int layerId = NOT_VALID );
+  void   xWritePicture( const Picture *pic, PCCVideo<T, 3> &video );
   DecLib m_cDecLib;
   int    m_iPOCLastDisplay = -MAX_INT;
   int    m_iSkipFrame{};
@@ -78,12 +78,12 @@ class PCCVTMLibVideoDecoderImpl : public PCCVTMLibVideoDecoderCfg {
   std::map<uint32_t, SEIAnnotatedRegions::AnnotatedRegionObject> m_arObjects;  ///< AR object pool
   std::map<uint32_t, std::string>                                m_arLabels;   ///< AR label pool
 
-  bool xIsNaluWithinTargetDecLayerIdSet( const InputNALUnit* nalu ) const;
-  bool xIsNaluWithinTargetOutputLayerIdSet( const InputNALUnit* nalu ) const;
-  bool isNewPicture( std::istream* bitstreamFile, class InputByteStream* bytestream );
-  bool isNewAccessUnit( bool newPicture, std::istream* bitstreamFile, class InputByteStream* bytestream );
+  bool xIsNaluWithinTargetDecLayerIdSet( const InputNALUnit *nalu ) const;
+  bool xIsNaluWithinTargetOutputLayerIdSet( const InputNALUnit *nalu ) const;
+  bool isNewPicture( std::istream *bitstreamFile, class InputByteStream *bytestream );
+  bool isNewAccessUnit( bool newPicture, std::istream *bitstreamFile, class InputByteStream *bytestream );
 
-  void xOutputAnnotatedRegions( PicList* pcListPic );
+  void xOutputAnnotatedRegions( PicList *pcListPic );
 };
 
 };  // namespace pcc

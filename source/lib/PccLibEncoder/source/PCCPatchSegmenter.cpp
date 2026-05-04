@@ -50,13 +50,13 @@ void PCCPatchSegmenter3::setNbThread( size_t nbThread ) {
 #endif
 }
 
-void PCCPatchSegmenter3::compute( const PCCPointSet3&                 geometry,
+void PCCPatchSegmenter3::compute( const PCCPointSet3                 &geometry,
                                   const size_t                        frameIndex,
-                                  const PCCPatchSegmenter3Parameters& params,
-                                  std::vector<PCCPatch>&              patches,
-                                  std::vector<PCCPointSet3>&          subPointCloud,
-                                  float&                              distanceSrcRec ) {
-  PCCVector3D* orientations     = nullptr;
+                                  const PCCPatchSegmenter3Parameters &params,
+                                  std::vector<PCCPatch>              &patches,
+                                  std::vector<PCCPointSet3>          &subPointCloud,
+                                  float                              &distanceSrcRec ) {
+  PCCVector3D *orientations     = nullptr;
   size_t       orientationCount = 0;
   if ( params.additionalProjectionPlaneMode_ == 0 ) {
     orientations     = orientations6;
@@ -90,19 +90,19 @@ void PCCPatchSegmenter3::compute( const PCCPointSet3&                 geometry,
   PCCNNResult          result;
   PCCNormalsGenerator3 normalsGen;
   auto                 normalsOrientation = static_cast<PCCNormalsGeneratorOrientation>( params.normalOrientation_ );
-  const PCCNormalsGenerator3Parameters normalsGenParams = {PCCVector3D( 0.0 ),
-                                                           ( std::numeric_limits<double>::max )(),
-                                                           ( std::numeric_limits<double>::max )(),
-                                                           ( std::numeric_limits<double>::max )(),
-                                                           ( std::numeric_limits<double>::max )(),
-                                                           params.nnNormalEstimation_,
-                                                           params.nnNormalEstimation_,
-                                                           params.nnNormalEstimation_,
-                                                           0,
-                                                           normalsOrientation,
-                                                           false,
-                                                           false,
-                                                           false};
+  const PCCNormalsGenerator3Parameters normalsGenParams = { PCCVector3D( 0.0 ),
+                                                            ( std::numeric_limits<double>::max )(),
+                                                            ( std::numeric_limits<double>::max )(),
+                                                            ( std::numeric_limits<double>::max )(),
+                                                            ( std::numeric_limits<double>::max )(),
+                                                            params.nnNormalEstimation_,
+                                                            params.nnNormalEstimation_,
+                                                            params.nnNormalEstimation_,
+                                                            0,
+                                                            normalsOrientation,
+                                                            false,
+                                                            false,
+                                                            false };
   // PCC_NORMALS_GENERATOR_ORIENTATION_SPANNING_TREE,
   normalsGen.compute( geometryVox, kdtree, normalsGenParams, nbThread_ );
   std::cout << "[done]" << std::endl;
@@ -149,11 +149,11 @@ void PCCPatchSegmenter3::compute( const PCCPointSet3&                 geometry,
   std::cout << "[done]" << std::endl;
 }
 
-void PCCPatchSegmenter3::convertPointsToVoxels( const PCCPointSet3& source,
+void PCCPatchSegmenter3::convertPointsToVoxels( const PCCPointSet3 &source,
                                                 size_t              geoBits,
                                                 size_t              voxDim,
-                                                PCCPointSet3&       sourceVox,
-                                                Voxels&             voxels ) {
+                                                PCCPointSet3       &sourceVox,
+                                                Voxels             &voxels ) {
 #define ADD_COLOR 0
   const size_t geoBits2    = geoBits << 1;
   size_t       voxDimShift = 0;
@@ -163,7 +163,7 @@ void PCCPatchSegmenter3::convertPointsToVoxels( const PCCPointSet3& source,
   auto subToInd = [&]( uint64_t x, uint64_t y, uint64_t z ) { return x + ( y << geoBits ) + ( z << geoBits2 ); };
 
   for ( size_t i = 0; i < source.getPointCount(); ++i ) {
-    const auto& pos = source[i];
+    const auto &pos = source[i];
     const auto  x0  = ( static_cast<uint64_t>( pos[0] ) + voxDimHalf ) >> voxDimShift;
     const auto  y0  = ( static_cast<uint64_t>( pos[1] ) + voxDimHalf ) >> voxDimShift;
     const auto  z0  = ( static_cast<uint64_t>( pos[2] ) + voxDimHalf ) >> voxDimShift;
@@ -183,29 +183,29 @@ void PCCPatchSegmenter3::convertPointsToVoxels( const PCCPointSet3& source,
 void PCCPatchSegmenter3::applyVoxelsDataToPoints( size_t                pointCount,
                                                   size_t                geoBits,
                                                   size_t                voxDim,
-                                                  Voxels&               voxels,  // const
-                                                  const PCCPointSet3&   sourceVox,
-                                                  PCCNormalsGenerator3& normalsGen,
-                                                  std::vector<size_t>&  partitions ) {
+                                                  Voxels               &voxels,  // const
+                                                  const PCCPointSet3   &sourceVox,
+                                                  PCCNormalsGenerator3 &normalsGen,
+                                                  std::vector<size_t>  &partitions ) {
   std::vector<size_t>      partitionsTmp( pointCount );
   std::vector<PCCVector3D> normalsTmp( pointCount );
-  auto&                    normals = normalsGen.getNormals();
+  auto                    &normals = normalsGen.getNormals();
 
   const size_t geoBits2    = geoBits << 1;
   size_t       voxDimShift = 0;
   for ( size_t i = voxDim; i > 1; ++voxDimShift, i >>= 1 ) { ; }
   const size_t voxDimHalf = voxDim >> 1;
 
-  auto subToInd = [&]( const PCCPoint3D& point ) {
+  auto subToInd = [&]( const PCCPoint3D &point ) {
     return (uint64_t)point[0] + ( (uint64_t)point[1] << geoBits ) + ( (uint64_t)point[2] << geoBits2 );
   };
 
   for ( size_t i = 0; i < sourceVox.getPointCount(); i++ ) {
-    const auto& partition = partitions[i];
-    const auto& normal    = normals[i];
-    const auto& pos       = sourceVox[i];
-    const auto& indices   = voxels[subToInd( pos )];
-    for ( const auto& index : indices ) {
+    const auto &partition = partitions[i];
+    const auto &normal    = normals[i];
+    const auto &pos       = sourceVox[i];
+    const auto &indices   = voxels[subToInd( pos )];
+    for ( const auto &index : indices ) {
       partitionsTmp[index] = partition;
       normalsTmp[index]    = normal;
     }
@@ -214,21 +214,21 @@ void PCCPatchSegmenter3::applyVoxelsDataToPoints( size_t                pointCou
   swap( normalsGen.getNormals(), normalsTmp );
 }
 
-void PCCPatchSegmenter3::initialSegmentation( const PCCPointSet3&         geometry,
-                                              const PCCNormalsGenerator3& normalsGen,
-                                              const PCCVector3D*          orientations,
+void PCCPatchSegmenter3::initialSegmentation( const PCCPointSet3         &geometry,
+                                              const PCCNormalsGenerator3 &normalsGen,
+                                              const PCCVector3D          *orientations,
                                               const size_t                orientationCount,
-                                              std::vector<size_t>&        partition ) {
+                                              std::vector<size_t>        &partition ) {
   PCCVector3D axis_weight;
   axis_weight[0] = axis_weight[1] = axis_weight[2] = 1.0F;
   initialSegmentation( geometry, normalsGen, orientations, orientationCount, partition, axis_weight );
 }
-void PCCPatchSegmenter3::initialSegmentation( const PCCPointSet3&         geometry,
-                                              const PCCNormalsGenerator3& normalsGen,
-                                              const PCCVector3D*          orientations,
+void PCCPatchSegmenter3::initialSegmentation( const PCCPointSet3         &geometry,
+                                              const PCCNormalsGenerator3 &normalsGen,
+                                              const PCCVector3D          *orientations,
                                               const size_t                orientationCount,
-                                              std::vector<size_t>&        partition,
-                                              const PCCVector3D&          axisWeight ) {
+                                              std::vector<size_t>        &partition,
+                                              const PCCVector3D          &axisWeight ) {
   assert( orientations );
   const size_t pointCount = geometry.getPointCount();
   partition.resize( pointCount );
@@ -264,9 +264,9 @@ void PCCPatchSegmenter3::initialSegmentation( const PCCPointSet3&         geomet
 #endif
 }
 
-void PCCPatchSegmenter3::computeAdjacencyInfo( const PCCPointSet3&               pointCloud,
-                                               const PCCKdTree&                  kdtree,
-                                               std::vector<std::vector<size_t>>& adj,
+void PCCPatchSegmenter3::computeAdjacencyInfo( const PCCPointSet3               &pointCloud,
+                                               const PCCKdTree                  &kdtree,
+                                               std::vector<std::vector<size_t>> &adj,
                                                const size_t                      maxNNCount ) {
   const size_t pointCount = pointCloud.getPointCount();
   adj.resize( pointCount );
@@ -279,20 +279,20 @@ void PCCPatchSegmenter3::computeAdjacencyInfo( const PCCPointSet3&              
 #endif
       PCCNNResult result;
       kdtree.search( pointCloud[i], maxNNCount, result );
-      std::vector<size_t>& neighbors = adj[i];
+      std::vector<size_t> &neighbors = adj[i];
       neighbors.resize( result.count() );
       for ( size_t j = 0; j < result.count(); ++j ) { neighbors[j] = result.indices( j ); }
 #if defined( ENABLE_TBB )
-      } );
     } );
+  } );
 #else
   }
 #endif
 }
 
-void PCCPatchSegmenter3::computeAdjacencyInfoInRadius( const PCCPointSet3&                 pointCloud,
-                                                       const PCCKdTree&                    kdtree,
-                                                       std::vector<std::vector<uint32_t>>& adj,
+void PCCPatchSegmenter3::computeAdjacencyInfoInRadius( const PCCPointSet3                 &pointCloud,
+                                                       const PCCKdTree                    &kdtree,
+                                                       std::vector<std::vector<uint32_t>> &adj,
                                                        const size_t                        maxNNCount,
                                                        const size_t                        radius ) {
   const size_t pointCount = pointCloud.getPointCount();
@@ -306,21 +306,21 @@ void PCCPatchSegmenter3::computeAdjacencyInfoInRadius( const PCCPointSet3&      
 #endif
       PCCNNResult result;
       kdtree.searchRadius( pointCloud[i], maxNNCount, radius, result );
-      std::vector<uint32_t>& neighbors = adj[i];
+      std::vector<uint32_t> &neighbors = adj[i];
       neighbors.resize( result.count() );
       for ( size_t j = 0; j < result.count(); ++j ) { neighbors[j] = result.indices( j ); }
 #if defined( ENABLE_TBB )
-      } );
     } );
+  } );
 #else
   }
 #endif
 }
 
-void PCCPatchSegmenter3::computeAdjacencyInfoDist( const PCCPointSet3&               pointCloud,
-                                                   const PCCKdTree&                  kdtree,
-                                                   std::vector<std::vector<size_t>>& adj,
-                                                   std::vector<std::vector<double>>& adjDist,
+void PCCPatchSegmenter3::computeAdjacencyInfoDist( const PCCPointSet3               &pointCloud,
+                                                   const PCCKdTree                  &kdtree,
+                                                   std::vector<std::vector<size_t>> &adj,
+                                                   std::vector<std::vector<double>> &adjDist,
                                                    const size_t                      maxNNCount ) {
   const size_t pointCount = pointCloud.getPointCount();
   adj.resize( pointCount );
@@ -334,8 +334,8 @@ void PCCPatchSegmenter3::computeAdjacencyInfoDist( const PCCPointSet3&          
 #endif
       PCCNNResult result;
       kdtree.search( pointCloud[i], maxNNCount, result );
-      std::vector<size_t>& neighbors     = adj[i];
-      std::vector<double>& neighborsDist = adjDist[i];
+      std::vector<size_t> &neighbors     = adj[i];
+      std::vector<double> &neighborsDist = adjDist[i];
       neighbors.resize( result.count() );
       neighborsDist.resize( result.count() );
       for ( size_t j = 0; j < result.count(); ++j ) {
@@ -350,8 +350,8 @@ void PCCPatchSegmenter3::computeAdjacencyInfoDist( const PCCPointSet3&          
 #endif
 }
 
-void printChunk( const std::vector<std::pair<int, int>>& chunk ) {
-  std::vector<std::string> axisName{"x -> ", "y -> ", "z -> "};
+void printChunk( const std::vector<std::pair<int, int>> &chunk ) {
+  std::vector<std::string> axisName{ "x -> ", "y -> ", "z -> " };
   for ( size_t axis = 0; axis < 3; ++axis ) {
     std::cout << axisName[axis] << "(" << chunk[axis].first << ", " << chunk[axis].second << ")"
               << " ";
@@ -359,10 +359,10 @@ void printChunk( const std::vector<std::pair<int, int>>& chunk ) {
   std::cout << std::endl;
 }
 
-void PCCPatchSegmenter3::resampledPointcloud( std::vector<size_t>& pointCount,
-                                              PCCPointSet3&        resampled,
-                                              std::vector<size_t>& resampledPatchPartition,
-                                              PCCPatch&            patch,
+void PCCPatchSegmenter3::resampledPointcloud( std::vector<size_t> &pointCount,
+                                              PCCPointSet3        &resampled,
+                                              std::vector<size_t> &resampledPatchPartition,
+                                              PCCPatch            &patch,
                                               size_t               patchIndex,
                                               bool                 multipleMaps,
                                               size_t               surfaceThickness,
@@ -371,7 +371,7 @@ void PCCPatchSegmenter3::resampledPointcloud( std::vector<size_t>& pointCount,
                                               bool                 useEnhancedOccupancyMapCode,
                                               size_t               geometryBitDepth3D,
                                               bool                 createSubPointCloud,
-                                              PCCPointSet3&        rec ) {
+                                              PCCPointSet3        &rec ) {
   pointCount.resize( 3 );
   size_t  d0CountPerPatch  = 0;
   size_t  d1CountPerPatch  = 0;
@@ -397,7 +397,7 @@ void PCCPatchSegmenter3::resampledPointcloud( std::vector<size_t>& pointCount,
         point[patch.getBitangentAxis()] = double( v ) + patch.getV1();
         if ( bIsAdditionalProjectionPlane ) {
           PCCVector3D point_tmp;
-          auto&       input = point;
+          auto       &input = point;
           iconvert( patch.getAxisOfAdditionalPlane(), geometryBitDepth3D, input, point_tmp );
           resampled.addPoint( point_tmp );
           resampledPatchPartition.push_back( patchIndex );
@@ -420,7 +420,7 @@ void PCCPatchSegmenter3::resampledPointcloud( std::vector<size_t>& pointCount,
               if ( pointEOM[patch.getNormalAxis()] != point[patch.getNormalAxis()] ) {
                 if ( bIsAdditionalProjectionPlane ) {
                   PCCVector3D point_tmp;
-                  auto&       input = pointEOM;
+                  auto       &input = pointEOM;
                   iconvert( patch.getAxisOfAdditionalPlane(), geometryBitDepth3D, input, point_tmp );
                   resampled.addPoint( point_tmp );
                   resampledPatchPartition.push_back( patchIndex );
@@ -441,7 +441,7 @@ void PCCPatchSegmenter3::resampledPointcloud( std::vector<size_t>& pointCount,
           if ( patch.getDepth( 0 )[p] != patch.getDepth( 1 )[p] ) { d1CountPerPatch++; }
           if ( bIsAdditionalProjectionPlane ) {
             PCCVector3D point_tmp;
-            auto&       input = point;
+            auto       &input = point;
             iconvert( patch.getAxisOfAdditionalPlane(), geometryBitDepth3D, input, point_tmp );
             resampled.addPoint( point_tmp );
             resampledPatchPartition.push_back( patchIndex );
@@ -456,10 +456,10 @@ void PCCPatchSegmenter3::resampledPointcloud( std::vector<size_t>& pointCount,
         }
         // adjust depth(0), depth(1)
         patch.setDepth( 0, p, projectionTypeIndication * ( patch.getDepth( 0 )[p] - int16_t( patch.getD1() ) ) );
-        patch.setSizeD( ( std::max )( patch.getSizeD(), static_cast<size_t>( patch.getDepth( 0 )[p] ) ) );
+        patch.setSizeD( (std::max)( patch.getSizeD(), static_cast<size_t>( patch.getDepth( 0 )[p] ) ) );
         if ( !( useEnhancedOccupancyMapCode && !multipleMaps ) ) {
           patch.setDepth( 1, p, projectionTypeIndication * ( patch.getDepth( 1 )[p] - int16_t( patch.getD1() ) ) );
-          patch.setSizeD( ( std::max )( patch.getSizeD(), static_cast<size_t>( patch.getDepth( 1 )[p] ) ) );
+          patch.setSizeD( (std::max)( patch.getSizeD(), static_cast<size_t>( patch.getDepth( 1 )[p] ) ) );
         }
       }
     }
@@ -469,11 +469,11 @@ void PCCPatchSegmenter3::resampledPointcloud( std::vector<size_t>& pointCount,
   pointCount[2] = eomCountPerPatch;
 }
 
-int16_t PCCPatchSegmenter3::getPatchSurfaceThickness( const PCCPointSet3&      points,
-                                                      PCCPatch&                patch,
+int16_t PCCPatchSegmenter3::getPatchSurfaceThickness( const PCCPointSet3      &points,
+                                                      PCCPatch                &patch,
                                                       size_t                   patchIndex,
-                                                      std::vector<PCCColor3B>& frame_pcc_color,
-                                                      std::vector<size_t>&     connectedComponent,
+                                                      std::vector<PCCColor3B> &frame_pcc_color,
+                                                      std::vector<size_t>     &connectedComponent,
                                                       size_t                   surfaceThickness,
                                                       size_t                   projectionMode,
                                                       bool                     bIsAdditionalProjectionPlane,
@@ -498,10 +498,10 @@ int16_t PCCPatchSegmenter3::getPatchSurfaceThickness( const PCCPointSet3&      p
   for ( const auto i : connectedComponent ) {
     PCCPoint3D pointTmp = points[i];
     if ( bIsAdditionalProjectionPlane ) {
-      auto& input = pointTmp;
+      auto &input = pointTmp;
       convert( patch.getAxisOfAdditionalPlane(), geometryBitDepth3D, input, pointTmp );
     }
-    const auto& point = pointTmp;
+    const auto &point = pointTmp;
     const auto  d     = int16_t( round( point[patch.getNormalAxis()] ) );
     const auto  u     = size_t( round( point[patch.getTangentAxis()] - patch.getU1() ) );
     const auto  v     = size_t( round( point[patch.getBitangentAxis()] - patch.getV1() ) );
@@ -539,20 +539,20 @@ int16_t PCCPatchSegmenter3::getPatchSurfaceThickness( const PCCPointSet3&      p
   return patch_surfaceThickness;
 }
 
-void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 points,
+void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3                 &points,
                                          const size_t                        frameIndex,
-                                         const PCCKdTree&                    kdtree,
-                                         const PCCPatchSegmenter3Parameters& params,
-                                         std::vector<size_t>&                partition,
-                                         std::vector<PCCPatch>&              patches,
-                                         std::vector<size_t>&                patchPartition,
-                                         std::vector<size_t>&                resampledPatchPartition,
+                                         const PCCKdTree                    &kdtree,
+                                         const PCCPatchSegmenter3Parameters &params,
+                                         std::vector<size_t>                &partition,
+                                         std::vector<PCCPatch>              &patches,
+                                         std::vector<size_t>                &patchPartition,
+                                         std::vector<size_t>                &resampledPatchPartition,
                                          std::vector<size_t>                 rawPoints,
-                                         PCCPointSet3&                       resampled,
-                                         std::vector<PCCPointSet3>&          subPointCloud,
-                                         float&                              distanceSrcRec,
-                                         const PCCNormalsGenerator3&         normalsGen,
-                                         const PCCVector3D*                  orientations,
+                                         PCCPointSet3                       &resampled,
+                                         std::vector<PCCPointSet3>          &subPointCloud,
+                                         float                              &distanceSrcRec,
+                                         const PCCNormalsGenerator3         &normalsGen,
+                                         const PCCVector3D                  *orientations,
                                          const size_t                        orientationCount ) {
   const size_t     maxNNCount                        = params.maxNNCountPatchSegmentation_;
   const size_t     minPointCountPerCC                = params.minPointCountPerCCPatchSegmentation_;
@@ -578,16 +578,16 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
   const double     minGradient                       = params.minGradient_;
   const size_t     minNumHighGradientPoints          = params.minNumHighGradientPoints_;
   bool             enablePointCloudPartitioning      = params.enablePointCloudPartitioning_;
-  std::vector<int> roiBoundingBoxMinX = const_cast<PCCPatchSegmenter3Parameters&>( params ).roiBoundingBoxMinX_;
-  std::vector<int> roiBoundingBoxMaxX = const_cast<PCCPatchSegmenter3Parameters&>( params ).roiBoundingBoxMaxX_;
-  std::vector<int> roiBoundingBoxMinY = const_cast<PCCPatchSegmenter3Parameters&>( params ).roiBoundingBoxMinY_;
-  std::vector<int> roiBoundingBoxMaxY = const_cast<PCCPatchSegmenter3Parameters&>( params ).roiBoundingBoxMaxY_;
-  std::vector<int> roiBoundingBoxMinZ = const_cast<PCCPatchSegmenter3Parameters&>( params ).roiBoundingBoxMinZ_;
-  std::vector<int> roiBoundingBoxMaxZ = const_cast<PCCPatchSegmenter3Parameters&>( params ).roiBoundingBoxMaxZ_;
-  int numCutsAlong1stLongestAxis      = const_cast<PCCPatchSegmenter3Parameters&>( params ).numCutsAlong1stLongestAxis_;
-  int numCutsAlong2ndLongestAxis      = const_cast<PCCPatchSegmenter3Parameters&>( params ).numCutsAlong2ndLongestAxis_;
-  int numCutsAlong3rdLongestAxis      = const_cast<PCCPatchSegmenter3Parameters&>( params ).numCutsAlong3rdLongestAxis_;
-  const size_t pointCount             = points.getPointCount();
+  std::vector<int> roiBoundingBoxMinX = const_cast<PCCPatchSegmenter3Parameters &>( params ).roiBoundingBoxMinX_;
+  std::vector<int> roiBoundingBoxMaxX = const_cast<PCCPatchSegmenter3Parameters &>( params ).roiBoundingBoxMaxX_;
+  std::vector<int> roiBoundingBoxMinY = const_cast<PCCPatchSegmenter3Parameters &>( params ).roiBoundingBoxMinY_;
+  std::vector<int> roiBoundingBoxMaxY = const_cast<PCCPatchSegmenter3Parameters &>( params ).roiBoundingBoxMaxY_;
+  std::vector<int> roiBoundingBoxMinZ = const_cast<PCCPatchSegmenter3Parameters &>( params ).roiBoundingBoxMinZ_;
+  std::vector<int> roiBoundingBoxMaxZ = const_cast<PCCPatchSegmenter3Parameters &>( params ).roiBoundingBoxMaxZ_;
+  int numCutsAlong1stLongestAxis = const_cast<PCCPatchSegmenter3Parameters &>( params ).numCutsAlong1stLongestAxis_;
+  int numCutsAlong2ndLongestAxis = const_cast<PCCPatchSegmenter3Parameters &>( params ).numCutsAlong2ndLongestAxis_;
+  int numCutsAlong3rdLongestAxis = const_cast<PCCPatchSegmenter3Parameters &>( params ).numCutsAlong3rdLongestAxis_;
+  const size_t pointCount        = points.getPointCount();
   patchPartition.resize( pointCount, 0 );
   resampledPatchPartition.reserve( pointCount );
   PCCNNResult             result;
@@ -621,15 +621,15 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
       numROIs = static_cast<int>( roiBoundingBoxMinX.size() );
       std::vector<std::vector<size_t>> numCutsPerAxis;  // number of cuts per axis for each ROI
       numCutsPerAxis.resize( numROIs );
-      for ( auto& nCut : numCutsPerAxis ) { nCut.resize( 3 ); }
+      for ( auto &nCut : numCutsPerAxis ) { nCut.resize( 3 ); }
       std::vector<std::vector<double>> cutSizePerAxis;  // size of cut per axis for each ROI
       cutSizePerAxis.resize( numROIs );
-      for ( auto& szCut : cutSizePerAxis ) { szCut.resize( 3 ); }
+      for ( auto &szCut : cutSizePerAxis ) { szCut.resize( 3 ); }
 
       // cutRangesPerAxis[r][x][i]: i-th cut-range of x-th axis of r-th ROI
       std::vector<std::vector<std::vector<Range>>> cutRangesPerAxis;
       cutRangesPerAxis.resize( numROIs );
-      for ( auto& cutRng : cutRangesPerAxis ) { cutRng.resize( 3 ); }
+      for ( auto &cutRng : cutRangesPerAxis ) { cutRng.resize( 3 ); }
 
       std::vector<std::vector<Range>> chunks;
       // chunks[c][x]: range of x-th axis of c-th chunk cut each ROI into chunks for each ROI, sort axes according to
@@ -675,7 +675,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
         using AxisDelta = std::pair<int, int>;
         std::vector<AxisDelta> axisDelta;
         axisDelta.resize( 3 );
-        for ( int k = 0; k < 3; ++k ) { axisDelta[k] = AxisDelta( {k, delta[k]} ); }
+        for ( int k = 0; k < 3; ++k ) { axisDelta[k] = AxisDelta( { k, delta[k] } ); }
 
         sort( axisDelta.begin(), axisDelta.end(), []( AxisDelta a, AxisDelta b ) { return a.second > b.second; } );
 
@@ -692,8 +692,8 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
           cutSizePerAxis[roiIndex][k] = double( delta[k] ) / double( numCutsPerAxis[roiIndex][k] );
         }
 
-        std::vector<int> shift{roiBoundingBoxMinX[roiIndex], roiBoundingBoxMinY[roiIndex],
-                               roiBoundingBoxMinZ[roiIndex]};
+        std::vector<int> shift{ roiBoundingBoxMinX[roiIndex], roiBoundingBoxMinY[roiIndex],
+                                roiBoundingBoxMinZ[roiIndex] };
 
         for ( size_t axis = 0; axis < 3; ++axis ) {
           std::vector<Range> cutRanges;
@@ -706,10 +706,10 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
           cutRangesPerAxis[roiIndex][axis] = cutRanges;
         }
 
-        for ( auto& rangeX : cutRangesPerAxis[roiIndex][0] ) {
-          for ( auto& rangeY : cutRangesPerAxis[roiIndex][1] ) {
-            for ( auto& rangeZ : cutRangesPerAxis[roiIndex][2] ) {
-              chunks.push_back( std::vector<Range>( {rangeX, rangeY, rangeZ} ) );
+        for ( auto &rangeX : cutRangesPerAxis[roiIndex][0] ) {
+          for ( auto &rangeY : cutRangesPerAxis[roiIndex][1] ) {
+            for ( auto &rangeZ : cutRangesPerAxis[roiIndex][2] ) {
+              chunks.push_back( std::vector<Range>( { rangeX, rangeY, rangeZ } ) );
             }
           }
         }
@@ -729,7 +729,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
       boundingBoxChunks.resize( numChunks );
 
       for ( size_t chunkIndex = 0; chunkIndex < numChunks; ++chunkIndex ) {
-        auto& boundingBox   = boundingBoxChunks[chunkIndex];
+        auto &boundingBox   = boundingBoxChunks[chunkIndex];
         boundingBox.min_[0] = chunks[chunkIndex][0].first;
         boundingBox.max_[0] = chunks[chunkIndex][0].second;
         boundingBox.min_[1] = chunks[chunkIndex][1].first;
@@ -739,7 +739,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
       }
       for ( size_t i = 0; i < pointCount; ++i ) {
         for ( size_t chunkIndex = 0; chunkIndex < numChunks; ++chunkIndex ) {
-          const auto& boundingBox = boundingBoxChunks[chunkIndex];
+          const auto &boundingBox = boundingBoxChunks[chunkIndex];
           if ( boundingBox.fullyContains( points[i] ) ) {
             pointsChunks[chunkIndex].addPoint( points[i] );
             pointsIndexChunks[chunkIndex].push_back( i );
@@ -816,7 +816,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
           const size_t indexCC      = connectedComponents.size();
           const size_t clusterIndex = partition[i];
           connectedComponents.resize( indexCC + 1 );
-          std::vector<size_t>& connectedComponent = connectedComponents[indexCC];
+          std::vector<size_t> &connectedComponent = connectedComponents[indexCC];
           fifo.push_back( i );
           connectedComponent.push_back( i );
           while ( !fifo.empty() ) {
@@ -855,7 +855,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
             const size_t indexCC      = connectedComponentsChunks[chunkIndex].size();
             const size_t clusterIndex = partition[pointsIndexChunks[chunkIndex][i]];
             connectedComponentsChunks[chunkIndex].resize( indexCC + 1 );
-            std::vector<size_t>& connectedComponentChunk = connectedComponentsChunks[chunkIndex][indexCC];
+            std::vector<size_t> &connectedComponentChunk = connectedComponentsChunks[chunkIndex][indexCC];
             fifo.push_back( i );
             connectedComponentChunk.push_back( i );
             while ( !fifo.empty() ) {
@@ -882,7 +882,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
       std::cout << "\n\t merge connected components of all chunks... ";
       // convert connected component indexes of chunks to original indexes
       for ( int chunkIndex = 0; chunkIndex < numChunks; ++chunkIndex ) {
-        for ( auto& connectedComponent : connectedComponentsChunks[chunkIndex] ) {
+        for ( auto &connectedComponent : connectedComponentsChunks[chunkIndex] ) {
           for ( size_t i = 0; i < connectedComponent.size(); ++i ) {
             connectedComponent[i] = pointsIndexChunks[chunkIndex][connectedComponent[i]];
           }
@@ -890,7 +890,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
       }
       connectedComponents.resize( 0 );
       for ( size_t chunkIndex = 0; chunkIndex < numChunks; ++chunkIndex ) {
-        for ( auto& connectedComponent : connectedComponentsChunks[chunkIndex] ) {
+        for ( auto &connectedComponent : connectedComponentsChunks[chunkIndex] ) {
           connectedComponents.push_back( connectedComponent );
         }
       }
@@ -905,13 +905,13 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
     }
     if ( patchExpansionEnabled ) {
       std::sort( connectedComponents.begin(), connectedComponents.end(),
-                 []( const std::vector<size_t>& a, const std::vector<size_t>& b ) { return a.size() >= b.size(); } );
+                 []( const std::vector<size_t> &a, const std::vector<size_t> &b ) { return a.size() >= b.size(); } );
     }
-    for ( auto& connectedComponent : connectedComponents ) {
+    for ( auto &connectedComponent : connectedComponents ) {
       const size_t patchIndex = patches.size();
       patches.resize( patchIndex + 1 );
       if ( createSubPointCloud ) { subPointCloud.resize( patchIndex + 1 ); }
-      PCCPatch& patch            = patches[patchIndex];
+      PCCPatch &patch            = patches[patchIndex];
       size_t    d0CountPerPatch  = 0;
       size_t    d1CountPerPatch  = 0;
       size_t    eomCountPerPatch = 0;
@@ -932,22 +932,22 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
         for ( const auto i : connectedComponent ) {
           PCCPoint3D pointTmp = points[i];
           if ( bIsAdditionalProjectionPlane ) {
-            auto& input = pointTmp;
+            auto &input = pointTmp;
             convert( patch.getAxisOfAdditionalPlane(), geometryBitDepth3D, input, pointTmp );
           }
-          const auto& point = pointTmp;
-          minU              = ( std::min )( minU, int16_t( round( point[patch.getTangentAxis()] ) ) );
-          minV              = ( std::min )( minV, int16_t( round( point[patch.getBitangentAxis()] ) ) );
+          const auto &point = pointTmp;
+          minU              = (std::min)( minU, int16_t( round( point[patch.getTangentAxis()] ) ) );
+          minV              = (std::min)( minV, int16_t( round( point[patch.getBitangentAxis()] ) ) );
         }
         std::vector<size_t> tempCC;
         tempCC.resize( 0 );
         for ( const auto i : connectedComponent ) {
           PCCPoint3D pointTmp = points[i];
           if ( bIsAdditionalProjectionPlane ) {
-            auto& input = pointTmp;
+            auto &input = pointTmp;
             convert( patch.getAxisOfAdditionalPlane(), geometryBitDepth3D, input, pointTmp );
           }
-          const auto& point = pointTmp;
+          const auto &point = pointTmp;
           const auto  u     = int16_t( round( point[patch.getTangentAxis()] ) );
           const auto  v     = int16_t( round( point[patch.getBitangentAxis()] ) );
           if ( u - minU < params.maxPatchSize_ && v - minV < params.maxPatchSize_ ) { tempCC.push_back( i ); }
@@ -989,10 +989,10 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
         patchPartition[i]   = patchIndex + 1;
         PCCPoint3D pointTmp = points[i];
         if ( bIsAdditionalProjectionPlane ) {
-          auto& input = pointTmp;
+          auto &input = pointTmp;
           convert( patch.getAxisOfAdditionalPlane(), geometryBitDepth3D, input, pointTmp );
         }
-        const auto& point = pointTmp;
+        const auto &point = pointTmp;
         for ( size_t k = 0; k < 3; ++k ) {
           if ( point[k] < boundingBox.min_[k] ) { boundingBox.min_[k] = floor( point[k] ); }
           if ( point[k] > boundingBox.max_[k] ) { boundingBox.max_[k] = ceil( point[k] ); }
@@ -1029,17 +1029,17 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
       for ( const auto i : connectedComponent ) {
         PCCPoint3D pointTmp = points[i];
         if ( bIsAdditionalProjectionPlane ) {
-          auto& input = pointTmp;
+          auto &input = pointTmp;
           convert( patch.getAxisOfAdditionalPlane(), geometryBitDepth3D, input, pointTmp );
         }
-        const auto& point = pointTmp;
+        const auto &point = pointTmp;
         const auto  d     = int16_t( round( point[patch.getNormalAxis()] ) );
         const auto  u     = size_t( round( point[patch.getTangentAxis()] - patch.getU1() ) );
         const auto  v     = size_t( round( point[patch.getBitangentAxis()] - patch.getV1() ) );
         assert( u >= 0 && u < patch.getSizeU() );
         assert( v >= 0 && v < patch.getSizeV() );
-        const size_t p           = v * patch.getSizeU() + u;
-        bool         bValidPoint = ( patch.getProjectionMode() == 0 )
+        const size_t p   = v * patch.getSizeU() + u;
+        bool bValidPoint = ( patch.getProjectionMode() == 0 )
                                ? ( patch.getDepth( 0 )[p] > d )
                                : ( ( patch.getDepth( 0 )[p] == g_infiniteDepth ) || ( patch.getDepth( 0 )[p] < d ) );
         if ( bValidPoint ) {  // min
@@ -1047,12 +1047,12 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
           int16_t maxD0 = patch.getD1();
           patch.setDepth( 0, p, d );
           patch.setDepth0PccIdx( p, i );
-          patch.setPatchSize2DXInPixel( ( std::max )( patch.getPatchSize2DXInPixel(), u ) );
-          patch.setPatchSize2DYInPixel( ( std::max )( patch.getPatchSize2DYInPixel(), v ) );
-          patch.setSizeU0( ( std::max )( patch.getSizeU0(), u / patch.getOccupancyResolution() ) );
-          patch.setSizeV0( ( std::max )( patch.getSizeV0(), v / patch.getOccupancyResolution() ) );
-          minD0 = ( std::min )( minD0, d );
-          maxD0 = ( std::max )( maxD0, d );
+          patch.setPatchSize2DXInPixel( (std::max)( patch.getPatchSize2DXInPixel(), u ) );
+          patch.setPatchSize2DYInPixel( (std::max)( patch.getPatchSize2DYInPixel(), v ) );
+          patch.setSizeU0( (std::max)( patch.getSizeU0(), u / patch.getOccupancyResolution() ) );
+          patch.setSizeV0( (std::max)( patch.getSizeV0(), v / patch.getOccupancyResolution() ) );
+          minD0 = (std::min)( minD0, d );
+          maxD0 = (std::max)( maxD0, d );
           if ( patch.getProjectionMode() == 0 ) {
             patch.setD1( ( minD0 / minLevel ) * minLevel );
           } else {
@@ -1092,12 +1092,12 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
           const size_t v0 = v / patch.getOccupancyResolution();
           const size_t p0 = v0 * patch.getSizeU0() + u0;
           if ( patch.getProjectionMode() == 0 ) {
-            peakPerBlock[p0] = ( std::min )( peakPerBlock[p0], depth0 );
+            peakPerBlock[p0] = (std::min)( peakPerBlock[p0], depth0 );
           } else {
-            peakPerBlock[p0] = ( std::max )( peakPerBlock[p0], depth0 );
+            peakPerBlock[p0] = (std::max)( peakPerBlock[p0], depth0 );
           }
         }  // u
-      }    // v
+      }  // v
       for ( int64_t v = 0; v < int64_t( patch.getSizeV() ); ++v ) {
         for ( int64_t u = 0; u < int64_t( patch.getSizeU() ); ++u ) {
           const size_t  p      = v * patch.getSizeU() + u;
@@ -1128,10 +1128,10 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
           for ( const auto i : connectedComponent ) {
             PCCPoint3D pointTmp = points[i];
             if ( bIsAdditionalProjectionPlane ) {
-              auto& input = pointTmp;
+              auto &input = pointTmp;
               convert( patch.getAxisOfAdditionalPlane(), geometryBitDepth3D, input, pointTmp );
             }
-            const auto& point = pointTmp;
+            const auto &point = pointTmp;
             const auto  d     = int16_t( round( point[patch.getNormalAxis()] ) );
             const auto  u     = size_t( round( point[patch.getTangentAxis()] - patch.getU1() ) );
             const auto  v     = size_t( round( point[patch.getBitangentAxis()] - patch.getV1() ) );
@@ -1162,10 +1162,10 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
           for ( const auto i : connectedComponent ) {
             PCCPoint3D pointTmp = points[i];
             if ( bIsAdditionalProjectionPlane ) {
-              auto& input = pointTmp;
+              auto &input = pointTmp;
               convert( patch.getAxisOfAdditionalPlane(), geometryBitDepth3D, input, pointTmp );
             }
-            const auto& point = pointTmp;
+            const auto &point = pointTmp;
             const auto  d     = int16_t( round( point[patch.getNormalAxis()] ) );
             const auto  u     = size_t( round( point[patch.getTangentAxis()] - patch.getU1() ) );
             const auto  v     = size_t( round( point[patch.getBitangentAxis()] - patch.getV1() ) );
@@ -1208,7 +1208,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
       // to satisfy the bitcount) max : (1<<std::min(geometryBitDepth3D, geometryBitDepth2D))
       patch.setSizeDPixel( patch.getSizeD() );
       patch.setSizeD(
-          std::min( ( size_t )( 1 << std::min( geometryBitDepth3D, geometryBitDepth2D ) ) - 1, patch.getSizeD() ) );
+          std::min( (size_t)( 1 << std::min( geometryBitDepth3D, geometryBitDepth2D ) ) - 1, patch.getSizeD() ) );
       size_t bitdepthD  = std::min( geometryBitDepth3D, geometryBitDepth2D ) - std::log2( minLevel );
       size_t maxDDplus1 = 1 << bitdepthD;  // e.g. 4
       size_t quantDD    = patch.getSizeD() == 0 ? 0 : ( ( patch.getSizeD() - 1 ) / minLevel + 1 );
@@ -1231,7 +1231,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
             testSrc.addPoint( points[i], points.getColor( i ) );
           }
         }
-        for ( const auto& p : rec.getPositions() ) { testRec.addPoint( p ); }
+        for ( const auto &p : rec.getPositions() ) { testRec.addPoint( p ); }
         testSrc.transferColorSimple( testRec );
         float distPAB;
         float distPBA;
@@ -1254,7 +1254,7 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
         testSrcNum += testSrc.getPointCount();
         testRecNum += testRec.getPointCount();
 
-        auto& sub = subPointCloud[subPointCloud.size() - 1];
+        auto &sub = subPointCloud[subPointCloud.size() - 1];
         sub.resize( 0 );
         PCCKdTree kdtreeRec( rec );
         for ( const auto i : connectedComponent ) {
@@ -1319,15 +1319,15 @@ void PCCPatchSegmenter3::segmentPatches( const PCCPointSet3&                 poi
   distanceSrcRec = meanYAB + meanUAB + meanVAB + meanYBA + meanUBA + meanVBA;
 }
 
-void PCCPatchSegmenter3::refineSegmentation( const PCCPointSet3&         pointCloud,
-                                             const PCCKdTree&            kdtree,
-                                             const PCCNormalsGenerator3& normalsGen,
-                                             const PCCVector3D*          orientations,
+void PCCPatchSegmenter3::refineSegmentation( const PCCPointSet3         &pointCloud,
+                                             const PCCKdTree            &kdtree,
+                                             const PCCNormalsGenerator3 &normalsGen,
+                                             const PCCVector3D          *orientations,
                                              const size_t                orientationCount,
                                              const size_t                maxNNCount,
                                              const double                lambda,
                                              const size_t                iterationCount,
-                                             std::vector<size_t>&        partition ) {
+                                             std::vector<size_t>        &partition ) {
   assert( orientations );
   std::vector<std::vector<size_t>> adj;
   computeAdjacencyInfo( pointCloud, kdtree, adj, maxNNCount );
@@ -1343,9 +1343,9 @@ void PCCPatchSegmenter3::refineSegmentation( const PCCPointSet3&         pointCl
 #else
     for ( size_t i = 0; i < pointCount; i++ ) {
 #endif
-        auto& scoreSmooth = scoresSmooth[i];
+        auto &scoreSmooth = scoresSmooth[i];
         std::fill( scoreSmooth.begin(), scoreSmooth.end(), 0 );
-        for ( auto& neighbor : adj[i] ) { ++scoreSmooth[partition[neighbor]]; }
+        for ( auto &neighbor : adj[i] ) { ++scoreSmooth[partition[neighbor]]; }
 #if defined( ENABLE_TBB )
       } );
     } );
@@ -1361,7 +1361,7 @@ void PCCPatchSegmenter3::refineSegmentation( const PCCPointSet3&         pointCl
         const PCCVector3D normal       = normalsGen.getNormal( i );
         size_t            clusterIndex = partition[i];
         double            bestScore    = 0.0;
-        const auto&       scoreSmooth  = scoresSmooth[i];
+        const auto       &scoreSmooth  = scoresSmooth[i];
         for ( size_t j = 0; j < orientationCount; ++j ) {
           const double scoreNormal = normal * orientations[j];
           const double score       = scoreNormal + weight * scoreSmooth[j];
@@ -1375,31 +1375,31 @@ void PCCPatchSegmenter3::refineSegmentation( const PCCPointSet3&         pointCl
       } );
     } );
 #else
-  }
+    }
 #endif
     swap( tempPartition, partition );
   }
-  for ( auto& vector : scoresSmooth ) { vector.clear(); }
+  for ( auto &vector : scoresSmooth ) { vector.clear(); }
   scoresSmooth.clear();
 }
 
-void PCCPatchSegmenter3::refineSegmentationGridBased( const PCCPointSet3&         pointCloud,
-                                                      const PCCNormalsGenerator3& normalsGen,
-                                                      const PCCVector3D*          orientations,
+void PCCPatchSegmenter3::refineSegmentationGridBased( const PCCPointSet3         &pointCloud,
+                                                      const PCCNormalsGenerator3 &normalsGen,
+                                                      const PCCVector3D          *orientations,
                                                       const size_t                orientationCount,
                                                       const size_t                maxNNCount,
                                                       const double                lambda,
                                                       const size_t                iterationCount,
                                                       const size_t                voxDim,
                                                       const size_t                searchRadius,
-                                                      std::vector<size_t>&        partition ) {
+                                                      std::vector<size_t>        &partition ) {
   const size_t pointCount = pointCloud.getPointCount();
   auto         geoMax     = pointCloud[0][0];
   for ( size_t i = 0; i < pointCount; ++i ) {
-    const auto& pos = pointCloud[i];
-    geoMax          = ( std::max )( geoMax, pos[0] );
-    geoMax          = ( std::max )( geoMax, pos[1] );
-    geoMax          = ( std::max )( geoMax, pos[2] );
+    const auto &pos = pointCloud[i];
+    geoMax          = (std::max)( geoMax, pos[0] );
+    geoMax          = (std::max)( geoMax, pos[1] );
+    geoMax          = (std::max)( geoMax, pos[2] );
   }
   size_t geoRange = 1;
   for ( size_t i = geoMax - 1; i != 0u; i >>= 1, geoRange <<= 1 ) { ; }
@@ -1420,7 +1420,7 @@ void PCCPatchSegmenter3::refineSegmentationGridBased( const PCCPointSet3&       
 
   const uint32_t uiMaxNumPointsInOneVox = voxDim * voxDim * voxDim;
   for ( size_t i = 0; i < pointCount; ++i ) {
-    const auto&  pos = pointCloud[i];
+    const auto  &pos = pointCloud[i];
     const size_t x0  = ( ( static_cast<size_t>( pos[0] ) + voxDimHalf ) ) >> voxDimShift;
     const size_t y0  = ( ( static_cast<size_t>( pos[1] ) + voxDimHalf ) ) >> voxDimShift;
     const size_t z0  = ( ( static_cast<size_t>( pos[2] ) + voxDimHalf ) ) >> voxDimShift;
@@ -1436,17 +1436,17 @@ void PCCPatchSegmenter3::refineSegmentationGridBased( const PCCPointSet3&       
   const uint64_t uiTotalNumOfVoxs = gridCenters.getPointCount();
 
   // pre-processing steps [m56635]
-  std::vector<PointIndicesOfGridCell*> pointIndicesOfVox;
+  std::vector<PointIndicesOfGridCell *> pointIndicesOfVox;
   pointIndicesOfVox.reserve( uiTotalNumOfVoxs );
 
-  std::vector<AttributeOfGridCell*> attributeOfVox;
+  std::vector<AttributeOfGridCell *> attributeOfVox;
   attributeOfVox.reserve( uiTotalNumOfVoxs );
 
   for ( size_t i = 0; i < uiTotalNumOfVoxs; ++i ) {
-    auto& p = gridCenters[i];
+    auto &p = gridCenters[i];
 
-    PointIndicesOfGridCell* pPI   = gridWithPointIndices[subToInd( p[0], p[1], p[2] )].get();
-    AttributeOfGridCell*    pAttr = gridWithAttributes[subToInd( p[0], p[1], p[2] )].get();
+    PointIndicesOfGridCell *pPI   = gridWithPointIndices[subToInd( p[0], p[1], p[2] )].get();
+    AttributeOfGridCell    *pAttr = gridWithAttributes[subToInd( p[0], p[1], p[2] )].get();
 
     pAttr->setNumOfTotalPoints( pPI->getPointCount() );
 
@@ -1475,15 +1475,15 @@ void PCCPatchSegmenter3::refineSegmentationGridBased( const PCCPointSet3&       
 
   // for each cell of the grid
   for ( size_t i = 0; i < uiTotalNumOfVoxs; ++i ) {
-    auto& p = gridCenters[i];
+    auto &p = gridCenters[i];
     adjDEV[i].reserve( 128 );
 
     size_t nnPointCount  = 0;
-    auto&  currentAdjOfI = adj[i];
+    auto  &currentAdjOfI = adj[i];
     auto   iter          = currentAdjOfI.begin();
     for ( ; iter != currentAdjOfI.end(); ++iter ) {
       // for the 2nd voxel classification [m56635]
-      auto&  q    = gridCenters[*iter];
+      auto  &q    = gridCenters[*iter];
       size_t xAbs = abs( p[0] - q[0] );
       size_t yAbs = abs( p[1] - q[1] );
       size_t zAbs = abs( p[2] - q[2] );
@@ -1515,17 +1515,17 @@ void PCCPatchSegmenter3::refineSegmentationGridBased( const PCCPointSet3&       
 
       std::fill( scoreSmooth.begin(), scoreSmooth.end(), 0 );
 
-      auto& currentAdjOfI = adj[i];
-      for ( const auto& j : currentAdjOfI ) {
-        ScoresVector_t* scoreSmoothOfAdj = attributeOfVox[j]->getScoreSmooth();
+      auto &currentAdjOfI = adj[i];
+      for ( const auto &j : currentAdjOfI ) {
+        ScoresVector_t *scoreSmoothOfAdj = attributeOfVox[j]->getScoreSmooth();
         for ( size_t k = 0; k < orientationCount; ++k ) { scoreSmooth[k] += ( *scoreSmoothOfAdj )[k]; }
       }
 
       // 2nd voxel classification (indirect edge-voxel)  [m56635]
-      const auto& maxEleOfScoreSmooth = std::max_element( scoreSmooth.begin(), scoreSmooth.end() );
+      const auto &maxEleOfScoreSmooth = std::max_element( scoreSmooth.begin(), scoreSmooth.end() );
       size_t      ppiOfScoreSmooth    = std::distance( scoreSmooth.begin(), maxEleOfScoreSmooth );
 
-      for ( auto& j : adjDEV[i] ) {
+      for ( auto &j : adjDEV[i] ) {
         uint8_t edgeOfAdj = attributeOfVox[j]->getEdge();
         uint8_t ppi       = attributeOfVox[j]->getPPI();
         if ( edgeOfAdj == NO_EDGE && ppi != ppiOfScoreSmooth ) { attributeOfVox[j]->updateEdge( INDIRECT_EDGE ); }
@@ -1538,15 +1538,15 @@ void PCCPatchSegmenter3::refineSegmentationGridBased( const PCCPointSet3&       
         if ( validNumOfScores == 1 && scoreSmooth[voxPPI] > 0 ) { continue; }
       }
 
-      const auto& pI = *( pointIndicesOfVox[i]->getPointIndices() );
+      const auto &pI = *( pointIndicesOfVox[i]->getPointIndices() );
 
       // for each point in a grid cell of i
-      for ( const auto& j : pI ) {
-        const auto& normal = normalsGen.getNormal( j );
+      for ( const auto &j : pI ) {
+        const auto &normal = normalsGen.getNormal( j );
         for ( size_t k = 0; k < orientationCount; ++k ) {
           scores[k] = normal * orientations[k] + weights[i] * scoreSmooth[k];
         }
-        const auto& result = std::max_element( scores.begin(), scores.end() );
+        const auto &result = std::max_element( scores.begin(), scores.end() );
         partition[j]       = std::distance( scores.begin(), result );
       }
 
@@ -1569,23 +1569,23 @@ float pcc::computeIOU( Rect a, Rect b ) {
   return iou;
 }
 
-void PCCPatchSegmenter3::separateHighGradientPoints( const PCCPointSet3&               points,
+void PCCPatchSegmenter3::separateHighGradientPoints( const PCCPointSet3               &points,
                                                      const size_t                      additionalProjectionAxis,
                                                      const bool                        absoluteD1,
-                                                     const PCCNormalsGenerator3&       normalsGen,
-                                                     const PCCVector3D*                orientations,
+                                                     const PCCNormalsGenerator3       &normalsGen,
+                                                     const PCCVector3D                *orientations,
                                                      const size_t                      orientationCount,
                                                      const size_t                      surfaceThickness,
                                                      const size_t                      geometryBitDepth3D,
                                                      const double                      minGradient,
                                                      const size_t                      minNumHighGradientPoints,
-                                                     std::vector<size_t>&              partition,
-                                                     std::vector<std::vector<size_t>>& adj,
-                                                     std::vector<std::vector<size_t>>& connectedComponents ) {
+                                                     std::vector<size_t>              &partition,
+                                                     std::vector<std::vector<size_t>> &adj,
+                                                     std::vector<std::vector<size_t>> &connectedComponents ) {
   // detect and remove high gradient points
   std::vector<std::vector<size_t>> highGradientConnectedComponents;
   size_t                           idx = 0;
-  for ( auto& connectedComponent : connectedComponents ) {
+  for ( auto &connectedComponent : connectedComponents ) {
     PCCPatch patch;
     patch.setIndex( idx++ );
     std::vector<bool> isComponentRemoved;
@@ -1611,7 +1611,7 @@ void PCCPatchSegmenter3::separateHighGradientPoints( const PCCPointSet3&        
   std::vector<size_t> patchPartition;
   patchPartition.resize( points.getPointCount(), 0 );
   for ( size_t i = 0; i < connectedComponents.size(); ++i ) {
-    auto& connectedComponent = connectedComponents[i];
+    auto &connectedComponent = connectedComponents[i];
     for ( const auto j : connectedComponent ) { patchPartition[j] = i + 1; }
   }
 
@@ -1620,7 +1620,7 @@ void PCCPatchSegmenter3::separateHighGradientPoints( const PCCPointSet3&        
   std::vector<size_t> highGradientPartition;
   highGradientPartition.resize( highGradientConnectedComponents.size(), 0 );
   for ( size_t i = 0; i < highGradientConnectedComponents.size(); ++i ) {
-    auto&       highGradientConnectedComponent = highGradientConnectedComponents[i];
+    auto       &highGradientConnectedComponent = highGradientConnectedComponents[i];
     PCCVector3D normalSum( 0.0F );
     for ( const auto j : highGradientConnectedComponent ) { normalSum += normalsGen.getNormal( j ); }
 
@@ -1670,7 +1670,7 @@ void PCCPatchSegmenter3::separateHighGradientPoints( const PCCPointSet3&        
   }
 
   for ( size_t i = 0; i < highGradientConnectedComponents.size(); ++i ) {
-    auto& highGradientConnectedComponent = highGradientConnectedComponents[i];
+    auto &highGradientConnectedComponent = highGradientConnectedComponents[i];
     if ( highGradientCCPartition[i] != 0 ) {
       const size_t newCCIdx = highGradientCCPartition[i] - 1;
       connectedComponents[newCCIdx].insert( connectedComponents[newCCIdx].end(), highGradientConnectedComponent.begin(),
@@ -1686,10 +1686,10 @@ void PCCPatchSegmenter3::separateHighGradientPoints( const PCCPointSet3&        
 
 void PCCPatchSegmenter3::determinePatchOrientation( const size_t         additionalProjectionAxis,
                                                     const bool           absoluteD1,
-                                                    bool&                bIsAdditionalProjectionPlane,
-                                                    PCCPatch&            patch,
-                                                    std::vector<size_t>& partition,
-                                                    std::vector<size_t>& connectedComponent ) {
+                                                    bool                &bIsAdditionalProjectionPlane,
+                                                    PCCPatch            &patch,
+                                                    std::vector<size_t> &partition,
+                                                    std::vector<size_t> &connectedComponent ) {
   size_t clusterIndex          = partition[connectedComponent[0]];
   bIsAdditionalProjectionPlane = ( clusterIndex > 5 );  // false;
   if ( bIsAdditionalProjectionPlane && ( additionalProjectionAxis == 2 ) ) clusterIndex += 4;
@@ -1697,11 +1697,11 @@ void PCCPatchSegmenter3::determinePatchOrientation( const size_t         additio
   patch.setViewId( clusterIndex );
 }
 
-void PCCPatchSegmenter3::generatePatchD0( const PCCPointSet3&  points,
+void PCCPatchSegmenter3::generatePatchD0( const PCCPointSet3  &points,
                                           const size_t         geometryBitDepth3D,
                                           const bool           bIsAdditionalProjectionPlane,
-                                          PCCPatch&            patch,
-                                          std::vector<size_t>& connectedComponent ) {
+                                          PCCPatch            &patch,
+                                          std::vector<size_t> &connectedComponent ) {
   PCCBox3D boundingBox;
   for ( size_t k = 0; k < 3; ++k ) {
     boundingBox.min_[k] = ( std::numeric_limits<double>::max )();
@@ -1710,10 +1710,10 @@ void PCCPatchSegmenter3::generatePatchD0( const PCCPointSet3&  points,
   for ( const auto i : connectedComponent ) {
     PCCPoint3D pointTmp = points[i];
     if ( bIsAdditionalProjectionPlane ) {
-      auto& input = pointTmp;
+      auto &input = pointTmp;
       convert( patch.getAxisOfAdditionalPlane(), geometryBitDepth3D, input, pointTmp );
     }
-    const auto& point = pointTmp;
+    const auto &point = pointTmp;
     for ( size_t k = 0; k < 3; ++k ) {
       if ( point[k] < boundingBox.min_[k] ) { boundingBox.min_[k] = floor( point[k] ); }
       if ( point[k] > boundingBox.max_[k] ) { boundingBox.max_[k] = ceil( point[k] ); }
@@ -1733,10 +1733,10 @@ void PCCPatchSegmenter3::generatePatchD0( const PCCPointSet3&  points,
   for ( const auto i : connectedComponent ) {
     PCCPoint3D pointTmp = points[i];
     if ( bIsAdditionalProjectionPlane ) {
-      auto& input = pointTmp;
+      auto &input = pointTmp;
       convert( patch.getAxisOfAdditionalPlane(), geometryBitDepth3D, input, pointTmp );
     }
-    const auto& point = pointTmp;
+    const auto &point = pointTmp;
     const auto  d     = int16_t( round( point[patch.getNormalAxis()] ) );
     const auto  u     = size_t( round( point[patch.getTangentAxis()] - patch.getU1() ) );
     const auto  v     = size_t( round( point[patch.getBitangentAxis()] - patch.getV1() ) );
@@ -1755,10 +1755,10 @@ void PCCPatchSegmenter3::generatePatchD0( const PCCPointSet3&  points,
   }
 }
 
-void PCCPatchSegmenter3::calculateGradient( const PCCPointSet3&               points,
-                                            const std::vector<size_t>&        connectedComponent,
-                                            const PCCNormalsGenerator3&       normalsGen,
-                                            const PCCVector3D*                orientations,
+void PCCPatchSegmenter3::calculateGradient( const PCCPointSet3               &points,
+                                            const std::vector<size_t>        &connectedComponent,
+                                            const PCCNormalsGenerator3       &normalsGen,
+                                            const PCCVector3D                *orientations,
                                             const size_t                      orientationCount,
                                             const size_t                      orgPartitionIdx,
                                             const size_t                      surfaceThickness,
@@ -1766,10 +1766,10 @@ void PCCPatchSegmenter3::calculateGradient( const PCCPointSet3&               po
                                             const bool                        bIsAdditionalProjectionPlane,
                                             const double                      minGradient,
                                             const size_t                      minNumHighGradientPoints,
-                                            PCCPatch&                         patch,
-                                            std::vector<std::vector<size_t>>& adj,
-                                            std::vector<std::vector<size_t>>& highGradientConnectedComponents,
-                                            std::vector<bool>&                isRemoved ) {
+                                            PCCPatch                         &patch,
+                                            std::vector<std::vector<size_t>> &adj,
+                                            std::vector<std::vector<size_t>> &highGradientConnectedComponents,
+                                            std::vector<bool>                &isRemoved ) {
   /* for the case that the xyz components of a normal are the same:
        sqrt( nx^2 + ny^2 + nz^2 ) = 1, where nx = ny = nz = 0.577 */
   const double        normalThreshold = 0.577;
@@ -1860,10 +1860,10 @@ void PCCPatchSegmenter3::calculateGradient( const PCCPointSet3&               po
     const size_t idx      = connectedComponent[i];
     PCCPoint3D   pointTmp = points[idx];
     if ( bIsAdditionalProjectionPlane ) {
-      auto& input = pointTmp;
+      auto &input = pointTmp;
       convert( patch.getAxisOfAdditionalPlane(), geometryBitDepth3D, input, pointTmp );
     }
-    const auto&  point = pointTmp;
+    const auto  &point = pointTmp;
     const auto   d     = int16_t( round( point[patch.getNormalAxis()] ) );
     const auto   u     = size_t( round( point[patch.getTangentAxis()] - patch.getU1() ) );
     const auto   v     = size_t( round( point[patch.getBitangentAxis()] - patch.getV1() ) );

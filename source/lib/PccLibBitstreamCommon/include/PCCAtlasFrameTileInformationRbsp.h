@@ -67,8 +67,8 @@ class AtlasFrameTileInformationRbsp {
     auxiliaryVideoTileRowHeight_.clear();
   };
 
-  AtlasFrameTileInformationRbsp& operator=( const AtlasFrameTileInformationRbsp& ) = default;
-  bool                       operator==( const AtlasFrameTileInformationRbsp& other ) const {
+  AtlasFrameTileInformationRbsp &operator=( const AtlasFrameTileInformationRbsp & ) = default;
+  bool                           operator==( const AtlasFrameTileInformationRbsp &other ) const {
     if ( singleTileInAtlasFrameFlag_ != other.singleTileInAtlasFrameFlag_ ) {
       return false;
     } else if ( !singleTileInAtlasFrameFlag_ ) {
@@ -190,10 +190,10 @@ class AtlasFrameTileInformationRbsp {
       assert( 0 );
     auxiliaryVideoTileRowHeight_[index] = value;
   }
-  std::vector<size_t>& getPartitionWidth() { return colWidth_; }
-  std::vector<size_t>& getPartitionHeight() { return rowHeight_; }
-  std::vector<size_t>& getPartitionPosX() { return partitionPosX_; }
-  std::vector<size_t>& getPartitionPosY() { return partitionPosY_; }
+  std::vector<size_t> &getPartitionWidth() { return colWidth_; }
+  std::vector<size_t> &getPartitionHeight() { return rowHeight_; }
+  std::vector<size_t> &getPartitionPosX() { return partitionPosX_; }
+  std::vector<size_t> &getPartitionPosY() { return partitionPosY_; }
   size_t               getPartitionPosX( size_t index ) { return partitionPosX_[index]; }
   size_t               getPartitionPosY( size_t index ) { return partitionPosY_[index]; }
   size_t               getPartitionWidth( size_t index ) { return colWidth_[index]; }

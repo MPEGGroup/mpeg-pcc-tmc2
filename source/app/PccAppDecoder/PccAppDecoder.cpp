@@ -33,6 +33,8 @@
 #ifndef _CRT_SECURE_NO_WARNINGS
 #define _CRT_SECURE_NO_WARNINGS
 #endif
+
+#include "PCCAdaptation.h"
 #include "PCCCommon.h"
 #include "PCCChrono.h"
 #include "PCCMemory.h"
@@ -61,7 +63,7 @@ using pcc::chrono::StopwatchUserTime;
 // :: Command line / config parsing helpers
 
 namespace pcc {
-static std::istream& operator>>( std::istream& in, PCCColorTransform& val ) {
+static std::istream &operator>>( std::istream &in, PCCColorTransform &val ) {
   unsigned int tmp;
   in >> tmp;
   val = PCCColorTransform( tmp );
@@ -73,10 +75,10 @@ static std::istream& operator>>( std::istream& in, PCCColorTransform& val ) {
 // :: Command line / config parsing
 
 bool parseParameters( int                       argc,
-                      char*                     argv[],
-                      PCCDecoderParameters&     decoderParams,
-                      PCCMetricsParameters&     metricsParams,
-                      PCCConformanceParameters& conformanceParams ) {
+                      char                     *argv[],
+                      PCCDecoderParameters     &decoderParams,
+                      PCCMetricsParameters     &metricsParams,
+                      PCCConformanceParameters &conformanceParams ) {
   namespace po = df::program_options_lite;
 
   bool   print_help = false;
@@ -123,6 +125,10 @@ bool parseParameters( int                       argc,
       decoderParams.inverseColorSpaceConversionConfig_,
       decoderParams.inverseColorSpaceConversionConfig_,
     "HDRConvert configuration file used for YUV420 to RGB444 conversion")
+    ("scalerConfig",
+      decoderParams.scalerConfig_,
+      decoderParams.scalerConfig_,
+      "configuration file used for Upscaling/Downscaling")
     ( "videoDecoderOccupancyPath",
       decoderParams.videoDecoderOccupancyPath_,
       decoderParams.videoDecoderOccupancyPath_, 
@@ -243,8 +249,8 @@ bool parseParameters( int                       argc,
        "frame per second" );
   // clang-format on
   po::setDefaults( opts );
-  po::ErrorReporter        err;
-  const list<const char*>& argv_unhandled = po::scanArgv( opts, argc, (const char**)argv, err );
+  po::ErrorReporter         err;
+  const list<const char *> &argv_unhandled = po::scanArgv( opts, argc, (const char **)argv, err );
   for ( const auto arg : argv_unhandled ) { printf( "Unhandled argument ignored: %s \n", arg ); }
 
   if ( argc == 1 || print_help ) {
@@ -275,10 +281,10 @@ bool parseParameters( int                       argc,
   return !err.is_errored;
 }
 
-int decompressVideo( PCCDecoderParameters&       decoderParams,
-                     const PCCMetricsParameters& metricsParams,
-                     PCCConformanceParameters&   conformanceParams,
-                     StopwatchUserTime&          clock ) {
+int decompressVideo( PCCDecoderParameters       &decoderParams,
+                     const PCCMetricsParameters &metricsParams,
+                     PCCConformanceParameters   &conformanceParams,
+                     StopwatchUserTime          &clock ) {
   PCCBitstream     bitstream;
   PCCBitstreamStat bitstreamStat;
   PCCLogger        logger;
@@ -333,6 +339,7 @@ int decompressVideo( PCCDecoderParameters&       decoderParams,
       context.setAtlasIndex( atlId );
       int retDecoding = decoder.decode( context, reconstructs, atlId );
       clock.stop();
+
       if ( retDecoding != 0 ) { return retDecoding; }
       if ( metricsParams.computeChecksum_ ) { checksum.computeDecoded( reconstructs ); }
       if ( metricsParams.computeMetrics_ ) {
@@ -361,7 +368,28 @@ int decompressVideo( PCCDecoderParameters&       decoderParams,
 #endif
 
       if ( !decoderParams.reconstructedDataPath_.empty() ) {
-        reconstructs.write( decoderParams.reconstructedDataPath_, frameNumber, decoderParams.nbThread_ );
+        // TODO
+        auto &vps                      = context.getVps();
+        auto  profileReconstructionIdc = vps.getProfileTierLevel().getProfileReconstructionIdc();
+        if ( profileReconstructionIdc == 3 ) {
+          // GS adaoptation
+          for ( size_t i = 0; i < reconstructs.getFrameCount(); i++ ) {
+            PCCAdaptation                 adaptation;
+            auto                         &pointCloud = reconstructs[i];
+            pcc::PCCPointSetGS            pointCloudGS;
+            const PCCAdaptationParameters adaptationParams = decoder.getAdaptationParams( i );
+
+            adaptation.inverseAdapt( pointCloud, pointCloudGS, adaptationParams );
+
+            pointCloudGS.write( decoderParams.reconstructedDataPath_ );
+
+            std::string outputPath =
+                decoderParams.reconstructedDataPath_ + "_" + std::to_string( frameNumber + i ) + "asci.ply";
+            reconstructs.write( outputPath, frameNumber, decoderParams.nbThread_ );
+          }
+        } else {
+          reconstructs.write( decoderParams.reconstructedDataPath_, frameNumber, decoderParams.nbThread_ );
+        }
       } else {
         frameNumber += reconstructs.getFrameCount();
       }
@@ -375,12 +403,12 @@ int decompressVideo( PCCDecoderParameters&       decoderParams,
   return !validChecksum;
 }
 
-int main( int argc, char* argv[] ) {
+int main( int argc, char *argv[] ) {
   std::cout << "PccAppDecoder v" << TMC2_VERSION_MAJOR << "." << TMC2_VERSION_MINOR << std::endl << std::endl;
 
   // this is mandatory to print floats with full precision
-  std::cout.precision(std::numeric_limits<float>::max_digits10);
-  
+  std::cout.precision( std::numeric_limits<float>::max_digits10 );
+
   PCCDecoderParameters     decoderParams;
   PCCMetricsParameters     metricsParams;
   PCCConformanceParameters conformanceParams;

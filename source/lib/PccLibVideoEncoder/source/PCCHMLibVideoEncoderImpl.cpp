@@ -54,17 +54,17 @@ template <typename T>
 PCCHMLibVideoEncoderImpl<T>::~PCCHMLibVideoEncoderImpl() {}
 
 template <typename T>
-Void PCCHMLibVideoEncoderImpl<T>::encode( PCCVideo<T, 3>&    videoSrc,
+Void PCCHMLibVideoEncoderImpl<T>::encode( PCCVideo<T, 3>    &videoSrc,
                                           std::string        arguments,
-                                          PCCVideoBitstream& bitstream,
-                                          PCCVideo<T, 3>&    videoRec ) {
-  std::ostringstream oss( ostringstream::binary | ostringstream::out );
-  std::ostream&      bitstreamFile = oss;
-  std::istringstream iss( arguments );
-  std::string        token;
-  std::vector<char*> args;
+                                          PCCVideoBitstream &bitstream,
+                                          PCCVideo<T, 3>    &videoRec ) {
+  std::ostringstream  oss( ostringstream::binary | ostringstream::out );
+  std::ostream       &bitstreamFile = oss;
+  std::istringstream  iss( arguments );
+  std::string         token;
+  std::vector<char *> args;
   while ( iss >> token ) {
-    char* arg = new char[token.size() + 1];
+    char *arg = new char[token.size() + 1];
     copy( token.begin(), token.end(), arg );
     arg[token.size()] = '\0';
     args.push_back( arg );
@@ -79,14 +79,14 @@ Void PCCHMLibVideoEncoderImpl<T>::encode( PCCVideo<T, 3>&    videoSrc,
 #endif
       return;
     }
-  } catch ( df::program_options_lite::ParseFailure& e ) {
+  } catch ( df::program_options_lite::ParseFailure &e ) {
     std::cerr << "Error parsing option \"" << e.arg << "\" with argument \"" << e.val << "\"." << std::endl;
     return;
   }
   for ( size_t i = 0; i < args.size(); i++ ) { delete[] args[i]; }
   m_framesToBeEncoded     = std::min( m_framesToBeEncoded, (int)videoSrc.getFrameCount() );
-  TComPicYuv* pcPicYuvOrg = new TComPicYuv;
-  TComPicYuv* pcPicYuvRec = NULL;
+  TComPicYuv *pcPicYuvOrg = new TComPicYuv;
+  TComPicYuv *pcPicYuvRec = NULL;
   // initialize internal class & member variables
   xInitLibCfg();
   m_cTEncTop.create();
@@ -97,9 +97,9 @@ Void PCCHMLibVideoEncoderImpl<T>::encode( PCCVideo<T, 3>&    videoSrc,
   if ( m_usePCCExt ) {
     // Note JR: must be given from the function parameters
     printf( "\nReading the aux info files\n" );
-    FILE* patchFile = NULL;
+    FILE *patchFile = NULL;
     patchFile       = fopen( m_patchInfoFileName.c_str(), "rb" );
-    memset(g_numPatches, 0, sizeof(long long)*PCC_ME_EXT_MAX_NUM_FRAMES);
+    memset( g_numPatches, 0, sizeof( long long ) * PCC_ME_EXT_MAX_NUM_FRAMES );
     for ( Int i = 0; i < PCC_ME_EXT_MAX_NUM_FRAMES; i++ ) {
       long long readSize = fread( &g_numPatches[i], sizeof( long long ), 1, patchFile );
       if ( readSize != 1 && readSize != 0 ) { printf( "error: frame[%d] Wrong Patch data group file\n", i ); }
@@ -634,7 +634,7 @@ Void PCCHMLibVideoEncoderImpl<T>::xInitLibCfg() {
 }
 
 template <typename T>
-Void PCCHMLibVideoEncoderImpl<T>::xGetBuffer( TComPicYuv*& rpcPicYuvRec ) {
+Void PCCHMLibVideoEncoderImpl<T>::xGetBuffer( TComPicYuv *&rpcPicYuvRec ) {
   assert( m_iGOPSize > 0 );
   if ( m_cListPicYuvRec.size() >= (UInt)m_iGOPSize ) {
     rpcPicYuvRec = m_cListPicYuvRec.popFront();
@@ -648,10 +648,10 @@ Void PCCHMLibVideoEncoderImpl<T>::xGetBuffer( TComPicYuv*& rpcPicYuvRec ) {
 
 template <typename T>
 Void PCCHMLibVideoEncoderImpl<T>::xDeleteBuffer() {
-  TComList<TComPicYuv*>::iterator iterPicYuvRec = m_cListPicYuvRec.begin();
-  Int                             iSize         = Int( m_cListPicYuvRec.size() );
+  TComList<TComPicYuv *>::iterator iterPicYuvRec = m_cListPicYuvRec.begin();
+  Int                              iSize         = Int( m_cListPicYuvRec.size() );
   for ( Int i = 0; i < iSize; i++ ) {
-    TComPicYuv* pcPicYuvRec = *( iterPicYuvRec++ );
+    TComPicYuv *pcPicYuvRec = *( iterPicYuvRec++ );
     pcPicYuvRec->destroy();
     delete pcPicYuvRec;
     pcPicYuvRec = NULL;
@@ -666,46 +666,46 @@ Void PCCHMLibVideoEncoderImpl<T>::xDeleteBuffer() {
  */
 
 template <typename T>
-Void PCCHMLibVideoEncoderImpl<T>::xWriteOutput( std::ostream&                bitstreamFile,
+Void PCCHMLibVideoEncoderImpl<T>::xWriteOutput( std::ostream                &bitstreamFile,
                                                 Int                          iNumEncoded,
-                                                const std::list<AccessUnit>& accessUnits,
-                                                PCCVideo<T, 3>&              videoRec ) {
+                                                const std::list<AccessUnit> &accessUnits,
+                                                PCCVideo<T, 3>              &videoRec ) {
   const InputColourSpaceConversion ipCSC =
       ( !m_outputInternalColourSpace ) ? m_inputColourSpaceConvert : IPCOLOURSPACE_UNCHANGED;
   if ( m_isField ) {
     // Reinterlace fields
     Int                              i;
-    TComList<TComPicYuv*>::iterator  iterPicYuvRec = m_cListPicYuvRec.end();
+    TComList<TComPicYuv *>::iterator iterPicYuvRec = m_cListPicYuvRec.end();
     list<AccessUnit>::const_iterator iterBitstream = accessUnits.begin();
     for ( i = 0; i < iNumEncoded; i++ ) { --iterPicYuvRec; }
     for ( i = 0; i < iNumEncoded / 2; i++ ) {
-      TComPicYuv* pcPicYuvRecTop = *( iterPicYuvRec++ );
+      TComPicYuv *pcPicYuvRecTop = *( iterPicYuvRec++ );
       iterPicYuvRec++;
       xWritePicture( pcPicYuvRecTop, videoRec );
-      const AccessUnit&   auTop    = *( iterBitstream++ );
-      const vector<UInt>& statsTop = writeAnnexB( bitstreamFile, auTop );
+      const AccessUnit   &auTop    = *( iterBitstream++ );
+      const vector<UInt> &statsTop = writeAnnexB( bitstreamFile, auTop );
       rateStatsAccum( auTop, statsTop );
-      const AccessUnit&   auBottom    = *( iterBitstream++ );
-      const vector<UInt>& statsBottom = writeAnnexB( bitstreamFile, auBottom );
+      const AccessUnit   &auBottom    = *( iterBitstream++ );
+      const vector<UInt> &statsBottom = writeAnnexB( bitstreamFile, auBottom );
       rateStatsAccum( auBottom, statsBottom );
     }
   } else {
     Int                              i;
-    TComList<TComPicYuv*>::iterator  iterPicYuvRec = m_cListPicYuvRec.end();
+    TComList<TComPicYuv *>::iterator iterPicYuvRec = m_cListPicYuvRec.end();
     list<AccessUnit>::const_iterator iterBitstream = accessUnits.begin();
     for ( i = 0; i < iNumEncoded; i++ ) { --iterPicYuvRec; }
     for ( i = 0; i < iNumEncoded; i++ ) {
-      TComPicYuv* pcPicYuvRec = *( iterPicYuvRec++ );
+      TComPicYuv *pcPicYuvRec = *( iterPicYuvRec++ );
       xWritePicture( pcPicYuvRec, videoRec );
-      const AccessUnit&   au    = *( iterBitstream++ );
-      const vector<UInt>& stats = writeAnnexB( bitstreamFile, au );
+      const AccessUnit   &au    = *( iterBitstream++ );
+      const vector<UInt> &stats = writeAnnexB( bitstreamFile, au );
       rateStatsAccum( au, stats );
     }
   }
 }
 
 template <typename T>
-Void PCCHMLibVideoEncoderImpl<T>::rateStatsAccum( const AccessUnit& au, const std::vector<UInt>& annexBsizes ) {
+Void PCCHMLibVideoEncoderImpl<T>::rateStatsAccum( const AccessUnit &au, const std::vector<UInt> &annexBsizes ) {
   AccessUnit::const_iterator   it_au    = au.begin();
   vector<UInt>::const_iterator it_stats = annexBsizes.begin();
   for ( ; it_au != au.end(); it_au++, it_stats++ ) {
@@ -769,15 +769,15 @@ Void PCCHMLibVideoEncoderImpl<T>::printChromaFormat() {
 }
 
 template <typename T>
-Void PCCHMLibVideoEncoderImpl<T>::xWritePicture( const TComPicYuv* pic, PCCVideo<T, 3>& video ) {
+Void PCCHMLibVideoEncoderImpl<T>::xWritePicture( const TComPicYuv *pic, PCCVideo<T, 3> &video ) {
   video.resize( video.getFrameCount() + 1 );
-  auto&          image           = video.getFrames().back();
+  auto          &image           = video.getFrames().back();
   int            chromaSubsample = pic->getWidth( COMPONENT_Y ) / pic->getWidth( COMPONENT_Cb );
   int            width           = m_iSourceWidth - m_confWinLeft - m_confWinRight;
   int            height          = m_iSourceHeight - m_confWinTop - m_confWinBottom;
-  PCCCOLORFORMAT format          = m_cTEncTop.getChromaFormatIdc() == CHROMA_420
-                              ? PCCCOLORFORMAT::YUV420
-                              : m_bRGBformat ? PCCCOLORFORMAT::RGB444 : PCCCOLORFORMAT::YUV444;
+  PCCCOLORFORMAT format          = m_cTEncTop.getChromaFormatIdc() == CHROMA_420 ? PCCCOLORFORMAT::YUV420
+                                   : m_bRGBformat                                ? PCCCOLORFORMAT::RGB444
+                                                                                 : PCCCOLORFORMAT::YUV444;
   image.set( pic->getAddr( COMPONENT_Y ), pic->getAddr( COMPONENT_Cb ), pic->getAddr( COMPONENT_Cr ), width, height,
              pic->getStride( COMPONENT_Y ), width / chromaSubsample, height / chromaSubsample,
              pic->getStride( COMPONENT_Cb ), m_internalBitDepth[0] - m_outputBitDepth[0], format,
@@ -785,8 +785,8 @@ Void PCCHMLibVideoEncoderImpl<T>::xWritePicture( const TComPicYuv* pic, PCCVideo
 }
 
 template <typename T>
-Void PCCHMLibVideoEncoderImpl<T>::xReadPicture( TComPicYuv* pic, PCCVideo<T, 3>& video, int frameIndex ) {
-  auto& image = video.getFrame( frameIndex );
+Void PCCHMLibVideoEncoderImpl<T>::xReadPicture( TComPicYuv *pic, PCCVideo<T, 3> &video, int frameIndex ) {
+  auto &image = video.getFrame( frameIndex );
   image.get( pic->getAddr( COMPONENT_Y ), pic->getAddr( COMPONENT_Cb ), pic->getAddr( COMPONENT_Cr ),
              pic->getWidth( COMPONENT_Y ), pic->getHeight( COMPONENT_Y ), pic->getStride( COMPONENT_Y ),
              pic->getWidth( COMPONENT_Cb ), pic->getHeight( COMPONENT_Cb ), pic->getStride( COMPONENT_Cb ),

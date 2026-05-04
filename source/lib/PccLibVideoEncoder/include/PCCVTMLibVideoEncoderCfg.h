@@ -47,7 +47,7 @@
 
 #include <map>
 template <class T1, class T2>
-static inline std::istream& operator>>( std::istream& in, std::map<T1, T2>& map );
+static inline std::istream &operator>>( std::istream &in, std::map<T1, T2> &map );
 
 #include "Utilities/program_options_lite.h"
 
@@ -273,7 +273,7 @@ class PCCVTMLibVideoEncoderCfg {
   OptionalValue<uint32_t> m_qpIncrementAtSourceFrame;  ///< Optional source frame number at which all subsequent frames
                                                        ///< are to use an increased internal QP.
 #else
-  double m_fQP;                     ///< QP value of key-picture (floating point)
+  double m_fQP;  ///< QP value of key-picture (floating point)
 #endif
   int                        m_iQP;  ///< QP value of key-picture (integer)
   bool                       m_useIdentityTableForNon420Chroma;
@@ -283,7 +283,7 @@ class PCCVTMLibVideoEncoderCfg {
   bool m_lambdaFromQPEnable;  ///< enable flag for QP:lambda fix
 #endif
   std::string              m_dQPFileName;              ///< QP offset for each slice (initialized from external file)
-  int*                     m_aidQP;                    ///< array of slice QP values
+  int                     *m_aidQP;                    ///< array of slice QP values
   int                      m_iMaxDeltaQP;              ///< max. |delta QP|
   uint32_t                 m_uiDeltaQpRD;              ///< dQP range for multi-pass slice QP optimization
   int                      m_cuQpDeltaSubdiv;          ///< Maximum subdiv for CU luma Qp adjustment (0:default)
@@ -475,7 +475,7 @@ class PCCVTMLibVideoEncoderCfg {
 #if W0038_DB_OPT
   int m_deblockingFilterMetric;  ///< blockiness metric in encoder
 #else
-  bool   m_DeblockingFilterMetric;  ///< blockiness metric in encoder
+  bool m_DeblockingFilterMetric;  ///< blockiness metric in encoder
 #endif
   bool m_enableIntraReferenceSmoothing;  ///< flag for enabling(default)/disabling intra reference smoothing/filtering
 
@@ -849,7 +849,7 @@ class PCCVTMLibVideoEncoderCfg {
  public:
   void create();                            ///< create option handling class
   void destroy();                           ///< destroy option handling class
-  bool parseCfg( int argc, char* argv[] );  ///< parse configuration file to fill member variables
+  bool parseCfg( int argc, char *argv[] );  ///< parse configuration file to fill member variables
 
 };  // END CLASS DEFINITION EncAppCfg
 

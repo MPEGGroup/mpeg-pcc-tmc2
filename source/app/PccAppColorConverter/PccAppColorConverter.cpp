@@ -48,15 +48,15 @@ using namespace std;
 using namespace pcc;
 
 bool parseParameters( int          argc,
-                      char*        argv[],
-                      std::string& srcVideoPath,
-                      std::string& dstVideoPath,
-                      std::string& configFile,
-                      size_t&      width,
-                      size_t&      height,
-                      std::string& colorFormat,
-                      size_t&      inputNumBytes,
-                      size_t&      outputNumBytes ) {
+                      char        *argv[],
+                      std::string &srcVideoPath,
+                      std::string &dstVideoPath,
+                      std::string &configFile,
+                      size_t      &width,
+                      size_t      &height,
+                      std::string &colorFormat,
+                      size_t      &inputNumBytes,
+                      size_t      &outputNumBytes ) {
   namespace po    = df::program_options_lite;
   bool print_help = false;
   // clang-format off
@@ -73,8 +73,8 @@ bool parseParameters( int          argc,
      ( "outputNumBytes", outputNumBytes, outputNumBytes, "Output video nbyte" );
   // clang-format on
   po::setDefaults( opts );
-  po::ErrorReporter        err;
-  const list<const char*>& argv_unhandled = po::scanArgv( opts, argc, (const char**)argv, err );
+  po::ErrorReporter         err;
+  const list<const char *> &argv_unhandled = po::scanArgv( opts, argc, (const char **)argv, err );
   for ( const auto arg : argv_unhandled ) { printf( "Unhandled argument ignored: %s \n", arg ); }
 
   printf( "parseParameters : \n" );
@@ -101,7 +101,7 @@ bool parseParameters( int          argc,
   return true;
 }
 
-int main( int argc, char* argv[] ) {
+int main( int argc, char *argv[] ) {
   std::cout << "PccAppVideoConverter v" << TMC2_VERSION_MAJOR << "." << TMC2_VERSION_MINOR << std::endl << std::endl;
   std::string srcVideoPath, dstVideoPath, configFile, colorFormat;
   size_t      width = 0, height = 0, inputNumBytes = 0, outputNumBytes = 0;

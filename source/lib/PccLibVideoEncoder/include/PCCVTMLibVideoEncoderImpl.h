@@ -68,15 +68,15 @@ namespace pcc {
 template <class T>
 class PCCVTMLibVideoEncoderImpl : public PCCVTMLibVideoEncoderCfg, public AUWriterIf {
  public:
-  PCCVTMLibVideoEncoderImpl( ostream& bitStream, EncLibCommon* encLibCommon );
+  PCCVTMLibVideoEncoderImpl( ostream &bitStream, EncLibCommon *encLibCommon );
 
   ~PCCVTMLibVideoEncoderImpl();
 
-  bool encode( PCCVideo<T, 3>&    videoSrc,
+  bool encode( PCCVideo<T, 3>    &videoSrc,
                std::string        arguments,
-               PCCVideoBitstream& bitstream,
-               PCCVideo<T, 3>&    videoRec );
-  bool encodePrep( bool& eos, PCCVideo<T, 3>& videoSrc, std::string arguments, PCCVideo<T, 3>& videoRec );
+               PCCVideoBitstream &bitstream,
+               PCCVideo<T, 3>    &videoRec );
+  bool encodePrep( bool &eos, PCCVideo<T, 3> &videoSrc, std::string arguments, PCCVideo<T, 3> &videoRec );
   void createLib( const int layerIdx );
   void destroyLib();
 
@@ -84,31 +84,31 @@ class PCCVTMLibVideoEncoderImpl : public PCCVTMLibVideoEncoderCfg, public AUWrit
   void xInitLibCfg();
   void xInitLib();
   void xDestroyLib();
-  void xWriteOutput( std::ostream&           bitstreamFile,
-                     int                     iNumEncoded,
-                     std::list<PelUnitBuf*>& recBufList,
-                     PCCVideo<T, 3>&         videoRec );
-  void xWritePicture( const PelUnitBuf* pic, PCCVideo<T, 3>& video );
-  void xReadPicture( PelUnitBuf* pic, PCCVideo<T, 3>& video, int frameIndex );
+  void xWriteOutput( std::ostream            &bitstreamFile,
+                     int                      iNumEncoded,
+                     std::list<PelUnitBuf *> &recBufList,
+                     PCCVideo<T, 3>          &videoRec );
+  void xWritePicture( const PelUnitBuf *pic, PCCVideo<T, 3> &video );
+  void xReadPicture( PelUnitBuf *pic, PCCVideo<T, 3> &video, int frameIndex );
   void printChromaFormat();
   void printRateSummary();
-  void rateStatsAccum( const AccessUnit& au, const std::vector<uint32_t>& stats );
-  void outputAU( const AccessUnit& au );
+  void rateStatsAccum( const AccessUnit &au, const std::vector<uint32_t> &stats );
+  void outputAU( const AccessUnit &au );
 
-  EncLib                 m_cEncLib;
-  std::list<PelUnitBuf*> m_recBufList;
-  int                    m_iFrameRcvd;
-  uint32_t               m_essentialBytes;
-  uint32_t               m_totalBytes;
-  int                    m_outputWidth;
-  int                    m_outputHeight;
-  int                    m_numEncoded;
-  PelStorage*            m_trueOrgPic;
-  PelStorage*            m_orgPic;
-  PelStorage*            m_filteredOrgPic;
-  EncTemporalFilter      m_temporalFilter;
-  bool                   m_flush;
-  ostream&               m_bitstream;
+  EncLib                  m_cEncLib;
+  std::list<PelUnitBuf *> m_recBufList;
+  int                     m_iFrameRcvd;
+  uint32_t                m_essentialBytes;
+  uint32_t                m_totalBytes;
+  int                     m_outputWidth;
+  int                     m_outputHeight;
+  int                     m_numEncoded;
+  PelStorage             *m_trueOrgPic;
+  PelStorage             *m_orgPic;
+  PelStorage             *m_filteredOrgPic;
+  EncTemporalFilter       m_temporalFilter;
+  bool                    m_flush;
+  ostream                &m_bitstream;
 };
 
 }  // namespace pcc

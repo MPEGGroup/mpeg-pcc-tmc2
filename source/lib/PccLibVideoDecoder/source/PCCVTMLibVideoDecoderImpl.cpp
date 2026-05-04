@@ -47,14 +47,14 @@ template <typename T>
 PCCVTMLibVideoDecoderImpl<T>::~PCCVTMLibVideoDecoderImpl() {}
 
 template <typename T>
-uint32_t PCCVTMLibVideoDecoderImpl<T>::decode( PCCVideoBitstream& bitstream,
+uint32_t PCCVTMLibVideoDecoderImpl<T>::decode( PCCVideoBitstream &bitstream,
                                                size_t             outputBitDepth,
-                                               PCCVideo<T, 3>&    video ) {
-  std::string        s( reinterpret_cast<char*>( bitstream.buffer() ), bitstream.size() );
+                                               PCCVideo<T, 3>    &video ) {
+  std::string        s( reinterpret_cast<char *>( bitstream.buffer() ), bitstream.size() );
   std::istringstream iss( s );
-  std::istream&      bitstreamFile = iss;
+  std::istream      &bitstreamFile = iss;
   int                poc;
-  PicList*           pcListPic = NULL;
+  PicList           *pcListPic = NULL;
 
   InputByteStream bytestream( bitstreamFile );
   if ( outputBitDepth ) {
@@ -89,7 +89,7 @@ uint32_t PCCVTMLibVideoDecoderImpl<T>::decode( PCCVideoBitstream& bitstream,
   }
 
   // main decoder loop
-  bool loopFiltered[MAX_VPS_LAYERS] = {false};
+  bool loopFiltered[MAX_VPS_LAYERS] = { false };
   bool bPicSkipped                  = false;
 
   bool isEosPresentInPu     = false;
@@ -103,7 +103,7 @@ uint32_t PCCVTMLibVideoDecoderImpl<T>::decode( PCCVideoBitstream& bitstream,
     if ( !outputPicturePresentInBitstream ) {
       PicList::iterator iterPic = pcListPic->begin();
       while ( !outputPicturePresentInBitstream && iterPic != pcListPic->end() ) {
-        Picture* pcPic = *( iterPic++ );
+        Picture *pcPic = *( iterPic++ );
         if ( pcPic->neededForOutput ) { outputPicturePresentInBitstream = true; }
       }
     }
@@ -395,7 +395,7 @@ void PCCVTMLibVideoDecoderImpl<T>::xCreateDecLib() {
   m_cDecLib.setDecodedPictureHashSEIEnabled( m_decodedPictureHashSEIEnabled );
 
   if ( !m_outputDecodedSEIMessagesFilename.empty() ) {
-    std::ostream& os = m_seiMessageFileStream.is_open() ? m_seiMessageFileStream : std::cout;
+    std::ostream &os = m_seiMessageFileStream.is_open() ? m_seiMessageFileStream : std::cout;
     m_cDecLib.setDecodedSEIMessageOutputStream( &os );
   }
 #if JVET_S0257_DUMP_360SEI_MESSAGE
@@ -422,8 +422,8 @@ void PCCVTMLibVideoDecoderImpl<T>::xDestroyDecLib() {
 }
 
 template <typename T>
-void PCCVTMLibVideoDecoderImpl<T>::setVideoSize( const SPS* sps ) {
-  auto& window        = sps->getConformanceWindow();
+void PCCVTMLibVideoDecoderImpl<T>::setVideoSize( const SPS *sps ) {
+  auto &window        = sps->getConformanceWindow();
   int   width         = sps->getMaxPicWidthInLumaSamples();
   int   height        = sps->getMaxPicHeightInLumaSamples();
   m_outputWidth       = width - window.getWindowLeftOffset() - window.getWindowRightOffset();
@@ -433,18 +433,18 @@ void PCCVTMLibVideoDecoderImpl<T>::setVideoSize( const SPS* sps ) {
 }
 
 template <typename T>
-void PCCVTMLibVideoDecoderImpl<T>::xWriteOutput( PicList* pcListPic, uint32_t tId, PCCVideo<T, 3>& video ) {
+void PCCVTMLibVideoDecoderImpl<T>::xWriteOutput( PicList *pcListPic, uint32_t tId, PCCVideo<T, 3> &video ) {
   if ( pcListPic->empty() ) { return; }
 
   PicList::iterator iterPic                = pcListPic->begin();
   int               numPicsNotYetDisplayed = 0;
   int               dpbFullness            = 0;
-  const SPS*        activeSPS              = ( pcListPic->front()->cs->sps );
+  const SPS        *activeSPS              = ( pcListPic->front()->cs->sps );
   uint32_t          maxNumReorderPicsHighestTid;
   uint32_t          maxDecPicBufferingHighestTid;
   uint32_t          maxNrSublayers = activeSPS->getMaxTLayers();
 
-  const VPS* referredVPS = pcListPic->front()->cs->vps;
+  const VPS *referredVPS = pcListPic->front()->cs->vps;
   const int  temporalId =
       ( m_iMaxTemporalLayer == -1 || m_iMaxTemporalLayer >= maxNrSublayers ) ? maxNrSublayers - 1 : m_iMaxTemporalLayer;
 
@@ -457,7 +457,7 @@ void PCCVTMLibVideoDecoderImpl<T>::xWriteOutput( PicList* pcListPic, uint32_t tI
   }
 
   while ( iterPic != pcListPic->end() ) {
-    Picture* pcPic = *( iterPic );
+    Picture *pcPic = *( iterPic );
     if ( pcPic->neededForOutput && pcPic->getPOC() > m_iPOCLastDisplay ) {
       numPicsNotYetDisplayed++;
       dpbFullness++;
@@ -471,16 +471,16 @@ void PCCVTMLibVideoDecoderImpl<T>::xWriteOutput( PicList* pcListPic, uint32_t tI
 
   if ( numPicsNotYetDisplayed > 2 ) { iterPic++; }
 
-  Picture* pcPic = *( iterPic );
+  Picture *pcPic = *( iterPic );
   if ( numPicsNotYetDisplayed > 2 && pcPic->fieldPic )  // Field Decoding
   {
     PicList::iterator endPic = pcListPic->end();
     endPic--;
     iterPic = pcListPic->begin();
     while ( iterPic != endPic ) {
-      Picture* pcPicTop = *( iterPic );
+      Picture *pcPicTop = *( iterPic );
       iterPic++;
-      Picture* pcPicBottom = *( iterPic );
+      Picture *pcPicBottom = *( iterPic );
 
       if ( pcPicTop->neededForOutput && pcPicBottom->neededForOutput &&
            ( numPicsNotYetDisplayed > maxNumReorderPicsHighestTid || dpbFullness > maxDecPicBufferingHighestTid ) &&
@@ -529,19 +529,19 @@ void PCCVTMLibVideoDecoderImpl<T>::xWriteOutput( PicList* pcListPic, uint32_t tI
 
 #if JVET_S0078_NOOUTPUTPRIORPICFLAG
 template <typename T>
-void PCCVTMLibVideoDecoderImpl<T>::xFlushOutput( PicList*        pcListPic,
-                                                 PCCVideo<T, 3>& video,
+void PCCVTMLibVideoDecoderImpl<T>::xFlushOutput( PicList        *pcListPic,
+                                                 PCCVideo<T, 3> &video,
                                                  const int       layerId,
                                                  bool            noOutputOfPriorPicsFlag ) {
 #else
 template <typename T>
-void PCCVTMLibVideoDecoderImpl<T>::xFlushOutput( PicList* pcListPic, PCCVideo<T, 3>& video, const int layerId ) {
+void PCCVTMLibVideoDecoderImpl<T>::xFlushOutput( PicList *pcListPic, PCCVideo<T, 3> &video, const int layerId ) {
 #endif
   if ( !pcListPic || pcListPic->empty() ) { return; }
   PicList::iterator iterPic = pcListPic->begin();
 
   iterPic        = pcListPic->begin();
-  Picture* pcPic = *( iterPic );
+  Picture *pcPic = *( iterPic );
 
   if ( pcPic->fieldPic )  // Field Decoding
   {
@@ -622,7 +622,7 @@ void PCCVTMLibVideoDecoderImpl<T>::xFlushOutput( PicList* pcListPic, PCCVideo<T,
     }
   }
   if ( layerId != NOT_VALID ) {
-    pcListPic->remove_if( []( Picture* p ) { return p == nullptr; } );
+    pcListPic->remove_if( []( Picture *p ) { return p == nullptr; } );
   } else {
     pcListPic->clear();
   }
@@ -630,16 +630,17 @@ void PCCVTMLibVideoDecoderImpl<T>::xFlushOutput( PicList* pcListPic, PCCVideo<T,
 }
 
 template <typename T>
-void PCCVTMLibVideoDecoderImpl<T>::xWritePicture( const Picture* pic, PCCVideo<T, 3>& video ) {
+void PCCVTMLibVideoDecoderImpl<T>::xWritePicture( const Picture *pic, PCCVideo<T, 3> &video ) {
   int chromaSubsample = pic->getPicWidthInLumaSamples() / pic->chromaSize().width;
   printf( "write output frame %zu size = %d %d bit depth = %d - %d = %d in %zd bytes buffers ( ChromaSub. = %d )\n",
           video.size(), pic->getPicWidthInLumaSamples(), pic->getPicHeightInLumaSamples(), m_internalBitDepths,
           m_outputBitDepth[0], m_internalBitDepths - m_outputBitDepth[0], sizeof( T ), chromaSubsample );
   fflush( stdout );
   video.resize( video.getFrameCount() + 1 );
-  auto&          image = video.getFrames().back();
-  PCCCOLORFORMAT format =
-      chromaSubsample > 1 ? PCCCOLORFORMAT::YUV420 : m_bRGB2GBR ? PCCCOLORFORMAT::RGB444 : PCCCOLORFORMAT::YUV444;
+  auto          &image  = video.getFrames().back();
+  PCCCOLORFORMAT format = chromaSubsample > 1 ? PCCCOLORFORMAT::YUV420
+                          : m_bRGB2GBR        ? PCCCOLORFORMAT::RGB444
+                                              : PCCCOLORFORMAT::YUV444;
   image.set( pic->getBuf( COMPONENT_Y, PIC_RECONSTRUCTION ).bufAt( 0, 0 ),
              pic->getBuf( COMPONENT_Cb, PIC_RECONSTRUCTION ).bufAt( 0, 0 ),
              pic->getBuf( COMPONENT_Cr, PIC_RECONSTRUCTION ).bufAt( 0, 0 ), m_outputWidth, m_outputHeight,
@@ -649,7 +650,7 @@ void PCCVTMLibVideoDecoderImpl<T>::xWritePicture( const Picture* pic, PCCVideo<T
 }
 
 template <typename T>
-bool PCCVTMLibVideoDecoderImpl<T>::xIsNaluWithinTargetDecLayerIdSet( const InputNALUnit* nalu ) const {
+bool PCCVTMLibVideoDecoderImpl<T>::xIsNaluWithinTargetDecLayerIdSet( const InputNALUnit *nalu ) const {
   if ( !m_targetDecLayerIdSet.size() )  // By default, the set is empty, meaning all LayerIds are allowed
   {
     return true;
@@ -662,17 +663,17 @@ bool PCCVTMLibVideoDecoderImpl<T>::xIsNaluWithinTargetDecLayerIdSet( const Input
 /** \param pcListPic list of pictures to be written to file
  */
 template <typename T>
-void PCCVTMLibVideoDecoderImpl<T>::xOutputAnnotatedRegions( PicList* pcListPic ) {
+void PCCVTMLibVideoDecoderImpl<T>::xOutputAnnotatedRegions( PicList *pcListPic ) {
   if ( !pcListPic || pcListPic->empty() ) { return; }
   PicList::iterator iterPic = pcListPic->begin();
 
   while ( iterPic != pcListPic->end() ) {
-    Picture* pcPic = *( iterPic );
+    Picture *pcPic = *( iterPic );
     if ( pcPic->neededForOutput ) {
       // Check if any annotated region SEI has arrived
       SEIMessages annotatedRegionSEIs = getSeisByType( pcPic->SEIs, SEI::ANNOTATED_REGIONS );
       for ( auto it = annotatedRegionSEIs.begin(); it != annotatedRegionSEIs.end(); it++ ) {
-        const SEIAnnotatedRegions& seiAnnotatedRegions = *(SEIAnnotatedRegions*)( *it );
+        const SEIAnnotatedRegions &seiAnnotatedRegions = *(SEIAnnotatedRegions *)( *it );
 
         if ( seiAnnotatedRegions.m_hdr.m_cancelFlag ) {
           m_arObjects.clear();
@@ -708,7 +709,7 @@ void PCCVTMLibVideoDecoderImpl<T>::xOutputAnnotatedRegions( PicList* pcListPic )
           for ( auto srcIt = seiAnnotatedRegions.m_annotatedRegions.begin();
                 srcIt != seiAnnotatedRegions.m_annotatedRegions.end(); srcIt++ ) {
             uint32_t                                          objIdx = srcIt->first;
-            const SEIAnnotatedRegions::AnnotatedRegionObject& src    = srcIt->second;
+            const SEIAnnotatedRegions::AnnotatedRegionObject &src    = srcIt->second;
 
             if ( src.objectCancelFlag ) {
               m_arObjects.erase( objIdx );
@@ -720,7 +721,7 @@ void PCCVTMLibVideoDecoderImpl<T>::xOutputAnnotatedRegions( PicList* pcListPic )
                 m_arObjects[objIdx] = src;
               } else  // Existing object, modifications to be done
               {
-                SEIAnnotatedRegions::AnnotatedRegionObject& dst = destIt->second;
+                SEIAnnotatedRegions::AnnotatedRegionObject &dst = destIt->second;
 
                 if ( seiAnnotatedRegions.m_hdr.m_objectLabelPresentFlag && src.objectLabelValid ) {
                   dst.objectLabelValid = true;
@@ -745,7 +746,7 @@ void PCCVTMLibVideoDecoderImpl<T>::xOutputAnnotatedRegions( PicList* pcListPic )
       }
 
       if ( !m_arObjects.empty() ) {
-        FILE* fpPersist = fopen( m_annotatedRegionsSEIFileName.c_str(), "ab" );
+        FILE *fpPersist = fopen( m_annotatedRegionsSEIFileName.c_str(), "ab" );
         if ( fpPersist == NULL ) {
           std::cout << "Not able to open file for writing persist SEI messages" << std::endl;
         } else {
@@ -778,7 +779,7 @@ void PCCVTMLibVideoDecoderImpl<T>::xOutputAnnotatedRegions( PicList* pcListPic )
 }
 
 template <typename T>
-bool PCCVTMLibVideoDecoderImpl<T>::xIsNaluWithinTargetOutputLayerIdSet( const InputNALUnit* nalu ) const {
+bool PCCVTMLibVideoDecoderImpl<T>::xIsNaluWithinTargetOutputLayerIdSet( const InputNALUnit *nalu ) const {
   if ( !m_targetOutputLayerIdSet.size() )  // By default, the set is empty, meaning all LayerIds are allowed
   {
     return true;
@@ -789,7 +790,7 @@ bool PCCVTMLibVideoDecoderImpl<T>::xIsNaluWithinTargetOutputLayerIdSet( const In
 }
 
 template <typename T>
-bool PCCVTMLibVideoDecoderImpl<T>::isNewPicture( std::istream* bitstreamFile, class InputByteStream* bytestream ) {
+bool PCCVTMLibVideoDecoderImpl<T>::isNewPicture( std::istream *bitstreamFile, class InputByteStream *bytestream ) {
   bool ret      = false;
   bool finished = false;
 
@@ -798,7 +799,7 @@ bool PCCVTMLibVideoDecoderImpl<T>::isNewPicture( std::istream* bitstreamFile, cl
 
   // save stream position for backup
 #if RExt__DECODER_DEBUG_STATISTICS
-  CodingStatistics::CodingStatisticsData* backupStats =
+  CodingStatistics::CodingStatisticsData *backupStats =
       new CodingStatistics::CodingStatisticsData( CodingStatistics::GetStatistics() );
   std::streampos location = bitstreamFile->tellg() - std::streampos( bytestream->GetNumBufferedBytes() );
 #else
@@ -888,8 +889,8 @@ bool PCCVTMLibVideoDecoderImpl<T>::isNewPicture( std::istream* bitstreamFile, cl
 
 template <typename T>
 bool PCCVTMLibVideoDecoderImpl<T>::isNewAccessUnit( bool                   newPicture,
-                                                    std::istream*          bitstreamFile,
-                                                    class InputByteStream* bytestream ) {
+                                                    std::istream          *bitstreamFile,
+                                                    class InputByteStream *bytestream ) {
   bool ret      = false;
   bool finished = false;
 
@@ -898,7 +899,7 @@ bool PCCVTMLibVideoDecoderImpl<T>::isNewAccessUnit( bool                   newPi
 
   // save stream position for backup
 #if RExt__DECODER_DEBUG_STATISTICS
-  CodingStatistics::CodingStatisticsData* backupStats =
+  CodingStatistics::CodingStatisticsData *backupStats =
       new CodingStatistics::CodingStatisticsData( CodingStatistics::GetStatistics() );
   std::streampos location = bitstreamFile->tellg() - std::streampos( bytestream->GetNumBufferedBytes() );
 #else

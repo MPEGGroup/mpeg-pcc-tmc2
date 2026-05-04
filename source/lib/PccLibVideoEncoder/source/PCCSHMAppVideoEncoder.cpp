@@ -11,7 +11,7 @@ PCCSHMAppVideoEncoder<T>::PCCSHMAppVideoEncoder() {}
 template <typename T>
 PCCSHMAppVideoEncoder<T>::~PCCSHMAppVideoEncoder() {}
 
-std::string replace( std::string string, const std::string& from, const std::string& to ) {
+std::string replace( std::string string, const std::string &from, const std::string &to ) {
   size_t position = 0;
   while ( ( position = string.find( from, position ) ) != std::string::npos ) {
     string.replace( position, from.length(), to );
@@ -21,10 +21,10 @@ std::string replace( std::string string, const std::string& from, const std::str
 }
 
 template <typename T>
-void PCCSHMAppVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
-                                       PCCVideoEncoderParameters& params,
-                                       PCCVideoBitstream&         bitstream,
-                                       PCCVideo<T, 3>&            videoRec ) {
+void PCCSHMAppVideoEncoder<T>::encode( PCCVideo<T, 3>            &videoSrc,
+                                       PCCVideoEncoderParameters &params,
+                                       PCCVideoBitstream         &bitstream,
+                                       PCCVideo<T, 3>            &videoRec ) {
   int32_t numLayers = std::stoi( getParameterFromConfigurationFile( params.encoderConfig_, "NumLayers" ) );
 
   const size_t width      = videoSrc.getWidth();
@@ -70,8 +70,8 @@ void PCCSHMAppVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
           PCCVideo<T, 3> videoDst;
           videoDst.resize( frameCount );
           for ( size_t j = 0; j < videoDst.getFrameCount(); j++ ) {
-            auto& imageSrc = videoSrc.getFrame( j );
-            auto& imageDst = videoDst.getFrame( j );
+            auto &imageSrc = videoSrc.getFrame( j );
+            auto &imageDst = videoDst.getFrame( j );
             imageDst.resize( width / scaleX, height / scaleY, imageSrc.getColorFormat() );
             for ( size_t v = 0; v < height; v += scaleY ) {
               for ( size_t u = 0; u < width; u += scaleX ) {
@@ -129,7 +129,7 @@ void PCCSHMAppVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
     PCCCOLORFORMAT format = getColorFormat( params.recYuvFileName_ );
     videoRec.clear();
     if ( params.shvcLayerIndex_ < numLayers - 1 ) {
-      int32_t index = ( std::min )( numLayers - 1, params.shvcLayerIndex_ );
+      int32_t index = (std::min)( numLayers - 1, params.shvcLayerIndex_ );
       printf( "Num Layer = %d layerIndex = %d => layer index = %d \n", numLayers, params.shvcLayerIndex_, index );
       videoRec.read( recYuvFileName[index], widthLayers[index], heightLayers[index], format,
                      params.outputBitDepth_ == 8 ? 1 : 2 );
@@ -197,7 +197,7 @@ void PCCSHMAppVideoEncoder<T>::encode( PCCVideo<T, 3>&            videoSrc,
 }
 
 template <typename T>
-PCCCOLORFORMAT PCCSHMAppVideoEncoder<T>::getColorFormat( std::string& name ) {
+PCCCOLORFORMAT PCCSHMAppVideoEncoder<T>::getColorFormat( std::string &name ) {
   if ( ( name.find( "_p444.rgb" ) ) != std::string::npos ) {
     return PCCCOLORFORMAT::RGB444;
   } else if ( ( name.find( "_p444.yuv" ) ) != std::string::npos ) {

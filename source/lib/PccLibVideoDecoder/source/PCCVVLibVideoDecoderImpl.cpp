@@ -55,16 +55,16 @@ using namespace pcc;
 
 #define MAX_CODED_PICTURE_SIZE 800000
 
-void msgFncStd( void*, int level, const char* fmt, va_list args ) {
+void msgFncStd( void *, int level, const char *fmt, va_list args ) {
   vfprintf( level == 1 ? stderr : stdout, fmt, args );
 }
 
-void msgFncErr( void*, int, const char* fmt, va_list args ) { vfprintf( stderr, fmt, args ); }
+void msgFncErr( void *, int, const char *fmt, va_list args ) { vfprintf( stderr, fmt, args ); }
 
 /**
  * \brief Retrieving of NAL unit start code
  */
-static inline int retrieveNalStartCode( unsigned char* pB, int iZerosInStartcode ) {
+static inline int retrieveNalStartCode( unsigned char *pB, int iZerosInStartcode ) {
   int info = 1;
   int i    = 0;
   for ( i = 0; i < iZerosInStartcode; i++ ) {
@@ -77,14 +77,14 @@ static inline int retrieveNalStartCode( unsigned char* pB, int iZerosInStartcode
 /**
  * \brief Reading of one Annex B NAL unit from file stream
  */
-static int readBitstreamFromFile( std::istream* f, vvdecAccessUnit* pcAccessUnit, bool bLoop ) {
+static int readBitstreamFromFile( std::istream *f, vvdecAccessUnit *pcAccessUnit, bool bLoop ) {
   uint32_t       len;
   int            info2           = 0;
   int            info3           = 0;
   int            pos             = 0;
   int            iStartCodeFound = 0;
   int            iRewind         = 0;
-  unsigned char* pBuf            = pcAccessUnit->payload;
+  unsigned char *pBuf            = pcAccessUnit->payload;
   int            curfilpos       = f->tellg();
   pcAccessUnit->payloadUsedSize  = 0;
   if ( curfilpos < 0 ) {
@@ -97,14 +97,14 @@ static int readBitstreamFromFile( std::istream* f, vvdecAccessUnit* pcAccessUnit
     }
   }
   // jump over possible start code
-  f->read( (char*)pBuf, 5 );
+  f->read( (char *)pBuf, 5 );
   size_t extracted = f->gcount();
   if ( extracted < 4 ) {
     if ( bLoop ) {
       f->clear();
       f->seekg( 0, f->beg );
       if ( f->bad() || f->fail() ) { return -1; }
-      f->read( (char*)pBuf, 5 );
+      f->read( (char *)pBuf, 5 );
       size_t extracted = f->gcount();
       if ( extracted < 4 ) { return -1; }
     } else {
@@ -130,7 +130,7 @@ static int readBitstreamFromFile( std::istream* f, vvdecAccessUnit* pcAccessUnit
     }
     if ( pos >= pcAccessUnit->payloadSize ) {
       int            iNewSize = pcAccessUnit->payloadSize * 2;
-      unsigned char* newbuf   = (unsigned char*)malloc( sizeof( unsigned char ) * iNewSize );
+      unsigned char *newbuf   = (unsigned char *)malloc( sizeof( unsigned char ) * iNewSize );
       if ( newbuf == NULL ) {
         fprintf( stderr, "ERR: readBitstreamFromFile: memory re-allocation failed!\n" );
         return -1;
@@ -141,8 +141,8 @@ static int readBitstreamFromFile( std::istream* f, vvdecAccessUnit* pcAccessUnit
       pcAccessUnit->payload = newbuf;
       pBuf                  = pcAccessUnit->payload;
     }
-    unsigned char* p = pBuf + pos;
-    f->read( (char*)p, 1 );
+    unsigned char *p = pBuf + pos;
+    f->read( (char *)p, 1 );
     pos++;
     info3 = retrieveNalStartCode( &pBuf[pos - 4], 3 );
     if ( info3 != 1 ) { info2 = retrieveNalStartCode( &pBuf[pos - 3], 2 ); }
@@ -178,26 +178,26 @@ template <typename T>
 PCCVVLibVideoDecoderImpl<T>::~PCCVVLibVideoDecoderImpl() {}
 
 template <typename T>
-void PCCVVLibVideoDecoderImpl<T>::decode( PCCVideoBitstream& bitstream, size_t outputBitDepth, PCCVideo<T, 3>& video ) {
-  std::string        s( reinterpret_cast<char*>( bitstream.buffer() ), bitstream.size() );
+void PCCVVLibVideoDecoderImpl<T>::decode( PCCVideoBitstream &bitstream, size_t outputBitDepth, PCCVideo<T, 3> &video ) {
+  std::string        s( reinterpret_cast<char *>( bitstream.buffer() ), bitstream.size() );
   std::istringstream iss( s );
-  std::istream&      cInFile          = iss;
+  std::istream      &cInFile          = iss;
   int                iMaxFrames       = -1;
   int                iLoopCount       = 1;
-  vvdecDecoder*      dec              = nullptr;
+  vvdecDecoder      *dec              = nullptr;
   int                iSEIHashErrCount = 0;
   int                iLoop            = 0;
   bool               bContinue        = true;
   vvdecParams        params;
   params.logLevel = VVDEC_INFO;
   vvdec_params_default( &params );
-  vvdecAccessUnit* accessUnit = vvdec_accessUnit_alloc();
+  vvdecAccessUnit *accessUnit = vvdec_accessUnit_alloc();
   vvdec_accessUnit_alloc_payload( accessUnit, MAX_CODED_PICTURE_SIZE );
   video.clear();
 
   while ( bContinue ) {
-    vvdecFrame* pcFrame     = NULL;
-    vvdecFrame* pcPrevField = NULL;
+    vvdecFrame *pcFrame     = NULL;
+    vvdecFrame *pcPrevField = NULL;
     if ( iLoopCount > 1 ) {
       std::cout << "-------------------------------------" << std::endl;
       std::cout << "begin decoder loop #" << iLoop << std::endl;
@@ -325,7 +325,7 @@ void PCCVVLibVideoDecoderImpl<T>::decode( PCCVideoBitstream& bitstream, size_t o
     // flush the decoder
     bFlushDecoder = true;
     while ( bFlushDecoder ) {
-      vvdecFrame* pcFrame = NULL;
+      vvdecFrame *pcFrame = NULL;
       // flush the decoder
       iRet = vvdec_flush( dec, &pcFrame );
       if ( iRet != VVDEC_OK && iRet != VVDEC_EOF ) {
@@ -397,21 +397,20 @@ void PCCVVLibVideoDecoderImpl<T>::decode( PCCVideoBitstream& bitstream, size_t o
 }
 
 template <typename T>
-int PCCVVLibVideoDecoderImpl<T>::storeDecodedFrame( const vvdecFrame* pcFrame,
+int PCCVVLibVideoDecoderImpl<T>::storeDecodedFrame( const vvdecFrame *pcFrame,
                                                     size_t            outputBitDepth,
-                                                    PCCVideo<T, 3>&   video ) {
-
+                                                    PCCVideo<T, 3>   &video ) {
   int chromaSubsample = pcFrame->colorFormat == VVDEC_CF_YUV420_PLANAR ? 2 : 1;
   // printf(
-  //     "storeDecodedFrame: write output frame %zu size = %d %d ( %d %d %d / %d %d %d) bit depth = %d - %zu = %zu in %zd "
-  //     "bytes buffers ( ChromaSub. = %d ) bytesPerSample = %u %u %u \n",
-  //     video.size(), pcFrame->width, pcFrame->height, pcFrame->planes[0].width, pcFrame->planes[0].height,
-  //     pcFrame->planes[0].stride, pcFrame->planes[1].width, pcFrame->planes[1].height, pcFrame->planes[1].stride,
-  //     pcFrame->bitDepth, outputBitDepth, pcFrame->bitDepth - outputBitDepth, sizeof( T ), chromaSubsample,
+  //     "storeDecodedFrame: write output frame %zu size = %d %d ( %d %d %d / %d %d %d) bit depth = %d - %zu = %zu in
+  //     %zd " "bytes buffers ( ChromaSub. = %d ) bytesPerSample = %u %u %u \n", video.size(), pcFrame->width,
+  //     pcFrame->height, pcFrame->planes[0].width, pcFrame->planes[0].height, pcFrame->planes[0].stride,
+  //     pcFrame->planes[1].width, pcFrame->planes[1].height, pcFrame->planes[1].stride, pcFrame->bitDepth,
+  //     outputBitDepth, pcFrame->bitDepth - outputBitDepth, sizeof( T ), chromaSubsample,
   //     pcFrame->planes[0].bytesPerSample, pcFrame->planes[1].bytesPerSample, pcFrame->planes[2].bytesPerSample );
   // fflush( stdout );
   video.resize( video.getFrameCount() + 1 );
-  auto&          image  = video.getFrames().back();
+  auto          &image  = video.getFrames().back();
   PCCCOLORFORMAT format = chromaSubsample > 1                              ? PCCCOLORFORMAT::YUV420
                           : pcFrame->colorFormat == VVDEC_CF_YUV444_PLANAR ? PCCCOLORFORMAT::RGB444
                                                                            : PCCCOLORFORMAT::YUV444;
@@ -429,9 +428,9 @@ int PCCVVLibVideoDecoderImpl<T>::storeDecodedFrame( const vvdecFrame* pcFrame,
                format,                                            // format
                pcFrame->colorFormat == VVDEC_CF_YUV444_PLANAR );  // rgb2bgr
   } else {
-    image.set( (uint16_t*)( pcFrame->planes[0].ptr ),             // Y ptr
-               (uint16_t*)( pcFrame->planes[1].ptr ),             // U ptr
-               (uint16_t*)( pcFrame->planes[2].ptr ),             // V ptr
+    image.set( (uint16_t *)( pcFrame->planes[0].ptr ),            // Y ptr
+               (uint16_t *)( pcFrame->planes[1].ptr ),            // U ptr
+               (uint16_t *)( pcFrame->planes[2].ptr ),            // V ptr
                pcFrame->planes[0].width,                          // widthY
                pcFrame->planes[0].height,                         // heightY
                pcFrame->planes[0].stride >> 1,                    // strideY

@@ -42,7 +42,7 @@ using namespace std;
 using namespace pcc;
 
 namespace pcc {
-static std::istream& operator>>( std::istream& in, PCCCodecId& val ) {
+static std::istream &operator>>( std::istream &in, PCCCodecId &val ) {
   unsigned int tmp;
   in >> tmp;
   val = PCCCodecId( tmp );
@@ -51,13 +51,13 @@ static std::istream& operator>>( std::istream& in, PCCCodecId& val ) {
 }  // namespace pcc
 
 bool parseParameters( int          argc,
-                      char*        argv[],
-                      std::string& srcVideo,
-                      std::string& encoderParameters,
-                      size_t&      width,
-                      size_t&      height,
-                      size_t&      nbyte,
-                      PCCCodecId&  codecId ) {
+                      char        *argv[],
+                      std::string &srcVideo,
+                      std::string &encoderParameters,
+                      size_t      &width,
+                      size_t      &height,
+                      size_t      &nbyte,
+                      PCCCodecId  &codecId ) {
   namespace po    = df::program_options_lite;
   bool print_help = false;
   // clang-format off
@@ -72,8 +72,8 @@ bool parseParameters( int          argc,
   ( "encoderParameters,p", encoderParameters, encoderParameters,"Encoder parameters" ) ;
   // clang-format on
   po::setDefaults( opts );
-  po::ErrorReporter        err;
-  const list<const char*>& argv_unhandled = po::scanArgv( opts, argc, (const char**)argv, err );
+  po::ErrorReporter         err;
+  const list<const char *> &argv_unhandled = po::scanArgv( opts, argc, (const char **)argv, err );
   for ( const auto arg : argv_unhandled ) {
     printf( "Unhandled argument ignored: %s \n", arg );
     fflush( stdout );
@@ -102,24 +102,24 @@ bool parseParameters( int          argc,
   return true;
 }
 
-int main( int argc, char* argv[] ) {
+int main( int argc, char *argv[] ) {
   std::cout << "PccAppVideoEncoder v" << TMC2_VERSION_MAJOR << "." << TMC2_VERSION_MINOR << std::endl << std::endl;
   std::string srcVideo, encoderParameters;
   size_t      width = 0, height = 0, nbyte = 0;
   PCCCodecId  codecId = PCCCodecId::UNKNOWN_CODEC;
-  
+
   if ( !parseParameters( argc, argv, srcVideo, encoderParameters, width, height, nbyte, codecId ) ) {
-    printf("parseParameters error \n");
-    fflush(stdout);
-    return -1; 
+    printf( "parseParameters error \n" );
+    fflush( stdout );
+    return -1;
   }
 
   typedef uint16_t T;
-  PCCVideo<T, 3> videoSrc, videoRec;
-  auto encoder = PCCVirtualVideoEncoder<T>::create( codecId );
+  PCCVideo<T, 3>   videoSrc, videoRec;
+  auto             encoder = PCCVirtualVideoEncoder<T>::create( codecId );
   videoSrc.read( srcVideo, width, height, PCCCOLORFORMAT::YUV420, nbyte );
 
-  PCCVideoBitstream bitstream( VIDEO_OCCUPANCY );
+  PCCVideoBitstream         bitstream( VIDEO_OCCUPANCY );
   PCCVideoEncoderParameters params;
   params.encoderPath_             = "EncoderPath";
   params.srcYuvFileName_          = srcVideo;

@@ -60,7 +60,7 @@ class PLRInformation {
     fillingFlag_.clear();
   };
 
-  PLRInformation& operator=( const PLRInformation& ) = default;
+  PLRInformation &operator=( const PLRInformation & ) = default;
 
   void allocate() {
     minimumDepth_.resize( numberOfModesMinus1_ + 1, 0 );

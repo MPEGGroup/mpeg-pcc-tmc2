@@ -51,7 +51,7 @@ class ProfileTierLevel {
       extendedSubProfileFlag_( false ),
       toolConstraintsPresentFlag_( false ) {}
   ~ProfileTierLevel() { subProfileIdc_.clear(); }
-  ProfileTierLevel& operator=( const ProfileTierLevel& ) = default;
+  ProfileTierLevel &operator=( const ProfileTierLevel & ) = default;
 
   void allocate() { subProfileIdc_.resize( numSubProfiles_, 0 ); }
 
@@ -64,7 +64,7 @@ class ProfileTierLevel {
   bool                                  getExtendedSubProfileFlag() { return extendedSubProfileFlag_; }
   bool                                  getToolConstraintsPresentFlag() { return toolConstraintsPresentFlag_; }
   uint8_t                               getSubProfileIdc( size_t index ) { return subProfileIdc_[index]; }
-  ProfileToolsetConstraintsInformation& getProfileToolsetConstraintsInformation() {
+  ProfileToolsetConstraintsInformation &getProfileToolsetConstraintsInformation() {
     return profileToolsetConstraintsInformation_;
   }
 

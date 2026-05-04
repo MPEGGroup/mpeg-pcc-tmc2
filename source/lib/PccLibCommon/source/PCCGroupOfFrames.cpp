@@ -43,7 +43,7 @@ PCCGroupOfFrames::PCCGroupOfFrames() = default;
 PCCGroupOfFrames::PCCGroupOfFrames( size_t value ) { frames_.resize( value ); }
 PCCGroupOfFrames::~PCCGroupOfFrames() { frames_.clear(); }
 
-bool PCCGroupOfFrames::load( const std::string&      uncompressedDataPath,
+bool PCCGroupOfFrames::load( const std::string      &uncompressedDataPath,
                              const size_t            startFrameNumber,
                              const size_t            endFrameNumber,
                              const PCCColorTransform colorTransform,
@@ -52,7 +52,7 @@ bool PCCGroupOfFrames::load( const std::string&      uncompressedDataPath,
   if ( endFrameNumber < startFrameNumber ) { return false; }
   const size_t frameCount = endFrameNumber - startFrameNumber;
   frames_.resize( frameCount );
- 
+
 #if defined( ENABLE_TBB )
   tbb::task_arena limited( static_cast<int>( nbThread ) );
   limited.execute( [&] {
@@ -62,7 +62,7 @@ bool PCCGroupOfFrames::load( const std::string&      uncompressedDataPath,
 #endif
       char fileName[4096];
       sprintf( fileName, uncompressedDataPath.c_str(), frameNumber );
-      auto& pointSet = frames_[frameNumber - startFrameNumber];
+      auto &pointSet = frames_[frameNumber - startFrameNumber];
       pointSet.resize( 0 );
       if ( !pointSet.read( fileName, readNormals ) ) {
         std::cout << "Error: can't open " << fileName << std::endl;
@@ -79,8 +79,8 @@ bool PCCGroupOfFrames::load( const std::string&      uncompressedDataPath,
   return ( startFrameNumber != endFrameNumber );
 }
 
-bool PCCGroupOfFrames::write( const std::string& reconstructedDataPath,
-                              size_t&            frameNumber,
+bool PCCGroupOfFrames::write( const std::string &reconstructedDataPath,
+                              size_t            &frameNumber,
                               const size_t       nbThread,
                               const bool         isAscii ) {
   bool ret = true;
@@ -92,7 +92,7 @@ bool PCCGroupOfFrames::write( const std::string& reconstructedDataPath,
   for ( size_t i = 0; i < frames_.size(); i++ ) {
 #endif
       char  fileName[4096];
-      auto& pointSet = frames_[i];
+      auto &pointSet = frames_[i];
       sprintf( fileName, reconstructedDataPath.c_str(), frameNumber + i );
       if ( !pointSet.write( fileName, isAscii ) ) { ret = false; }
 #if defined( ENABLE_TBB )

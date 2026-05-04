@@ -1,28 +1,35 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 3.2)
+cmake_minimum_required(VERSION 3.2)
 
-GET_FILENAME_COMPONENT(MYNAME ${CMAKE_CURRENT_LIST_DIR} NAME)
-STRING(REPLACE " " "_" MYNAME ${MYNAME})
-SET( MYNAME ${MYNAME}${CMAKE_DEBUG_POSTFIX} )
-PROJECT(${MYNAME} C CXX)
+get_filename_component(MYNAME ${CMAKE_CURRENT_LIST_DIR} NAME)
+string(REPLACE " " "_" MYNAME ${MYNAME})
+set(MYNAME ${MYNAME}${CMAKE_DEBUG_POSTFIX})
+project(${MYNAME} C CXX)
 
-FILE(GLOB SRC *.h *.cpp *.c ${CMAKE_SOURCE_DIR}/dependencies/program-options-lite/* 
-                            ${CMAKE_SOURCE_DIR}/dependencies/nanoflann/*.hpp
-                            ${CMAKE_SOURCE_DIR}/dependencies/nanoflann/*.h )
+file(
+  GLOB
+  SRC
+  *.h
+  *.cpp
+  *.c
+  ${CMAKE_SOURCE_DIR}/dependencies/program-options-lite/*
+  ${CMAKE_SOURCE_DIR}/dependencies/nanoflann/*.hpp
+  ${CMAKE_SOURCE_DIR}/dependencies/nanoflann/*.h)
 
-INCLUDE_DIRECTORIES( ${CMAKE_SOURCE_DIR}/source/lib/PccLibCommon/include
-                     ${CMAKE_SOURCE_DIR}/source/lib/PccLibBitstreamCommon/include 
-                     ${CMAKE_SOURCE_DIR}/source/lib/PccLibEncoder/include 
-                     ${CMAKE_SOURCE_DIR}/dependencies/program-options-lite
-                     ${CMAKE_SOURCE_DIR}/dependencies/nanoflann  )
+include_directories(
+  ${CMAKE_SOURCE_DIR}/source/lib/PccLibCommon/include
+  ${CMAKE_SOURCE_DIR}/source/lib/PccLibBitstreamCommon/include
+  ${CMAKE_SOURCE_DIR}/source/lib/PccLibEncoder/include
+  ${CMAKE_SOURCE_DIR}/dependencies/program-options-lite
+  ${CMAKE_SOURCE_DIR}/dependencies/nanoflann)
 
-SET( LIBS PccLibCommon PccLibEncoder ) 
-IF ( ENABLE_TBB ) 
-  INCLUDE_DIRECTORIES( ${CMAKE_SOURCE_DIR}/dependencies/tbb/include )
-  SET( LIBS ${LIBS} tbb_static ) 
-ENDIF()
-                     
-ADD_EXECUTABLE( ${MYNAME} ${SRC} )
+set(LIBS PccLibCommon PccLibEncoder)
+if(ENABLE_TBB)
+  include_directories(${CMAKE_SOURCE_DIR}/dependencies/tbb/include)
+  set(LIBS ${LIBS} tbb_static)
+endif()
 
-TARGET_LINK_LIBRARIES( ${MYNAME} ${LIBS} )
+add_executable(${MYNAME} ${SRC})
 
-INSTALL( TARGETS ${MYNAME} DESTINATION bin )
+target_link_libraries(${MYNAME} ${LIBS})
+
+install(TARGETS ${MYNAME} DESTINATION bin)

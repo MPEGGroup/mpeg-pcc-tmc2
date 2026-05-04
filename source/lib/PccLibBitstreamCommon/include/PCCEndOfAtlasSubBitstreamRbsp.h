@@ -42,7 +42,7 @@ class EndOfAtlasSubBitstreamRbsp {
  public:
   EndOfAtlasSubBitstreamRbsp() {}
   ~EndOfAtlasSubBitstreamRbsp() {}
-  EndOfAtlasSubBitstreamRbsp& operator=( const EndOfAtlasSubBitstreamRbsp& ) = default;
+  EndOfAtlasSubBitstreamRbsp &operator=( const EndOfAtlasSubBitstreamRbsp & ) = default;
 
  private:
 };

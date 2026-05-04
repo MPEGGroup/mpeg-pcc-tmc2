@@ -55,10 +55,10 @@ class PCCJMLibVideoEncoderImpl {
 
   ~PCCJMLibVideoEncoderImpl();
 
-  void encode( PCCVideo<T, 3>&    videoSrc,
+  void encode( PCCVideo<T, 3>    &videoSrc,
                std::string        arguments,
-               PCCVideoBitstream& bitstream,
-               PCCVideo<T, 3>&    videoRec );
+               PCCVideoBitstream &bitstream,
+               PCCVideo<T, 3>    &videoRec );
 };
 
 }  // namespace pcc

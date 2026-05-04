@@ -54,16 +54,16 @@ class PCCHMLibVideoDecoderImpl {
   PCCHMLibVideoDecoderImpl();
 
   ~PCCHMLibVideoDecoderImpl();
-  void decode( PCCVideoBitstream& bitstream, size_t outputBitDepth, PCCVideo<T, 3>& video );
+  void decode( PCCVideoBitstream &bitstream, size_t outputBitDepth, PCCVideo<T, 3> &video );
 
  private:
-  void               setVideoSize( const pcc_hm::TComSPS* sps );
-  void               xWriteOutput( pcc_hm::TComList<pcc_hm::TComPic*>* pcListPic, uint32_t tId, PCCVideo<T, 3>& video );
-  void               xFlushOutput( pcc_hm::TComList<pcc_hm::TComPic*>* pcListPic, PCCVideo<T, 3>& video );
-  void               xWritePicture( const pcc_hm::TComPicYuv* pic, PCCVideo<T, 3>& video );
-  pcc_hm::TDecTop*   m_pTDecTop;
-  int                m_iPOCLastDisplay;
-  int                m_iSkipFrame{};
+  void             setVideoSize( const pcc_hm::TComSPS *sps );
+  void             xWriteOutput( pcc_hm::TComList<pcc_hm::TComPic *> *pcListPic, uint32_t tId, PCCVideo<T, 3> &video );
+  void             xFlushOutput( pcc_hm::TComList<pcc_hm::TComPic *> *pcListPic, PCCVideo<T, 3> &video );
+  void             xWritePicture( const pcc_hm::TComPicYuv *pic, PCCVideo<T, 3> &video );
+  pcc_hm::TDecTop *m_pTDecTop;
+  int              m_iPOCLastDisplay;
+  int              m_iSkipFrame{};
   std::array<int, 2> m_outputBitDepth{};
   int                m_internalBitDepths;
   int                m_outputWidth;

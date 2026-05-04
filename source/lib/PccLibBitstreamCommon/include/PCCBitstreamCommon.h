@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2017, ISO/IEC
+ * Copyright (c) 2010-2025, ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -90,23 +90,96 @@ enum PCCVideoType {
   VIDEO_GEOMETRY_RAW,
   VIDEO_ATTRIBUTE,
   VIDEO_ATTRIBUTE_T0,
-  VIDEO_ATTRIBUTE_T1  = VIDEO_ATTRIBUTE_T0 + MAX_NUM_ATTR_PARTITIONS,
-  VIDEO_ATTRIBUTE_T2  = VIDEO_ATTRIBUTE_T1 + MAX_NUM_ATTR_PARTITIONS,
-  VIDEO_ATTRIBUTE_T3  = VIDEO_ATTRIBUTE_T2 + MAX_NUM_ATTR_PARTITIONS,
-  VIDEO_ATTRIBUTE_T4  = VIDEO_ATTRIBUTE_T3 + MAX_NUM_ATTR_PARTITIONS,
-  VIDEO_ATTRIBUTE_T5  = VIDEO_ATTRIBUTE_T4 + MAX_NUM_ATTR_PARTITIONS,
-  VIDEO_ATTRIBUTE_T6  = VIDEO_ATTRIBUTE_T5 + MAX_NUM_ATTR_PARTITIONS,
-  VIDEO_ATTRIBUTE_T7  = VIDEO_ATTRIBUTE_T6 + MAX_NUM_ATTR_PARTITIONS,
-  VIDEO_ATTRIBUTE_T8  = VIDEO_ATTRIBUTE_T7 + MAX_NUM_ATTR_PARTITIONS,
-  VIDEO_ATTRIBUTE_T9  = VIDEO_ATTRIBUTE_T8 + MAX_NUM_ATTR_PARTITIONS,
-  VIDEO_ATTRIBUTE_T10 = VIDEO_ATTRIBUTE_T9 + MAX_NUM_ATTR_PARTITIONS,
-  VIDEO_ATTRIBUTE_T11 = VIDEO_ATTRIBUTE_T10 + MAX_NUM_ATTR_PARTITIONS,
-  VIDEO_ATTRIBUTE_T12 = VIDEO_ATTRIBUTE_T11 + MAX_NUM_ATTR_PARTITIONS,
-  VIDEO_ATTRIBUTE_T13 = VIDEO_ATTRIBUTE_T12 + MAX_NUM_ATTR_PARTITIONS,
-  VIDEO_ATTRIBUTE_T14 = VIDEO_ATTRIBUTE_T13 + MAX_NUM_ATTR_PARTITIONS,
-  VIDEO_ATTRIBUTE_T15 = VIDEO_ATTRIBUTE_T14 + MAX_NUM_ATTR_PARTITIONS,
-  VIDEO_ATTRIBUTE_RAW = VIDEO_ATTRIBUTE_T15 + MAX_NUM_ATTR_PARTITIONS,
-  NUM_VIDEO_TYPE      = VIDEO_ATTRIBUTE_RAW + MAX_NUM_ATTR_PARTITIONS
+  VIDEO_ATTRIBUTE_T1       = VIDEO_ATTRIBUTE_T0 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_ATTRIBUTE_T2       = VIDEO_ATTRIBUTE_T1 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_ATTRIBUTE_T3       = VIDEO_ATTRIBUTE_T2 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_ATTRIBUTE_T4       = VIDEO_ATTRIBUTE_T3 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_ATTRIBUTE_T5       = VIDEO_ATTRIBUTE_T4 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_ATTRIBUTE_T6       = VIDEO_ATTRIBUTE_T5 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_ATTRIBUTE_T7       = VIDEO_ATTRIBUTE_T6 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_ATTRIBUTE_T8       = VIDEO_ATTRIBUTE_T7 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_ATTRIBUTE_T9       = VIDEO_ATTRIBUTE_T8 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_ATTRIBUTE_T10      = VIDEO_ATTRIBUTE_T9 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_ATTRIBUTE_T11      = VIDEO_ATTRIBUTE_T10 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_ATTRIBUTE_T12      = VIDEO_ATTRIBUTE_T11 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_ATTRIBUTE_T13      = VIDEO_ATTRIBUTE_T12 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_ATTRIBUTE_T14      = VIDEO_ATTRIBUTE_T13 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_ATTRIBUTE_T15      = VIDEO_ATTRIBUTE_T14 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_ATTRIBUTE_RAW      = VIDEO_ATTRIBUTE_T15 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_SPHERICAL_HARMONIC = VIDEO_ATTRIBUTE_RAW + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_SPHERICAL_HARMONIC_T0,
+  VIDEO_SPHERICAL_HARMONIC_T1  = VIDEO_SPHERICAL_HARMONIC_T0 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_SPHERICAL_HARMONIC_T2  = VIDEO_SPHERICAL_HARMONIC_T1 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_SPHERICAL_HARMONIC_T3  = VIDEO_SPHERICAL_HARMONIC_T2 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_SPHERICAL_HARMONIC_T4  = VIDEO_SPHERICAL_HARMONIC_T3 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_SPHERICAL_HARMONIC_T5  = VIDEO_SPHERICAL_HARMONIC_T4 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_SPHERICAL_HARMONIC_T6  = VIDEO_SPHERICAL_HARMONIC_T5 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_SPHERICAL_HARMONIC_T7  = VIDEO_SPHERICAL_HARMONIC_T6 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_SPHERICAL_HARMONIC_T8  = VIDEO_SPHERICAL_HARMONIC_T7 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_SPHERICAL_HARMONIC_T9  = VIDEO_SPHERICAL_HARMONIC_T8 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_SPHERICAL_HARMONIC_T10 = VIDEO_SPHERICAL_HARMONIC_T9 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_SPHERICAL_HARMONIC_T11 = VIDEO_SPHERICAL_HARMONIC_T10 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_SPHERICAL_HARMONIC_T12 = VIDEO_SPHERICAL_HARMONIC_T11 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_SPHERICAL_HARMONIC_T13 = VIDEO_SPHERICAL_HARMONIC_T12 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_SPHERICAL_HARMONIC_T14 = VIDEO_SPHERICAL_HARMONIC_T13 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_SPHERICAL_HARMONIC_T15 = VIDEO_SPHERICAL_HARMONIC_T14 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_SPHERICAL_HARMONIC_RAW = VIDEO_SPHERICAL_HARMONIC_T15 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_ROTATION               = VIDEO_SPHERICAL_HARMONIC_RAW + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_ROTATION_T0,
+  VIDEO_ROTATION_T1  = VIDEO_ROTATION_T0 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_ROTATION_T2  = VIDEO_ROTATION_T1 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_ROTATION_T3  = VIDEO_ROTATION_T2 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_ROTATION_T4  = VIDEO_ROTATION_T3 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_ROTATION_T5  = VIDEO_ROTATION_T4 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_ROTATION_T6  = VIDEO_ROTATION_T5 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_ROTATION_T7  = VIDEO_ROTATION_T6 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_ROTATION_T8  = VIDEO_ROTATION_T7 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_ROTATION_T9  = VIDEO_ROTATION_T8 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_ROTATION_T10 = VIDEO_ROTATION_T9 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_ROTATION_T11 = VIDEO_ROTATION_T10 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_ROTATION_T12 = VIDEO_ROTATION_T11 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_ROTATION_T13 = VIDEO_ROTATION_T12 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_ROTATION_T14 = VIDEO_ROTATION_T13 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_ROTATION_T15 = VIDEO_ROTATION_T14 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_ROTATION_RAW = VIDEO_ROTATION_T15 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_SCALE        = VIDEO_ROTATION_RAW + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_SCALE_T0,
+  VIDEO_SCALE_T1  = VIDEO_SCALE_T0 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_SCALE_T2  = VIDEO_SCALE_T1 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_SCALE_T3  = VIDEO_SCALE_T2 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_SCALE_T4  = VIDEO_SCALE_T3 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_SCALE_T5  = VIDEO_SCALE_T4 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_SCALE_T6  = VIDEO_SCALE_T5 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_SCALE_T7  = VIDEO_SCALE_T6 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_SCALE_T8  = VIDEO_SCALE_T7 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_SCALE_T9  = VIDEO_SCALE_T8 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_SCALE_T10 = VIDEO_SCALE_T9 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_SCALE_T11 = VIDEO_SCALE_T10 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_SCALE_T12 = VIDEO_SCALE_T11 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_SCALE_T13 = VIDEO_SCALE_T12 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_SCALE_T14 = VIDEO_SCALE_T13 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_SCALE_T15 = VIDEO_SCALE_T14 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_SCALE_RAW = VIDEO_SCALE_T15 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_OPACITY   = VIDEO_SCALE_RAW + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_OPACITY_T0,
+  VIDEO_OPACITY_T1  = VIDEO_OPACITY_T0 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_OPACITY_T2  = VIDEO_OPACITY_T1 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_OPACITY_T3  = VIDEO_OPACITY_T2 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_OPACITY_T4  = VIDEO_OPACITY_T3 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_OPACITY_T5  = VIDEO_OPACITY_T4 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_OPACITY_T6  = VIDEO_OPACITY_T5 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_OPACITY_T7  = VIDEO_OPACITY_T6 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_OPACITY_T8  = VIDEO_OPACITY_T7 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_OPACITY_T9  = VIDEO_OPACITY_T8 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_OPACITY_T10 = VIDEO_OPACITY_T9 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_OPACITY_T11 = VIDEO_OPACITY_T10 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_OPACITY_T12 = VIDEO_OPACITY_T11 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_OPACITY_T13 = VIDEO_OPACITY_T12 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_OPACITY_T14 = VIDEO_OPACITY_T13 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_OPACITY_T15 = VIDEO_OPACITY_T14 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_OPACITY_RAW = VIDEO_OPACITY_T15 + MAX_NUM_ATTR_PARTITIONS,
+  VIDEO_PACKED      = VIDEO_OPACITY_RAW + MAX_NUM_ATTR_PARTITIONS,
+  NUM_VIDEO_TYPE    = VIDEO_PACKED + MAX_NUM_ATTR_PARTITIONS
 };
 enum PCCMetadataType { METADATA_GOF = 0, METADATA_FRAME, METADATA_PATCH };
 enum PCCPatchOrientation {
@@ -121,16 +194,25 @@ enum PCCPatchOrientation {
   PATCH_ORIENTATION_MROT270 = 8   // 8: similar to SWAP, not used switched SWAP with ROT90 positions
 };
 
+enum VpsExtensionType {
+  VPS_EXT_UNSPECIFIED = 0,
+  VPS_EXT_PACKED      = 1,
+  VPS_EXT_MIV         = 2,
+  VPS_EXT_MIV_2       = 3,
+  VPS_EXT_VDMC        = 4,
+  VPS_EXT_PACKED_2    = 5
+};
+
 enum V3CUnitType {
-  V3C_VPS = 0,       //  0: Sequence parameter set
-  V3C_AD,            //  1: Patch Data Group
-  V3C_OVD,           //  2: Occupancy Video Data
-  V3C_GVD,           //  3: Geometry Video Data
-  V3C_AVD,           //  4: Attribute Video Data
-  V3C_RSVD_05,       //  5: Reserved
-  V3C_RSVD_06,       //  6: Reserved
-  V3C_RSVD_07,       //  7: Reserved
-  V3C_RSVD_08,       //  8: Reserved
+  V3C_VPS = 0,       //  0: V3C parameter set
+  V3C_AD,            //  1: Atlas data
+  V3C_OVD,           //  2: Occupancy video data
+  V3C_GVD,           //  3: Geometry video data
+  V3C_AVD,           //  4: Attribute video data
+  V3C_PVD,           //  5: Packed video data
+  V3C_CAD,           //  6: Common atlas data
+  V3C_BMD,           //  7: Basemesh data
+  V3C_ADD,           //  8: Arithmetic coded displacement data
   V3C_RSVD_09,       //  9: Reserved
   V3C_RSVD_10,       // 10: Reserved
   V3C_RSVD_11,       // 11: Reserved
@@ -246,11 +328,18 @@ enum SeiPayloadType {
   VIEWPORT_CAMERA_PARAMETERS       = 17,  // 17: viewport camera parameters
   VIEWPORT_POSITION                = 18,  // 18: viewport position
   DECODED_ATLAS_INFORMATION_HASH   = 19,  // 19: decoded atlas information hash
+  CUSTOM_ATTRIBUTE_INFORMATION     = 21,  // 21: custom attribute information
   ATTRIBUTE_TRANSFORMATION_PARAMS  = 64,  // 64: attribute transformation params
   OCCUPANCY_SYNTHESIS              = 65,  // 65: occupancy synthesis
   GEOMETRY_SMOOTHING               = 66,  // 66: geometry smoothing
   ATTRIBUTE_SMOOTHING              = 67,  // 67: attribute smoothing
-  RESERVED_SEI_MESSAGE             = 68,  // 68: reserved sei message
+  VPCC_REGISTERED                  = 68,  // 68: v-pcc registered SEI
+  RESERVED_MESSAGE                 = 69   // 69: reserved message
+};
+
+enum VpccSeiPayloadType {
+  GS_CAMERA_POSE_INFO   = 0,  //  0: camera pose info
+  RESERVED_MESSAGE_VPCC = 1
 };
 
 enum NalUnitType {
@@ -374,6 +463,7 @@ static inline std::string toString( NalUnitType type ) {
     case NAL_PREFIX_NSEI: return std::string( "NAL_PREFIX_NSEI" ); break;
     case NAL_SUFFIX_ESEI: return std::string( "NAL_SUFFIX_ESEI" ); break;
     case NAL_SUFFIX_NSEI: return std::string( "NAL_SUFFIX_NSEI" ); break;
+    case NAL_AAPS: return std::string( "NAL_AAPS" ); break;
     default: return std::string( "others" ); break;
   }
 }
@@ -385,6 +475,7 @@ static inline std::string toString( V3CUnitType type ) {
     case V3C_OVD: return std::string( "V3C_OVD" ); break;
     case V3C_GVD: return std::string( "V3C_GVD" ); break;
     case V3C_AVD: return std::string( "V3C_AVD" ); break;
+    case V3C_PVD: return std ::string( "V3C_PVD" ); break;
     default: return std::string( "reserved?" ); break;
   }
 }
@@ -406,6 +497,30 @@ static inline std::string toString( PCCVideoType type ) {
            std::string( " video " );
   else if ( typeIndex == (size_t)VIDEO_ATTRIBUTE_RAW )
     return std::string( "raw points attribute video " );
+  else if ( typeIndex >= (size_t)VIDEO_SPHERICAL_HARMONIC_T0 && typeIndex <= (size_t)VIDEO_SPHERICAL_HARMONIC_T15 )
+    return std::string( "sphericalHarmonic T" ) + std::to_string( typeIndex - (size_t)VIDEO_SPHERICAL_HARMONIC_T0 ) +
+           std::string( " video " );
+  else if ( typeIndex >= (size_t)VIDEO_SPHERICAL_HARMONIC_RAW &&
+            typeIndex < (size_t)( VIDEO_SPHERICAL_HARMONIC_RAW + MAX_NUM_ATTR_PARTITIONS ) )
+    return std::string( "raw points sphericalHarmonic T" ) +
+           std::to_string( typeIndex - (size_t)VIDEO_SPHERICAL_HARMONIC_RAW ) + std::string( " video " );
+  else if ( typeIndex >= (size_t)VIDEO_ROTATION_T0 && typeIndex <= (size_t)VIDEO_ROTATION_T15 )
+    return std::string( "rotation T" ) + std::to_string( typeIndex - (size_t)VIDEO_ROTATION_T0 ) +
+           std::string( " video " );
+  else if ( typeIndex >= (size_t)VIDEO_ROTATION_RAW &&
+            typeIndex < (size_t)( VIDEO_ROTATION_RAW + MAX_NUM_ATTR_PARTITIONS ) )
+    return std::string( "raw points rotation T" ) + std::to_string( typeIndex - (size_t)VIDEO_ROTATION_RAW ) +
+           std::string( " video " );
+  else if ( typeIndex == (size_t)VIDEO_SCALE_T0 )
+    return std::string( "scale video " );
+  else if ( typeIndex == (size_t)VIDEO_SCALE_RAW )
+    return std::string( "raw points scale video " );
+  else if ( typeIndex == (size_t)VIDEO_OPACITY_T0 )
+    return std::string( "opacity video " );
+  else if ( typeIndex == (size_t)VIDEO_OPACITY_RAW )
+    return std::string( "raw points opacity video " );
+  else if ( typeIndex >= (size_t)VIDEO_PACKED && typeIndex < (size_t)( VIDEO_PACKED + MAX_NUM_ATTR_PARTITIONS ) )
+    return std::string( "packed T" ) + std::to_string( typeIndex - (size_t)VIDEO_PACKED ) + std::string( " video " );
   else
     return std::string( "not supported" );
 }
@@ -432,16 +547,17 @@ static inline std::string toString( SeiPayloadType payloadType ) {
     case VIEWPORT_CAMERA_PARAMETERS: return std::string( "VIEWPORT_CAMERA_PARAMETERS" ); break;
     case VIEWPORT_POSITION: return std::string( "VIEWPORT_POSITION" ); break;
     case DECODED_ATLAS_INFORMATION_HASH: return std::string( "DECODED_ATLAS_INFORMATION_HASH" ); break;
+    case CUSTOM_ATTRIBUTE_INFORMATION: return std::string( "CUSTOM_ATTRIBUTE_INFORMATION" ); break;
     case ATTRIBUTE_TRANSFORMATION_PARAMS: return std::string( "ATTRIBUTE_TRANSFORMATION_PARAMS" ); break;
     case OCCUPANCY_SYNTHESIS: return std::string( "OCCUPANCY_SYNTHESIS" ); break;
     case GEOMETRY_SMOOTHING: return std::string( "GEOMETRY_SMOOTHING" ); break;
     case ATTRIBUTE_SMOOTHING: return std::string( "ATTRIBUTE_SMOOTHING" ); break;
-    case RESERVED_SEI_MESSAGE: return std::string( "RESERVED_SEI_MESSAGE" ); break;
+    case RESERVED_MESSAGE: return std::string( "RESERVED_MESSAGE" ); break;
     default: return std::string( "others" ); break;
   }
 }
 
-static bool exist( const std::string& sString ) {
+static bool exist( const std::string &sString ) {
   struct stat buffer;
   return ( stat( sString.c_str(), &buffer ) == 0 );
 }
@@ -458,9 +574,9 @@ static char getSeparator() { return '/'; }
 static char getSeparator() { return '\\'; }
 #endif
 
-static char getSeparator( const std::string& eFilename ) {
+static char getSeparator( const std::string &eFilename ) {
   auto pos1 = eFilename.find_last_of( '/' ), pos2 = eFilename.find_last_of( '\\' );
-  auto pos = ( std::max )( pos1 != std::string::npos ? pos1 : 0, pos2 != std::string::npos ? pos2 : 0 );
+  auto pos = (std::max)( pos1 != std::string::npos ? pos1 : 0, pos2 != std::string::npos ? pos2 : 0 );
   return ( pos != 0 ? eFilename[pos] : getSeparator() );
 }
 
@@ -469,13 +585,13 @@ static inline std::string removeFileExtension( const std::string string ) {
   return pos != std::string::npos ? string.substr( 0, pos ) : string;
 }
 
-static inline std::string getDirectoryName( const std::string& string ) {
+static inline std::string getDirectoryName( const std::string &string ) {
   auto position = string.find_last_of( getSeparator( string ) );
   if ( position != std::string::npos ) { return string.substr( 0, position ); }
   return string;
 }
 
-static inline std::string getBasename( const std::string& string ) {
+static inline std::string getBasename( const std::string &string ) {
   auto position = string.find_last_of( getSeparator() );
   if ( position != std::string::npos ) { return string.substr( position + 1, string.length() ); }
   return string;
@@ -556,6 +672,75 @@ static inline int floorLog2( uint32_t x ) {
 }
 
 static inline int ceilLog2( uint32_t x ) { return ( x == 0 ) ? -1 : floorLog2( x - 1 ) + 1; }
+
+static inline PCCVideoType getAttributeType( int attrTypeId, int attrPartIndex ) {
+  if ( attrTypeId == 0 ) {  // color
+    return VIDEO_ATTRIBUTE;
+  } else if ( attrTypeId == 2 ) {  // opacity
+    return PCCVideoType( VIDEO_OPACITY_T0 + 64 * attrPartIndex );
+  } else if ( attrTypeId == 5 ) {  // sphericalHarmonic
+    return PCCVideoType( VIDEO_SPHERICAL_HARMONIC_T0 + 64 * attrPartIndex );
+  } else if ( attrTypeId == 6 ) {  // scale
+    return PCCVideoType( VIDEO_SCALE_T0 + 64 * attrPartIndex );
+  } else if ( attrTypeId == 7 ) {  // rotation
+    return PCCVideoType( VIDEO_ROTATION_T0 + 64 * attrPartIndex );
+  } else {
+    std::cerr << "Error: getAttributeType invalid attrTypeId " << attrTypeId << std::endl;
+    exit( -1 );
+  }
+}
+
+static inline PCCVideoType getAttributeType( bool multiStream, int attrTypeId, int attrPartIndex ) {
+  if ( attrTypeId == 0 ) {  // color
+    return multiStream ? VIDEO_ATTRIBUTE_T0 : VIDEO_ATTRIBUTE;
+  } else if ( attrTypeId == 2 ) {  // opacity
+    return PCCVideoType( VIDEO_OPACITY_T0 + attrPartIndex );
+  } else if ( attrTypeId == 5 ) {  // sphericalHarmonic
+    return PCCVideoType( VIDEO_SPHERICAL_HARMONIC_T0 + attrPartIndex );
+  } else if ( attrTypeId == 6 ) {  // scale
+    return PCCVideoType( VIDEO_SCALE_T0 + attrPartIndex );
+  } else if ( attrTypeId == 7 ) {  // rotation
+    return PCCVideoType( VIDEO_ROTATION_T0 + attrPartIndex );
+  } else {
+    std::cerr << "Error: getAttributeType invalid attrTypeId " << attrTypeId << std::endl;
+    exit( -1 );
+  }
+}
+
+static inline PCCVideoType getAttributeTypeRaw( int attrTypeId, int attrPartIndex ) {
+  if ( attrTypeId == 0 ) {  // color
+    return VIDEO_ATTRIBUTE_RAW;
+  } else if ( attrTypeId == 2 ) {  // opacity
+    return PCCVideoType( VIDEO_OPACITY_RAW + attrPartIndex );
+  } else if ( attrTypeId == 5 ) {  // sphericalHarmonic
+    return PCCVideoType( VIDEO_SPHERICAL_HARMONIC_RAW + attrPartIndex );
+  } else if ( attrTypeId == 6 ) {  // scale
+    return PCCVideoType( VIDEO_SCALE_RAW + attrPartIndex );
+  } else if ( attrTypeId == 7 ) {  // rotation
+    return PCCVideoType( VIDEO_ROTATION_RAW + attrPartIndex );
+  } else {
+    std::cerr << "Error: getAttributeTypeRaw invalid attrTypeId " << attrTypeId << std::endl;
+    exit( -1 );
+  }
+}
+
+static inline std::string getAttributeName( int attrTypeId ) {
+  if ( attrTypeId == 0 ) {  // color
+    return "color";
+  } else if ( attrTypeId == 2 ) {  // opacity
+    return "opacity";
+  } else if ( attrTypeId == 5 ) {  // sphericalHarmonic
+    return "sphericalHarmonic";
+  } else if ( attrTypeId == 6 ) {  // scale
+    return "scale";
+  } else if ( attrTypeId == 7 ) {  // rotation
+    return "rotation";
+  } else if ( attrTypeId == 15 ) {
+    return "custom";
+  } else {
+    return "reserved";
+  }
+}
 }  // namespace pcc
 
 #include "PCCLogger.h"

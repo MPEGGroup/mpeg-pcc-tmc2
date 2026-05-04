@@ -60,7 +60,7 @@ class PCCBitstreamGofStat {
   void                 setVideoBinSize( PCCVideoType type, size_t size ) { videoBinSize_[type] += size; }
   size_t               getV3CUnitSize( V3CUnitType type ) { return v3cUnitSize_[type]; }
   size_t               getVideoBinSize( PCCVideoType type ) { return videoBinSize_[type]; }
-  PCCBitstreamGofStat& operator+=( const PCCBitstreamGofStat& other ) {
+  PCCBitstreamGofStat &operator+=( const PCCBitstreamGofStat &other ) {
     for ( size_t i = 0; i < v3cUnitSize_.size(); i++ ) { v3cUnitSize_[i] += other.v3cUnitSize_[i]; }
     for ( size_t i = 0; i < videoBinSize_.size(); i++ ) { videoBinSize_[i] += other.videoBinSize_[i]; }
     return *this;
@@ -77,7 +77,7 @@ class PCCBitstreamGofStat {
   }
   size_t getTotalAttribute() {
     size_t retVal = 0;
-    for ( int i = VIDEO_ATTRIBUTE; i < VIDEO_ATTRIBUTE_RAW + MAX_NUM_ATTR_PARTITIONS; i++ ) retVal += videoBinSize_[i];
+    for ( int i = VIDEO_ATTRIBUTE; i < VIDEO_OPACITY_RAW + MAX_NUM_ATTR_PARTITIONS; i++ ) retVal += videoBinSize_[i];
     return retVal;
   }
   size_t getTotalMetadata() { return getTotal() - getTotalGeometry() - getTotalAttribute(); }
@@ -136,7 +136,7 @@ class PCCBitstreamStat {
       printf( "  Total: \n" );
     }
     PCCBitstreamGofStat totalBitstreamStat;
-    for ( auto& element : bitstreamGofStat_ ) { totalBitstreamStat += element; }
+    for ( auto &element : bitstreamGofStat_ ) { totalBitstreamStat += element; }
     totalBitstreamStat.trace();
     size_t totalMetadata  = totalBitstreamStat.getTotalMetadata() + header_;
     size_t totalGeometry  = totalBitstreamStat.getTotalGeometry();
@@ -158,9 +158,9 @@ class PCCBitstream {
   PCCBitstream();
   ~PCCBitstream();
 
-  bool initialize( std::vector<uint8_t>& data );
-  bool initialize( const PCCBitstream& bitstream );
-  bool initialize( const std::string& compressedStreamPath );
+  bool initialize( std::vector<uint8_t> &data );
+  bool initialize( const PCCBitstream &bitstream );
+  bool initialize( const std::string &compressedStreamPath );
   void initialize( uint64_t capacity ) { data_.resize( capacity, 0 ); }
   void clear() {
     data_.clear();
@@ -171,21 +171,21 @@ class PCCBitstream {
     position_.bits_  = 0;
     position_.bytes_ = 0;
   }
-  bool                  write( const std::string& compressedStreamPath );
-  uint8_t*              buffer() { return data_.data(); }
-  std::vector<uint8_t>& vector() { return data_; }
-  uint64_t&             size() { return position_.bytes_; }
+  bool                  write( const std::string &compressedStreamPath );
+  uint8_t              *buffer() { return data_.data(); }
+  std::vector<uint8_t> &vector() { return data_; }
+  uint64_t             &size() { return position_.bytes_; }
   uint64_t              capacity() { return data_.size(); }
   PCCBistreamPosition   getPosition() { return position_; }
-  void                  setPosition( PCCBistreamPosition& val ) { position_ = val; }
-  PCCBitstream&         operator+=( const uint64_t size ) {
+  void                  setPosition( PCCBistreamPosition &val ) { position_ = val; }
+  PCCBitstream         &operator+=( const uint64_t size ) {
     position_.bytes_ += size;
     return *this;
   }
-  void copyFrom( PCCBitstream& dataBitstream, const size_t startByte, const size_t bitstreamSize );
-  void copyTo( PCCBitstream& dataBitstream, const size_t size );
-  void writeVideoStream( PCCVideoBitstream& videoBitstream );
-  void readVideoStream( PCCVideoBitstream& videoBitstream, size_t videoStreamSize );
+  void copyFrom( PCCBitstream &dataBitstream, const size_t startByte, const size_t bitstreamSize );
+  void copyTo( PCCBitstream &dataBitstream, const size_t size );
+  void writeVideoStream( PCCVideoBitstream &videoBitstream );
+  void readVideoStream( PCCVideoBitstream &videoBitstream, size_t videoStreamSize );
   bool byteAligned() { return ( position_.bits_ == 0 ); }
   bool moreData() { return position_.bytes_ < data_.size(); }
   void computeMD5();
@@ -203,7 +203,7 @@ class PCCBitstream {
 
   inline void writeString( std::string str ) {
     while ( !byteAligned() ) { write( 0, 1 ); }
-    for ( auto& element : str ) { write( element, 8 ); }
+    for ( auto &element : str ) { write( element, 8 ); }
     write( 0, 8 );
   }
 
@@ -211,10 +211,9 @@ class PCCBitstream {
   inline uint32_t read( uint8_t bits, bool bFullStream = false ) {
     uint32_t code = read( bits, position_ );
 #ifdef BITSTREAM_TRACE
-    if ( bFullStream == true )
-      trace( "FullStream: CodU[%2u]: %4zu \n", bits, code );
-    else
-      trace( "  CodU[%2u]: %4zu \n", bits, code );
+    if ( bFullStream == true ) trace( "FullStream: CodU[%2u]: %4zu \n", bits, code );
+//    else
+//      trace( "  CodU[%2u]: %4zu \n", bits, code );
 #endif
     return code;
   }
@@ -222,10 +221,9 @@ class PCCBitstream {
   void write( T value, uint8_t bits, bool bFullStream = false ) {
     write( static_cast<uint32_t>( value ), bits, position_ );
 #ifdef BITSTREAM_TRACE
-    if ( bFullStream == true )
-      trace( "FullStream: CodU[%2u]: %4zu \n", bits, static_cast<uint32_t>( value ) );
-    else
-      trace( "  CodU[%2u]: %4zu \n", bits, static_cast<uint32_t>( value ) );
+    if ( bFullStream == true ) trace( "FullStream: CodU[%2u]: %4zu \n", bits, static_cast<uint32_t>( value ) );
+//    else
+//      trace( "  CodU[%2u]: %4zu \n", bits, static_cast<uint32_t>( value ) );
 #endif
   }
 
@@ -235,12 +233,12 @@ class PCCBitstream {
     if ( value >= 0 ) {
       code = (uint32_t)value;
     } else {
-      code = ( uint32_t )( value & ( ( 1 << ( bits - 1 ) ) - 1 ) );
+      code = (uint32_t)( value & ( ( 1 << ( bits - 1 ) ) - 1 ) );
       code |= ( 1 << ( bits - 1 ) );
     }
     write( code, bits );
 #ifdef BITSTREAM_TRACE
-    trace( "  CodS[%2u]: %4zu \n", bits, value );
+    // trace( "  CodS[%2u]: %4zu \n", bits, value );
 #endif
   }
 
@@ -255,7 +253,7 @@ class PCCBitstream {
       value = (int32_t)code | ~( midPoint - 1 );
     }
 #ifdef BITSTREAM_TRACE
-    trace( "  CodS[%2u]: %4zu \n", bits, value );
+    // trace( "  CodS[%2u]: %4zu \n", bits, value );
 #endif
     return value;
   }
@@ -277,7 +275,7 @@ class PCCBitstream {
     write( code, ( length + 1 ) >> 1 );
 #ifdef BITSTREAM_TRACE
     trace_ = traceStartingValue;
-    trace( "  CodeUvlc: %4zu \n", orgCode );
+//    trace( "  CodeUvlc: %4zu \n", orgCode );
 #endif
   }
 
@@ -299,7 +297,7 @@ class PCCBitstream {
     }
 #ifdef BITSTREAM_TRACE
     trace_ = traceStartingValue;
-    trace( "  CodeUvlc: %4zu \n", value );
+//    trace( "  CodeUvlc: %4zu \n", value );
 #endif
     return value;
   }
@@ -307,18 +305,18 @@ class PCCBitstream {
   template <typename T>
   inline void writeSvlc( T value ) {
     int32_t code = static_cast<int32_t>( value );
-    writeUvlc( ( uint32_t )( code <= 0 ? -code << 1 : ( code << 1 ) - 1 ) );
+    writeUvlc( (uint32_t)( code <= 0 ? -code << 1 : ( code << 1 ) - 1 ) );
 #ifdef BITSTREAM_TRACE
-    trace( "  CodeSvlc: %4d \n", code );
+//    trace( "  CodeSvlc: %4d \n", code );
 #endif
   }
 
   inline int32_t readSvlc() {
     uint32_t bits = readUvlc();
 #ifdef BITSTREAM_TRACE
-    trace( "  CodeSvlc: %4d \n", ( bits & 1 ) ? ( int32_t )( bits >> 1 ) + 1 : -( int32_t )( bits >> 1 ) );
+//    trace( "  CodeSvlc: %4d \n", ( bits & 1 ) ? ( int32_t )( bits >> 1 ) + 1 : -( int32_t )( bits >> 1 ) );
 #endif
-    return ( bits & 1 ) ? ( int32_t )( bits >> 1 ) + 1 : -( int32_t )( bits >> 1 );
+    return ( bits & 1 ) ? (int32_t)( bits >> 1 ) + 1 : -(int32_t)( bits >> 1 );
   }
 
   inline void writeFloat( float value ) {
@@ -335,21 +333,83 @@ class PCCBitstream {
   }
 
 #ifdef BITSTREAM_TRACE
-  template <typename... Args>
-  void trace( const char* pFormat, Args... eArgs ) {
+  void traceBitFloat( const std::string &name, float value, const std::string &type ) {
     if ( trace_ ) {
-      logger_->traceStream( "[%6llu - %2u]: ", position_.bytes_, position_.bits_ );
+      logger_->traceStream( "[%6llu-%1u]", position_.bytes_, position_.bits_ );
+      logger_->traceStreamIndent();
+      auto              str    = name.substr( 0, 50 - logger_->getIndent() );
+      static const char dots[] = "..................................................";
+      auto              len    = (std::min)( logger_->getIndent() + str.length(), (size_t)50 );
+      logger_->traceStream( "%s %s = %-6f %s \n", str.c_str(), dots + len, value, type.c_str() );
+    }
+  }
+  void traceBitDouble( const std::string &name, double value, const std::string &type ) {
+    if ( trace_ ) {
+      logger_->traceStream( "[%6llu-%1u]", position_.bytes_, position_.bits_ );
+      logger_->traceStreamIndent();
+      auto              str    = name.substr( 0, 50 - logger_->getIndent() );
+      static const char dots[] = "..................................................";
+      auto              len    = (std::min)( logger_->getIndent() + str.length(), (size_t)50 );
+      logger_->traceStream( "%s %s = %-6f %s \n", str.c_str(), dots + len, value, type.c_str() );
+    }
+  }
+  void traceBitStr( const std::string &name, const std::string &value, const std::string &type ) {
+    if ( trace_ ) {
+      logger_->traceStream( "[%6llu-%1u]", position_.bytes_, position_.bits_ );
+      logger_->traceStreamIndent();
+      auto              str    = name.substr( 0, 50 - logger_->getIndent() );
+      static const char dots[] = "..................................................";
+      auto              len    = (std::min)( logger_->getIndent() + str.length(), (size_t)50 );
+      logger_->traceStream( "%s %s = %-6f %s \n", str.c_str(), dots + len, value.c_str(), type.c_str() );
+    }
+  }
+  template <typename T>
+  void traceBit( const std::string &name, T value, const std::string &type ) {
+    if ( trace_ ) {
+      logger_->traceStream( "[%6llu-%1u]", position_.bytes_, position_.bits_ );
+      logger_->traceStreamIndent();
+      auto              str    = name.substr( 0, 50 - logger_->getIndent() );
+      static const char dots[] = "..................................................";
+      auto              len    = (std::min)( logger_->getIndent() + str.length(), (size_t)50 );
+      logger_->traceStream( "%s %s = %-6d %s \n", str.c_str(), dots + len, (int)value, type.c_str() );
+    }
+  }
+
+  template <typename... Args>
+  void trace( const char *pFormat, Args... eArgs ) {
+    if ( trace_ ) {
+      logger_->traceStream( "[%6llu-%u] ", position_.bytes_, position_.bits_ );
+      logger_->traceStreamIndent();
       logger_->traceStream( pFormat, eArgs... );
     }
   }
+
+  template <typename... Args>
+  void traceIn( const char *pFormat, Args... eArgs ) {
+    if ( trace_ ) {
+      trace( pFormat, eArgs... );
+      logger_->traceStream( "%s\n", "(){" );
+      logger_->indentIn();
+    }
+  }
+  template <typename... Args>
+  void traceOut( const char *pFormat, Args... eArgs ) {
+    if ( trace_ ) {
+      logger_->indentOut();
+      trace( "%s", "} ~" );
+      logger_->traceStream( pFormat, eArgs... );
+      logger_->traceStream( "%s\n", "" );
+    }
+  }
+
 #endif
 #if defined( BITSTREAM_TRACE ) || defined( CONFORMANCE_TRACE )
   void setTrace( bool trace ) { trace_ = trace; }
-  void setLogger( PCCLogger& logger ) { logger_ = &logger; }
+  void setLogger( PCCLogger &logger ) { logger_ = &logger; }
 #endif
  private:
   inline void realloc( const size_t size = 4096 ) { data_.resize( data_.size() + ( ( ( size / 4096 ) + 1 ) * 4096 ) ); }
-  inline uint32_t read( uint8_t bits, PCCBistreamPosition& pos ) {
+  inline uint32_t read( uint8_t bits, PCCBistreamPosition &pos ) {
     uint32_t value = 0;
     for ( size_t i = 0; i < bits; i++ ) {
       value |= ( ( data_[pos.bytes_] >> ( 7 - pos.bits_ ) ) & 1 ) << ( bits - 1 - i );
@@ -363,7 +423,7 @@ class PCCBitstream {
     return value;
   }
 
-  inline void write( uint32_t value, uint8_t bits, PCCBistreamPosition& pos ) {
+  inline void write( uint32_t value, uint8_t bits, PCCBistreamPosition &pos ) {
     if ( pos.bytes_ + bits + 16 >= data_.size() ) { realloc(); }
     for ( size_t i = 0; i < bits; i++ ) {
       data_[pos.bytes_] |= ( ( value >> ( bits - 1 - i ) ) & 1 ) << ( 7 - pos.bits_ );
@@ -379,9 +439,9 @@ class PCCBitstream {
   std::vector<uint8_t> data_;
   PCCBistreamPosition  position_;
 
-#if defined(CONFORMANCE_TRACE) || defined(BITSTREAM_TRACE)
+#if defined( CONFORMANCE_TRACE ) || defined( BITSTREAM_TRACE )
   bool       trace_;
-  PCCLogger* logger_ = nullptr;
+  PCCLogger *logger_ = nullptr;
 #endif
 };
 

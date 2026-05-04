@@ -42,21 +42,21 @@ class PCCVideoBitstream {
   PCCVideoBitstream( PCCVideoType type ) : type_( type ) { data_.clear(); }
   ~PCCVideoBitstream() { data_.clear(); }
 
-  PCCVideoBitstream&    operator=( const PCCVideoBitstream& ) = default;
+  PCCVideoBitstream    &operator=( const PCCVideoBitstream & ) = default;
   void                  resize( size_t size ) { data_.resize( size ); }
-  std::vector<uint8_t>& vector() { return data_; }
-  uint8_t*              buffer() { return data_.data(); }
+  std::vector<uint8_t> &vector() { return data_; }
+  uint8_t              *buffer() { return data_.data(); }
   size_t                size() { return data_.size(); }
   PCCVideoType          type() { return type_; }
 
   void trace() { std::cout << "      " << toString( type_ ) << " ->" << size() << " B " << std::endl; }
 
   std::string getExtension();
-  bool        write( const std::string& filename );
-  bool        read( const std::string& filename );
+  bool        write( const std::string &filename );
+  bool        read( const std::string &filename );
 #if defined( WIN32 )
-  bool _write( const std::string& filename );
-  bool _read( const std::string& filename );
+  bool _write( const std::string &filename );
+  bool _read( const std::string &filename );
 #endif
 
   void byteStreamToSampleStream( size_t precision = 4, bool emulationPreventionBytes = false );

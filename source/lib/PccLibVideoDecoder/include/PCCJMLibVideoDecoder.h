@@ -47,11 +47,11 @@ class PCCJMLibVideoDecoder : public PCCVirtualVideoDecoder<T> {
   PCCJMLibVideoDecoder();
   ~PCCJMLibVideoDecoder();
 
-  void decode( PCCVideoBitstream& bitstream,
-               PCCVideo<T, 3>&    video,
+  void decode( PCCVideoBitstream &bitstream,
+               PCCVideo<T, 3>    &video,
                size_t             outputBitDepth = 8,
-               const std::string& decoderPath    = "",
-               const std::string& parameters     = "" );
+               const std::string &decoderPath    = "",
+               const std::string &parameters     = "" );
 };
 
 };  // namespace pcc

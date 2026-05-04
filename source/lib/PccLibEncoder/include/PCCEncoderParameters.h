@@ -46,8 +46,8 @@ class PCCEncoderParameters {
   void        print();
   bool        check();
   void        completePath();
-  static void constructAspsRefListStruct( PCCContext& context, size_t aspsIdx, size_t afpsIdx );
-  void        initializeContext( PCCContext& context );
+  static void constructAspsRefListStruct( PCCContext &context, size_t aspsIdx, size_t afpsIdx );
+  void        initializeContext( PCCContext &context );
   uint8_t     getCodecIdIndex( PCCCodecId codecId );
 
   size_t            startFrameNumber_;
@@ -97,6 +97,9 @@ class PCCEncoderParameters {
   std::string attribute0Config_;
   std::string attribute1Config_;
   bool        multipleStreams_;
+  size_t      attributeDF_;
+  size_t      geometryDF_;
+  std::string scalerConfig_;
 
   // segmentation
   bool   gridBasedSegmentation_;

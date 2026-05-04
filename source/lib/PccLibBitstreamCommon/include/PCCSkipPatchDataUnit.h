@@ -40,9 +40,9 @@ namespace pcc {
 // 8.3.7.4  Skip patch data unit syntax
 class SkipPatchDataUnit {
  public:
-  SkipPatchDataUnit() : patchIndex_( 0 ), frameIndex_( 0 ), tileOrder_( 0 ){};
-  ~SkipPatchDataUnit(){};
-  SkipPatchDataUnit& operator=( const SkipPatchDataUnit& ) = default;
+  SkipPatchDataUnit() : patchIndex_( 0 ), frameIndex_( 0 ), tileOrder_( 0 ) {};
+  ~SkipPatchDataUnit() {};
+  SkipPatchDataUnit &operator=( const SkipPatchDataUnit & ) = default;
   size_t             getPatchIndex() { return patchIndex_; }
   size_t             getFrameIndex() { return frameIndex_; }
   size_t             getTileOrder() { return tileOrder_; }

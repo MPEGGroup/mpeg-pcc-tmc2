@@ -64,11 +64,11 @@ class PCCNNResult {
     return indices_.size();
   }
   inline size_t  count() const { return size(); }
-  inline size_t& indices( size_t index ) { return indices_[index]; }
-  inline double& dist( size_t index ) { return dist_[index]; }
-  inline size_t* indices() { return indices_.data(); }
-  inline double* dist() { return dist_.data(); }
-  inline void    pushBack( const std::pair<size_t, double>& value ) {
+  inline size_t &indices( size_t index ) { return indices_[index]; }
+  inline double &dist( size_t index ) { return dist_[index]; }
+  inline size_t *indices() { return indices_.data(); }
+  inline double *dist() { return dist_.data(); }
+  inline void    pushBack( const std::pair<size_t, double> &value ) {
     indices_.push_back( value.first );
     dist_.push_back( value.second );
   }
@@ -85,18 +85,18 @@ class PCCNNResult {
 class PCCKdTree {
  public:
   PCCKdTree();
-  PCCKdTree( const PCCPointSet3& pointCloud );
+  PCCKdTree( const PCCPointSet3 &pointCloud );
   ~PCCKdTree();
-  void init( const PCCPointSet3& pointCloud );
-  void search( const PCCPoint3D& point, const size_t num_results, PCCNNResult& results ) const;
-  void searchRadius( const PCCPoint3D& point,
+  void init( const PCCPointSet3 &pointCloud );
+  void search( const PCCPoint3D &point, const size_t num_results, PCCNNResult &results ) const;
+  void searchRadius( const PCCPoint3D &point,
                      const size_t      num_results,
                      const double      radius,
-                     PCCNNResult&      results ) const;
+                     PCCNNResult      &results ) const;
 
  private:
   void  clear();
-  void* kdtree_;
+  void *kdtree_;
 };
 
 }  // namespace pcc

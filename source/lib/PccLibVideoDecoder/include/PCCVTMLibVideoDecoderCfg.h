@@ -95,7 +95,7 @@ class PCCVTMLibVideoDecoderCfg {
   PCCVTMLibVideoDecoderCfg();
   virtual ~PCCVTMLibVideoDecoderCfg();
 
-  bool parseCfg( int argc, char* argv[] );  ///< initialize option class from configuration
+  bool parseCfg( int argc, char *argv[] );  ///< initialize option class from configuration
 };
 
 //! \}

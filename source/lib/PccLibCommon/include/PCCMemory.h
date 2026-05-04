@@ -69,23 +69,23 @@ static uint64_t getPeakMemory() {
   return (size_t)rusage.ru_maxrss / 1024;
 }
 #else
-static int parseLine( char* pLine ) {
+static int parseLine( char *pLine ) {
   int         iLen = (int)strlen( pLine );
-  const char* pTmp = pLine;
+  const char *pTmp = pLine;
   while ( *pTmp < '0' || *pTmp > '9' ) { pTmp++; }
   pLine[iLen - 3] = '\0';
   iLen            = atoi( pTmp );
   return iLen;
 }
 static int getUsedMemory() {
-  FILE* pFile   = fopen( "/proc/self/status", "r" );
+  FILE *pFile   = fopen( "/proc/self/status", "r" );
   int   iResult = 0;
   if ( pFile != NULL ) {
     char pLine[128];
     while ( fgets( pLine, 128, pFile ) != NULL ) {
       if ( strncmp( pLine, "VmSize:", 7 ) == 0 ) {
         iResult          = (int)strlen( pLine );
-        const char* pTmp = pLine;
+        const char *pTmp = pLine;
         while ( *pTmp < '0' || *pTmp > '9' ) { pTmp++; }
         pLine[iResult - 3] = '\0';
         iResult            = atoi( pTmp );
@@ -97,13 +97,13 @@ static int getUsedMemory() {
   return iResult;
 }
 static uint64_t getPeakMemory() {
-  FILE*    pFile   = fopen( "/proc/self/status", "r" );
+  FILE    *pFile   = fopen( "/proc/self/status", "r" );
   uint64_t iResult = 0;
   if ( pFile != NULL ) {
     char pLine[128];
     while ( fgets( pLine, 128, pFile ) != NULL ) {
       if ( strncmp( pLine, "VmPeak:", 7 ) == 0 ) {
-        const char* pTmp = pLine;
+        const char *pTmp = pLine;
         while ( *pTmp < '0' || *pTmp > '9' ) { pTmp++; }
         pLine[(int)strlen( pLine ) - 3] = '\0';
         iResult                         = atoi( pTmp );

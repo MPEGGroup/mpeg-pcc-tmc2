@@ -59,13 +59,13 @@ using pcc::chrono::StopwatchUserTime;
 // :: Command line / config parsing helpers
 
 namespace pcc {
-static std::istream& operator>>( std::istream& in, PCCColorTransform& val ) {
+static std::istream &operator>>( std::istream &in, PCCColorTransform &val ) {
   unsigned int tmp;
   in >> tmp;
   val = PCCColorTransform( tmp );
   return in;
 }
-static std::istream& operator>>( std::istream& in, PCCCodecId& val ) {
+static std::istream &operator>>( std::istream &in, PCCCodecId &val ) {
   val = UNKNOWN_CODEC;
   std::string tmp;
   in >> tmp;
@@ -97,7 +97,7 @@ static std::istream& operator>>( std::istream& in, PCCCodecId& val ) {
   return in;
 }
 
-static std::istream& operator>>( std::istream& in, std::vector<int>& vector ) {
+static std::istream &operator>>( std::istream &in, std::vector<int> &vector ) {
   std::string str;
   in >> str;
   str.erase( std::remove( str.begin(), str.end(), ' ' ), str.end() );
@@ -116,9 +116,9 @@ static std::istream& operator>>( std::istream& in, std::vector<int>& vector ) {
 // :: Command line / config parsing
 
 bool parseParameters( int                   argc,
-                      char*                 argv[],
-                      PCCEncoderParameters& encoderParams,
-                      PCCMetricsParameters& metricsParams ) {
+                      char                 *argv[],
+                      PCCEncoderParameters &encoderParams,
+                      PCCMetricsParameters &metricsParams ) {
   namespace po    = df::program_options_lite;
   bool print_help = false;
 
@@ -975,7 +975,16 @@ bool parseParameters( int                   argc,
     ( "vvcCodecIdIndex",
       encoderParams.vvcCodecIdIndex_,
       encoderParams.vvcCodecIdIndex_, 
-      "index for vvc codec " );
+      "index for vvc codec " )
+    ("attributeDF",
+      encoderParams.attributeDF_,
+      encoderParams.attributeDF_, "Downscaling factor for attributes")
+      ("geometryDF",
+        encoderParams.geometryDF_,
+        encoderParams.geometryDF_, "Downscaling factor for geometry")
+      ("scalerConfig",
+        encoderParams.scalerConfig_,
+        encoderParams.scalerConfig_, "configuration file used for Upscaling/Downscaling");
 
     //8.3.4.6	Profile toolset constraints information syntax
     opts.addOptions()
@@ -986,8 +995,8 @@ bool parseParameters( int                   argc,
 
   // clang-format on
   po::setDefaults( opts );
-  po::ErrorReporter        err;
-  const list<const char*>& argv_unhandled = po::scanArgv( opts, argc, (const char**)argv, err );
+  po::ErrorReporter         err;
+  const list<const char *> &argv_unhandled = po::scanArgv( opts, argc, (const char **)argv, err );
   for ( const auto arg : argv_unhandled ) { printf( "Unhandled argument ignored: %s \n", arg ); }
 
   if ( argc == 1 || print_help ) {
@@ -1012,12 +1021,12 @@ bool parseParameters( int                   argc,
   return true;
 }
 
-int compressVideo( const PCCEncoderParameters& encoderParams,
-                   const PCCMetricsParameters& metricsParams,
-                   StopwatchUserTime&          clock ) {
+int compressVideo( const PCCEncoderParameters &encoderParams,
+                   const PCCMetricsParameters &metricsParams,
+                   StopwatchUserTime          &clock ) {
   const size_t startFrameNumber0        = encoderParams.startFrameNumber_;
   size_t       endFrameNumber0          = encoderParams.startFrameNumber_ + encoderParams.frameCount_;
-  const size_t groupOfFramesSize0       = ( std::max )( size_t( 1 ), encoderParams.groupOfFramesSize_ );
+  const size_t groupOfFramesSize0       = (std::max)( size_t( 1 ), encoderParams.groupOfFramesSize_ );
   size_t       startFrameNumber         = startFrameNumber0;
   size_t       reconstructedFrameNumber = encoderParams.startFrameNumber_;
 
@@ -1117,12 +1126,12 @@ int compressVideo( const PCCEncoderParameters& encoderParams,
   return checksumEqual ? 0 : -1;
 }
 
-int main( int argc, char* argv[] ) {
+int main( int argc, char *argv[] ) {
   std::cout << "PccAppEncoder v" << TMC2_VERSION_MAJOR << "." << TMC2_VERSION_MINOR << std::endl << std::endl;
 
   // this is mandatory to print floats with full precision
-  std::cout.precision(std::numeric_limits<float>::max_digits10);
-  
+  std::cout.precision( std::numeric_limits<float>::max_digits10 );
+
   PCCEncoderParameters encoderParams;
   PCCMetricsParameters metricsParams;
   if ( !parseParameters( argc, argv, encoderParams, metricsParams ) ) { return -1; }

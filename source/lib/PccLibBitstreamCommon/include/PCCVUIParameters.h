@@ -47,7 +47,7 @@ class HrdSubLayerParameters {
     cabSizeValueMinus1_.clear();
     cbrFlag_.clear();
   }
-  HrdSubLayerParameters& operator=( const HrdSubLayerParameters& ) = default;
+  HrdSubLayerParameters &operator=( const HrdSubLayerParameters & ) = default;
   void                   allocate( size_t size ) {
     bitRateValueMinus1_.resize( size, 0 );
     cabSizeValueMinus1_.resize( size, 0 );
@@ -94,7 +94,7 @@ class HrdParameters {
     subLayerParameters_[0].clear();
     subLayerParameters_[1].clear();
   }
-  HrdParameters& operator=( const HrdParameters& ) = default;
+  HrdParameters &operator=( const HrdParameters & ) = default;
 
   int32_t                getMaxNumSubLayersMinus1() { return maxNumSubLayersMinus1_; }
   bool                   getNalParametersPresentFlag() { return nalParametersPresentFlag_; }
@@ -106,7 +106,7 @@ class HrdParameters {
   bool                   getElementalDurationInTcMinus1( size_t i ) { return elementalDurationInTcMinus1_[i]; }
   bool                   getLowDelayFlag( size_t i ) { return lowDelayFlag_[i]; }
   uint32_t               getCabCntMinus1( size_t i ) { return cabCntMinus1_[i]; }
-  HrdSubLayerParameters& getHdrSubLayerParameters( size_t i, size_t j ) { return subLayerParameters_[i][j]; }
+  HrdSubLayerParameters &getHdrSubLayerParameters( size_t i, size_t j ) { return subLayerParameters_[i][j]; }
 
   void setNalParametersPresentFlag( bool value ) { nalParametersPresentFlag_ = value; }
   void setAclParametersPresentFlag( bool value ) { aclParametersPresentFlag_ = value; }
@@ -146,7 +146,7 @@ class MaxCodedVideoResolution {
       attributeWidth_( 0 ),
       attributeHeight_( 0 ) {}
   ~MaxCodedVideoResolution() {}
-  MaxCodedVideoResolution& operator=( const MaxCodedVideoResolution& ) = default;
+  MaxCodedVideoResolution &operator=( const MaxCodedVideoResolution & ) = default;
 
   bool     getOccupancyResolutionPresentFlag() { return occupancyResolutionPresentFlag_; }
   bool     getGeometryResolutionPresentFlag() { return geometryResolutionPresentFlag_; }
@@ -183,13 +183,9 @@ class MaxCodedVideoResolution {
 class CoordinateSystemParameters {
  public:
   CoordinateSystemParameters() :
-      forwardAxis_( 0 ),
-      deltaLeftAxis_( 0 ),
-      forwardSign_( 0 ),
-      leftSign_( 0 ),
-      upSign_( 0 ) {}
+      forwardAxis_( 0 ), deltaLeftAxis_( 0 ), forwardSign_( 0 ), leftSign_( 0 ), upSign_( 0 ) {}
   ~CoordinateSystemParameters() {}
-  CoordinateSystemParameters& operator=( const CoordinateSystemParameters& ) = default;
+  CoordinateSystemParameters &operator=( const CoordinateSystemParameters & ) = default;
 
   uint8_t getForwardAxis() { return forwardAxis_; }
   uint8_t getDeltaLeftAxis() { return deltaLeftAxis_; }
@@ -230,17 +226,17 @@ class VUIParameters {
       coordinateSystemParametersPresentFlag_( false ),
       unitInMetresFlag_( false ),
       displayBoxInfoPresentFlag_( false ),
-      displayBoxOrigin_{0, 0, 0},
-      displayBoxSize_{0, 0, 0},
+      displayBoxOrigin_{ 0, 0, 0 },
+      displayBoxSize_{ 0, 0, 0 },
       anchorPointPresentFlag_( false ),
-      anchorPoint_{0.f, 0.f, 0.f} {}
+      anchorPoint_{ 0.f, 0.f, 0.f } {}
 
   ~VUIParameters() {}
-  VUIParameters& operator=( const VUIParameters& ) = default;
+  VUIParameters &operator=( const VUIParameters & ) = default;
 
-  HrdParameters&              getHrdParameters() { return hrdParameters_; }
-  CoordinateSystemParameters& getCoordinateSystemParameters() { return coordinateSystemParameters_; }
-  MaxCodedVideoResolution&    getMaxCodedVideoResolution() { return maxCodedVideoResolution_; }
+  HrdParameters              &getHrdParameters() { return hrdParameters_; }
+  CoordinateSystemParameters &getCoordinateSystemParameters() { return coordinateSystemParameters_; }
+  MaxCodedVideoResolution    &getMaxCodedVideoResolution() { return maxCodedVideoResolution_; }
   bool                        getTimingInfoPresentFlag() { return timingInfoPresentFlag_; }
   uint32_t                    getNumUnitsInTick() { return numUnitsInTick_; }
   uint32_t                    getTimeScale() { return timeScale_; }

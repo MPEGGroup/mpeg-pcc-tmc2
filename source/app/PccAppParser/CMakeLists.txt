@@ -1,19 +1,20 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 3.2)
+cmake_minimum_required(VERSION 3.2)
 
-GET_FILENAME_COMPONENT(MYNAME ${CMAKE_CURRENT_LIST_DIR} NAME)
-STRING(REPLACE " " "_" MYNAME ${MYNAME})
-SET( MYNAME ${MYNAME}${CMAKE_DEBUG_POSTFIX} )
-PROJECT(${MYNAME} C CXX)
+get_filename_component(MYNAME ${CMAKE_CURRENT_LIST_DIR} NAME)
+string(REPLACE " " "_" MYNAME ${MYNAME})
+set(MYNAME ${MYNAME}${CMAKE_DEBUG_POSTFIX})
+project(${MYNAME} C CXX)
 
-FILE(GLOB SRC *.h *.cpp *.c )
+file(GLOB SRC *.h *.cpp *.c)
 
-INCLUDE_DIRECTORIES( ${CMAKE_SOURCE_DIR}/source/lib/PccLibBitstreamCommon/include
-                     ${CMAKE_SOURCE_DIR}/source/lib/PccLibBitstreamReader/include )
+include_directories(
+  ${CMAKE_SOURCE_DIR}/source/lib/PccLibBitstreamCommon/include
+  ${CMAKE_SOURCE_DIR}/source/lib/PccLibBitstreamReader/include)
 
-ADD_EXECUTABLE( ${MYNAME} ${SRC} )
+add_executable(${MYNAME} ${SRC})
 
-SET( LIBS PccLibBitstreamCommon PccLibBitstreamReader  )
+set(LIBS PccLibBitstreamCommon PccLibBitstreamReader)
 
-TARGET_LINK_LIBRARIES( ${MYNAME} ${LIBS} )
+target_link_libraries(${MYNAME} ${LIBS})
 
-INSTALL( TARGETS ${MYNAME} DESTINATION bin )
+install(TARGETS ${MYNAME} DESTINATION bin)

@@ -14,11 +14,11 @@ template <typename T>
 PCCSHMAppVideoDecoder<T>::~PCCSHMAppVideoDecoder() {}
 
 template <typename T>
-void PCCSHMAppVideoDecoder<T>::decode( PCCVideoBitstream& bitstream,
-                                       PCCVideo<T, 3>&    video,
+void PCCSHMAppVideoDecoder<T>::decode( PCCVideoBitstream &bitstream,
+                                       PCCVideo<T, 3>    &video,
                                        size_t             outputBitDepth,
-                                       const std::string& decoderPath,
-                                       const std::string& fileName ) {
+                                       const std::string &decoderPath,
+                                       const std::string &fileName ) {
   if ( decoderPath.empty() || !exist( decoderPath ) ) {
     std::cerr << "decoderPath not set\n";
     exit( 1 );
@@ -29,7 +29,7 @@ void PCCSHMAppVideoDecoder<T>::decode( PCCVideoBitstream& bitstream,
   std::vector<uint8_t>    isRGB;
   pcc_shvc::PccShvcParser shvcParser;
   shvcParser.getVideoSize( bitstream.vector(), width, height, bitDepth, isRGB );
-  layerIndex_ = ( std::min )( width.size() - 1, layerIndex_ );
+  layerIndex_ = (std::min)( width.size() - 1, layerIndex_ );
 
   printf( "Num Layer = %zu layerIndex = %zu \n", width.size(), layerIndex_ );
   for ( size_t i = 0; i < width.size(); i++ ) {

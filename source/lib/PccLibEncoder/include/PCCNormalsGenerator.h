@@ -65,24 +65,24 @@ class PCCNormalsGenerator3 {
     double   weight_;
     uint32_t start_;
     uint32_t end_;
-    bool     operator<( const PCCWeightedEdge& rhs ) const {
+    bool     operator<( const PCCWeightedEdge &rhs ) const {
       if ( weight_ == rhs.weight_ ) { return start_ == rhs.start_ ? end_ < rhs.end_ : start_ < rhs.start_; }
       return weight_ < rhs.weight_;
     }
   };
 
  public:
-  PCCNormalsGenerator3( void )                        = default;
-  PCCNormalsGenerator3( const PCCNormalsGenerator3& ) = delete;
-  PCCNormalsGenerator3& operator=( const PCCNormalsGenerator3& ) = delete;
-  ~PCCNormalsGenerator3()                                        = default;
+  PCCNormalsGenerator3( void )                                    = default;
+  PCCNormalsGenerator3( const PCCNormalsGenerator3 & )            = delete;
+  PCCNormalsGenerator3 &operator=( const PCCNormalsGenerator3 & ) = delete;
+  ~PCCNormalsGenerator3()                                         = default;
   void                      clear() { normals_.resize( 0 ); }
-  void                      init( const size_t pointCount, const PCCNormalsGenerator3Parameters& params );
-  void                      compute( const PCCPointSet3&                   pointCloud,
-                                     const PCCKdTree&                      kdtree,
-                                     const PCCNormalsGenerator3Parameters& params,
+  void                      init( const size_t pointCount, const PCCNormalsGenerator3Parameters &params );
+  void                      compute( const PCCPointSet3                   &pointCloud,
+                                     const PCCKdTree                      &kdtree,
+                                     const PCCNormalsGenerator3Parameters &params,
                                      const size_t                          nbThread );
-  std::vector<PCCVector3D>& getNormals() { return normals_; }
+  std::vector<PCCVector3D> &getNormals() { return normals_; }
   PCCVector3D               getNormal( const size_t pos ) const {
     assert( pos < normals_.size() );
     return normals_[pos];
@@ -102,26 +102,26 @@ class PCCNormalsGenerator3 {
   size_t getNormalCount() const { return normals_.size(); }
 
   void computeNormal( const size_t                          index,
-                      const PCCPointSet3&                   pointCloud,
-                      const PCCKdTree&                      kdtree,
-                      const PCCNormalsGenerator3Parameters& params,
-                      PCCNNResult&                          nNResult );
-  void computeNormals( const PCCPointSet3&                   pointCloud,
-                       const PCCKdTree&                      kdtree,
-                       const PCCNormalsGenerator3Parameters& params );
-  void orientNormals( const PCCPointSet3&                   pointCloud,
-                      const PCCKdTree&                      kdtree,
-                      const PCCNormalsGenerator3Parameters& params );
+                      const PCCPointSet3                   &pointCloud,
+                      const PCCKdTree                      &kdtree,
+                      const PCCNormalsGenerator3Parameters &params,
+                      PCCNNResult                          &nNResult );
+  void computeNormals( const PCCPointSet3                   &pointCloud,
+                       const PCCKdTree                      &kdtree,
+                       const PCCNormalsGenerator3Parameters &params );
+  void orientNormals( const PCCPointSet3                   &pointCloud,
+                      const PCCKdTree                      &kdtree,
+                      const PCCNormalsGenerator3Parameters &params );
   void addNeighbors( const uint32_t      current,
-                     const PCCPointSet3& pointCloud,
-                     const PCCKdTree&    kdtree,
-                     PCCNNQuery3&        nNQuery,
-                     PCCNNResult&        nNResult,
-                     PCCVector3D&        accumulatedNormals,
-                     size_t&             numberOfNormals );
-  void smoothNormals( const PCCPointSet3&                   pointCloud,
-                      const PCCKdTree&                      kdtree,
-                      const PCCNormalsGenerator3Parameters& params );
+                     const PCCPointSet3 &pointCloud,
+                     const PCCKdTree    &kdtree,
+                     PCCNNQuery3        &nNQuery,
+                     PCCNNResult        &nNResult,
+                     PCCVector3D        &accumulatedNormals,
+                     size_t             &numberOfNormals );
+  void smoothNormals( const PCCPointSet3                   &pointCloud,
+                      const PCCKdTree                      &kdtree,
+                      const PCCNormalsGenerator3Parameters &params );
 
  private:
   std::vector<PCCVector3D>             normals_;

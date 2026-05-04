@@ -47,7 +47,7 @@ void usage() {
   exit( -1 );
 }
 
-int parserPccBin( const std::string& filename ) {
+int parserPccBin( const std::string &filename ) {
   PCCBitstream     bitstream;
   PCCBitstreamStat bitstreamStat;
   PCCLogger        logger;
@@ -77,7 +77,7 @@ int parserPccBin( const std::string& filename ) {
   return 0;
 }
 
-int main( int argc, char* argv[] ) {
+int main( int argc, char *argv[] ) {
   std::cout << "PccAppParser v" << TMC2_VERSION_MAJOR << "." << TMC2_VERSION_MINOR << std::endl << std::endl;
   if ( argc != 2 ) { usage(); }
   if ( !exist( argv[1] ) ) {

@@ -156,13 +156,13 @@ const std::vector<int> g_orientationHorizontal = {
 // ******************************************************************* //
 static inline PCCEndianness PCCSystemEndianness() {
   uint32_t num = 1;
-  return ( *( reinterpret_cast<char*>( &num ) ) == 1 ) ? PCC_LITTLE_ENDIAN : PCC_BIG_ENDIAN;
+  return ( *( reinterpret_cast<char *>( &num ) ) == 1 ) ? PCC_LITTLE_ENDIAN : PCC_BIG_ENDIAN;
 }
 
 static inline void PCCDivideRange( const size_t         start,
                                    const size_t         end,
                                    const size_t         chunckCount,
-                                   std::vector<size_t>& subRanges ) {
+                                   std::vector<size_t> &subRanges ) {
   const size_t elementCount = end - start;
   if ( elementCount <= chunckCount ) {
     subRanges.resize( elementCount + 1 );
@@ -180,7 +180,7 @@ static inline void PCCDivideRange( const size_t         start,
 }
 
 template <typename... Args>
-std::string stringFormat( const char* pFormat, Args... eArgs ) {
+std::string stringFormat( const char *pFormat, Args... eArgs ) {
   size_t      iSize = snprintf( NULL, 0, pFormat, eArgs... );
   std::string eBuffer;
   eBuffer.reserve( iSize + 1 );
@@ -210,7 +210,7 @@ void printVector( std::vector<T>    data,
   }
 }
 
-static inline std::string getParameter( const std::string& config, const std::string& param ) {
+static inline std::string getParameter( const std::string &config, const std::string &param ) {
   std::size_t pos = 0;
   if ( ( pos = config.find( param ) ) == std::string::npos ) {
     printf( "Can't find parameter: \"%s\" in: %s \n", param.c_str(), config.c_str() );
@@ -220,7 +220,7 @@ static inline std::string getParameter( const std::string& config, const std::st
   return config.substr( pos, config.find( " ", pos ) - pos );
 }
 
-static inline std::string getParameterFromConfigurationFile( const std::string& filename, const std::string& param ) {
+static inline std::string getParameterFromConfigurationFile( const std::string &filename, const std::string &param ) {
   std::string ret = "0";
   std::cout << "getParameterFromConfigurationFile filename = " << filename << '\n';
   std::ifstream file( filename.c_str(), std::ifstream::in );
@@ -247,7 +247,7 @@ struct Tile {
   int maxU;
   int minV;
   int maxV;
-  Tile() : minU( -1 ), maxU( -1 ), minV( -1 ), maxV( -1 ){};
+  Tile() : minU( -1 ), maxU( -1 ), minV( -1 ), maxV( -1 ) {};
 };
 
 #ifdef ENABLE_PAPI_PROFILING
@@ -262,7 +262,7 @@ static void initPapiProfiler() {
   return;
 }
 
-static void createPapiEvent( int& EventSet ) {
+static void createPapiEvent( int &EventSet ) {
   EventSet = PAPI_NULL;
   int retval, number = 0;
   if ( ( retval = PAPI_create_eventset( &EventSet ) ) != PAPI_OK ) { ERROR_RETURN( retval ); }

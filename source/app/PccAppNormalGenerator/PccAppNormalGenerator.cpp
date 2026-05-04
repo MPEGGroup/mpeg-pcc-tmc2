@@ -50,7 +50,7 @@ using namespace pcc;
 // :: Command line / config parsing helpers
 
 namespace pcc {
-static std::istream& operator>>( std::istream& in, PCCNormalsGeneratorOrientation& val ) {
+static std::istream &operator>>( std::istream &in, PCCNormalsGeneratorOrientation &val ) {
   unsigned int tmp;
   in >> tmp;
   val = PCCNormalsGeneratorOrientation( tmp );
@@ -62,13 +62,13 @@ static std::istream& operator>>( std::istream& in, PCCNormalsGeneratorOrientatio
 // :: Command line / config parsing
 
 bool parseParameters( int                             argc,
-                      char*                           argv[],
-                      std::string&                    srcPlyPath,
-                      std::string&                    dstPlyPath,
-                      size_t&                         startFrame,
-                      size_t&                         numFrames,
-                      size_t&                         numThread,
-                      PCCNormalsGenerator3Parameters& normalParams ) {
+                      char                           *argv[],
+                      std::string                    &srcPlyPath,
+                      std::string                    &dstPlyPath,
+                      size_t                         &startFrame,
+                      size_t                         &numFrames,
+                      size_t                         &numThread,
+                      PCCNormalsGenerator3Parameters &normalParams ) {
   namespace po    = df::program_options_lite;
   bool print_help = false;
 
@@ -211,8 +211,8 @@ bool parseParameters( int                             argc,
   opts.addOptions();
   // clang-format on
   po::setDefaults( opts );
-  po::ErrorReporter        err;
-  const list<const char*>& argv_unhandled = po::scanArgv( opts, argc, (const char**)argv, err );
+  po::ErrorReporter         err;
+  const list<const char *> &argv_unhandled = po::scanArgv( opts, argc, (const char **)argv, err );
   for ( const auto arg : argv_unhandled ) { printf( "Unhandled argument ignored: %s \n", arg ); }
 
   if ( argc == 1 || print_help ) {
@@ -259,12 +259,12 @@ bool parseParameters( int                             argc,
   return true;
 }
 
-int generateNormal( const std::string&                    uncompressedDataPath,
-                    const std::string&                    reconstructedDataPath,
+int generateNormal( const std::string                    &uncompressedDataPath,
+                    const std::string                    &reconstructedDataPath,
                     const size_t                          startFrameNumber,
                     const size_t                          frameCount,
                     const size_t                          nbThread,
-                    const PCCNormalsGenerator3Parameters& normalParams ) {
+                    const PCCNormalsGenerator3Parameters &normalParams ) {
   PCCGroupOfFrames sources;
   // reading the input ply
   std::cout << std::endl << "============= INPUT: " << uncompressedDataPath << " ============= " << std::endl;
@@ -275,7 +275,7 @@ int generateNormal( const std::string&                    uncompressedDataPath,
   for ( int frIdx = startFrameNumber; frIdx < startFrameNumber + frameCount; frIdx++ ) {
     std::cout << std::endl << "============= FRAME " << frIdx << " ============= " << std::endl;
     std::cout << "  Computing normals for original point cloud... ";
-    PCCPointSet3&        geometry = sources.getFrames()[frIdx];
+    PCCPointSet3        &geometry = sources.getFrames()[frIdx];
     PCCKdTree            kdtree( geometry );
     PCCNNResult          result;
     PCCNormalsGenerator3 normalsGen;
@@ -294,26 +294,26 @@ int generateNormal( const std::string&                    uncompressedDataPath,
   return 0;
 }
 
-int main( int argc, char* argv[] ) {
+int main( int argc, char *argv[] ) {
   std::cout << "PccAppNormalGenerator v" << TMC2_VERSION_MAJOR << "." << TMC2_VERSION_MINOR << std::endl << std::endl;
   std::string                    uncompressedDataPath;
   std::string                    reconstructedDataPath;
   size_t                         startFrameNumber;
   size_t                         frameCount;
   size_t                         nbThread     = 0;
-  PCCNormalsGenerator3Parameters normalParams = {PCCVector3D( 0.0 ),
-                                                 ( std::numeric_limits<double>::max )(),
-                                                 ( std::numeric_limits<double>::max )(),
-                                                 ( std::numeric_limits<double>::max )(),
-                                                 ( std::numeric_limits<double>::max )(),
-                                                 16,
-                                                 16,
-                                                 16,
-                                                 0,
-                                                 PCC_NORMALS_GENERATOR_ORIENTATION_SPANNING_TREE,
-                                                 false,
-                                                 false,
-                                                 false};  // default values
+  PCCNormalsGenerator3Parameters normalParams = { PCCVector3D( 0.0 ),
+                                                  ( std::numeric_limits<double>::max )(),
+                                                  ( std::numeric_limits<double>::max )(),
+                                                  ( std::numeric_limits<double>::max )(),
+                                                  ( std::numeric_limits<double>::max )(),
+                                                  16,
+                                                  16,
+                                                  16,
+                                                  0,
+                                                  PCC_NORMALS_GENERATOR_ORIENTATION_SPANNING_TREE,
+                                                  false,
+                                                  false,
+                                                  false };  // default values
   if ( !parseParameters( argc, argv, uncompressedDataPath, reconstructedDataPath, startFrameNumber, frameCount,
                          nbThread, normalParams ) ) {
     return -1;

@@ -46,7 +46,7 @@ PCCConformance::PCCConformance() :
     levelLimitTestsMatch_( true ) {}
 PCCConformance::~PCCConformance() {}
 
-void PCCConformance::check( const PCCConformanceParameters& params ) {
+void PCCConformance::check( const PCCConformanceParameters &params ) {
   PCCErrorMessage errMsg;
   double          aR = 1. / (double)params.fps_;
   KeyValMaps      key_val_decA, key_val_decB;
@@ -155,11 +155,11 @@ void PCCConformance::check( const PCCConformanceParameters& params ) {
        << levelLimitsCount_ << std::endl;
 }
 
-bool PCCConformance::compareLogFiles( std::string&                    fNameEnc,
-                                      std::string&                    fNameDec,
-                                      const std::vector<std::string>& keyList,
-                                      KeyValMaps&                     key_val_enc,
-                                      KeyValMaps&                     key_val_dec ) {
+bool PCCConformance::compareLogFiles( std::string                    &fNameEnc,
+                                      std::string                    &fNameDec,
+                                      const std::vector<std::string> &keyList,
+                                      KeyValMaps                     &key_val_enc,
+                                      KeyValMaps                     &key_val_dec ) {
   PCCConfigurationFileParser cfr( keyList );
   if ( !cfr.parseFile( fNameEnc, key_val_enc ) ) {
     cout << " Encoder File " << fNameEnc << " not exist \n";
@@ -181,8 +181,8 @@ bool PCCConformance::compareLogFiles( std::string&                    fNameEnc,
     return false;
   }
   size_t index = 0;
-  for ( auto& key_val : key_val_enc ) {
-    StringStringMap&          dec = key_val_dec[index++];
+  for ( auto &key_val : key_val_enc ) {
+    StringStringMap          &dec = key_val_dec[index++];
     StringStringMap::iterator it;
     for ( it = key_val.begin(); it != key_val.end(); ++it ) {
       if ( !dec[it->first].compare( it->second ) ) {
@@ -207,7 +207,7 @@ bool PCCConformance::compareLogFiles( std::string&                    fNameEnc,
   return true;
 }
 
-void PCCConformance::checkLevelLimits( uint8_t levelIdc, double aR, KeyValMaps& key_val_map, bool atlasFlag ) {
+void PCCConformance::checkLevelLimits( uint8_t levelIdc, double aR, KeyValMaps &key_val_map, bool atlasFlag ) {
   std::map<std::string, size_t> maxLevelLimit;
   std::map<std::string, size_t> maxLevelLimitPerSecond;
   std::deque<PCCDynamicData>    dataWindow;
@@ -216,8 +216,8 @@ void PCCConformance::checkLevelLimits( uint8_t levelIdc, double aR, KeyValMaps& 
   agrData.resize( 3 );
 
   int64_t clockTick     = -1;
-  int64_t frmPerSecMin1 = ( int64_t )( 1 / aR ) - 1;
-  uint8_t levelIdx      = ( uint8_t )( 2 * ( levelIdc / 30.0 - 1 ) );
+  int64_t frmPerSecMin1 = (int64_t)( 1 / aR ) - 1;
+  uint8_t levelIdx      = (uint8_t)( 2 * ( levelIdc / 30.0 - 1 ) );
   if ( levelIdx >= 6 ) {
     error_rep.error(
         " Dynamic Conformance Check Cannot Be Done: level indicator should be in multiples of 30 i.e. 30 - 105 for "
@@ -257,10 +257,10 @@ void PCCConformance::checkLevelLimits( uint8_t levelIdc, double aR, KeyValMaps& 
   // check general tier level limits A.6.1 & A.6.2
   size_t         frmIdx, value, maxValue;
   PCCDynamicData totalPerSec{};
-  for ( auto& key_val_pair : key_val_map ) {
+  for ( auto &key_val_pair : key_val_map ) {
     PCCDynamicData tmp;
     bool           skipLineFlag = false;
-    for ( auto& kvp : key_val_pair ) {
+    for ( auto &kvp : key_val_pair ) {
       if ( kvp.first == "AtlasFrameIndex" ) {
         convertString( kvp.second, frmIdx );
         skipLineFlag = true;
@@ -305,7 +305,7 @@ void PCCConformance::checkLevelLimits( uint8_t levelIdc, double aR, KeyValMaps& 
 }
 
 template <typename T>
-inline bool PCCConformance::checkLimit( const std::string& keyValue, T& maxVal, T& val ) {
+inline bool PCCConformance::checkLimit( const std::string &keyValue, T &maxVal, T &val ) {
   bool               error = true;
   std::istringstream keyVal_ss( keyValue, std::istringstream::in );
   keyVal_ss.exceptions( std::ios::failbit );
@@ -315,7 +315,7 @@ inline bool PCCConformance::checkLimit( const std::string& keyValue, T& maxVal, 
 }
 
 template <typename T>
-inline void PCCConformance::convertString( const std::string& keyValue, T& val ) {
+inline void PCCConformance::convertString( const std::string &keyValue, T &val ) {
   std::istringstream keyVal_ss( keyValue, std::istringstream::in );
   keyVal_ss.exceptions( std::ios::failbit );
   keyVal_ss >> val;

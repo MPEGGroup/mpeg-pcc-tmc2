@@ -47,7 +47,7 @@ class GeometryInformation {
       geometry3dCoordinatesBitdepthMinus1_( 9 ),
       auxiliaryGeometryCodecId_( 0 ) {}
   ~GeometryInformation() {}
-  GeometryInformation& operator=( const GeometryInformation& ) = default;
+  GeometryInformation &operator=( const GeometryInformation & ) = default;
 
   uint8_t getGeometryCodecId() { return geometryCodecId_; }
   uint8_t getGeometry2dBitdepthMinus1() { return Geometry2dBitdepthMinus1_; }

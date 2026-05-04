@@ -52,8 +52,8 @@ class EOMPatchDataUnit {
     associatedPatchesIdx_.clear();
     points_.clear();
   };
-  ~EOMPatchDataUnit(){};
-  EOMPatchDataUnit& operator=( const EOMPatchDataUnit& ) = default;
+  ~EOMPatchDataUnit() {};
+  EOMPatchDataUnit &operator=( const EOMPatchDataUnit & ) = default;
 
   bool   getPatchInAuxiliaryVideoFlag() { return patchInAuxiliaryVideoFlag_; }
   size_t get2dPosX() { return pos2dX_; }

@@ -65,7 +65,7 @@ size_t PCCAtlasContext::calculateAFOCLsb( size_t frameOrder ) {
   return frameOrder % ( size_t( 1 ) << log2MaxAtlasFrameOrderCntLsb_ );
 }
 
-size_t PCCContext::calculateAFOCval( std::vector<AtlasTileLayerRbsp>& atglList, size_t atglIndex ) {
+size_t PCCContext::calculateAFOCval( std::vector<AtlasTileLayerRbsp> &atglList, size_t atglIndex ) {
   // 8.2.3.1 Atals frame order count derivation process
   if ( atglIndex == 0 ) {
     atglList[atglIndex].setAtlasFrmOrderCntMsb( 0 );
@@ -74,9 +74,9 @@ size_t PCCContext::calculateAFOCval( std::vector<AtlasTileLayerRbsp>& atglList, 
   }
   size_t prevAtlasFrmOrderCntMsb = atglList[atglIndex - 1].getAtlasFrmOrderCntMsb();
   size_t atlasFrmOrderCntMsb     = 0;
-  auto&  atgh                    = atglList[atglIndex].getHeader();
-  auto&  afps                    = getAtlasFrameParameterSet( atgh.getAtlasFrameParameterSetId() );
-  auto&  asps                    = getAtlasSequenceParameterSet( afps.getAtlasSequenceParameterSetId() );
+  auto  &atgh                    = atglList[atglIndex].getHeader();
+  auto  &afps                    = getAtlasFrameParameterSet( atgh.getAtlasFrameParameterSetId() );
+  auto  &asps                    = getAtlasSequenceParameterSet( afps.getAtlasSequenceParameterSetId() );
   size_t maxAtlasFrmOrderCntLsb  = size_t( 1 ) << ( asps.getLog2MaxAtlasFrameOrderCntLsbMinus4() + 4 );
   size_t afocLsb                 = atgh.getAtlasFrmOrderCntLsb();
   size_t prevAtlasFrmOrderCntLsb = atglList[atglIndex - 1].getHeader().getAtlasFrmOrderCntLsb();
@@ -95,20 +95,20 @@ size_t PCCContext::calculateAFOCval( std::vector<AtlasTileLayerRbsp>& atglList, 
 }
 
 void PCCAtlasContext::allocOneLayerData() {
-  for ( auto& frameContext : frameContexts_ ) {
+  for ( auto &frameContext : frameContexts_ ) {
     for ( size_t ti = 0; ti < frameContext.getNumTilesInAtlasFrame(); ti++ ) { frameContext[ti].allocOneLayerData(); }
   }
 }
 
 void PCCAtlasContext::printBlockToPatch( const size_t occupancyResolution ) {
-  for ( auto& frameContext : frameContexts_ ) {
+  for ( auto &frameContext : frameContexts_ ) {
     for ( size_t ti = 0; ti < frameContext.getNumTilesInAtlasFrame(); ti++ ) {
       frameContext[ti].printBlockToPatch( occupancyResolution );
     }
   }
 }
 
-void PCCAtlasContext::allocateVideoFrames( PCCHighLevelSyntax& syntax, size_t numFrames ) {
+void PCCAtlasContext::allocateVideoFrames( PCCHighLevelSyntax &syntax, size_t numFrames ) {
   // syntax elements values
   size_t attrCount     = syntax.getVps().getAttributeInformation( atlasIndex_ ).getAttributeCount();
   size_t mapCount      = syntax.getVps().getMapCountMinus1( atlasIndex_ ) + 1;
@@ -217,14 +217,14 @@ void PCCAtlasContext::clearVideoFrames() {
   attrBitdepth_.clear();
   attrWidth_.clear();
   attrHeight_.clear();
-  for ( auto& attrAuxFrame : attrAuxFrames_ ) {
-    for ( auto& partIdx : attrAuxFrame ) { partIdx.clear(); }
+  for ( auto &attrAuxFrame : attrAuxFrames_ ) {
+    for ( auto &partIdx : attrAuxFrame ) { partIdx.clear(); }
     attrAuxFrame.clear();
   }
   attrAuxFrames_.clear();
 }
 
-std::vector<uint8_t> PCCContext::computeMD5( uint8_t* byteString, size_t len ) {
+std::vector<uint8_t> PCCContext::computeMD5( uint8_t *byteString, size_t len ) {
   MD5                  md5Hash;
   std::vector<uint8_t> tmp_digest;
   tmp_digest.resize( 16 );
@@ -233,7 +233,7 @@ std::vector<uint8_t> PCCContext::computeMD5( uint8_t* byteString, size_t len ) {
   return tmp_digest;
 }
 
-uint16_t PCCContext::computeCRC( uint8_t* byteString, size_t len ) {
+uint16_t PCCContext::computeCRC( uint8_t *byteString, size_t len ) {
   unsigned int crc    = 0xFFFF;
   byteString[len]     = 0;
   byteString[len + 1] = 0;
@@ -246,7 +246,7 @@ uint16_t PCCContext::computeCRC( uint8_t* byteString, size_t len ) {
   return crc;
 };
 
-uint32_t PCCContext::computeCheckSum( uint8_t* byteString, size_t len ) {
+uint32_t PCCContext::computeCheckSum( uint8_t *byteString, size_t len ) {
   uint32_t checkSum = 0;
   for ( uint32_t i = 0; i < len; i++ ) {
     uint8_t xor_mask = ( i & 0xFF ) ^ ( i >> 8 );
@@ -260,9 +260,9 @@ void PCCContext::allocOneLayerData() {
   fflush( stdout );
   atlasContexts_[atlasIndex_].allocOneLayerData();
   for ( size_t frameIdx = 0; frameIdx < size(); frameIdx++ ) {
-    auto& atlasFrameContext = atlasContexts_[atlasIndex_].getFrameContexts()[frameIdx];
+    auto &atlasFrameContext = atlasContexts_[atlasIndex_].getFrameContexts()[frameIdx];
     for ( size_t tileIdx = 0; tileIdx < atlasFrameContext.getNumTilesInAtlasFrame(); tileIdx++ ) {
-      auto& tile = atlasFrameContext.getTile( tileIdx );
+      auto &tile = atlasFrameContext.getTile( tileIdx );
       tile.allocOneLayerData();
     }
   }

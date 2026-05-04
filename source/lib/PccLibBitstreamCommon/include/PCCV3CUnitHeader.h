@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2017, ISO/IEC
+ * Copyright (c) 2010-2025, ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -50,18 +50,20 @@ class V3CUnitHeader {
       auxiliaryVideoFlag_( false ) {}
 
   ~V3CUnitHeader() {}
-  V3CUnitHeader& operator=( const V3CUnitHeader& ) = default;
+  V3CUnitHeader &operator=( const V3CUnitHeader & ) = default;
   uint8_t        getV3CParameterSetId() { return sequenceParamterSetId_; }
   uint8_t        getAtlasId() { return atlasId_; }
   uint8_t        getAttributeIndex() { return attributeIndex_; }
   uint8_t        getAttributeDimensionIndex() { return attributeDimensionIndex_; }
   uint8_t        getMapIndex() { return mapIndex_; }
+  uint8_t        getPackedMapIndex() { return packedMapIndex_; }
   bool           getAuxiliaryVideoFlag() { return auxiliaryVideoFlag_; }
   void           setV3CParameterSetId( uint8_t value ) { sequenceParamterSetId_ = value; }
   void           setAtlasId( uint8_t value ) { atlasId_ = value; }
   void           setAttributeIndex( uint8_t value ) { attributeIndex_ = value; }
   void           setAttributeDimensionIndex( uint8_t value ) { attributeDimensionIndex_ = value; }
   void           setMapIndex( uint8_t value ) { mapIndex_ = value; }
+  void           setPackedMapIndex( uint8_t value ) { packedMapIndex_ = value; }
   void           setAuxiliaryVideoFlag( bool value ) { auxiliaryVideoFlag_ = value; }
 
  private:
@@ -70,6 +72,7 @@ class V3CUnitHeader {
   uint8_t attributeIndex_;
   uint8_t attributeDimensionIndex_;
   uint8_t mapIndex_;
+  uint8_t packedMapIndex_{};
   bool    auxiliaryVideoFlag_;
 };
 

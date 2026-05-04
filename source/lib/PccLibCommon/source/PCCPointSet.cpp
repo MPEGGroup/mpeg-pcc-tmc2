@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2017, ISO/IEC
+ * Copyright (c) 2026, ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -44,6 +44,11 @@ void PCCPointSet3::removeDuplicate() {
   PCCPointSet3 newPointcloud;
   if ( withColors_ ) { newPointcloud.hasColors(); }
   if ( withReflectances_ ) { newPointcloud.addReflectances(); }
+  if ( withSphericalHarmonics_ ) { newPointcloud.addSphericalHarmonics(); }
+  if ( withRotations_ ) { newPointcloud.addRotations(); }
+  if ( withScales_ ) { newPointcloud.addScales(); }
+  if ( withOpacities_ ) { newPointcloud.addOpacities(); }
+
   std::map<float, std::map<float, std::map<float, size_t>>> eMapA;
   if ( withColors_ ) {
     for ( size_t i = 0; i < positions_.size(); ++i ) {
@@ -53,8 +58,14 @@ void PCCPointSet3::removeDuplicate() {
       if ( eMapA.find( x ) != eMapA.end() && eMapA[x].find( y ) != eMapA[x].end() &&
            eMapA[x][y].find( z ) != eMapA[x][y].end() ) {
       } else {
-        eMapA[x][y][z] = i;
+        eMapA[x][y][z]     = i;
+        const size_t index = newPointcloud.getPointCount();
         newPointcloud.addPoint( positions_[i], colors_[i] );
+
+        if ( withSphericalHarmonics_ ) { newPointcloud.setSphericalHarmonic( index, getSphericalHarmonic( i ) ); }
+        if ( withRotations_ ) { newPointcloud.setRotation( index, getRotation( i ) ); }
+        if ( withScales_ ) { newPointcloud.setScale( index, getScale( i ) ); }
+        if ( withOpacities_ ) { newPointcloud.setOpacity( index, opacities_[i] ); }
       }
     }
   } else {
@@ -65,8 +76,14 @@ void PCCPointSet3::removeDuplicate() {
       if ( eMapA.find( x ) != eMapA.end() && eMapA[x].find( y ) != eMapA[x].end() &&
            eMapA[x][y].find( z ) != eMapA[x][y].end() ) {
       } else {
-        eMapA[x][y][z] = i;
+        eMapA[x][y][z]     = i;
+        const size_t index = newPointcloud.getPointCount();
         newPointcloud.addPoint( positions_[i] );
+
+        if ( withSphericalHarmonics_ ) { newPointcloud.setSphericalHarmonic( index, getSphericalHarmonic( i ) ); }
+        if ( withRotations_ ) { newPointcloud.setRotation( index, getRotation( i ) ); }
+        if ( withScales_ ) { newPointcloud.setScale( index, getScale( i ) ); }
+        if ( withOpacities_ ) { newPointcloud.setOpacity( index, opacities_[i] ); }
       }
     }
   }
@@ -74,36 +91,40 @@ void PCCPointSet3::removeDuplicate() {
   colors_.swap( newPointcloud.colors_ );
   reflectances_.swap( newPointcloud.reflectances_ );
   types_.swap( newPointcloud.types_ );
+  rotations_.swap( newPointcloud.rotations_ );
+  scales_.swap( newPointcloud.scales_ );
+  sphericalHarmonics_.swap( newPointcloud.sphericalHarmonics_ );
+  opacities_.swap( newPointcloud.opacities_ );
 }
 
-void PCCPointSet3::distanceGeo( const PCCPointSet3& pointcloud, float& distPAB, float& distPBA ) const {
+void PCCPointSet3::distanceGeo( const PCCPointSet3 &pointcloud, float &distPAB, float &distPBA ) const {
   this->distance( pointcloud, distPAB );
   pointcloud.distance( *this, distPBA );
 }
 
-void PCCPointSet3::distanceGeoColor( const PCCPointSet3& pointcloud,
-                                     float&              distPAB,
-                                     float&              distPBA,
-                                     float&              distYAB,
-                                     float&              distYBA,
-                                     float&              distUAB,
-                                     float&              distUBA,
-                                     float&              distVAB,
-                                     float&              distVBA ) const {
+void PCCPointSet3::distanceGeoColor( const PCCPointSet3 &pointcloud,
+                                     float              &distPAB,
+                                     float              &distPBA,
+                                     float              &distYAB,
+                                     float              &distYBA,
+                                     float              &distUAB,
+                                     float              &distUBA,
+                                     float              &distVAB,
+                                     float              &distVBA ) const {
   this->distance( pointcloud, distPAB, distYAB, distUAB, distVAB );
   pointcloud.distance( *this, distPBA, distYBA, distUBA, distVBA );
 }
-void convertRGBtoYUV_BT709( const PCCColor3B& in_rgb, float* out_yuv ) {
+void convertRGBtoYUV_BT709( const PCCColor3B &in_rgb, float *out_yuv ) {
   // color space conversion to YUV
   out_yuv[0] = ( 0.2126F * in_rgb[0] + 0.7152F * in_rgb[1] + 0.0722F * in_rgb[2] ) / 255.0F;
   out_yuv[1] = ( -0.1146F * in_rgb[0] - 0.3854F * in_rgb[1] + 0.5000F * in_rgb[2] ) / 255.0F + 0.5000F;
   out_yuv[2] = ( 0.5000F * in_rgb[0] - 0.4542F * in_rgb[1] - 0.0458F * in_rgb[2] ) / 255.0F + 0.5000F;
 }
-void PCCPointSet3::distance( const PCCPointSet3& pointcloud,
-                             float&              distP,
-                             float&              distY,
-                             float&              distU,
-                             float&              distV ) const {
+void PCCPointSet3::distance( const PCCPointSet3 &pointcloud,
+                             float              &distP,
+                             float              &distY,
+                             float              &distU,
+                             float              &distV ) const {
   distP = 0.F;
   distY = 0.F;
   distU = 0.F;
@@ -129,11 +150,11 @@ void PCCPointSet3::distance( const PCCPointSet3& pointcloud,
   distV /= static_cast<float>( positions_.size() );
 }
 
-void PCCPointSet3::distance( const PCCPointSet3& pointcloud, float& distP ) const {
+void PCCPointSet3::distance( const PCCPointSet3 &pointcloud, float &distP ) const {
   distP = 0.F;
   PCCKdTree   kdtree( pointcloud );
   PCCNNResult result;
-  for ( const auto& position : positions_ ) {
+  for ( const auto &position : positions_ ) {
     kdtree.search( position, 1, result );
     distP += result.dist( 0 );
   }
@@ -145,7 +166,7 @@ PCCPoint3D PCCPointSet3::computeCentroid() const {
   const size_t pointCount = getPointCount();
   if ( pointCount != 0u ) {
     for ( size_t i = 0; i < pointCount; ++i ) {
-      const PCCPoint3D& pt = ( *this )[i];
+      const PCCPoint3D &pt = ( *this )[i];
       bary += pt;
     }
     bary /= double( pointCount );
@@ -154,10 +175,10 @@ PCCPoint3D PCCPointSet3::computeCentroid() const {
 }
 
 PCCBox3D PCCPointSet3::computeBoundingBox() const {
-  PCCBox3D     bbox       = {( std::numeric_limits<double>::max )(), ( std::numeric_limits<double>::lowest )()};
+  PCCBox3D     bbox       = { ( std::numeric_limits<double>::max )(), ( std::numeric_limits<double>::lowest )() };
   const size_t pointCount = getPointCount();
   for ( size_t i = 0; i < pointCount; ++i ) {
-    const PCCPoint3D& pt = ( *this )[i];
+    const PCCPoint3D &pt = ( *this )[i];
     for ( int k = 0; k < 3; ++k ) {
       if ( pt[k] > bbox.max_[k] ) { bbox.max_[k] = pt[k]; }
       if ( pt[k] < bbox.min_[k] ) { bbox.min_[k] = pt[k]; }
@@ -166,13 +187,18 @@ PCCBox3D PCCPointSet3::computeBoundingBox() const {
   return bbox;
 }
 
-void PCCPointSet3::removeDuplicate( PCCPointSet3& newPointcloud, size_t dropDuplicates ) const {
+void PCCPointSet3::removeDuplicate( PCCPointSet3 &newPointcloud, size_t dropDuplicates ) const {
   if ( withColors_ ) { newPointcloud.hasColors(); }
   if ( withReflectances_ ) { newPointcloud.addReflectances(); }
   if ( withNormals_ ) {
     std::cerr << "Normaled objects can't be modified or reordered \n" << std::endl;
     exit( -1 );
   }
+  if ( withSphericalHarmonics_ ) { newPointcloud.addSphericalHarmonics(); }
+  if ( withRotations_ ) { newPointcloud.addRotations(); }
+  if ( withScales_ ) { newPointcloud.addScales(); }
+  if ( withOpacities_ ) { newPointcloud.addOpacities(); }
+
   std::map<float, std::map<float, std::map<float, std::vector<size_t>>>> map;
   for ( size_t i = 0; i < positions_.size(); ++i ) {
     float x = positions_[i][0];
@@ -181,18 +207,25 @@ void PCCPointSet3::removeDuplicate( PCCPointSet3& newPointcloud, size_t dropDupl
     map[x][y][z].push_back( i );
   }
   if ( withColors_ ) {
-    for ( auto& itX : map ) {
-      for ( auto& itY : itX.second ) {
-        for ( auto& itZ : itY.second ) {
-          auto& listIndex = itZ.second;
+    for ( auto &itX : map ) {
+      for ( auto &itY : itX.second ) {
+        for ( auto &itZ : itY.second ) {
+          auto &listIndex = itZ.second;
           if ( listIndex.size() == 1 || dropDuplicates == 1 ) {
+            const size_t index = newPointcloud.getPointCount();
             newPointcloud.addPoint( positions_[listIndex[0]], colors_[listIndex[0]] );
+            if ( withSphericalHarmonics_ ) {
+              newPointcloud.setSphericalHarmonic( index, getSphericalHarmonic( listIndex[0] ) );
+            }
+            if ( withRotations_ ) { newPointcloud.setRotation( index, getRotation( listIndex[0] ) ); }
+            if ( withScales_ ) { newPointcloud.setScale( index, getScale( listIndex[0] ) ); }
+            if ( withOpacities_ ) { newPointcloud.setOpacity( index, opacities_[listIndex[0]] ); }
           } else {
             PCCColor3B average;
             size_t     r = 0;
             size_t     g = 0;
             size_t     b = 0;
-            for ( auto& index : listIndex ) {
+            for ( auto &index : listIndex ) {
               r += colors_[index][0];
               g += colors_[index][1];
               b += colors_[index][2];
@@ -206,11 +239,19 @@ void PCCPointSet3::removeDuplicate( PCCPointSet3& newPointcloud, size_t dropDupl
       }
     }
   } else {
-    for ( auto& itX : map ) {
-      for ( auto& itY : itX.second ) {
-        for ( auto& itZ : itY.second ) {
-          auto& listIndex = itZ.second;
+    for ( auto &itX : map ) {
+      for ( auto &itY : itX.second ) {
+        for ( auto &itZ : itY.second ) {
+          auto        &listIndex = itZ.second;
+          const size_t index     = newPointcloud.getPointCount();
           newPointcloud.addPoint( positions_[listIndex[0]] );
+
+          if ( withSphericalHarmonics_ ) {
+            newPointcloud.setSphericalHarmonic( index, getSphericalHarmonic( listIndex[0] ) );
+          }
+          if ( withRotations_ ) { newPointcloud.setRotation( index, getRotation( listIndex[0] ) ); }
+          if ( withScales_ ) { newPointcloud.setScale( index, getScale( listIndex[0] ) ); }
+          if ( withOpacities_ ) { newPointcloud.setOpacity( index, opacities_[listIndex[0]] ); }
         }
       }
     }
@@ -222,8 +263,12 @@ using UInt = unsigned int;
 std::vector<uint8_t> PCCPointSet3::computeChecksum( bool reorderPoints ) {
   if ( reorderPoints ) {
     PCCPointSet3 reorderPointCloud;
-    if ( withColors_ ) { reorderPointCloud.hasColors(); }
+    if ( withColors_ ) { reorderPointCloud.addColors(); }
     if ( withReflectances_ ) { reorderPointCloud.addReflectances(); }
+    if ( withSphericalHarmonics_ ) { reorderPointCloud.addSphericalHarmonics(); }
+    if ( withRotations_ ) { reorderPointCloud.addRotations(); }
+    if ( withScales_ ) { reorderPointCloud.addScales(); }
+    if ( withOpacities_ ) { reorderPointCloud.addOpacities(); }
     reorder( reorderPointCloud, true );
     return reorderPointCloud.computeMd5();
   }
@@ -232,19 +277,19 @@ std::vector<uint8_t> PCCPointSet3::computeChecksum( bool reorderPoints ) {
 std::vector<uint8_t> PCCPointSet3::computeMd5() {
   std::vector<uint8_t> digest;
   MD5                  md5;
-  md5.update( reinterpret_cast<uint8_t*>( positions_.data() ), positions_.size() * sizeof( PCCPoint3D ) );
+  md5.update( reinterpret_cast<uint8_t *>( positions_.data() ), positions_.size() * sizeof( PCCPoint3D ) );
   if ( withColors_ ) {
-    md5.update( reinterpret_cast<uint8_t*>( colors_.data() ), colors_.size() * sizeof( PCCColor3B ) );
+    md5.update( reinterpret_cast<uint8_t *>( colors_.data() ), colors_.size() * sizeof( PCCColor3B ) );
   }
   if ( withReflectances_ ) {
-    md5.update( reinterpret_cast<uint8_t*>( reflectances_.data() ), reflectances_.size() * sizeof( uint16_t ) );
+    md5.update( reinterpret_cast<uint8_t *>( reflectances_.data() ), reflectances_.size() * sizeof( uint16_t ) );
   }
   digest.resize( MD5_DIGEST_STRING_LENGTH );
   md5.finalize( digest.data() );
   return digest;
 }
 
-void PCCPointSet3::sortColor( std::vector<size_t>& list ) {
+void PCCPointSet3::sortColor( std::vector<size_t> &list ) {
   for ( size_t i = 0; i < list.size(); ++i ) {
     size_t indexMin = i;
     for ( size_t j = i + 1; j < list.size(); ++j ) {
@@ -258,7 +303,7 @@ void PCCPointSet3::sortColor( std::vector<size_t>& list ) {
   }
 }
 
-void PCCPointSet3::reorder( PCCPointSet3& newPointcloud, bool dropDuplicates ) {
+void PCCPointSet3::reorder( PCCPointSet3 &newPointcloud, bool dropDuplicates ) {
   std::map<float, std::map<float, std::map<float, std::vector<size_t>>>> map;
   for ( size_t i = 0; i < positions_.size(); ++i ) {
     float x = positions_[i][0];
@@ -267,17 +312,17 @@ void PCCPointSet3::reorder( PCCPointSet3& newPointcloud, bool dropDuplicates ) {
     map[x][y][z].push_back( i );
   }
   if ( withColors_ ) {
-    for ( auto& itX : map ) {
-      for ( auto& itY : itX.second ) {
-        for ( auto& itZ : itY.second ) {
-          auto& listIndex = itZ.second;
+    for ( auto &itX : map ) {
+      for ( auto &itY : itX.second ) {
+        for ( auto &itZ : itY.second ) {
+          auto &listIndex = itZ.second;
           if ( listIndex.size() > 1 ) { sortColor( listIndex ); }
           if ( dropDuplicates ) {
             PCCColor3B average;
             size_t     r = 0;
             size_t     g = 0;
             size_t     b = 0;
-            for ( auto& index : listIndex ) {
+            for ( auto &index : listIndex ) {
               r += colors_[index][0];
               g += colors_[index][1];
               b += colors_[index][2];
@@ -287,17 +332,17 @@ void PCCPointSet3::reorder( PCCPointSet3& newPointcloud, bool dropDuplicates ) {
             average[2] = b / listIndex.size();
             newPointcloud.addPoint( positions_[listIndex[0]], average );
           } else {
-            for ( auto& index : listIndex ) { newPointcloud.addPoint( positions_[index], colors_[index] ); }
+            for ( auto &index : listIndex ) { newPointcloud.addPoint( positions_[index], colors_[index] ); }
           }
         }
       }
     }
   } else {
-    for ( auto& itX : map ) {
-      for ( auto& itY : itX.second ) {
-        for ( auto& itZ : itY.second ) {
-          auto& listIndex = itZ.second;
-          for ( auto& index : listIndex ) { newPointcloud.addPoint( positions_[index] ); }
+    for ( auto &itX : map ) {
+      for ( auto &itY : itX.second ) {
+        for ( auto &itZ : itY.second ) {
+          auto &listIndex = itZ.second;
+          for ( auto &index : listIndex ) { newPointcloud.addPoint( positions_[index] ); }
         }
       }
     }
@@ -311,17 +356,21 @@ void PCCPointSet3::reorder() {
   reorder( newPointcloud, false );
   swap( newPointcloud );
 }
-void PCCPointSet3::swap( PCCPointSet3& newPointcloud ) {
+void PCCPointSet3::swap( PCCPointSet3 &newPointcloud ) {
   positions_.swap( newPointcloud.positions_ );
   colors_.swap( newPointcloud.colors_ );
   reflectances_.swap( newPointcloud.reflectances_ );
   types_.swap( newPointcloud.types_ );
   normals_.swap( newPointcloud.normals_ );
+  rotations_.swap( newPointcloud.rotations_ );
+  scales_.swap( newPointcloud.scales_ );
+  sphericalHarmonics_.swap( newPointcloud.sphericalHarmonics_ );
+  opacities_.swap( newPointcloud.opacities_ );
 }
 bool PCCPointSet3::isBboxEmpty( PCCBox3D bbox ) const {
   const size_t pointCount = getPointCount();
   for ( size_t i = 0; i < pointCount; ++i ) {
-    const PCCPoint3D& pt = ( *this )[i];
+    const PCCPoint3D &pt = ( *this )[i];
     if ( ( pt[0] >= bbox.min_[0] && pt[0] <= bbox.max_[0] ) && ( pt[1] >= bbox.min_[1] && pt[1] <= bbox.max_[1] ) &&
          ( pt[2] >= bbox.min_[2] && pt[2] <= bbox.max_[2] ) ) {
       return false;
@@ -332,10 +381,10 @@ bool PCCPointSet3::isBboxEmpty( PCCBox3D bbox ) const {
 
 int PCCPointSet3::fillRawPointsBbox( std::vector<size_t>  rawPoints,
                                      PCCBox3D             bbox,
-                                     std::vector<size_t>& bboxRawPoints ) const {
+                                     std::vector<size_t> &bboxRawPoints ) const {
   const size_t rawPointsCount = rawPoints.size();
   for ( size_t i = 0; i < rawPointsCount; ++i ) {
-    const PCCPoint3D& pt = ( *this )[rawPoints[i]];
+    const PCCPoint3D &pt = ( *this )[rawPoints[i]];
     if ( ( pt[0] >= bbox.min_[0] && pt[0] <= bbox.max_[0] ) && ( pt[1] >= bbox.min_[1] && pt[1] <= bbox.max_[1] ) &&
          ( pt[2] >= bbox.min_[2] && pt[2] <= bbox.max_[2] ) ) {
       bboxRawPoints.push_back( rawPoints[i] );
@@ -347,7 +396,7 @@ int PCCPointSet3::fillRawPointsBbox( std::vector<size_t>  rawPoints,
 bool PCCPointSet3::isRawPointsBboxEmpty( std::vector<size_t> rawPoints, PCCBox3D bbox ) const {
   const size_t rawPointsCount = rawPoints.size();
   for ( size_t i = 0; i < rawPointsCount; ++i ) {
-    const PCCPoint3D& pt = ( *this )[rawPoints[i]];
+    const PCCPoint3D &pt = ( *this )[rawPoints[i]];
     if ( ( pt[0] >= bbox.min_[0] && pt[0] <= bbox.max_[0] ) && ( pt[1] >= bbox.min_[1] && pt[1] <= bbox.max_[1] ) &&
          ( pt[2] >= bbox.min_[2] && pt[2] <= bbox.max_[2] ) ) {
       return false;
@@ -356,7 +405,7 @@ bool PCCPointSet3::isRawPointsBboxEmpty( std::vector<size_t> rawPoints, PCCBox3D
   return true;
 }
 
-bool PCCPointSet3::write( const std::string& fileName, const bool asAscii ) {
+bool PCCPointSet3::write( const std::string &fileName, const bool asAscii ) {
   std::ofstream fout( fileName, std::ofstream::out );
   if ( !fout.is_open() ) { return false; }
   const size_t pointCount = getPointCount();
@@ -404,26 +453,64 @@ bool PCCPointSet3::write( const std::string& fileName, const bool asAscii ) {
       default: break;
     }
   }
+
+  if ( hasSphericalHarmonics() ) {
+    fout << "property uint16 f_dc_0" << std::endl;
+    fout << "property uint16 f_dc_1" << std::endl;
+    fout << "property uint16 f_dc_2" << std::endl;
+    for ( int i = 3; i < 48; i++ ) { fout << "property uint16 f_rest_" << i - 3 << std::endl; }
+  }
+  if ( hasOpacities() ) { fout << "property uint16 opacity" << std::endl; }
+  if ( hasScales() ) {
+    fout << "property uint16 scale_0" << std::endl;
+    fout << "property uint16 scale_1" << std::endl;
+    fout << "property uint16 scale_2" << std::endl;
+  }
+  if ( hasRotations() ) {
+    fout << "property uint16 rot_0" << std::endl;
+    fout << "property uint16 rot_1" << std::endl;
+    fout << "property uint16 rot_2" << std::endl;
+    fout << "property uint16 rot_3" << std::endl;
+  }
   fout << "element face 0" << std::endl;
   fout << "property list uint8 int32 vertex_index" << std::endl;
   fout << "end_header" << std::endl;
   if ( asAscii ) {
     fout << std::setprecision( std::numeric_limits<double>::max_digits10 );
     for ( size_t i = 0; i < pointCount; ++i ) {
-      const PCCPoint3D& position = ( *this )[i];
+      const PCCPoint3D &position = ( *this )[i];
       fout << position.x() << " " << position.y() << " " << position.z();
       if ( hasNormals() ) {
-        const PCCNormal3D& normal = getNormals()[i];
+        const PCCNormal3D &normal = getNormals()[i];
         fout << " " << static_cast<float>( normal[0] ) << " " << static_cast<float>( normal[1] ) << " "
              << static_cast<float>( normal[2] );
       }
       if ( hasColors() ) {
-        const PCCColor3B& color = getColor( i );
+        const PCCColor3B &color = getColor( i );
         fout << " " << static_cast<int>( color[0] ) << " " << static_cast<int>( color[1] ) << " "
              << static_cast<int>( color[2] );
       }
       if ( hasReflectances() ) { fout << " " << static_cast<int>( getReflectance( i ) ); }
       if ( PCC_SAVE_POINT_TYPE != 0u ) { fout << " " << static_cast<int>( types_[i] ); }
+
+      if ( hasSphericalHarmonics() ) {
+        auto sh = getSphericalHarmonic( i );
+        for ( int j = 0; j < 16; j++ ) {
+          fout << " " << static_cast<int>( sh[j][0] ) << " " << static_cast<int>( sh[j][1] ) << " "
+               << static_cast<int>( sh[j][2] );
+        }
+      }
+      if ( hasOpacities() ) { fout << " " << static_cast<int>( getOpacity( i )[0] ); }
+      if ( hasScales() ) {
+        auto scale = getScale( i );
+        fout << " " << static_cast<int>( scale[0] ) << " " << static_cast<int>( scale[1] ) << " "
+             << static_cast<int>( scale[2] );
+      }
+      if ( hasRotations() ) {
+        auto rot = getRotation( i );
+        fout << " " << static_cast<int>( rot[0][0] ) << " " << static_cast<int>( rot[0][1] ) << " "
+             << static_cast<int>( rot[0][2] ) << " " << static_cast<int>( rot[1][0] );
+      }
       fout << std::endl;
     }
   } else {
@@ -431,37 +518,80 @@ bool PCCPointSet3::write( const std::string& fileName, const bool asAscii ) {
     fout.close();
     fout.open( fileName, std::ofstream::binary | std::ofstream::out | std::ofstream::app );
     for ( size_t i = 0; i < pointCount; ++i ) {
-      const PCCPoint3D& position = ( *this )[i];
+      const PCCPoint3D &position = ( *this )[i];
       // fout.write( reinterpret_cast<const char* const>( &position ), sizeof( PCCType ) * 3 );
       float value[3];
       value[0] = position[0];
       value[1] = position[1];
       value[2] = position[2];
-      fout.write( reinterpret_cast<const char*>( &value ), sizeof( float ) * 3 );
+      fout.write( reinterpret_cast<const char *>( &value ), sizeof( float ) * 3 );
       if ( hasNormals() ) {
-        const PCCNormal3D& normal = getNormals()[i];
+        const PCCNormal3D &normal = getNormals()[i];
         value[0]                  = normal[0];
         value[1]                  = normal[1];
         value[2]                  = normal[2];
-        fout.write( reinterpret_cast<const char*>( &value ), sizeof( float ) * 3 );
+        fout.write( reinterpret_cast<const char *>( &value ), sizeof( float ) * 3 );
       }
       if ( hasColors() ) {
-        const PCCColor3B& color = getColor( i );
-        fout.write( reinterpret_cast<const char*>( &color ), sizeof( uint8_t ) * 3 );
+        const PCCColor3B &color = getColor( i );
+        fout.write( reinterpret_cast<const char *>( &color ), sizeof( uint8_t ) * 3 );
       }
       if ( hasReflectances() ) {
-        const uint16_t& reflectance = getReflectance( i );
-        fout.write( reinterpret_cast<const char*>( &reflectance ), sizeof( uint16_t ) );
+        const uint16_t &reflectance = getReflectance( i );
+        fout.write( reinterpret_cast<const char *>( &reflectance ), sizeof( uint16_t ) );
       }
       if ( PCC_SAVE_POINT_TYPE != 0u ) {
-        fout.write( reinterpret_cast<const char* const>( &types_[i] ), sizeof( uint8_t ) );
+        fout.write( reinterpret_cast<const char *const>( &types_[i] ), sizeof( uint8_t ) );
+      }
+
+      uint16_t value1;
+      if ( hasSphericalHarmonics() ) {
+        auto sh = getSphericalHarmonic( i );
+        for ( int j = 0; j < 16; j++ ) {
+          value1 = sh[j][0];
+          fout.write( reinterpret_cast<const char *>( &value1 ), sizeof( uint16_t ) );
+          value1 = sh[j][1];
+          fout.write( reinterpret_cast<const char *>( &value1 ), sizeof( uint16_t ) );
+          value1 = sh[j][2];
+          fout.write( reinterpret_cast<const char *>( &value1 ), sizeof( uint16_t ) );
+        }
+      }
+      if ( hasOpacities() ) {
+        value1 = getOpacity( i )[0];
+        fout.write( reinterpret_cast<const char *>( &value1 ), sizeof( uint16_t ) );
+      }
+      if ( hasScales() ) {
+        auto scale = getScale( i );
+        for ( int j = 0; j < 3; j++ ) {
+          value1 = scale[j];
+          fout.write( reinterpret_cast<const char *>( &value1 ), sizeof( uint16_t ) );
+        }
+      }
+      if ( hasRotations() ) {
+        auto rot = getRotation( i );
+        value1   = rot[0][0];
+        fout.write( reinterpret_cast<const char *>( &value1 ), sizeof( uint16_t ) );
+        value1 = rot[0][1];
+        fout.write( reinterpret_cast<const char *>( &value1 ), sizeof( uint16_t ) );
+        value1 = rot[0][2];
+        fout.write( reinterpret_cast<const char *>( &value1 ), sizeof( uint16_t ) );
+        value1 = rot[1][0];
+        fout.write( reinterpret_cast<const char *>( &value1 ), sizeof( uint16_t ) );
       }
     }
   }
   fout.close();
   return true;
 }
-bool PCCPointSet3::read( const std::string& fileName, const bool readNormals ) {
+
+template <class T>
+inline T _readValue( std::ifstream &ifs ) {
+  T value;
+  ifs.read( reinterpret_cast<char *>( &value ), sizeof( T ) );
+  return value;
+}
+
+bool PCCPointSet3::read( const std::string &fileName, const bool readNormals ) {
   std::ifstream ifs( fileName, std::ifstream::in );
   if ( !ifs.is_open() ) { return false; }
   enum AttributeType {
@@ -483,10 +613,10 @@ bool PCCPointSet3::read( const std::string& fileName, const bool readNormals ) {
   };
 
   std::vector<AttributeInfo> attributesInfo;
-  attributesInfo.reserve( 16 );
-  const size_t             MAX_BUFFER_SIZE = 4096;
+  attributesInfo.reserve( 59 );
+  const size_t             MAX_BUFFER_SIZE = 100000;
   char                     tmp[MAX_BUFFER_SIZE];
-  const char*              sep = " \t\r";
+  const char              *sep = " \t\r";
   std::vector<std::string> tokens;
 
   ifs.getline( tmp, MAX_BUFFER_SIZE );
@@ -495,10 +625,11 @@ bool PCCPointSet3::read( const std::string& fileName, const bool readNormals ) {
     std::cout << "Error: corrupted file!" << std::endl;
     return false;
   }
-  bool   isAscii          = false;
-  double version          = 1.0;
-  size_t pointCount       = 0;
-  bool   isVertexProperty = true;
+  bool                     isAscii          = false;
+  double                   version          = 1.0;
+  size_t                   pointCount       = 0;
+  bool                     isVertexProperty = true;
+  std::vector<std::string> cameraInfoHeader;
   while ( true ) {
     if ( ifs.eof() ) {
       std::cout << "Error: corrupted header!" << std::endl;
@@ -506,7 +637,91 @@ bool PCCPointSet3::read( const std::string& fileName, const bool readNormals ) {
     }
     ifs.getline( tmp, MAX_BUFFER_SIZE );
     getTokens( tmp, sep, tokens );
-    if ( tokens.empty() || tokens[0] == "comment" ) { continue; }
+    if ( tokens.empty() ) { continue; }
+    if ( tokens[0] == "comment" ) {
+      if ( tokens[1] == "camera_position_header" ) {
+        for ( auto t = 2; t < tokens.size(); t++ ) { cameraInfoHeader.push_back( tokens[t] ); }
+      }
+      if ( tokens[1] == "camera_position" ) {
+        CameraInfo ci;
+        for ( auto t = 2; t < tokens.size(); t++ ) {
+          if ( cameraInfoHeader[t - 2] == "imageId" ) { ci.imageId = atoi( tokens[t].c_str() ); }
+          if ( cameraInfoHeader[t - 2] == "cameraId" ) { ci.cameraId = atoi( tokens[t].c_str() ); }
+          if ( cameraInfoHeader[t - 2] == "pos.x" ) { ci.posX = atof( tokens[t].c_str() ); }
+          if ( cameraInfoHeader[t - 2] == "pos.y" ) { ci.posY = atof( tokens[t].c_str() ); }
+          if ( cameraInfoHeader[t - 2] == "pos.z" ) { ci.posZ = atof( tokens[t].c_str() ); }
+          if ( cameraInfoHeader[t - 2] == "quat.w" ) { ci.quatW = atof( tokens[t].c_str() ); }
+          if ( cameraInfoHeader[t - 2] == "quat.x" ) { ci.quatX = atof( tokens[t].c_str() ); }
+          if ( cameraInfoHeader[t - 2] == "quat.y" ) { ci.quatY = atof( tokens[t].c_str() ); }
+          if ( cameraInfoHeader[t - 2] == "quat.z" ) { ci.quatZ = atof( tokens[t].c_str() ); }
+          if ( cameraInfoHeader[t - 2] == "focal.x" ) { ci.focalX = atof( tokens[t].c_str() ); }
+          if ( cameraInfoHeader[t - 2] == "focal.y" ) { ci.focalY = atof( tokens[t].c_str() ); }
+          if ( cameraInfoHeader[t - 2] == "name" ) { ci.name = tokens[t]; }
+        }
+        cameraInfo_.push_back( ci );
+      }
+      if ( tokens[1] == "limits" ) {
+        if ( tokens[2] == "position" ) {
+          int index                                 = 3;
+          geometryDequantizationParameters_.enabled = true;
+          for ( int i = 0; i < 3; i++ ) {
+            geometryDequantizationParameters_.posMin[i] = atof( tokens[index++].c_str() );
+          }
+          for ( int i = 0; i < 3; i++ ) {
+            geometryDequantizationParameters_.posMax[i] = atof( tokens[index++].c_str() );
+          }
+        }
+        if ( tokens[2] == "rot" ) {
+          int index                                          = 3;
+          attributeRotationDequantizationParameters_.enabled = true;
+          for ( int i = 0; i < 4; i++ ) {
+            attributeRotationDequantizationParameters_.rotMin[i] = atof( tokens[index++].c_str() );
+          }
+          for ( int i = 0; i < 4; i++ ) {
+            attributeRotationDequantizationParameters_.rotMax[i] = atof( tokens[index++].c_str() );
+          }
+        }
+        if ( tokens[2] == "scale" ) {
+          int index                                       = 3;
+          attributeScaleDequantizationParameters_.enabled = true;
+          for ( int i = 0; i < 3; i++ ) {
+            attributeScaleDequantizationParameters_.scaleMin[i] = atof( tokens[index++].c_str() );
+          }
+          for ( int i = 0; i < 3; i++ ) {
+            attributeScaleDequantizationParameters_.scaleMax[i] = atof( tokens[index++].c_str() );
+          }
+        }
+        if ( tokens[2] == "opacity" ) {
+          int index                                         = 3;
+          attributeOpacityDequantizationParameters_.enabled = true;
+          attributeOpacityDequantizationParameters_.opMin   = atof( tokens[index++].c_str() );
+          attributeOpacityDequantizationParameters_.opMax   = atof( tokens[index++].c_str() );
+        }
+        if ( tokens[2] == "sh" ) {
+          int index                                     = 3;
+          attributeShDequantizationParameters_.enabled  = true;
+          int numLevels                                 = atoi( tokens[index++].c_str() );
+          attributeShDequantizationParameters_.numLevel = numLevels;
+          attributeShDequantizationParameters_.numChannels.resize( numLevels, 0 );
+          attributeShDequantizationParameters_.shMin.resize( numLevels );
+          attributeShDequantizationParameters_.shMax.resize( numLevels );
+          for ( int l = 0; l < attributeShDequantizationParameters_.numLevel; l++ ) {
+            int numChannels                                     = atoi( tokens[index++].c_str() );
+            attributeShDequantizationParameters_.numChannels[l] = numChannels;
+            attributeShDequantizationParameters_.shMin[l].resize( numChannels, 0.0 );
+            attributeShDequantizationParameters_.shMax[l].resize( numChannels, 0.0 );
+            for ( int c = 0; c < numChannels; c++ ) {
+              attributeShDequantizationParameters_.shMin[l][c] = atof( tokens[index++].c_str() );
+            }
+            for ( int c = 0; c < numChannels; c++ ) {
+              attributeShDequantizationParameters_.shMax[l][c] = atof( tokens[index++].c_str() );
+            }
+          }
+        }
+      } else {
+        continue;
+      }
+    }
     if ( tokens[0] == "format" ) {
       if ( tokens.size() != 3 ) {
         std::cout << "Error: corrupted format info!" << std::endl;
@@ -529,11 +744,11 @@ bool PCCPointSet3::read( const std::string& fileName, const bool readNormals ) {
         std::cout << "Error: corrupted property info!" << std::endl;
         return false;
       }
-      const std::string& propertyType   = tokens[1];
-      const std::string& propertyName   = tokens[2];
+      const std::string &propertyType   = tokens[1];
+      const std::string &propertyName   = tokens[2];
       const size_t       attributeIndex = attributesInfo.size();
       attributesInfo.resize( attributeIndex + 1 );
-      AttributeInfo& attributeInfo = attributesInfo[attributeIndex];
+      AttributeInfo &attributeInfo = attributesInfo[attributeIndex];
       attributeInfo.name           = propertyName;
       if ( propertyType == "double" || propertyType == "float64" ) {
         attributeInfo.type      = ATTRIBUTE_TYPE_FLOAT64;
@@ -575,6 +790,12 @@ bool PCCPointSet3::read( const std::string& fileName, const bool readNormals ) {
     return false;
   }
 
+  std::vector<size_t> indexSphericalHarmonics;
+  std::vector<size_t> indexRot( 4, g_undefined_index );
+  std::vector<size_t> indexScale( 3, g_undefined_index );
+  size_t              indexOpacity = g_undefined_index;
+  indexSphericalHarmonics.reserve( 48 );
+
   size_t       indexX           = g_undefined_index;
   size_t       indexY           = g_undefined_index;
   size_t       indexZ           = g_undefined_index;
@@ -587,7 +808,7 @@ bool PCCPointSet3::read( const std::string& fileName, const bool readNormals ) {
   size_t       indexNZ          = g_undefined_index;
   const size_t attributeCount   = attributesInfo.size();
   for ( size_t a = 0; a < attributeCount; ++a ) {
-    const auto& attributeInfo = attributesInfo[a];
+    const auto &attributeInfo = attributesInfo[a];
     if ( attributeInfo.name == "x" &&
          ( attributeInfo.byteCount == 8 || attributeInfo.byteCount == 4 || attributeInfo.byteCount == 2 ) ) {
       indexX = a;
@@ -612,6 +833,22 @@ bool PCCPointSet3::read( const std::string& fileName, const bool readNormals ) {
     } else if ( ( attributeInfo.name == "reflectance" || attributeInfo.name == "refc" ) &&
                 attributeInfo.byteCount <= 2 ) {
       indexReflectance = a;
+    } else if ( attributeInfo.name == "opacity" ) {
+      indexOpacity = a;
+    } else if ( attributeInfo.name.compare( 0, 5, "f_dc_" ) == 0 ) {
+      int i = std::stoi( attributeInfo.name.substr( 5 ) );
+      if ( indexSphericalHarmonics.size() <= i ) indexSphericalHarmonics.resize( i + 1, g_undefined_index );
+      indexSphericalHarmonics[i] = a;
+    } else if ( attributeInfo.name.compare( 0, 7, "f_rest_" ) == 0 ) {
+      int i = std::stoi( attributeInfo.name.substr( 7 ) ) + 3;
+      if ( indexSphericalHarmonics.size() <= i ) indexSphericalHarmonics.resize( i + 1, g_undefined_index );
+      indexSphericalHarmonics[i] = a;
+    } else if ( attributeInfo.name.compare( 0, 6, "scale_" ) == 0 ) {
+      int i = std::stoi( attributeInfo.name.substr( 6 ) );
+      if ( i >= 0 && i < 3 ) indexScale[i] = a;
+    } else if ( attributeInfo.name.compare( 0, 4, "rot_" ) == 0 ) {
+      int i = std::stoi( attributeInfo.name.substr( 4 ) );
+      if ( i >= 0 && i < 4 ) indexRot[i] = a;
     }
   }
   if ( indexX == g_undefined_index || indexY == g_undefined_index || indexZ == g_undefined_index ) {
@@ -621,6 +858,16 @@ bool PCCPointSet3::read( const std::string& fileName, const bool readNormals ) {
   withColors_       = indexR != g_undefined_index && indexG != g_undefined_index && indexB != g_undefined_index;
   withReflectances_ = indexReflectance != g_undefined_index;
   withNormals_      = indexNX != g_undefined_index && indexNY != g_undefined_index && indexNZ != g_undefined_index;
+
+  withSphericalHarmonics_ =
+      indexSphericalHarmonics.size() > 0 && std::all_of( indexSphericalHarmonics.begin(), indexSphericalHarmonics.end(),
+                                                         []( size_t i ) { return i != g_undefined_index; } );
+  withOpacities_ = indexOpacity != g_undefined_index;
+  withScales_ =
+      indexScale[0] != g_undefined_index && indexScale[1] != g_undefined_index && indexScale[2] != g_undefined_index;
+  withRotations_ = indexRot[0] != g_undefined_index && indexRot[1] != g_undefined_index &&
+                   indexRot[2] != g_undefined_index && indexRot[3] != g_undefined_index;
+
   resize( pointCount );
   if ( isAscii ) {
     size_t pointCounter = 0;
@@ -629,126 +876,200 @@ bool PCCPointSet3::read( const std::string& fileName, const bool readNormals ) {
       getTokens( tmp, sep, tokens );
       if ( tokens.empty() ) { continue; }
       if ( tokens.size() < attributeCount ) { return false; }
-      auto& position = positions_[pointCounter];
+      auto &position = positions_[pointCounter];
       position[0]    = atof( tokens[indexX].c_str() );
       position[1]    = atof( tokens[indexY].c_str() );
       position[2]    = atof( tokens[indexZ].c_str() );
       if ( hasColors() ) {
-        auto& color = colors_[pointCounter];
+        auto &color = colors_[pointCounter];
         color[0]    = atoi( tokens[indexR].c_str() );
         color[1]    = atoi( tokens[indexG].c_str() );
         color[2]    = atoi( tokens[indexB].c_str() );
       }
       if ( hasReflectances() ) { reflectances_[pointCounter] = uint16_t( atoi( tokens[indexReflectance].c_str() ) ); }
+
+      if ( hasSphericalHarmonics() ) {
+        auto &sphericalHarmonic = sphericalHarmonics_[pointCounter];
+        for ( int i = 0; i < 48; i++ ) {
+          auto index                      = indexSphericalHarmonics[i];
+          sphericalHarmonic[i / 3][i % 3] = atoi( tokens[index].c_str() );
+        }
+      }
+      if ( hasOpacities() ) {
+        auto &opacity = opacities_[pointCounter];
+        opacity[0]    = atoi( tokens[indexOpacity].c_str() );
+      }
+      if ( hasScales() ) {
+        auto &scale = scales_[pointCounter];
+        for ( int i = 0; i < 3; i++ ) {
+          auto index = indexScale[i];
+          scale[i]   = atoi( tokens[index].c_str() );
+        }
+      }
+      if ( hasRotations() ) {
+        auto &rotation = rotations_[pointCounter];
+        for ( int i = 0; i < 4; i++ ) {
+          auto index             = indexRot[i];
+          rotation[i / 3][i % 3] = atoi( tokens[index].c_str() );
+        }
+      }
       ++pointCounter;
     }
   } else {
     ifs.close();
     ifs.open( fileName, std::ifstream::binary | std::ifstream::in );
     ifs.read( tmp, MAX_BUFFER_SIZE );
-    char* str       = strstr( tmp, "end_header" );
+    char *str       = strstr( tmp, "end_header" );
     str             = strstr( str, "\n" );
     int headerCount = str - tmp + 1;
     ifs.close();
     ifs.open( fileName, std::ifstream::binary | std::ifstream::in );
     ifs.read( tmp, headerCount );
     for ( size_t pointCounter = 0; pointCounter < pointCount && !ifs.eof(); ++pointCounter ) {
-      auto& position = positions_[pointCounter];
+      auto &position = positions_[pointCounter];
       for ( size_t a = 0; a < attributeCount && !ifs.eof(); ++a ) {
-        const auto& attributeInfo = attributesInfo[a];
+        const auto &attributeInfo = attributesInfo[a];
         if ( a == indexX ) {
           if ( attributeInfo.byteCount == 2 ) {
             uint16_t x;
-            ifs.read( reinterpret_cast<char*>( &x ), sizeof( uint16_t ) );
+            ifs.read( reinterpret_cast<char *>( &x ), sizeof( uint16_t ) );
             position[0] = x;
           } else if ( attributeInfo.byteCount == 4 ) {
             float x;
-            ifs.read( reinterpret_cast<char*>( &x ), sizeof( float ) );
+            ifs.read( reinterpret_cast<char *>( &x ), sizeof( float ) );
             position[0] = x;
           } else {
             double x;
-            ifs.read( reinterpret_cast<char*>( &x ), sizeof( double ) );
+            ifs.read( reinterpret_cast<char *>( &x ), sizeof( double ) );
             position[0] = x;
           }
         } else if ( a == indexY ) {
           if ( attributeInfo.byteCount == 2 ) {
             uint16_t y;
-            ifs.read( reinterpret_cast<char*>( &y ), sizeof( uint16_t ) );
+            ifs.read( reinterpret_cast<char *>( &y ), sizeof( uint16_t ) );
             position[1] = y;
           } else if ( attributeInfo.byteCount == 4 ) {
             float y;
-            ifs.read( reinterpret_cast<char*>( &y ), sizeof( float ) );
+            ifs.read( reinterpret_cast<char *>( &y ), sizeof( float ) );
             position[1] = y;
           } else {
             double y;
-            ifs.read( reinterpret_cast<char*>( &y ), sizeof( double ) );
+            ifs.read( reinterpret_cast<char *>( &y ), sizeof( double ) );
             position[1] = y;
           }
         } else if ( a == indexZ ) {
           if ( attributeInfo.byteCount == 2 ) {
             uint16_t z;
-            ifs.read( reinterpret_cast<char*>( &z ), sizeof( uint16_t ) );
+            ifs.read( reinterpret_cast<char *>( &z ), sizeof( uint16_t ) );
             position[2] = z;
           } else if ( attributeInfo.byteCount == 4 ) {
             float z;
-            ifs.read( reinterpret_cast<char*>( &z ), sizeof( float ) );
+            ifs.read( reinterpret_cast<char *>( &z ), sizeof( float ) );
             position[2] = z;
           } else {
             double z;
-            ifs.read( reinterpret_cast<char*>( &z ), sizeof( double ) );
+            ifs.read( reinterpret_cast<char *>( &z ), sizeof( double ) );
             position[2] = z;
           }
         } else if ( a == indexR && attributeInfo.byteCount == 1 ) {
-          auto& color = colors_[pointCounter];
-          ifs.read( reinterpret_cast<char*>( &color[0] ), sizeof( uint8_t ) );
+          auto &color = colors_[pointCounter];
+          ifs.read( reinterpret_cast<char *>( &color[0] ), sizeof( uint8_t ) );
         } else if ( a == indexG && attributeInfo.byteCount == 1 ) {
-          auto& color = colors_[pointCounter];
-          ifs.read( reinterpret_cast<char*>( &color[1] ), sizeof( uint8_t ) );
+          auto &color = colors_[pointCounter];
+          ifs.read( reinterpret_cast<char *>( &color[1] ), sizeof( uint8_t ) );
         } else if ( a == indexB && attributeInfo.byteCount == 1 ) {
-          auto& color = colors_[pointCounter];
-          ifs.read( reinterpret_cast<char*>( &color[2] ), sizeof( uint8_t ) );
+          auto &color = colors_[pointCounter];
+          ifs.read( reinterpret_cast<char *>( &color[2] ), sizeof( uint8_t ) );
         } else if ( a == indexNX ) {
           if ( attributeInfo.byteCount == 4 ) {
             float nx;
-            ifs.read( reinterpret_cast<char*>( &nx ), sizeof( float ) );
+            ifs.read( reinterpret_cast<char *>( &nx ), sizeof( float ) );
             normals_[pointCounter][0] = nx;
           } else {
             double nx;
-            ifs.read( reinterpret_cast<char*>( &nx ), sizeof( double ) );
+            ifs.read( reinterpret_cast<char *>( &nx ), sizeof( double ) );
             normals_[pointCounter][0] = nx;
           }
         } else if ( a == indexNY ) {
           if ( attributeInfo.byteCount == 4 ) {
             float ny;
-            ifs.read( reinterpret_cast<char*>( &ny ), sizeof( float ) );
+            ifs.read( reinterpret_cast<char *>( &ny ), sizeof( float ) );
             normals_[pointCounter][1] = ny;
           } else {
             double ny;
-            ifs.read( reinterpret_cast<char*>( &ny ), sizeof( double ) );
+            ifs.read( reinterpret_cast<char *>( &ny ), sizeof( double ) );
             normals_[pointCounter][1] = ny;
           }
         } else if ( a == indexNZ ) {
           if ( attributeInfo.byteCount == 4 ) {
             float nz;
-            ifs.read( reinterpret_cast<char*>( &nz ), sizeof( float ) );
+            ifs.read( reinterpret_cast<char *>( &nz ), sizeof( float ) );
             normals_[pointCounter][2] = nz;
           } else {
             double nz;
-            ifs.read( reinterpret_cast<char*>( &nz ), sizeof( double ) );
+            ifs.read( reinterpret_cast<char *>( &nz ), sizeof( double ) );
             normals_[pointCounter][2] = nz;
           }
         } else if ( a == indexReflectance && attributeInfo.byteCount <= 2 ) {
           if ( indexReflectance == 1 ) {
             uint8_t reflectance;
-            ifs.read( reinterpret_cast<char*>( &reflectance ), sizeof( uint8_t ) );
+            ifs.read( reinterpret_cast<char *>( &reflectance ), sizeof( uint8_t ) );
             reflectances_[pointCounter] = reflectance;
           } else {
-            auto& reflectance = reflectances_[pointCounter];
-            ifs.read( reinterpret_cast<char*>( reflectance ), sizeof( uint16_t ) );
+            auto &reflectance = reflectances_[pointCounter];
+            ifs.read( reinterpret_cast<char *>( reflectance ), sizeof( uint16_t ) );
           }
         } else {
-          char buffer[128];
-          ifs.read( buffer, attributeInfo.byteCount );
+          uint64_t value;
+          if ( attributeInfo.type == AttributeType::ATTRIBUTE_TYPE_FLOAT64 )
+            value = std::round( _readValue<double>( ifs ) );
+          else if ( attributeInfo.type == AttributeType::ATTRIBUTE_TYPE_FLOAT32 )
+            value = std::round( _readValue<float>( ifs ) );
+          else if ( attributeInfo.type == AttributeType::ATTRIBUTE_TYPE_UINT64 )
+            value = _readValue<uint64_t>( ifs );
+          else if ( attributeInfo.type == AttributeType::ATTRIBUTE_TYPE_INT64 )
+            value = _readValue<int64_t>( ifs );
+          else if ( attributeInfo.type == AttributeType::ATTRIBUTE_TYPE_UINT32 )
+            value = _readValue<uint32_t>( ifs );
+          else if ( attributeInfo.type == AttributeType::ATTRIBUTE_TYPE_INT32 )
+            value = _readValue<int32_t>( ifs );
+          else if ( attributeInfo.type == AttributeType::ATTRIBUTE_TYPE_UINT16 )
+            value = _readValue<uint16_t>( ifs );
+          else if ( attributeInfo.type == AttributeType::ATTRIBUTE_TYPE_INT16 )
+            value = _readValue<int16_t>( ifs );
+          else if ( attributeInfo.type == AttributeType::ATTRIBUTE_TYPE_UINT8 )
+            value = _readValue<uint8_t>( ifs );
+          else
+            value = _readValue<int8_t>( ifs );
+
+          std::vector<size_t>::iterator found;
+          found = std::find( indexSphericalHarmonics.begin(), indexSphericalHarmonics.end(), a );
+          if ( found != indexSphericalHarmonics.end() ) {
+            auto  &sphericalHarmonic        = sphericalHarmonics_[pointCounter];
+            size_t i                        = std::distance( indexSphericalHarmonics.begin(), found );
+            sphericalHarmonic[i / 3][i % 3] = value;
+            continue;
+          }
+
+          found = std::find( indexScale.begin(), indexScale.end(), a );
+          if ( found != indexScale.end() ) {
+            auto &scale                                       = scales_[pointCounter];
+            scale[std::distance( indexScale.begin(), found )] = value;
+            continue;
+          }
+
+          found = std::find( indexRot.begin(), indexRot.end(), a );
+          if ( found != indexRot.end() ) {
+            auto  &rotation        = rotations_[pointCounter];
+            size_t i               = std::distance( indexRot.begin(), found );
+            rotation[i / 3][i % 3] = value;
+            continue;
+          }
+
+          if ( indexOpacity == a ) {
+            auto &opacity = opacities_[pointCounter];
+            opacity[0]    = value;
+          }
         }
       }
     }
@@ -757,7 +1078,7 @@ bool PCCPointSet3::read( const std::string& fileName, const bool readNormals ) {
 }
 
 void PCCPointSet3::convertRGBToYUV() {  // BT709
-  for ( auto& color : colors_ ) {
+  for ( auto &color : colors_ ) {
     const uint8_t r = color[0];
     const uint8_t g = color[1];
     const uint8_t b = color[2];
@@ -777,7 +1098,7 @@ void PCCPointSet3::convertRGBToYUV() {  // BT709
 }
 
 void PCCPointSet3::convertRGBToYUVClosedLoop() {  // BT709
-  for ( auto& color : colors_ ) {
+  for ( auto &color : colors_ ) {
     const uint8_t r = color[0];
     const uint8_t g = color[1];
     const uint8_t b = color[2];
@@ -791,7 +1112,7 @@ void PCCPointSet3::convertRGBToYUVClosedLoop() {  // BT709
   }
 }
 void PCCPointSet3::convertYUVToRGB() {  // BT709
-  for ( auto& color : colors_ ) {
+  for ( auto &color : colors_ ) {
     const double y1 = color[0];
     const double u1 = color[1] - 128.0;
     const double v1 = color[2] - 128.0;
@@ -804,7 +1125,7 @@ void PCCPointSet3::convertYUVToRGB() {  // BT709
   }
 }
 
-bool PCCPointSet3::transferColors( PCCPointSet3& target,
+bool PCCPointSet3::transferColors( PCCPointSet3 &target,
                                    const int32_t searchRange,
                                    const bool    losslessAttribute,
                                    const int     numNeighborsColorTransferFwd,
@@ -822,7 +1143,7 @@ bool PCCPointSet3::transferColors( PCCPointSet3& target,
                                    const bool    excludeColorOutlier,
                                    const double  thresholdColorOutlierDist ) const {
   printf( "transferColors \n" );
-  const auto&  source           = *this;
+  const auto  &source           = *this;
   const size_t pointCountSource = source.getPointCount();
   const size_t pointCountTarget = target.getPointCount();
   if ( ( pointCountSource == 0u ) || ( pointCountTarget == 0u ) || !source.hasColors() ) { return false; }
@@ -881,7 +1202,7 @@ bool PCCPointSet3::transferColors( PCCPointSet3& target,
           if ( maxColorDist2 <= maxColorDist2Fwd ) {
             PCCVector3D refinedColor( 0.0 );
             if ( useDistWeightedAverageFwd ) {
-              double sumWeights{0.0};
+              double sumWeights{ 0.0 };
               for ( int i = 0; i < nNN; ++i ) {
                 const double weight = 1 / ( result.dist( i ) + distOffsetFwd );
                 for ( int k = 0; k < 3; ++k ) { refinedColor[k] += source.getColor( result.indices( i ) )[k] * weight; }
@@ -946,19 +1267,19 @@ bool PCCPointSet3::transferColors( PCCPointSet3& target,
     // keep the points that satisfy geometry dist threshold
     for ( int i = 0; i < result.size(); ++i ) {
       if ( result.dist( i ) <= maxGeometryDist2Bwd ) {
-        refinedColorsDists2[result.indices( i )].push_back( DistColor8Bit{result.dist( i ), color} );
+        refinedColorsDists2[result.indices( i )].push_back( DistColor8Bit{ result.dist( i ), color } );
       }
     }
   }
   // sort refinedColorsDists2 according to distance
   for ( size_t index = 0; index < pointCountTarget; ++index ) {
     std::sort( refinedColorsDists2[index].begin(), refinedColorsDists2[index].end(),
-               []( DistColor8Bit& dc1, DistColor8Bit& dc2 ) { return dc1.dist < dc2.dist; } );
+               []( DistColor8Bit &dc1, DistColor8Bit &dc2 ) { return dc1.dist < dc2.dist; } );
   }
   // compute centroid2
   for ( size_t index = 0; index < pointCountTarget; ++index ) {
     const PCCColor3B color1       = refinedColors1[index];       // refined color derived in forward direction
-    auto&            colorsDists2 = refinedColorsDists2[index];  // set of candidate points
+    auto            &colorsDists2 = refinedColorsDists2[index];  // set of candidate points
                                                                  // derived in backward
                                                                  // direction
     if ( colorsDists2.empty() || losslessAttribute ) {
@@ -1004,8 +1325,8 @@ bool PCCPointSet3::transferColors( PCCPointSet3& target,
             if ( maxColorDist2 <= maxColorDist2Bwd ) {
               for ( size_t k = 0; k < 3; ++k ) { centroid2[k] = 0; }
               if ( useDistWeightedAverageBwd ) {
-                double sumWeights{0.0};
-                for ( auto& i : colorsDists2 ) {
+                double sumWeights{ 0.0 };
+                for ( auto &i : colorsDists2 ) {
                   const double weight = 1 / ( sqrt( i.dist ) + distOffsetBwd );
                   for ( size_t k = 0; k < 3; ++k ) { centroid2[k] += ( i.color[k] * weight ); }
                   sumWeights += weight;
@@ -1015,7 +1336,7 @@ bool PCCPointSet3::transferColors( PCCPointSet3& target,
                   PCCVector3D excludeOutlierCentroid2( 0.0 );
                   size_t      excludeCount = 0;
                   sumWeights               = 0.0;
-                  for ( auto& i : colorsDists2 ) {
+                  for ( auto &i : colorsDists2 ) {
                     PCCVector3D sourceColor( i.color[0], i.color[1], i.color[2] );
                     double      dist = ( sourceColor - centroid2 ).getNorm2();
                     if ( dist > thresholdColorOutlierDist * thresholdColorOutlierDist ) {
@@ -1030,7 +1351,7 @@ bool PCCPointSet3::transferColors( PCCPointSet3& target,
                   if ( excludeCount != nNN && excludeCount != 0 ) { centroid2 = excludeOutlierCentroid2 / sumWeights; }
                 }
               } else {
-                for ( auto& coldist : colorsDists2 ) {
+                for ( auto &coldist : colorsDists2 ) {
                   for ( int k = 0; k < 3; ++k ) { centroid2[k] += coldist.color[k]; }
                 }
                 centroid2 /= colorsDists2.size();
@@ -1044,7 +1365,7 @@ bool PCCPointSet3::transferColors( PCCPointSet3& target,
       }
       auto   H  = double( colorsDists2.size() );
       double D2 = 0.0;
-      for ( const auto& color2dist : colorsDists2 ) {
+      for ( const auto &color2dist : colorsDists2 ) {
         auto color2 = color2dist.color;
         for ( size_t k = 0; k < 3; ++k ) {
           const double d2 = centroid2[k] - color2[k];
@@ -1096,7 +1417,7 @@ bool PCCPointSet3::transferColors( PCCPointSet3& target,
               e1 *= rTarget;
 
               double e2 = 0.0;
-              for ( const auto& color2dist : colorsDists2 ) {
+              for ( const auto &color2dist : colorsDists2 ) {
                 auto color2 = color2dist.color;
                 for ( size_t k = 0; k < 3; ++k ) {
                   const double d = color[k] - color2[k];
@@ -1123,7 +1444,7 @@ bool PCCPointSet3::transferColors( PCCPointSet3& target,
   return true;
 }
 
-bool PCCPointSet3::transferColors16bitBP( PCCPointSet3& target,
+bool PCCPointSet3::transferColors16bitBP( PCCPointSet3 &target,
                                           const int     filterType,
                                           const int32_t searchRange,
                                           const bool    losslessAttribute,
@@ -1141,7 +1462,7 @@ bool PCCPointSet3::transferColors16bitBP( PCCPointSet3& target,
                                           double        maxColorDist2Bwd,
                                           const bool    excludeColorOutlier,
                                           const double  thresholdColorOutlierDist ) const {
-  const auto&  source           = *this;
+  const auto  &source           = *this;
   const size_t pointCountSource = source.getPointCount();
   const size_t pointCountTarget = target.getPointCount();
   if ( ( pointCountSource == 0u ) || ( pointCountTarget == 0u ) || !source.hasColors() ) { return false; }
@@ -1213,7 +1534,7 @@ bool PCCPointSet3::transferColors16bitBP( PCCPointSet3& target,
             if ( maxColorDist2 <= maxColorDist2Fwd ) {
               PCCVector3D refinedColor( 0.0 );
               if ( useDistWeightedAverageFwd ) {
-                double sumWeights{0.0};
+                double sumWeights{ 0.0 };
                 for ( int i = 0; i < nNN; ++i ) {
                   const double weight = 1 / ( result.dist( i ) + distOffsetFwd );
                   for ( int k = 0; k < 3; ++k ) {
@@ -1285,8 +1606,9 @@ bool PCCPointSet3::transferColors16bitBP( PCCPointSet3& target,
           if ( std::abs( color[0] - target.getColor16bit()[result.indices( i )][0] ) < 40 &&
                std::abs( color[1] - target.getColor16bit()[result.indices( i )][1] ) < 40 &&
                std::abs( color[2] - target.getColor16bit()[result.indices( i )][2] ) < 40 )
-            refinedColorsDists2[result.indices( i )].push_back( DistColor{
-                result.dist( i ), color, target[result.indices( i )], partSource.getParentPointIndex( index ), index} );
+            refinedColorsDists2[result.indices( i )].push_back(
+                DistColor{ result.dist( i ), color, target[result.indices( i )],
+                           partSource.getParentPointIndex( index ), index } );
         }
       }
     }
@@ -1294,7 +1616,7 @@ bool PCCPointSet3::transferColors16bitBP( PCCPointSet3& target,
     // sort refinedColorsDists2 according to distance
     for ( size_t index = 0; index < pointCountTarget; ++index ) {
       std::sort( refinedColorsDists2[index].begin(), refinedColorsDists2[index].end(),
-                 []( DistColor& dc1, DistColor& dc2 ) { return dc1.dist < dc2.dist; } );
+                 []( DistColor &dc1, DistColor &dc2 ) { return dc1.dist < dc2.dist; } );
     }
   } else {
     // populate refinedColorsDists2
@@ -1305,21 +1627,21 @@ bool PCCPointSet3::transferColors16bitBP( PCCPointSet3& target,
       // keep the points that satisfy geometry dist threshold
       for ( int i = 0; i < result.size(); ++i ) {
         if ( result.dist( i ) <= maxGeometryDist2Bwd ) {
-          refinedColorsDists2[result.indices( i )].push_back( DistColor{result.dist( i ), color} );
+          refinedColorsDists2[result.indices( i )].push_back( DistColor{ result.dist( i ), color } );
         }
       }
     }
     // sort refinedColorsDists2 according to distance
     for ( size_t index = 0; index < pointCountTarget; ++index ) {
       std::sort( refinedColorsDists2[index].begin(), refinedColorsDists2[index].end(),
-                 []( DistColor& dc1, DistColor& dc2 ) { return dc1.dist < dc2.dist; } );
+                 []( DistColor &dc1, DistColor &dc2 ) { return dc1.dist < dc2.dist; } );
     }
   }
   // compute centroid2
   for ( size_t index = 0; index < pointCountTarget; ++index ) {
     if ( filterType == 1 && target.getBoundaryPointType( index ) != 3 ) continue;
     const PCCColor16bit color1       = refinedColors1[index];       // refined color derived in forward direction
-    auto&               colorsDists2 = refinedColorsDists2[index];  // set of candidate points
+    auto               &colorsDists2 = refinedColorsDists2[index];  // set of candidate points
                                                                     // derived in backward
                                                                     // direction
     if ( colorsDists2.empty() || losslessAttribute ) {
@@ -1365,8 +1687,8 @@ bool PCCPointSet3::transferColors16bitBP( PCCPointSet3& target,
             if ( maxColorDist2 <= maxColorDist2Bwd ) {
               for ( size_t k = 0; k < 3; ++k ) { centroid2[k] = 0; }
               if ( useDistWeightedAverageBwd ) {
-                double sumWeights{0.0};
-                for ( auto& i : colorsDists2 ) {
+                double sumWeights{ 0.0 };
+                for ( auto &i : colorsDists2 ) {
                   const double weight = 1 / ( sqrt( i.dist ) + distOffsetBwd );
                   for ( size_t k = 0; k < 3; ++k ) { centroid2[k] += ( i.color[k] * weight ); }
                   sumWeights += weight;
@@ -1376,7 +1698,7 @@ bool PCCPointSet3::transferColors16bitBP( PCCPointSet3& target,
                   PCCVector3D excludeOutlierCentroid2( 0.0 );
                   size_t      excludeCount = 0;
                   sumWeights               = 0.0;
-                  for ( auto& i : colorsDists2 ) {
+                  for ( auto &i : colorsDists2 ) {
                     PCCVector3D sourceColor( i.color[0], i.color[1], i.color[2] );
                     double      dist = ( sourceColor - centroid2 ).getNorm2();
                     if ( dist > thresholdColorOutlierDist * thresholdColorOutlierDist * 256.0 * 256.0 ) {
@@ -1391,7 +1713,7 @@ bool PCCPointSet3::transferColors16bitBP( PCCPointSet3& target,
                   if ( excludeCount != nNN && excludeCount != 0 ) { centroid2 = excludeOutlierCentroid2 / sumWeights; }
                 }
               } else {
-                for ( auto& coldist : colorsDists2 ) {
+                for ( auto &coldist : colorsDists2 ) {
                   for ( int k = 0; k < 3; ++k ) { centroid2[k] += coldist.color[k]; }
                 }
                 centroid2 /= colorsDists2.size();
@@ -1405,7 +1727,7 @@ bool PCCPointSet3::transferColors16bitBP( PCCPointSet3& target,
       }
       auto   H  = double( colorsDists2.size() );
       double D2 = 0.0;
-      for ( const auto& color2dist : colorsDists2 ) {
+      for ( const auto &color2dist : colorsDists2 ) {
         auto color2 = color2dist.color;
         for ( size_t k = 0; k < 3; ++k ) {
           const double d2 = centroid2[k] - color2[k];
@@ -1457,7 +1779,7 @@ bool PCCPointSet3::transferColors16bitBP( PCCPointSet3& target,
               e1 *= rTarget;
 
               double e2 = 0.0;
-              for ( const auto& color2dist : colorsDists2 ) {
+              for ( const auto &color2dist : colorsDists2 ) {
                 auto color2 = color2dist.color;
                 for ( size_t k = 0; k < 3; ++k ) {
                   const double d = color[k] - color2[k];
@@ -1484,7 +1806,7 @@ bool PCCPointSet3::transferColors16bitBP( PCCPointSet3& target,
   return true;
 }
 
-bool PCCPointSet3::transferColorsBackward16bitBP( PCCPointSet3& target,
+bool PCCPointSet3::transferColorsBackward16bitBP( PCCPointSet3 &target,
                                                   const int     filterType,
                                                   const int32_t searchRange,
                                                   const bool    losslessAttribute,
@@ -1502,7 +1824,7 @@ bool PCCPointSet3::transferColorsBackward16bitBP( PCCPointSet3& target,
                                                   double        maxColorDist2Bwd,
                                                   const bool    excludeColorOutlier,
                                                   const double  thresholdColorOutlierDist ) const {
-  const auto&  source           = *this;
+  const auto  &source           = *this;
   const size_t pointCountSource = source.getPointCount();
   const size_t pointCountTarget = target.getPointCount();
   if ( ( pointCountSource == 0u ) || ( pointCountTarget == 0u ) || !source.hasColors() ) { return false; }
@@ -1558,8 +1880,8 @@ bool PCCPointSet3::transferColorsBackward16bitBP( PCCPointSet3& target,
             assert( 0 );
             exit( 0 );
           }
-          refinedColorsDists2[indexInTarget].push_back(
-              DistColor{result.dist( i ), color, partTarget[result.indices( i )], indexInTarget, result.indices( i )} );
+          refinedColorsDists2[indexInTarget].push_back( DistColor{
+              result.dist( i ), color, partTarget[result.indices( i )], indexInTarget, result.indices( i ) } );
         }
       }
     } else {
@@ -1567,7 +1889,7 @@ bool PCCPointSet3::transferColorsBackward16bitBP( PCCPointSet3& target,
       // keep the points that satisfy geometry dist threshold
       for ( int i = 0; i < result.count(); ++i ) {
         if ( result.dist( i ) <= maxGeometryDist2Bwd ) {
-          refinedColorsDists2[result.indices( i )].push_back( DistColor{result.dist( i ), color} );
+          refinedColorsDists2[result.indices( i )].push_back( DistColor{ result.dist( i ), color } );
         }
       }
     }
@@ -1575,7 +1897,7 @@ bool PCCPointSet3::transferColorsBackward16bitBP( PCCPointSet3& target,
 
   for ( size_t index = 0; index < pointCountTarget; ++index ) {
     std::sort( refinedColorsDists2[index].begin(), refinedColorsDists2[index].end(),
-               []( DistColor& dc1, DistColor& dc2 ) { return dc1.dist < dc2.dist; } );
+               []( DistColor &dc1, DistColor &dc2 ) { return dc1.dist < dc2.dist; } );
   }
 
   // compute centroid2
@@ -1585,7 +1907,7 @@ bool PCCPointSet3::transferColorsBackward16bitBP( PCCPointSet3& target,
       continue;
     }
     if ( refinedColorsDists2[index].empty() ) { continue; }
-    auto&       colorsDists2 = refinedColorsDists2[index];
+    auto       &colorsDists2 = refinedColorsDists2[index];
     bool        isDone       = false;
     PCCVector3D centroid2( 0.0 );
     if ( skipAvgIfIdenticalSourcePointPresentBwd ) {
@@ -1625,8 +1947,8 @@ bool PCCPointSet3::transferColorsBackward16bitBP( PCCPointSet3& target,
           if ( maxColorDist2 <= maxColorDist2Bwd ) {
             for ( size_t k = 0; k < 3; ++k ) { centroid2[k] = 0; }
             if ( useDistWeightedAverageBwd ) {
-              double sumWeights{0.0};
-              for ( auto& i : colorsDists2 ) {
+              double sumWeights{ 0.0 };
+              for ( auto &i : colorsDists2 ) {
                 const double weight = 1 / ( sqrt( i.dist ) + distOffsetBwd );
                 for ( size_t k = 0; k < 3; ++k ) { centroid2[k] += ( i.color[k] * weight ); }
                 sumWeights += weight;
@@ -1636,7 +1958,7 @@ bool PCCPointSet3::transferColorsBackward16bitBP( PCCPointSet3& target,
                 PCCVector3D excludeOutlierCentroid2( 0.0 );
                 size_t      excludeCount = 0;
                 sumWeights               = 0.0;
-                for ( auto& i : colorsDists2 ) {
+                for ( auto &i : colorsDists2 ) {
                   PCCVector3D sourceColor( i.color[0], i.color[1], i.color[2] );
                   double      dist = ( sourceColor - centroid2 ).getNorm2();
                   if ( dist > thresholdColorOutlierDist * thresholdColorOutlierDist * 256.0 * 256.0 ) {
@@ -1651,7 +1973,7 @@ bool PCCPointSet3::transferColorsBackward16bitBP( PCCPointSet3& target,
                 if ( excludeCount != nNN && excludeCount != 0 ) { centroid2 = excludeOutlierCentroid2 / sumWeights; }
               }
             } else {
-              for ( auto& coldist : colorsDists2 ) {
+              for ( auto &coldist : colorsDists2 ) {
                 for ( int k = 0; k < 3; ++k ) { centroid2[k] += coldist.color[k]; }
               }
               centroid2 /= colorsDists2.size();
@@ -1718,7 +2040,7 @@ bool PCCPointSet3::transferColorsBackward16bitBP( PCCPointSet3& target,
             if ( maxColorDist2 <= maxColorDist2Fwd ) {
               PCCVector3D refinedColor( 0.0 );
               if ( useDistWeightedAverageFwd ) {
-                double sumWeights{0.0};
+                double sumWeights{ 0.0 };
                 for ( int i = 0; i < nNN; ++i ) {
                   const double weight = 1 / ( result.dist( i ) + distOffsetFwd );
                   for ( int k = 0; k < 3; ++k ) {
@@ -1765,17 +2087,17 @@ bool PCCPointSet3::transferColorsBackward16bitBP( PCCPointSet3& target,
             }
           }
         }  // while
-      }    //! isDone
+      }  //! isDone
 
       target.setColor16bit( index,
                             PCCColor16bit( uint16_t( refinedColors1[index][0] ), uint16_t( refinedColors1[index][1] ),
                                            uint16_t( refinedColors1[index][2] ) ) );
     }  // if ( target.getBoundaryPointType( index ) == 3 && newValueDecided[ index ] == false )
-  }    // index
+  }  // index
 
   return true;
 }
-bool PCCPointSet3::transferColors16bit( PCCPointSet3& target,
+bool PCCPointSet3::transferColors16bit( PCCPointSet3 &target,
                                         const int32_t searchRange,
                                         const bool    losslessAttribute,
                                         const int     numNeighborsColorTransferFwd,
@@ -1793,7 +2115,7 @@ bool PCCPointSet3::transferColors16bit( PCCPointSet3& target,
                                         const bool    excludeColorOutlier,
                                         const double  thresholdColorOutlierDist ) const {
   printf( "transferColors16bit \n" );
-  const auto&  source           = *this;
+  const auto  &source           = *this;
   const size_t pointCountSource = source.getPointCount();
   const size_t pointCountTarget = target.getPointCount();
   if ( ( pointCountSource == 0u ) || ( pointCountTarget == 0u ) || !source.hasColors() ) { return false; }
@@ -1852,7 +2174,7 @@ bool PCCPointSet3::transferColors16bit( PCCPointSet3& target,
           if ( maxColorDist2 <= maxColorDist2Fwd ) {
             PCCVector3D refinedColor( 0.0 );
             if ( useDistWeightedAverageFwd ) {
-              double sumWeights{0.0};
+              double sumWeights{ 0.0 };
               for ( int i = 0; i < nNN; ++i ) {
                 const double weight = 1 / ( result.dist( i ) + distOffsetFwd );
                 for ( int k = 0; k < 3; ++k ) {
@@ -1918,19 +2240,19 @@ bool PCCPointSet3::transferColors16bit( PCCPointSet3& target,
     // keep the points that satisfy geometry dist threshold
     for ( int i = 0; i < result.size(); ++i ) {
       if ( result.dist( i ) <= maxGeometryDist2Bwd ) {
-        refinedColorsDists2[result.indices( i )].push_back( DistColor{result.dist( i ), color} );
+        refinedColorsDists2[result.indices( i )].push_back( DistColor{ result.dist( i ), color } );
       }
     }
   }
   // sort refinedColorsDists2 according to distance
   for ( size_t index = 0; index < pointCountTarget; ++index ) {
     std::sort( refinedColorsDists2[index].begin(), refinedColorsDists2[index].end(),
-               []( DistColor& dc1, DistColor& dc2 ) { return dc1.dist < dc2.dist; } );
+               []( DistColor &dc1, DistColor &dc2 ) { return dc1.dist < dc2.dist; } );
   }
   // compute centroid2
   for ( size_t index = 0; index < pointCountTarget; ++index ) {
     const PCCColor16bit color1       = refinedColors1[index];       // refined color derived in forward direction
-    auto&               colorsDists2 = refinedColorsDists2[index];  // set of candidate points
+    auto               &colorsDists2 = refinedColorsDists2[index];  // set of candidate points
                                                                     // derived in backward
                                                                     // direction
     if ( colorsDists2.empty() || losslessAttribute ) {
@@ -1976,8 +2298,8 @@ bool PCCPointSet3::transferColors16bit( PCCPointSet3& target,
             if ( maxColorDist2 <= maxColorDist2Bwd ) {
               for ( size_t k = 0; k < 3; ++k ) { centroid2[k] = 0; }
               if ( useDistWeightedAverageBwd ) {
-                double sumWeights{0.0};
-                for ( auto& i : colorsDists2 ) {
+                double sumWeights{ 0.0 };
+                for ( auto &i : colorsDists2 ) {
                   const double weight = 1 / ( sqrt( i.dist ) + distOffsetBwd );
                   for ( size_t k = 0; k < 3; ++k ) { centroid2[k] += ( i.color[k] * weight ); }
                   sumWeights += weight;
@@ -1987,7 +2309,7 @@ bool PCCPointSet3::transferColors16bit( PCCPointSet3& target,
                   PCCVector3D excludeOutlierCentroid2( 0.0 );
                   size_t      excludeCount = 0;
                   sumWeights               = 0.0;
-                  for ( auto& i : colorsDists2 ) {
+                  for ( auto &i : colorsDists2 ) {
                     PCCVector3D sourceColor( i.color[0], i.color[1], i.color[2] );
                     double      dist = ( sourceColor - centroid2 ).getNorm2();
                     if ( dist > thresholdColorOutlierDist * thresholdColorOutlierDist * 256.0 * 256.0 ) {
@@ -2002,7 +2324,7 @@ bool PCCPointSet3::transferColors16bit( PCCPointSet3& target,
                   if ( excludeCount != nNN && excludeCount != 0 ) { centroid2 = excludeOutlierCentroid2 / sumWeights; }
                 }
               } else {
-                for ( auto& coldist : colorsDists2 ) {
+                for ( auto &coldist : colorsDists2 ) {
                   for ( int k = 0; k < 3; ++k ) { centroid2[k] += coldist.color[k]; }
                 }
                 centroid2 /= colorsDists2.size();
@@ -2016,7 +2338,7 @@ bool PCCPointSet3::transferColors16bit( PCCPointSet3& target,
       }
       auto   H  = double( colorsDists2.size() );
       double D2 = 0.0;
-      for ( const auto& color2dist : colorsDists2 ) {
+      for ( const auto &color2dist : colorsDists2 ) {
         auto color2 = color2dist.color;
         for ( size_t k = 0; k < 3; ++k ) {
           const double d2 = centroid2[k] - color2[k];
@@ -2068,7 +2390,7 @@ bool PCCPointSet3::transferColors16bit( PCCPointSet3& target,
               e1 *= rTarget;
 
               double e2 = 0.0;
-              for ( const auto& color2dist : colorsDists2 ) {
+              for ( const auto &color2dist : colorsDists2 ) {
                 auto color2 = color2dist.color;
                 for ( size_t k = 0; k < 3; ++k ) {
                   const double d = color[k] - color2[k];
@@ -2094,11 +2416,11 @@ bool PCCPointSet3::transferColors16bit( PCCPointSet3& target,
   }
   return true;
 }
-bool PCCPointSet3::transferColorsFilter3( PCCPointSet3& target,
+bool PCCPointSet3::transferColorsFilter3( PCCPointSet3 &target,
                                           const int32_t searchRange,
                                           const bool    losslessAttribute ) const {
   printf( "transferColorsFilter3 \n" );
-  const auto&  source           = *this;
+  const auto  &source           = *this;
   const size_t pointCountSource = source.getPointCount();
   const size_t pointCountTarget = target.getPointCount();
   if ( ( pointCountSource == 0u ) || ( pointCountTarget == 0u ) || !source.hasColors() ) { return false; }
@@ -2126,20 +2448,20 @@ bool PCCPointSet3::transferColorsFilter3( PCCPointSet3& target,
 
   for ( size_t index = 0; index < pointCountTarget; ++index ) {
     const PCCColor3B               color1  = refinedColors1[index];
-    const std::vector<PCCColor3B>& colors2 = refinedColors2[index];
+    const std::vector<PCCColor3B> &colors2 = refinedColors2[index];
     if ( colors2.empty() || losslessAttribute ) {
       target.setColor( index, color1 );
     } else {
       const auto        H = double( colors2.size() );
       const PCCVector3D centroid1( color1[0], color1[1], color1[2] );
       PCCVector3D       centroid2( 0.0 );
-      for ( const auto& color2 : colors2 ) {
+      for ( const auto &color2 : colors2 ) {
         for ( size_t k = 0; k < 3; ++k ) { centroid2[k] += color2[k]; }
       }
       centroid2 /= H;
 
       double D2 = 0.0;
-      for ( const auto& color2 : colors2 ) {
+      for ( const auto &color2 : colors2 ) {
         for ( size_t k = 0; k < 3; ++k ) {
           const double d2 = centroid2[k] - color2[k];
           D2 += d2 * d2;
@@ -2170,9 +2492,9 @@ bool PCCPointSet3::transferColorsFilter3( PCCPointSet3& target,
   return true;
 }
 
-bool PCCPointSet3::transferColorSimple( PCCPointSet3& target, const double bestColorSearchStep ) {
+bool PCCPointSet3::transferColorSimple( PCCPointSet3 &target, const double bestColorSearchStep ) {
   printf( "transferColorSimple \n" );
-  const auto&  source           = *this;
+  const auto  &source           = *this;
   const size_t pointCountSource = source.getPointCount();
   const size_t pointCountTarget = target.getPointCount();
   if ( ( pointCountSource == 0u ) || ( pointCountTarget == 0u ) || !source.hasColors() ) { return false; }
@@ -2211,11 +2533,11 @@ bool PCCPointSet3::transferColorSimple( PCCPointSet3& target, const double bestC
       while ( w1 <= 1.0 ) {
         const double w2 = 1.0 - w1;
         PCCVector3D  color( 0.0 );
-        for ( const auto& color2 : colors2 ) {
+        for ( const auto &color2 : colors2 ) {
           for ( size_t k = 0; k < 3; ++k ) { color[k] += color2[k]; }
         }
         for ( size_t k = 0; k < 3; ++k ) {
-          color[k] = ( std::min )( round( w2 * s * color[k] + w1 * color1[k] ), 255.0 );
+          color[k] = (std::min)( round( w2 * s * color[k] + w1 * color1[k] ), 255.0 );
         }
 
         double e1 = 0.0;
@@ -2226,7 +2548,7 @@ bool PCCPointSet3::transferColorSimple( PCCPointSet3& target, const double bestC
         e1 *= r1;
 
         double e2 = 0.0;
-        for ( const auto& color2 : colors2 ) {
+        for ( const auto &color2 : colors2 ) {
           for ( size_t k = 0; k < 3; ++k ) {
             const double d = color[k] - color2[k];
             e2 += d * d;
@@ -2234,7 +2556,7 @@ bool PCCPointSet3::transferColorSimple( PCCPointSet3& target, const double bestC
         }
         e2 *= r2;
 
-        const double e = ( std::max )( e1, e2 );
+        const double e = (std::max)( e1, e2 );
         if ( e < minError ) {
           bestColor = color;
           minError  = e;
@@ -2247,8 +2569,8 @@ bool PCCPointSet3::transferColorSimple( PCCPointSet3& target, const double bestC
   return true;
 }
 
-bool PCCPointSet3::transferColorWeight( PCCPointSet3& target, const double bestColorSearchStep ) {
-  const auto&  source           = *this;
+bool PCCPointSet3::transferColorWeight( PCCPointSet3 &target, const double bestColorSearchStep ) {
+  const auto  &source           = *this;
   const size_t pointCountSource = source.getPointCount();
   const size_t pointCountTarget = target.getPointCount();
   if ( ( pointCountSource == 0u ) || ( pointCountTarget == 0u ) || !source.hasColors() ) { return false; }
@@ -2271,7 +2593,7 @@ bool PCCPointSet3::transferColorWeight( PCCPointSet3& target, const double bestC
       }
       color16bit /= sum;
     } else {
-      const auto& found = source.getColor16bit( result.indices( 0 ) );
+      const auto &found = source.getColor16bit( result.indices( 0 ) );
       color16bit        = found;
     }
     target.getColor16bit( index ) = color16bit;
@@ -2279,7 +2601,82 @@ bool PCCPointSet3::transferColorWeight( PCCPointSet3& target, const double bestC
   return true;
 }
 
-void PCCPointSet3::copyNormals( const PCCPointSet3& sourceWithNormal ) {
+void PCCPointSet3::transferAttributes( PCCPointSet3 &target,
+                                       const int32_t searchRange,
+                                       bool          onlyRawPatch_,
+                                       const bool    losslessAttribute,
+                                       const int     numNeighborsAttributeTransferFwd,
+                                       const int     numNeighborsAttributeTransferBwd,
+                                       const bool    useDistWeightedAverageFwd,
+                                       const bool    useDistWeightedAverageBwd,
+                                       const bool    skipAvgIfIdenticalSourcePointPresentFwd,
+                                       const bool    skipAvgIfIdenticalSourcePointPresentBwd,
+                                       const double  distOffsetFwd,
+                                       const double  distOffsetBwd,
+                                       double        maxGeometryDist2Fwd,
+                                       double        maxGeometryDist2Bwd,
+                                       double        maxAttributeDist2Fwd,
+                                       double        maxAttributeDist2Bwd,
+                                       const bool    excludeAttributeOutlier,
+                                       const double  thresholdAttributeOutlierDist ) const {
+  if ( onlyRawPatch_ ) {
+    auto        &srcIdx           = target.getToSrcIdx();
+    const size_t pointCountTarget = target.getPointCount();
+    for ( size_t index = 0; index < pointCountTarget; ++index ) {
+      if ( hasSphericalHarmonics() ) { target.setSphericalHarmonic( index, getSphericalHarmonic( srcIdx[index] ) ); }
+      if ( hasOpacities() ) { target.setOpacity( index, getOpacity( srcIdx[index] ) ); }
+      if ( hasScales() ) { target.setScale( index, getScale( srcIdx[index] ) ); }
+      if ( hasRotations() ) { target.setRotation( index, getRotation( srcIdx[index] ) ); }
+    }
+    return;
+  }
+
+  if ( hasColors() ) {
+    transferColors( target, searchRange, losslessAttribute, numNeighborsAttributeTransferFwd,
+                    numNeighborsAttributeTransferBwd, useDistWeightedAverageFwd, useDistWeightedAverageBwd,
+                    skipAvgIfIdenticalSourcePointPresentFwd, skipAvgIfIdenticalSourcePointPresentBwd, distOffsetFwd,
+                    distOffsetBwd, maxGeometryDist2Fwd, maxGeometryDist2Bwd, maxAttributeDist2Fwd, maxAttributeDist2Bwd,
+                    excludeAttributeOutlier, thresholdAttributeOutlierDist );
+  }
+}
+
+bool PCCPointSet3::transferAttributeWeight( PCCPointSet3               &target,
+                                            const TransferAttributeType attributeType,
+                                            const double                bestColorSearchStep ) {
+  const auto  &source           = *this;
+  const size_t pointCountSource = source.getPointCount();
+  const size_t pointCountTarget = target.getPointCount();
+  if ( ( pointCountSource == 0u ) || ( pointCountTarget == 0u ) || !source.hasAttributeGS( attributeType ) ) {
+    return false;
+  }
+  target.addAttribute( attributeType );
+  PCCKdTree    kdtreeSource( source );
+  PCCNNResult  result;
+  const size_t num_results = 5;
+  for ( size_t index = 0; index < pointCountTarget; ++index ) {
+    kdtreeSource.search( target[index], num_results, result );
+    PCCVector3D attribute16bit( 0.0 );
+    if ( result.size() > 1 && result.dist( 0 ) > 0.0001 ) {
+      double sum = 0;
+      for ( size_t i = 0; i < result.size(); ++i ) {
+        const double w     = 1.0 / pow( result.dist( i ), 2.0 );
+        auto         found = source.getAttribute( attributeType, result.indices( i ) );
+        PCCVector3D  scaled;
+        scaled = found;
+        attribute16bit += scaled * w;
+        sum += w;
+      }
+      attribute16bit /= sum;
+    } else {
+      const auto &found = source.getAttribute( attributeType, result.indices( 0 ) );
+      attribute16bit    = found;
+    }
+    target.getAttribute( attributeType, index ) = attribute16bit;
+  }
+  return true;
+}
+
+void PCCPointSet3::copyNormals( const PCCPointSet3 &sourceWithNormal ) {
   if ( !sourceWithNormal.withNormals_ ) {
     std::cerr << "Normal object don't have normals \n" << std::endl;
     exit( -1 );
@@ -2319,7 +2716,7 @@ void PCCPointSet3::copyNormals( const PCCPointSet3& sourceWithNormal ) {
   }
 }
 
-void PCCPointSet3::scaleNormals( const PCCPointSet3& sourceWithNormal ) {
+void PCCPointSet3::scaleNormals( const PCCPointSet3 &sourceWithNormal ) {
   if ( !sourceWithNormal.withNormals_ ) {
     std::cerr << "Normal object don't have normals \n" << std::endl;
     exit( -1 );

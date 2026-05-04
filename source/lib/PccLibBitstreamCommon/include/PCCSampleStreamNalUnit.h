@@ -43,18 +43,18 @@ class SampleStreamNalUnit {
  public:
   SampleStreamNalUnit() : sizePrecisionBytesMinus1_( 0 ) {}
   ~SampleStreamNalUnit() { nalUnit_.clear(); }
-  NalUnit& addNalUnit() {
+  NalUnit &addNalUnit() {
     nalUnit_.resize( nalUnit_.size() + 1 );
     return nalUnit_.back();
   }
 
   void                  popFront() { nalUnit_.erase( nalUnit_.begin(), nalUnit_.begin() + 1 ); }
-  NalUnit&              front() { return *( nalUnit_.begin() ); }
-  std::vector<NalUnit>& getNalUnit() { return nalUnit_; }
-  NalUnit&              getNalUnit( size_t index ) { return nalUnit_[index]; }
+  NalUnit              &front() { return *( nalUnit_.begin() ); }
+  std::vector<NalUnit> &getNalUnit() { return nalUnit_; }
+  NalUnit              &getNalUnit( size_t index ) { return nalUnit_[index]; }
   size_t                getNalUnitCount() { return nalUnit_.size(); }
   uint8_t               getSizePrecisionBytesMinus1() { return sizePrecisionBytesMinus1_; }
-  NalUnit&              getLastNalUnit() { return nalUnit_.back(); }
+  NalUnit              &getLastNalUnit() { return nalUnit_.back(); }
   void                  setSizePrecisionBytesMinus1( uint8_t value ) { sizePrecisionBytesMinus1_ = value; }
 
  private:

@@ -40,7 +40,7 @@
 
 using namespace pcc;
 
-void PCCNormalsGenerator3::init( const size_t pointCount, const PCCNormalsGenerator3Parameters& params ) {
+void PCCNormalsGenerator3::init( const size_t pointCount, const PCCNormalsGenerator3Parameters &params ) {
   normals_.resize( pointCount );
   if ( params.storeNumberOfNearestNeighborsInNormalEstimation_ ) {
     numberOfNearestNeighborsInNormalEstimation_.resize( pointCount );
@@ -58,9 +58,9 @@ void PCCNormalsGenerator3::init( const size_t pointCount, const PCCNormalsGenera
     barycenters_.resize( 0 );
   }
 }
-void PCCNormalsGenerator3::compute( const PCCPointSet3&                   pointCloud,
-                                    const PCCKdTree&                      kdtree,
-                                    const PCCNormalsGenerator3Parameters& params,
+void PCCNormalsGenerator3::compute( const PCCPointSet3                   &pointCloud,
+                                    const PCCKdTree                      &kdtree,
+                                    const PCCNormalsGenerator3Parameters &params,
                                     const size_t                          nbThread ) {
   nbThread_ = nbThread;
   init( pointCloud.getPointCount(), params );
@@ -69,10 +69,10 @@ void PCCNormalsGenerator3::compute( const PCCPointSet3&                   pointC
   orientNormals( pointCloud, kdtree, params );
 }
 void PCCNormalsGenerator3::computeNormal( const size_t                          index,
-                                          const PCCPointSet3&                   pointCloud,
-                                          const PCCKdTree&                      kdtree,
-                                          const PCCNormalsGenerator3Parameters& params,
-                                          PCCNNResult&                          nNResult ) {
+                                          const PCCPointSet3                   &pointCloud,
+                                          const PCCKdTree                      &kdtree,
+                                          const PCCNormalsGenerator3Parameters &params,
+                                          PCCNNResult                          &nNResult ) {
   PCCVector3D bary( pointCloud[index][0], pointCloud[index][1], pointCloud[index][2] );
   PCCVector3D normal( 0.0 );
   PCCVector3D eigenval( 0.0 );
@@ -155,9 +155,9 @@ void PCCNormalsGenerator3::computeNormal( const size_t                          
     numberOfNearestNeighborsInNormalEstimation_[index] = uint32_t( nNResult.count() );
   }
 }
-void PCCNormalsGenerator3::computeNormals( const PCCPointSet3&                   pointCloud,
-                                           const PCCKdTree&                      kdtree,
-                                           const PCCNormalsGenerator3Parameters& params ) {
+void PCCNormalsGenerator3::computeNormals( const PCCPointSet3                   &pointCloud,
+                                           const PCCKdTree                      &kdtree,
+                                           const PCCNormalsGenerator3Parameters &params ) {
   const size_t pointCount = pointCloud.getPointCount();
   normals_.resize( pointCount );
   std::vector<size_t> subRanges;
@@ -183,9 +183,9 @@ void PCCNormalsGenerator3::computeNormals( const PCCPointSet3&                  
   }
 #endif
 }
-void PCCNormalsGenerator3::orientNormals( const PCCPointSet3&                   pointCloud,
-                                          const PCCKdTree&                      kdtree,
-                                          const PCCNormalsGenerator3Parameters& params ) {
+void PCCNormalsGenerator3::orientNormals( const PCCPointSet3                   &pointCloud,
+                                          const PCCKdTree                      &kdtree,
+                                          const PCCNormalsGenerator3Parameters &params ) {
 // save mesh with normals
 #ifdef DEBUG_NORMAL
   PCCPointSet3 saveNormal = pointCloud;
@@ -200,11 +200,11 @@ void PCCNormalsGenerator3::orientNormals( const PCCPointSet3&                   
     PCCNNResult  nNResult;
     visited_.resize( pointCount );
     std::fill( visited_.begin(), visited_.end(), 0 );
-    PCCNNQuery3 nNQuery  = {PCCPoint3D( 0.0 ),
-                           static_cast<float>( params.radiusNormalOrientation_ ) * params.radiusNormalOrientation_,
-                           params.numberOfNearestNeighborsInNormalOrientation_};
-    PCCNNQuery3 nNQuery2 = {PCCPoint3D( 0.0 ), ( std::numeric_limits<float>::max )(),
-                            params.numberOfNearestNeighborsInNormalOrientation_};
+    PCCNNQuery3 nNQuery  = { PCCPoint3D( 0.0 ),
+                             static_cast<float>( params.radiusNormalOrientation_ ) * params.radiusNormalOrientation_,
+                             params.numberOfNearestNeighborsInNormalOrientation_ };
+    PCCNNQuery3 nNQuery2 = { PCCPoint3D( 0.0 ), ( std::numeric_limits<float>::max )(),
+                             params.numberOfNearestNeighborsInNormalOrientation_ };
     for ( size_t ptIndex = 0; ptIndex < pointCount; ++ptIndex ) {
       if ( visited_[ptIndex] == 0u ) {
         visited_[ptIndex] = 1;
@@ -250,22 +250,22 @@ void PCCNormalsGenerator3::orientNormals( const PCCPointSet3&                   
     saveNormal4.write( "normal_orientation_spanning_tree_final.ply" );
 #endif
   } else if ( params.orientationStrategy_ == PCC_NORMALS_GENERATOR_ORIENTATION_VIEW_POINT ) {
-    const size_t    pointCount = pointCloud.getPointCount();
+    const size_t pointCount = pointCloud.getPointCount();
 #if defined( ENABLE_TBB )
     tbb::task_arena limited( static_cast<int>( nbThread_ ) );
     limited.execute( [&] {
       tbb::parallel_for( size_t( 0 ), pointCount, [&]( const size_t ptIndex ) {
 #else
-  for ( size_t ptIndex = 0; ptIndex < pointCount; ptIndex++ ) {
+    for ( size_t ptIndex = 0; ptIndex < pointCount; ptIndex++ ) {
 #endif
         if ( normals_[ptIndex] * ( params.viewPoint_ - pointCloud[ptIndex] ) < 0.0 ) {
           normals_[ptIndex] = -normals_[ptIndex];
         }
 #if defined( ENABLE_TBB )
+      } );
     } );
-  } );
 #else
-  }
+    }
 #endif
 #ifdef DEBUG_NORMAL
     // save mesh
@@ -292,10 +292,10 @@ void PCCNormalsGenerator3::orientNormals( const PCCPointSet3&                   
         PCCVector3D( -1, 0, 0 ), PCCVector3D( 0, -1, 0 ), PCCVector3D( 0, 0, -1 ),
         PCCVector3D( 1, 0, 0 ),  PCCVector3D( 0, 1, 0 ),  PCCVector3D( 0, 0, 1 ),
     };
-    double planeWidth[3]  = {( bb.max_[1] - bb.min_[1] ) + 1, ( bb.max_[2] - bb.min_[2] ) + 1,
-                            ( bb.max_[0] - bb.min_[0] ) + 1};
-    double planeHeight[3] = {( bb.max_[2] - bb.min_[2] ) + 1, ( bb.max_[0] - bb.min_[0] ) + 1,
-                             ( bb.max_[1] - bb.min_[1] ) + 1};
+    double planeWidth[3]  = { ( bb.max_[1] - bb.min_[1] ) + 1, ( bb.max_[2] - bb.min_[2] ) + 1,
+                              ( bb.max_[0] - bb.min_[0] ) + 1 };
+    double planeHeight[3] = { ( bb.max_[2] - bb.min_[2] ) + 1, ( bb.max_[0] - bb.min_[0] ) + 1,
+                              ( bb.max_[1] - bb.min_[1] ) + 1 };
     // allocating projection planes
     std::vector<std::vector<int>> projection;
 #ifdef DEBUG_NORMAL
@@ -449,11 +449,11 @@ void PCCNormalsGenerator3::orientNormals( const PCCPointSet3&                   
     saveNormal2.write( "normal_projection_orientation.ply" );
 #endif
     // smooth reference normals
-    PCCNNQuery3 nNQuery  = {PCCPoint3D( 0.0 ),
-                           static_cast<float>( params.radiusNormalOrientation_ ) * params.radiusNormalOrientation_,
-                           params.numberOfNearestNeighborsInNormalOrientation_};
-    PCCNNQuery3 nNQuery2 = {PCCPoint3D( 0.0 ), ( std::numeric_limits<float>::max )(),
-                            params.numberOfNearestNeighborsInNormalOrientation_};
+    PCCNNQuery3 nNQuery  = { PCCPoint3D( 0.0 ),
+                             static_cast<float>( params.radiusNormalOrientation_ ) * params.radiusNormalOrientation_,
+                             params.numberOfNearestNeighborsInNormalOrientation_ };
+    PCCNNQuery3 nNQuery2 = { PCCPoint3D( 0.0 ), ( std::numeric_limits<float>::max )(),
+                             params.numberOfNearestNeighborsInNormalOrientation_ };
 
     for ( size_t ptIndex = 0; ptIndex < pointCount; ++ptIndex ) {
       if ( visited_[ptIndex] == 1u ) {
@@ -519,12 +519,12 @@ void PCCNormalsGenerator3::orientNormals( const PCCPointSet3&                   
   }
 }
 void PCCNormalsGenerator3::addNeighbors( const uint32_t      current,
-                                         const PCCPointSet3& pointCloud,
-                                         const PCCKdTree&    kdtree,
-                                         PCCNNQuery3&        nNQuery,
-                                         PCCNNResult&        nNResult,
-                                         PCCVector3D&        accumulatedNormals,
-                                         size_t&             numberOfNormals ) {
+                                         const PCCPointSet3 &pointCloud,
+                                         const PCCKdTree    &kdtree,
+                                         PCCNNQuery3        &nNQuery,
+                                         PCCNNResult        &nNResult,
+                                         PCCVector3D        &accumulatedNormals,
+                                         size_t             &numberOfNormals ) {
   accumulatedNormals = 0.0;
   numberOfNormals    = 0;
   if ( nNQuery.radius > 32768.0 ) {
@@ -546,9 +546,9 @@ void PCCNormalsGenerator3::addNeighbors( const uint32_t      current,
     }
   }
 }
-void PCCNormalsGenerator3::smoothNormals( const PCCPointSet3&                   pointCloud,
-                                          const PCCKdTree&                      kdtree,
-                                          const PCCNormalsGenerator3Parameters& params ) {
+void PCCNormalsGenerator3::smoothNormals( const PCCPointSet3                   &pointCloud,
+                                          const PCCKdTree                      &kdtree,
+                                          const PCCNormalsGenerator3Parameters &params ) {
   const double        w2         = params.weightNormalSmoothing_;
   const double        w0         = ( 1 - w2 );
   const size_t        pointCount = pointCloud.getPointCount();
@@ -591,7 +591,7 @@ void PCCNormalsGenerator3::smoothNormals( const PCCPointSet3&                   
       } );
     } );
 #else
-  }
+    }
 #endif
   }
 }

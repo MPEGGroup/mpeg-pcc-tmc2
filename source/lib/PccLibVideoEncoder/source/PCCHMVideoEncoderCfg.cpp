@@ -63,7 +63,8 @@ namespace po = pcc_hm::df::program_options_lite;
 enum UIProfileName  // this is used for determining profile strings, where
                     // multiple profiles map to a single profile idc with
                     // various constraint flag combinations
-{ UI_NONE                 = 0,
+{
+  UI_NONE                 = 0,
   UI_MAIN                 = 1,
   UI_MAIN10               = 2,
   UI_MAIN10_STILL_PICTURE = 10002,
@@ -126,7 +127,8 @@ enum UIProfileName  // this is used for determining profile strings, where
   UI_SCC_MAIN_444_10           = 121310,
   UI_SCC_HIGHTHROUGHPUT_444    = 221308,
   UI_SCC_HIGHTHROUGHPUT_444_10 = 221310,
-  UI_SCC_HIGHTHROUGHPUT_444_14 = 221314 };
+  UI_SCC_HIGHTHROUGHPUT_444_14 = 221314
+};
 
 //! \ingroup TAppEncoder
 //! \{
@@ -171,8 +173,8 @@ Void PCCHMLibVideoEncoderCfg::create() {}
 Void PCCHMLibVideoEncoderCfg::destroy() {}
 
 namespace pcc_hm {
-std::istringstream& operator>>( std::istringstream& in,
-                                GOPEntry&           entry )  // input
+std::istringstream &operator>>( std::istringstream &in,
+                                GOPEntry           &entry )  // input
 {
   in >> entry.m_sliceType;
   in >> entry.m_POC;
@@ -200,7 +202,7 @@ std::istringstream& operator>>( std::istringstream& in,
   }
   return in;
 }
-Bool confirmPara( Bool bflag, const TChar* message );
+Bool confirmPara( Bool bflag, const TChar *message );
 }  // namespace pcc_hm
 
 static inline ChromaFormat numberToChromaFormat( const Int val ) {
@@ -214,140 +216,140 @@ static inline ChromaFormat numberToChromaFormat( const Int val ) {
 }
 
 static const struct MapStrToProfile {
-  const TChar*  str;
+  const TChar  *str;
   Profile::Name value;
-} strToProfile[] = {{"none", Profile::NONE},
-                    {"main", Profile::MAIN},
-                    {"main10", Profile::MAIN10},
-                    {"main-still-picture", Profile::MAINSTILLPICTURE},
-                    {"main10-still-picture", Profile::MAIN10},
-                    {"main-RExt", Profile::MAINREXT},
-                    {"high-throughput-RExt", Profile::HIGHTHROUGHPUTREXT},
-                    {"main-SCC", Profile::MAINSCC},
-                    {"high-throughput-SCC", Profile::HIGHTHROUGHPUTSCC}};
+} strToProfile[] = { { "none", Profile::NONE },
+                     { "main", Profile::MAIN },
+                     { "main10", Profile::MAIN10 },
+                     { "main-still-picture", Profile::MAINSTILLPICTURE },
+                     { "main10-still-picture", Profile::MAIN10 },
+                     { "main-RExt", Profile::MAINREXT },
+                     { "high-throughput-RExt", Profile::HIGHTHROUGHPUTREXT },
+                     { "main-SCC", Profile::MAINSCC },
+                     { "high-throughput-SCC", Profile::HIGHTHROUGHPUTSCC } };
 
 static const struct MapStrToUIProfileName {
-  const TChar*  str;
+  const TChar  *str;
   UIProfileName value;
 } strToUIProfileName[] = {
-    {"none", UI_NONE},
-    {"main", UI_MAIN},
-    {"main10", UI_MAIN10},
-    {"main10_still_picture", UI_MAIN10_STILL_PICTURE},
-    {"main10-still-picture", UI_MAIN10_STILL_PICTURE},
-    {"main_still_picture", UI_MAINSTILLPICTURE},
-    {"main-still-picture", UI_MAINSTILLPICTURE},
-    {"main_RExt", UI_MAINREXT},
-    {"main-RExt", UI_MAINREXT},
-    {"main_rext", UI_MAINREXT},
-    {"main-rext", UI_MAINREXT},
-    {"high_throughput_RExt", UI_HIGHTHROUGHPUTREXT},
-    {"high-throughput-RExt", UI_HIGHTHROUGHPUTREXT},
-    {"high_throughput_rext", UI_HIGHTHROUGHPUTREXT},
-    {"high-throughput-rext", UI_HIGHTHROUGHPUTREXT},
-    {"main-SCC", UI_MAINSCC},
-    {"main_SCC", UI_MAINSCC},
-    {"main-scc", UI_MAINSCC},
-    {"main_scc", UI_MAINSCC},
-    {"high_throughput_SCC", UI_HIGHTHROUGHPUTSCC},
-    {"high-throughput-SCC", UI_HIGHTHROUGHPUTSCC},
-    {"high_throughput_scc", UI_HIGHTHROUGHPUTSCC},
-    {"high-throughput-scc", UI_HIGHTHROUGHPUTSCC},
-    {"monochrome", UI_MONOCHROME_8},
-    {"monochrome12", UI_MONOCHROME_12},
-    {"monochrome16", UI_MONOCHROME_16},
-    {"main12", UI_MAIN_12},
-    {"main_422_10", UI_MAIN_422_10},
-    {"main_422_12", UI_MAIN_422_12},
-    {"main_444", UI_MAIN_444},
-    {"main_444_10", UI_MAIN_444_10},
-    {"main_444_12", UI_MAIN_444_12},
-    {"main_444_16", UI_MAIN_444_16},
-    {"main_intra", UI_MAIN_INTRA},
-    {"main_10_intra", UI_MAIN_10_INTRA},
-    {"main_12_intra", UI_MAIN_12_INTRA},
-    {"main_422_10_intra", UI_MAIN_422_10_INTRA},
-    {"main_422_12_intra", UI_MAIN_422_12_INTRA},
-    {"main_444_intra", UI_MAIN_444_INTRA},
-    {"main_444_still_picture", UI_MAIN_444_STILL_PICTURE},
-    {"main_444_10_intra", UI_MAIN_444_10_INTRA},
-    {"main_444_12_intra", UI_MAIN_444_12_INTRA},
-    {"main_444_16_intra", UI_MAIN_444_16_INTRA},
-    {"main_444_16_still_picture", UI_MAIN_444_16_STILL_PICTURE},
-    {"high_throughput_444", UI_HIGHTHROUGHPUT_444},
-    {"high_throughput_444_10", UI_HIGHTHROUGHPUT_444_10},
-    {"high_throughput_444_14", UI_HIGHTHROUGHPUT_444_14},
-    {"high_throughput_444_16_intra", UI_HIGHTHROUGHPUT_444_16_INTRA},
-    {"scc_main", UI_SCC_MAIN},
-    {"scc_main_10", UI_SCC_MAIN_10},
-    {"scc_main_444", UI_SCC_MAIN_444},
-    {"scc_main_444_10", UI_SCC_MAIN_444_10},
-    {"scc_high_throughput_444", UI_SCC_HIGHTHROUGHPUT_444},
-    {"scc_high_throughput_444_10", UI_SCC_HIGHTHROUGHPUT_444_10},
-    {"scc_high_throughput_444_14", UI_SCC_HIGHTHROUGHPUT_444_14},
+    { "none", UI_NONE },
+    { "main", UI_MAIN },
+    { "main10", UI_MAIN10 },
+    { "main10_still_picture", UI_MAIN10_STILL_PICTURE },
+    { "main10-still-picture", UI_MAIN10_STILL_PICTURE },
+    { "main_still_picture", UI_MAINSTILLPICTURE },
+    { "main-still-picture", UI_MAINSTILLPICTURE },
+    { "main_RExt", UI_MAINREXT },
+    { "main-RExt", UI_MAINREXT },
+    { "main_rext", UI_MAINREXT },
+    { "main-rext", UI_MAINREXT },
+    { "high_throughput_RExt", UI_HIGHTHROUGHPUTREXT },
+    { "high-throughput-RExt", UI_HIGHTHROUGHPUTREXT },
+    { "high_throughput_rext", UI_HIGHTHROUGHPUTREXT },
+    { "high-throughput-rext", UI_HIGHTHROUGHPUTREXT },
+    { "main-SCC", UI_MAINSCC },
+    { "main_SCC", UI_MAINSCC },
+    { "main-scc", UI_MAINSCC },
+    { "main_scc", UI_MAINSCC },
+    { "high_throughput_SCC", UI_HIGHTHROUGHPUTSCC },
+    { "high-throughput-SCC", UI_HIGHTHROUGHPUTSCC },
+    { "high_throughput_scc", UI_HIGHTHROUGHPUTSCC },
+    { "high-throughput-scc", UI_HIGHTHROUGHPUTSCC },
+    { "monochrome", UI_MONOCHROME_8 },
+    { "monochrome12", UI_MONOCHROME_12 },
+    { "monochrome16", UI_MONOCHROME_16 },
+    { "main12", UI_MAIN_12 },
+    { "main_422_10", UI_MAIN_422_10 },
+    { "main_422_12", UI_MAIN_422_12 },
+    { "main_444", UI_MAIN_444 },
+    { "main_444_10", UI_MAIN_444_10 },
+    { "main_444_12", UI_MAIN_444_12 },
+    { "main_444_16", UI_MAIN_444_16 },
+    { "main_intra", UI_MAIN_INTRA },
+    { "main_10_intra", UI_MAIN_10_INTRA },
+    { "main_12_intra", UI_MAIN_12_INTRA },
+    { "main_422_10_intra", UI_MAIN_422_10_INTRA },
+    { "main_422_12_intra", UI_MAIN_422_12_INTRA },
+    { "main_444_intra", UI_MAIN_444_INTRA },
+    { "main_444_still_picture", UI_MAIN_444_STILL_PICTURE },
+    { "main_444_10_intra", UI_MAIN_444_10_INTRA },
+    { "main_444_12_intra", UI_MAIN_444_12_INTRA },
+    { "main_444_16_intra", UI_MAIN_444_16_INTRA },
+    { "main_444_16_still_picture", UI_MAIN_444_16_STILL_PICTURE },
+    { "high_throughput_444", UI_HIGHTHROUGHPUT_444 },
+    { "high_throughput_444_10", UI_HIGHTHROUGHPUT_444_10 },
+    { "high_throughput_444_14", UI_HIGHTHROUGHPUT_444_14 },
+    { "high_throughput_444_16_intra", UI_HIGHTHROUGHPUT_444_16_INTRA },
+    { "scc_main", UI_SCC_MAIN },
+    { "scc_main_10", UI_SCC_MAIN_10 },
+    { "scc_main_444", UI_SCC_MAIN_444 },
+    { "scc_main_444_10", UI_SCC_MAIN_444_10 },
+    { "scc_high_throughput_444", UI_SCC_HIGHTHROUGHPUT_444 },
+    { "scc_high_throughput_444_10", UI_SCC_HIGHTHROUGHPUT_444_10 },
+    { "scc_high_throughput_444_14", UI_SCC_HIGHTHROUGHPUT_444_14 },
 };
 
 static const UIProfileName
     validRExtHighThroughPutProfileNames[2 /* intraConstraintFlag*/][4 /* bit depth constraint 8=0, 10=1, 12=2, 16=3*/] =
         {
-            {UI_HIGHTHROUGHPUT_444, UI_HIGHTHROUGHPUT_444_10, UI_HIGHTHROUGHPUT_444_14,
-             UI_NONE},  // intraConstraintFlag 0 - 8-bit,10-bit,14-bit and 16-bit
-            {UI_NONE, UI_NONE, UI_NONE, UI_HIGHTHROUGHPUT_444_16_INTRA}  // intraConstraintFlag 1 -
-                                                                         // 8-bit,10-bit,14-bit and 16-bit
+            { UI_HIGHTHROUGHPUT_444, UI_HIGHTHROUGHPUT_444_10, UI_HIGHTHROUGHPUT_444_14,
+              UI_NONE },  // intraConstraintFlag 0 - 8-bit,10-bit,14-bit and 16-bit
+            { UI_NONE, UI_NONE, UI_NONE, UI_HIGHTHROUGHPUT_444_16_INTRA }  // intraConstraintFlag 1 -
+                                                                           // 8-bit,10-bit,14-bit and 16-bit
 };
 
 static const UIProfileName validRExtProfileNames
     [2 /* intraConstraintFlag*/][4 /* bit depth constraint 8=0, 10=1, 12=2, 16=3*/][4 /*chroma format*/] = {
         {
-            {UI_MONOCHROME_8, UI_NONE, UI_NONE, UI_MAIN_444},                // 8-bit  inter for 400, 420, 422 and 444
-            {UI_NONE, UI_NONE, UI_MAIN_422_10, UI_MAIN_444_10},              // 10-bit inter for 400, 420, 422 and 444
-            {UI_MONOCHROME_12, UI_MAIN_12, UI_MAIN_422_12, UI_MAIN_444_12},  // 12-bit inter for 400, 420, 422 and 444
-            {UI_MONOCHROME_16, UI_NONE, UI_NONE, UI_MAIN_444_16}  // 16-bit inter for 400, 420, 422 and 444 (the latter
-                                                                  // is non standard used for development)
+            { UI_MONOCHROME_8, UI_NONE, UI_NONE, UI_MAIN_444 },                // 8-bit  inter for 400, 420, 422 and 444
+            { UI_NONE, UI_NONE, UI_MAIN_422_10, UI_MAIN_444_10 },              // 10-bit inter for 400, 420, 422 and 444
+            { UI_MONOCHROME_12, UI_MAIN_12, UI_MAIN_422_12, UI_MAIN_444_12 },  // 12-bit inter for 400, 420, 422 and 444
+            { UI_MONOCHROME_16, UI_NONE, UI_NONE, UI_MAIN_444_16 }  // 16-bit inter for 400, 420, 422 and 444 (the
+                                                                    // latter is non standard used for development)
         },
         {
-            {UI_NONE, UI_MAIN_INTRA, UI_NONE, UI_MAIN_444_INTRA},  // 8-bit  intra for 400, 420, 422 and 444
-            {UI_NONE, UI_MAIN_10_INTRA, UI_MAIN_422_10_INTRA,
-             UI_MAIN_444_10_INTRA},  // 10-bit intra for 400, 420, 422 and 444
-            {UI_NONE, UI_MAIN_12_INTRA, UI_MAIN_422_12_INTRA,
-             UI_MAIN_444_12_INTRA},                            // 12-bit intra for 400, 420, 422 and 444
-            {UI_NONE, UI_NONE, UI_NONE, UI_MAIN_444_16_INTRA}  // 16-bit intra for 400, 420, 422 and 444
-        }};
+            { UI_NONE, UI_MAIN_INTRA, UI_NONE, UI_MAIN_444_INTRA },  // 8-bit  intra for 400, 420, 422 and 444
+            { UI_NONE, UI_MAIN_10_INTRA, UI_MAIN_422_10_INTRA,
+              UI_MAIN_444_10_INTRA },  // 10-bit intra for 400, 420, 422 and 444
+            { UI_NONE, UI_MAIN_12_INTRA, UI_MAIN_422_12_INTRA,
+              UI_MAIN_444_12_INTRA },                            // 12-bit intra for 400, 420, 422 and 444
+            { UI_NONE, UI_NONE, UI_NONE, UI_MAIN_444_16_INTRA }  // 16-bit intra for 400, 420, 422 and 444
+        } };
 
 static const UIProfileName validSCCProfileNames
     [2 /* high throughput*/][4 /* bit depth constraint 8=0, 10=1, 12=2, 14=3*/][4 /*chroma format*/] = {
         {
-            {UI_NONE, UI_SCC_MAIN, UI_NONE, UI_SCC_MAIN_444},        // 8-bit  intra for 400, 420, 422 and 444
-            {UI_NONE, UI_SCC_MAIN_10, UI_NONE, UI_SCC_MAIN_444_10},  // 10-bit intra for 400, 420, 422 and 444
-            {UI_NONE, UI_NONE, UI_NONE, UI_NONE},                    // 12-bit intra for 400, 420, 422 and 444
-            {UI_NONE, UI_NONE, UI_NONE, UI_NONE}                     // 16-bit intra for 400, 420, 422 and 444
+            { UI_NONE, UI_SCC_MAIN, UI_NONE, UI_SCC_MAIN_444 },        // 8-bit  intra for 400, 420, 422 and 444
+            { UI_NONE, UI_SCC_MAIN_10, UI_NONE, UI_SCC_MAIN_444_10 },  // 10-bit intra for 400, 420, 422 and 444
+            { UI_NONE, UI_NONE, UI_NONE, UI_NONE },                    // 12-bit intra for 400, 420, 422 and 444
+            { UI_NONE, UI_NONE, UI_NONE, UI_NONE }                     // 16-bit intra for 400, 420, 422 and 444
         },
         {
-            {UI_NONE, UI_NONE, UI_NONE, UI_SCC_HIGHTHROUGHPUT_444},     // 8-bit  inter for 400, 420, 422 and 444
-            {UI_NONE, UI_NONE, UI_NONE, UI_SCC_HIGHTHROUGHPUT_444_10},  // 10-bit inter for 400, 420, 422 and
-                                                                        // 444
-            {UI_NONE, UI_NONE, UI_NONE, UI_NONE},                       // 12-bit inter for 400, 420, 422 and 444
-            {UI_NONE, UI_NONE, UI_NONE, UI_SCC_HIGHTHROUGHPUT_444_14}   // 16-bit inter for 400, 420, 422 and
-                                                                        // 444 (the latter is non standard used
-                                                                        // for development)
-        }};
+            { UI_NONE, UI_NONE, UI_NONE, UI_SCC_HIGHTHROUGHPUT_444 },     // 8-bit  inter for 400, 420, 422 and 444
+            { UI_NONE, UI_NONE, UI_NONE, UI_SCC_HIGHTHROUGHPUT_444_10 },  // 10-bit inter for 400, 420, 422 and
+                                                                          // 444
+            { UI_NONE, UI_NONE, UI_NONE, UI_NONE },                       // 12-bit inter for 400, 420, 422 and 444
+            { UI_NONE, UI_NONE, UI_NONE, UI_SCC_HIGHTHROUGHPUT_444_14 }   // 16-bit inter for 400, 420, 422 and
+                                                                          // 444 (the latter is non standard used
+                                                                          // for development)
+        } };
 
 static const struct MapStrToTier {
-  const TChar* str;
+  const TChar *str;
   Level::Tier  value;
 } strToTier[] = {
-    {"main", Level::MAIN},
-    {"high", Level::HIGH},
+    { "main", Level::MAIN },
+    { "high", Level::HIGH },
 };
 
 static const struct MapStrToLevel {
-  const TChar* str;
+  const TChar *str;
   Level::Name  value;
 } strToLevel[] = {
-    {"none", Level::NONE},    {"1", Level::LEVEL1},     {"2", Level::LEVEL2},     {"2.1", Level::LEVEL2_1},
-    {"3", Level::LEVEL3},     {"3.1", Level::LEVEL3_1}, {"4", Level::LEVEL4},     {"4.1", Level::LEVEL4_1},
-    {"5", Level::LEVEL5},     {"5.1", Level::LEVEL5_1}, {"5.2", Level::LEVEL5_2}, {"6", Level::LEVEL6},
-    {"6.1", Level::LEVEL6_1}, {"6.2", Level::LEVEL6_2}, {"8.5", Level::LEVEL8_5},
+    { "none", Level::NONE },    { "1", Level::LEVEL1 },     { "2", Level::LEVEL2 },     { "2.1", Level::LEVEL2_1 },
+    { "3", Level::LEVEL3 },     { "3.1", Level::LEVEL3_1 }, { "4", Level::LEVEL4 },     { "4.1", Level::LEVEL4_1 },
+    { "5", Level::LEVEL5 },     { "5.1", Level::LEVEL5_1 }, { "5.2", Level::LEVEL5_2 }, { "6", Level::LEVEL6 },
+    { "6.1", Level::LEVEL6_1 }, { "6.2", Level::LEVEL6_2 }, { "8.5", Level::LEVEL8_5 },
 };
 
 namespace pcc_hm {
@@ -355,27 +357,27 @@ UInt g_uiMaxCpbSize[2][21] = {
     //         LEVEL1,        LEVEL2,LEVEL2_1,     LEVEL3, LEVEL3_1,
     // LEVEL4, LEVEL4_1,       LEVEL5,  LEVEL5_1,  LEVEL5_2,    LEVEL6,
     // LEVEL6_1,  LEVEL6_2
-    {0, 0,        0,        350000, 0,        0,        1500000,  3000000,  0,         6000000,  10000000,
-     0, 12000000, 20000000, 0,      25000000, 40000000, 60000000, 60000000, 120000000, 240000000},
-    {0, 0,        0,        0, 0,         0,         0,         0,         0,         0,        0,
-     0, 30000000, 50000000, 0, 100000000, 160000000, 240000000, 240000000, 480000000, 800000000}};
+    { 0, 0,        0,        350000, 0,        0,        1500000,  3000000,  0,         6000000,  10000000,
+      0, 12000000, 20000000, 0,      25000000, 40000000, 60000000, 60000000, 120000000, 240000000 },
+    { 0, 0,        0,        0, 0,         0,         0,         0,         0,         0,        0,
+      0, 30000000, 50000000, 0, 100000000, 160000000, 240000000, 240000000, 480000000, 800000000 } };
 
 }  // namespace pcc_hm
 
 static const struct MapStrToCostMode {
-  const TChar* str;
+  const TChar *str;
   CostMode     value;
-} strToCostMode[] = {{"lossy", COST_STANDARD_LOSSY},
-                     {"sequence_level_lossless", COST_SEQUENCE_LEVEL_LOSSLESS},
-                     {"lossless", COST_LOSSLESS_CODING},
-                     {"mixed_lossless_lossy", COST_MIXED_LOSSLESS_LOSSY_CODING}};
+} strToCostMode[] = { { "lossy", COST_STANDARD_LOSSY },
+                      { "sequence_level_lossless", COST_SEQUENCE_LEVEL_LOSSLESS },
+                      { "lossless", COST_LOSSLESS_CODING },
+                      { "mixed_lossless_lossy", COST_MIXED_LOSSLESS_LOSSY_CODING } };
 
 static const struct MapStrToScalingListMode {
-  const TChar*    str;
+  const TChar    *str;
   ScalingListMode value;
-} strToScalingListMode[] = {{"0", SCALING_LIST_OFF},           {"1", SCALING_LIST_DEFAULT},
-                            {"2", SCALING_LIST_FILE_READ},     {"off", SCALING_LIST_OFF},
-                            {"default", SCALING_LIST_DEFAULT}, {"file", SCALING_LIST_FILE_READ}};
+} strToScalingListMode[] = { { "0", SCALING_LIST_OFF },           { "1", SCALING_LIST_DEFAULT },
+                             { "2", SCALING_LIST_FILE_READ },     { "off", SCALING_LIST_OFF },
+                             { "default", SCALING_LIST_DEFAULT }, { "file", SCALING_LIST_FILE_READ } };
 
 template <typename T, typename P>
 static std::string enumToString( P map[], UInt mapLen, const T val ) {
@@ -386,13 +388,12 @@ static std::string enumToString( P map[], UInt mapLen, const T val ) {
 }
 
 template <typename T, typename P>
-static istream& readStrToEnum( P map[], UInt mapLen, istream& in, T& val ) {
+static istream &readStrToEnum( P map[], UInt mapLen, istream &in, T &val ) {
   string str;
   in >> str;
 
   UInt i = 0;
-  for ( ; i < mapLen && str != map[i].str; i++ )
-    ;
+  for ( ; i < mapLen && str != map[i].str; i++ );
 
   if ( i < mapLen ) {
     val = map[i].value;
@@ -410,14 +411,10 @@ struct SMultiValueInputHM {
   const std::size_t maxNumValuesIncl;  // Use 0 for unlimited
   std::vector<T>    values;
   SMultiValueInputHM() : minValIncl( 0 ), maxValIncl( 0 ), minNumValuesIncl( 0 ), maxNumValuesIncl( 0 ), values() {}
-  SMultiValueInputHM( std::vector<T>& defaults ) :
-      minValIncl( 0 ),
-      maxValIncl( 0 ),
-      minNumValuesIncl( 0 ),
-      maxNumValuesIncl( 0 ),
-      values( defaults ) {}
-  SMultiValueInputHM( const T&    minValue,
-                      const T&    maxValue,
+  SMultiValueInputHM( std::vector<T> &defaults ) :
+      minValIncl( 0 ), maxValIncl( 0 ), minNumValuesIncl( 0 ), maxNumValuesIncl( 0 ), values( defaults ) {}
+  SMultiValueInputHM( const T    &minValue,
+                      const T    &maxValue,
                       std::size_t minNumberValues = 0,
                       std::size_t maxNumberValues = 0 ) :
       minValIncl( minValue ),
@@ -425,34 +422,34 @@ struct SMultiValueInputHM {
       minNumValuesIncl( minNumberValues ),
       maxNumValuesIncl( maxNumberValues ),
       values() {}
-  SMultiValueInputHM( const T&    minValue,
-                      const T&    maxValue,
+  SMultiValueInputHM( const T    &minValue,
+                      const T    &maxValue,
                       std::size_t minNumberValues,
                       std::size_t maxNumberValues,
-                      const T*    defValues,
+                      const T    *defValues,
                       const UInt  numDefValues ) :
       minValIncl( minValue ),
       maxValIncl( maxValue ),
       minNumValuesIncl( minNumberValues ),
       maxNumValuesIncl( maxNumberValues ),
       values( defValues, defValues + numDefValues ) {}
-  SMultiValueInputHM<T>& operator=( const std::vector<T>& userValues ) {
+  SMultiValueInputHM<T> &operator=( const std::vector<T> &userValues ) {
     values = userValues;
     return *this;
   }
-  SMultiValueInputHM<T>& operator=( const SMultiValueInputHM<T>& userValues ) {
+  SMultiValueInputHM<T> &operator=( const SMultiValueInputHM<T> &userValues ) {
     values = userValues.values;
     return *this;
   }
 
-  T readValue( const TChar*& pStr, Bool& bSuccess );
+  T readValue( const TChar *&pStr, Bool &bSuccess );
 
-  istream& readValues( std::istream& in );
+  istream &readValues( std::istream &in );
 };
 
 template <>
-UInt SMultiValueInputHM<UInt>::readValue( const TChar*& pStr, Bool& bSuccess ) {
-  TChar* eptr;
+UInt SMultiValueInputHM<UInt>::readValue( const TChar *&pStr, Bool &bSuccess ) {
+  TChar *eptr;
   UInt   val = strtoul( pStr, &eptr, 0 );
   pStr       = eptr;
   bSuccess   = !( *eptr != 0 && !isspace( *eptr ) && *eptr != ',' ) && !( val < minValIncl || val > maxValIncl );
@@ -460,8 +457,8 @@ UInt SMultiValueInputHM<UInt>::readValue( const TChar*& pStr, Bool& bSuccess ) {
 }
 
 template <>
-Int SMultiValueInputHM<Int>::readValue( const TChar*& pStr, Bool& bSuccess ) {
-  TChar* eptr;
+Int SMultiValueInputHM<Int>::readValue( const TChar *&pStr, Bool &bSuccess ) {
+  TChar *eptr;
   Int    val = strtol( pStr, &eptr, 0 );
   pStr       = eptr;
   bSuccess   = !( *eptr != 0 && !isspace( *eptr ) && *eptr != ',' ) && !( val < minValIncl || val > maxValIncl );
@@ -469,8 +466,8 @@ Int SMultiValueInputHM<Int>::readValue( const TChar*& pStr, Bool& bSuccess ) {
 }
 
 template <>
-Double SMultiValueInputHM<Double>::readValue( const TChar*& pStr, Bool& bSuccess ) {
-  TChar* eptr;
+Double SMultiValueInputHM<Double>::readValue( const TChar *&pStr, Bool &bSuccess ) {
+  TChar *eptr;
   Double val = strtod( pStr, &eptr );
   pStr       = eptr;
   bSuccess   = !( *eptr != 0 && !isspace( *eptr ) && *eptr != ',' ) && !( val < minValIncl || val > maxValIncl );
@@ -478,8 +475,8 @@ Double SMultiValueInputHM<Double>::readValue( const TChar*& pStr, Bool& bSuccess
 }
 
 template <>
-Bool SMultiValueInputHM<Bool>::readValue( const TChar*& pStr, Bool& bSuccess ) {
-  TChar* eptr;
+Bool SMultiValueInputHM<Bool>::readValue( const TChar *&pStr, Bool &bSuccess ) {
+  TChar *eptr;
   Int    val = strtol( pStr, &eptr, 0 );
   pStr       = eptr;
   bSuccess =
@@ -488,7 +485,7 @@ Bool SMultiValueInputHM<Bool>::readValue( const TChar*& pStr, Bool& bSuccess ) {
 }
 
 template <class T>
-istream& SMultiValueInputHM<T>::readValues( std::istream& in ) {
+istream &SMultiValueInputHM<T>::readValues( std::istream &in ) {
   values.clear();
   string str;
   while ( !in.eof() ) {
@@ -497,10 +494,9 @@ istream& SMultiValueInputHM<T>::readValues( std::istream& in ) {
     str += " " + tmp;
   }
   if ( !str.empty() ) {
-    const TChar* pStr = str.c_str();
+    const TChar *pStr = str.c_str();
     // soak up any whitespace
-    for ( ; isspace( *pStr ); pStr++ )
-      ;
+    for ( ; isspace( *pStr ); pStr++ );
 
     while ( *pStr != 0 ) {
       Bool bSuccess = true;
@@ -516,11 +512,9 @@ istream& SMultiValueInputHM<T>::readValues( std::istream& in ) {
       }
       values.push_back( val );
       // soak up any whitespace and up to 1 comma.
-      for ( ; isspace( *pStr ); pStr++ )
-        ;
+      for ( ; isspace( *pStr ); pStr++ );
       if ( *pStr == ',' ) { pStr++; }
-      for ( ; isspace( *pStr ); pStr++ )
-        ;
+      for ( ; isspace( *pStr ); pStr++ );
     }
   }
   if ( values.size() < minNumValuesIncl ) { in.setstate( ios::failbit ); }
@@ -531,18 +525,18 @@ istream& SMultiValueInputHM<T>::readValues( std::istream& in ) {
 
 // inline to prevent compiler warnings for "unused static function"
 
-static inline istream& operator>>( istream& in, UIProfileName& profile ) {
+static inline istream &operator>>( istream &in, UIProfileName &profile ) {
   return readStrToEnum( strToUIProfileName, sizeof( strToUIProfileName ) / sizeof( *strToUIProfileName ), in, profile );
 }
 
 template <class T>
-static inline istream& operator>>( std::istream& in, SMultiValueInputHM<T>& values ) {
+static inline istream &operator>>( std::istream &in, SMultiValueInputHM<T> &values ) {
   return values.readValues( in );
 }
 
 #if JVET_E0059_FLOATING_POINT_QP_FIX
 template <class T>
-static inline istream& operator>>( std::istream& in, PCCHMLibVideoEncoderCfg::OptionalValue<T>& value ) {
+static inline istream &operator>>( std::istream &in, PCCHMLibVideoEncoderCfg::OptionalValue<T> &value ) {
   in >> std::ws;
   if ( in.eof() ) {
     value.bPresent = false;
@@ -557,19 +551,19 @@ static inline istream& operator>>( std::istream& in, PCCHMLibVideoEncoderCfg::Op
 
 namespace pcc_hm {
 
-static inline istream& operator>>( istream& in, CostMode& mode ) {
+static inline istream &operator>>( istream &in, CostMode &mode ) {
   return readStrToEnum( strToCostMode, sizeof( strToCostMode ) / sizeof( *strToCostMode ), in, mode );
 }
-static inline istream& operator>>( istream& in, ScalingListMode& mode ) {
+static inline istream &operator>>( istream &in, ScalingListMode &mode ) {
   return readStrToEnum( strToScalingListMode, sizeof( strToScalingListMode ) / sizeof( *strToScalingListMode ), in,
                         mode );
 }
 namespace Level {
-static inline istream& operator>>( istream& in, Tier& tier ) {
+static inline istream &operator>>( istream &in, Tier &tier ) {
   return readStrToEnum( strToTier, sizeof( strToTier ) / sizeof( *strToTier ), in, tier );
 }
 
-static inline istream& operator>>( istream& in, Name& level ) {
+static inline istream &operator>>( istream &in, Name &level ) {
   return readStrToEnum( strToLevel, sizeof( strToLevel ) / sizeof( *strToLevel ), in, level );
 }
 }  // namespace Level
@@ -579,8 +573,8 @@ static Void automaticallySelectRExtProfile( const Bool         bUsingGeneralRExt
                                             const Bool         bUsingChromaQPAdjustment,
                                             const Bool         bUsingExtendedPrecision,
                                             const Bool         bIntraConstraintFlag,
-                                            UInt&              bitDepthConstraint,
-                                            ChromaFormat&      chromaFormatConstraint,
+                                            UInt              &bitDepthConstraint,
+                                            ChromaFormat      &chromaFormatConstraint,
                                             const Int          maxBitDepth,
                                             const ChromaFormat chromaFormat ) {
   // Try to choose profile, according to table in Q1013.
@@ -635,7 +629,7 @@ static Void automaticallySelectRExtProfile( const Bool         bUsingGeneralRExt
     \param  argv        array of arguments
     \retval             true when success
  */
-Bool PCCHMLibVideoEncoderCfg::parseCfg( Int argc, TChar* argv[] ) {
+Bool PCCHMLibVideoEncoderCfg::parseCfg( Int argc, TChar *argv[] ) {
   Bool do_help = false;
 
   Int           tmpChromaFormat;
@@ -671,8 +665,8 @@ Bool PCCHMLibVideoEncoderCfg::parseCfg( Int argc, TChar* argv[] ) {
                      ///[temporalLayer], else if size>0, use [size()-1], else use
                      /// m_adLambdaModifier.
 
-  const Int               defaultLumaLevelTodQp_QpChangePoints[]   = {-3, -2, -1, 0, 1, 2, 3, 4, 5, 6};
-  const Int               defaultLumaLevelTodQp_LumaChangePoints[] = {0, 301, 367, 434, 501, 567, 634, 701, 767, 834};
+  const Int               defaultLumaLevelTodQp_QpChangePoints[]   = { -3, -2, -1, 0, 1, 2, 3, 4, 5, 6 };
+  const Int               defaultLumaLevelTodQp_LumaChangePoints[] = { 0, 301, 367, 434, 501, 567, 634, 701, 767, 834 };
   SMultiValueInputHM<Int> cfg_lumaLeveltoDQPMappingQP( -MAX_QP, MAX_QP, 0, LUMA_LEVEL_TO_DQP_LUT_MAXSIZE,
                                                        defaultLumaLevelTodQp_QpChangePoints,
                                                        sizeof( defaultLumaLevelTodQp_QpChangePoints ) / sizeof( Int ) );
@@ -681,19 +675,19 @@ Bool PCCHMLibVideoEncoderCfg::parseCfg( Int argc, TChar* argv[] ) {
       sizeof( defaultLumaLevelTodQp_LumaChangePoints ) / sizeof( Int ) );
   UInt lumaLevelToDeltaQPMode;
 
-  const UInt               defaultInputKneeCodes[3]       = {600, 800, 900};
-  const UInt               defaultOutputKneeCodes[3]      = {100, 250, 450};
+  const UInt               defaultInputKneeCodes[3]       = { 600, 800, 900 };
+  const UInt               defaultOutputKneeCodes[3]      = { 100, 250, 450 };
   Int                      cfg_kneeSEINumKneePointsMinus1 = 0;
   SMultiValueInputHM<UInt> cfg_kneeSEIInputKneePointValue( 1, 999, 0, 999, defaultInputKneeCodes,
                                                            sizeof( defaultInputKneeCodes ) / sizeof( UInt ) );
   SMultiValueInputHM<UInt> cfg_kneeSEIOutputKneePointValue( 0, 1000, 0, 999, defaultOutputKneeCodes,
                                                             sizeof( defaultOutputKneeCodes ) / sizeof( UInt ) );
-  const Int                defaultPrimaryCodes[6]   = {0, 50000, 0, 0, 50000, 0};
-  const Int                defaultWhitePointCode[2] = {16667, 16667};
+  const Int                defaultPrimaryCodes[6]   = { 0, 50000, 0, 0, 50000, 0 };
+  const Int                defaultWhitePointCode[2] = { 16667, 16667 };
   SMultiValueInputHM<Int>  cfg_DisplayPrimariesCode( 0, 50000, 6, 6, defaultPrimaryCodes,
-                                                    sizeof( defaultPrimaryCodes ) / sizeof( Int ) );
+                                                     sizeof( defaultPrimaryCodes ) / sizeof( Int ) );
   SMultiValueInputHM<Int>  cfg_DisplayWhitePointCode( 0, 50000, 2, 2, defaultWhitePointCode,
-                                                     sizeof( defaultWhitePointCode ) / sizeof( Int ) );
+                                                      sizeof( defaultWhitePointCode ) / sizeof( Int ) );
 
   SMultiValueInputHM<Bool> cfg_timeCodeSeiTimeStampFlag( 0, 1, 0, MAX_TIMECODE_SEI_SETS );
   SMultiValueInputHM<Bool> cfg_timeCodeSeiNumUnitFieldBasedFlag( 0, 1, 0, MAX_TIMECODE_SEI_SETS );
@@ -710,7 +704,7 @@ Bool PCCHMLibVideoEncoderCfg::parseCfg( Int argc, TChar* argv[] ) {
   SMultiValueInputHM<Bool> cfg_timeCodeSeiHoursFlag( 0, 1, 0, MAX_TIMECODE_SEI_SETS );
   SMultiValueInputHM<Int>  cfg_timeCodeSeiTimeOffsetLength( 0, 31, 0, MAX_TIMECODE_SEI_SETS );
   SMultiValueInputHM<Int>  cfg_timeCodeSeiTimeOffsetValue( std::numeric_limits<Int>::min(),
-                                                          std::numeric_limits<Int>::max(), 0, MAX_TIMECODE_SEI_SETS );
+                                                           std::numeric_limits<Int>::max(), 0, MAX_TIMECODE_SEI_SETS );
 #if ERP_SR_OV_SEI_MESSAGE
   SMultiValueInputHM<Int>  cfg_omniViewportSEIAzimuthCentre( -11796480, 11796479, 0, 15 );
   SMultiValueInputHM<Int>  cfg_omniViewportSEIElevationCentre( -5898240, 5898240, 0, 15 );
@@ -1309,9 +1303,9 @@ Bool PCCHMLibVideoEncoderCfg::parseCfg( Int argc, TChar* argv[] ) {
     opts.addOptions()( cOSS.str(), m_GOPList[i - 1], GOPEntry() );
   }
   po::setDefaults( opts );
-  po::ErrorReporter         err;
-  const list<const TChar*>& argv_unhandled = po::scanArgv( opts, argc, (const TChar**)argv, err );
-  for ( list<const TChar*>::const_iterator it = argv_unhandled.begin(); it != argv_unhandled.end(); it++ ) {
+  po::ErrorReporter          err;
+  const list<const TChar *> &argv_unhandled = po::scanArgv( opts, argc, (const TChar **)argv, err );
+  for ( list<const TChar *>::const_iterator it = argv_unhandled.begin(); it != argv_unhandled.end(); it++ ) {
     fprintf( stderr, "Unhandled argument ignored: `%s'\n", *it );
   }
 
@@ -1566,7 +1560,7 @@ Bool PCCHMLibVideoEncoderCfg::parseCfg( Int argc, TChar* argv[] ) {
           const Int maxBitDepth = m_chromaFormatIDC == CHROMA_400 ? m_internalBitDepth[CHANNEL_TYPE_LUMA]
                                                                   : std::max( m_internalBitDepth[CHANNEL_TYPE_LUMA],
                                                                               m_internalBitDepth[CHANNEL_TYPE_CHROMA] );
-          m_bitDepthConstraint = maxBitDepth > 8 ? 16 : 8;
+          m_bitDepthConstraint  = maxBitDepth > 8 ? 16 : 8;
         } else {
           m_chromaFormatConstraint = NUM_CHROMA_FORMAT;
           automaticallySelectRExtProfile(
@@ -1624,8 +1618,8 @@ Bool PCCHMLibVideoEncoderCfg::parseCfg( Int argc, TChar* argv[] ) {
     case Profile::NONE:
       m_chromaFormatConstraint = m_chromaFormatIDC;
       m_bitDepthConstraint     = m_chromaFormatIDC == CHROMA_400 ? m_internalBitDepth[CHANNEL_TYPE_LUMA]
-                                                             : std::max( m_internalBitDepth[CHANNEL_TYPE_LUMA],
-                                                                         m_internalBitDepth[CHANNEL_TYPE_CHROMA] );
+                                                                 : std::max( m_internalBitDepth[CHANNEL_TYPE_LUMA],
+                                                                             m_internalBitDepth[CHANNEL_TYPE_CHROMA] );
       break;
     default:
       fprintf( stderr, "Unknown profile selected\n" );
@@ -1742,11 +1736,11 @@ Bool PCCHMLibVideoEncoderCfg::parseCfg( Int argc, TChar* argv[] ) {
   // handling of floating-point QP values
   // if QP is not integer, sequence is split into two sections having QP and
   // QP+1
-  m_iQP = ( Int )( m_fQP );
+  m_iQP = (Int)( m_fQP );
   if ( m_iQP < m_fQP ) {
-    Int iSwitchPOC = ( Int )( m_framesToBeEncoded - ( m_fQP - m_iQP ) * m_framesToBeEncoded + 0.5 );
+    Int iSwitchPOC = (Int)( m_framesToBeEncoded - ( m_fQP - m_iQP ) * m_framesToBeEncoded + 0.5 );
 
-    iSwitchPOC = ( Int )( (Double)iSwitchPOC / m_iGOPSize + 0.5 ) * m_iGOPSize;
+    iSwitchPOC = (Int)( (Double)iSwitchPOC / m_iGOPSize + 0.5 ) * m_iGOPSize;
     for ( Int i = iSwitchPOC; i < m_framesToBeEncoded + m_iGOPSize + 1; i++ ) { m_aidQP[i] = 1; }
   }
 #endif
@@ -1779,7 +1773,7 @@ Bool PCCHMLibVideoEncoderCfg::parseCfg( Int argc, TChar* argv[] ) {
 
   // reading external dQP description from file
   if ( !m_dQPFileName.empty() ) {
-    FILE* fpt = fopen( m_dQPFileName.c_str(), "r" );
+    FILE *fpt = fopen( m_dQPFileName.c_str(), "r" );
     if ( fpt ) {
       Int iValue;
       Int iPOC = 0;
@@ -1832,7 +1826,7 @@ Bool PCCHMLibVideoEncoderCfg::parseCfg( Int argc, TChar* argv[] ) {
     assert( cfg_kneeSEINumKneePointsMinus1 >= 0 && cfg_kneeSEINumKneePointsMinus1 < 999 );
     m_kneeFunctionInformationSEI.m_kneeSEIKneePointPairs.resize( cfg_kneeSEINumKneePointsMinus1 + 1 );
     for ( Int i = 0; i < ( cfg_kneeSEINumKneePointsMinus1 + 1 ); i++ ) {
-      TEncCfg::TEncSEIKneeFunctionInformation::KneePointPair& kpp =
+      TEncCfg::TEncSEIKneeFunctionInformation::KneePointPair &kpp =
           m_kneeFunctionInformationSEI.m_kneeSEIKneePointPairs[i];
       kpp.inputKneePoint =
           cfg_kneeSEIInputKneePointValue.values.size() > i ? cfg_kneeSEIInputKneePointValue.values[i] : 1;
@@ -2052,8 +2046,8 @@ Void PCCHMLibVideoEncoderCfg::xCheckParameter() {
                           : ( m_bitDepthConstraint == 12 ? 2 : ( m_bitDepthConstraint == 16 ? 3 : 4 ) ) ) );
         const UInt chromaFormatIdx = UInt( m_chromaFormatConstraint );
         const Bool bValidProfile   = ( bitDepthIdx > 3 || chromaFormatIdx > 3 )
-                                       ? false
-                                       : ( validRExtProfileNames[intraIdx][bitDepthIdx][chromaFormatIdx] != UI_NONE );
+                                         ? false
+                                         : ( validRExtProfileNames[intraIdx][bitDepthIdx][chromaFormatIdx] != UI_NONE );
         xConfirmPara( !bValidProfile,
                       "Invalid intra constraint flag, bit depth constraint flag "
                       "and chroma format constraint flag combination for a RExt "
@@ -2063,7 +2057,7 @@ Void PCCHMLibVideoEncoderCfg::xCheckParameter() {
                                             m_rdpcmEnabledFlag[RDPCM_SIGNAL_EXPLICIT] ||
                                             !m_enableIntraReferenceSmoothing || m_persistentRiceAdaptationEnabledFlag ||
                                             m_log2MaxTransformSkipBlockSize != 2;
-        const Bool bUsingChromaQPTool      = m_diffCuChromaQpOffsetDepth >= 0;
+        const Bool bUsingChromaQPTool     = m_diffCuChromaQpOffsetDepth >= 0;
         const Bool bUsingExtendedPrecision = m_extendedPrecisionProcessingFlag;
 
         xConfirmPara(
@@ -2789,7 +2783,7 @@ Void PCCHMLibVideoEncoderCfg::xCheckParameter() {
           Int newIdc  = 0;
           for ( Int i = 0; i <= refPics; i++ ) {
             Int deltaPOC  = ( ( i != refPics ) ? m_GOPList[rIdx].m_referencePics[i]
-                                              : 0 );  // check if the reference abs POC is >= 0
+                                               : 0 );  // check if the reference abs POC is >= 0
             Int absPOCref = refPOC + deltaPOC;
             Int refIdc    = 0;
             for ( Int j = 0; j < m_GOPList[m_iGOPSize + m_extraRPSs].m_numRefPics; j++ ) {
@@ -2958,7 +2952,7 @@ Void PCCHMLibVideoEncoderCfg::xCheckParameter() {
     xConfirmPara( kneeSEINumKneePointsMinus1 < 0 || kneeSEINumKneePointsMinus1 > 998,
                   "SEIKneeFunctionNumKneePointsMinus1 must be in the range of 0 to 998" );
     for ( UInt i = 0; i <= kneeSEINumKneePointsMinus1; i++ ) {
-      TEncCfg::TEncSEIKneeFunctionInformation::KneePointPair& kpp =
+      TEncCfg::TEncSEIKneeFunctionInformation::KneePointPair &kpp =
           m_kneeFunctionInformationSEI.m_kneeSEIKneePointPairs[i];
       xConfirmPara( kpp.inputKneePoint < 1 || kpp.inputKneePoint > 999,
                     "SEIKneeFunctionInputKneePointValue must be in the range of "
@@ -2967,7 +2961,7 @@ Void PCCHMLibVideoEncoderCfg::xCheckParameter() {
                     "SEIKneeFunctionOutputKneePointValue must be in the range "
                     "of 0 to 1000" );
       if ( i > 0 ) {
-        TEncCfg::TEncSEIKneeFunctionInformation::KneePointPair& kppPrev =
+        TEncCfg::TEncSEIKneeFunctionInformation::KneePointPair &kppPrev =
             m_kneeFunctionInformationSEI.m_kneeSEIKneePointPairs[i - 1];
         xConfirmPara( kppPrev.inputKneePoint >= kpp.inputKneePoint,
                       "The i-th SEIKneeFunctionInputKneePointValue must be "
@@ -3003,8 +2997,7 @@ Void PCCHMLibVideoEncoderCfg::xCheckParameter() {
                   "Rate control cannot be used together with slice level "
                   "multiple-QP optimization!\n" );
     if ( ( m_RCCpbSaturationEnabled ) && ( m_level != Level::NONE ) && ( m_profile != Profile::NONE ) ) {
-      UInt uiLevelIdx =
-          ( m_level / 10 ) + ( UInt )( ( m_level % 10 ) / 3 );  // (m_level / 30)*3 + ((m_level % 10) / 3);
+      UInt uiLevelIdx = ( m_level / 10 ) + (UInt)( ( m_level % 10 ) / 3 );  // (m_level / 30)*3 + ((m_level % 10) / 3);
       xConfirmPara( m_RCCpbSize > g_uiMaxCpbSize[m_levelTier][uiLevelIdx],
                     "RCCpbSize should be smaller than or equal to Max CPB size "
                     "according to tier and level" );
@@ -3169,7 +3162,7 @@ Void PCCHMLibVideoEncoderCfg::xCheckParameter() {
   if ( check_failed ) { exit( EXIT_FAILURE ); }
 }
 
-const TChar* profileToString( const Profile::Name profile ) {
+const TChar *profileToString( const Profile::Name profile ) {
   static const UInt numberOfProfiles = sizeof( strToProfile ) / sizeof( *strToProfile );
 
   for ( UInt profileIndex = 0; profileIndex < numberOfProfiles; profileIndex++ ) {
@@ -3244,8 +3237,8 @@ Void PCCHMLibVideoEncoderCfg::xPrintParameter() {
                         : ( m_bitDepthConstraint == 12 ? 2 : ( m_bitDepthConstraint == 16 ? 3 : 4 ) ) ) );
       const UInt chromaFormatIdx = UInt( m_chromaFormatConstraint );
       validProfileName           = ( bitDepthIdx > 3 || chromaFormatIdx > 3 )
-                             ? UI_NONE
-                             : validRExtProfileNames[intraIdx][bitDepthIdx][chromaFormatIdx];
+                                       ? UI_NONE
+                                       : validRExtProfileNames[intraIdx][bitDepthIdx][chromaFormatIdx];
     }
     std::string rextSubProfile;
     if ( validProfileName != UI_NONE ) {
@@ -3483,7 +3476,7 @@ Void PCCHMLibVideoEncoderCfg::xPrintParameter() {
 }
 
 namespace pcc_hm {
-Bool confirmPara( Bool bflag, const TChar* message ) {
+Bool confirmPara( Bool bflag, const TChar *message ) {
   if ( !bflag ) { return false; }
 
   printf( "Error: %s\n", message );

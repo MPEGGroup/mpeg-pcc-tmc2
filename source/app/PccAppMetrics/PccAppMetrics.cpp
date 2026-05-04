@@ -47,7 +47,7 @@ using namespace std;
 using namespace pcc;
 using pcc::chrono::StopwatchUserTime;
 
-bool parseParameters( int argc, char* argv[], PCCMetricsParameters& metricsParams ) {
+bool parseParameters( int argc, char *argv[], PCCMetricsParameters &metricsParams ) {
   namespace po      = df::program_options_lite;
   bool   print_help = false;
   size_t ignore     = 0;
@@ -112,8 +112,8 @@ bool parseParameters( int argc, char* argv[], PCCMetricsParameters& metricsParam
     ( "surfaceSeparation", ignore, ignore, "Ignore parameter" );
   // clang-format on
   po::setDefaults( opts );
-  po::ErrorReporter        err;
-  const list<const char*>& argv_unhandled = po::scanArgv( opts, argc, (const char**)argv, err );
+  po::ErrorReporter         err;
+  const list<const char *> &argv_unhandled = po::scanArgv( opts, argc, (const char **)argv, err );
   for ( const auto arg : argv_unhandled ) { printf( "Unhandled argument ignored: %s \n", arg ); }
   if ( argc == 1 || print_help ) {
     po::doHelp( std::cout, opts, 78 );
@@ -133,7 +133,7 @@ bool parseParameters( int argc, char* argv[], PCCMetricsParameters& metricsParam
   return true;
 }
 
-int computeMetrics( const PCCMetricsParameters& metricsParams, StopwatchUserTime& clock ) {
+int computeMetrics( const PCCMetricsParameters &metricsParams, StopwatchUserTime &clock ) {
   PCCMetrics metrics;
   metrics.setParameters( metricsParams );
   for ( size_t frameIndex = metricsParams.startFrameNumber_;
@@ -159,7 +159,7 @@ int computeMetrics( const PCCMetricsParameters& metricsParams, StopwatchUserTime
   return 0;
 }
 
-int main( int argc, char* argv[] ) {
+int main( int argc, char *argv[] ) {
   std::cout << "PccAppMetrics v" << TMC2_VERSION_MAJOR << "." << TMC2_VERSION_MINOR << std::endl << std::endl;
 
   PCCMetricsParameters metricsParams;

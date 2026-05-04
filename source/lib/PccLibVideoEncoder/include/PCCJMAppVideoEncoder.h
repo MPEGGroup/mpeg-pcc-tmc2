@@ -48,13 +48,13 @@ class PCCJMAppVideoEncoder : public PCCVirtualVideoEncoder<T> {
   PCCJMAppVideoEncoder();
   ~PCCJMAppVideoEncoder();
 
-  void encode( PCCVideo<T, 3>&            videoSrc,
-               PCCVideoEncoderParameters& params,
-               PCCVideoBitstream&         bitstream,
-               PCCVideo<T, 3>&            videoRec );
+  void encode( PCCVideo<T, 3>            &videoSrc,
+               PCCVideoEncoderParameters &params,
+               PCCVideoBitstream         &bitstream,
+               PCCVideo<T, 3>            &videoRec );
 
  private:
-  PCCCOLORFORMAT getColorFormat( std::string& name );
+  PCCCOLORFORMAT getColorFormat( std::string &name );
 };
 
 }  // namespace pcc

@@ -1,0 +1,5 @@
+black==26.1.0
+clang-format==21.1.8
+clang-tidy==21.1.6
+cmake==3.31.10
+cmake-format==0.6.13

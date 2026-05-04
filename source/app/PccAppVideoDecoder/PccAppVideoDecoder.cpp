@@ -43,7 +43,7 @@ using namespace std;
 using namespace pcc;
 
 namespace pcc {
-static std::istream& operator>>( std::istream& in, PCCCodecId& val ) {
+static std::istream &operator>>( std::istream &in, PCCCodecId &val ) {
   unsigned int tmp;
   in >> tmp;
   val = PCCCodecId( tmp );
@@ -51,7 +51,7 @@ static std::istream& operator>>( std::istream& in, PCCCodecId& val ) {
 }
 }  // namespace pcc
 
-int main( int argc, char* argv[] ) {
+int main( int argc, char *argv[] ) {
   std::cout << "PccAppVideoDecoder v" << TMC2_VERSION_MAJOR << "." << TMC2_VERSION_MINOR << std::endl << std::endl;
   std::string binFile, path;
   size_t      width = 0, height = 0, nbyte = 0;
@@ -71,8 +71,8 @@ int main( int argc, char* argv[] ) {
 
   // clang-format on
   po::setDefaults( opts );
-  po::ErrorReporter        err;
-  const list<const char*>& argv_unhandled = po::scanArgv( opts, argc, (const char**)argv, err );
+  po::ErrorReporter         err;
+  const list<const char *> &argv_unhandled = po::scanArgv( opts, argc, (const char **)argv, err );
   for ( const auto arg : argv_unhandled ) { printf( "Unhandled argument ignored: %s \n", arg ); }
   if ( argc == 1 || print_help ) {
     po::doHelp( std::cout, opts, 78 );

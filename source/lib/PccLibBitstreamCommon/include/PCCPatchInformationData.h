@@ -47,29 +47,29 @@ namespace pcc {
 // 8.3.7.2  Patch information data syntax (pid)
 class PatchInformationData {
  public:
-  PatchInformationData(){};
-  ~PatchInformationData(){};
-  PatchInformationData& operator=( const PatchInformationData& ) = default;
+  PatchInformationData() {};
+  ~PatchInformationData() {};
+  PatchInformationData &operator=( const PatchInformationData & ) = default;
 
   size_t              getTileOrder() { return tileOrder_; }
   size_t              getPatchIndex() { return patchIndex_; }
   uint8_t             getPatchMode() { return patchMode_; }
-  PatchDataUnit&      getPatchDataUnit() { return patchDataUnit_; }
-  InterPatchDataUnit& getInterPatchDataUnit() { return interPatchDataUnit_; }
-  MergePatchDataUnit& getMergePatchDataUnit() { return mergePatchDataUnit_; }
-  SkipPatchDataUnit&  getSkipPatchDataUnit() { return skipPatchDataUnit_; }
-  RawPatchDataUnit&   getRawPatchDataUnit() { return rawPatchyDataUnit_; }
-  EOMPatchDataUnit&   getEomPatchDataUnit() { return eomPatchDataUnit_; }
+  PatchDataUnit      &getPatchDataUnit() { return patchDataUnit_; }
+  InterPatchDataUnit &getInterPatchDataUnit() { return interPatchDataUnit_; }
+  MergePatchDataUnit &getMergePatchDataUnit() { return mergePatchDataUnit_; }
+  SkipPatchDataUnit  &getSkipPatchDataUnit() { return skipPatchDataUnit_; }
+  RawPatchDataUnit   &getRawPatchDataUnit() { return rawPatchyDataUnit_; }
+  EOMPatchDataUnit   &getEomPatchDataUnit() { return eomPatchDataUnit_; }
 
   void setTileOrder( size_t value ) { tileOrder_ = value; }
   void setPatchIndex( size_t value ) { patchIndex_ = value; }
   void setPatchMode( uint8_t value ) { patchMode_ = value; }
-  void setPatchDataUnit( PatchDataUnit& value ) { patchDataUnit_ = value; }
-  void setInterPatchDataUnit( InterPatchDataUnit& value ) { interPatchDataUnit_ = value; }
-  void setMergePatchDataUnit( MergePatchDataUnit& value ) { mergePatchDataUnit_ = value; }
-  void setSkipPatchDataUnit( SkipPatchDataUnit& value ) { skipPatchDataUnit_ = value; }
-  void setRawPatchDataUnit( RawPatchDataUnit& value ) { rawPatchyDataUnit_ = value; }
-  void setEomPatchDataUnit( EOMPatchDataUnit& value ) { eomPatchDataUnit_ = value; }
+  void setPatchDataUnit( PatchDataUnit &value ) { patchDataUnit_ = value; }
+  void setInterPatchDataUnit( InterPatchDataUnit &value ) { interPatchDataUnit_ = value; }
+  void setMergePatchDataUnit( MergePatchDataUnit &value ) { mergePatchDataUnit_ = value; }
+  void setSkipPatchDataUnit( SkipPatchDataUnit &value ) { skipPatchDataUnit_ = value; }
+  void setRawPatchDataUnit( RawPatchDataUnit &value ) { rawPatchyDataUnit_ = value; }
+  void setEomPatchDataUnit( EOMPatchDataUnit &value ) { eomPatchDataUnit_ = value; }
 
  private:
   size_t             tileOrder_;

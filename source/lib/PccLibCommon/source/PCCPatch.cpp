@@ -44,8 +44,9 @@ static const std::vector<uint8_t> g_orientation = {
     5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 7, 7, 0, 0, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 7, 0, 0, 0, 0, 0, 0,
-    0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 3, 3, 0, 3, 0, 0, 0, 4, 1, 0, 0, 0, 1, 0, 1, 0, 2, 3, 0, 0, 1, 2, 0, 0};
-static const int8_t g_dilate[8][2] = {{1, 0}, {1, 1}, {0, 1}, {-1, 1}, {-1, 0}, {-1, -1}, {0, -1}, {1, -1}};
+    0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 3, 3, 0, 3, 0, 0, 0, 4, 1, 0, 0, 0, 1, 0, 1, 0, 2, 3, 0, 0, 1, 2, 0, 0 };
+static const int8_t g_dilate[8][2] = { { 1, 0 },  { 1, 1 },   { 0, 1 },  { -1, 1 },
+                                       { -1, 0 }, { -1, -1 }, { 0, -1 }, { 1, -1 } };
 
 #define OCC( tl, t, tr, l, v, r, bl, b, br ) \
   ( ( tl << 7 ) | ( t << 6 ) | ( tr << 5 ) | ( l << 4 ) | ( r << 3 ) | ( bl << 2 ) | ( b << 1 ) | ( br ) )
@@ -193,8 +194,8 @@ size_t PCCPatch::patch2Canvas( const size_t u,
                                const size_t v,
                                size_t       canvasStride,
                                size_t       canvasHeight,
-                               size_t&      x,
-                               size_t&      y ) {
+                               size_t      &x,
+                               size_t      &y ) {
   switch ( patchOrientation_ ) {
     case PATCH_ORIENTATION_DEFAULT:
       x = u + u0_ * occupancyResolution_;
@@ -334,7 +335,7 @@ bool PCCPatch::checkFitPatchCanvas( std::vector<bool> canvas,
   return true;
 }
 
-bool PCCPatch::smallerRefFirst( const PCCPatch& rhs ) {
+bool PCCPatch::smallerRefFirst( const PCCPatch &rhs ) {
   if ( bestMatchIdx_ == -1 && rhs.getBestMatchIdx() == -1 ) {
     return gt( rhs );
   } else if ( bestMatchIdx_ == -1 || rhs.getBestMatchIdx() == -1 ) {
@@ -346,7 +347,7 @@ bool PCCPatch::smallerRefFirst( const PCCPatch& rhs ) {
   }
 }
 
-bool PCCPatch::gt( const PCCPatch& rhs ) {
+bool PCCPatch::gt( const PCCPatch &rhs ) {
   size_t maxDim, rhsMaxDim;
   size_t minDim, rhsMinDim;
   // setting the largest dimension
@@ -366,8 +367,9 @@ bool PCCPatch::gt( const PCCPatch& rhs ) {
     rhsMinDim = rhs.sizeU0_;
   }
   // if the dimensions are the same, decide by the index
-  return maxDim != rhsMaxDim ? ( maxDim > rhsMaxDim )
-                             : ( minDim != rhsMinDim ) ? ( minDim > rhsMinDim ) : ( index_ < rhs.index_ );
+  return maxDim != rhsMaxDim       ? ( maxDim > rhsMaxDim )
+         : ( minDim != rhsMinDim ) ? ( minDim > rhsMinDim )
+                                   : ( index_ < rhs.index_ );
 }
 
 void PCCPatch::print() const {
@@ -380,10 +382,10 @@ void PCCPatch::printDecoder() const {
           u1_, v1_, d1_, patchOrientation_ );
 }
 
-void PCCPatch::getPatchHorizons( std::vector<int>& topHorizon,
-                                 std::vector<int>& bottomHorizon,
-                                 std::vector<int>& rightHorizon,
-                                 std::vector<int>& leftHorizon ) {
+void PCCPatch::getPatchHorizons( std::vector<int> &topHorizon,
+                                 std::vector<int> &bottomHorizon,
+                                 std::vector<int> &rightHorizon,
+                                 std::vector<int> &leftHorizon ) {
   topHorizon.resize( sizeU0_, 0 );
   bottomHorizon.resize( sizeU0_, 0 );
   rightHorizon.resize( sizeV0_, 0 );
@@ -420,11 +422,11 @@ void PCCPatch::getPatchHorizons( std::vector<int>& topHorizon,
   }
 }
 
-int PCCPatch::calculateWastedSpace( std::vector<int>& horizon,
-                                    std::vector<int>& topHorizon,
-                                    std::vector<int>& bottomHorizon,
-                                    std::vector<int>& rightHorizon,
-                                    std::vector<int>& leftHorizon ) {
+int PCCPatch::calculateWastedSpace( std::vector<int> &horizon,
+                                    std::vector<int> &topHorizon,
+                                    std::vector<int> &bottomHorizon,
+                                    std::vector<int> &rightHorizon,
+                                    std::vector<int> &leftHorizon ) {
   int wasted_space          = 0;
   int wasted_space_external = 0;
   int wasted_space_internal = 0;
@@ -512,11 +514,11 @@ int PCCPatch::calculateWastedSpace( std::vector<int>& horizon,
   return wasted_space;
 }
 
-bool PCCPatch::isPatchLocationAboveHorizon( std::vector<int>& horizon,
-                                            std::vector<int>& topHorizon,
-                                            std::vector<int>& bottomHorizon,
-                                            std::vector<int>& rightHorizon,
-                                            std::vector<int>& leftHorizon ) {
+bool PCCPatch::isPatchLocationAboveHorizon( std::vector<int> &horizon,
+                                            std::vector<int> &topHorizon,
+                                            std::vector<int> &bottomHorizon,
+                                            std::vector<int> &rightHorizon,
+                                            std::vector<int> &leftHorizon ) {
   if ( patchOrientation_ == PATCH_ORIENTATION_DEFAULT ) {
     for ( int idx = 0; idx < sizeU0_; idx++ ) {
       if ( v0_ + bottomHorizon[idx] < horizon[u0_ + idx] ) { return false; }
@@ -557,11 +559,11 @@ bool PCCPatch::isPatchLocationAboveHorizon( std::vector<int>& horizon,
   return true;
 }
 
-void PCCPatch::updateHorizon( std::vector<int>& horizon,
-                              std::vector<int>& topHorizon,
-                              std::vector<int>& bottomHorizon,
-                              std::vector<int>& rightHorizon,
-                              std::vector<int>& leftHorizon ) {
+void PCCPatch::updateHorizon( std::vector<int> &horizon,
+                              std::vector<int> &topHorizon,
+                              std::vector<int> &bottomHorizon,
+                              std::vector<int> &rightHorizon,
+                              std::vector<int> &leftHorizon ) {
   size_t bestU           = u0_;
   size_t bestV           = v0_;
   size_t bestOrientation = patchOrientation_;
@@ -698,15 +700,15 @@ void PCCPatch::allocOneLayerData() {
   std::fill( pointLocalReconstructionModeByBlock_.begin(), pointLocalReconstructionModeByBlock_.end(), 0 );
 }
 
-void PCCPatch::setDepthFromGeometryVideo( const std::vector<uint16_t>& geometryVideo,
+void PCCPatch::setDepthFromGeometryVideo( const std::vector<uint16_t> &geometryVideo,
                                           const int32_t                u2,
                                           const int32_t                v2,
                                           int32_t                      width,
                                           int32_t                      height,
                                           int32_t                      occupancyPrecision,
-                                          int16_t*                     depth ) {
-  const int32_t x0 = ( int32_t )( u0_ * occupancyResolution_ );
-  const int32_t y0 = ( int32_t )( v0_ * occupancyResolution_ );
+                                          int16_t                     *depth ) {
+  const int32_t x0 = (int32_t)( u0_ * occupancyResolution_ );
+  const int32_t y0 = (int32_t)( v0_ * occupancyResolution_ );
   depth += v2 * depthMapWidth_;
   switch ( patchOrientation_ ) {
     case PATCH_ORIENTATION_DEFAULT:
@@ -734,9 +736,9 @@ void PCCPatch::setDepthFromGeometryVideo( const std::vector<uint16_t>& geometryV
       break;
     case PATCH_ORIENTATION_ROT180:
       for ( int32_t j = 0, v = v2; j < occupancyPrecision; j++, v++, depth += depthMapWidth_ ) {
-        int32_t y = ( int32_t )( ( sizeV0_ * occupancyResolution_ - 1 - v ) + y0 );
+        int32_t y = (int32_t)( ( sizeV0_ * occupancyResolution_ - 1 - v ) + y0 );
         for ( int32_t i = 0, u = u2; i < occupancyPrecision; i++, u++ ) {
-          int32_t x = ( int32_t )( ( sizeU0_ * occupancyResolution_ - 1 - u ) + x0 );
+          int32_t x = (int32_t)( ( sizeU0_ * occupancyResolution_ - 1 - u ) + x0 );
           depth[u]  = geometryVideo[x + width * y];
         }
       }
@@ -794,9 +796,9 @@ void PCCPatch::setDepthFromGeometryVideo( const std::vector<uint16_t>& geometryV
   }
 }
 
-void PCCPatch::setLocalData( const std::vector<uint8_t>&  occupancyMapVideo,
-                             const std::vector<uint16_t>& geometryVideo,
-                             std::vector<size_t>&         blockToPatch,
+void PCCPatch::setLocalData( const std::vector<uint8_t>  &occupancyMapVideo,
+                             const std::vector<uint16_t> &geometryVideo,
+                             std::vector<size_t>         &blockToPatch,
                              const int32_t                width,
                              const int32_t                height,
                              const int32_t                occupancyPrecision,
@@ -811,10 +813,12 @@ void PCCPatch::setLocalData( const std::vector<uint8_t>&  occupancyMapVideo,
   const int32_t blockToPatchWidth  = width / occupancyResolution_;
   const int32_t blockToPatchHeight = height / occupancyResolution_;
   const int32_t occupancyResByPres = int32_t( occupancyResolution_ / occupancyPrecision );
-  const int32_t shiftPrecision =
-      occupancyPrecision == 1 ? 0 : occupancyPrecision == 2 ? 1 : occupancyPrecision == 4 ? 2 : 3;
-  uint8_t* ocm   = occupancyMap_.data() + border_ + depthMapWidth_ * border_;
-  int16_t* depth = depthMap_.data() + border_ + depthMapWidth_ * border_;
+  const int32_t shiftPrecision     = occupancyPrecision == 1   ? 0
+                                     : occupancyPrecision == 2 ? 1
+                                     : occupancyPrecision == 4 ? 2
+                                                               : 3;
+  uint8_t      *ocm                = occupancyMap_.data() + border_ + depthMapWidth_ * border_;
+  int16_t      *depth              = depthMap_.data() + border_ + depthMapWidth_ * border_;
   for ( int32_t v0 = 0; v0 < sizeV0_; ++v0 ) {
     for ( int32_t u0 = 0; u0 < sizeU0_; ++u0 ) {
       const int32_t blockIndex = patchBlock2CanvasBlock( u0, v0, blockToPatchWidth, blockToPatchHeight );
@@ -838,9 +842,9 @@ void PCCPatch::setLocalData( const std::vector<uint8_t>&  occupancyMapVideo,
   }
 }
 
-const bool PCCPatch::isBorder( size_t u, size_t v ) {  
-  const int  x1 = u + border_ - 2, x2 = u + border_ + 2;
-  const int  y1 = ( v + border_ - 2 ) * depthMapWidth_, y2 = ( v + border_ + 2 ) * depthMapWidth_;
+const bool PCCPatch::isBorder( size_t u, size_t v ) {
+  const int x1 = u + border_ - 2, x2 = u + border_ + 2;
+  const int y1 = ( v + border_ - 2 ) * depthMapWidth_, y2 = ( v + border_ + 2 ) * depthMapWidth_;
   for ( int y = y1; y <= y2; y += depthMapWidth_ ) {
     for ( int x = x1; x <= x2; ++x ) {
       if ( occupancyMap_[y + x] == 0 ) { return true; }
@@ -871,10 +875,10 @@ void PCCPatch::generateBorderPoints3D() {
 void PCCPatch::filtering( const int8_t           passesCount,
                           const int8_t           filterSize,
                           const int8_t           log2Threshold,
-                          std::vector<PCCPatch>& patches ) {
+                          std::vector<PCCPatch> &patches ) {
   const int8_t         localWindowSizeU = filterSize;
   const int32_t        localWindowSizeV = filterSize >> 1;
-  PCCInt16Box3D        boundingBox      = boundingBox_;
+  PCCInt32Box3D        boundingBox      = boundingBox_;
   const int16_t        sizeX            = sizeU0_ * occupancyResolution_;
   const int16_t        sizeY            = sizeV0_ * occupancyResolution_;
   const int16_t        threshold        = log2Threshold * log2Threshold;
@@ -884,9 +888,9 @@ void PCCPatch::filtering( const int8_t           passesCount,
   neighborDepth.resize( size, undefined );
   boundingBox.min_ -= PCCPoint3D( 8 );
   boundingBox.max_ += PCCPoint3D( 8 );
-  const int32_t shift = ( int32_t )( ( -(int32_t)v1_ + border_ ) * depthMapWidth_ - (int32_t)u1_ + border_ );
-  for ( auto& i : neighboringPatches_ ) {
-    for ( auto& point : patches[i].borderPoints_ ) {
+  const int32_t shift = (int32_t)( ( -(int32_t)v1_ + border_ ) * depthMapWidth_ - (int32_t)u1_ + border_ );
+  for ( auto &i : neighboringPatches_ ) {
+    for ( auto &point : patches[i].borderPoints_ ) {
       if ( boundingBox.contains( point ) ) {
         int32_t       d = generateDepth( point );
         const int32_t c = shift + point[bitangentAxis_] * depthMapWidth_ + point[tangentAxis_];
@@ -899,9 +903,9 @@ void PCCPatch::filtering( const int8_t           passesCount,
   std::vector<uint8_t> newOccupancyMap;
   newOccupancyMap.resize( size, 0 );
   for ( size_t iter = 0; iter < passesCount; iter++ ) {  // HN : OMap precision =4, passescount = 2
-    uint8_t* src = iter % 2 == 0 ? occupancyMap_.data() : newOccupancyMap.data();  // iter=0, occupancyMap_.data(),
+    uint8_t *src = iter % 2 == 0 ? occupancyMap_.data() : newOccupancyMap.data();  // iter=0, occupancyMap_.data(),
                                                                                    // iter=1, newOccupancyMap.data()
-    uint8_t* dst = iter % 2 == 1 ? occupancyMap_.data() : newOccupancyMap.data();
+    uint8_t *dst = iter % 2 == 1 ? occupancyMap_.data() : newOccupancyMap.data();
     for ( int32_t v = 0, c = border_ * depthMapWidth_ + border_; v < sizeY; v++, c += 2 * border_ ) {
       for ( int32_t u = 0; u < sizeX; u++, c++ ) {
         if ( src[c] == 0 ) {
@@ -917,8 +921,8 @@ void PCCPatch::filtering( const int8_t           passesCount,
             int32_t       count  = 0;
             const int8_t  orX    = ORIENTATION( src, c, depthMapWidth_ );
             const int8_t  orY    = ( orX + 2 ) % 8;
-            const int8_t* dX     = g_dilate[orX];
-            const int8_t* dY     = g_dilate[orY];
+            const int8_t *dX     = g_dilate[orX];
+            const int8_t *dY     = g_dilate[orY];
             const int32_t shiftX = dX[0] + dX[1] * depthMapWidth_;
             const int32_t shiftY = dY[0] + dY[1] * depthMapWidth_;
             const int32_t dE     = depthMap_[c - shiftX];
@@ -957,26 +961,24 @@ void PatchBlockFiltering::patchBorderFiltering( size_t imageWidth,
                                                 int8_t log2Threshold ) {
   // Generate border points
   for ( size_t patchIndex = 0; patchIndex < patches_->size(); patchIndex++ ) {
-    auto& patch = patches_->at( patchIndex );
+    auto &patch = patches_->at( patchIndex );
     patch.setIndexCopy( patchIndex );
     patch.setLocalData( *occupancyMapVideo_, *geometryVideo_, *blockToPatch_, (int32_t)imageWidth, (int32_t)imageHeight,
                         (int32_t)occupancyPrecision, (int32_t)thresholdLossyOM );
     patch.generateBorderPoints3D();
   }
-  for ( auto& patch : *patches_ ) {
-    for ( auto& other : *patches_ ) {
+  for ( auto &patch : *patches_ ) {
+    for ( auto &other : *patches_ ) {
       if ( patch.getIndexCopy() != other.getIndexCopy() && patch.intersects( other ) ) {
         patch.getNeighboringPatches().push_back( other.getIndexCopy() );
       }
     }
   }
   // Filtering;
-  for ( auto& patch : *patches_ ) { patch.filtering( passesCount, filterSize, log2Threshold, *patches_ ); }
+  for ( auto &patch : *patches_ ) { patch.filtering( passesCount, filterSize, log2Threshold, *patches_ ); }
 #if PLR_FIX
   std::cout << "remove clearing function" << std::endl;
 #else
-  for ( auto& patch : *patches_ ) { patch.clearPatchBlockFilteringData(); }
+  for ( auto &patch : *patches_ ) { patch.clearPatchBlockFilteringData(); }
 #endif
-
 }
-

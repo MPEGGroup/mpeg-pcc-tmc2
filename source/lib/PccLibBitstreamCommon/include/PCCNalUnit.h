@@ -41,10 +41,7 @@ namespace pcc {
 class NalUnit {
  public:
   NalUnit( NalUnitType nalUnitType = NAL_TRAIL_N, uint8_t layerId = 0, uint8_t temporalyIdPlus1 = 0 ) :
-      type_( nalUnitType ),
-      layerId_( layerId ),
-      temporalyIdPlus1_( temporalyIdPlus1 ),
-      size_( 0 ) {}
+      type_( nalUnitType ), layerId_( layerId ), temporalyIdPlus1_( temporalyIdPlus1 ), size_( 0 ) {}
   ~NalUnit() { data_.clear(); }
   void                  allocate() { data_.resize( size_ - 2, 0 ); }
   NalUnitType           getType() { return type_; }
@@ -52,7 +49,7 @@ class NalUnit {
   uint8_t               getTemporalyIdPlus1() { return temporalyIdPlus1_; }
   size_t                getSize() { return size_; }
   uint8_t               getData( size_t index ) { return data_[index]; }
-  std::vector<uint8_t>& getData() { return data_; }
+  std::vector<uint8_t> &getData() { return data_; }
 
   void setType( NalUnitType value ) { type_ = value; }
   void setLayerId( uint8_t value ) { layerId_ = value; }
@@ -63,7 +60,7 @@ class NalUnit {
                    uint8_t     layerId,
                    uint8_t     temporalyIdPlus1,
                    size_t      size = 0,
-                   uint8_t*    data = nullptr ) {
+                   uint8_t    *data = nullptr ) {
     type_             = type;
     layerId_          = layerId;
     temporalyIdPlus1_ = temporalyIdPlus1;

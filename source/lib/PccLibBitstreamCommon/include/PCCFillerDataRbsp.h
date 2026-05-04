@@ -42,7 +42,7 @@ class FillerDataRbsp {
  public:
   FillerDataRbsp() {}
   ~FillerDataRbsp() {}
-  FillerDataRbsp& operator=( const FillerDataRbsp& ) = default;
+  FillerDataRbsp &operator=( const FillerDataRbsp & ) = default;
 
  private:
 };

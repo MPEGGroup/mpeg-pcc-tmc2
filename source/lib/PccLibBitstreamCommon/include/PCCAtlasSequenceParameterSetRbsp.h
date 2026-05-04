@@ -79,7 +79,7 @@ class AtlasSequenceParameterSetRbsp {
     plrInformation_.clear();
   }
 
-  AtlasSequenceParameterSetRbsp& operator=( const AtlasSequenceParameterSetRbsp& ) = default;
+  AtlasSequenceParameterSetRbsp &operator=( const AtlasSequenceParameterSetRbsp & ) = default;
 
   void allocateRefListStruct() { refListStruct_.resize( numRefAtlasFrameListsInAsps_ ); }
   void allocatePixelDeinterleavingMapFlag() { pixelDeinterleavingMapFlag_.resize( mapCountMinus1_ + 1, false ); }
@@ -114,8 +114,8 @@ class AtlasSequenceParameterSetRbsp {
   bool               getExtensionFlag() { return extensionFlag_; }
   bool               getVpccExtensionFlag() { return vpccExtensionFlag_; }
   uint8_t            getExtension7Bits() { return extension7Bits_; }
-  VUIParameters&     getVuiParameters() { return vuiParameters_; }
-  AspsVpccExtension& getAspsVpccExtension() { return aspsVpccExtension_; }
+  VUIParameters     &getVuiParameters() { return vuiParameters_; }
+  AspsVpccExtension &getAspsVpccExtension() { return aspsVpccExtension_; }
   void               setAtlasSequenceParameterSetId( uint8_t value ) { atlasSequenceParameterSetId_ = value; }
   void               setFrameWidth( uint16_t value ) { frameWidth_ = value; }
   void               setFrameHeight( uint16_t value ) { frameHeight_ = value; }
@@ -146,16 +146,16 @@ class AtlasSequenceParameterSetRbsp {
   void setVpccExtensionFlag( bool value ) { vpccExtensionFlag_ = value; }
   void setExtension7Bits( uint8_t value ) { extension7Bits_ = value; }
 
-  RefListStruct& getRefListStruct( uint8_t index ) { return refListStruct_[index]; }
+  RefListStruct &getRefListStruct( uint8_t index ) { return refListStruct_[index]; }
   void           addRefListStruct( RefListStruct value ) { refListStruct_.push_back( value ); }
-  RefListStruct& addRefListStruct() {
+  RefListStruct &addRefListStruct() {
     RefListStruct refListStruct;
     refListStruct_.push_back( refListStruct );
     return refListStruct_.back();
   }
-  PLRInformation& getPLRInformation( uint8_t index ) { return plrInformation_[index]; }
+  PLRInformation &getPLRInformation( uint8_t index ) { return plrInformation_[index]; }
   void            addPLRInformation( PLRInformation value ) { plrInformation_.push_back( value ); }
-  PLRInformation& addPLRInformation() {
+  PLRInformation &addPLRInformation() {
     PLRInformation plri;
     plrInformation_.push_back( plri );
     return plrInformation_.back();

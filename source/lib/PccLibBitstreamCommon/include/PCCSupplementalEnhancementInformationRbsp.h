@@ -43,7 +43,7 @@ class SupplementalEnhancementInformationRbsp {
  public:
   SupplementalEnhancementInformationRbsp() {}
   ~SupplementalEnhancementInformationRbsp() {}
-  SupplementalEnhancementInformationRbsp& operator=( const SupplementalEnhancementInformationRbsp& ) = default;
+  SupplementalEnhancementInformationRbsp &operator=( const SupplementalEnhancementInformationRbsp & ) = default;
 
  private:
   std::vector<SEI> sei_;
