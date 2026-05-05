@@ -2090,6 +2090,7 @@ int PCCDecoder::ReconstructIdc3( PCCContext &context, PCCGroupOfFrames &reconstr
           adaptationParams.enableRotationQuantization_ = dequant.getRotationPresentFlag();
 
           if ( adaptationParams.enablePositionQuantization_ ) {
+            adaptationParams.positionBitDepth_ = asps.getGeometry3dBitdepthMinus1() + 1;
             for ( size_t i = 0; i < 3; i++ ) {
               adaptationParams.computedPositionMin_[i] = dequant.getMinPosition( i );
               adaptationParams.computedPositionMax_[i] = dequant.getMaxPosition( i );
