@@ -80,6 +80,8 @@ log.txt
 /dependencies/vvdec/
 /dependencies/vvenc/
 
+/temp/
+
 /cmake-build-debug/
 /cmake-build-release/
 

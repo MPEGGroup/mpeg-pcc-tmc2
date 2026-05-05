@@ -76,11 +76,20 @@ class PCCAtlasHighLevelSyntax {
     assert( 0 );
     exit( -1 );
   }
+  void clearVideoBitstream(){
+    videoBitstream_.clear();
+  }
   void printVideoBitstream();
 
   // ASPS related functions
   AtlasSequenceParameterSetRbsp &getAtlasSequenceParameterSet( size_t setId ) {
-    return atlasSequenceParameterSet_[setId];
+    for ( auto &asps : atlasSequenceParameterSet_ ) {
+      if ( asps.getAtlasSequenceParameterSetId() == setId ) { return asps; }
+    }
+    printf( "ERROR: can't get ASPS with id %zu \n", setId );
+    fflush( stdout );
+    assert( 0 );
+    exit( -1 );
   }
   AtlasSequenceParameterSetRbsp &addAtlasSequenceParameterSet() {
     AtlasSequenceParameterSetRbsp asps;
@@ -130,7 +139,15 @@ class PCCAtlasHighLevelSyntax {
   size_t getPointLocalReconstructionModeNumber() { return pointLocalReconstructionMode_.size(); }
 
   // AFPS related functions
-  AtlasFrameParameterSetRbsp &getAtlasFrameParameterSet( size_t setId ) { return atlasFrameParameterSet_[setId]; }
+  AtlasFrameParameterSetRbsp &getAtlasFrameParameterSet( size_t setId ) {
+    for ( auto &afps : atlasFrameParameterSet_ ) {
+      if ( afps.getAtlasFrameParameterSetId() == setId ) { return afps; }
+    }
+    printf( "ERROR: can't get AFPS with id %zu \n", setId );
+    fflush( stdout );
+    assert( 0 );
+    exit( -1 );
+  }
   std::vector<AtlasFrameParameterSetRbsp> &getAtlasFrameParameterSetList() { return atlasFrameParameterSet_; }
   AtlasFrameParameterSetRbsp              &addAtlasFrameParameterSet() {
     AtlasFrameParameterSetRbsp afps;
@@ -156,7 +173,13 @@ class PCCAtlasHighLevelSyntax {
 
   // AAPS related functions
   AtlasAdaptationParameterSetRbsp &getAtlasAdaptationParameterSet( size_t setId ) {
-    return atlasAdaptationParameterSet_[setId];
+    for ( auto &aaps : atlasAdaptationParameterSet_ ) {
+      if ( aaps.getAtlasAdaptationParameterSetId() == setId ) { return aaps; }
+    }
+    printf( "ERROR: can't get AAPS with id %zu \n", setId );
+    fflush( stdout );
+    assert( 0 );
+    exit( -1 );
   }
   std::vector<AtlasAdaptationParameterSetRbsp> &getAtlasAdaptationParameterSetList() {
     return atlasAdaptationParameterSet_;
@@ -226,6 +249,26 @@ class PCCAtlasHighLevelSyntax {
     return atlasTileLayer_[getAtlasTileLayerIndex( frameIndex, tileIndex )];
   }
 
+  // get/set functions for active parameter sets
+  uint8_t                          getActiveASPS() { return activeASPS_; }
+  void                             setActiveASPS( uint8_t value ) { activeASPS_ = value; }
+  AtlasSequenceParameterSetRbsp   &getActiveAtlasSequenceParameterSet() {
+    assert( activeASPS_ < atlasSequenceParameterSet_.size() );
+    return atlasSequenceParameterSet_[activeASPS_];
+  }
+  uint8_t                          getActiveAFPS() { return activeAFPS_; }
+  void                             setActiveAFPS( uint8_t value ) { activeAFPS_ = value; }
+  AtlasFrameParameterSetRbsp      &getActiveAtlasFrameParameterSet() {
+    assert( activeAFPS_ < atlasFrameParameterSet_.size() );
+    return atlasFrameParameterSet_[activeAFPS_];
+  }
+  uint8_t                          getActiveAAPS() { return activeAAPS_; }
+  void                             setActiveAAPS( uint8_t value ) { activeAAPS_ = value; }
+  AtlasAdaptationParameterSetRbsp &getActiveAtlasAdaptationParameterSet() {
+    assert( activeAAPS_ < atlasAdaptationParameterSet_.size() );
+    return atlasAdaptationParameterSet_[activeAAPS_];
+  }
+
  private:
   std::vector<PCCVideoBitstream>               videoBitstream_;             // video related variables
   std::vector<AtlasSequenceParameterSetRbsp>   atlasSequenceParameterSet_;  // ASPS related variables
@@ -235,6 +278,10 @@ class PCCAtlasHighLevelSyntax {
   std::vector<AtlasFrameParameterSetRbsp>      atlasFrameParameterSet_;       // AFPS related variables
   std::vector<AtlasAdaptationParameterSetRbsp> atlasAdaptationParameterSet_;  // AAPS related variables
   std::vector<AtlasTileLayerRbsp>              atlasTileLayer_;               // ATGL related variables
+
+  uint8_t activeASPS_ = 0;
+  uint8_t activeAFPS_ = 0;
+  uint8_t activeAAPS_ = 0;
 };
 
 class PCCHighLevelSyntax {
@@ -294,6 +341,9 @@ class PCCHighLevelSyntax {
   // video related functions
   PCCVideoBitstream &createVideoBitstream( PCCVideoType type ) {
     return atlasHLS_[atlasIndex_].createVideoBitstream( type );
+  }
+  void clearVideoBitstream(  ) {
+    return atlasHLS_[atlasIndex_].clearVideoBitstream(  );
   }
   size_t             getVideoBitstreamCount() { return atlasHLS_[atlasIndex_].getVideoBitstreamCount(); }
   PCCVideoBitstream &getVideoBitstream( size_t index ) { return atlasHLS_[atlasIndex_].getVideoBitstream( index ); }

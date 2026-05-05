@@ -69,6 +69,8 @@ struct PCCGSEncoderParameters {
 
   // Encoder configuration files
   std::string debugPath_;
+  std::string frameNameBase_;
+  std::string binaryFileBase_;
   std::string geometryVideoEncoderConfig_;
   std::string attributeVideoEncoderConfig_;
   std::string packedVideoEncoderConfig_;
@@ -122,6 +124,8 @@ struct PCCGSEncoderParameters {
     attributeRotationPackedMapIndex_     = 0;
     attributeColorPackedMapIndex_        = 0;
     debugPath_                           = "./temp";
+    frameNameBase_                       = "frame";
+    binaryFileBase_                      = "data";
     keepIntermediateFiles_               = false;
     gsColmapFolderPath_                  = "";
     gsdTransform2dPresentFlag_           = false;

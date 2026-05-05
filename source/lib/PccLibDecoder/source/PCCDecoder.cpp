@@ -82,8 +82,8 @@ int PCCDecoder::decode( PCCContext &context, PCCGroupOfFrames &reconstructs, int
   auto             &ai               = sps.getAttributeInformation( atlasIndex );
   auto             &oi               = sps.getOccupancyInformation( atlasIndex );
   auto             &gi               = sps.getGeometryInformation( atlasIndex );
-  auto             &asps             = context.getAtlasSequenceParameterSet( 0 );
-  size_t            frameCount       = context.size();
+  auto             &asps             = context.getAtlasSequenceParameterSetList()[0];
+  size_t           frameCount       = context.size();
   auto             &plt              = sps.getProfileTierLevel();
   const size_t      mapCount         = sps.getMapCountMinus1( atlasIndex ) + 1;
   int               geometryBitDepth = gi.getGeometry2dBitdepthMinus1() + 1;
@@ -1673,7 +1673,7 @@ void PCCDecoder::createHlsAtlasTileLogFiles( PCCContext &context, int frameIndex
 void PCCDecoder::setTilePartitionSizeAfti( PCCContext &context ) {  // decoder
 
   for ( size_t afpsIdx = 0; afpsIdx < context.getAtlasFrameParameterSetList().size(); afpsIdx++ ) {
-    auto  &afps             = context.getAtlasFrameParameterSet( afpsIdx );
+    auto  &afps             = context.getAtlasFrameParameterSetList()[afpsIdx];
     auto  &asps             = context.getAtlasSequenceParameterSet( afps.getAtlasSequenceParameterSetId() );
     auto  &afti             = afps.getAtlasFrameTileInformationRbsp();
     size_t frameWidth       = asps.getFrameWidth();
@@ -2384,7 +2384,7 @@ int PCCDecoder::ReconstructIdc0Idc1Idc2Idc255( PCCContext       &context,
 }
 
 void PCCDecoder::setPointLocalReconstruction( PCCContext &context ) {
-  auto &asps = context.getAtlasSequenceParameterSet( 0 );
+  auto &asps = context.getAtlasSequenceParameterSetList()[0];
   TRACE_PATCH( "PLR = %d \n", asps.getPLREnabledFlag() );
   PointLocalReconstructionMode mode = { false, false, 0, 1 };
   if ( asps.getPLREnabledFlag() ) {

@@ -486,7 +486,7 @@ bool PCCVideoDecoder::decompress( PCCVideo<T, 3>    &video,
   }
 
   // annex-b: Scale if necessary
-  auto &asps                = contexts.getAtlasSequenceParameterSet( 0 );
+  auto &asps                = contexts.getAtlasSequenceParameterSetList()[0];
   auto  expectedFrameWidth  = asps.getFrameWidth();
   auto  expectedFrameHeight = asps.getFrameHeight();
 

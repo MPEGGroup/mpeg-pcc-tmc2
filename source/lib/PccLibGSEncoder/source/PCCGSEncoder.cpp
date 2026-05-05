@@ -46,8 +46,16 @@ int PCCGSEncoder::encode( const PCCPointSet3            &inputPointCloud,
                           SampleStreamV3CUnit           &ssvu,
                           PCCLogger                     &logger ) {
   // 1. Initialize high-level syntax
-  hlsBuilder_.initialize( hls_, bitstreamStat_, params, adaptationParams );
-
+  if ( !hlsBuilder_.isInitialized() ) {
+    hlsBuilder_.initialize( hls_, bitstreamStat_, params, adaptationParams );
+  } else {
+    hls_.clearVideoBitstream();
+    hlsBuilder_.replaceVpsHls( hls_, params );
+    hlsBuilder_.replaceAtlasAspsHls( hls_, params );
+    hlsBuilder_.replaceAtlasAfpsHls( hls_, params );
+    hlsBuilder_.replaceAtlasAapsHls( hls_, adaptationParams );
+    hlsBuilder_.removeAtlasFrames( hls_ );
+  }
   // 2. Generate patches (3D and 2D)
   auto patchResult = patchGenerator_.generate( inputPointCloud, params );
 
@@ -58,6 +66,7 @@ int PCCGSEncoder::encode( const PCCPointSet3            &inputPointCloud,
   hlsBuilder_.updateVps( hls_, patchResult.mapWidth, patchResult.mapHeight, params );
   hlsBuilder_.updateAsps( hls_, patchResult.mapWidth, patchResult.mapHeight, params );
 
+  std::cout << "Number of points: " << inputPointCloud.getPointCount() << std::endl;
   // 5. Generate maps (geometry, attributes, packed)
   auto videoFrames =
       mapGenerator_.generate( inputPointCloud, patchResult.patches, hls_, patchResult.mapWidth, patchResult.mapHeight );

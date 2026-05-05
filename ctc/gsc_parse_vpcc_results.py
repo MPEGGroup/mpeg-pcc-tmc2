@@ -2,6 +2,37 @@ import argparse
 import os
 import re
 
+COLUMN_ORDER = [
+    "length",
+    "seq",
+    "rate",
+    "total_Byte",
+    "pos_Byte",
+    "sh0_Byte",
+    "sh1_Byte",
+    "sh2_Byte",
+    "sh3_Byte",
+    "rot_Byte",
+    "scale_Byte",
+    "opacity_Byte",
+    "meta_Byte",
+    "total_encT",
+    "pos_encT",
+    "att_encT",
+    "total_decT",
+    "pos_decT",
+    "att_decT",
+    "enc_MaxRSS",
+    "dec_MaxRSS",
+    "RGB-PSNR",
+    "YUV-PSNR",
+    "YUV-SSIM",
+    "YUV-IVSSIM",
+    "RGB-LPIPS",
+    "GT-RGB-PSNR",
+    "renT",
+]
+
 
 def parse_bitstream_file(path):
     attr_bytes = {
@@ -166,88 +197,85 @@ def parse_metric_file(path):
     return metrics
 
 
-def main():
+def per_frame_results(results_dir: str, base: str, start_frame: int, frame_count: int):
+    results = []
+
+    for i in range(start_frame, start_frame + frame_count):
+        frame_path = os.path.join(results_dir, f"{base}_{i:04d}.decoded.ply")
+        metric_path = os.path.join(results_dir, f"{base}_{i:04d}.decoded.ply.metric")
+
+        for file in (frame_path, metric_path):
+            if not os.path.exists(file):
+                raise FileNotFoundError(f"Missing file: {file}")
+
+        results.append(parse_metric_file(metric_path))
+
+    return results
+
+
+def average_per_frame_results(per_frame_results):
+    average = {}
+
+    for key in per_frame_results[0].keys():
+        average[key] = sum(f[key] for f in per_frame_results) / len(per_frame_results)
+
+    return average
+
+
+def per_rate_results(results_dir: str, base: str):
+    enc_log_path = os.path.join(results_dir, f"{base}.encoder.log")
+    dec_log_path = os.path.join(results_dir, f"{base}.decoder.log")
+    enc_bitstream_path = os.path.join(results_dir, f"{base}_enc_bitstream.txt")
+
+    for file in (enc_bitstream_path, enc_log_path, dec_log_path):
+        if not os.path.exists(file):
+            raise FileNotFoundError(f"Missing file: {file}")
+
+    result = {}
+    bitstream_data = parse_bitstream_file(enc_bitstream_path)
+    result.update(bitstream_data)
+    enc_log_data = parse_enc_log_file(enc_log_path)
+    result.update(enc_log_data)
+    dec_log_data = parse_dec_log_file(dec_log_path)
+    result.update(dec_log_data)
+    return result
+
+
+def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-d", "--dir", required=True, help="Results directory")
+    parser.add_argument("-d", "--results-dir", required=True, help="Results directory")
+    parser.add_argument("-l", "--length", required=True, help="Length (1F or NF)")
     parser.add_argument("-s", "--seq", required=True, help="Sequence name")
     parser.add_argument("-r", "--rate", required=True, help="Rate string (e.g. r01)")
-    parser.add_argument("-f", "--frames", type=int, default=1, help="Frame count")
-    args = parser.parse_args()
+    parser.add_argument(
+        "-f", "--start-frame", required=True, type=int, help="Start frame number"
+    )
+    parser.add_argument(
+        "-n", "--frame-count", required=True, type=int, help="Number of frames"
+    )
+    return parser.parse_args()
 
-    # Find all frame metrics
-    frame_files = [f for f in os.listdir(args.dir) if f.endswith(".decoded.ply.metric")]
-    if not frame_files:
-        raise FileNotFoundError(f"No frames found with logs")
-    frame_results = []
-    for f in frame_files:
-        # extract frame base name (without .decoded.ply.metric)
-        base = f.replace(".decoded.ply.metric", "")
-        metric_path = os.path.join(args.dir, f"{base}.decoded.ply.metric")
-        enc_bitstream_path = os.path.join(args.dir, f"{base}_enc_bitstream.txt")
-        enc_log_path = os.path.join(args.dir, f"{base}.encoder.log")
-        dec_log_path = os.path.join(args.dir, f"{base}.decoder.log")
 
-        if not os.path.exists(metric_path):
-            raise FileNotFoundError(f"Missing file: {metric_path}")
-        if not os.path.exists(enc_bitstream_path):
-            raise FileNotFoundError(f"Missing file: {enc_bitstream_path}")
-        if not os.path.exists(enc_log_path):
-            raise FileNotFoundError(f"Missing file: {enc_log_path}")
-        if not os.path.exists(dec_log_path):
-            raise FileNotFoundError(f"Missing file: {dec_log_path}")
-
-        frame_result = {}
-        metric_data = parse_metric_file(metric_path)
-        frame_result.update(metric_data)
-        bitstream_data = parse_bitstream_file(enc_bitstream_path)
-        frame_result.update(bitstream_data)
-        enc_log_data = parse_enc_log_file(enc_log_path)
-        frame_result.update(enc_log_data)
-        dec_log_data = parse_dec_log_file(dec_log_path)
-        frame_result.update(dec_log_data)
-
-        frame_results.append(frame_result)
-
-    # Average per-frame results
-    avg_result = {}
-    avg_result["seq"] = args.seq
-    avg_result["rate"] = args.rate
-    for key in frame_results[0].keys():
-        avg_result[key] = sum(fr[key] for fr in frame_results) / len(frame_results)
-
-    # Define output order
-    columns = [
-        "seq",
-        "rate",
-        "total_Byte",
-        "pos_Byte",
-        "sh0_Byte",
-        "sh1_Byte",
-        "sh2_Byte",
-        "sh3_Byte",
-        "rot_Byte",
-        "scale_Byte",
-        "opacity_Byte",
-        "meta_Byte",
-        "total_encT",
-        "pos_encT",
-        "att_encT",
-        "total_decT",
-        "pos_decT",
-        "att_decT",
-        "enc_MaxRSS",
-        "dec_MaxRSS",
-        "RGB-PSNR",
-        "YUV-PSNR",
-        "YUV-SSIM",
-        "YUV-IVSSIM",
-        "RGB-LPIPS",
-        "GT-RGB-PSNR",
-        "renT",
-    ]
-
-    print(",".join(str(avg_result[col]) for col in columns))
+def main(
+    results_dir: str,
+    length: str,
+    seq: str,
+    rate: str,
+    start_frame: int,
+    frame_count: int,
+):
+    base = f"{length}_{seq}_{rate}"
+    result = {
+        "length": length,
+        "seq": seq,
+        "rate": rate,
+    }
+    frame_results = per_frame_results(results_dir, base, start_frame, frame_count)
+    result.update(average_per_frame_results(frame_results))
+    result.update(per_rate_results(results_dir, base))
+    print(",".join(str(result[col]) for col in COLUMN_ORDER))
 
 
 if __name__ == "__main__":
-    main()
+    args = parse_args()
+    main(**vars(args))

@@ -82,7 +82,6 @@ Void         destroyROMPccHevc();
 // ====================================================================================================================
 
 
-// Void         initZscanToRasterPccHevc ( Int iMaxDepth, Int iDepth, UInt uiStartVal, UInt*& rpuiCurrIdx );
 Void         initRasterToZscanPccHevc ( UInt uiMaxCUWidth, UInt uiMaxCUHeight, UInt uiMaxDepth         );
 
 

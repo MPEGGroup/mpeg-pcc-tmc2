@@ -37,17 +37,9 @@ import os
 import argparse
 
 # Constants for CSV column ranges and Excel positions
-# JEE6.2
-# BITRATES_RANGE = (3, 12, 16, 5)       # start_idx, end_idx, start_col
-# METRICS_RANGE = (20, 26, 33, 6)
-# TIMES_RSS_RANGE = (12, 14, 16, 16)
-# RSS_RANGE = ()
-
-# JEE6.6 & JEE6.7 template
-BITRATES_RANGE_1F = (2, 11, 11)  # start_idx, end_idx, start_col
-# Metadata bytes are skipped!
-METRICS_RANGE_1F = (20, 23, 20)
-TIMES_RSS_RANGE_1F = (12, 20, 31)
+BITRATES_RANGE = (3, 12, 11)       # start_idx, end_idx, start_col
+METRICS_RANGE = (21, 24, 20)
+TIMES_RSS_RANGE = (13, 21, 31)
 
 
 def write_values(ws, csv_tokens, start_idx, end_idx, start_col, rate_id, seq_offset):
@@ -64,63 +56,53 @@ def write_values(ws, csv_tokens, start_idx, end_idx, start_col, rate_id, seq_off
         print("WRITING", val, "to", (seq_offset + rate_id, start_col + col))
 
 
-def csv2xlsm(wb, file_path, sheet_name, flag_1f):
+def csv2xlsm(wb, file_path, sheet_name):
     """
     Read a CSV file and write its data into the given workbook.
     sheet_name determines the sheet that will be filled out.
     """
-    if flag_1f:
-        bitrates_range = BITRATES_RANGE_1F
-        metrics_range = METRICS_RANGE_1F
-        times_rss_range = TIMES_RSS_RANGE_1F
-    else:
-        bitrates_range = BITRATES_RANGE
-        metrics_range = METRICS_RANGE
-        times_rss_range = TIMES_RSS_RANGE
-
     try:
         ws = wb[sheet_name]
     except KeyError:
         print(f"[ERROR] Sheet '{sheet_name}' not found in workbook")
         exit()
 
-    # get all values in the 'C' column
-    valid_sequence_names = {
-        cell.value: cell.row
-        for cell in ws["C"]
-        if cell.value is not None and cell.row > 2
+    # Build index from sequence variant, e.g. ("1F", "plant"), to row number in the worksheet
+    sequence_rows = {
+        (ws.cell(row=cell.row, column=2).value, ws.cell(row=cell.row, column=3).value): cell.row
+        for cell in ws["B"]
+        if cell.value is not None
     }
-    print(valid_sequence_names)
+    for key, value in sequence_rows.items():
+        print(f"Sequence variant {' '.join(key)} is at row {value}")
+
     warned_sequences = set()
     with open(file_path, "rt") as fp:
         next(fp)  # skip header line
         for line in fp:
             csv_tokens = line.strip().split(",")
-            seq = csv_tokens[0]
-            if seq not in valid_sequence_names:
+            seq_variant = (csv_tokens[0], csv_tokens[1])
+            if seq_variant not in sequence_rows:
                 # print a warning
-                if seq not in warned_sequences:
-                    print(f"[WARNING] Sequence '{seq}' not found in the template!")
-                    warned_sequences.add(seq)
+                if seq_variant not in warned_sequences:
+                    print(f"[WARNING] Sequence '{' '.join(seq_variant)}' not found in the template!")
+                    warned_sequences.add(seq_variant)
                 continue
-            seq_row_offset = valid_sequence_names[seq]
-            print("FOUND ", seq)
-            rate_id = int(csv_tokens[1].split("r")[-1]) - 1
+            seq_row_offset = sequence_rows[seq_variant]
+            print("FOUND", ' '.join(seq_variant))
+            rate_id = int(csv_tokens[2].split("r")[-1]) - 1
 
             # Write different sections of the CSV into the worksheet
             print("WRITING BITRATES")
-            write_values(ws, csv_tokens, *bitrates_range, rate_id, seq_row_offset)
+            write_values(ws, csv_tokens, *BITRATES_RANGE, rate_id, seq_row_offset)
             print("WRITING METRICS")
-            write_values(ws, csv_tokens, *metrics_range, rate_id, seq_row_offset)
+            write_values(ws, csv_tokens, *METRICS_RANGE, rate_id, seq_row_offset)
             print("WRITING TIMES")
-            write_values(ws, csv_tokens, *times_rss_range, rate_id, seq_row_offset)
+            write_values(ws, csv_tokens, *TIMES_RSS_RANGE, rate_id, seq_row_offset)
 
 
 def main():
     parser = argparse.ArgumentParser(description="Generate XLSM file from CSV data.")
-    parser.add_argument(
-        "-f", "--flag_1f", type=int, default=0, help="Flag for single frame processing"
-    )
     parser.add_argument(
         "-t", "--template", required=True, help="Path to XLSM template file"
     )
@@ -138,14 +120,14 @@ def main():
 
     # Process anchor CSV
     if os.path.isfile(args.anc_csv):
-        csv2xlsm(wb, args.anc_csv, "Anchor", args.flag_1f)
+        csv2xlsm(wb, args.anc_csv, "Anchor")
     else:
         print(f"[ERROR] No anchor CSV file found: {args.anc_csv}")
         exit()
 
     # Process proposed CSV
     if os.path.isfile(args.pro_csv):
-        csv2xlsm(wb, args.pro_csv, "Proposal", args.flag_1f)
+        csv2xlsm(wb, args.pro_csv, "Proposal")
     else:
         print(f"[ERROR] No proposed CSV file found: {args.pro_csv}")
         exit()

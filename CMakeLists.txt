@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.17 FATAL_ERROR)
 
 project(TMC2 CXX C Fortran)
-set(TMC2_VERSION_MAJOR 25)
+set(TMC2_VERSION_MAJOR 26)
 set(TMC2_VERSION_MINOR 0)
 
 # Video encoder and decoder library and application:
@@ -38,7 +38,7 @@ option(ENABLE_PAPI_PROFILING "Enable PAPI profiling" FALSE)
 option(BITSTREAM_TRACE "Enable bitstream traces" TRUE)
 option(CODEC_TRACE "Enable encoder and decoder process traces" FALSE)
 option(SEI_TRACE "Enable SEI bitstream traces" FALSE)
-option(CONFORMANCE_TRACE "Enable conformance traces" TRUE)
+option(CONFORMANCE_TRACE "Enable conformance traces" FALSE)
 
 # CLANG-TIDY CHECK
 set(CMAKE_CXX_STANDARD 14)

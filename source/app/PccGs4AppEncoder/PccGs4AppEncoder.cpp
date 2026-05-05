@@ -106,7 +106,8 @@ int main( int argc, char *argv[] ) {
 #endif
 
   // remove the extension and keep folder path and base file name
-  encoderParams.debugPath_ = removeFileExtension( applicationParams.compressedStreamPath_ );
+  encoderParams.binaryFileBase_ = removeFileExtension( applicationParams.compressedStreamPath_ );
+  encoderParams.debugPath_ = getDirectoryName( applicationParams.compressedStreamPath_ );
   encoderParams.geometryVideoEncoderConfig_ =
       applicationParams.configurationFolder_ + applicationParams.geometryConfig_;
   encoderParams.attributeVideoEncoderConfig_ =
@@ -127,7 +128,7 @@ int main( int argc, char *argv[] ) {
   SampleStreamV3CUnit ssvu;
 
   PCCLogger logger;
-  logger.initilalize( encoderParams.debugPath_, true );
+  logger.initilalize( encoderParams.binaryFileBase_, true );
 
   clockWall.start();
   clockUser.start();
@@ -145,11 +146,19 @@ int main( int argc, char *argv[] ) {
     }
 
     // DEBUG
-    std::string adaptedPlyPath = encoderParams.debugPath_ + "_adapted_frame" + std::to_string( frameNumber ) + ".ply";
+    std::string fileName( 512, '\0' );
+    int len = std::snprintf( &fileName[0], fileName.size(), applicationParams.uncompressedDataPath_.c_str(), frameNumber );
+    if ( len > 0 && len < static_cast<int>( fileName.size() ) ) {
+      fileName.resize( len );
+    }
+
+    encoderParams.frameNameBase_ = removeFileExtension( getBasename( fileName ) );
+    
+    std::string adaptedPlyPath = encoderParams.debugPath_ + "/" + encoderParams.frameNameBase_ + ".asci.ply";
     adaptedPointCloud.write( adaptedPlyPath );
 
     // Optionally write adaptation config for decoder
-    std::string configPath = encoderParams.debugPath_ + "_adaptation_config.json";
+    std::string configPath = encoderParams.debugPath_ + "/" + encoderParams.frameNameBase_ + "_adaptation_config.json";
     adaptationParams.writeConfig( configPath );
 
     // Encode adapted (quantized int) point cloud

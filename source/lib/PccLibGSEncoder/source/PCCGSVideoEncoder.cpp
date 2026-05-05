@@ -82,6 +82,7 @@ void PCCGSVideoEncoder::encodeVideo( PCCVideo<uint16_t, 3>        &videoFrames,
                                      PCCVideoType                  videoType,
                                      PCCHighLevelSyntax           &hls,
                                      const PCCGSEncoderParameters &params ) {
+                    
   PCCVideoBitstream &bitstream = hls.createVideoBitstream( videoType );
   int                nbyte     = 2;
 
@@ -112,7 +113,7 @@ void PCCGSVideoEncoder::encodeVideo( PCCVideo<uint16_t, 3>        &videoFrames,
   int height = videoFrames.getHeight();
 
   const std::string type         = bitstream.getExtension();
-  const std::string baseFileName = params.debugPath_ + "_" + type;
+  const std::string baseFileName = params.debugPath_ + "/" + params.frameNameBase_ + "_" + type;
   const std::string binFileName  = baseFileName + ".bin";
   const char       *bitdepth     = nbyte == 2 ? "10" : "8";
 

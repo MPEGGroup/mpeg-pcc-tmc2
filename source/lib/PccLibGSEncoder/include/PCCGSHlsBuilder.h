@@ -65,6 +65,8 @@ class PCCGSHlsBuilder {
                    const PCCGSEncoderParameters  &params,
                    const PCCAdaptationParameters &adaptationParams );
 
+  bool isInitialized() const { return initialized_; }
+
   /**
    * @brief Add atlas frame HLS for the given patches
    * @param hls Reference to the high-level syntax
@@ -93,6 +95,12 @@ class PCCGSHlsBuilder {
    */
   void updateAsps( PCCHighLevelSyntax &hls, size_t mapWidth, size_t mapHeight, const PCCGSEncoderParameters &params );
 
+  void replaceVpsHls( PCCHighLevelSyntax &hls, const PCCGSEncoderParameters           &params );
+  void replaceAtlasAspsHls( PCCHighLevelSyntax &hls, const PCCGSEncoderParameters           &params );
+  void replaceAtlasAfpsHls( PCCHighLevelSyntax &hls, const PCCGSEncoderParameters           &params );
+  void replaceAtlasAapsHls( PCCHighLevelSyntax &hls, const PCCAdaptationParameters &adaptationParams );
+  void removeAtlasFrames(PCCHighLevelSyntax &hls );
+
  private:
   void initializeV3CHls( PCCHighLevelSyntax &hls, const PCCGSEncoderParameters &params );
   void initializeAtlasHls( PCCHighLevelSyntax            &hls,
@@ -103,6 +111,15 @@ class PCCGSHlsBuilder {
   void initializeAtlasAapsHls( PCCHighLevelSyntax &hls, const PCCAdaptationParameters &adaptationParams );
   void layoutPackedMapsHls( PCCHighLevelSyntax &hls, const PCCGSEncoderParameters &params );
   void createGsCameraModelInfoSei( AtlasTileLayerRbsp &atgl, std::string path );
+
+  uint8_t vpsParameterSetId_ = 0;
+  uint8_t aspsParameterSetId_ = 0;
+  uint8_t afpsParameterSetId_ = 0;
+  uint8_t aapsParameterSetId_ = 0;
+
+  size_t   frameIndex_ = 0;
+  
+  bool initialized_ = false;
 };
 
 }  // namespace pcc

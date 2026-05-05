@@ -380,13 +380,17 @@ int decompressVideo( PCCDecoderParameters       &decoderParams,
             const PCCAdaptationParameters adaptationParams = decoder.getAdaptationParams( i );
 
             adaptation.inverseAdapt( pointCloud, pointCloudGS, adaptationParams );
+            std::string fileName( 512, '\0' );
+            int len = std::snprintf( &fileName[0], fileName.size(), decoderParams.reconstructedDataPath_.c_str(), decoderParams.startFrameNumber_ + i );
+            if ( len > 0 && len < static_cast<int>( fileName.size() ) ) {
+                fileName.resize( len );
+            }
+            pointCloudGS.write( fileName );
 
-            pointCloudGS.write( decoderParams.reconstructedDataPath_ );
-
-            std::string outputPath =
-                decoderParams.reconstructedDataPath_ + "_" + std::to_string( frameNumber + i ) + "asci.ply";
+            std::string outputPath = fileName + "_asci.ply";
             reconstructs.write( outputPath, frameNumber, decoderParams.nbThread_ );
           }
+          decoderParams.startFrameNumber_ += reconstructs.getFrameCount();
         } else {
           reconstructs.write( decoderParams.reconstructedDataPath_, frameNumber, decoderParams.nbThread_ );
         }

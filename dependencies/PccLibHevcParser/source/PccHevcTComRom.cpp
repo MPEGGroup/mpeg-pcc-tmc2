@@ -391,25 +391,6 @@ Void destroyROMPccHevc()
 
 const UInt gPccHevc_auiPUOffset[NUMBER_OF_PART_SIZES] = { 0, 8, 4, 4, 2, 10, 1, 5};
 
-// Void initZscanToRasterPccHevc ( Int iMaxDepth, Int iDepth, UInt uiStartVal, UInt*& rpuiCurrIdx )
-// {
-//   Int iStride = 1 << ( iMaxDepth - 1 );
-
-//   if ( iDepth == iMaxDepth )
-//   {
-//     rpuiCurrIdx[0] = uiStartVal;
-//     rpuiCurrIdx++;
-//   }
-//   else
-//   {
-//     Int iStep = iStride >> iDepth;
-//     initZscanToRasterPccHevc( iMaxDepth, iDepth+1, uiStartVal,                     rpuiCurrIdx );
-//     initZscanToRasterPccHevc( iMaxDepth, iDepth+1, uiStartVal+iStep,               rpuiCurrIdx );
-//     initZscanToRasterPccHevc( iMaxDepth, iDepth+1, uiStartVal+iStep*iStride,       rpuiCurrIdx );
-//     initZscanToRasterPccHevc( iMaxDepth, iDepth+1, uiStartVal+iStep*iStride+iStep, rpuiCurrIdx );
-//   }
-// }
-
 Void initRasterToZscanPccHevc ( UInt uiMaxCUWidth, UInt uiMaxCUHeight, UInt uiMaxDepth )
 {
   UInt  uiMinCUWidth  = uiMaxCUWidth  >> ( uiMaxDepth - 1 );
