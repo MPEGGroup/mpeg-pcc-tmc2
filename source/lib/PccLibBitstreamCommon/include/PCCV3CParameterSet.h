@@ -109,10 +109,10 @@ class V3CParameterSet {
     mapPredictorIndexDiff_[index].resize( mapCountMinus1_[index] + 1 );
   }
   uint32_t          getV3CParameterSetId() { return v3cParameterSetId_; }
-  uint32_t          getAtlasCountMinus1() { return atlasCountMinus1_; }
-  uint16_t          getAtlasId( size_t index ) { return atlasId_[index]; }
-  uint16_t          getFrameWidth( size_t index ) { return frameWidth_[index]; }
-  uint16_t          getFrameHeight( size_t index ) { return frameHeight_[index]; }
+  uint32_t          getAtlasCountMinus1() const { return atlasCountMinus1_; }
+  uint16_t          getAtlasId( size_t index ) const { return atlasId_[index]; }
+  uint16_t          getFrameWidth( size_t index ) const { return frameWidth_[index]; }
+  uint16_t          getFrameHeight( size_t index ) const { return frameHeight_[index]; }
   uint32_t          getMapCountMinus1( size_t index ) { return mapCountMinus1_[index]; }
   bool              getMultipleMapStreamsPresentFlag( size_t index ) { return multipleMapStreamsPresentFlag_[index]; }
   bool              getAuxiliaryVideoPresentFlag( size_t index ) { return auxiliaryVideoPresentFlag_[index]; }

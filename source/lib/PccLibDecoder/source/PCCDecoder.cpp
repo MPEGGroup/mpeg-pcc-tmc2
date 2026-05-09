@@ -96,7 +96,9 @@ int PCCDecoder::decode( PCCContext &context, PCCGroupOfFrames &reconstructs, int
   auto                       &pve = sps.getVpsPackedVideoExtension();
   std::vector<PCCVideoPacked> packedVideos;
   if ( pve.isPresent() && pve.getPackedVideoPresentFlag( atlasIndex ) ) {
-    auto   &packingInfo          = pve.getPackingInformation( atlasIndex );
+    auto &packingInfo = pve.getPackingInformation( atlasIndex );
+    pve.initializeBoundingBoxes( sps );
+    pve.dumpTo( std::clog, {} );
     uint8_t packedMapCountMinus1 = packingInfo.getPackedMapCountMinus1();
 
     packedVideos.resize( packedMapCountMinus1 + 1 );

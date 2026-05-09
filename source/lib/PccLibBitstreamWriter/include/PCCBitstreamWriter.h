@@ -151,11 +151,11 @@ class PCCBitstreamWriter {
                                   uint8_t             version,
                                   V3CParameterSet    &vps,
                                   PCCBitstream       &bitstream );
-  static void packedRegion( PackedRegion    &region,
-                            uint8_t          packedMapCountMinus1,
-                            uint8_t          j,
-                            V3CParameterSet &vps,
-                            PCCBitstream    &bitstream );
+  static void packedRegion( PackedRegion             &region,
+                            const PackingInformation &pin,
+                            uint8_t                   j,
+                            V3CParameterSet          &vps,
+                            PCCBitstream             &bitstream );
 
   // 8.3.4.8 VPS extension syntax
   static void vpsExtension( uint8_t extensionType, V3CParameterSet &vps, PCCBitstream &bitstream );

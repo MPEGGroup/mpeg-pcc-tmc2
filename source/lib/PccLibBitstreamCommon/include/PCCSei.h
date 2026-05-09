@@ -1854,10 +1854,10 @@ class SEIGsCameraModelInfo : public SEIVPCCRegistered {
     for ( size_t i = 0; i < cameraNum_; i++ ) {
       tmp = static_cast<uint32_t>( cameraId_[i] );
       for ( int k = 0; k < 4; ++k ) byteStrData_.push_back( ( tmp >> ( 8 * k ) ) & 0xFF );
-      val = (uint8_t)( cancelFlag_[i] & 0xFF );
+      val = (uint8_t)(cancelFlag_[i]);
       byteStrData_.push_back( val );
       if ( !cancelFlag_[i] ) {
-        val = (uint8_t)( persistenceFlag_[i] & 0xFF );
+        val = (uint8_t)( persistenceFlag_[i] );
         byteStrData_.push_back( val );
         if ( ( i == 0 ) || ( !sameIntrinsicsFlag_ ) ) {
           val = (uint8_t)( imageWidth_[i] & 0xFF );

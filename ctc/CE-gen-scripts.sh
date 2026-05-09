@@ -52,7 +52,7 @@ LENGTHS=(1F)                # Valid values for LENGTHS are (1F), (NF), or (1F NF
 # CODINGS=("C1", "CW")      # Valid values for CODINGS are (C1), (CW), or (C1 CW)
 KEEP_INTERMEDIATE_FILES=0   # 0: reduce diskspace, or 1: keep intermediate files
 GENERATE_PNGs=0             # 0 or 1
-EXPERIMENT_MODE=2           # 0: mandatory, 1: all, 2: man_with_fruit_tracked only
+: "${EXPERIMENT_MODE:=2}"   # 0: mandatory, 1: all, 2: man_with_fruit_tracked only, 3: subset
 
 # ==================================================================================================
 # Coding settings
@@ -60,6 +60,7 @@ EXPERIMENT_MODE=2           # 0: mandatory, 1: all, 2: man_with_fruit_tracked on
 
 MAPMODE=1                   # 0: INTERLEAVED, 1: PLANAR(CTC)
 PACKING_MODE=1              # 0: pack-none, 1: pack-attr, 2: pack-all
+IMPLICIT_PACKING=1          # 0: OFF(explicit), 1:ON (implicit)
 SH_MAPPING=1                # set to 0 to use interleaved maping in the video bitstream (1 corresponds to CTC, i.e. planar mapping)
 COLMAP_SEI=0                # set it to 1 if you want to send the camera pareters as an SEI message
 GSD_TRANSFORM_2D=1          # 1: enable 2D transform for sphereical harmnoics, 0: disable
@@ -153,6 +154,12 @@ elif [ $EXPERIMENT_MODE -eq 2 ]; then
     done
     ENABLE_SEQs[manwithfruit_tracked]=1
     JOBNAME="$JOBNAME-manwithfruit"
+elif [ $EXPERIMENT_MODE -eq 3 ]; then
+    ENABLE_SEQs[musical]=0
+    ENABLE_SEQs[library]=0
+    ENABLE_SEQs[flowerdance]=0
+    ENABLE_SEQs[gymnast]=0
+    JOBNAME="$JOBNAME-subset"
 fi
 
 # ==================================================================================================
@@ -174,6 +181,8 @@ for SEQ in "${SEQUENCES[@]}"; do
 done
 
 START_FRAME_NR[manwithfruit_tracked]=81
+START_FRAME_NR[gymnast]=200
+
 AVAILABLE_FRAMES[bartender_tracked]=32
 AVAILABLE_FRAMES[bartender_semitracked]=32
 AVAILABLE_FRAMES[cinema_tracked]=32
@@ -363,6 +372,9 @@ for SEQ in "${SEQUENCES[@]}"; do
                 if (( $COLMAP_SEI == 1 )); then
                     FIRST_FRAME="$(printf "frame_%04i" ${START_FRAME_NR[$SEQ]})"
                     echo "    --GSColmapFolderPath=\"${COLMAP_DIRs[$SEQ]}/$FIRST_FRAME/sparse/\" \\"
+                fi
+                if [ "$PACKING_MODE" -ne 0 ]; then
+                    echo "    --implicitPacking=$IMPLICIT_PACKING \\"
                 fi
                 echo "    --gsdTransform2dPresentFlag=$GSD_TRANSFORM_2D \\"
                 echo "    --dataAdaptiveShTransformEnabled=$GSD_ADAPTIVE_SH \\"
@@ -577,6 +589,14 @@ echo "$RUN_METRIC"
 echo "$RUN_SUMMARY"
 echo "$MASTER_RUN"
 echo "$MASTER_RUN_SLURM"
+echo
+echo "[Experiment settings]"
+echo "Job name: $JOBNAME"
+echo "Auto run: $AUTO_RUN" 
+echo "Lengths: ${LENGTHS[*]}"
+echo "Keep intermediate files: $KEEP_INTERMEDIATE_FILES"
+echo "Generate PNGs: $GENERATE_PNGs"
+echo "Experiment mode: $EXPERIMENT_MODE"
 echo
 echo "💡 Run (Local): bash \"$MASTER_RUN\""
 echo "💡 Run (Slurm): bash \"$MASTER_RUN_SLURM\""

@@ -872,6 +872,9 @@ void PCCBitstreamWriter::packingInformation( PackingInformation &pin,
                                              V3CParameterSet    &vps,
                                              PCCBitstream       &bitstream ) {
   TRACE_BITSTREAM_IN( "%s", __func__ );
+
+  const auto &pve = vps.getVpsPackedVideoExtension();
+
   WRITE_CODE( pin.getCodecId(), 8 );               // u(8)
   WRITE_CODE( pin.getOccupancyPresentFlag(), 1 );  // u(1)
   WRITE_CODE( pin.getGeometryPresentFlag(), 1 );   // u(1)
@@ -942,33 +945,55 @@ void PCCBitstreamWriter::packingInformation( PackingInformation &pin,
   }
   WRITE_UVLC( pin.getRegionsCountMinus1() );  // ue(v)
 
-  if ( version >= 2 ) {
+  if ( pve.getMultiplePackedMapsEnabledFlag() ) {
     WRITE_CODE( pin.getPackedMapCountMinus1(), ceilLog2( pin.getRegionsCountMinus1() + 1 ) );  // u(v)
   }
+  if ( pve.getTemporalPackingEnabledFlag() ) {
+    for ( uint8_t k = 0; k <= pin.getPackedMapCountMinus1(); ++k ) {
+      WRITE_CODE( pin.getConstituentFrameCountMinus1( k ), ceilLog2( pin.getRegionsCountMinus1() + 1 ) );  // u(v)
+    }
+  }
+  if ( pve.getImplicitPackingMode() == ImplicitPackingMode::implicit_mode ) {
+    for ( uint8_t k = 0; k <= pin.getPackedMapCountMinus1(); ++k ) {
+      WRITE_UVLC( pin.getPackedMapGridColumnsMinus1( k ) );  // ue(v)
+      WRITE_UVLC( pin.getPackedMapGridRowsMinus1( k ) );     // ue(v)
+    }
+  }
   for ( size_t i = 0; i <= pin.getRegionsCountMinus1(); i++ ) {
-    packedRegion( pin.getRegion( i ), pin.getPackedMapCountMinus1(), j, vps, bitstream );
+    packedRegion( pin.getRegion( i ), pin, j, vps, bitstream );
   }
   TRACE_BITSTREAM_OUT( "%s", __func__ );
 }
 
-void PCCBitstreamWriter::packedRegion( PackedRegion    &region,
-                                       uint8_t          packedMapCountMinus1,
-                                       uint8_t          j,
-                                       V3CParameterSet &vps,
-                                       PCCBitstream    &bitstream ) {
+void PCCBitstreamWriter::packedRegion( PackedRegion             &region,
+                                       const PackingInformation &pin,
+                                       uint8_t                   j,
+                                       V3CParameterSet          &vps,
+                                       PCCBitstream             &bitstream ) {
   TRACE_BITSTREAM_IN( "%s", __func__ );
-  if ( packedMapCountMinus1 > 0 ) {
-    WRITE_CODE( region.getPackedMapIndex(), ceilLog2( packedMapCountMinus1 + 1 ) );  // u(v)
+
+  const auto &pve = vps.getVpsPackedVideoExtension();
+
+  if ( pin.getPackedMapCountMinus1() > 0 ) {
+    WRITE_CODE( region.getPackedMapIndex(), ceilLog2( pin.getPackedMapCountMinus1() + 1 ) );  // u(v)
   }
-  WRITE_CODE( region.getTileId(), 8 );           // u(8)
-  WRITE_CODE( region.getTypeIdMinus2(), 2 );     // u(2)
-  WRITE_CODE( region.getTopLeftX(), 16 );        // u(16)
-  WRITE_CODE( region.getTopLeftY(), 16 );        // u(16)
-  WRITE_CODE( region.getWidthMinus1(), 16 );     // u(16)
-  WRITE_CODE( region.getHeightMinus1(), 16 );    // u(16)
-  WRITE_CODE( region.getUnpackTopLeftX(), 16 );  // u(16)
-  WRITE_CODE( region.getUnpackTopLeftY(), 16 );  // u(16)
-  WRITE_CODE( region.getRotationFlag(), 1 );     // u(1)
+  const auto k = region.getPackedMapIndex();
+  assert( k <= pin.getPackedMapCountMinus1() );
+  if ( pin.getConstituentFrameCountMinus1( k ) > 0 ) {
+    WRITE_CODE( region.getConstituentFrameIndex(), ceilLog2( pin.getConstituentFrameCountMinus1( k ) + 1 ) );  // u(v)
+  }
+  WRITE_CODE( region.getTileId(), 8 );        // u(8)
+  WRITE_CODE( region.getTypeIdMinus2(), 2 );  // u(2)
+
+  if ( pve.getImplicitPackingMode() == ImplicitPackingMode::explicit_mode ) {
+    WRITE_CODE( region.getTopLeftX(), 16 );        // u(16)
+    WRITE_CODE( region.getTopLeftY(), 16 );        // u(16)
+    WRITE_CODE( region.getWidthMinus1(), 16 );     // u(16)
+    WRITE_CODE( region.getHeightMinus1(), 16 );    // u(16)
+    WRITE_CODE( region.getUnpackTopLeftX(), 16 );  // u(16)
+    WRITE_CODE( region.getUnpackTopLeftY(), 16 );  // u(16)
+    WRITE_CODE( region.getRotationFlag(), 1 );     // u(1)
+  }
 
   const auto typeId = region.getTypeIdMinus2() + 2;
 
@@ -1011,6 +1036,15 @@ void PCCBitstreamWriter::vpsPackedVideoExtension( VpsPackedVideoExtension &pve,
                                                   V3CParameterSet         &vps,
                                                   PCCBitstream            &bitstream ) {
   TRACE_BITSTREAM_IN( "%s", __func__ );
+
+  if ( version >= 2 ) {
+    WRITE_CODE( pve.getTemporalPackingEnabledFlag(), 1 );  // u(1)
+    if ( pve.getTemporalPackingEnabledFlag() ) {
+      WRITE_UVLC( static_cast<uint32_t>( pve.getTemporalPackingMode() ) );  // ue(v)
+    }
+    WRITE_CODE( pve.getMultiplePackedMapsEnabledFlag(), 1 );              // u(1)
+    WRITE_UVLC( static_cast<uint32_t>( pve.getImplicitPackingMode() ) );  // ue(v)
+  }
 
   for ( uint8_t k = 0; k <= vps.getAtlasCountMinus1(); ++k ) {
     const auto j = vps.getAtlasId( k );

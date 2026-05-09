@@ -434,8 +434,14 @@ void PCCGSHlsBuilder::updateVps( PCCHighLevelSyntax           &hls,
                      ai.getAttributeDimensionPartitionsMinus1( attrIdx ) + 1 );
       }
     }
+    if ( packedRegionsPerMap.empty() ) {
+      std::cerr << "Video packing is enabled, but there are no packed regions.\n";
+      exit( -1 );
+    }
+    auto &vpe = vps.getVpsPackedVideoExtension();
+    vpe.setMultiplePackedMapsEnabledFlag( packedRegionsPerMap.size() > 1 );
 
-    auto &pin = vps.getVpsPackedVideoExtension().getPackingInformation( ATLAS_INDEX );
+    auto &pin = vpe.getPackingInformation( ATLAS_INDEX );
     pin.setPackedMapCountMinus1( static_cast<uint8_t>( packedRegionsPerMap.size() - 1 ) );
 
     if ( params.packGeometry_ ) {
@@ -464,6 +470,29 @@ void PCCGSHlsBuilder::updateVps( PCCHighLevelSyntax           &hls,
       }
     }
 
+    if ( params.implicitPacking_ ) {
+      vpe.setImplicitPackingMode( ImplicitPackingMode::implicit_mode );
+
+      if ( params.packedMapColumnsCount_.size() != pin.getPackedMapCountMinus1() + 1 ) {
+        std::cerr << "Expected packedMapColumnsCount with " << pin.getPackedMapCountMinus1() + 1 << " values\n";
+        exit( -1 );
+      }
+      for ( uint8_t k = 0; k <= pin.getPackedMapCountMinus1(); ++k ) {
+        for ( uint8_t j = 0; j <= pin.getConstituentFrameCountMinus1( k ); ++j ) {
+          auto count = 0;
+
+          for ( size_t i = 0; i <= pin.getRegionsCountMinus1(); ++i ) {
+            const auto &region = pin.getRegion( i );
+            if ( region.getPackedMapIndex() == k && region.getConstituentFrameIndex() == j ) { ++count; }
+          }
+          const auto columnsCount = params.packedMapColumnsCount_[k];
+          const auto rowsCount    = ( count + columnsCount - 1 ) / columnsCount;
+          pin.setPackedMapGridColumnsMinus1( k, columnsCount - 1 );
+          pin.setPackedMapGridRowsMinus1( k, rowsCount - 1 );
+        }
+      }
+    }
+
     if ( params.packGeometry_ || params.packAttributes_ ) { layoutPackedMapsHls( hls, params ); }
   }
 }
@@ -481,38 +510,40 @@ void PCCGSHlsBuilder::updateAsps( PCCHighLevelSyntax           &hls,
 }
 
 void PCCGSHlsBuilder::layoutPackedMapsHls( PCCHighLevelSyntax &hls, const PCCGSEncoderParameters &params ) {
-  auto      &vps    = hls.getVps();
-  const auto width  = vps.getFrameWidth( ATLAS_INDEX );
-  const auto height = vps.getFrameHeight( ATLAS_INDEX );
-  auto      &pin    = vps.getVpsPackedVideoExtension().getPackingInformation( ATLAS_INDEX );
+  auto                   &vps                    = hls.getVps();
+  const auto              width                  = vps.getFrameWidth( ATLAS_INDEX );
+  const auto              height                 = vps.getFrameHeight( ATLAS_INDEX );
+  auto                   &pve                    = vps.getVpsPackedVideoExtension();
+  auto                   &pin                    = pve.getPackingInformation( ATLAS_INDEX );
+  const std::vector<int> &packedMapsColumnsCount = params.packedMapColumnsCount_;
 
-  if ( params.packedMapColumnsCount_.size() <= pin.getPackedMapCountMinus1() ) {
-    std::cerr << "Error: not enough values in packedMapsColumnsCount parameters\n";
-    exit( 1 );
-  }
-  for ( size_t packedMapIndex = 0; packedMapIndex <= pin.getPackedMapCountMinus1(); ++packedMapIndex ) {
-    const auto columnsCount = params.packedMapColumnsCount_[packedMapIndex];
-    std::clog << "layoutPackedMaps: packedMapIndex=" << packedMapIndex << ", columnsCount=" << columnsCount << "\n";
-    auto nextIndex = 0;
+  if ( pve.getImplicitPackingMode() == ImplicitPackingMode::explicit_mode ) {
+    if ( packedMapsColumnsCount.size() <= pin.getPackedMapCountMinus1() ) {
+      std::cerr << "Error: not enough values in packedMapsColumnsCount parameters\n";
+      exit( 1 );
+    }
+    for ( size_t packedMapIndex = 0; packedMapIndex <= pin.getPackedMapCountMinus1(); ++packedMapIndex ) {
+      const auto columnsCount = packedMapsColumnsCount[packedMapIndex];
+      auto       nextIndex    = 0;
 
-    for ( size_t regionIdx = 0; regionIdx <= pin.getRegionsCountMinus1(); ++regionIdx ) {
-      auto &region = pin.getRegion( regionIdx );
+      for ( size_t regionIdx = 0; regionIdx <= pin.getRegionsCountMinus1(); ++regionIdx ) {
+        auto &region = pin.getRegion( regionIdx );
 
-      if ( region.getPackedMapIndex() == packedMapIndex ) {
-        auto index = nextIndex++;
+        if ( region.getPackedMapIndex() == packedMapIndex ) {
+          auto index = nextIndex++;
 
-        region.setWidthMinus1( width - 1 );
-        region.setHeightMinus1( height - 1 );
-        region.setTopLeftY( ( index / columnsCount ) * height );
-        region.setTopLeftX( ( index % columnsCount ) * width );
-
-        std::clog << "  region: attribute, packedMapIndex=" << int( packedMapIndex )
-                  << ", attrIndex= " << int( region.getAttrIndex() )
-                  << ", attrPartitionIndex=" << int( region.getAttrPartitionIndex() )
-                  << ", widthMinus1=" << region.getWidthMinus1() << ", heightMinus1=" << region.getHeightMinus1()
-                  << ", topLeftY=" << region.getTopLeftY() << ", topLeftX=" << region.getTopLeftX() << "\n";
+          region.setWidthMinus1( width - 1 );
+          region.setHeightMinus1( height - 1 );
+          region.setTopLeftY( ( index / columnsCount ) * height );
+          region.setTopLeftX( ( index % columnsCount ) * width );
+        }
       }
     }
+  } else if ( pve.getImplicitPackingMode() == ImplicitPackingMode::implicit_mode ) {
+    pve.initializeBoundingBoxes( vps );
+  } else {
+    std::cerr << "Unsupported implicit packing mode " << static_cast<unsigned>( pve.getImplicitPackingMode() ) << '\n';
+    exit( -1 );
   }
 }
 

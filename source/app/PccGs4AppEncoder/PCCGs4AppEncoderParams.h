@@ -202,6 +202,10 @@ bool parseParameters( int                           argc,
       encoderParams.packAttributes_,
       encoderParams.packAttributes_,
       "Pack attributes using the packed video extension (VPS_EXT_PACKED_2)" )
+    ("implicitPacking", //m76092
+      encoderParams.implicitPacking_,
+      encoderParams.implicitPacking_,
+      "Enable implicit packing (0(default): explicit mode, 1: implicit mode)")
     ( "geometryPackedMapIndex",
       encoderParams.geometryPackedMapIndex_,
       encoderParams.geometryPackedMapIndex_,
