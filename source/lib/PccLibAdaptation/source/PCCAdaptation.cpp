@@ -35,6 +35,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <set>
 #include <fstream>
 #include <iomanip>
 #include <limits>
@@ -178,8 +179,21 @@ bool PCCAdaptationParameters::writeConfig( const std::string &filename ) const {
   } else {
     ofs << "\n";
   }
+  ofs << "  }";
 
-  ofs << "  }\n";
+  if ( enableAdaptiveShQuantization_ ) {
+    ofs << ",\n";
+    ofs << "  \"adaptive_bitshifts\": {\n";
+    ofs << "    \"sh\": [";
+    for ( size_t i = 0; i < adaptiveShBitshifts_.size(); ++i ) {
+      ofs << adaptiveShBitshifts_[i] << ( i < adaptiveShBitshifts_.size() - 1 ? ", " : "" );
+    }
+    ofs << "]\n";
+    ofs << "  }\n";
+  } else {
+    ofs << "\n";
+  }
+
   ofs << "}\n";
   ofs.close();
   return true;
@@ -407,6 +421,13 @@ bool PCCAdaptationParameters::readConfig( const std::string &filename ) {
     }
   }
 
+  // Parse adaptive quantization bitshifts
+  size_t adaptiveQuantizationPos = content.find( "\"adaptive_bitshifts\"" );
+  if ( adaptiveQuantizationPos != std::string::npos ) {
+    enableAdaptiveShQuantization_ = true;
+    parseIntVector( findValue( "sh", adaptiveQuantizationPos ), adaptiveShBitshifts_ );
+  }
+
   return true;
 }
 
@@ -417,6 +438,20 @@ bool PCCAdaptationParameters::readConfig( const std::string &filename ) {
 PCCAdaptation::PCCAdaptation() {}
 
 PCCAdaptation::~PCCAdaptation() {}
+
+//============================================================================
+// PCCAdaptation - Forward Declarations
+//============================================================================
+
+namespace {
+
+template <typename PointSetT>
+size_t getAdaptiveBitDepth( const uint32_t                 maxBitDepth,
+                            const PointSetT               &input,
+                            const PCCAdaptationParameters &params,
+                            size_t                         pointIndex );
+
+}  // namespace
 
 //============================================================================
 // PCCAdaptation - Main Adaptation Functions
@@ -494,6 +529,10 @@ bool PCCAdaptation::adapt( const PCCPointSetGS     &inputPointCloud,
     }
     if ( params.shMappingMode_ == 1 )
       reorderSphericalHarmonicsAC( const_cast<PCCPointSet3 &>( outputPointCloud ), false );
+
+    if ( params.enableAdaptiveShQuantization_ ) {
+      outputPointCloud.getQuantizationGroupIds() = inputPointCloud.getQuantizationGroupIds();
+    }
   }
 
   // Copy colors directly (already uint8_t)
@@ -552,6 +591,10 @@ bool PCCAdaptation::inverseAdapt( const PCCPointSet3            &inputPointCloud
       sphericalHarmonicsInvTransform( outputPointCloud, params );
     }
     reorderSphericalHarmonicsAC( outputPointCloud, false );
+
+    if ( params.enableAdaptiveShQuantization_ ) {
+      outputPointCloud.getQuantizationGroupIds() = inputPointCloud.getQuantizationGroupIds();
+    }
   }
 
   // Copy colors directly
@@ -941,6 +984,8 @@ bool PCCAdaptation::quantizeSphericalHarmonics( const PCCPointSetGS     &input,
   for ( size_t i = 0; i < pointCount; ++i ) {
     const GSSphericalHarmonics    &sh = input.getSphericalHarmonics()[i];
     std::vector<PCCAttribute16bit> qSh( 16 );
+    uint32_t                       pointBitDepth = bitDepth;
+    if ( params.enableAdaptiveShQuantization_ ) { pointBitDepth = getAdaptiveBitDepth( bitDepth, input, params, i ); }
 
     for ( size_t l = 0; l < params.shCoefficientCount_; ++l ) {
       for ( int ch = 0; ch < 3; ++ch ) {
@@ -949,7 +994,7 @@ bool PCCAdaptation::quantizeSphericalHarmonics( const PCCPointSetGS     &input,
           int M   = params.shNumRegionsMinus1_[idx];
           if ( M == 0 ) {
             double norm = normalizeToUnit( sh[l][ch], params.computedShMin_[l][ch], params.computedShMax_[l][ch] );
-            qSh[l][ch]  = static_cast<uint16_t>( quantizeValue( norm, bitDepth ) );
+            qSh[l][ch]  = static_cast<uint16_t>( quantizeValue( norm, pointBitDepth ) );
           } else {
             const auto &reg        = shRegions[idx];
             int         region_idx = 0;
@@ -958,13 +1003,14 @@ bool PCCAdaptation::quantizeSphericalHarmonics( const PCCPointSetGS     &input,
             double prev_idx  = ( region_idx > 0 ) ? reg.tp_int[region_idx - 1] : reg.min_offset;
             double step_vec  = params.shStepSizes_[ssBaseOffsets[idx] + region_idx];
             double base_real = reg.region_start_real[region_idx];
-            double q_vals    = std::round( ( sh[l][ch] - base_real ) / step_vec + prev_idx );
-
+            double q_vals    = ( sh[l][ch] - base_real ) / step_vec + prev_idx;
+            if ( params.enableAdaptiveShQuantization_ ) { q_vals = q_vals / exp2( bitDepth - pointBitDepth ); }
+            q_vals     = std::round( q_vals );
             qSh[l][ch] = static_cast<uint16_t>( std::max( 0.0, std::min( static_cast<double>( max_val ), q_vals ) ) );
           }
         } else {
           double norm = normalizeToUnit( sh[l][ch], params.computedShMin_[l][ch], params.computedShMax_[l][ch] );
-          qSh[l][ch]  = static_cast<uint16_t>( quantizeValue( norm, bitDepth ) );
+          qSh[l][ch]  = static_cast<uint16_t>( quantizeValue( norm, pointBitDepth ) );
         }
       }
     }
@@ -1026,8 +1072,10 @@ bool PCCAdaptation::dequantizeSphericalHarmonics( const PCCPointSet3            
   }
 
   for ( size_t i = 0; i < pointCount; ++i ) {
-    const auto           &qSh = input.getSphericalHarmonics()[i];
-    GSSphericalHarmonics &sh  = output.getSphericalHarmonics()[i];
+    const auto           &qSh           = input.getSphericalHarmonics()[i];
+    GSSphericalHarmonics &sh            = output.getSphericalHarmonics()[i];
+    uint32_t              pointBitDepth = bitDepth;
+    if ( params.enableAdaptiveShQuantization_ ) { pointBitDepth = getAdaptiveBitDepth( bitDepth, input, params, i ); }
 
     for ( size_t l = 0; l < params.shCoefficientCount_; ++l ) {
       for ( int ch = 0; ch < 3; ++ch ) {
@@ -1035,12 +1083,13 @@ bool PCCAdaptation::dequantizeSphericalHarmonics( const PCCPointSet3            
           int idx = l * 3 + ch;
           int M   = params.shNumRegionsMinus1_[idx];
           if ( M == 0 ) {
-            sh[l][ch] = denormalizeFromUnit( dequantizeValue( qSh[l][ch], bitDepth ), params.computedShMin_[l][ch],
+            sh[l][ch] = denormalizeFromUnit( dequantizeValue( qSh[l][ch], pointBitDepth ), params.computedShMin_[l][ch],
                                              params.computedShMax_[l][ch] );
           } else {
-            const auto &reg        = shRegions[idx];
-            int         q_val      = qSh[l][ch];
-            int         region_idx = 0;
+            const auto &reg   = shRegions[idx];
+            int         q_val = qSh[l][ch];
+            if ( params.enableAdaptiveShQuantization_ ) { q_val = q_val * exp2( bitDepth - pointBitDepth ); }
+            int region_idx = 0;
             while ( region_idx < M && q_val > reg.tp_int[region_idx] ) { region_idx++; }
 
             double prev_idx  = ( region_idx > 0 ) ? reg.tp_int[region_idx - 1] : reg.min_offset;
@@ -1049,7 +1098,7 @@ bool PCCAdaptation::dequantizeSphericalHarmonics( const PCCPointSet3            
             sh[l][ch]        = base_real + ( q_val - prev_idx ) * step_vec;
           }
         } else {
-          sh[l][ch] = denormalizeFromUnit( dequantizeValue( qSh[l][ch], bitDepth ), params.computedShMin_[l][ch],
+          sh[l][ch] = denormalizeFromUnit( dequantizeValue( qSh[l][ch], pointBitDepth ), params.computedShMin_[l][ch],
                                            params.computedShMax_[l][ch] );
         }
       }
@@ -1770,5 +1819,218 @@ bool PCCAdaptation::reorderSphericalHarmonicsAC( PCCPointSet3 &pointCloud, bool 
 
   return true;
 }
+
+//============================================================================
+// Adaptive SH Quantization
+//============================================================================
+
+bool computeGroupIdsFromImportanceScores( const std::string &importanceScoresPath,
+                                          const size_t       pointCount,
+                                          std::vector<int>  &groupIds ) {
+  std::ifstream ifs( importanceScoresPath );
+  if ( !ifs.is_open() ) {
+    std::cerr << "PCCAdaptation::computeGroupIdsFromImportanceScores - Cannot open file: " << importanceScoresPath
+              << std::endl;
+    return false;
+  }
+  std::vector<double> impScores;
+  impScores.reserve( pointCount );
+
+  std::string line;
+  while ( std::getline( ifs, line ) ) {
+    if ( line.find_first_not_of( " \t\r\n" ) == std::string::npos ) { continue; }
+    impScores.push_back( std::stod( line ) );
+  }
+
+  if ( impScores.size() != pointCount ) {
+    std::cerr << "PCCAdaptation::computeGroupIdsFromImportanceScores - Score count mismatch. " << pointCount
+              << " != " << impScores.size() << std::endl;
+    return false;
+  }
+
+  const double eps = 1e-18;
+  for ( auto &score : impScores ) {
+    if ( score < eps ) { score = eps; }
+  }
+  const double maxScore = *std::max_element( impScores.begin(), impScores.end() );
+  const double c        = 0.5 * std::log( maxScore );
+
+  groupIds.resize( impScores.size() );
+  for ( size_t i = 0; i < impScores.size(); ++i ) {
+    const double group = c - 0.5 * std::log( impScores[i] );
+    groupIds[i]        = std::max( 0, static_cast<int>( std::round( group ) ) );
+  }
+
+  return true;
+}
+
+bool PCCAdaptation::pruneAndGroupAdaptiveQuantization( const PCCPointSetGS     &inputPointCloud,
+                                                       PCCPointSetGS           &outputPointCloud,
+                                                       PCCAdaptationParameters &params ) const {
+  if ( !params.enableAdaptiveShQuantization_ ) {
+    outputPointCloud = inputPointCloud;
+    return true;
+  }
+
+  const size_t inputPointCount = inputPointCloud.getPointCount();
+
+  if ( params.importanceScoresPath_.empty() ) {
+    std::cerr << "Error - Missing importanceScoresPath for adaptive SH quantization" << std::endl;
+    return false;
+  }
+  if ( params.adaptiveShBitshifts_.empty() ) {
+    std::cerr << "Error - Empty adaptiveShBitshifts mapping" << std::endl;
+    return false;
+  }
+
+  std::vector<int> groupIds;
+  if ( !computeGroupIdsFromImportanceScores( params.importanceScoresPath_, inputPointCount, groupIds ) ) {
+    std::cerr << "Error - Failed to compute quantization groups from importance score file: "
+              << params.importanceScoresPath_ << std::endl;
+    return false;
+  }
+
+  // Remove empty groups and re-index
+  std::vector<int> shBitshifts( params.adaptiveShBitshifts_.begin(), params.adaptiveShBitshifts_.end() );
+
+  const int     maxGrp = *std::max_element( groupIds.begin(), groupIds.end() );
+  std::set<int> usedGrps( groupIds.begin(), groupIds.end() );
+
+  std::set<int> allGrps;
+  for ( int g = 0; g <= maxGrp; ++g ) { allGrps.insert( g ); }
+
+  std::vector<int> emptyGrps;
+  for ( int g : allGrps ) {
+    if ( usedGrps.find( g ) == usedGrps.end() ) { emptyGrps.push_back( g ); }
+  }
+
+  std::sort( emptyGrps.rbegin(), emptyGrps.rend() );
+  for ( int g : emptyGrps ) {
+    if ( static_cast<int>( shBitshifts.size() ) > g + 1 ) { shBitshifts.erase( shBitshifts.begin() + g ); }
+    for ( auto &gid : groupIds ) {
+      if ( gid > g ) { gid -= 1; }
+    }
+  }
+
+  if ( shBitshifts.empty() ) {
+    std::cerr << "Error - Empty SH bitshift mapping after removing empty groups" << std::endl;
+    return false;
+  }
+
+  for ( auto &gid : groupIds ) { gid = std::max( 0, std::min( gid, static_cast<int>( shBitshifts.size() - 1 ) ) ); }
+
+  // Prune gaussians with 0 SH bits
+  std::vector<size_t> keepIndices;
+  keepIndices.reserve( inputPointCount );
+
+  const size_t          maxShBitDepth = params.shBitDepth_;
+  std::vector<uint8_t>  isPrunedGroup( shBitshifts.size(), 0 );
+  std::vector<uint16_t> groupIdsKept;
+  groupIdsKept.reserve( inputPointCount );
+  for ( size_t i = 0; i < inputPointCount; ++i ) {
+    const int gid = groupIds[i];
+    if ( isPrunedGroup[gid] ) { continue; }
+
+    const int bitshift = shBitshifts[gid];
+    int       bits     = static_cast<int>( maxShBitDepth ) - bitshift;
+    bits               = std::max( 0, std::min( static_cast<int>( maxShBitDepth ), bits ) );
+
+    if ( bits > 0 || params.keepZeroShBitGaussians_ ) {
+      keepIndices.push_back( i );
+      groupIdsKept.push_back( static_cast<uint16_t>( gid ) );
+    } else {
+      isPrunedGroup[gid] = 1;
+    }
+  }
+
+  if ( keepIndices.empty() ) {
+    std::cerr << "Error - Adaptive SH pruning removed all gaussians" << std::endl;
+    return false;
+  }
+
+  // Merge same bitshifts and quantization groups and ignore pruned groups
+  std::vector<int> mergedShBitshifts;
+  std::vector<int> remapGroupIds( shBitshifts.size(), -1 );
+  mergedShBitshifts.reserve( shBitshifts.size() );
+
+  for ( size_t g = 0; g < shBitshifts.size(); ++g ) {
+    if ( isPrunedGroup[g] ) { continue; }
+
+    const int bitshift = shBitshifts[g];
+    auto      it       = std::find( mergedShBitshifts.begin(), mergedShBitshifts.end(), bitshift );
+    if ( it == mergedShBitshifts.end() ) {
+      remapGroupIds[g] = static_cast<int>( mergedShBitshifts.size() );
+      mergedShBitshifts.push_back( bitshift );
+    } else {
+      remapGroupIds[g] = static_cast<int>( std::distance( mergedShBitshifts.begin(), it ) );
+    }
+  }
+
+  for ( auto &gid : groupIdsKept ) { gid = static_cast<uint16_t>( remapGroupIds[gid] ); }
+  shBitshifts = mergedShBitshifts;
+  // Update adaptive SH bitshift mapping
+  params.adaptiveShBitshifts_ = shBitshifts;
+
+  outputPointCloud.clear();
+  if ( inputPointCloud.hasColors() ) { outputPointCloud.addColors(); }
+  if ( inputPointCloud.hasRotations() ) { outputPointCloud.addRotations(); }
+  if ( inputPointCloud.hasScales() ) { outputPointCloud.addScales(); }
+  if ( inputPointCloud.hasOpacities() ) { outputPointCloud.addOpacities(); }
+  if ( inputPointCloud.hasSphericalHarmonics() ) {
+    outputPointCloud.addSphericalHarmonics();
+    outputPointCloud.setSphericalHarmonicsCount( inputPointCloud.getSphericalHarmonicsCount() );
+  }
+  outputPointCloud.resize( keepIndices.size() );
+
+  for ( size_t outIdx = 0; outIdx < keepIndices.size(); ++outIdx ) {
+    const size_t inIdx       = keepIndices[outIdx];
+    outputPointCloud[outIdx] = inputPointCloud[inIdx];
+
+    if ( inputPointCloud.hasColors() ) { outputPointCloud.setColor( outIdx, inputPointCloud.getColor( inIdx ) ); }
+    if ( inputPointCloud.hasRotations() ) {
+      outputPointCloud.setRotation( outIdx, inputPointCloud.getRotation( inIdx ) );
+    }
+    if ( inputPointCloud.hasScales() ) { outputPointCloud.setScale( outIdx, inputPointCloud.getScale( inIdx ) ); }
+    if ( inputPointCloud.hasOpacities() ) {
+      outputPointCloud.setOpacity( outIdx, inputPointCloud.getOpacity( inIdx ) );
+    }
+    if ( inputPointCloud.hasSphericalHarmonics() ) {
+      outputPointCloud.setSphericalHarmonic( outIdx, inputPointCloud.getSphericalHarmonic( inIdx ) );
+    }
+  }
+
+  outputPointCloud.getQuantizationGroupIds() = groupIdsKept;
+
+  return true;
+}
+
+namespace {
+
+template <typename PointSetT>
+size_t getAdaptiveBitDepth( const uint32_t                 maxBitDepth,
+                            const PointSetT               &input,
+                            const PCCAdaptationParameters &params,
+                            size_t                         pointIndex ) {
+  if ( !input.hasQuantizationGroupIds() ) {
+    std::cerr << "PCCAdaptation::getAdaptiveBitDepth - missing quantization group IDs" << std::endl;
+    return 0;
+  }
+  if ( params.adaptiveShBitshifts_.empty() ) {
+    std::cerr << "PCCAdaptation::getAdaptiveBitDepth - empty adaptive bitshift mapping" << std::endl;
+    return 0;
+  }
+
+  size_t groupId = input.getQuantizationGroupId( pointIndex );
+  if ( groupId >= params.adaptiveShBitshifts_.size() ) {
+    std::cerr << "PCCAdaptation::getAdaptiveBitDepth - invalid group id " << groupId << " at gaussian index "
+              << pointIndex << std::endl;
+    return 0;
+  }
+  int bits = static_cast<int>( maxBitDepth ) - params.adaptiveShBitshifts_[groupId];
+  bits     = std::max( 0, std::min( static_cast<int>( maxBitDepth ), bits ) );
+  return static_cast<uint32_t>( bits );
+}
+
+}  // namespace
 
 }  // namespace pcc

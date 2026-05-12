@@ -526,24 +526,24 @@ void PCCBitstreamWriter::atlasSubStream( PCCHighLevelSyntax &syntax, PCCBitstrea
 
   uint32_t lastSize      = 0;
   size_t   nalHeaderSize = 2;
-  int8_t  aspsIdx        = syntax.getAtlasHighLevelSyntax(0).getActiveASPS();  // TODO: get correct value of atlas id
+  int8_t   aspsIdx       = syntax.getAtlasHighLevelSyntax( 0 ).getActiveASPS();  // TODO: get correct value of atlas id
   atlasSequenceParameterSetRbsp( syntax.getAtlasSequenceParameterSet( aspsIdx ), syntax, tempBitStream );
   aspsSizeList[aspsIdx] = tempBitStream.size() - lastSize + nalHeaderSize;
   lastSize              = tempBitStream.size();
   if ( maxUnitSize < aspsSizeList[aspsIdx] ) { maxUnitSize = aspsSizeList[aspsIdx]; }
-  
-  int8_t  afpsIdx        = syntax.getAtlasHighLevelSyntax(0).getActiveAFPS();  // TODO: get correct value of atlas id
+
+  int8_t afpsIdx = syntax.getAtlasHighLevelSyntax( 0 ).getActiveAFPS();  // TODO: get correct value of atlas id
   atlasFrameParameterSetRbsp( syntax.getAtlasFrameParameterSet( afpsIdx ), syntax, tempBitStream );
   afpsSizeList[afpsIdx] = tempBitStream.size() - lastSize + nalHeaderSize;
   lastSize              = tempBitStream.size();
   if ( maxUnitSize < afpsSizeList[afpsIdx] ) { maxUnitSize = afpsSizeList[afpsIdx]; }
-  
-  int8_t  aapsIdx        = syntax.getAtlasHighLevelSyntax(0).getActiveAAPS();  // TODO: get correct value of atlas id
+
+  int8_t aapsIdx = syntax.getAtlasHighLevelSyntax( 0 ).getActiveAAPS();  // TODO: get correct value of atlas id
   atlasAdaptationParameterSetRbsp( syntax.getAtlasAdaptationParameterSet( aapsIdx ), tempBitStream );
   aapsSizeList[aapsIdx] = tempBitStream.size() - lastSize + nalHeaderSize;
   lastSize              = tempBitStream.size();
   if ( maxUnitSize < aapsSizeList[aapsIdx] ) { maxUnitSize = aapsSizeList[aapsIdx]; }
-  
+
   for ( size_t atglIndex = 0; atglIndex < atglSize; atglIndex++ ) {
     auto &atgl = syntax.getAtlasTileLayer( atglIndex );
     seiPrefixSizeList[atglIndex].resize( atgl.getSEI().getSeiPrefix().size() );
@@ -579,9 +579,9 @@ void PCCBitstreamWriter::atlasSubStream( PCCHighLevelSyntax &syntax, PCCBitstrea
       min( max( static_cast<int>( ceil( static_cast<double>( ceilLog2( maxUnitSize + 1 ) ) / 8.0 ) ), 1 ), 8 ) - 1 );
   ssnu.setSizePrecisionBytesMinus1( precision );
   sampleStreamNalHeader( bitstream, ssnu );
-  //for ( size_t aspsCount = 0; aspsCount < syntax.getAtlasSequenceParameterSetList().size(); aspsCount++ ) 
+  // for ( size_t aspsCount = 0; aspsCount < syntax.getAtlasSequenceParameterSetList().size(); aspsCount++ )
   {
-    int8_t  aspsIdx        = syntax.getAtlasHighLevelSyntax(0).getActiveASPS();  
+    int8_t  aspsIdx = syntax.getAtlasHighLevelSyntax( 0 ).getActiveASPS();
     NalUnit nu( NAL_ASPS, 0, 1 );
     nu.setSize( aspsSizeList[aspsIdx] );
     sampleStreamNalUnit( syntax, bitstream, ssnu, nu, aspsIdx );
@@ -591,9 +591,9 @@ void PCCBitstreamWriter::atlasSubStream( PCCHighLevelSyntax &syntax, PCCBitstrea
     //        (int)nu.getType(), toString( nu.getType() ).c_str(), ( ssnu.getSizePrecisionBytesMinus1() + 1 ),
     //        nu.getSize(), bitstream.size() );
   }
-  //for ( size_t afpsCount = 0; afpsCount < syntax.getAtlasFrameParameterSetList().size(); afpsCount++ ) 
+  // for ( size_t afpsCount = 0; afpsCount < syntax.getAtlasFrameParameterSetList().size(); afpsCount++ )
   {
-    int8_t  afpsIdx        = syntax.getAtlasHighLevelSyntax(0).getActiveAFPS();  
+    int8_t  afpsIdx = syntax.getAtlasHighLevelSyntax( 0 ).getActiveAFPS();
     NalUnit nu( NAL_AFPS, 0, 1 );
     nu.setSize( afpsSizeList[afpsIdx] );
     sampleStreamNalUnit( syntax, bitstream, ssnu, nu, afpsIdx );
@@ -604,9 +604,9 @@ void PCCBitstreamWriter::atlasSubStream( PCCHighLevelSyntax &syntax, PCCBitstrea
     //        nu.getSize(), bitstream.size() );
   }
 
-  //for ( size_t aapsCount = 0; aapsCount < syntax.getAtlasAdaptationParameterSetList().size(); aapsCount++ ) 
+  // for ( size_t aapsCount = 0; aapsCount < syntax.getAtlasAdaptationParameterSetList().size(); aapsCount++ )
   {
-    int8_t  aapsIdx        = syntax.getAtlasHighLevelSyntax(0).getActiveAAPS();  
+    int8_t  aapsIdx = syntax.getAtlasHighLevelSyntax( 0 ).getActiveAAPS();
     NalUnit nu( NAL_AAPS, 0, 1 );
     nu.setSize( aapsSizeList[aapsIdx] );
     sampleStreamNalUnit( syntax, bitstream, ssnu, nu, aapsIdx );
@@ -2959,7 +2959,7 @@ void PCCBitstreamWriter::rpduVpccGsExtension( PCCBitstream        &bitstream,
                                               RawPatchDataUnit    &rpdu ) {
   TRACE_BITSTREAM_IN( "%s", __func__ );
   if ( ext.getAdaptiveQuantizationEnableFlag() ) {
-    WRITE_UVLC( 0 /* rpdu.getShBitdepthDelta() */ );  // ue(v) TODO
+    WRITE_UVLC( rpdu.getShBitdepthDelta() );  // ue(v)
   }
   TRACE_BITSTREAM_OUT( "%s", __func__ );
 }

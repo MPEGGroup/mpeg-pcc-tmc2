@@ -66,6 +66,8 @@ COLMAP_SEI=0                # set it to 1 if you want to send the camera pareter
 GSD_TRANSFORM_2D=1          # 1: enable 2D transform for sphereical harmnoics, 0: disable
 GSD_ADAPTIVE_SH=1           # when GSD_TRANSFORM_2D=1, 1: enable m75790, 0: enable m75380
 GSD_NON_UNIFORM_QUANT=1     # 1: enable m75025, 0: disable m75025
+ADAPTIVE_QUANTIZATION=0     # 1: enable m75039, 0: disable
+ANNOTATE_DIR=""             # m75039: path to directory of importance score files for each sequence. If string is empty, files are recomputed
 
 # ==================================================================================================
 # Base directories
@@ -226,6 +228,7 @@ RESOLUTIONS[gymnast]="2456x2054"
 METRIC="$METRIC_DIR/mpeg-gsc-metrics"
 CAMERAPOS_BIN="$CAMERAPOS_DIR/cameraPosition"
 CFG_PATH="$TMC_DIR/cfg/gs4"
+IMP_BIN="$TMC_DIR/build/bin/importance-scores"
 TMC_ENC_BIN="$TMC_DIR/bin/PccGs4AppEncoder"
 TMC_DEC_BIN="$TMC_DIR/bin/PccAppDecoder"
 PARSER_SCRIPT="$SCRIPT_DIR/gsc_parse_vpcc_results.py"
@@ -277,6 +280,7 @@ done
 
 CURTIME="$(date "+%y-%m-%d-%H%M%S")"
 OUT="$BASE_OUTPUT/$JOBNAME-$CURTIME"
+BATCH_ANNOTATE="$OUT/jobs/batch_annotate"
 BATCH_CODEC="$OUT/jobs/batch_codec"
 BATCH_METRIC="$OUT/jobs/batch_metric"
 LOG_DIR="$OUT/jobs/logs"
@@ -291,6 +295,11 @@ MKDIRCK "$LOG_DIR"
 MKDIRCK "$OUT/jobs/done/codec"
 MKDIRCK "$OUT/jobs/done/metric"
 
+if [ -z "$ANNOTATE_DIR" ] && [ $ADAPTIVE_QUANTIZATION == 1 ]; then
+    MKDIRCK "$BATCH_ANNOTATE"
+    MKDIRCK "$OUT/jobs/done/annotate"
+fi
+
 cp "$TMC_ENC_BIN" "$OUT/bin/$(basename $TMC_ENC_BIN)"
 if [ $TMC_ENC_BIN != $TMC_DEC_BIN ]; then
     cp "$TMC_DEC_BIN" "$OUT/bin/$(basename $TMC_DEC_BIN)"
@@ -302,7 +311,13 @@ TMC_DEC_BIN="$OUT/bin/$(basename $TMC_DEC_BIN)"
 cp "$CAMERAPOS_BIN" "$OUT/bin/$(basename $CAMERAPOS_BIN)"
 CAMERAPOS_BIN="$OUT/bin/$(basename $CAMERAPOS_BIN)"
 
+if [ -f "$IMP_BIN" ]; then
+    cp "$IMP_BIN" "$OUT/bin/$(basename $IMP_BIN)"
+    IMP_BIN="$OUT/bin/$(basename $IMP_BIN)"
+fi
+
 cd "$OUT/jobs"
+RUN_ANNOTATE="$OUT/jobs/step0_run_annotate.sh"
 RUN_CODEC="$OUT/jobs/step1_run_codec.sh"
 RUN_METRIC="$OUT/jobs/step2_run_metric.sh"
 RUN_SUMMARY="$OUT/jobs/step3_run_summary.sh"
@@ -324,6 +339,10 @@ for SEQ in "${SEQUENCES[@]}"; do
         echo "⏭️ Skipping disabled $SEQ"
         continue
     fi
+
+    REN_W=$(echo ${RESOLUTIONS[$SEQ]} | cut -d'x' -f1)
+    REN_H=$(echo ${RESOLUTIONS[$SEQ]} | cut -d'x' -f2)
+
     for LENGTH in "${LENGTHS[@]}"; do
         case $LENGTH in
             "1F") FRAME_COUNT=1 ; METRIC_CPU=1 ;;
@@ -338,6 +357,49 @@ for SEQ in "${SEQUENCES[@]}"; do
         echo "Processing sequence $LENGTH $SEQ"
         echo "Printing the md5sum of the first input file:"
         md5sum $(printf ${UNCOMPRESSED_DATA_PATHs[$SEQ]} ${START_FRAME_NR[$SEQ]})
+        
+        if [ -z "$ANNOTATE_DIR" ] && [ $ADAPTIVE_QUANTIZATION == 1 ]; then
+            SEQ_GROUP_DIR="$OUT/importance_scores/$LENGTH/$SEQ"
+            MKDIRCK "$SEQ_GROUP_DIR"
+            
+            for ((i = START_FRAME_NR[$SEQ]; i < START_FRAME_NR[$SEQ] + FRAME_COUNT; i++)); do
+                INPUT_FILE=$(printf "${UNCOMPRESSED_DATA_PATHs[$SEQ]}" $i)
+                FRAME_NR=$(printf "%04i" $i)
+                FRAME="frame_$FRAME_NR"
+
+                # Compute importance-score based quantization groups
+                JOBFILE_ANO="$BATCH_ANNOTATE/$JOBNAME-$CURTIME-$LENGTH-$SEQ-$FRAME.sh"
+                {
+                    echo "#!/bin/bash"
+                    echo "#SBATCH --output=$OUT/jobs/logs/%j.out"
+                    echo "#SBATCH --ntasks-per-node=1"
+                    echo "#SBATCH --nodes=1"
+                    echo "#SBATCH --mem-per-cpu=8G"
+                    echo ""
+                    echo "# Printing the md5sum of the input PLY for debugging"
+                    echo "md5sum $INPUT_FILE"
+                    echo ""
+                    echo "# Add camera header to source"
+                    echo "$CAMERAPOS_BIN \\"
+                    echo "    --input=\"$INPUT_FILE\" \\"
+                    echo "    --output=\"$SEQ_GROUP_DIR/$FRAME.camerpos.ply\" \\"
+                    echo "    --image=\"${COLMAP_DIRs[$SEQ]}/$FRAME/sparse/images.bin\" \\"
+                    echo "    --camera=\"${COLMAP_DIRs[$SEQ]}/$FRAME/sparse/cameras.bin\""
+                    echo
+                    echo "# Calculate importance scores"
+                    echo "$TIME$IMP_BIN --threads=7\\"
+                    echo "    -a \"$SEQ_GROUP_DIR/$FRAME.camerpos.ply\" \\"
+                    echo "    \"--impScore=$SEQ_GROUP_DIR/$FRAME.impScores.txt\" \\"
+                    echo "    \"--width=$REN_W\" \"--height=$REN_H\" "
+                    echo "touch $OUT/jobs/done/annotate/\$SLURM_JOB_ID"
+                } > "$JOBFILE_ANO"
+                chmod +x "$JOBFILE_ANO"
+                echo "$JOBFILE_ANO > $LOG_DIR/$JOBNAME-$CURTIME-$LENGTH-$SEQ-$FRAME.annotate.log " >> "$RUN_ANNOTATE"
+            done
+        else
+            SEQ_GROUP_DIR="$ANNOTATE_DIR/$LENGTH/$SEQ"
+        fi
+
         echo "Configuration path: ${CFG_PATH}"
         CFG_RATE_DIRs=($CFG_PATH/rate/*)
 
@@ -362,6 +424,10 @@ for SEQ in "${SEQUENCES[@]}"; do
                 echo "    --configurationFolder=$CFG_PATH/ \\"
                 echo "    --config=$CFG_PATH/gs-scc-common.cfg \\"
                 echo "    --config=$PACK_CONFIG \\"
+                if (( $ADAPTIVE_QUANTIZATION == 1 )); then
+                    echo "    --config=$CFG_PATH/gs-adaptive-quantization.cfg \\"
+                    echo "    --importanceScoresPath=\"$SEQ_GROUP_DIR/$FRAME.impScores.txt\" \\"
+                fi
                 echo "    --config=$CFG_RATE_DIR/encoder.cfg \\"
                 echo "    --startFrameNumber=${START_FRAME_NR[$SEQ]} \\"
                 echo "    --frameCount=$FRAME_COUNT \\"
@@ -394,9 +460,6 @@ for SEQ in "${SEQUENCES[@]}"; do
             } > "$JOBFILE"
             chmod +x "$JOBFILE"
             echo "$JOBFILE > $LOG_DIR/$JOBNAME-$CURTIME-$LENGTH-$SEQ-$RATE.codec.log " >> "$RUN_CODEC"
-
-            REN_W=$(echo ${RESOLUTIONS[$SEQ]} | cut -d'x' -f1)
-            REN_H=$(echo ${RESOLUTIONS[$SEQ]} | cut -d'x' -f2)
 
             # Metrics are run per frame to allow for parallel execution
             for ((i = START_FRAME_NR[$SEQ]; i < START_FRAME_NR[$SEQ] + FRAME_COUNT; i++)); do
@@ -541,6 +604,11 @@ declare -f run_with_progress_sbatch_wait >> "$MASTER_RUN_SLURM"
     echo
     echo "echo '🔧 Detected nproc = $(nproc)'"
     echo
+    if [ -z $ANNOTATE_DIR ] && [ $ADAPTIVE_QUANTIZATION == 1 ]; then
+        echo "echo '▶ Step 0: ANNOTATE_DIR not set -> Run importance score computation in parallel'"
+        echo "run_with_progress_sbatch_wait \"$RUN_ANNOTATE\" \"$OUT/jobs/done/annotate/\""
+        echo
+    fi
     echo "echo '▶ Step 1: VPCC encode/decode in parallel'"
     echo "run_with_progress_sbatch_wait \"$RUN_CODEC\" \"$OUT/jobs/done/codec/\" "
     echo
@@ -566,6 +634,11 @@ declare -f run_with_progress >> "$MASTER_RUN"
     echo
     echo "echo '🔧 Detected nproc = $(nproc)'"
     echo
+    if [ -z $ANNOTATE_DIR ] && [ $ADAPTIVE_QUANTIZATION == 1 ]; then
+        echo "echo '▶ Step 0: ANNOTATE_DIR not set -> importance score calculation in parallel'"
+        echo "run_with_progress \"$RUN_ANNOTATE\"" 1
+        echo
+    fi
     echo "echo '▶ Step 1: VPCC encode/decode in parallel'"
     echo "run_with_progress \"$RUN_CODEC\" \$(nproc)"
     echo
@@ -584,6 +657,9 @@ chmod +x "$MASTER_RUN"
 
 echo
 echo "[Generated scripts]"
+if [ -z $ANNOTATE_DIR ] && [ $ADAPTIVE_QUANTIZATION == 1 ]; then
+    echo "$RUN_ANNOTATE"
+fi
 echo "$RUN_CODEC"
 echo "$RUN_METRIC"
 echo "$RUN_SUMMARY"

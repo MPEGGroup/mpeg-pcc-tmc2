@@ -52,7 +52,8 @@ class RawPatchDataUnit {
       rawPointsMinus1_( 0 ),
       patchIndex_( 0 ),
       frameIndex_( 0 ),
-      tileOrder_( 0 ) {}
+      tileOrder_( 0 ),
+      shBitdepthDelta_( 0 ) {}
   ~RawPatchDataUnit() {}
   RawPatchDataUnit &operator=( const RawPatchDataUnit & ) = default;
 
@@ -68,6 +69,7 @@ class RawPatchDataUnit {
   size_t   getPatchIndex() { return patchIndex_; }
   size_t   getFrameIndex() { return frameIndex_; }
   size_t   getTileOrder() { return tileOrder_; }
+  size_t   getShBitdepthDelta() { return shBitdepthDelta_; }
   void     setPatchIndex( size_t value ) { patchIndex_ = value; }
   void     setFrameIndex( size_t value ) { frameIndex_ = value; }
   void     setTileOrder( size_t value ) { tileOrder_ = value; }
@@ -80,6 +82,7 @@ class RawPatchDataUnit {
   void     set3dOffsetV( size_t value ) { pos3dOffsetV_ = value; }
   void     set3dOffsetD( size_t value ) { pos3dOffsetD_ = value; }
   void     setRawPointsMinus1( uint32_t value ) { rawPointsMinus1_ = value; }
+  void     setShBitdepthDelta( uint32_t value ) { shBitdepthDelta_ = value; }
 
  private:
   bool     patchInAuxiliaryVideoFlag_;
@@ -94,6 +97,7 @@ class RawPatchDataUnit {
   size_t   patchIndex_;
   size_t   frameIndex_;
   size_t   tileOrder_;
+  size_t   shBitdepthDelta_;
 };
 
 };  // namespace pcc

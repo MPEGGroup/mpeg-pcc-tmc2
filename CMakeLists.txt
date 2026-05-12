@@ -126,3 +126,5 @@ add_subdirectory(source/app/PccAppVideoDecoder)
 add_subdirectory(source/app/PccAppColorConverter)
 add_subdirectory(source/app/PccAppNormalGenerator)
 add_subdirectory(source/app/PccGs4AppEncoder)
+
+add_subdirectory(mpeg-gsc-metrics)

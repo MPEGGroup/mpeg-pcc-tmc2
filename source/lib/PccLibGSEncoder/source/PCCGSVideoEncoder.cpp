@@ -49,7 +49,8 @@ void PCCGSVideoEncoder::encode( PCCGSVideoFrames             &frames,
   auto vps = hls.getVpsList().front();
 
   if ( vps.getGeometryVideoPresentFlag( ATLAS_INDEX ) ) {
-    encodeVideo( frames.geometry, PCCVideoType::VIDEO_GEOMETRY, hls, params );
+    encodeVideo( frames.geometry, PCCVideoType::VIDEO_GEOMETRY, hls, params, params.geometryQP_,
+                 params.geometryVideoEncoderConfig_ );
   }
 
   if ( vps.getAttributeVideoPresentFlag( ATLAS_INDEX ) ) {
@@ -62,7 +63,8 @@ void PCCGSVideoEncoder::encode( PCCGSVideoFrames             &frames,
 
       for ( size_t partitionIdx = 0; partitionIdx <= partitionCount; partitionIdx++ ) {
         PCCVideoType videoType = getVideoTypeByAttributeType( attributeType, partitionIdx );
-        encodeVideo( frames.attributes[attributeIdx][partitionIdx], videoType, hls, params );
+        encodeVideo( frames.attributes[attributeIdx][partitionIdx], videoType, hls, params,
+                     getVideoQPByAttributeType( attributeType, params ), params.attributeVideoEncoderConfig_ );
       }
     }
   }
@@ -73,7 +75,8 @@ void PCCGSVideoEncoder::encode( PCCGSVideoFrames             &frames,
 
     for ( size_t packedMapIndex = 0; packedMapIndex < mapsCount; packedMapIndex++ ) {
       encodeVideo( frames.packed[packedMapIndex],
-                   static_cast<PCCVideoType>( PCCVideoType::VIDEO_PACKED + packedMapIndex ), hls, params );
+                   static_cast<PCCVideoType>( PCCVideoType::VIDEO_PACKED + packedMapIndex ), hls, params,
+                   getPackedVideoQP( packedMapIndex, params ), params.packedVideoEncoderConfig_ );
     }
   }
 }
@@ -81,25 +84,11 @@ void PCCGSVideoEncoder::encode( PCCGSVideoFrames             &frames,
 void PCCGSVideoEncoder::encodeVideo( PCCVideo<uint16_t, 3>        &videoFrames,
                                      PCCVideoType                  videoType,
                                      PCCHighLevelSyntax           &hls,
-                                     const PCCGSEncoderParameters &params ) {
-                    
+                                     const PCCGSEncoderParameters &params,
+                                     const int32_t                 videoQP,
+                                     const std::string            &encoderConfig ) {
   PCCVideoBitstream &bitstream = hls.createVideoBitstream( videoType );
   int                nbyte     = 2;
-
-  std::string encoderConfig;
-  size_t      videoQP = 6;
-
-  if ( videoType == PCCVideoType::VIDEO_GEOMETRY ) {
-    encoderConfig = params.geometryVideoEncoderConfig_;
-    videoQP       = params.geometryQP_;
-  } else if ( videoType == PCCVideoType::VIDEO_PACKED ) {
-    encoderConfig = params.packedVideoEncoderConfig_;
-    videoQP       = params.packQP_;
-  } else {
-    encoderConfig = params.attributeVideoEncoderConfig_;
-    videoQP       = params.attributeQP_;
-  }
-
   // Check if encoder config file exists
   FILE *file = fopen( encoderConfig.c_str(), "r" );
   if ( !file ) {
@@ -168,4 +157,29 @@ PCCVideoType PCCGSVideoEncoder::getVideoTypeByAttributeType( size_t attributeTyp
     default: break;
   }
   return static_cast<PCCVideoType>( static_cast<int>( videoType ) + static_cast<int>( partitionIdx * 64 ) );
+}
+
+int32_t PCCGSVideoEncoder::getVideoQPByAttributeType( size_t attributeType, const PCCGSEncoderParameters &params ) {
+  switch ( attributeType ) {
+    case ATTR_TYPE_OPACITY: return params.attributeOpacityQP_;
+    case ATTR_TYPE_SPHERICAL_HARMONIC: return params.attributeColorQP_;
+    case ATTR_TYPE_SCALE: return params.attributeScaleQP_;
+    case ATTR_TYPE_ROTATION: return params.attributeRotationQP_;
+    default: break;
+  }
+  std::cerr << "Error: invalid attribute type." << std::endl;
+  exit( -1 );
+}
+
+int32_t PCCGSVideoEncoder::getPackedVideoQP( size_t packedMapIndex, const PCCGSEncoderParameters &params ) {
+  if ( params.packQP_.empty() ) {
+    std::cerr << "Error: packed video requires at least one packQP value." << std::endl;
+    exit( -1 );
+  }
+  if ( params.packQP_.size() == 1 ) {
+    return params.packQP_[0];
+  } else {
+    assert( packedMapIndex < params.packQP_.size() );
+    return params.packQP_[packedMapIndex];
+  }
 }

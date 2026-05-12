@@ -46,9 +46,12 @@ namespace pcc {
  * @brief Parameters for the GS Encoder
  */
 struct PCCGSEncoderParameters {
-  size_t geometryQP_;
-  size_t attributeQP_;
-  size_t packQP_;
+  int32_t              geometryQP_;
+  int32_t              attributeScaleQP_;
+  int32_t              attributeOpacityQP_;
+  int32_t              attributeRotationQP_;
+  int32_t              attributeColorQP_;
+  std::vector<int32_t> packQP_{};
 
   // Occupancy resolution for raw points patches
   size_t occupancyResolution_;
@@ -108,8 +111,10 @@ struct PCCGSEncoderParameters {
 
   PCCGSEncoderParameters() {
     geometryQP_                          = 6;
-    attributeQP_                         = 6;
-    packQP_                              = 6;
+    attributeScaleQP_                    = 6;
+    attributeOpacityQP_                  = 6;
+    attributeRotationQP_                 = 6;
+    attributeColorQP_                    = 6;
     occupancyResolution_                 = 1;
     geometryBitDepth3D_                  = 18;
     geometryBitDepth2D_                  = 10;

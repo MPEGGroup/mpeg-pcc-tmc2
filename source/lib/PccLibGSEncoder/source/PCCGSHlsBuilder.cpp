@@ -149,8 +149,8 @@ void PCCGSHlsBuilder::initializeAtlasHls( PCCHighLevelSyntax            &hls,
 }
 
 void PCCGSHlsBuilder::initializeAtlasAspsHls( PCCHighLevelSyntax &hls, const PCCGSEncoderParameters &params ) {
-  auto &asps = hls.addAtlasSequenceParameterSet( aspsParameterSetId_);
-  hls.getAtlasHighLevelSyntax(ATLAS_INDEX).setActiveASPS( aspsParameterSetId_ );
+  auto &asps = hls.addAtlasSequenceParameterSet( aspsParameterSetId_ );
+  hls.getAtlasHighLevelSyntax( ATLAS_INDEX ).setActiveASPS( aspsParameterSetId_ );
   asps.setLog2PatchPackingBlockSize( std::log2( params.occupancyResolution_ ) );
   asps.setLog2MaxAtlasFrameOrderCntLsbMinus4( 6 );
   asps.setMaxDecAtlasFrameBufferingMinus1( 0 );
@@ -190,7 +190,7 @@ void PCCGSHlsBuilder::initializeAtlasAspsHls( PCCHighLevelSyntax &hls, const PCC
 
 void PCCGSHlsBuilder::initializeAtlasAfpsHls( PCCHighLevelSyntax &hls, const PCCGSEncoderParameters &params ) {
   auto &afps = hls.addAtlasFrameParameterSet( afpsParameterSetId_ );
-  hls.getAtlasHighLevelSyntax(ATLAS_INDEX).setActiveAFPS( afpsParameterSetId_ );
+  hls.getAtlasHighLevelSyntax( ATLAS_INDEX ).setActiveAFPS( afpsParameterSetId_ );
   auto &asps = hls.getAtlasSequenceParameterSet( aspsParameterSetId_ );
   afps.setAtlasSequenceParameterSetId( asps.getAtlasSequenceParameterSetId() );
   afps.setNumRefIdxDefaultActiveMinus1( 0 );
@@ -206,7 +206,7 @@ void PCCGSHlsBuilder::initializeAtlasAfpsHls( PCCHighLevelSyntax &hls, const PCC
 void PCCGSHlsBuilder::initializeAtlasAapsHls( PCCHighLevelSyntax            &hls,
                                               const PCCAdaptationParameters &adaptationParams ) {
   auto &aaps = hls.addAtlasAdaptationParameterSet( aapsParameterSetId_ );
-  hls.getAtlasHighLevelSyntax(ATLAS_INDEX).setActiveAAPS( aapsParameterSetId_ );
+  hls.getAtlasHighLevelSyntax( ATLAS_INDEX ).setActiveAAPS( aapsParameterSetId_ );
   aaps.setExtensionFlag( true );
   aaps.setVpccExtensionFlag( false );
   aaps.setVpccGsExtensionFlag( true );
@@ -275,6 +275,7 @@ void PCCGSHlsBuilder::initializeAtlasAapsHls( PCCHighLevelSyntax            &hls
       dequant.setMaxRotation( i, adaptationParams.computedRotationMax_[i] );
     }
   }
+  ext.setAdaptiveQuantizationEnableFlag( adaptationParams.enableAdaptiveShQuantization_ );
 
   auto &shProp = ext.getGsShProperty();
   shProp.setShMappingMethod( adaptationParams.shMappingMode_ );
@@ -307,44 +308,42 @@ void PCCGSHlsBuilder::initializeAtlasAapsHls( PCCHighLevelSyntax            &hls
   return;
 }
 
-void PCCGSHlsBuilder::replaceVpsHls( PCCHighLevelSyntax &hls, const PCCGSEncoderParameters           &params ){
+void PCCGSHlsBuilder::replaceVpsHls( PCCHighLevelSyntax &hls, const PCCGSEncoderParameters &params ) {
   hls.getVpsList().clear();
-  vpsParameterSetId_ = (vpsParameterSetId_ + 1)%16;
+  vpsParameterSetId_ = ( vpsParameterSetId_ + 1 ) % 16;
   hls.setActiveVpsId( vpsParameterSetId_ );
   initializeV3CHls( hls, params );
 }
 
-void PCCGSHlsBuilder::replaceAtlasAspsHls( PCCHighLevelSyntax &hls, const PCCGSEncoderParameters           &params ){
+void PCCGSHlsBuilder::replaceAtlasAspsHls( PCCHighLevelSyntax &hls, const PCCGSEncoderParameters &params ) {
   hls.getAtlasSequenceParameterSetList().clear();
-  aspsParameterSetId_ = (aspsParameterSetId_ + 1)%64;
+  aspsParameterSetId_ = ( aspsParameterSetId_ + 1 ) % 64;
   initializeAtlasAspsHls( hls, params );
 }
 
-void PCCGSHlsBuilder::replaceAtlasAfpsHls( PCCHighLevelSyntax &hls, const PCCGSEncoderParameters           &params ){
+void PCCGSHlsBuilder::replaceAtlasAfpsHls( PCCHighLevelSyntax &hls, const PCCGSEncoderParameters &params ) {
   hls.getAtlasFrameParameterSetList().clear();
-  afpsParameterSetId_ = (afpsParameterSetId_ + 1)%64;
+  afpsParameterSetId_ = ( afpsParameterSetId_ + 1 ) % 64;
   initializeAtlasAfpsHls( hls, params );
 }
 
-void PCCGSHlsBuilder::replaceAtlasAapsHls( PCCHighLevelSyntax &hls, const PCCAdaptationParameters &adaptationParams ){
+void PCCGSHlsBuilder::replaceAtlasAapsHls( PCCHighLevelSyntax &hls, const PCCAdaptationParameters &adaptationParams ) {
   hls.getAtlasAdaptationParameterSetList().clear();
-  aapsParameterSetId_ = (aapsParameterSetId_ + 1)%64;
+  aapsParameterSetId_ = ( aapsParameterSetId_ + 1 ) % 64;
   initializeAtlasAapsHls( hls, adaptationParams );
 }
 
-void PCCGSHlsBuilder::removeAtlasFrames( PCCHighLevelSyntax &hls ) {
-  hls.getAtlasTileLayerList().clear();
-}
+void PCCGSHlsBuilder::removeAtlasFrames( PCCHighLevelSyntax &hls ) { hls.getAtlasTileLayerList().clear(); }
 
 void PCCGSHlsBuilder::addAtlasFrame( PCCHighLevelSyntax                     &hls,
                                      std::vector<GSEncoderPatchInformation> &patches,
                                      const PCCGSEncoderParameters           &params ) {
-  int   tileIndex  = 0;
-  int   tileId     = 0;
-  auto &afps       = hls.getAtlasFrameParameterSet( afpsParameterSetId_ );
-  auto &asps       = hls.getAtlasSequenceParameterSet( afps.getAtlasSequenceParameterSetId() );
-  auto &af         = hls.addAtlasTileLayer( frameIndex_, tileIndex );
-  auto &ath        = af.getHeader();
+  int   tileIndex = 0;
+  int   tileId    = 0;
+  auto &afps      = hls.getAtlasFrameParameterSet( afpsParameterSetId_ );
+  auto &asps      = hls.getAtlasSequenceParameterSet( afps.getAtlasSequenceParameterSetId() );
+  auto &af        = hls.addAtlasTileLayer( frameIndex_, tileIndex );
+  auto &ath       = af.getHeader();
 
   ath.setAtlasFrameParameterSetId( afps.getAtlasFrameParameterSetId() );
   ath.setAtlasAdaptationParameterSetId( aapsParameterSetId_ );
@@ -394,6 +393,7 @@ void PCCGSHlsBuilder::addAtlasFrame( PCCHighLevelSyntax                     &hls
     rpdu.set3dOffsetV( patchInfo.patch.v1_ / RawShift );
     rpdu.set3dOffsetD( patchInfo.patch.d1_ / RawShift );
     rpdu.setRawPointsMinus1( patchInfo.patch.getNumberOfRawPoints() - 1 );
+    rpdu.setShBitdepthDelta( patchInfo.patch.shBitdepthDelta_ );
   }
 
   // end patch
@@ -401,7 +401,6 @@ void PCCGSHlsBuilder::addAtlasFrame( PCCHighLevelSyntax                     &hls
 
   // create SEI message
   if ( !params.gsColmapFolderPath_.empty() ) { createGsCameraModelInfoSei( af, params.gsColmapFolderPath_ ); }
-
 }
 
 void PCCGSHlsBuilder::updateVps( PCCHighLevelSyntax           &hls,
@@ -501,9 +500,9 @@ void PCCGSHlsBuilder::updateAsps( PCCHighLevelSyntax           &hls,
                                   size_t                        mapWidth,
                                   size_t                        mapHeight,
                                   const PCCGSEncoderParameters &params ) {
-  auto activeAfpsId = hls.getAtlasHighLevelSyntax(ATLAS_INDEX).getActiveAFPS();                                    
-  auto &afps = hls.getAtlasFrameParameterSetList()[activeAfpsId];
-  auto &asps = hls.getAtlasSequenceParameterSetList()[afps.getAtlasSequenceParameterSetId()];
+  auto  activeAfpsId = hls.getAtlasHighLevelSyntax( ATLAS_INDEX ).getActiveAFPS();
+  auto &afps         = hls.getAtlasFrameParameterSetList()[activeAfpsId];
+  auto &asps         = hls.getAtlasSequenceParameterSetList()[afps.getAtlasSequenceParameterSetId()];
 
   asps.setFrameWidth( mapWidth );
   asps.setFrameHeight( mapHeight );

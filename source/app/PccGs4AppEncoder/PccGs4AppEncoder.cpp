@@ -107,7 +107,7 @@ int main( int argc, char *argv[] ) {
 
   // remove the extension and keep folder path and base file name
   encoderParams.binaryFileBase_ = removeFileExtension( applicationParams.compressedStreamPath_ );
-  encoderParams.debugPath_ = getDirectoryName( applicationParams.compressedStreamPath_ );
+  encoderParams.debugPath_      = getDirectoryName( applicationParams.compressedStreamPath_ );
   encoderParams.geometryVideoEncoderConfig_ =
       applicationParams.configurationFolder_ + applicationParams.geometryConfig_;
   encoderParams.attributeVideoEncoderConfig_ =
@@ -138,22 +138,32 @@ int main( int argc, char *argv[] ) {
     pcc::PCCPointSetGS originalPointCloudGS;
     if ( !loadPointCloudGS( applicationParams.uncompressedDataPath_, frameNumber, originalPointCloudGS ) ) { continue; }
 
+    pcc::PCCPointSetGS pointCloudGS;
+    if ( adaptationParams.enableAdaptiveShQuantization_ ) {
+      if ( !adaptationModule.pruneAndGroupAdaptiveQuantization( originalPointCloudGS, pointCloudGS,
+                                                                adaptationParams ) ) {
+        std::cerr << "Error: adaptive SH pruning and grouping failed for frame " << frameNumber << std::endl;
+        continue;
+      }
+    } else {
+      pointCloudGS = originalPointCloudGS;
+    }
+
     // Adapt point cloud: convert float (PCCPointSetGS) to quantized int (PCCPointSet3)
     pcc::PCCPointSet3 adaptedPointCloud;
-    if ( !adaptationModule.adapt( originalPointCloudGS, adaptedPointCloud, adaptationParams ) ) {
+    if ( !adaptationModule.adapt( pointCloudGS, adaptedPointCloud, adaptationParams ) ) {
       std::cerr << "Error: adaptation failed for frame " << frameNumber << std::endl;
       continue;
     }
 
     // DEBUG
     std::string fileName( 512, '\0' );
-    int len = std::snprintf( &fileName[0], fileName.size(), applicationParams.uncompressedDataPath_.c_str(), frameNumber );
-    if ( len > 0 && len < static_cast<int>( fileName.size() ) ) {
-      fileName.resize( len );
-    }
+    int         len =
+        std::snprintf( &fileName[0], fileName.size(), applicationParams.uncompressedDataPath_.c_str(), frameNumber );
+    if ( len > 0 && len < static_cast<int>( fileName.size() ) ) { fileName.resize( len ); }
 
     encoderParams.frameNameBase_ = removeFileExtension( getBasename( fileName ) );
-    
+
     std::string adaptedPlyPath = encoderParams.debugPath_ + "/" + encoderParams.frameNameBase_ + ".asci.ply";
     adaptedPointCloud.write( adaptedPlyPath );
 

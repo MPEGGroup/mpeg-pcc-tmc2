@@ -57,7 +57,7 @@ int PCCGSEncoder::encode( const PCCPointSet3            &inputPointCloud,
     hlsBuilder_.removeAtlasFrames( hls_ );
   }
   // 2. Generate patches (3D and 2D)
-  auto patchResult = patchGenerator_.generate( inputPointCloud, params );
+  auto patchResult = patchGenerator_.generate( inputPointCloud, params, adaptationParams );
 
   // 3. Add patch information to atlas HLS
   hlsBuilder_.addAtlasFrame( hls_, patchResult.patches, params );

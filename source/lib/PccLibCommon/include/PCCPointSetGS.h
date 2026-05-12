@@ -238,6 +238,16 @@ class PCCPointSetGS {
   std::vector<GSSphericalHarmonics>       &getSphericalHarmonics() { return sphericalHarmonics_; }
   const std::vector<GSSphericalHarmonics> &getSphericalHarmonics() const { return sphericalHarmonics_; }
 
+  std::vector<uint16_t>       &getQuantizationGroupIds() { return quantizationGroupIds_; }
+  const std::vector<uint16_t> &getQuantizationGroupIds() const { return quantizationGroupIds_; }
+  const uint16_t               getQuantizationGroupId( const size_t index ) const {
+    assert( hasQuantizationGroupIds() && index < quantizationGroupIds_.size() );
+    return quantizationGroupIds_[index];
+  }
+  bool hasQuantizationGroupIds() const {
+    return !quantizationGroupIds_.empty() && quantizationGroupIds_.size() == positions_.size();
+  }
+
   // ==================== Size & Capacity ====================
 
   size_t getPointCount() const { return positions_.size(); }
@@ -250,6 +260,7 @@ class PCCPointSetGS {
     if ( withScales_ ) scales_.resize( count );
     if ( withOpacities_ ) opacities_.resize( count );
     if ( withSphericalHarmonics_ ) sphericalHarmonics_.resize( count );
+    if ( !quantizationGroupIds_.empty() ) quantizationGroupIds_.resize( count );
   }
 
   void reserve( size_t count ) {
@@ -259,6 +270,7 @@ class PCCPointSetGS {
     if ( withScales_ ) scales_.reserve( count );
     if ( withOpacities_ ) opacities_.reserve( count );
     if ( withSphericalHarmonics_ ) sphericalHarmonics_.reserve( count );
+    if ( !quantizationGroupIds_.empty() ) quantizationGroupIds_.reserve( count );
   }
 
   void clear() {
@@ -268,6 +280,7 @@ class PCCPointSetGS {
     scales_.clear();
     opacities_.clear();
     sphericalHarmonics_.clear();
+    quantizationGroupIds_.clear();
     withColors_             = false;
     withRotations_          = false;
     withScales_             = false;
@@ -317,6 +330,7 @@ class PCCPointSetGS {
     if ( withScales_ ) scales_.push_back( GSScale() );
     if ( withOpacities_ ) opacities_.push_back( 1.0f );
     if ( withSphericalHarmonics_ ) sphericalHarmonics_.push_back( GSSphericalHarmonics() );
+    if ( !quantizationGroupIds_.empty() ) quantizationGroupIds_.push_back( 0 );
     return positions_.size() - 1;
   }
 
@@ -446,6 +460,9 @@ class PCCPointSetGS {
   std::vector<GSScale>              scales_;
   std::vector<float>                opacities_;
   std::vector<GSSphericalHarmonics> sphericalHarmonics_;
+
+  // Adaptive SH quantization group identifiers
+  std::vector<uint16_t> quantizationGroupIds_;
 
   // Attribute presence flags
   bool withColors_             = false;

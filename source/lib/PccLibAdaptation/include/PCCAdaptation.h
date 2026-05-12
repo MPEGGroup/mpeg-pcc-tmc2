@@ -39,6 +39,7 @@
 #include "PCCPointSetGS.h"
 
 #include <array>
+#include <string>
 #include <vector>
 
 namespace pcc {
@@ -133,6 +134,19 @@ struct PCCAdaptationParameters {
 
   /// Number of bits used for transition points
   std::vector<int> shNumBitsForTransitionPoint_;
+
+  // ==================== SH Adaptive Quantization =======================
+  /// Enable adaptive quantization for SH (m75039)
+  bool enableAdaptiveShQuantization_ = false;
+
+  /// Whether to avoid pruning Gaussians for which the adaptive SH bits are set to 0
+  bool keepZeroShBitGaussians_ = false;
+
+  /// List of bitshifts for each adaptive quantization group index
+  std::vector<int> adaptiveShBitshifts_;
+
+  /// Path to file containing per-gaussian importance scores
+  std::string importanceScoresPath_;
 
   // ==================== Opacity Parameters ====================
   /// Bit depth for opacity quantization (default: 10)
@@ -247,6 +261,11 @@ class PCCAdaptation {
   bool inverseAdapt( const PCCPointSet3            &inputPointCloud,
                      PCCPointSetGS                 &outputPointCloud,
                      const PCCAdaptationParameters &params );
+
+  /// Prune gaussians with 0 SH bits and assign quantization groups for adaptive SH quantization.
+  bool pruneAndGroupAdaptiveQuantization( const PCCPointSetGS     &inputPointCloud,
+                                          PCCPointSetGS           &outputPointCloud,
+                                          PCCAdaptationParameters &params ) const;
 
   // ==================== Individual Operations ====================
 

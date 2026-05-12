@@ -198,14 +198,16 @@ class PCCCodec {
   void generateRawPointsGeometryfromVideo( PCCContext &context, size_t frameIndex );
   void generateRawPointsGeometryfromVideoRecGS( PCCContext &context, size_t frameIndex, PCCPointSet3 &pointCloud );
 
-  void generateRawPointsAttributefromVideo( PCCContext &context, size_t frameIndex );
-  void generateRawPointsAttributefromVideoRecGS( PCCContext   &context,
-                                                 size_t        frameIndex,
-                                                 size_t        attributeIdx,
-                                                 size_t        partitionIndex,
-                                                 PCCPointSet3 &pointCloud );
-
-  void setLogger( PCCLogger &logger ) { logger_ = &logger; }
+  void             generateRawPointsAttributefromVideo( PCCContext &context, size_t frameIndex );
+  void             generateRawPointsAttributefromVideoRecGS( PCCContext   &context,
+                                                             size_t        frameIndex,
+                                                             size_t        attributeIdx,
+                                                             size_t        partitionIndex,
+                                                             PCCPointSet3 &pointCloud );
+  std::vector<int> generateAdaptiveQuantizationInfofromRawPatchRecGS( PCCContext   &context,
+                                                                      size_t        frameIndex,
+                                                                      PCCPointSet3 &pointCloud );
+  void             setLogger( PCCLogger &logger ) { logger_ = &logger; }
 
  protected:
   void generateOccupancyMap( PCCFrameContext      &tile,

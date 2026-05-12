@@ -152,16 +152,44 @@ bool parseParameters( int                           argc,
       adaptationParams.shMappingMode_,
       adaptationParams.shMappingMode_,
       "Mapping spherical harmonics AC coefficients to video using planar mode")
+    ( "enableAdaptiveShQuantization",
+      adaptationParams.enableAdaptiveShQuantization_,
+      adaptationParams.enableAdaptiveShQuantization_,
+      "Enable adaptive SH quantization" )
+     ( "keepZeroShBitGaussians",
+      adaptationParams.keepZeroShBitGaussians_,
+      adaptationParams.keepZeroShBitGaussians_,
+      "Keep Gaussians that have an adaptive bit depth of 0 (no pruning)" )
+    ( "adaptiveBitshifts",
+      adaptationParams.adaptiveShBitshifts_,
+      adaptationParams.adaptiveShBitshifts_,
+      "Comma-separated mapping from quantization group ID to SH bitshift" )
+    ( "importanceScoresPath",
+      adaptationParams.importanceScoresPath_,
+      adaptationParams.importanceScoresPath_,
+      "Path to text file containing gaussian importance scores" )
     
     // Encoder parameters
     ( "geometryQP",
       encoderParams.geometryQP_,
       encoderParams.geometryQP_,
       "QP for compression of geometry video" )
-    ( "attributeQP",
-      encoderParams.attributeQP_,
-      encoderParams.attributeQP_,
-      "QP for compression of attribute video" )
+    ( "attributeScaleQP",
+      encoderParams.attributeScaleQP_,
+      encoderParams.attributeScaleQP_,
+      "QP for compression of scale attribute video" )
+    ( "attributeOpacityQP",
+      encoderParams.attributeOpacityQP_,
+      encoderParams.attributeOpacityQP_,
+      "QP for compression of opacity attribute video" )
+    ( "attributeRotationQP",
+      encoderParams.attributeRotationQP_,
+      encoderParams.attributeRotationQP_,
+      "QP for compression of rotation attribute video" )
+    ( "attributeColorQP",
+      encoderParams.attributeColorQP_,
+      encoderParams.attributeColorQP_,
+      "QP for compression of color/SH attribute video" )
     ( "packQP",
       encoderParams.packQP_,
       encoderParams.packQP_,

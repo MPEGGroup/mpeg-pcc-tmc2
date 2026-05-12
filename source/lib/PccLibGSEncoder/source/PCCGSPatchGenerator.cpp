@@ -61,13 +61,15 @@ uint64_t mortonAddr( const PCCPoint3D &vec, int depth ) {
 
 }  // namespace
 
-PCCGSPatchResult PCCGSPatchGenerator::generate( const PCCPointSet3 &source, const PCCGSEncoderParameters &params ) {
+PCCGSPatchResult PCCGSPatchGenerator::generate( const PCCPointSet3            &source,
+                                                const PCCGSEncoderParameters  &params,
+                                                const PCCAdaptationParameters &adaptationParams ) {
   patches_.clear();
   mapWidth_  = 0;
   mapHeight_ = 0;
 
   // Generate patches in 3D space
-  generate3DPatches( source, params );
+  generate3DPatches( source, params, adaptationParams );
 
   // Generate 2D positions using CTC algorithm
   generate2DPatchesCTC( source, params );
@@ -80,7 +82,9 @@ PCCGSPatchResult PCCGSPatchGenerator::generate( const PCCPointSet3 &source, cons
   return result;
 }
 
-void PCCGSPatchGenerator::generate3DPatches( const PCCPointSet3 &source, const PCCGSEncoderParameters &params ) {
+void PCCGSPatchGenerator::generate3DPatches( const PCCPointSet3            &source,
+                                             const PCCGSEncoderParameters  &params,
+                                             const PCCAdaptationParameters &adaptationParams ) {
   std::map<PCCBox3D, std::vector<size_t>> bbox2rawPoints;
   auto                                    mpsBoxSize = double( 1 << params.geometryBitDepth2D_ );
   if ( params.raw3dOffsetBitCountExplicitModeFlag_ ) {
@@ -115,6 +119,12 @@ void PCCGSPatchGenerator::generate3DPatches( const PCCPointSet3 &source, const P
               << bboxRawPoints.max_.z() << ") " << std::endl;
 
     patches_.push_back( createPatchInfo( bboxRawPoints, rawPointsBBox ) );
+  }
+
+  // adaptive quantization
+  if ( adaptationParams.enableAdaptiveShQuantization_ ) {
+    patches_ = splitPatchesAdaptiveQuantization( source, adaptationParams, patches_ );
+    std::cout << "Raw patch count after split for adaptive quantization: " << patches_.size() << std::endl;
   }
 }
 
@@ -354,4 +364,57 @@ GSEncoderPatchInformation PCCGSPatchGenerator::createPatchInfo( const PCCBox3D  
   patchInfo.patch.setNumberOfRawPoints( pointIndices.size() );
   patchInfo.pointsIndicesInPatch = pointIndices;
   return patchInfo;
+}
+
+std::vector<GSEncoderPatchInformation> PCCGSPatchGenerator::splitPatchesAdaptiveQuantization(
+    const PCCPointSet3                           &source,
+    const PCCAdaptationParameters                &adaptationParams,
+    const std::vector<GSEncoderPatchInformation> &patches ) {
+  size_t maxQuantizationGroupId = source.getMaxQuantizationGroupId();
+  if ( !source.hasQuantizationGroupIds() || maxQuantizationGroupId == 0 ) { return patches; }
+
+  const auto &quantizationGroupIds = source.getQuantizationGroupIds();
+
+  // for each group, store list of patches
+  std::vector<std::vector<std::vector<size_t>>> perGroupPointsIndicesInPatch( maxQuantizationGroupId + 1 );
+  std::vector<std::vector<PCCVector3<size_t>>>  perGroupPatchUVDs( maxQuantizationGroupId + 1 );
+
+  std::cout << "Split patches with adaptive quantization." << std::endl;
+  for ( const auto &patchInfo : patches ) {
+    PCCVector3<size_t> rawPatchUVD( patchInfo.patch.u1_, patchInfo.patch.v1_, patchInfo.patch.d1_ );
+    const auto        &rawPointsBBox = patchInfo.pointsIndicesInPatch;
+    for ( uint16_t g = 0; g <= maxQuantizationGroupId; ++g ) {
+      perGroupPointsIndicesInPatch[g].emplace_back();
+      auto &pointsIndicesInPatch = perGroupPointsIndicesInPatch[g].back();
+      // Count points relevant for this group and save their indices
+      for ( auto rawPointIndex : rawPointsBBox ) {
+        auto quantizationGroupId = quantizationGroupIds[rawPointIndex];
+        if ( quantizationGroupId == g ) { pointsIndicesInPatch.push_back( rawPointIndex ); }
+      }
+      if ( pointsIndicesInPatch.size() == 0 ) {
+        perGroupPointsIndicesInPatch[g].pop_back();
+        continue;  // Don't create empty patch
+      }
+      perGroupPatchUVDs[g].push_back( rawPatchUVD );
+    }
+  }
+  std::vector<GSEncoderPatchInformation> splitPatches;
+  splitPatches.reserve( patches.size() * ( maxQuantizationGroupId + 1 ) );
+  // now we have per group: a list of patches with the point indices corresponding to them
+  for ( size_t g = 0; g <= maxQuantizationGroupId; ++g ) {
+    auto &perPatchSrcIdx = perGroupPointsIndicesInPatch[g];
+    // iterate over patches (within group)
+    for ( size_t p = 0; p < perPatchSrcIdx.size(); ++p ) {
+      PCCVector3<size_t> &rawPatchUVD = perGroupPatchUVDs[g][p];
+      PCCBox3D            bbox;
+      for ( int j = 0; j < 3; j++ ) {
+        bbox.min_[j] = rawPatchUVD[j];  // NOTE: bbox.max is unused
+      }
+      const auto               &rawPointsBBox = perPatchSrcIdx[p];
+      GSEncoderPatchInformation patchInfo     = createPatchInfo( bbox, rawPointsBBox );
+      patchInfo.patch.shBitdepthDelta_        = adaptationParams.adaptiveShBitshifts_[g];
+      splitPatches.push_back( patchInfo );
+    }
+  }
+  return splitPatches;
 }

@@ -68,12 +68,15 @@ class PCCGSVideoEncoder {
   void encodeVideo( PCCVideo<uint16_t, 3>        &videoFrames,
                     PCCVideoType                  videoType,
                     PCCHighLevelSyntax           &hls,
-                    const PCCGSEncoderParameters &params );
-
+                    const PCCGSEncoderParameters &params,
+                    int32_t                       videoQP,
+                    const std::string            &encoderConfig );
   /**
    * @brief Get video type for an attribute type
    */
   PCCVideoType getVideoTypeByAttributeType( size_t attributeType, size_t partitionIdx );
+  int32_t      getVideoQPByAttributeType( size_t attributeType, const PCCGSEncoderParameters &params );
+  int32_t      getPackedVideoQP( size_t packedMapIndex, const PCCGSEncoderParameters &params );
 };
 
 }  // namespace pcc

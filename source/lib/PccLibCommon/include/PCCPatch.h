@@ -475,6 +475,7 @@ struct PCCRawPointsPatch {
   size_t                numberOfRawPointsColors_;
   size_t                preV0_;   // GPA.
   size_t                tempV0_;  // GPA.
+  uint8_t               shBitdepthDelta_;
 
   void resize( const size_t size ) {
     x_.resize( size );
@@ -510,6 +511,7 @@ struct PCCRawPointsPatch {
     numberOfRawPoints_   = 0;
     preV0_               = 0;
     tempV0_              = 0;
+    shBitdepthDelta_     = 0;
     occupancy_.resize( 0 );
     x_.resize( 0 );
     y_.resize( 0 );

@@ -76,9 +76,7 @@ class PCCAtlasHighLevelSyntax {
     assert( 0 );
     exit( -1 );
   }
-  void clearVideoBitstream(){
-    videoBitstream_.clear();
-  }
+  void clearVideoBitstream() { videoBitstream_.clear(); }
   void printVideoBitstream();
 
   // ASPS related functions
@@ -250,15 +248,15 @@ class PCCAtlasHighLevelSyntax {
   }
 
   // get/set functions for active parameter sets
-  uint8_t                          getActiveASPS() { return activeASPS_; }
-  void                             setActiveASPS( uint8_t value ) { activeASPS_ = value; }
-  AtlasSequenceParameterSetRbsp   &getActiveAtlasSequenceParameterSet() {
+  uint8_t                        getActiveASPS() { return activeASPS_; }
+  void                           setActiveASPS( uint8_t value ) { activeASPS_ = value; }
+  AtlasSequenceParameterSetRbsp &getActiveAtlasSequenceParameterSet() {
     assert( activeASPS_ < atlasSequenceParameterSet_.size() );
     return atlasSequenceParameterSet_[activeASPS_];
   }
-  uint8_t                          getActiveAFPS() { return activeAFPS_; }
-  void                             setActiveAFPS( uint8_t value ) { activeAFPS_ = value; }
-  AtlasFrameParameterSetRbsp      &getActiveAtlasFrameParameterSet() {
+  uint8_t                     getActiveAFPS() { return activeAFPS_; }
+  void                        setActiveAFPS( uint8_t value ) { activeAFPS_ = value; }
+  AtlasFrameParameterSetRbsp &getActiveAtlasFrameParameterSet() {
     assert( activeAFPS_ < atlasFrameParameterSet_.size() );
     return atlasFrameParameterSet_[activeAFPS_];
   }
@@ -342,9 +340,7 @@ class PCCHighLevelSyntax {
   PCCVideoBitstream &createVideoBitstream( PCCVideoType type ) {
     return atlasHLS_[atlasIndex_].createVideoBitstream( type );
   }
-  void clearVideoBitstream(  ) {
-    return atlasHLS_[atlasIndex_].clearVideoBitstream(  );
-  }
+  void               clearVideoBitstream() { return atlasHLS_[atlasIndex_].clearVideoBitstream(); }
   size_t             getVideoBitstreamCount() { return atlasHLS_[atlasIndex_].getVideoBitstreamCount(); }
   PCCVideoBitstream &getVideoBitstream( size_t index ) { return atlasHLS_[atlasIndex_].getVideoBitstream( index ); }
   PCCVideoBitstream &getVideoBitstream( PCCVideoType type ) { return atlasHLS_[atlasIndex_].getVideoBitstream( type ); }

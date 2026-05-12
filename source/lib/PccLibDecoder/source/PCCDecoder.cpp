@@ -83,7 +83,7 @@ int PCCDecoder::decode( PCCContext &context, PCCGroupOfFrames &reconstructs, int
   auto             &oi               = sps.getOccupancyInformation( atlasIndex );
   auto             &gi               = sps.getGeometryInformation( atlasIndex );
   auto             &asps             = context.getAtlasSequenceParameterSetList()[0];
-  size_t           frameCount       = context.size();
+  size_t            frameCount       = context.size();
   auto             &plt              = sps.getProfileTierLevel();
   const size_t      mapCount         = sps.getMapCountMinus1( atlasIndex ) + 1;
   int               geometryBitDepth = gi.getGeometry2dBitdepthMinus1() + 1;
@@ -1202,6 +1202,7 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext &context, size_t atgl
       rawPointsPatch.v0_                = rpdu.get2dPosY();
       rawPointsPatch.sizeU0_            = rpdu.get2dSizeXMinus1() + 1;
       rawPointsPatch.sizeV0_            = rpdu.get2dSizeYMinus1() + 1;
+      rawPointsPatch.shBitdepthDelta_   = rpdu.getShBitdepthDelta();
       if ( afps.getRaw3dOffsetBitCountExplicitModeFlag() ) {
         rawPointsPatch.u1_ = rpdu.get3dOffsetU();
         rawPointsPatch.v1_ = rpdu.get3dOffsetV();
@@ -2175,7 +2176,12 @@ int PCCDecoder::ReconstructIdc3( PCCContext &context, PCCGroupOfFrames &reconstr
           for ( int i = 0; i < 16; ++i ) { adaptationParams.shTrTypeCol_.push_back( tr2d.getTrColType( i ) ); }
         }
       }
-
+      if ( ext.getAdaptiveQuantizationEnableFlag() ) {
+        pointCloud.addQuantizationGroupIds();
+        adaptationParams.enableAdaptiveShQuantization_ = true;
+        adaptationParams.adaptiveShBitshifts_ =
+            generateAdaptiveQuantizationInfofromRawPatchRecGS( context, frameIdx, pointCloud );
+      }
       if ( addAdaptationParameters ) adaptationParams_.push_back( adaptationParams );
     }
   }  // frameIdx

@@ -37,7 +37,7 @@ import os
 import argparse
 
 # Constants for CSV column ranges and Excel positions
-BITRATES_RANGE = (3, 12, 11)       # start_idx, end_idx, start_col
+BITRATES_RANGE = (3, 12, 11)  # start_idx, end_idx, start_col
 METRICS_RANGE = (21, 24, 20)
 TIMES_RSS_RANGE = (13, 21, 31)
 
@@ -69,7 +69,10 @@ def csv2xlsm(wb, file_path, sheet_name):
 
     # Build index from sequence variant, e.g. ("1F", "plant"), to row number in the worksheet
     sequence_rows = {
-        (ws.cell(row=cell.row, column=2).value, ws.cell(row=cell.row, column=3).value): cell.row
+        (
+            ws.cell(row=cell.row, column=2).value,
+            ws.cell(row=cell.row, column=3).value,
+        ): cell.row
         for cell in ws["B"]
         if cell.value is not None
     }
@@ -85,11 +88,13 @@ def csv2xlsm(wb, file_path, sheet_name):
             if seq_variant not in sequence_rows:
                 # print a warning
                 if seq_variant not in warned_sequences:
-                    print(f"[WARNING] Sequence '{' '.join(seq_variant)}' not found in the template!")
+                    print(
+                        f"[WARNING] Sequence '{' '.join(seq_variant)}' not found in the template!"
+                    )
                     warned_sequences.add(seq_variant)
                 continue
             seq_row_offset = sequence_rows[seq_variant]
-            print("FOUND", ' '.join(seq_variant))
+            print("FOUND", " ".join(seq_variant))
             rate_id = int(csv_tokens[2].split("r")[-1]) - 1
 
             # Write different sections of the CSV into the worksheet

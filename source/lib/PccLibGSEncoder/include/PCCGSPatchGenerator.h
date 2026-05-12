@@ -37,6 +37,7 @@
 #include "PCCCommon.h"
 #include "PCCPointSet.h"
 #include "PCCGSEncoderParameters.h"
+#include "PCCAdaptation.h"
 #include "PCCGSPatchInfo.h"
 
 namespace pcc {
@@ -67,13 +68,17 @@ class PCCGSPatchGenerator {
    * @param params Encoder parameters
    * @return Patch generation result containing patches and map dimensions
    */
-  PCCGSPatchResult generate( const PCCPointSet3 &source, const PCCGSEncoderParameters &params );
+  PCCGSPatchResult generate( const PCCPointSet3            &source,
+                             const PCCGSEncoderParameters  &params,
+                             const PCCAdaptationParameters &adaptationParams );
 
  private:
   /**
    * @brief Generate raw patches in 3D space by grouping points into bounding boxes
    */
-  void generate3DPatches( const PCCPointSet3 &source, const PCCGSEncoderParameters &params );
+  void generate3DPatches( const PCCPointSet3            &source,
+                          const PCCGSEncoderParameters  &params,
+                          const PCCAdaptationParameters &adaptationParams );
 
   /**
    * @brief Generate 2D patch positions using CTC packing algorithm
@@ -104,6 +109,14 @@ class PCCGSPatchGenerator {
    * @brief Create patch information from bounding box and point indices
    */
   GSEncoderPatchInformation createPatchInfo( const PCCBox3D &bbox, const std::vector<size_t> &pointIndices );
+
+  /**
+   * @brief Computes new patch list from input patches by splitting patches by quantization group
+   */
+  std::vector<GSEncoderPatchInformation> splitPatchesAdaptiveQuantization(
+      const PCCPointSet3                           &source,
+      const PCCAdaptationParameters                &adaptationParams,
+      const std::vector<GSEncoderPatchInformation> &patches );
 
   std::vector<GSEncoderPatchInformation> patches_;
   size_t                                 mapWidth_{ 0 };

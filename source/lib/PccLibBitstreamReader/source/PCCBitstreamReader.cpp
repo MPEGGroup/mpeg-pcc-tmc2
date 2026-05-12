@@ -2967,7 +2967,7 @@ void PCCBitstreamReader::rpduVpccGsExtension( PCCBitstream        &bitstream,
   int value;
   if ( ext.getAdaptiveQuantizationEnableFlag() ) {
     READ_UVLC_DESC( value, "" );  // ue(v)
-    /* rpdu.setShBitdepthDelta(value) */
+    rpdu.setShBitdepthDelta( value );
   }
   TRACE_BITSTREAM_OUT( "%s", __func__ );
 }

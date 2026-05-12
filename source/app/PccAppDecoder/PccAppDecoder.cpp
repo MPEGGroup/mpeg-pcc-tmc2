@@ -381,10 +381,9 @@ int decompressVideo( PCCDecoderParameters       &decoderParams,
 
             adaptation.inverseAdapt( pointCloud, pointCloudGS, adaptationParams );
             std::string fileName( 512, '\0' );
-            int len = std::snprintf( &fileName[0], fileName.size(), decoderParams.reconstructedDataPath_.c_str(), decoderParams.startFrameNumber_ + i );
-            if ( len > 0 && len < static_cast<int>( fileName.size() ) ) {
-                fileName.resize( len );
-            }
+            int len = std::snprintf( &fileName[0], fileName.size(), decoderParams.reconstructedDataPath_.c_str(),
+                                     decoderParams.startFrameNumber_ + i );
+            if ( len > 0 && len < static_cast<int>( fileName.size() ) ) { fileName.resize( len ); }
             pointCloudGS.write( fileName );
 
             std::string outputPath = fileName + "_asci.ply";

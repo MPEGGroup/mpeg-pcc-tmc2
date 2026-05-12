@@ -157,20 +157,22 @@ class PCCPointSet3 {
     std::vector<std::vector<PCCAttribute16bit>>::iterator itSphericalHarmonics;
     std::vector<PCCAttribute16bit>::iterator              itOpacities;
     std::vector<uint32_t>::iterator                       itToSrcIdx;
+    std::vector<uint16_t>::iterator                       itQuantizationGroupIds;
 
-    itPositions          = positions_.end();
-    itColors             = colors_.end();
-    itColors16bit        = colors16bit_.end();
-    itReflectances       = reflectances_.end();
-    itBoundaryPointTypes = boundaryPointTypes_.end();
-    itPointPatchIndexes  = pointPatchIndexes_.end();
-    itTypes              = types_.end();
-    itNormals            = normals_.end();
-    itRotations          = rotations_.end();
-    itScales             = scales_.end();
-    itSphericalHarmonics = sphericalHarmonics_.end();
-    itOpacities          = opacities_.end();
-    itToSrcIdx           = toSrcIdx_.end();
+    itPositions            = positions_.end();
+    itColors               = colors_.end();
+    itColors16bit          = colors16bit_.end();
+    itReflectances         = reflectances_.end();
+    itBoundaryPointTypes   = boundaryPointTypes_.end();
+    itPointPatchIndexes    = pointPatchIndexes_.end();
+    itTypes                = types_.end();
+    itNormals              = normals_.end();
+    itRotations            = rotations_.end();
+    itScales               = scales_.end();
+    itSphericalHarmonics   = sphericalHarmonics_.end();
+    itOpacities            = opacities_.end();
+    itToSrcIdx             = toSrcIdx_.end();
+    itQuantizationGroupIds = quantizationGroupIds_.end();
 
     positions_.insert( itPositions, pointSet.getPositions().begin(), pointSet.getPositions().end() );
     colors_.insert( itColors, pointSet.getColor().begin(), pointSet.getColor().end() );
@@ -189,6 +191,8 @@ class PCCPointSet3 {
     opacities_.insert( itOpacities, pointSet.getOpacities().begin(), pointSet.getOpacities().end() );
 
     toSrcIdx_.insert( itToSrcIdx, pointSet.getToSrcIdx().begin(), pointSet.getToSrcIdx().end() );
+    quantizationGroupIds_.insert( itQuantizationGroupIds, pointSet.getQuantizationGroupIds().begin(),
+                                  pointSet.getQuantizationGroupIds().end() );
 
     resize( getPointCount() );
     return positions_.size();
@@ -641,6 +645,35 @@ class PCCPointSet3 {
 
   std::vector<uint32_t> &getToSrcIdx() { return toSrcIdx_; }
 
+  std::vector<uint16_t>       &getQuantizationGroupIds() { return quantizationGroupIds_; }
+  const std::vector<uint16_t> &getQuantizationGroupIds() const { return quantizationGroupIds_; }
+  const uint16_t               getQuantizationGroupId( const size_t index ) const {
+    assert( hasQuantizationGroupIds() && index < quantizationGroupIds_.size() );
+    return quantizationGroupIds_[index];
+  }
+  uint16_t &getQuantizationGroupId( const size_t index ) {
+    assert( hasQuantizationGroupIds() && index < quantizationGroupIds_.size() );
+    return quantizationGroupIds_[index];
+  }
+  bool hasQuantizationGroupIds() const {
+    return !quantizationGroupIds_.empty() && quantizationGroupIds_.size() == positions_.size();
+  }
+  void setQuantizationGroupId( const size_t index, const uint16_t quantizationGroupId ) {
+    assert( hasQuantizationGroupIds() && index < quantizationGroupIds_.size() );
+    quantizationGroupIds_[index] = quantizationGroupId;
+  }
+  void   addQuantizationGroupIds() { quantizationGroupIds_.resize( getPointCount() ); }
+  void   removeQuantizationGroupIds() { quantizationGroupIds_.resize( 0 ); }
+  size_t getMaxQuantizationGroupId() const {
+    if ( !hasQuantizationGroupIds() ) { return 0; }
+
+    uint32_t maxGroupId = 0;
+    for ( const auto groupId : quantizationGroupIds_ ) {
+      if ( groupId > maxGroupId ) { maxGroupId = groupId; }
+    }
+    return static_cast<size_t>( maxGroupId );
+  }
+
   std::vector<CameraInfo>       &getCameraInfo() { return cameraInfo_; }
   const std::vector<CameraInfo> &getCameraInfo() const { return cameraInfo_; }
 
@@ -813,6 +846,7 @@ class PCCPointSet3 {
     pointPatchIndexes_.resize( size );
     parentPointIndex_.resize( size );
     toSrcIdx_.resize( size );
+    if ( !quantizationGroupIds_.empty() ) { quantizationGroupIds_.resize( size ); }
     if ( hasSphericalHarmonics() ) {
       sphericalHarmonics_.resize( size );
       for ( int i = 0; i < getPointCount(); i++ ) { sphericalHarmonics_[i].resize( 16 ); }
@@ -835,6 +869,7 @@ class PCCPointSet3 {
     boundaryPointTypes_.reserve( size );
     pointPatchIndexes_.reserve( size );
     parentPointIndex_.reserve( size );
+    if ( !quantizationGroupIds_.empty() ) { quantizationGroupIds_.reserve( size ); }
     if ( hasSphericalHarmonics() ) {
       sphericalHarmonics_.reserve( size );
       for ( int i = 0; i < getPointCount(); i++ ) { sphericalHarmonics_[i].reserve( 16 ); }
@@ -860,6 +895,7 @@ class PCCPointSet3 {
     opacities_.clear();
     scales_.clear();
     rotations_.clear();
+    quantizationGroupIds_.clear();
   }
   size_t addPoint( const PCCPoint3D &position ) {
     const size_t index = getPointCount();
@@ -906,6 +942,9 @@ class PCCPointSet3 {
     if ( hasOpacities() ) { std::swap( getOpacity( index1 ), getOpacity( index2 ) ); }
     if ( hasScales() ) { std::swap( getScale( index1 ), getScale( index2 ) ); }
     if ( hasRotations() ) { std::swap( getRotation( index1 ), getRotation( index2 ) ); }
+    if ( hasQuantizationGroupIds() ) {
+      std::swap( getQuantizationGroupId( index1 ), getQuantizationGroupId( index2 ) );
+    }
     if ( PCC_SAVE_POINT_TYPE ) { std::swap( getType( index1 ), getType( index2 ) ); }
   }
   PCCPoint3D computeCentroid() const;
@@ -1015,6 +1054,7 @@ class PCCPointSet3 {
   bool withOpacities_;
 
   std::vector<uint32_t>                     toSrcIdx_;
+  std::vector<uint16_t>                     quantizationGroupIds_;
   std::vector<CameraInfo>                   cameraInfo_;
   std::vector<AttributeTransformationInfo>  attributeTransformationInfo_;
   GeometryTransformationInfo                geometryTransformationInfo_;

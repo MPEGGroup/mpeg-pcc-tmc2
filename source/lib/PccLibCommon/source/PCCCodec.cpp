@@ -1710,7 +1710,8 @@ void PCCCodec::generateRawPointsGeometryfromVideoRecGS( PCCContext      &context
         return;
       }
 
-      pointCloud.addPoint( PCCPoint3D( valueX, valueY, valueZ ) );
+      size_t pointIndex = pointCloud.addPoint( PCCPoint3D( valueX, valueY, valueZ ) );
+      pointCloud.setPointPatchIndex( pointIndex, tile.getTileIndex(), i );
     }
   }
 
@@ -1877,6 +1878,45 @@ void PCCCodec::generateRawPointsAttributefromVideoRecGS( PCCContext      &contex
   //}
 
   return;
+}
+
+std::vector<int> PCCCodec::generateAdaptiveQuantizationInfofromRawPatchRecGS( PCCContext   &context,
+                                                                              size_t        frameIndex,
+                                                                              PCCPointSet3 &pointCloud ) {
+  TRACE_CODEC( "%s \n", "generateAdaptiveQuantizationInfofromRawPatchRecGS start" );
+  size_t           totalNumRawPoints = 0;
+  std::vector<int> shBitdepthDeltas( 0 );
+
+  for ( size_t tileIdx = 0; tileIdx < context.getFrame( frameIndex ).getNumTilesInAtlasFrame(); tileIdx++ ) {
+    auto &tile = context.getFrame( frameIndex ).getTile( tileIdx );
+    for ( int i = 0; i < tile.getNumberOfRawPointsPatches(); i++ ) {
+      auto   &rawPointsPatch  = tile.getRawPointsPatch( i );
+      uint8_t shBitdepthDelta = rawPointsPatch.shBitdepthDelta_;
+      auto    it              = std::find( shBitdepthDeltas.begin(), shBitdepthDeltas.end(), shBitdepthDelta );
+      if ( it == shBitdepthDeltas.end() ) { shBitdepthDeltas.push_back( shBitdepthDelta ); }
+      totalNumRawPoints += rawPointsPatch.getNumberOfRawPoints();
+    }
+    std::cout << "generate adaptive quantization info frame[" << frameIndex << "] tile[" << tileIdx << "] : "
+              << " #rawPatches: " << tile.getNumberOfRawPointsPatches() << " #rawPoints: " << totalNumRawPoints
+              << std::endl;
+  }
+
+  for ( size_t pointIdx = 0; pointIdx < pointCloud.getPointCount(); ++pointIdx ) {
+    auto    tilePatchIdx    = pointCloud.getPointPatchIndex( pointIdx );
+    auto   &tile            = context.getFrame( frameIndex ).getTile( tilePatchIdx.first );
+    uint8_t shBitdepthDelta = tile.getRawPointsPatch( tilePatchIdx.second ).shBitdepthDelta_;
+    auto    it              = std::find( shBitdepthDeltas.begin(), shBitdepthDeltas.end(), shBitdepthDelta );
+    if ( it == shBitdepthDeltas.end() ) {
+      std::cerr << "PCCCodec::generateAdaptiveQuantizationInfofromRawPatchRecGS - invalid rawPatch shBitdepthDelta"
+                << std::endl;
+    }
+    uint16_t quantizationGroupId = static_cast<uint16_t>( std::distance( shBitdepthDeltas.begin(), it ) );
+
+    pointCloud.setQuantizationGroupId( pointIdx, quantizationGroupId );
+  }
+
+  TRACE_CODEC( "%s \n", "generateAdaptiveQuantizationInfofromRawPatchRecGS done" );
+  return shBitdepthDeltas;
 }
 
 void PCCCodec::generateRawPointsAttributefromVideo( PCCContext &context, size_t frameIndex ) {
