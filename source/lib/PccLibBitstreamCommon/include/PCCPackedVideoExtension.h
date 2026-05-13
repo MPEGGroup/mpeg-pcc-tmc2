@@ -65,7 +65,7 @@ struct PackedRegion {
   uint16_t getPackedRegionHeight() const { return heightMinus1_ + 1; }
 
   void setPackedMapIndex( uint8_t value ) { packedMapIndex_ = value; }
-  void setConstituentFrameIndex(uint8_t value) { constituentFrameIndex_ = value; }
+  void setConstituentFrameIndex( uint8_t value ) { constituentFrameIndex_ = value; }
   void setTileId( uint8_t value ) { tileId_ = value; }
   void setTypeIdMinus2( uint8_t value ) { typeIdMinus2_ = value; }
   void setTopLeftX( uint16_t value ) { topLeftX_ = value; }
@@ -81,7 +81,8 @@ struct PackedRegion {
   void setAttrPartitionIndex( uint8_t value ) { attrPartitionIndex_ = value; }
 
   // Dump the full state to the stream in a human-readable way
-  void dumpTo(std::ostream& stream, const std::string& indent) const;
+  void dumpTo( std::ostream &stream, const std::string &indent ) const;
+
  private:
   uint8_t  packedMapIndex_{};
   uint8_t  constituentFrameIndex_{};
@@ -111,19 +112,19 @@ class PackingInformation {
   bool    getGeometryPresentFlag() const { return geometryPresentFlag_; }
   bool    getAttributePresentFlag() const { return attributePresentFlag_; }
   uint8_t getPackedMapCountMinus1() const {
-      return packedMaps_.empty() ? 0 : static_cast<uint8_t>(packedMaps_.size() - 1);
+    return packedMaps_.empty() ? 0 : static_cast<uint8_t>( packedMaps_.size() - 1 );
   }
-  uint8_t getConstituentFrameCountMinus1(size_t index) const {
-      checkPackedMapIndex(index);
-      return packedMaps_[index].constituentFrameCountMinus1;
+  uint8_t getConstituentFrameCountMinus1( size_t index ) const {
+    checkPackedMapIndex( index );
+    return packedMaps_[index].constituentFrameCountMinus1;
   }
-  uint8_t getPackedMapGridColumnsMinus1(size_t index) const {
-      checkPackedMapIndex(index);
-      return packedMaps_[index].packedMapGridColumnsMinus1;
+  uint8_t getPackedMapGridColumnsMinus1( size_t index ) const {
+    checkPackedMapIndex( index );
+    return packedMaps_[index].packedMapGridColumnsMinus1;
   }
-  uint8_t getPackedMapGridRowsMinus1(size_t index) const {
-      checkPackedMapIndex(index);
-      return packedMaps_[index].packedMapGridRowsMinus1;
+  uint8_t getPackedMapGridRowsMinus1( size_t index ) const {
+    checkPackedMapIndex( index );
+    return packedMaps_[index].packedMapGridRowsMinus1;
   }
 
   size_t        getRegionsCountMinus1() const { return regions_.size() - 1; }
@@ -159,29 +160,29 @@ class PackingInformation {
   void setOccupancyPresentFlag( bool value ) { occupancyPresentFlag_ = value; }
   void setGeometryPresentFlag( bool value ) { geometryPresentFlag_ = value; }
   void setAttributePresentFlag( bool value ) { attributePresentFlag_ = value; }
-  void setPackedMapCountMinus1(uint8_t value) { packedMaps_.resize(value + size_t{ 1 }); }
-  void setConstituentFrameCountMinus1(size_t index, uint8_t value) {
-      checkPackedMapIndex(index);
-      packedMaps_[index].constituentFrameCountMinus1 = value;
+  void setPackedMapCountMinus1( uint8_t value ) { packedMaps_.resize( value + size_t{ 1 } ); }
+  void setConstituentFrameCountMinus1( size_t index, uint8_t value ) {
+    checkPackedMapIndex( index );
+    packedMaps_[index].constituentFrameCountMinus1 = value;
   }
-  void setPackedMapGridColumnsMinus1(size_t index, uint8_t value) {
-      checkPackedMapIndex(index);
-      packedMaps_[index].packedMapGridColumnsMinus1 = value;
+  void setPackedMapGridColumnsMinus1( size_t index, uint8_t value ) {
+    checkPackedMapIndex( index );
+    packedMaps_[index].packedMapGridColumnsMinus1 = value;
   }
-  void setPackedMapGridRowsMinus1(size_t index, uint8_t value) {
-      checkPackedMapIndex(index);
-      packedMaps_[index].packedMapGridRowsMinus1 = value;
+  void setPackedMapGridRowsMinus1( size_t index, uint8_t value ) {
+    checkPackedMapIndex( index );
+    packedMaps_[index].packedMapGridRowsMinus1 = value;
   }
 
   // Dump the full state to the stream in a human-readable way
-  void dumpTo(std::ostream& stream, const std::string& indent) const;
+  void dumpTo( std::ostream &stream, const std::string &indent ) const;
 
  private:
-  void checkPackedMapIndex(size_t index) const {
-      if (index >= packedMaps_.size()) {
-          std::cerr << "Packed map index is out of bounds\n";
-          std::abort();
-      }
+  void checkPackedMapIndex( size_t index ) const {
+    if ( index >= packedMaps_.size() ) {
+      std::cerr << "Packed map index is out of bounds\n";
+      std::abort();
+    }
   }
 
   uint8_t codecId_{};
@@ -190,11 +191,11 @@ class PackingInformation {
   bool    attributePresentFlag_{};
 
   struct PackedMap_ {
-      uint8_t constituentFrameCountMinus1{};
-      uint8_t packedMapGridColumnsMinus1{};
-      uint8_t packedMapGridRowsMinus1{};
+    uint8_t constituentFrameCountMinus1{};
+    uint8_t packedMapGridColumnsMinus1{};
+    uint8_t packedMapGridRowsMinus1{};
 
-      void dumpTo(std::ostream& stream, const std::string& indent) const;
+    void dumpTo( std::ostream &stream, const std::string &indent ) const;
   };
   std::vector<PackedMap_>   packedMaps_{ {} };
   std::vector<PackedRegion> regions_;
@@ -224,10 +225,10 @@ class VpsPackedVideoExtension {
     return packingInformation_[index].pin;
   }
 
-  void setTemporalPackingEnabledFlag(bool value) { temporalPackingEnabledFlag_ = value; }
-  void setTemporalPackingMode(TemporalPackingMode value) { temporalPackingMode_ = value; }
-  void setMultiplePackedMapsEnabledFlag(bool value) { multiplePackedMapsEnabledFlag_ = value; }
-  void setImplicitPackingMode(ImplicitPackingMode value) { implicitPackingMode_ = value; }
+  void setTemporalPackingEnabledFlag( bool value ) { temporalPackingEnabledFlag_ = value; }
+  void setTemporalPackingMode( TemporalPackingMode value ) { temporalPackingMode_ = value; }
+  void setMultiplePackedMapsEnabledFlag( bool value ) { multiplePackedMapsEnabledFlag_ = value; }
+  void setImplicitPackingMode( ImplicitPackingMode value ) { implicitPackingMode_ = value; }
 
   void setPackedVideoPresentFlag( size_t index, bool value ) {
     while ( packingInformation_.size() <= index ) { packingInformation_.push_back( {} ); }
@@ -237,10 +238,10 @@ class VpsPackedVideoExtension {
   void setVersion( uint8_t value ) { version_ = value; }
 
   // Dump the full state to the stream in a human-readable way
-  void dumpTo(std::ostream& stream, const std::string& indent) const;
+  void dumpTo( std::ostream &stream, const std::string &indent ) const;
 
   // Annex B.4.5 Packed region bounding box initialization process
-  void initializeBoundingBoxes(const V3CParameterSet& vps);
+  void initializeBoundingBoxes( const V3CParameterSet &vps );
 
  private:
   struct PackingInformation_ {
