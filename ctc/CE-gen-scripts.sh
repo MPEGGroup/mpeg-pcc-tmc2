@@ -425,6 +425,7 @@ for SEQ in "${SEQUENCES[@]}"; do
                 echo "    --config=$CFG_PATH/gs-scc-common.cfg \\"
                 echo "    --config=$PACK_CONFIG \\"
                 if (( $ADAPTIVE_QUANTIZATION == 1 )); then
+                    FRAME="$(printf "frame_%04i" ${START_FRAME_NR[$SEQ]})"
                     echo "    --config=$CFG_PATH/gs-adaptive-quantization.cfg \\"
                     echo "    --importanceScoresPath=\"$SEQ_GROUP_DIR/$FRAME.impScores.txt\" \\"
                 fi
