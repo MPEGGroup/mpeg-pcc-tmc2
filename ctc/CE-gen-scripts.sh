@@ -114,7 +114,7 @@ SEQUENCES=(
  "library"
  "flowerdance"
  "gymnast"
-)
+ )
 
 # ==================================================================================================
 # Enable sequences for the experiment
@@ -141,7 +141,7 @@ ENABLE_SEQs[solo_tango_female]=1
 ENABLE_SEQs[solo_tango_male]=1
 ENABLE_SEQs[tango_duo]=1
 ENABLE_SEQs[tennis_player]=1
-ENABLE_SEQs[library]=1
+ENABLE_SEQs[library]=0
 ENABLE_SEQs[flowerdance]=1
 ENABLE_SEQs[gymnast]=1
 
@@ -158,7 +158,6 @@ elif [ $EXPERIMENT_MODE -eq 2 ]; then
     JOBNAME="$JOBNAME-manwithfruit"
 elif [ $EXPERIMENT_MODE -eq 3 ]; then
     ENABLE_SEQs[musical]=0
-    ENABLE_SEQs[library]=0
     ENABLE_SEQs[flowerdance]=0
     ENABLE_SEQs[gymnast]=0
     JOBNAME="$JOBNAME-subset"
