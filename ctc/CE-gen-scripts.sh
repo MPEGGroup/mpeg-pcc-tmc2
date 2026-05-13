@@ -66,7 +66,7 @@ COLMAP_SEI=0                # set it to 1 if you want to send the camera pareter
 GSD_TRANSFORM_2D=1          # 1: enable 2D transform for sphereical harmnoics, 0: disable
 GSD_ADAPTIVE_SH=1           # when GSD_TRANSFORM_2D=1, 1: enable m75790, 0: enable m75380
 GSD_NON_UNIFORM_QUANT=1     # 1: enable m75025, 0: disable m75025
-ADAPTIVE_QUANTIZATION=0     # 1: enable m75039, 0: disable
+ADAPTIVE_QUANTIZATION=1     # 1: enable m75039, 0: disable
 ANNOTATE_DIR=""             # m75039: path to directory of importance score files for each sequence. If string is empty, files are recomputed
 
 # ==================================================================================================
@@ -522,7 +522,7 @@ for SEQ in "${SEQUENCES[@]}"; do
     done
 done
 
-echo "$PYTHON $SCRIPT_DIR/gsc_csv2excel.py -t \"$SCRIPT_DIR/templates/WG07N1414_template.xlsm\" -a \"$SCRIPT_DIR/anchor_results/VPCC-GS.csv\" -p \"$csv_file\" -x \"$OUT/metrics/VPCC-GS-Anchor__vs__proposed.xlsm\"" >> "$RUN_SUMMARY"
+echo "$PYTHON $SCRIPT_DIR/gsc_csv2excel.py -t \"$SCRIPT_DIR/templates/WG04N0826_template.xlsm\" -a \"$SCRIPT_DIR/anchor_results/VPCC-GS.csv\" -p \"$csv_file\" -x \"$OUT/metrics/VPCC-GS-Anchor__vs__proposed.xlsm\"" >> "$RUN_SUMMARY"
 
 # ==================================================================================================
 # Functions for parallel jobs

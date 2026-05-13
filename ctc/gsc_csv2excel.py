@@ -3,7 +3,7 @@
 # party and contributor rights, including patent rights, and no such
 # rights are granted under this licence.
 #
-# Copyright (c) 2025, ISO/IEC
+# Copyright (c) 2026, ISO/IEC
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -125,14 +125,14 @@ def main():
 
     # Process anchor CSV
     if os.path.isfile(args.anc_csv):
-        csv2xlsm(wb, args.anc_csv, "Anchor")
+        csv2xlsm(wb, args.anc_csv, "Anchor.C1")
     else:
         print(f"[ERROR] No anchor CSV file found: {args.anc_csv}")
         exit()
 
     # Process proposed CSV
     if os.path.isfile(args.pro_csv):
-        csv2xlsm(wb, args.pro_csv, "Proposal")
+        csv2xlsm(wb, args.pro_csv, "Proposal.C1")
     else:
         print(f"[ERROR] No proposed CSV file found: {args.pro_csv}")
         exit()
