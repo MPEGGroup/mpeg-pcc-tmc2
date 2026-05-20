@@ -56,6 +56,7 @@ struct PackedRegion {
   bool     getAuxiliaryDataFlag() const { return auxiliaryDataFlag_; }
   uint8_t  getAttrIndex() const { return attrIndex_; }
   uint8_t  getAttrPartitionIndex() const { return attrPartitionIndex_; }
+  uint8_t  getRegionLodMask() const { return regionLodMask_; }
 
   // Convenience methods for unpacking
   uint8_t  getRegionTypeId() const { return typeIdMinus2_ + 2; }  // Returns V3C_OVD, V3C_GVD, V3C_AVD
@@ -79,6 +80,7 @@ struct PackedRegion {
   void setAuxiliaryDataFlag( bool value ) { auxiliaryDataFlag_ = value; }
   void setAttrIndex( uint8_t value ) { attrIndex_ = value; }
   void setAttrPartitionIndex( uint8_t value ) { attrPartitionIndex_ = value; }
+  void setRegionLodMask( uint8_t value ) { regionLodMask_ = value; }
 
   // Dump the full state to the stream in a human-readable way
   void dumpTo( std::ostream &stream, const std::string &indent ) const;
@@ -99,6 +101,7 @@ struct PackedRegion {
   bool     auxiliaryDataFlag_{};
   uint8_t  attrIndex_{};
   uint8_t  attrPartitionIndex_{};
+  uint8_t  regionLodMask_{};
 };
 
 enum class TemporalPackingMode : uint8_t { consecutive_frames };
@@ -130,6 +133,8 @@ class PackingInformation {
   size_t        getRegionsCountMinus1() const { return regions_.size() - 1; }
   PackedRegion &getRegion( size_t index ) { return regions_[index]; }
   PackedRegion &addRegion() { return regions_.push_back( {} ), regions_.back(); }
+  bool          getLodEnabledFlag() const { return lodEnabledFlag_; }
+  uint8_t       getLodLevelCountMinus2() const { return lodLevelCountMinus2_; }
 
   // Compute the maximum bit depth from occupancy, geometry, and attribute information
   template <typename VpsType>
@@ -173,6 +178,8 @@ class PackingInformation {
     checkPackedMapIndex( index );
     packedMaps_[index].packedMapGridRowsMinus1 = value;
   }
+  void setLodEnabledFlag( bool value ) { lodEnabledFlag_ = value; }
+  void setLodLevelCountMinus2( uint8_t value ) { lodLevelCountMinus2_ = value; }
 
   // Dump the full state to the stream in a human-readable way
   void dumpTo( std::ostream &stream, const std::string &indent ) const;
@@ -189,6 +196,8 @@ class PackingInformation {
   bool    occupancyPresentFlag_{};
   bool    geometryPresentFlag_{};
   bool    attributePresentFlag_{};
+  bool    lodEnabledFlag_{};
+  uint8_t lodLevelCountMinus2_{};
 
   struct PackedMap_ {
     uint8_t constituentFrameCountMinus1{};

@@ -959,6 +959,12 @@ void PCCBitstreamWriter::packingInformation( PackingInformation &pin,
       WRITE_UVLC( pin.getPackedMapGridRowsMinus1( k ) );     // ue(v)
     }
   }
+  if ( version >= 2 ) {
+    WRITE_CODE( pin.getLodEnabledFlag(), 1 );  // u(1)
+    if ( pin.getLodEnabledFlag() ) {
+      WRITE_CODE( pin.getLodLevelCountMinus2(), 2 );  // u(2)
+    }
+  }
   for ( size_t i = 0; i <= pin.getRegionsCountMinus1(); i++ ) {
     packedRegion( pin.getRegion( i ), pin, j, vps, bitstream );
   }
@@ -974,6 +980,10 @@ void PCCBitstreamWriter::packedRegion( PackedRegion             &region,
 
   const auto &pve = vps.getVpsPackedVideoExtension();
 
+  if ( pin.getLodEnabledFlag() ) {
+    uint8_t maskBits = pin.getLodLevelCountMinus2() + 2;
+    WRITE_CODE( region.getRegionLodMask(), maskBits );  // u(v)
+  }
   if ( pin.getPackedMapCountMinus1() > 0 ) {
     WRITE_CODE( region.getPackedMapIndex(), ceilLog2( pin.getPackedMapCountMinus1() + 1 ) );  // u(v)
   }

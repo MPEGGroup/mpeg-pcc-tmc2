@@ -781,6 +781,14 @@ void PCCBitstreamReader::packingInformation( PackingInformation &pin,
       pin.setPackedMapGridRowsMinus1( k, value );
     }
   }
+  if ( version >= 2 ) {
+    READ_CODE_DESC( value, 1, "pin_lod_enabled_flag" )  // u(1)
+    pin.setLodEnabledFlag( value );
+    if ( pin.getLodEnabledFlag() ) {
+      READ_CODE_DESC( value, 2, "pin_lod_level_count_minus2" )  // u(2)
+      pin.setLodLevelCountMinus2( value );
+    }
+  }
 
   for ( size_t i = 0; i <= regionsCountMinus1; i++ ) { packedRegion( pin.addRegion(), pin, j, vps, bitstream ); }
 }
@@ -793,6 +801,12 @@ void PCCBitstreamReader::packedRegion( PackedRegion             &region,
   TRACE_BITSTREAM( "%s \n", __func__ );
   const auto &pve = vps.getVpsPackedVideoExtension();
   uint32_t    value;
+
+  if ( pin.getLodEnabledFlag() ) {
+    uint8_t maskBits = pin.getLodLevelCountMinus2() + 2;
+    READ_CODE_DESC( value, maskBits, "pin_region_lod_mask" )  // u(v)
+    region.setRegionLodMask( value );
+  }
 
   if ( pin.getPackedMapCountMinus1() > 0 ) {
     READ_CODE_DESC( value, ceilLog2( pin.getPackedMapCountMinus1() + 1 ), "pin_region_packed_map_index" )  // u(v)
