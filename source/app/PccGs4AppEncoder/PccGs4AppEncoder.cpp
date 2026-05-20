@@ -107,7 +107,10 @@ int main( int argc, char *argv[] ) {
 
   // remove the extension and keep folder path and base file name
   encoderParams.binaryFileBase_ = removeFileExtension( applicationParams.compressedStreamPath_ );
-  encoderParams.debugPath_      = getDirectoryName( applicationParams.compressedStreamPath_ );
+
+  if ( encoderParams.debugPath_.empty() ) {
+    encoderParams.debugPath_ = getDirectoryName( applicationParams.compressedStreamPath_ );
+  }
   encoderParams.geometryVideoEncoderConfig_ =
       applicationParams.configurationFolder_ + applicationParams.geometryConfig_;
   encoderParams.attributeVideoEncoderConfig_ =
@@ -164,12 +167,14 @@ int main( int argc, char *argv[] ) {
 
     encoderParams.frameNameBase_ = removeFileExtension( getBasename( fileName ) );
 
-    std::string adaptedPlyPath = encoderParams.debugPath_ + "/" + encoderParams.frameNameBase_ + ".asci.ply";
-    adaptedPointCloud.write( adaptedPlyPath );
+    if ( encoderParams.keepIntermediateFiles_ ) {
+      std::string adaptedPlyPath = encoderParams.debugPath_ + "/" + encoderParams.frameNameBase_ + ".asci.ply";
+      adaptedPointCloud.write( adaptedPlyPath );
 
-    // Optionally write adaptation config for decoder
-    std::string configPath = encoderParams.debugPath_ + "/" + encoderParams.frameNameBase_ + "_adaptation_config.json";
-    adaptationParams.writeConfig( configPath );
+      std::string configPath =
+          encoderParams.debugPath_ + "/" + encoderParams.frameNameBase_ + "_adaptation_config.json";
+      adaptationParams.writeConfig( configPath );
+    }
 
     // Encode adapted (quantized int) point cloud
     encoderModule.encode( adaptedPointCloud, encoderParams, adaptationParams, ssvu, logger );

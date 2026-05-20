@@ -73,6 +73,7 @@ void PCCDecoderParameters::print() {
   std::cout << "\t colorTransform                      " << colorTransform_ << std::endl;
   std::cout << "\t nbThread                            " << nbThread_ << std::endl;
   std::cout << "\t keepIntermediateFiles               " << keepIntermediateFiles_ << std::endl;
+  if ( keepIntermediateFiles_ ) { std::cout << "\t debugPath                           " << debugPath_ << std::endl; }
   std::cout << "\t video encoding" << std::endl;
   std::cout << "\t   colorSpaceConversionPath          " << colorSpaceConversionPath_ << std::endl;
   std::cout << "\t   videoDecoderOccupancyPath         " << videoDecoderOccupancyPath_ << std::endl;

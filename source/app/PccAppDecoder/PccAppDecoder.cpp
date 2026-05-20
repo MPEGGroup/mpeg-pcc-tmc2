@@ -165,6 +165,10 @@ bool parseParameters( int                       argc,
       decoderParams.keepIntermediateFiles_,
       decoderParams.keepIntermediateFiles_,
       "Keep intermediate files: RGB, YUV and bin")
+    ( "debugPath",
+      decoderParams.debugPath_,
+      decoderParams.debugPath_,
+      "Path for debug output files" )
 	  ( "shvcLayerIndex",
 	    decoderParams.shvcLayerIndex_,
 	    decoderParams.shvcLayerIndex_,
@@ -386,8 +390,15 @@ int decompressVideo( PCCDecoderParameters       &decoderParams,
             if ( len > 0 && len < static_cast<int>( fileName.size() ) ) { fileName.resize( len ); }
             pointCloudGS.write( fileName );
 
-            std::string outputPath = fileName + "_asci.ply";
-            reconstructs.write( outputPath, frameNumber, decoderParams.nbThread_ );
+            if ( decoderParams.keepIntermediateFiles_ ) {
+              std::string adaptedPlyPath =
+                  decoderParams.debugPath_ + "/" + removeFileExtension( getBasename( fileName ) ) + "_adapted.asci.ply";
+              pointCloud.write( adaptedPlyPath );
+
+              std::string outputPath =
+                  decoderParams.debugPath_ + "/" + removeFileExtension( getBasename( fileName ) ) + "_asci.ply";
+              reconstructs.write( outputPath, frameNumber, decoderParams.nbThread_ );
+            }
           }
           decoderParams.startFrameNumber_ += reconstructs.getFrameCount();
         } else {

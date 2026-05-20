@@ -235,8 +235,8 @@ def per_frame_results(results_dir: str, base: str, start_frame: int, frame_count
     results = []
 
     for i in range(start_frame, start_frame + frame_count):
-        frame_path = os.path.join(results_dir, f"{base}_{i:04d}.decoded.ply")
-        metric_path = os.path.join(results_dir, f"{base}_{i:04d}.decoded.ply.metric")
+        frame_path = os.path.join(results_dir, f"plys/{base}_{i:04d}.decoded.ply")
+        metric_path = os.path.join(results_dir, f"metrics/{base}_{i:04d}.decoded.ply.metric")
 
         for file in (frame_path, metric_path):
             if not os.path.exists(file):

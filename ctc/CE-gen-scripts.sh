@@ -114,7 +114,7 @@ SEQUENCES=(
  "library"
  "flowerdance"
  "gymnast"
- )
+)
 
 # ==================================================================================================
 # Enable sequences for the experiment
@@ -141,7 +141,7 @@ ENABLE_SEQs[solo_tango_female]=1
 ENABLE_SEQs[solo_tango_male]=1
 ENABLE_SEQs[tango_duo]=1
 ENABLE_SEQs[tennis_player]=1
-ENABLE_SEQs[library]=0
+ENABLE_SEQs[library]=1
 ENABLE_SEQs[flowerdance]=1
 ENABLE_SEQs[gymnast]=1
 
@@ -158,6 +158,7 @@ elif [ $EXPERIMENT_MODE -eq 2 ]; then
     JOBNAME="$JOBNAME-manwithfruit"
 elif [ $EXPERIMENT_MODE -eq 3 ]; then
     ENABLE_SEQs[musical]=0
+    ENABLE_SEQs[library]=0
     ENABLE_SEQs[flowerdance]=0
     ENABLE_SEQs[gymnast]=0
     JOBNAME="$JOBNAME-subset"
@@ -405,7 +406,9 @@ for SEQ in "${SEQUENCES[@]}"; do
         for CFG_RATE_DIR in "${CFG_RATE_DIRs[@]}"; do
             RATE="$(basename "$CFG_RATE_DIR")"
             RESULT_DIR="$OUT/results/$LENGTH/$SEQ/$RATE"
-            MKDIRCK "$RESULT_DIR"
+            MKDIRCK "$RESULT_DIR/plys"
+            MKDIRCK "$RESULT_DIR/pos_plys"
+            MKDIRCK "$RESULT_DIR/metrics"
 
             echo "Rate point: $SEQ/$RATE"
 
@@ -431,7 +434,10 @@ for SEQ in "${SEQUENCES[@]}"; do
                 echo "    --config=$CFG_RATE_DIR/encoder.cfg \\"
                 echo "    --startFrameNumber=${START_FRAME_NR[$SEQ]} \\"
                 echo "    --frameCount=$FRAME_COUNT \\"
-                echo "    --keepIntermediateFiles=$KEEP_INTERMEDIATE_FILES \\"
+                if [ $KEEP_INTERMEDIATE_FILES -eq 1 ]; then
+                    MKDIRCK "$RESULT_DIR/debug"
+                    echo "    --keepIntermediateFiles=1 --debugPath=$RESULT_DIR/debug \\"
+                fi
                 if (( $SH_MAPPING == 0 )); then
                     echo "    --shMappingMode=0 \\"
                 fi
@@ -451,8 +457,12 @@ for SEQ in "${SEQUENCES[@]}"; do
                 echo "# Decode all frames from single bitstream"
                 echo "$TIME$TMC_DEC_BIN \\"
                 echo "    --compressedStreamPath=$RESULT_DIR/${LENGTH}_${SEQ}_${RATE}.bin \\"
-                echo "    --reconstructedDataPath=$RESULT_DIR/${LENGTH}_${SEQ}_${RATE}_%04i.decoded.ply \\"
-                echo "    --computeMetrics=0 --computeChecksum=0 --keepIntermediateFiles=$KEEP_INTERMEDIATE_FILES \\"
+                echo "    --reconstructedDataPath=$RESULT_DIR/plys/${LENGTH}_${SEQ}_${RATE}_%04i.decoded.ply \\"
+                echo "    --computeMetrics=0 --computeChecksum=0 \\"
+                if [ $KEEP_INTERMEDIATE_FILES -eq 1 ]; then
+                    MKDIRCK "$RESULT_DIR/debug"
+                    echo "    --keepIntermediateFiles=1 --debugPath=$RESULT_DIR/debug \\"                    
+                fi
                 echo "    --startFrameNumber=${START_FRAME_NR[$SEQ]} \\"
                 echo "    2>&1 | tee $RESULT_DIR/${LENGTH}_${SEQ}_${RATE}.decoder.log"
                 echo ""
@@ -486,16 +496,16 @@ for SEQ in "${SEQUENCES[@]}"; do
                     echo "# Add camera header to source"
                     echo "$CAMERAPOS_BIN \\"
                     echo "    --input=\"$INPUT_FILE\" \\"
-                    echo "    --output=\"$RESULT_DIR/$FRAME.camerpos.ply\" \\"
+                    echo "    --output=\"$RESULT_DIR/pos_plys/$FRAME.camerpos.ply\" \\"
                     echo "    --image=\"${COLMAP_DIRs[$SEQ]}/$FRAME/sparse/images.bin\" \\"
                     echo "    --camera=\"${COLMAP_DIRs[$SEQ]}/$FRAME/sparse/cameras.bin\""
                     echo
                     echo "# Calculate all metrics"
                     echo "$TIME$METRIC -v 1 --startFrame=0 --frameCount=1 --cpu=$METRIC_CPU --useCameraPosition=1 --threads=7 \\"
                     echo "    --width=$REN_W --height=$REN_H \\"
-                    echo "    --source=\"$RESULT_DIR/$FRAME.camerpos.ply\" \\"
-                    echo "    --decode=\"$RESULT_DIR/${LENGTH}_${SEQ}_${RATE}_${FRAME_NR}.decoded.ply\" \\"
-                    echo "    --output=\"$RESULT_DIR/${LENGTH}_${SEQ}_${RATE}_${FRAME_NR}.decoded.ply.metric\""
+                    echo "    --source=\"$RESULT_DIR/pos_plys/$FRAME.camerpos.ply\" \\"
+                    echo "    --decode=\"$RESULT_DIR/plys/${LENGTH}_${SEQ}_${RATE}_${FRAME_NR}.decoded.ply\" \\"
+                    echo "    --output=\"$RESULT_DIR/metrics/${LENGTH}_${SEQ}_${RATE}_${FRAME_NR}.decoded.ply.metric\""
 
                     if [ $GENERATE_PNGs == 1 ]; then
                         echo "# Convert to PNG images"

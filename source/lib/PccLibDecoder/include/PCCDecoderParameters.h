@@ -61,6 +61,7 @@ class PCCDecoderParameters {
   std::string       scalerConfig_;
   size_t            nbThread_;
   bool              keepIntermediateFiles_;
+  std::string       debugPath_;
   bool              patchColorSubsampling_;
   size_t            bestColorSearchRange_;
   int               numNeighborsColorTransferFwd_;

@@ -142,7 +142,7 @@ void PCCGSVideoEncoder::encodeVideo( PCCVideo<uint16_t, 3>        &videoFrames,
   PCCVideo<uint16_t, 3> videoRec;
   auto                  encoder = PCCVirtualVideoEncoder<uint16_t>::create( HMLIB );
   encoder->encode( videoFrames, encParams, bitstream, videoRec );
-  bitstream.write( binFileName );
+  if ( params.keepIntermediateFiles_ ) { bitstream.write( binFileName ); }
   bitstream.byteStreamToSampleStream();
   if ( params.keepIntermediateFiles_ ) { videoRec.write( recYuvFileName, nbyte ); }
 }

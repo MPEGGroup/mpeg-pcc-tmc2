@@ -90,7 +90,8 @@ int PCCDecoder::decode( PCCContext &context, PCCGroupOfFrames &reconstructs, int
   setConsitantFourCCCode( context, 0 );  //
   auto occupancyCodecId = getCodedCodecId( context, oi.getOccupancyCodecId(), params_.videoDecoderOccupancyPath_ );
   auto geometryCodecId  = getCodedCodecId( context, gi.getGeometryCodecId(), params_.videoDecoderGeometryPath_ );
-  path << removeFileExtension( params_.compressedStreamPath_ ) << "_dec_GOF" << sps.getV3CParameterSetId() << "_";
+  path << params_.debugPath_ << "/" << removeFileExtension( params_.compressedStreamPath_ ) << "_dec_GOF"
+       << sps.getV3CParameterSetId() << "_";
 
   // Step 1: Decompress packed video if present
   auto                       &pve = sps.getVpsPackedVideoExtension();
