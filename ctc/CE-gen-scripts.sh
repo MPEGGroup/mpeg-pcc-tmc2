@@ -49,7 +49,7 @@ declare -A AVAILABLE_FRAMES
 JOBNAME="V-PCC-GS"
 AUTO_RUN=0                  # 0:off, 1:run_local, 2:run_slurm 
 LENGTHS=(1F)                # Valid values for LENGTHS are (1F), (NF), or (1F NF)
-# CODINGS=("C1", "CW")      # Valid values for CODINGS are (C1), (CW), or (C1 CW)
+CODINGS=(C1 CW)             # Valid values for CODINGS are (C1), (CW), or (C1 CW)
 KEEP_INTERMEDIATE_FILES=0   # 0: reduce diskspace, or 1: keep intermediate files
 GENERATE_PNGs=0             # 0 or 1
 : "${EXPERIMENT_MODE:=2}"   # 0: mandatory, 1: all, 2: man_with_fruit_tracked only, 3: subset
@@ -407,6 +407,16 @@ for SEQ in "${SEQUENCES[@]}"; do
 
         for CFG_RATE_DIR in "${CFG_RATE_DIRs[@]}"; do
             RATE="$(basename "$CFG_RATE_DIR")"
+
+            if [ "$RATE" = "lossless" ] && [[ ! " ${CODINGS[@]} " =~ "CW" ]]; then
+                echo Condition CW is disabled
+                continue
+            fi
+            if [ "$RATE" != "lossless" ] && [[ ! " ${CODINGS[@]} " =~ "C1" ]]; then
+                echo Condition C1 is disabled
+                continue
+            fi
+
             RESULT_DIR="$OUT/results/$LENGTH/$SEQ/$RATE"
             MKDIRCK "$RESULT_DIR/plys"
             MKDIRCK "$RESULT_DIR/pos_plys"
@@ -680,6 +690,7 @@ echo "[Experiment settings]"
 echo "Job name: $JOBNAME"
 echo "Auto run: $AUTO_RUN" 
 echo "Lengths: ${LENGTHS[*]}"
+echo "Codings: ${CODINGS[*]}"
 echo "Keep intermediate files: $KEEP_INTERMEDIATE_FILES"
 echo "Generate PNGs: $GENERATE_PNGs"
 echo "Experiment mode: $EXPERIMENT_MODE"
