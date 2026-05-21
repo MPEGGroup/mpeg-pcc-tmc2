@@ -261,7 +261,7 @@ for SEQ in "${SEQUENCES[@]}"; do
     for LENGTH in "${LENGTHS[@]}"; do
         case $LENGTH in
             "1F") if (( REQUIRED_FRAMES < 1 )); then REQUIRED_FRAMES=1; fi ;;
-            "NF") if (( REQUIRED_FRAMES < 32 )); then REQUIRED_FRAMES=32; fi ;;
+            "NF") if (( REQUIRED_FRAMES < 32 && 32 <= AVAILABLE_FRAMES[$SEQ] )); then REQUIRED_FRAMES=32; fi ;;
             *) echo "Unknown length variant: $LENGTH"; exit 1 ;;
         esac
     done
@@ -436,7 +436,7 @@ for SEQ in "${SEQUENCES[@]}"; do
                 echo "$TIME$TMC_ENC_BIN \\"
                 echo "    --uncompressedDataPath=${UNCOMPRESSED_DATA_PATHs[$SEQ]} \\"
                 echo "    --configurationFolder=$CFG_PATH/ \\"
-                echo "    --config=$CFG_PATH/gs-scc-common.cfg \\"
+                echo "    --config=$CFG_PATH/gs-main10-common.cfg \\"
                 echo "    --config=$PACK_CONFIG \\"
                 if (( $ADAPTIVE_QUANTIZATION == 1 )); then
                     FRAME="$(printf "frame_%04i" ${START_FRAME_NR[$SEQ]})"
