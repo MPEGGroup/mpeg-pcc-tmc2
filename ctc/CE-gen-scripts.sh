@@ -53,6 +53,7 @@ LENGTHS=(1F)                # Valid values for LENGTHS are (1F), (NF), or (1F NF
 KEEP_INTERMEDIATE_FILES=0   # 0: reduce diskspace, or 1: keep intermediate files
 GENERATE_PNGs=0             # 0 or 1
 : "${EXPERIMENT_MODE:=2}"   # 0: mandatory, 1: all, 2: man_with_fruit_tracked only, 3: subset
+: "${METRICS_THREADS:=1}"   # Number of threads for mpeg-gsc-metrics (optimize for your system resources)
 
 # ==================================================================================================
 # Coding settings
@@ -375,6 +376,7 @@ for SEQ in "${SEQUENCES[@]}"; do
                     echo "#SBATCH --ntasks-per-node=1"
                     echo "#SBATCH --nodes=1"
                     echo "#SBATCH --mem-per-cpu=8G"
+                    echo "#SBATCH --cpus-per-task=$METRICS_THREADS"
                     echo ""
                     echo "# Printing the md5sum of the input PLY for debugging"
                     echo "md5sum $INPUT_FILE"
@@ -387,7 +389,7 @@ for SEQ in "${SEQUENCES[@]}"; do
                     echo "    --camera=\"${COLMAP_DIRs[$SEQ]}/$FRAME/sparse/cameras.bin\""
                     echo
                     echo "# Calculate importance scores"
-                    echo "$TIME$IMP_BIN --threads=7\\"
+                    echo "$TIME$IMP_BIN --threads=$METRICS_THREADS \\"
                     echo "    -a \"$SEQ_GROUP_DIR/$FRAME.camerpos.ply\" \\"
                     echo "    \"--impScore=$SEQ_GROUP_DIR/$FRAME.impScores.txt\" \\"
                     echo "    \"--width=$REN_W\" \"--height=$REN_H\" "
@@ -484,10 +486,8 @@ for SEQ in "${SEQUENCES[@]}"; do
                     echo "#SBATCH --output=$OUT/jobs/logs/metric/%j-$LENGTH-$SEQ-$RATE-$FRAME_NR.out"
                     echo "#SBATCH --ntasks-per-node=1"
                     echo "#SBATCH --nodes=1"
-
-                    # We measured a peak memory consumption of 45.1 GB [m76044] < 7 x 8G = 56G
                     echo "#SBATCH --mem-per-cpu=8G"
-                    echo "#SBATCH --cpus-per-task=7"
+                    echo "#SBATCH --cpus-per-task=$METRICS_THREADS"
                     
                     if [ $METRIC_CPU -eq 0 ]; then
                         echo "#SBATCH --gpus=1"
@@ -501,7 +501,7 @@ for SEQ in "${SEQUENCES[@]}"; do
                     echo "    --camera=\"${COLMAP_DIRs[$SEQ]}/$FRAME/sparse/cameras.bin\""
                     echo
                     echo "# Calculate all metrics"
-                    echo "$TIME$METRIC -v 1 --startFrame=0 --frameCount=1 --cpu=$METRIC_CPU --useCameraPosition=1 --threads=7 \\"
+                    echo "$TIME$METRIC -v 1 --startFrame=0 --frameCount=1 --cpu=$METRIC_CPU --useCameraPosition=1 --threads=$METRICS_THREADS \\"
                     echo "    --width=$REN_W --height=$REN_H \\"
                     echo "    --source=\"$RESULT_DIR/pos_plys/$FRAME.camerpos.ply\" \\"
                     echo "    --decode=\"$RESULT_DIR/plys/${LENGTH}_${SEQ}_${RATE}_${FRAME_NR}.decoded.ply\" \\"
