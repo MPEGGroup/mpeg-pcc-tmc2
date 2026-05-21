@@ -333,7 +333,7 @@ RUN_SUMMARY="$OUT/jobs/step3_run_summary.sh"
 
 csv_file="$OUT/metrics/$JOBNAME.csv"
 
-echo "length, seq, rate, total_Byte, pos_Byte, sh0_Byte, sh1_Byte, sh2_Byte, sh3_Byte, rot_Byte, scale_Byte, opacity_Byte, meta_Byte,total_encT, pos_encT, att_encT, total_decT, pos_decT, att_decT, enc_MaxRSS, dec_MaxRSS, RGB-PSNR, YUV-PSNR, YUV-SSIM, YUV-IVSSIM, RGB-LPIPS, GT-RGB-PSNR, renT" > "$csv_file"
+echo "$PYTHON $PARSER_SCRIPT --print-header-row > \"$csv_file\"" >> "$RUN_SUMMARY"
 
 for SEQ in "${SEQUENCES[@]}"; do
     if [ "${ENABLE_SEQs[$SEQ]}" -ne 1 ]; then

@@ -49,7 +49,23 @@ COLUMN_ORDER = [
     "rot_Byte",
     "scale_Byte",
     "opacity_Byte",
+    "packed0_Byte",
+    "packed1_Byte",
+    "packed2_Byte",
+    "packed3_Byte",
     "meta_Byte",
+    "RGB-PSNR",
+    "YUV-PSNR",
+    "YUV-SSIM",
+    "YUV-IVSSIM",
+    "min RGB-PSNR",
+    "min YUV-PSNR",
+    "min YUV-SSIM",
+    "min YUV-IVSSIM",
+    "max RGB-PSNR",
+    "max YUV-PSNR",
+    "max YUV-SSIM",
+    "max YUV-IVSSIM",
     "total_encT",
     "pos_encT",
     "att_encT",
@@ -58,90 +74,56 @@ COLUMN_ORDER = [
     "att_decT",
     "enc_MaxRSS",
     "dec_MaxRSS",
-    "RGB-PSNR",
-    "YUV-PSNR",
-    "YUV-SSIM",
-    "YUV-IVSSIM",
-    "RGB-LPIPS",
-    "GT-RGB-PSNR",
-    "renT",
 ]
 
 
 def parse_bitstream_file(path):
-    attr_bytes = {
-        "pos_Byte": 0,
-        "sh0_Byte": 0,
-        "sh1_Byte": 0,
-        "sh2_Byte": 0,
-        "sh3_Byte": 0,
-        "rot_Byte": 0,
-        "scale_Byte": 0,
-        "opacity_Byte": 0,
-        "meta_Byte": 0,
-        "total_Byte": 0,
-    }
+    attr_bytes = {k: 0 for k in COLUMN_ORDER if k.endswith("_Byte")}
+    attribute: str | None = None
+    packed_map: int | None = None
 
-    v3c_unit_attr = None
-    attr_count = {}
-
-    attribute_name_remap = {
-        "position": "pos",
-        "opacity": "opacity",
-        "sphericalHarmonic": "sh",
-        "scale": "scale",
-        "rotation": "rot",
-    }
     with open(path, "rt") as f:
         for line in f:
             line = line.strip()
 
             # Detect the attribute inside videoSubStream
-            m_attr = re.match(r"\[ *\d+- *\d+\] *attribute *(\w+)", line)
-            if m_attr:
-                if v3c_unit_attr is not None:
-                    raise "ERR, two attributes detected in one v3cUnit"
-                v3c_unit_attr = m_attr.group(1)
+            if m_attr := re.match(r"\[ *\d+- *\d+\] *attribute *(\w+)", line):
+                attribute = m_attr.group(1)
                 continue
 
+            if m_pmap := re.match(
+                r"\[ *\d+- *\d+\] +PackedMapIndex \.+ = (\d+) ", line
+            ):
+                packed_map = int(m_pmap.group(1))
+
             # Detect the end of the V3C unit
-            m_end = re.match(r"\[\s*(\d+)-\d+\] \} ~v3cUnit", line)
-            if m_end:
+            if m_end := re.match(r"\[\s*(\d+)-\d+\] \} ~v3cUnit\((V3C_[A-Z]+)\)", line):
                 size = int(m_end.group(1))
+                v3c_unit_type = m_end.group(2)
 
-                if v3c_unit_attr is None:
-                    # Position is encoded differently, it has no v3c_unit_attr
-                    v3c_unit_attr = "position"
+                if v3c_unit_type in ["V3C_VPS", "V3C_AD"]:
+                    key = "meta_Byte"
+                elif v3c_unit_type == "V3C_GVD":
+                    key = "pos_Byte"
+                elif v3c_unit_type == "V3C_AVD":
+                    assert attribute is not None
 
-                if v3c_unit_attr not in attribute_name_remap:
-                    attr_name = "meta"
+                    if attribute == "rotation":
+                        key = "rot_Byte"
+                    elif attribute == "sphericalHarmonic":
+                        key = "sh0_Byte"  # Difficult to distinguish between sh0 .. sh3 with the remappings
+                    else:
+                        key = f"{attribute}_Byte"
+                elif v3c_unit_type == "V3C_PVD":
+                    assert packed_map is not None
+                    key = f"packed{packed_map}_Byte"
                 else:
-                    attr_name = attribute_name_remap[v3c_unit_attr]
+                    raise ValueError(f"Unexpected V3C unit type: {v3c_unit_type}")
 
-                # Increment attribute count
-                if attr_name not in attr_count:
-                    attr_count[attr_name] = 0
-                attr_count[attr_name] += 1
+                if key is not None:
+                    attr_bytes[key] += size
 
-                # Log size
-                if attr_name == "sh":
-                    sh_count = attr_count[attr_name]
-                    if sh_count in (1,):
-                        sh_name = f"sh0"
-                    elif sh_count in (2, 3, 4):
-                        sh_name = f"sh1"
-                    elif sh_count in (5, 6, 7, 8, 9):
-                        sh_name = f"sh2"
-                    elif sh_count in (10, 11, 12, 13, 14, 15, 16):
-                        sh_name = f"sh3"
-                    key = f"{sh_name}_Byte"
-                else:
-                    key = f"{attr_name}_Byte"
-                attr_bytes[key] += size
                 attr_bytes["total_Byte"] += size
-
-                # Reset for next unit
-                v3c_unit_attr = None
 
     return attr_bytes
 
@@ -205,9 +187,6 @@ def parse_metric_file(path):
         "YUV-PSNR": 0.0,
         "YUV-SSIM": 0.0,
         "YUV-IVSSIM": 0.0,
-        "RGB-LPIPS": 0.0,
-        "GT-RGB-PSNR": 0.0,
-        "renT": 0.0,
     }
 
     with open(path, "rt") as f:
@@ -222,12 +201,6 @@ def parse_metric_file(path):
                 metrics["YUV-SSIM"] = float(line.split()[-1])
             elif line.startswith("IVSSIM YUV"):
                 metrics["YUV-IVSSIM"] = float(line.split()[-1])
-            elif line.startswith("IVSSIM RGB"):
-                metrics["RGB-IVSSIM"] = float(line.split()[-1])
-            elif line.startswith("RGB-LPIPS"):
-                metrics["RGB-LPIPS"] = float(line.split()[-1])
-            elif line.startswith("GT-RGB-PSNR"):
-                metrics["GT-RGB-PSNR"] = float(line.split()[-1])
     return metrics
 
 
@@ -249,13 +222,17 @@ def per_frame_results(results_dir: str, base: str, start_frame: int, frame_count
     return results
 
 
-def average_per_frame_results(per_frame_results):
-    average = {}
+def aggregate_per_frame_results(per_frame_results):
+    aggregates = {}
 
     for key in per_frame_results[0].keys():
-        average[key] = sum(f[key] for f in per_frame_results) / len(per_frame_results)
+        aggregates[key] = sum(f[key] for f in per_frame_results) / len(
+            per_frame_results
+        )
+        aggregates[f"min {key}"] = min(f[key] for f in per_frame_results)
+        aggregates[f"max {key}"] = max(f[key] for f in per_frame_results)
 
-    return average
+    return aggregates
 
 
 def per_rate_results(results_dir: str, base: str):
@@ -279,20 +256,22 @@ def per_rate_results(results_dir: str, base: str):
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-d", "--results-dir", required=True, help="Results directory")
-    parser.add_argument("-l", "--length", required=True, help="Length (1F or NF)")
-    parser.add_argument("-s", "--seq", required=True, help="Sequence name")
-    parser.add_argument("-r", "--rate", required=True, help="Rate string (e.g. r01)")
     parser.add_argument(
-        "-f", "--start-frame", required=True, type=int, help="Start frame number"
+        "--print-header-row",
+        action="store_true",
+        help="Print CSV header row and exit",
     )
-    parser.add_argument(
-        "-n", "--frame-count", required=True, type=int, help="Number of frames"
-    )
+    parser.add_argument("-d", "--results-dir", help="Results directory")
+    parser.add_argument("-l", "--length", help="Length (1F or NF)")
+    parser.add_argument("-s", "--seq", help="Sequence name")
+    parser.add_argument("-r", "--rate", help="Rate string (e.g. r01)")
+    parser.add_argument("-f", "--start-frame", type=int, help="Start frame number")
+    parser.add_argument("-n", "--frame-count", type=int, help="Number of frames")
     return parser.parse_args()
 
 
 def main(
+    print_header_row: bool,
     results_dir: str,
     length: str,
     seq: str,
@@ -300,6 +279,10 @@ def main(
     start_frame: int,
     frame_count: int,
 ):
+    if print_header_row:
+        print(", ".join(COLUMN_ORDER))
+        return
+
     base = f"{length}_{seq}_{rate}"
     result = {
         "length": length,
@@ -307,9 +290,9 @@ def main(
         "rate": rate,
     }
     frame_results = per_frame_results(results_dir, base, start_frame, frame_count)
-    result.update(average_per_frame_results(frame_results))
+    result.update(aggregate_per_frame_results(frame_results))
     result.update(per_rate_results(results_dir, base))
-    print(",".join(str(result[col]) for col in COLUMN_ORDER))
+    print(", ".join(str(result[col]) for col in COLUMN_ORDER))
 
 
 if __name__ == "__main__":

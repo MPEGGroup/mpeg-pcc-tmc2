@@ -35,39 +35,59 @@
 import openpyxl
 import os
 import argparse
+import re
 
-# Constants for CSV column ranges and Excel positions
-BITRATES_RANGE = (3, 12, 11)  # start_idx, end_idx, start_col
-METRICS_RANGE = (21, 24, 20)
-TIMES_RSS_RANGE = (13, 21, 31)
+TITLE_MAPPING = {
+    "total_Byte": ("bitstream size [bytes]", "Total"),
+    "pos_Byte": ("bitstream size [bytes]", "position"),
+    "sh0_Byte": ("bitstream size [bytes]", "sh0"),
+    "sh1_Byte": ("bitstream size [bytes]", "sh1"),
+    "sh2_Byte": ("bitstream size [bytes]", "sh2"),
+    "sh3_Byte": ("bitstream size [bytes]", "sh3"),
+    "rot_Byte": ("bitstream size [bytes]", "rotation"),
+    "scale_Byte": ("bitstream size [bytes]", "scaling"),
+    "opacity_Byte": ("bitstream size [bytes]", "opacity"),
+    "total_encT": ("Encoding time [s]", "Total"),
+    "pos_encT": ("Encoding time [s]", "Geometry"),
+    "att_encT": ("Encoding time [s]", "Attributes"),
+    "total_decT": ("Decoding time [s]", "Total"),
+    "pos_decT": ("Decoding time [s]", "Geometry"),
+    "att_decT": ("Decoding time [s]", "Attributes"),
+    "enc_MaxRSS": ("Max RSS [KB]", "encoder"),
+    "dec_MaxRSS": ("Max RSS [KB]", "decoder"),
+    "RGB-PSNR": ("Average objective quality", "RGB-PSNR"),
+    "YUV-PSNR": ("Average objective quality", "YUV-PSNR"),
+    "YUV-SSIM": ("Average objective quality", "YUV-SSIM"),
+    "YUV-IVSSIM": ("Average objective quality", "Custom A"),
+    "min RGB-PSNR": ("Minimum objective quality", "RGB-PSNR"),
+    "min YUV-PSNR": ("Minimum objective quality", "YUV-PSNR"),
+    "min YUV-SSIM": ("Minimum objective quality", "YUV-SSIM"),
+    "max RGB-PSNR": ("Maximum objective quality", "RGB-PSNR"),
+    "max YUV-PSNR": ("Maximum objective quality", "YUV-PSNR"),
+    "max YUV-SSIM": ("Maximum objective quality", "YUV-SSIM"),
+}
 
 
-def write_values(ws, csv_tokens, start_idx, end_idx, start_col, rate_id, seq_offset):
+def write_values(ws, row, title_columns, measurement):
     """
     Write a range of CSV values into the worksheet.
     Converts to float if not empty, otherwise writes None.
     """
-    for col, val in enumerate(csv_tokens[start_idx:end_idx]):
-        ws.cell(
-            row=seq_offset + rate_id,
-            column=start_col + col,
-            value=float(val) if val else None,
-        )
-        print("WRITING", val, "to", (seq_offset + rate_id, start_col + col))
+    for key, value in measurement.items():
+        if title := TITLE_MAPPING.get(key):
+            if column := title_columns.get(title):
+                ws.cell(row=row, column=column, value=float(value) if value else None)
+                print(f"    Writing {key} == {value} to ({row}, {column})")
+            else:
+                print(f"    WARNING: Could not map {title} to a column")
+        else:
+            print(f"    WARNING: Could not map {key} to a title")
 
 
-def csv2xlsm(wb, file_path, sheet_name):
+def build_sequence_index(ws):
     """
-    Read a CSV file and write its data into the given workbook.
-    sheet_name determines the sheet that will be filled out.
+    Build index from sequence variant, e.g. ("1F", "plant"), to row number in the worksheet
     """
-    try:
-        ws = wb[sheet_name]
-    except KeyError:
-        print(f"[ERROR] Sheet '{sheet_name}' not found in workbook")
-        exit()
-
-    # Build index from sequence variant, e.g. ("1F", "plant"), to row number in the worksheet
     sequence_rows = {
         (
             ws.cell(row=cell.row, column=2).value,
@@ -79,31 +99,70 @@ def csv2xlsm(wb, file_path, sheet_name):
     for key, value in sequence_rows.items():
         print(f"Sequence variant {' '.join(key)} is at row {value}")
 
-    warned_sequences = set()
-    with open(file_path, "rt") as fp:
-        next(fp)  # skip header line
-        for line in fp:
-            csv_tokens = line.strip().split(",")
-            seq_variant = (csv_tokens[0], csv_tokens[1])
-            if seq_variant not in sequence_rows:
-                # print a warning
-                if seq_variant not in warned_sequences:
-                    print(
-                        f"[WARNING] Sequence '{' '.join(seq_variant)}' not found in the template!"
-                    )
-                    warned_sequences.add(seq_variant)
-                continue
-            seq_row_offset = sequence_rows[seq_variant]
-            print("FOUND", " ".join(seq_variant))
-            rate_id = int(csv_tokens[2].split("r")[-1]) - 1
+    return sequence_rows
 
-            # Write different sections of the CSV into the worksheet
-            print("WRITING BITRATES")
-            write_values(ws, csv_tokens, *BITRATES_RANGE, rate_id, seq_row_offset)
-            print("WRITING METRICS")
-            write_values(ws, csv_tokens, *METRICS_RANGE, rate_id, seq_row_offset)
-            print("WRITING TIMES")
-            write_values(ws, csv_tokens, *TIMES_RSS_RANGE, rate_id, seq_row_offset)
+
+def build_title_index(ws):
+    """
+    Build index from title and sub-title, e.g. ("bitstream size [bytes]", "sh3"), to column number in the worksheet
+    """
+    title = None
+    title_columns = {}
+
+    for col in ws.iter_cols():
+        if not col[1].value:
+            continue
+        if col[0].value:
+            title = col[0].value
+        if title is None:
+            continue
+
+        sub_title = col[1].value
+        full_title = (title, sub_title)
+        assert not full_title in title_columns
+        title_columns[full_title] = col[0].column
+
+    for key, value in title_columns.items():
+        print(f'Title "{key}" is at column {value}')
+
+    return title_columns
+
+
+def csv2xlsm(wb, file_path, sheet_name):
+    """
+    Read a CSV file and write its data into the given workbook.
+    sheet_name determines the sheet that will be filled out.
+    """
+    try:
+        ws = wb[sheet_name]
+    except KeyError:
+        raise RuntimeError(f"ERROR: Sheet '{sheet_name}' not found in workbook")
+
+    sequence_rows = build_sequence_index(ws)
+    title_columns = build_title_index(ws)
+
+    with open(file_path, "rt") as fp:
+        keys = [s.strip() for s in next(fp).strip().split(",")]
+        assert keys[:3] == ["length", "seq", "rate"]
+
+        for line in fp:
+            values = [s.strip() for s in line.strip().split(",")]
+            assert len(keys) == len(values)
+            seq_variant = (values[0], values[1])
+
+            rate = values[2]
+            m_rate = re.match(r"r(\d+)", rate)
+            assert m_rate
+            rate_idx = int(m_rate[1]) - 1
+            assert rate_idx >= 0
+
+            measurement = {keys[i]: values[i] for i in range(3, len(keys))}
+
+            if seq_row_offset := sequence_rows.get(seq_variant):
+                print(' '.join(values[:3]))
+                write_values(ws, seq_row_offset + rate_idx, title_columns, measurement)
+            else:
+                print(f"WARNING: Sequence '{' '.join(seq_variant)}' not in template.")
 
 
 def main():
@@ -127,19 +186,17 @@ def main():
     if os.path.isfile(args.anc_csv):
         csv2xlsm(wb, args.anc_csv, "Anchor.C1")
     else:
-        print(f"[ERROR] No anchor CSV file found: {args.anc_csv}")
-        exit()
+        raise RuntimeError(f"ERROR: No anchor CSV file found: {args.anc_csv}")
 
     # Process proposed CSV
     if os.path.isfile(args.pro_csv):
         csv2xlsm(wb, args.pro_csv, "Proposal.C1")
     else:
-        print(f"[ERROR] No proposed CSV file found: {args.pro_csv}")
-        exit()
+        raise RuntimeError(f"ERROR: No proposed CSV file found: {args.pro_csv}")
 
     # Save the updated workbook
     wb.save(args.xlsm)
-    print(f"[INFO] XLSM file saved: {args.xlsm}")
+    print(f"XLSM file saved: {args.xlsm}")
 
 
 if __name__ == "__main__":
