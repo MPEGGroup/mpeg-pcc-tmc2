@@ -58,7 +58,7 @@ void PCCGSVideoEncoder::encode( PCCGSVideoFrames             &frames,
     size_t attributeCount = ai.getAttributeCount();
 
     for ( size_t attributeIdx = 0; attributeIdx < attributeCount; attributeIdx++ ) {
-      size_t attributeType  = ai.getAttributeTypeId( attributeIdx );
+      auto   attributeType  = ai.getAttributeTypeId( attributeIdx );
       size_t partitionCount = ai.getAttributeDimensionPartitionsMinus1( attributeIdx );
 
       for ( size_t partitionIdx = 0; partitionIdx <= partitionCount; partitionIdx++ ) {
@@ -147,24 +147,25 @@ void PCCGSVideoEncoder::encodeVideo( PCCVideo<uint16_t, 3>        &videoFrames,
   if ( params.keepIntermediateFiles_ ) { videoRec.write( recYuvFileName, nbyte ); }
 }
 
-PCCVideoType PCCGSVideoEncoder::getVideoTypeByAttributeType( size_t attributeType, size_t partitionIdx ) {
+PCCVideoType PCCGSVideoEncoder::getVideoTypeByAttributeType( AttributeTypeId attributeType, size_t partitionIdx ) {
   PCCVideoType videoType = PCCVideoType::VIDEO_ATTRIBUTE;
   switch ( attributeType ) {
-    case ATTR_TYPE_OPACITY: videoType = PCCVideoType::VIDEO_OPACITY_T0; break;
-    case ATTR_TYPE_SPHERICAL_HARMONIC: videoType = PCCVideoType::VIDEO_SPHERICAL_HARMONIC_T0; break;
-    case ATTR_TYPE_SCALE: videoType = PCCVideoType::VIDEO_SCALE_T0; break;
-    case ATTR_TYPE_ROTATION: videoType = PCCVideoType::VIDEO_ROTATION_T0; break;
+    case ATTR_TRANSPARENCY: videoType = PCCVideoType::VIDEO_OPACITY_T0; break;
+    case ATTR_SPHERICAL_HARMONICS: videoType = PCCVideoType::VIDEO_SPHERICAL_HARMONIC_T0; break;
+    case ATTR_SCALE: videoType = PCCVideoType::VIDEO_SCALE_T0; break;
+    case ATTR_ROTATION: videoType = PCCVideoType::VIDEO_ROTATION_T0; break;
     default: break;
   }
   return static_cast<PCCVideoType>( static_cast<int>( videoType ) + static_cast<int>( partitionIdx * 64 ) );
 }
 
-int32_t PCCGSVideoEncoder::getVideoQPByAttributeType( size_t attributeType, const PCCGSEncoderParameters &params ) {
+int32_t PCCGSVideoEncoder::getVideoQPByAttributeType( AttributeTypeId               attributeType,
+                                                      const PCCGSEncoderParameters &params ) {
   switch ( attributeType ) {
-    case ATTR_TYPE_OPACITY: return params.attributeOpacityQP_;
-    case ATTR_TYPE_SPHERICAL_HARMONIC: return params.attributeColorQP_;
-    case ATTR_TYPE_SCALE: return params.attributeScaleQP_;
-    case ATTR_TYPE_ROTATION: return params.attributeRotationQP_;
+    case ATTR_TRANSPARENCY: return params.attributeOpacityQP_;
+    case ATTR_SPHERICAL_HARMONICS: return params.attributeColorQP_;
+    case ATTR_SCALE: return params.attributeScaleQP_;
+    case ATTR_ROTATION: return params.attributeRotationQP_;
     default: break;
   }
   std::cerr << "Error: invalid attribute type." << std::endl;

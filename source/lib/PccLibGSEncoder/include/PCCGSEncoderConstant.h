@@ -37,13 +37,6 @@
 
 namespace pcc {
 
-// Attribute type constants (from V3C specification)
-constexpr size_t ATTR_TYPE_COLOR              = 0;
-constexpr size_t ATTR_TYPE_OPACITY            = 2;
-constexpr size_t ATTR_TYPE_SPHERICAL_HARMONIC = 5;
-constexpr size_t ATTR_TYPE_SCALE              = 6;
-constexpr size_t ATTR_TYPE_ROTATION           = 7;
-
 static const std::vector<int32_t> g_kernel = { 12, 28, 12, 28, 96, 28, 12, 28, 12 };
 
 static const uint32_t g_kMortonCode256Z[256] = {

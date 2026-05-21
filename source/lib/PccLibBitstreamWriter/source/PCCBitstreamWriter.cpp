@@ -382,7 +382,7 @@ void PCCBitstreamWriter::videoSubStream( PCCHighLevelSyntax &syntax,
       if ( vuh.getAuxiliaryVideoFlag() ) {
         int          attrIndex          = vuh.getAttributeIndex();
         int          attrPartitionIndex = vuh.getAttributeDimensionIndex();
-        int          attrTypeId         = sps.getAttributeInformation( atlasIndex ).getAttributeTypeId( attrIndex );
+        auto         attrTypeId         = sps.getAttributeInformation( atlasIndex ).getAttributeTypeId( attrIndex );
         PCCVideoType attributeIndex     = getAttributeTypeRaw( attrTypeId, attrPartitionIndex );
         std::string  attributeName      = getAttributeName( attrTypeId );
         // TRACE_BITSTREAM( "Attribute %s RAW, PARTITION: %d\n", attributeName.c_str(), vuh.getAttributeDimensionIndex()
@@ -400,7 +400,7 @@ void PCCBitstreamWriter::videoSubStream( PCCHighLevelSyntax &syntax,
         } else {
           int          attrIndex          = vuh.getAttributeIndex();
           int          attrPartitionIndex = vuh.getAttributeDimensionIndex();
-          int          attrTypeId         = sps.getAttributeInformation( atlasIndex ).getAttributeTypeId( attrIndex );
+          auto         attrTypeId         = sps.getAttributeInformation( atlasIndex ).getAttributeTypeId( attrIndex );
           PCCVideoType attributeIndex     = getAttributeType( attrTypeId, attrPartitionIndex );
           std::string  attributeName      = getAttributeName( attrTypeId );
           TRACE_BITSTREAM( "attribute %s \n", attributeName.c_str() );

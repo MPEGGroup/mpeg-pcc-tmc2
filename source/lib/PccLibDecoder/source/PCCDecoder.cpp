@@ -387,7 +387,7 @@ int PCCDecoder::decode( PCCContext &context, PCCGroupOfFrames &reconstructs, int
   if ( ai.getAttributeCount() > 0 ) {
     for ( int attrIndex = 0; attrIndex < ai.getAttributeCount(); attrIndex++ ) {
       int  attributeBitDepth  = ai.getAttribute2dBitdepthMinus1( attrIndex ) + 1;
-      int  attributeTypeId    = ai.getAttributeTypeId( attrIndex );
+      auto attributeTypeId    = ai.getAttributeTypeId( attrIndex );
       int  attributeDimension = ai.getAttributeDimensionPartitionsMinus1( attrIndex ) + 1;
       auto attributeCodecId =
           getCodedCodecId( context, ai.getAttributeCodecId( attrIndex ), params_.videoDecoderAttributePath_ );

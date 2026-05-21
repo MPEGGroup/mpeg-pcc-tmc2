@@ -56,7 +56,7 @@ class AttributeInformation {
   AttributeInformation &operator=( const AttributeInformation & ) = default;
 
   void allocate() {
-    attributeTypeId_.resize( attributeCount_, 0 );
+    attributeTypeId_.resize( attributeCount_, {} );
     attributeCodecId_.resize( attributeCount_, 0 );
     auxiliaryAttributeCodecId_.resize( attributeCount_, 0 );
     attributeDimensionMinus1_.resize( attributeCount_, 0 );
@@ -66,12 +66,12 @@ class AttributeInformation {
     attributeMapAbsoluteCodingPersistenceFlagList_.resize( attributeCount_ );
     attributeMSBAlignFlag_.resize( attributeCount_, 0 );
   }
-  uint8_t getAttributeCount() { return attributeCount_; }
-  bool    getAttributeMSBAlignFlag( uint32_t index ) { return attributeMSBAlignFlag_[index]; }
-  uint8_t getAttributeTypeId( uint32_t index ) { return attributeTypeId_[index]; }
-  uint8_t getAttributeCodecId( uint32_t index ) { return attributeCodecId_[index]; };
-  uint8_t getAuxiliaryAttributeCodecId( uint32_t index ) { return auxiliaryAttributeCodecId_[index]; }
-  uint8_t getAttributeDimensionMinus1( uint32_t index ) { return attributeDimensionMinus1_[index]; }
+  uint8_t         getAttributeCount() { return attributeCount_; }
+  bool            getAttributeMSBAlignFlag( uint32_t index ) { return attributeMSBAlignFlag_[index]; }
+  AttributeTypeId getAttributeTypeId( uint32_t index ) { return attributeTypeId_[index]; }
+  uint8_t         getAttributeCodecId( uint32_t index ) { return attributeCodecId_[index]; };
+  uint8_t         getAuxiliaryAttributeCodecId( uint32_t index ) { return auxiliaryAttributeCodecId_[index]; }
+  uint8_t         getAttributeDimensionMinus1( uint32_t index ) { return attributeDimensionMinus1_[index]; }
   uint8_t getAttributeDimensionPartitionsMinus1( uint32_t index ) { return attributeDimensionPartitionsMinus1_[index]; }
   uint8_t getAttribute2dBitdepthMinus1( uint32_t index ) { return Attribute2dBitdepthMinus1_[index]; }
   uint8_t getAttributePartitionChannelsMinus1( uint32_t index, uint32_t j ) {
@@ -88,7 +88,7 @@ class AttributeInformation {
   }
   void setAttributeCount( uint8_t value ) { attributeCount_ = value; }
   void setAttributeMSBAlignFlag( uint32_t index, bool value ) { attributeMSBAlignFlag_[index] = value; }
-  void setAttributeTypeId( uint32_t index, uint8_t value ) { attributeTypeId_[index] = value; }
+  void setAttributeTypeId( uint32_t index, AttributeTypeId value ) { attributeTypeId_[index] = value; }
   void setAttributeCodecId( uint32_t index, uint8_t value ) { attributeCodecId_[index] = value; };
   void setAuxiliaryAttributeCodecId( uint32_t index, uint8_t value ) { auxiliaryAttributeCodecId_[index] = value; }
   void setAttributeDimensionMinus1( uint32_t index, uint8_t value ) { attributeDimensionMinus1_[index] = value; }
@@ -108,7 +108,7 @@ class AttributeInformation {
 
  private:
   uint8_t                           attributeCount_;
-  std::vector<uint8_t>              attributeTypeId_;
+  std::vector<AttributeTypeId>      attributeTypeId_;
   std::vector<uint8_t>              attributeCodecId_;
   std::vector<uint8_t>              auxiliaryAttributeCodecId_;
   std::vector<bool>                 attributeMapAbsoluteCodingPersistenceFlagList_;

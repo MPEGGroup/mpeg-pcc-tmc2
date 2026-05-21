@@ -74,8 +74,8 @@ class PCCGSVideoEncoder {
   /**
    * @brief Get video type for an attribute type
    */
-  PCCVideoType getVideoTypeByAttributeType( size_t attributeType, size_t partitionIdx );
-  int32_t      getVideoQPByAttributeType( size_t attributeType, const PCCGSEncoderParameters &params );
+  PCCVideoType getVideoTypeByAttributeType( AttributeTypeId attributeType, size_t partitionIdx );
+  int32_t      getVideoQPByAttributeType( AttributeTypeId attributeType, const PCCGSEncoderParameters &params );
   int32_t      getPackedVideoQP( size_t packedMapIndex, const PCCGSEncoderParameters &params );
 };
 

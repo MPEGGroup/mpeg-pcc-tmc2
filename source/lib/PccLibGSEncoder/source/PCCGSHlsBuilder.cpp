@@ -102,27 +102,27 @@ void PCCGSHlsBuilder::initializeV3CHls( PCCHighLevelSyntax &hls, const PCCGSEnco
   gi.setGeometryCodecId( 0 );
 
   // Attribute information
-  auto                &ai               = vps.getAttributeInformation( ATLAS_INDEX );
-  std::vector<uint8_t> attributeTypeIds = { ATTR_TYPE_OPACITY, ATTR_TYPE_SPHERICAL_HARMONIC, ATTR_TYPE_SCALE,
-                                            ATTR_TYPE_ROTATION };
+  auto                        &ai               = vps.getAttributeInformation( ATLAS_INDEX );
+  std::vector<AttributeTypeId> attributeTypeIds = { ATTR_TRANSPARENCY, ATTR_SPHERICAL_HARMONICS, ATTR_SCALE,
+                                                    ATTR_ROTATION };
 
   ai.setAttributeCount( 4 );
   ai.allocate();
   for ( size_t i = 0; i < ai.getAttributeCount(); i++ ) {
     ai.setAttributeTypeId( i, attributeTypeIds[i] );
-    if ( attributeTypeIds[i] == ATTR_TYPE_COLOR ) {
+    if ( attributeTypeIds[i] == ATTR_TEXTURE ) {
       ai.setAttributeDimensionMinus1( i, 2 );
-    } else if ( attributeTypeIds[i] == ATTR_TYPE_OPACITY ) {
+    } else if ( attributeTypeIds[i] == ATTR_TRANSPARENCY ) {
       ai.setAttributeDimensionMinus1( i, 0 );
-    } else if ( attributeTypeIds[i] == ATTR_TYPE_SPHERICAL_HARMONIC ) {
+    } else if ( attributeTypeIds[i] == ATTR_SPHERICAL_HARMONICS ) {
       ai.setAttributeDimensionMinus1( i, 47 );
       ai.setAttributeDimensionPartitionsMinus1( i, 15 );
       for ( int j = 0; j < 16; j++ ) { ai.setAttributePartitionChannelsMinus1( i, j, 2 ); }
-    } else if ( attributeTypeIds[i] == ATTR_TYPE_SCALE ) {
+    } else if ( attributeTypeIds[i] == ATTR_SCALE ) {
       ai.setAttributeDimensionMinus1( i, 2 );
       ai.setAttributeDimensionPartitionsMinus1( i, 0 );
       ai.setAttributePartitionChannelsMinus1( i, 0, 2 );
-    } else if ( attributeTypeIds[i] == ATTR_TYPE_ROTATION ) {
+    } else if ( attributeTypeIds[i] == ATTR_ROTATION ) {
       ai.setAttributeDimensionMinus1( i, 3 );
       ai.setAttributeDimensionPartitionsMinus1( i, 1 );
       ai.setAttributePartitionChannelsMinus1( i, 0, 2 );

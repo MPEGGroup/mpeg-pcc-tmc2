@@ -98,14 +98,14 @@ struct PCCGSEncoderParameters {
 
   bool keepIntermediateFiles_;
 
-  uint8_t getPackedMapIndexByAttributeTypeId( uint8_t attrTypeId ) const {
+  uint8_t getPackedMapIndexByAttributeTypeId( AttributeTypeId attrTypeId ) const {
     switch ( attrTypeId ) {
-      case ATTR_TYPE_COLOR:
-      case ATTR_TYPE_SPHERICAL_HARMONIC: return attributeColorPackedMapIndex_;
-      case ATTR_TYPE_OPACITY: return attributeOpacityPackedMapIndex_;
-      case ATTR_TYPE_SCALE: return attributeScalePackedMapIndex_;
-      case ATTR_TYPE_ROTATION: return attributeRotationPackedMapIndex_;
-      default: std::cerr << "Unsupported attribute type for packing: " << int( attrTypeId ) << "\n"; exit( -1 );
+      case ATTR_TEXTURE:
+      case ATTR_SPHERICAL_HARMONICS: return attributeColorPackedMapIndex_;
+      case ATTR_TRANSPARENCY: return attributeOpacityPackedMapIndex_;
+      case ATTR_SCALE: return attributeScalePackedMapIndex_;
+      case ATTR_ROTATION: return attributeRotationPackedMapIndex_;
+      default: std::cerr << "Unsupported attribute type for packing: " << attrTypeId << "\n"; exit( -1 );
     }
   }
 

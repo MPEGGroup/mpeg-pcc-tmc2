@@ -421,9 +421,9 @@ void PCCBitstreamReader::videoSubStream( PCCHighLevelSyntax &syntax,
     auto &vuh = syntax.getV3CUnitHeader( static_cast<size_t>( V3C_AVD ) - 1 );
     auto &vps = syntax.getVps();
     if ( vps.getAttributeInformation( atlasIndex ).getAttributeCount() > 0 ) {
-      int attributeIndex     = vuh.getAttributeIndex();
-      int attrPartitionIndex = vuh.getAttributeDimensionIndex();
-      int attrTypeId         = vps.getAttributeInformation( atlasIndex ).getAttributeTypeId( attributeIndex );
+      int  attributeIndex     = vuh.getAttributeIndex();
+      int  attrPartitionIndex = vuh.getAttributeDimensionIndex();
+      auto attrTypeId         = vps.getAttributeInformation( atlasIndex ).getAttributeTypeId( attributeIndex );
       if ( vuh.getAuxiliaryVideoFlag() ) {
         auto        videoType     = getAttributeTypeRaw( attrTypeId, attrPartitionIndex );
         std::string attributeName = getAttributeName( attrTypeId );
@@ -613,8 +613,8 @@ void PCCBitstreamReader::attributeInformation( AttributeInformation &ai,
   TRACE_BITSTREAM( "AttributeCount = %u  \n", ai.getAttributeCount() );
   ai.allocate();
   for ( uint32_t i = 0; i < ai.getAttributeCount(); i++ ) {
-    ai.setAttributeTypeId( i, bitstream.read( 4 ) );   // u(4)
-    ai.setAttributeCodecId( i, bitstream.read( 8 ) );  // u(8)
+    ai.setAttributeTypeId( i, static_cast<AttributeTypeId>( bitstream.read( 4 ) ) );  // u(4)
+    ai.setAttributeCodecId( i, bitstream.read( 8 ) );                                 // u(8)
     if ( sps.getAuxiliaryVideoPresentFlag( atlasIndex ) ) {
       ai.setAuxiliaryAttributeCodecId( i, bitstream.read( 8 ) );  // u(8)
     }
@@ -728,7 +728,7 @@ void PCCBitstreamReader::packingInformation( PackingInformation &pin,
     ai.allocate();
     for ( size_t i = 0; i < ai.getAttributeCount(); i++ ) {
       READ_CODE_DESC( value, 4, "pin_attribute_type_id" )  // u(4)
-      ai.setAttributeTypeId( i, value );
+      ai.setAttributeTypeId( i, static_cast<AttributeTypeId>( value ) );
       READ_CODE_DESC( value, 5, "pin_attribute_2d_bit_depth_minus1" )  // u(5)
       ai.setAttribute2dBitdepthMinus1( i, value );
       READ_CODE_DESC( value, 1, "pin_attribute_msb_align_flag" )  // u(1)

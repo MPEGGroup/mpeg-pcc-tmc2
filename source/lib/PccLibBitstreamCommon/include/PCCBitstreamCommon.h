@@ -673,16 +673,50 @@ static inline int floorLog2( uint32_t x ) {
 
 static inline int ceilLog2( uint32_t x ) { return ( x == 0 ) ? -1 : floorLog2( x - 1 ) + 1; }
 
-static inline PCCVideoType getAttributeType( int attrTypeId, int attrPartIndex ) {
-  if ( attrTypeId == 0 ) {  // color
+enum class AttributeTypeId : uint8_t {
+  ATTR_TEXTURE,
+  ATTR_MATERIAL_ID,
+  ATTR_TRANSPARENCY,
+  ATTR_REFLECTANCE,
+  ATTR_NORMAL,
+  ATTR_SPHERICAL_HARMONICS,
+  ATTR_SCALE,
+  ATTR_ROTATION,
+  ATTR_CUSTOM = 15
+};
+
+static constexpr auto ATTR_TEXTURE             = AttributeTypeId::ATTR_TEXTURE;
+static constexpr auto ATTR_TRANSPARENCY        = AttributeTypeId::ATTR_TRANSPARENCY;
+static constexpr auto ATTR_SPHERICAL_HARMONICS = AttributeTypeId::ATTR_SPHERICAL_HARMONICS;
+static constexpr auto ATTR_SCALE               = AttributeTypeId::ATTR_SCALE;
+static constexpr auto ATTR_ROTATION            = AttributeTypeId::ATTR_ROTATION;
+static constexpr auto ATTR_CUSTOM              = AttributeTypeId::ATTR_CUSTOM;
+
+inline std::ostream &operator<<( std::ostream &stream, AttributeTypeId value ) {
+  switch ( value ) {
+    case AttributeTypeId::ATTR_TEXTURE: return stream << "ATTR_TEXTURE";
+    case AttributeTypeId::ATTR_MATERIAL_ID: return stream << "ATTR_MATERIAL_ID";
+    case AttributeTypeId::ATTR_TRANSPARENCY: return stream << "ATTR_TRANSPARENCY";
+    case AttributeTypeId::ATTR_REFLECTANCE: return stream << "ATTR_REFLECTANCE";
+    case AttributeTypeId::ATTR_NORMAL: return stream << "ATTR_NORMAL";
+    case AttributeTypeId::ATTR_SPHERICAL_HARMONICS: return stream << "ATTR_SPHERICAL_HARMONICS";
+    case AttributeTypeId::ATTR_SCALE: return stream << "ATTR_SCALE";
+    case AttributeTypeId::ATTR_ROTATION: return stream << "ATTR_ROTATION";
+    case AttributeTypeId::ATTR_CUSTOM: return stream << "ATTR_CUSTOM";
+    default: return stream << "ATTR_RESERVED_" << static_cast<int>( value );
+  }
+}
+
+static inline PCCVideoType getAttributeType( AttributeTypeId attrTypeId, int attrPartIndex ) {
+  if ( attrTypeId == ATTR_TEXTURE ) {
     return VIDEO_ATTRIBUTE;
-  } else if ( attrTypeId == 2 ) {  // opacity
+  } else if ( attrTypeId == ATTR_TRANSPARENCY ) {
     return PCCVideoType( VIDEO_OPACITY_T0 + 64 * attrPartIndex );
-  } else if ( attrTypeId == 5 ) {  // sphericalHarmonic
+  } else if ( attrTypeId == ATTR_SPHERICAL_HARMONICS ) {
     return PCCVideoType( VIDEO_SPHERICAL_HARMONIC_T0 + 64 * attrPartIndex );
-  } else if ( attrTypeId == 6 ) {  // scale
+  } else if ( attrTypeId == ATTR_SCALE ) {
     return PCCVideoType( VIDEO_SCALE_T0 + 64 * attrPartIndex );
-  } else if ( attrTypeId == 7 ) {  // rotation
+  } else if ( attrTypeId == ATTR_ROTATION ) {
     return PCCVideoType( VIDEO_ROTATION_T0 + 64 * attrPartIndex );
   } else {
     std::cerr << "Error: getAttributeType invalid attrTypeId " << attrTypeId << std::endl;
@@ -690,16 +724,16 @@ static inline PCCVideoType getAttributeType( int attrTypeId, int attrPartIndex )
   }
 }
 
-static inline PCCVideoType getAttributeType( bool multiStream, int attrTypeId, int attrPartIndex ) {
-  if ( attrTypeId == 0 ) {  // color
+static inline PCCVideoType getAttributeType( bool multiStream, AttributeTypeId attrTypeId, int attrPartIndex ) {
+  if ( attrTypeId == ATTR_TEXTURE ) {
     return multiStream ? VIDEO_ATTRIBUTE_T0 : VIDEO_ATTRIBUTE;
-  } else if ( attrTypeId == 2 ) {  // opacity
+  } else if ( attrTypeId == ATTR_TRANSPARENCY ) {
     return PCCVideoType( VIDEO_OPACITY_T0 + attrPartIndex );
-  } else if ( attrTypeId == 5 ) {  // sphericalHarmonic
+  } else if ( attrTypeId == ATTR_SPHERICAL_HARMONICS ) {
     return PCCVideoType( VIDEO_SPHERICAL_HARMONIC_T0 + attrPartIndex );
-  } else if ( attrTypeId == 6 ) {  // scale
+  } else if ( attrTypeId == ATTR_SCALE ) {
     return PCCVideoType( VIDEO_SCALE_T0 + attrPartIndex );
-  } else if ( attrTypeId == 7 ) {  // rotation
+  } else if ( attrTypeId == ATTR_ROTATION ) {
     return PCCVideoType( VIDEO_ROTATION_T0 + attrPartIndex );
   } else {
     std::cerr << "Error: getAttributeType invalid attrTypeId " << attrTypeId << std::endl;
@@ -707,16 +741,16 @@ static inline PCCVideoType getAttributeType( bool multiStream, int attrTypeId, i
   }
 }
 
-static inline PCCVideoType getAttributeTypeRaw( int attrTypeId, int attrPartIndex ) {
-  if ( attrTypeId == 0 ) {  // color
+static inline PCCVideoType getAttributeTypeRaw( AttributeTypeId attrTypeId, int attrPartIndex ) {
+  if ( attrTypeId == ATTR_TEXTURE ) {
     return VIDEO_ATTRIBUTE_RAW;
-  } else if ( attrTypeId == 2 ) {  // opacity
+  } else if ( attrTypeId == ATTR_TRANSPARENCY ) {
     return PCCVideoType( VIDEO_OPACITY_RAW + attrPartIndex );
-  } else if ( attrTypeId == 5 ) {  // sphericalHarmonic
+  } else if ( attrTypeId == ATTR_SPHERICAL_HARMONICS ) {
     return PCCVideoType( VIDEO_SPHERICAL_HARMONIC_RAW + attrPartIndex );
-  } else if ( attrTypeId == 6 ) {  // scale
+  } else if ( attrTypeId == ATTR_SCALE ) {
     return PCCVideoType( VIDEO_SCALE_RAW + attrPartIndex );
-  } else if ( attrTypeId == 7 ) {  // rotation
+  } else if ( attrTypeId == ATTR_ROTATION ) {
     return PCCVideoType( VIDEO_ROTATION_RAW + attrPartIndex );
   } else {
     std::cerr << "Error: getAttributeTypeRaw invalid attrTypeId " << attrTypeId << std::endl;
@@ -724,18 +758,18 @@ static inline PCCVideoType getAttributeTypeRaw( int attrTypeId, int attrPartInde
   }
 }
 
-static inline std::string getAttributeName( int attrTypeId ) {
-  if ( attrTypeId == 0 ) {  // color
+static inline std::string getAttributeName( AttributeTypeId attrTypeId ) {
+  if ( attrTypeId == ATTR_TEXTURE ) {
     return "color";
-  } else if ( attrTypeId == 2 ) {  // opacity
+  } else if ( attrTypeId == ATTR_TRANSPARENCY ) {
     return "opacity";
-  } else if ( attrTypeId == 5 ) {  // sphericalHarmonic
+  } else if ( attrTypeId == ATTR_SPHERICAL_HARMONICS ) {
     return "sphericalHarmonic";
-  } else if ( attrTypeId == 6 ) {  // scale
+  } else if ( attrTypeId == ATTR_SCALE ) {
     return "scale";
-  } else if ( attrTypeId == 7 ) {  // rotation
+  } else if ( attrTypeId == ATTR_ROTATION ) {
     return "rotation";
-  } else if ( attrTypeId == 15 ) {
+  } else if ( attrTypeId == ATTR_CUSTOM ) {
     return "custom";
   } else {
     return "reserved";

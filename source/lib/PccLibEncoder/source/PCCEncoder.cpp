@@ -446,8 +446,8 @@ int PCCEncoder::encode( const PCCGroupOfFrames &sources, PCCContext &context, PC
     auto        &videoBitstream = params_.multipleStreams_ ? context.createVideoBitstream( VIDEO_ATTRIBUTE_T0 )
                                                            : context.createVideoBitstream( VIDEO_ATTRIBUTE );
     const size_t nbyteAtt       = 1;
-    int attrPartitionIndex      = sps.getAttributeInformation( atlasIndex ).getAttributeDimensionPartitionsMinus1( 0 );
-    int attrTypeId              = sps.getAttributeInformation( atlasIndex ).getAttributeTypeId( 0 );
+    int  attrPartitionIndex     = sps.getAttributeInformation( atlasIndex ).getAttributeDimensionPartitionsMinus1( 0 );
+    auto attrTypeId             = sps.getAttributeInformation( atlasIndex ).getAttributeTypeId( 0 );
     TRACE_PICTURE( "MapIdx = 0, AuxiliaryVideoFlag = 0, AttrIdx = 0, AttrPartIdx = %d, AttrTypeID = %d\n",
                    attrPartitionIndex, attrTypeId );
     auto encoderConfig0 = params_.multipleStreams_

@@ -65,7 +65,7 @@ PCCGSVideoFrames PCCGSMapGenerator::generate( const PCCPointSet3                
 
     for ( size_t attributeIdx = 0; attributeIdx < attributeCount; attributeIdx++ ) {
       size_t partitionCount = ai.getAttributeDimensionPartitionsMinus1( attributeIdx );
-      size_t attributeType  = ai.getAttributeTypeId( attributeIdx );
+      auto   attributeType  = ai.getAttributeTypeId( attributeIdx );
       frames.attributes[attributeIdx].resize( partitionCount + 1 );
 
       for ( size_t partitionIdx = 0; partitionIdx <= partitionCount; partitionIdx++ ) {
@@ -102,7 +102,7 @@ PCCGSVideoFrames PCCGSMapGenerator::generate( const PCCPointSet3                
         } else if ( region.getTypeIdMinus2() == V3C_AVD - 2 ) {
           size_t attributeIdx  = region.getAttrIndex();
           size_t partitionIdx  = region.getAttrPartitionIndex();
-          size_t attributeType = vps.getAttributeInformation( ATLAS_INDEX ).getAttributeTypeId( attributeIdx );
+          auto   attributeType = vps.getAttributeInformation( ATLAS_INDEX ).getAttributeTypeId( attributeIdx );
           size_t channelCount  = vps.getAttributeInformation( ATLAS_INDEX )
                                      .getAttributePartitionChannelsMinus1( attributeIdx, partitionIdx ) +
                                  1;
@@ -179,7 +179,7 @@ void PCCGSMapGenerator::generateAttributeMap( std::vector<GSEncoderPatchInformat
 void PCCGSMapGenerator::generateAttributeMapsForRegion( const PCCPointSet3                     &source,
                                                         std::vector<GSEncoderPatchInformation> &patches,
                                                         PCCVideoFrame                          &frame,
-                                                        size_t                                  attributeType,
+                                                        AttributeTypeId                         attributeType,
                                                         size_t                                  channelCount,
                                                         size_t                                  partitionIdx,
                                                         size_t                                  topLeftX,
@@ -197,13 +197,13 @@ void PCCGSMapGenerator::generateAttributeMapsForRegion( const PCCPointSet3      
 }
 
 std::vector<PCCAttribute16bit> PCCGSMapGenerator::getAttributeValuesByType( const PCCPointSet3 &source,
-                                                                            size_t              attributeType,
+                                                                            AttributeTypeId     attributeType,
                                                                             size_t              partitionIdx ) {
   switch ( attributeType ) {
-    case ATTR_TYPE_OPACITY: return source.getOpacities();
-    case ATTR_TYPE_SPHERICAL_HARMONIC: return source.getSphericalHarmonicPartition( partitionIdx );
-    case ATTR_TYPE_SCALE: return source.getScales();
-    case ATTR_TYPE_ROTATION: return source.getRotationPartition( partitionIdx );
+    case ATTR_TRANSPARENCY: return source.getOpacities();
+    case ATTR_SPHERICAL_HARMONICS: return source.getSphericalHarmonicPartition( partitionIdx );
+    case ATTR_SCALE: return source.getScales();
+    case ATTR_ROTATION: return source.getRotationPartition( partitionIdx );
     default: return {};
   }
 }

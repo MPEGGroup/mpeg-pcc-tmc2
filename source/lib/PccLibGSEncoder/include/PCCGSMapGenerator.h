@@ -109,7 +109,7 @@ class PCCGSMapGenerator {
   void generateAttributeMapsForRegion( const PCCPointSet3                     &source,
                                        std::vector<GSEncoderPatchInformation> &patches,
                                        PCCVideoFrame                          &frame,
-                                       size_t                                  attributeType,
+                                       AttributeTypeId                         attributeType,
                                        size_t                                  channelCount,
                                        size_t                                  partitionIdx,
                                        size_t                                  topLeftX,
@@ -119,7 +119,7 @@ class PCCGSMapGenerator {
    * @brief Get attribute values by type from source point cloud
    */
   std::vector<PCCAttribute16bit> getAttributeValuesByType( const PCCPointSet3 &source,
-                                                           size_t              attributeType,
+                                                           AttributeTypeId     attributeType,
                                                            size_t              partitionIdx );
 
   /**

@@ -1759,15 +1759,15 @@ void PCCCodec::generateRawPointsAttributefromVideoRecGS( PCCContext      &contex
 
   TransferAttributeType attributeType = TransferAttributeType::TRAN_OPACITY;
 
-  if ( attributeTypeId == 2 ) {
+  if ( attributeTypeId == ATTR_TRANSPARENCY ) {
     std::cout << "OPACITY" << std::endl;
-  } else if ( attributeTypeId == 5 ) {
+  } else if ( attributeTypeId == ATTR_SPHERICAL_HARMONICS ) {
     std::cout << "SPHERICAL HARMONICS " << partitionIndex << std::endl;
     attributeType = TransferAttributeType( TRAN_SH0 + partitionIndex );
-  } else if ( attributeTypeId == 6 ) {
+  } else if ( attributeTypeId == ATTR_SCALE ) {
     std::cout << "SCALE" << std::endl;
     attributeType = TransferAttributeType( TRAN_SCALE );
-  } else if ( attributeTypeId == 7 ) {
+  } else if ( attributeTypeId == ATTR_ROTATION ) {
     std::cout << "ROTATION" << partitionIndex << std::endl;
     attributeType = TransferAttributeType( TRAN_ROTATION0 + partitionIndex );
   } else {
