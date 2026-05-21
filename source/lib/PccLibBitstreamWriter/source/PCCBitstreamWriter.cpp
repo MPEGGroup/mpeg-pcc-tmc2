@@ -2855,11 +2855,13 @@ void PCCBitstreamWriter::aapsVpccGsExtension( PCCBitstream &bitstream, AapsVpccG
   WRITE_CODE( ext.getAdaptiveQuantizationEnableFlag(), 1 );  // u(1)
   WRITE_CODE( ext.getShPropertyPresentFlag(), 1 );           // u(1)
   WRITE_CODE( ext.getTransform2DPresentFlag(), 1 );          // u(1)
-  WRITE_CODE( 0, 4 );                                        // u(4)
+  WRITE_CODE( ext.getReservedZero8bits(), 8 );               // u(8)
 
   if ( ext.getDequantizationPresentFlag() ) { gsDequantization( bitstream, ext.getGsDequantization() ); }
   if ( ext.getShPropertyPresentFlag() ) { gsShProperty( bitstream, ext.getGsShProperty() ); }
   if ( ext.getTransform2DPresentFlag() ) { gs2DTransform( bitstream, ext.getGs2DTransform() ); }
+
+  byteAlignment( bitstream );
   TRACE_BITSTREAM_OUT( "%s", __func__ );
 }
 

@@ -2820,19 +2820,27 @@ void PCCBitstreamReader::atlasCameraParameters( PCCBitstream &bitstream, AtlasCa
 void PCCBitstreamReader::aapsVpccGsExtension( PCCBitstream &bitstream, AapsVpccGsExtension &ext ) {
   TRACE_BITSTREAM_IN( "%s \n", __func__ );
   int value;
-  READ_CODE_DESC( value, 1, "DequantizationPresentFlag" );
+  READ_CODE_DESC( value, 1, "aaps_vpcc_gs_dequantization_present_flag" );
   ext.setDequantizationPresentFlag( value );  // u(1)
-  READ_CODE_DESC( value, 1, "AdaptiveQuantizationEnableFlag" );
+  READ_CODE_DESC( value, 1, "aaps_vpcc_gs_adaptive_quantization_enable_flag" );
   ext.setAdaptiveQuantizationEnableFlag( value );  // u(1)
-  READ_CODE_DESC( value, 1, "ShPropertyPresentFlag" );
+  READ_CODE_DESC( value, 1, "aaps_vpcc_gs_sh_property_present_flag" );
   ext.setShPropertyPresentFlag( value );  // u(1)
-  READ_CODE_DESC( value, 1, "Transform2DPresentFlag" );
+  READ_CODE_DESC( value, 1, "aaps_vpcc_gs_2dsh_transform_present_flag" );
   ext.setTransform2DPresentFlag( value );  // u(1)
-  READ_CODE( value, 4 );
+  READ_CODE_DESC( value, 8, "aaps_vpcc_gs_reserved_zero_8bits" );
+  ext.setReservedZero8bits( value );  // u(8);
 
   if ( ext.getDequantizationPresentFlag() ) { gsDequantization( bitstream, ext.getGsDequantization() ); }
   if ( ext.getShPropertyPresentFlag() ) { gsShProperty( bitstream, ext.getGsShProperty() ); }
   if ( ext.getTransform2DPresentFlag() ) { gs2DTransform( bitstream, ext.getGs2DTransform() ); }
+
+  if ( ext.getReservedZero8bits() != 0 ) {
+    while ( moreRbspData( bitstream ) ) {
+      bitstream.read( 1 );  // aaps_vpcc_gs_extension_data_bit
+    }
+  }
+  byteAlignment( bitstream );
   TRACE_BITSTREAM_OUT( "%s \n", __func__ );
 }
 

@@ -421,12 +421,6 @@ class Gs2DTransform {
 // H.8.3.6.3.4	AAPS V-PCC GS extension syntax
 class AapsVpccGsExtension {
  public:
-  AapsVpccGsExtension() :
-      dequantizationPresentFlag_( false ),
-      adaptiveQuantizationEnableFlag_( false ),
-      shPropertyPresentFlag_( false ),
-      transform2DPresentFlag_( false ) {}
-  ~AapsVpccGsExtension() {}
   AapsVpccGsExtension &operator=( const AapsVpccGsExtension & ) = default;
 
   bool              getDequantizationPresentFlag() { return dequantizationPresentFlag_; }
@@ -444,14 +438,18 @@ class AapsVpccGsExtension {
   Gs2DTransform &getGs2DTransform() { return gs2DTransform_; }
   void           setTransform2DPresentFlag( bool value ) { transform2DPresentFlag_ = value; }
 
+  uint8_t getReservedZero8bits() const { return reservedZero8bits_; }
+  void    setReservedZero8bits( uint8_t value ) { reservedZero8bits_ = value; }
+
  private:
-  bool                         dequantizationPresentFlag_;
-  bool                         adaptiveQuantizationEnableFlag_;
-  bool                         shPropertyPresentFlag_;
-  bool                         transform2DPresentFlag_;
-  GsDequantization             gsDequantization_;
-  GsSphericalHarmonicsProperty shSphericalHarmonicsProperty_;
-  Gs2DTransform                gs2DTransform_;
+  bool                         dequantizationPresentFlag_{};
+  bool                         adaptiveQuantizationEnableFlag_{};
+  bool                         shPropertyPresentFlag_{};
+  bool                         transform2DPresentFlag_{};
+  GsDequantization             gsDequantization_{};
+  GsSphericalHarmonicsProperty shSphericalHarmonicsProperty_{};
+  Gs2DTransform                gs2DTransform_{};
+  uint8_t                      reservedZero8bits_{};
 };
 };  // namespace pcc
 
