@@ -128,7 +128,7 @@ def build_title_index(ws):
     return title_columns
 
 
-def csv2xlsm(wb, file_path, sheet_name):
+def csv2xlsm(wb, file_path, sheet_name, lossless_sheet: bool):
     """
     Read a CSV file and write its data into the given workbook.
     sheet_name determines the sheet that will be filled out.
@@ -151,10 +151,18 @@ def csv2xlsm(wb, file_path, sheet_name):
             seq_variant = (values[0], values[1])
 
             rate = values[2]
-            m_rate = re.match(r"r(\d+)", rate)
-            assert m_rate
-            rate_idx = int(m_rate[1]) - 1
-            assert rate_idx >= 0
+
+            if rate == "lossless":
+                if not lossless_sheet:
+                    continue
+                rate_idx = 0
+            else:
+                if lossless_sheet:
+                    continue
+                m_rate = re.match(r"r(\d+)", rate)
+                assert m_rate
+                rate_idx = int(m_rate[1]) - 1
+                assert rate_idx >= 0
 
             measurement = {keys[i]: values[i] for i in range(3, len(keys))}
 
@@ -184,13 +192,15 @@ def main():
 
     # Process anchor CSV
     if os.path.isfile(args.anc_csv):
-        csv2xlsm(wb, args.anc_csv, "Anchor.C1")
+        csv2xlsm(wb, args.anc_csv, "Anchor.C1", lossless_sheet=False)
+        csv2xlsm(wb, args.anc_csv, "Anchor.CW", lossless_sheet=True)
     else:
         raise RuntimeError(f"ERROR: No anchor CSV file found: {args.anc_csv}")
 
     # Process proposed CSV
     if os.path.isfile(args.pro_csv):
-        csv2xlsm(wb, args.pro_csv, "Proposal.C1")
+        csv2xlsm(wb, args.pro_csv, "Proposal.C1", lossless_sheet=False)
+        csv2xlsm(wb, args.pro_csv, "Proposal.CW", lossless_sheet=True)
     else:
         raise RuntimeError(f"ERROR: No proposed CSV file found: {args.pro_csv}")
 
