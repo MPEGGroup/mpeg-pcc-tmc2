@@ -1501,29 +1501,107 @@ bool PCCAdaptation::extractSHQuantRegions( const PCCPointSetGS &input, PCCAdapta
   }
   params.shNumBitsForTransitionPoint_.assign( 16 * 3, 10 );
 
+  double       sum1 = 0.0, sumSq1 = 0.0;
+  double       sum3 = 0.0, sumSq3 = 0.0;
+  const int    idx3_arr[3] = { 11, 13, 12 };
+  const size_t count1      = pointCount * 9 * 3;
+  const size_t count3      = pointCount * 3 * 3;
+
+  for ( size_t p = 0; p < pointCount; ++p ) {
+    for ( size_t l = 1; l <= 9; ++l ) {
+      for ( int ch = 0; ch < 3; ++ch ) {
+        double val = input.getSphericalHarmonics()[p][l][ch];
+        sum1 += val;
+        sumSq1 += val * val;
+      }
+    }
+    for ( int i = 0; i < 3; ++i ) {
+      size_t l = idx3_arr[i];
+      for ( int ch = 0; ch < 3; ++ch ) {
+        double val = input.getSphericalHarmonics()[p][l][ch];
+        sum3 += val;
+        sumSq3 += val * val;
+      }
+    }
+  }
+
+  double mean1 = sum1 / count1;
+  double mean3 = sum3 / count3;
+  double var1  = ( sumSq1 / count1 ) - ( mean1 * mean1 );
+  double var3  = ( sumSq3 / count3 ) - ( mean3 * mean3 );
+  double std1  = std::sqrt( std::max( 0.0, var1 ) );
+  double std3  = std::sqrt( std::max( 0.0, var3 ) );
+
+  int    thresh1, thresh2, thresh3, thresh4, thresh5;
+  double stdRatio = std3 > 1e-10 ? std1 / std3 : 0.0;
+  if ( stdRatio > 2.0 && stdRatio < 10.0 ) {
+    thresh1 = 10;
+    thresh2 = 15;
+    thresh3 = 20;
+    thresh4 = 25;
+    thresh5 = 30;
+  } else {
+    thresh1 = 15;
+    thresh2 = 30;
+    thresh3 = 40;
+    thresh4 = 5;
+    thresh5 = 10;
+  }
+
+  const int idx2_arr[3] = { 10, 14, 15 };
+
   for ( size_t l = 0; l < params.shCoefficientCount_; ++l ) {
     for ( int ch = 0; ch < 3; ++ch ) {
-      std::vector<double> values;
-      values.reserve( pointCount );
-      for ( size_t p = 0; p < pointCount; ++p ) {
-        const auto &sh = input.getSphericalHarmonics()[p];
-        values.push_back( sh[l][ch] );
+      double perc_low, perc_high;
+      if ( l == 0 ) {
+        if ( ch == 0 ) {
+          perc_low  = thresh4;
+          perc_high = 100 - thresh4;
+        } else {
+          perc_low  = thresh5;
+          perc_high = 100 - thresh5;
+        }
+      } else if ( l >= 1 && l <= 9 ) {
+        perc_low  = thresh1;
+        perc_high = 100 - thresh1;
+      } else if ( l == static_cast<size_t>( idx2_arr[0] ) || l == static_cast<size_t>( idx2_arr[1] ) ||
+                  l == static_cast<size_t>( idx2_arr[2] ) ) {
+        perc_low  = thresh2;
+        perc_high = 100 - thresh2;
+      } else if ( l == static_cast<size_t>( idx3_arr[0] ) || l == static_cast<size_t>( idx3_arr[1] ) ||
+                  l == static_cast<size_t>( idx3_arr[2] ) ) {
+        perc_low  = thresh3;
+        perc_high = 100 - thresh3;
+      } else {
+        perc_low  = 25.0;
+        perc_high = 75.0;
       }
 
-      std::nth_element( values.begin(), values.begin() + pointCount / 4, values.end() );
-      double tp_25 = values[pointCount / 4];
+      std::vector<double> values;
+      values.reserve( pointCount );
+      for ( size_t p = 0; p < pointCount; ++p ) { values.push_back( input.getSphericalHarmonics()[p][l][ch] ); }
 
-      std::nth_element( values.begin(), values.begin() + 3 * pointCount / 4, values.end() );
-      double tp_75 = values[3 * pointCount / 4];
+      size_t lowIdx  = static_cast<size_t>( std::round( perc_low / 100.0 * pointCount ) );
+      size_t highIdx = static_cast<size_t>( std::round( perc_high / 100.0 * pointCount ) );
+      lowIdx         = std::min( lowIdx, pointCount > 0 ? pointCount - 1 : 0 );
+      highIdx        = std::min( highIdx, pointCount > 0 ? pointCount - 1 : 0 );
+
+      std::nth_element( values.begin(), values.begin() + lowIdx, values.end() );
+      double tp_low = values[lowIdx];
+
+      std::nth_element( values.begin(), values.begin() + highIdx, values.end() );
+      double tp_high = values[highIdx];
 
       double minLim = params.shLimitMin_[l][ch];
       double maxLim = params.shLimitMax_[l][ch];
 
-      int tp_25_quant = static_cast<int>( std::round( ( tp_25 - minLim ) / ( maxLim - minLim ) * max_quant_val ) );
-      int tp_75_quant = static_cast<int>( std::round( ( tp_75 - minLim ) / ( maxLim - minLim ) * max_quant_val ) );
+      int tp_low_quant  = static_cast<int>( std::round( ( tp_low - minLim ) / ( maxLim - minLim ) * max_quant_val ) );
+      int tp_high_quant = static_cast<int>( std::round( ( tp_high - minLim ) / ( maxLim - minLim ) * max_quant_val ) );
 
-      params.shTransitionPoints_.push_back( std::max( 0, std::min( static_cast<int>( max_quant_val ), tp_25_quant ) ) );
-      params.shTransitionPoints_.push_back( std::max( 0, std::min( static_cast<int>( max_quant_val ), tp_75_quant ) ) );
+      params.shTransitionPoints_.push_back(
+          std::max( 0, std::min( static_cast<int>( max_quant_val ), tp_low_quant ) ) );
+      params.shTransitionPoints_.push_back(
+          std::max( 0, std::min( static_cast<int>( max_quant_val ), tp_high_quant ) ) );
     }
   }
 
