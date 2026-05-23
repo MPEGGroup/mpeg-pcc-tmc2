@@ -233,6 +233,21 @@ void PCCGSHlsBuilder::initializeAtlasAapsHls( PCCHighLevelSyntax            &hls
 
   if ( adaptationParams.enableShQuantization_ ) {
     dequant.setShPresentFlag( true );
+    dequant.setShMultipleRegionsEnableFlag( adaptationParams.enableShNonUniformQuantization_ );
+    bool   sameMinMax = true;
+    double minVal     = adaptationParams.computedShMin_[0][0];
+    double maxVal     = adaptationParams.computedShMax_[0][0];
+    for ( size_t i = 0; i < adaptationParams.shCoefficientCount_; i++ ) {
+      for ( size_t j = 0; j < 3; j++ ) {
+        if ( ( adaptationParams.computedShMin_[i][j] != minVal ) ||
+             ( adaptationParams.computedShMax_[i][j] != maxVal ) ) {
+          sameMinMax = false;
+          break;
+        }
+      }
+      if ( !sameMinMax ) break;
+    }
+    dequant.setShSameMinMaxFlag( sameMinMax );
     dequant.setShNumLvl( adaptationParams.shCoefficientCount_ );
     int tpOffset = 0;
     int ssOffset = 0;

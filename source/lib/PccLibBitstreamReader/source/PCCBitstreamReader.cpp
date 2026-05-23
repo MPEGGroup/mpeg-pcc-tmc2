@@ -2889,28 +2889,39 @@ void PCCBitstreamReader::gsDequantization( PCCBitstream &bitstream, GsDequantiza
     READ_CODE_DESC( value, 1, "ShPresentFlag" );
     gsd.setShPresentFlag( value );
     if ( gsd.getShPresentFlag() ) {
+      READ_CODE_DESC( value, 1, "ShMultipleRegionsEnableFlag" );
+      gsd.setShMultipleRegionsEnableFlag( value );
+      READ_CODE_DESC( value, 1, "ShSameMinMaxFlag" );
+      gsd.setShSameMinMaxFlag( value );
       READ_UVLC_DESC( value, "ShNumLvl" );
       gsd.setShNumLvl( value );
       for ( int i = 0; i < gsd.getShNumLvl(); i++ ) {
         READ_UVLC_DESC( value, "ShNumChan" );
         gsd.setShNumChan( i, value );
         for ( int c = 0; c < gsd.getShNumChan( i ); c++ ) {
-          READ_FLOAT_DESC( valueFlt, "MinSh" );
-          gsd.setMinSh( i, c, valueFlt );
-          READ_FLOAT_DESC( valueFlt, "MaxSh" );
-          gsd.setMaxSh( i, c, valueFlt );
-          READ_UVLC_DESC( value, "NumQuantRegionsMinus1" );
-          gsd.setNumQuantRegionsMinus1( i, c, value );
-          if ( gsd.getNumQuantRegionsMinus1( i, c ) > 0 ) {
-            READ_CODE_DESC( value, 4, "NumBitsForTransitionPoint" );
-            gsd.setNumBitsForTransitionPoint( i, c, value );
-            for ( int m = 0; m < gsd.getNumQuantRegionsMinus1( i, c ); m++ ) {
-              READ_CODE_DESC( value, gsd.getNumBitsForTransitionPoint( i, c ), "QuantRegionTransitionPoint" );
-              gsd.setQuantRegionTransitionPoint( i, c, m, value );
-            }
-            for ( int m = 0; m < gsd.getNumQuantRegionsMinus1( i, c ) + 1; m++ ) {
-              READ_FLOAT_DESC( valueFlt, "RegionStepSize" );
-              gsd.setRegionStepSize( i, c, m, valueFlt );
+          if ( !gsd.getShSameMinMaxFlag() || ( ( i == 0 ) && ( c == 0 ) ) ) {
+            READ_FLOAT_DESC( valueFlt, "MinSh" );
+            gsd.setMinSh( i, c, valueFlt );
+            READ_FLOAT_DESC( valueFlt, "MaxSh" );
+            gsd.setMaxSh( i, c, valueFlt );
+          } else {
+            gsd.setMinSh( i, c, gsd.getMinSh( 0, 0 ) );
+            gsd.setMaxSh( i, c, gsd.getMaxSh( 0, 0 ) );
+          }
+          if ( gsd.getShMultipleRegionsEnableFlag() ) {
+            READ_UVLC_DESC( value, "NumQuantRegionsMinus1" );
+            gsd.setNumQuantRegionsMinus1( i, c, value );
+            if ( gsd.getNumQuantRegionsMinus1( i, c ) > 0 ) {
+              READ_CODE_DESC( value, 4, "NumBitsForTransitionPoint" );
+              gsd.setNumBitsForTransitionPoint( i, c, value );
+              for ( int m = 0; m < gsd.getNumQuantRegionsMinus1( i, c ); m++ ) {
+                READ_CODE_DESC( value, gsd.getNumBitsForTransitionPoint( i, c ), "QuantRegionTransitionPoint" );
+                gsd.setQuantRegionTransitionPoint( i, c, m, value );
+              }
+              for ( int m = 0; m < gsd.getNumQuantRegionsMinus1( i, c ) + 1; m++ ) {
+                READ_FLOAT_DESC( valueFlt, "RegionStepSize" );
+                gsd.setRegionStepSize( i, c, m, valueFlt );
+              }
             }
           }
         }

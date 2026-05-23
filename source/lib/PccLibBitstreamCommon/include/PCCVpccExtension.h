@@ -123,7 +123,28 @@ class AapsVpccExtension {
 // H.8.3.6.3.5	GS Dequantization syntax
 class GsDequantization {
  public:
-  GsDequantization() : dequantizationType_( 0 ) {}
+  GsDequantization() :
+      dequantizationType_( 0 ),
+      shMultipleRegionsEnableFlag_( false ),
+      shSameMinMaxFlag_( false ),
+      rotationPresentFlag_( false ),
+      scalePresentFlag_( false ),
+      opacityPresentFlag_( false ),
+      shPresentFlag_( false ),
+      shNumLvl_( 0 ),
+      minOpacity_( 0.0f ),
+      maxOpacity_( 0.0f ) {
+    for ( int i = 0; i < 3; ++i ) {
+      minPosition_[i] = 0.0f;
+      maxPosition_[i] = 0.0f;
+      minScale_[i]    = 0.0f;
+      maxScale_[i]    = 0.0f;
+    }
+    for ( int i = 0; i < 4; ++i ) {
+      minRotation_[i] = 0.0f;
+      maxRotation_[i] = 0.0f;
+    }
+  }
   ~GsDequantization() {}
   GsDequantization &operator=( const GsDequantization & ) = default;
 
@@ -206,6 +227,8 @@ class GsDequantization {
   float    getMinOpacity() { return minOpacity_; }
   float    getMaxOpacity() { return maxOpacity_; }
   bool     getShPresentFlag() { return shPresentFlag_; }
+  bool     getShMultipleRegionsEnableFlag() const { return shMultipleRegionsEnableFlag_; }
+  bool     getShSameMinMaxFlag() const { return shSameMinMaxFlag_; }
   uint8_t  getShNumLvl() { return shNumLvl_; }
   uint8_t  getShNumChan( int i ) { return shNumChan_[i]; }
   float    getMinSh( int i, int j ) { return minSH_[i][j]; }
@@ -228,6 +251,8 @@ class GsDequantization {
   void setMinOpacity( float value ) { minOpacity_ = value; }
   void setMaxOpacity( float value ) { maxOpacity_ = value; }
   void setShPresentFlag( bool value ) { shPresentFlag_ = value; }
+  void setShMultipleRegionsEnableFlag( bool value ) { shMultipleRegionsEnableFlag_ = value; }
+  void setShSameMinMaxFlag( bool value ) { shSameMinMaxFlag_ = value; }
   void setShNumLvl( int value ) {
     shNumLvl_ = value;
     shNumChan_.resize( value, 0 );
@@ -276,6 +301,8 @@ class GsDequantization {
   float                                           minOpacity_;
   float                                           maxOpacity_;
   bool                                            shPresentFlag_;
+  bool                                            shMultipleRegionsEnableFlag_;
+  bool                                            shSameMinMaxFlag_;
   uint32_t                                        shNumLvl_;
   std::vector<uint32_t>                           shNumChan_;
   std::vector<std::vector<float>>                 minSH_;

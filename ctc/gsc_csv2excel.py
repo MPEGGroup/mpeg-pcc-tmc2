@@ -167,7 +167,7 @@ def csv2xlsm(wb, file_path, sheet_name, lossless_sheet: bool):
             measurement = {keys[i]: values[i] for i in range(3, len(keys))}
 
             if seq_row_offset := sequence_rows.get(seq_variant):
-                print(' '.join(values[:3]))
+                print(" ".join(values[:3]))
                 write_values(ws, seq_row_offset + rate_idx, title_columns, measurement)
             else:
                 print(f"WARNING: Sequence '{' '.join(seq_variant)}' not in template.")
