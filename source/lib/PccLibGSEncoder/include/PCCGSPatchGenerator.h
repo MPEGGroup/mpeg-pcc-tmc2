@@ -115,7 +115,6 @@ class PCCGSPatchGenerator {
    */
   std::vector<GSEncoderPatchInformation> splitPatchesAdaptiveQuantization(
       const PCCPointSet3                           &source,
-      const PCCAdaptationParameters                &adaptationParams,
       const std::vector<GSEncoderPatchInformation> &patches );
 
   std::vector<GSEncoderPatchInformation> patches_;

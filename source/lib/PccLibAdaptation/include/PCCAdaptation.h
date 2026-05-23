@@ -265,7 +265,8 @@ class PCCAdaptation {
   /// Prune gaussians with 0 SH bits and assign quantization groups for adaptive SH quantization.
   bool pruneAndGroupAdaptiveQuantization( const PCCPointSetGS     &inputPointCloud,
                                           PCCPointSetGS           &outputPointCloud,
-                                          PCCAdaptationParameters &params ) const;
+                                          PCCAdaptationParameters &params,
+                                          uint32_t                 frameNumber ) const;
 
   // ==================== Individual Operations ====================
 

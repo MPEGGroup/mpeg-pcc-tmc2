@@ -673,6 +673,12 @@ class PCCPointSet3 {
     }
     return static_cast<size_t>( maxGroupId );
   }
+  std::vector<int>       &getQuantizationGroupBitDepthDeltas() { return quantizationGroupBitDepthDeltas_; }
+  const std::vector<int> &getQuantizationGroupBitDepthDeltas() const { return quantizationGroupBitDepthDeltas_; }
+  const int               getQuantizationGroupBitDepthDelta( const size_t index ) const {
+    assert( index < quantizationGroupBitDepthDeltas_.size() );
+    return quantizationGroupBitDepthDeltas_[index];
+  }
 
   std::vector<CameraInfo>       &getCameraInfo() { return cameraInfo_; }
   const std::vector<CameraInfo> &getCameraInfo() const { return cameraInfo_; }
@@ -1055,6 +1061,7 @@ class PCCPointSet3 {
 
   std::vector<uint32_t>                     toSrcIdx_;
   std::vector<uint16_t>                     quantizationGroupIds_;
+  std::vector<int>                          quantizationGroupBitDepthDeltas_;
   std::vector<CameraInfo>                   cameraInfo_;
   std::vector<AttributeTransformationInfo>  attributeTransformationInfo_;
   GeometryTransformationInfo                geometryTransformationInfo_;

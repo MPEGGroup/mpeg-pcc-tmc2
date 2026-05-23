@@ -247,6 +247,12 @@ class PCCPointSetGS {
   bool hasQuantizationGroupIds() const {
     return !quantizationGroupIds_.empty() && quantizationGroupIds_.size() == positions_.size();
   }
+  std::vector<int>       &getQuantizationGroupBitDepthDeltas() { return quantizationGroupBitDepthDeltas_; }
+  const std::vector<int> &getQuantizationGroupBitDepthDeltas() const { return quantizationGroupBitDepthDeltas_; }
+  const int               getQuantizationGroupBitDepthDelta( const size_t index ) const {
+    assert( index < quantizationGroupBitDepthDeltas_.size() );
+    return quantizationGroupBitDepthDeltas_[index];
+  }
 
   // ==================== Size & Capacity ====================
 
@@ -463,6 +469,7 @@ class PCCPointSetGS {
 
   // Adaptive SH quantization group identifiers
   std::vector<uint16_t> quantizationGroupIds_;
+  std::vector<int>      quantizationGroupBitDepthDeltas_;
 
   // Attribute presence flags
   bool withColors_             = false;

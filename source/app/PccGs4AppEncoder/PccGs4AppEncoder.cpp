@@ -143,8 +143,8 @@ int main( int argc, char *argv[] ) {
 
     pcc::PCCPointSetGS pointCloudGS;
     if ( adaptationParams.enableAdaptiveShQuantization_ ) {
-      if ( !adaptationModule.pruneAndGroupAdaptiveQuantization( originalPointCloudGS, pointCloudGS,
-                                                                adaptationParams ) ) {
+      if ( !adaptationModule.pruneAndGroupAdaptiveQuantization( originalPointCloudGS, pointCloudGS, adaptationParams,
+                                                                frameNumber ) ) {
         std::cerr << "Error: adaptive SH pruning and grouping failed for frame " << frameNumber << std::endl;
         continue;
       }

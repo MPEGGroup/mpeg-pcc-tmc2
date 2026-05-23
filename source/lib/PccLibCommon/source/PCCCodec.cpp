@@ -1880,9 +1880,9 @@ void PCCCodec::generateRawPointsAttributefromVideoRecGS( PCCContext      &contex
   return;
 }
 
-std::vector<int> PCCCodec::generateAdaptiveQuantizationInfofromRawPatchRecGS( PCCContext   &context,
-                                                                              size_t        frameIndex,
-                                                                              PCCPointSet3 &pointCloud ) {
+void PCCCodec::generateAdaptiveQuantizationInfofromRawPatchRecGS( PCCContext   &context,
+                                                                  size_t        frameIndex,
+                                                                  PCCPointSet3 &pointCloud ) {
   TRACE_CODEC( "%s \n", "generateAdaptiveQuantizationInfofromRawPatchRecGS start" );
   size_t           totalNumRawPoints = 0;
   std::vector<int> shBitdepthDeltas( 0 );
@@ -1915,8 +1915,8 @@ std::vector<int> PCCCodec::generateAdaptiveQuantizationInfofromRawPatchRecGS( PC
     pointCloud.setQuantizationGroupId( pointIdx, quantizationGroupId );
   }
 
+  pointCloud.getQuantizationGroupBitDepthDeltas() = shBitdepthDeltas;
   TRACE_CODEC( "%s \n", "generateAdaptiveQuantizationInfofromRawPatchRecGS done" );
-  return shBitdepthDeltas;
 }
 
 void PCCCodec::generateRawPointsAttributefromVideo( PCCContext &context, size_t frameIndex ) {

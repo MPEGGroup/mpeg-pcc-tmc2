@@ -123,7 +123,7 @@ void PCCGSPatchGenerator::generate3DPatches( const PCCPointSet3            &sour
 
   // adaptive quantization
   if ( adaptationParams.enableAdaptiveShQuantization_ ) {
-    patches_ = splitPatchesAdaptiveQuantization( source, adaptationParams, patches_ );
+    patches_ = splitPatchesAdaptiveQuantization( source, patches_ );
     std::cout << "Raw patch count after split for adaptive quantization: " << patches_.size() << std::endl;
   }
 }
@@ -368,7 +368,6 @@ GSEncoderPatchInformation PCCGSPatchGenerator::createPatchInfo( const PCCBox3D  
 
 std::vector<GSEncoderPatchInformation> PCCGSPatchGenerator::splitPatchesAdaptiveQuantization(
     const PCCPointSet3                           &source,
-    const PCCAdaptationParameters                &adaptationParams,
     const std::vector<GSEncoderPatchInformation> &patches ) {
   size_t maxQuantizationGroupId = source.getMaxQuantizationGroupId();
   if ( !source.hasQuantizationGroupIds() || maxQuantizationGroupId == 0 ) { return patches; }
@@ -412,7 +411,7 @@ std::vector<GSEncoderPatchInformation> PCCGSPatchGenerator::splitPatchesAdaptive
       }
       const auto               &rawPointsBBox = perPatchSrcIdx[p];
       GSEncoderPatchInformation patchInfo     = createPatchInfo( bbox, rawPointsBBox );
-      patchInfo.patch.shBitdepthDelta_        = adaptationParams.adaptiveShBitshifts_[g];
+      patchInfo.patch.shBitdepthDelta_        = source.getQuantizationGroupBitDepthDelta( g );
       splitPatches.push_back( patchInfo );
     }
   }

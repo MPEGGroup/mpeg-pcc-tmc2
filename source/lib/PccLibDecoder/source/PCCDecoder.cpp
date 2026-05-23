@@ -2180,8 +2180,7 @@ int PCCDecoder::ReconstructIdc3( PCCContext &context, PCCGroupOfFrames &reconstr
       if ( ext.getAdaptiveQuantizationEnableFlag() ) {
         pointCloud.addQuantizationGroupIds();
         adaptationParams.enableAdaptiveShQuantization_ = true;
-        adaptationParams.adaptiveShBitshifts_ =
-            generateAdaptiveQuantizationInfofromRawPatchRecGS( context, frameIdx, pointCloud );
+        generateAdaptiveQuantizationInfofromRawPatchRecGS( context, frameIdx, pointCloud );
       }
       if ( addAdaptationParameters ) adaptationParams_.push_back( adaptationParams );
     }
