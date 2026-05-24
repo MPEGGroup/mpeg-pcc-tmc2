@@ -1654,16 +1654,14 @@ double PCCAdaptation::denormalizeFromUnit( double value, double min, double max 
 }
 
 uint32_t PCCAdaptation::quantizeValue( double normalizedValue, uint32_t bitDepth ) {
-  uint32_t maxVal         = ( 1u << bitDepth ) - 1;
-  uint32_t debugPythonVal = ( 1u << bitDepth );
-  double   quantized      = std::round( normalizedValue * static_cast<double>( debugPythonVal ) );
+  uint32_t maxVal    = ( 1u << bitDepth ) - 1;
+  double   quantized = std::round( normalizedValue * static_cast<double>( maxVal ) );
   return static_cast<uint32_t>( std::max( 0.0, std::min( static_cast<double>( maxVal ), quantized ) ) );
 }
 
 double PCCAdaptation::dequantizeValue( uint32_t quantizedValue, uint32_t bitDepth ) {
-  uint32_t maxVal         = ( 1u << bitDepth ) - 1;
-  uint32_t debugPythonVal = ( 1u << bitDepth );
-  return static_cast<double>( quantizedValue ) / static_cast<double>( debugPythonVal );
+  uint32_t maxVal = ( 1u << bitDepth ) - 1;
+  return static_cast<double>( quantizedValue ) / static_cast<double>( maxVal );
 }
 
 void PCCAdaptation::canonicalizeQuaternion( float &w, float &x, float &y, float &z ) {
