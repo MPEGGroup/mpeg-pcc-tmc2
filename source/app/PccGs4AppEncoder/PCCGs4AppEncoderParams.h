@@ -280,6 +280,10 @@ bool parseParameters( int                           argc,
       encoderParams.enableShNonUniformQuantization_,
       false,
       "Enable non-uniform quantization for SH (m75025)" )
+    ("linearOpacity",
+      encoderParams.encodeLinearOpacity_,
+      false,
+      "Enable linear opacity encoding")
 
     ( "keepIntermediateFiles",
       encoderParams.keepIntermediateFiles_,

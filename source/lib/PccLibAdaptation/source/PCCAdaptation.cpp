@@ -505,6 +505,7 @@ bool PCCAdaptation::adapt( const PCCPointSetGS     &inputPointCloud,
 
   // Apply opacity quantization
   if ( params.enableOpacityQuantization_ && inputPointCloud.hasOpacities() ) {
+    if ( params.encodeLinearOpacity_ ) logitToLinearOpacity( const_cast<PCCPointSetGS &>( inputPointCloud ) );
     if ( !quantizeOpacities( inputPointCloud, outputPointCloud, params ) ) {
       std::cerr << "PCCAdaptation::adapt - Opacity quantization failed" << std::endl;
       return false;
@@ -578,6 +579,7 @@ bool PCCAdaptation::inverseAdapt( const PCCPointSet3            &inputPointCloud
   // Apply opacity dequantization
   if ( params.enableOpacityQuantization_ && inputPointCloud.hasOpacities() ) {
     if ( !dequantizeOpacities( inputPointCloud, outputPointCloud, params ) ) { return false; }
+    if ( params.encodeLinearOpacity_ ) linearToLogitOpacity( const_cast<PCCPointSetGS &>( outputPointCloud ) );
   }
 
   // Apply spherical harmonics dequantization
@@ -911,6 +913,24 @@ bool PCCAdaptation::dequantizeOpacities( const PCCPointSet3            &input,
   }
 
   return true;
+}
+
+void PCCAdaptation::logitToLinearOpacity( PCCPointSetGS &pointCloud ) {
+  if ( !pointCloud.hasOpacities() ) return;
+  auto &opacities = pointCloud.getOpacities();
+  for ( auto &opacity : opacities ) {
+    // Convert logit to linear: linear = 1 / (1 + exp(-logit))
+    opacity = 1.0f / ( 1.0f + std::exp( -opacity ) );
+  }
+}
+
+void PCCAdaptation::linearToLogitOpacity( PCCPointSetGS &pointCloud ) {
+  if ( !pointCloud.hasOpacities() ) return;
+  auto &opacities = pointCloud.getOpacities();
+  for ( auto &opacity : opacities ) {
+    // Convert linear to logit: logit = log(linear / (1 - linear))
+    opacity = std::log( opacity / ( 1.0f - opacity ) );
+  }
 }
 
 //============================================================================

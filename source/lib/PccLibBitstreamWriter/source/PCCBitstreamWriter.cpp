@@ -2855,11 +2855,13 @@ void PCCBitstreamWriter::aapsVpccGsExtension( PCCBitstream &bitstream, AapsVpccG
   WRITE_CODE( ext.getAdaptiveQuantizationEnableFlag(), 1 );  // u(1)
   WRITE_CODE( ext.getShPropertyPresentFlag(), 1 );           // u(1)
   WRITE_CODE( ext.getTransform2DPresentFlag(), 1 );          // u(1)
+  WRITE_CODE( ext.getOpacityPropertyPresentFlag(), 1 );      // u(1)
   WRITE_CODE( ext.getReservedZero8bits(), 8 );               // u(8)
 
   if ( ext.getDequantizationPresentFlag() ) { gsDequantization( bitstream, ext.getGsDequantization() ); }
   if ( ext.getShPropertyPresentFlag() ) { gsShProperty( bitstream, ext.getGsShProperty() ); }
   if ( ext.getTransform2DPresentFlag() ) { gs2DTransform( bitstream, ext.getGs2DTransform() ); }
+  if ( ext.getOpacityPropertyPresentFlag() ) { gsOpacityProperty( bitstream, ext.getGsOpacityProperty() ); }
 
   byteAlignment( bitstream );
   TRACE_BITSTREAM_OUT( "%s", __func__ );
@@ -2968,6 +2970,12 @@ void PCCBitstreamWriter::gs2DTransform( PCCBitstream &bitstream, Gs2DTransform &
   for ( int i = 0; i < 16; i++ ) {
     if ( colTr[i] == 1 ) { WRITE_CODE( gs2DTransform.getTrColType( i ), 3 ); }
   }
+  TRACE_BITSTREAM_OUT( "%s", __func__ );
+}
+// H.8.3.6.3.11 Gaussian splat opacity property syntax
+void PCCBitstreamWriter::gsOpacityProperty( PCCBitstream &bitstream, GsOpacityProperty &gsop ) {
+  TRACE_BITSTREAM_IN( "%s", __func__ );
+  WRITE_CODE( gsop.getLinearOpacityFlag(), 1 );
   TRACE_BITSTREAM_OUT( "%s", __func__ );
 }
 

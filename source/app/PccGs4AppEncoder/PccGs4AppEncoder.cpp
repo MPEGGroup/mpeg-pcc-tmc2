@@ -98,6 +98,12 @@ int main( int argc, char *argv[] ) {
   adaptationParams.gsdTransform2dPresentFlag_      = encoderParams.gsdTransform2dPresentFlag_;
   adaptationParams.dataAdaptiveShTransformEnabled_ = encoderParams.dataAdaptiveShTransformEnabled_;
   adaptationParams.enableShNonUniformQuantization_ = encoderParams.enableShNonUniformQuantization_;
+  adaptationParams.encodeLinearOpacity_            = encoderParams.encodeLinearOpacity_;
+  if ( encoderParams.encodeLinearOpacity_ ) {
+    // changing the default value of the opacity quantization
+    adaptationParams.computedOpacityMin_ = 0.0;
+    adaptationParams.computedOpacityMax_ = 1.0;
+  }
 
 #if defined( ENABLE_TBB )
   if ( applicationParams.nbThread_ > 0 ) {

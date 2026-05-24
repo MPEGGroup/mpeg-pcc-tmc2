@@ -98,6 +98,8 @@ struct PCCGSEncoderParameters {
 
   bool keepIntermediateFiles_;
 
+  bool encodeLinearOpacity_ = false;
+
   uint8_t getPackedMapIndexByAttributeTypeId( AttributeTypeId attrTypeId ) const {
     switch ( attrTypeId ) {
       case ATTR_TEXTURE:

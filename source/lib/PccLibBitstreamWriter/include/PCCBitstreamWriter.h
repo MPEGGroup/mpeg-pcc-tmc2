@@ -410,6 +410,8 @@ class PCCBitstreamWriter {
   static void gsShProperty( PCCBitstream &bitstream, GsSphericalHarmonicsProperty &gshp );
   // H.8.3.6.3.7	Gaussian splat spherical harmonics transform syntax
   static void gs2DTransform( PCCBitstream &bitstream, Gs2DTransform &gs2DTransform );
+  // H.8.3.6.3.11 Gaussian splat opacity property syntax
+  static void gsOpacityProperty( PCCBitstream &bitstream, GsOpacityProperty &gsop );
   // H.8.3.9	Raw patch data unit V-PCC Gaussian Splat extension syntax
   static void rpduVpccGsExtension( PCCBitstream &bitstream, AapsVpccGsExtension &ext, RawPatchDataUnit &rpdu );
   // H.20.2	SEI payload syntax

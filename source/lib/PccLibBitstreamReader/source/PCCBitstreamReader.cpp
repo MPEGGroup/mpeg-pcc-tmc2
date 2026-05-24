@@ -2828,12 +2828,15 @@ void PCCBitstreamReader::aapsVpccGsExtension( PCCBitstream &bitstream, AapsVpccG
   ext.setShPropertyPresentFlag( value );  // u(1)
   READ_CODE_DESC( value, 1, "aaps_vpcc_gs_2dsh_transform_present_flag" );
   ext.setTransform2DPresentFlag( value );  // u(1)
+  READ_CODE_DESC( value, 1, "aaps_vpcc_gs_opacity_property_present_flag" );
+  ext.setOpacityPropertyPresentFlag( value );  // u(1)
   READ_CODE_DESC( value, 8, "aaps_vpcc_gs_reserved_zero_8bits" );
   ext.setReservedZero8bits( value );  // u(8);
 
   if ( ext.getDequantizationPresentFlag() ) { gsDequantization( bitstream, ext.getGsDequantization() ); }
   if ( ext.getShPropertyPresentFlag() ) { gsShProperty( bitstream, ext.getGsShProperty() ); }
   if ( ext.getTransform2DPresentFlag() ) { gs2DTransform( bitstream, ext.getGs2DTransform() ); }
+  if ( ext.getOpacityPropertyPresentFlag() ) { gsOpacityProperty( bitstream, ext.getGsOpacityProperty() ); }
 
   if ( ext.getReservedZero8bits() != 0 ) {
     while ( moreRbspData( bitstream ) ) {
@@ -2989,6 +2992,15 @@ void PCCBitstreamReader::gs2DTransform( PCCBitstream &bitstream, Gs2DTransform &
       gs2DTransform.setTrColType( i, value );
     }
   }
+  TRACE_BITSTREAM_OUT( "%s", __func__ );
+}
+
+// H.8.3.6.3.11 Gaussian splat opacity property syntax
+void PCCBitstreamReader::gsOpacityProperty( PCCBitstream &bitstream, GsOpacityProperty &gsOpacityProperty ) {
+  TRACE_BITSTREAM_IN( "%s", __func__ );
+  int value;
+  READ_CODE_DESC( value, 1, "LinearOpacityFlag" );
+  gsOpacityProperty.setLinearOpacityFlag( value );
   TRACE_BITSTREAM_OUT( "%s", __func__ );
 }
 

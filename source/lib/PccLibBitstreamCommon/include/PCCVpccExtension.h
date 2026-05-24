@@ -445,9 +445,34 @@ class Gs2DTransform {
   std::vector<uint8_t>                         trRowType_;
 };
 
+// H.8.3.6.3.11	GS Opacity Property syntax
+class GsOpacityProperty {
+ public:
+  GsOpacityProperty() : linearOpacityFlag_( 0 ) {}
+  ~GsOpacityProperty() {}
+  GsOpacityProperty &operator=( const GsOpacityProperty & ) = default;
+
+  bool operator==( const GsOpacityProperty &other ) const { return linearOpacityFlag_ == other.linearOpacityFlag_; }
+
+  bool operator!=( const GsOpacityProperty &other ) const { return !( *this == other ); }
+
+  uint8_t getLinearOpacityFlag() const { return linearOpacityFlag_; }
+  void    setLinearOpacityFlag( uint8_t value ) { linearOpacityFlag_ = value; }
+
+ private:
+  uint8_t linearOpacityFlag_;
+};
+
 // H.8.3.6.3.4	AAPS V-PCC GS extension syntax
 class AapsVpccGsExtension {
  public:
+  AapsVpccGsExtension() :
+      dequantizationPresentFlag_( false ),
+      adaptiveQuantizationEnableFlag_( false ),
+      shPropertyPresentFlag_( false ),
+      transform2DPresentFlag_( false ),
+      opacityPropertyPresentFlag_( false ) {}
+  ~AapsVpccGsExtension() {}
   AapsVpccGsExtension &operator=( const AapsVpccGsExtension & ) = default;
 
   bool              getDequantizationPresentFlag() { return dequantizationPresentFlag_; }
@@ -465,6 +490,10 @@ class AapsVpccGsExtension {
   Gs2DTransform &getGs2DTransform() { return gs2DTransform_; }
   void           setTransform2DPresentFlag( bool value ) { transform2DPresentFlag_ = value; }
 
+  bool               getOpacityPropertyPresentFlag() { return opacityPropertyPresentFlag_; }
+  GsOpacityProperty &getGsOpacityProperty() { return gsOpacityProperty_; }
+  void               setOpacityPropertyPresentFlag( bool value ) { opacityPropertyPresentFlag_ = value; }
+
   uint8_t getReservedZero8bits() const { return reservedZero8bits_; }
   void    setReservedZero8bits( uint8_t value ) { reservedZero8bits_ = value; }
 
@@ -473,9 +502,11 @@ class AapsVpccGsExtension {
   bool                         adaptiveQuantizationEnableFlag_{};
   bool                         shPropertyPresentFlag_{};
   bool                         transform2DPresentFlag_{};
+  bool                         opacityPropertyPresentFlag_{};
   GsDequantization             gsDequantization_{};
   GsSphericalHarmonicsProperty shSphericalHarmonicsProperty_{};
   Gs2DTransform                gs2DTransform_{};
+  GsOpacityProperty            gsOpacityProperty_;
   uint8_t                      reservedZero8bits_{};
 };
 };  // namespace pcc

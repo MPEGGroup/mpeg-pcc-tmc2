@@ -160,6 +160,9 @@ struct PCCAdaptationParameters {
   /// Auto-compute opacity limits from data
   bool autoComputeOpacityLimits_ = false;
 
+  /// If true, convert logit opacity to linear before quantization
+  bool encodeLinearOpacity_ = false;
+
   /// Computed opacity limits (stored during adaptation)
   double computedOpacityMin_ = 0.0;
   double computedOpacityMax_ = 0.0;
@@ -400,6 +403,12 @@ class PCCAdaptation {
 
   /// Compute min/max range from double vector
   static void computeRange( const std::vector<double> &values, double &minVal, double &maxVal );
+
+  /// Convert logit opacity to linear opacity in-place for all points
+  static void logitToLinearOpacity( PCCPointSetGS &pointCloud );
+
+  /// Convert linear opacity to logit opacity in-place for all points
+  static void linearToLogitOpacity( PCCPointSetGS &pointCloud );
 };
 
 }  // namespace pcc

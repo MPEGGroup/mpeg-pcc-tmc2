@@ -320,6 +320,13 @@ void PCCGSHlsBuilder::initializeAtlasAapsHls( PCCHighLevelSyntax            &hls
     }
     for ( size_t i = 0; i < 16; ++i ) { tr2d.setTrColType( i, adaptationParams.shTrTypeCol_[i] ); }
   }
+
+  ext.setOpacityPropertyPresentFlag( true );
+  if ( ext.getOpacityPropertyPresentFlag() ) {
+    auto &opacityProp = ext.getGsOpacityProperty();
+    opacityProp.setLinearOpacityFlag( adaptationParams.encodeLinearOpacity_ );
+  }
+
   return;
 }
 
