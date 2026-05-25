@@ -1017,7 +1017,7 @@ bool PCCPointSet3::read( const std::string &fileName, const bool readNormals ) {
             reflectances_[pointCounter] = reflectance;
           } else {
             auto &reflectance = reflectances_[pointCounter];
-            ifs.read( reinterpret_cast<char *>( reflectance ), sizeof( uint16_t ) );
+            ifs.read( reinterpret_cast<char *>( &reflectance ), sizeof( uint16_t ) );
           }
         } else {
           uint64_t value;
