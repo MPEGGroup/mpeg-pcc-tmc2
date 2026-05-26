@@ -5947,7 +5947,7 @@ size_t PCCEncoder::adjustDepth3DPadding( size_t            x,
     size_t deltadepth = 8;
     if ( mean_val < deltadepth ) { deltadepth = mean_val; }
     if ( mean_val + deltadepth > frame.getMaxDepth() ) { deltadepth = frame.getMaxDepth() - mean_val; }
-    for ( uint16_t depth = 1; depth < deltadepth; depth++ ) {
+    for ( size_t depth = 1; depth < deltadepth; depth++ ) {
       PCCPoint3D point = patch.canvasTo3D( x, y, mean_val + depth );
       // now find the distance between the point and the original point cloud
       PCCNNResult result;

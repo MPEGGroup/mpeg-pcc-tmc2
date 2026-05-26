@@ -413,7 +413,7 @@ void PCCPatchSegmenter3::resampledPointcloud( std::vector<size_t> &pointCount,
         PCCVector3D pointEOM( point );
         if ( useEnhancedOccupancyMapCode && patch.getDepthEOM()[p] != 0 ) {
           size_t N = multipleMaps ? surfaceThickness : EOMFixBitCount;
-          for ( uint16_t i = 0; i < N; i++ ) {
+          for ( size_t i = 0; i < N; i++ ) {
             if ( ( patch.getDepthEOM()[p] & ( 1 << i ) ) != 0 ) {
               uint16_t nDeltaDCur             = ( i + 1 );
               pointEOM[patch.getNormalAxis()] = double( depth0 + projectionTypeIndication * ( nDeltaDCur ) );

@@ -382,7 +382,7 @@ std::vector<GSEncoderPatchInformation> PCCGSPatchGenerator::splitPatchesAdaptive
   for ( const auto &patchInfo : patches ) {
     PCCVector3<size_t> rawPatchUVD( patchInfo.patch.u1_, patchInfo.patch.v1_, patchInfo.patch.d1_ );
     const auto        &rawPointsBBox = patchInfo.pointsIndicesInPatch;
-    for ( uint16_t g = 0; g <= maxQuantizationGroupId; ++g ) {
+    for ( size_t g = 0; g <= maxQuantizationGroupId; ++g ) {
       perGroupPointsIndicesInPatch[g].emplace_back();
       auto &pointsIndicesInPatch = perGroupPointsIndicesInPatch[g].back();
       // Count points relevant for this group and save their indices

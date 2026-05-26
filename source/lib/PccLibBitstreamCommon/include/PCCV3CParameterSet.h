@@ -109,7 +109,7 @@ class V3CParameterSet {
     mapPredictorIndexDiff_[index].resize( mapCountMinus1_[index] + 1 );
   }
   uint32_t          getV3CParameterSetId() { return v3cParameterSetId_; }
-  uint32_t          getAtlasCountMinus1() const { return atlasCountMinus1_; }
+  uint8_t           getAtlasCountMinus1() const { return atlasCountMinus1_; }
   uint16_t          getAtlasId( size_t index ) const { return atlasId_[index]; }
   uint16_t          getFrameWidth( size_t index ) const { return frameWidth_[index]; }
   uint16_t          getFrameHeight( size_t index ) const { return frameHeight_[index]; }
@@ -131,7 +131,7 @@ class V3CParameterSet {
   VpsPackedVideoExtension &getVpsPackedVideoExtension() { return vpsPackedVideoExtension_; }
 
   void setV3CParameterSetId( uint32_t value ) { v3cParameterSetId_ = value; }
-  void setAtlasCountMinus1( uint32_t value ) { atlasCountMinus1_ = value; }
+  void setAtlasCountMinus1( uint8_t value ) { atlasCountMinus1_ = value; }
   void setAtlasId( size_t index, uint16_t value ) { atlasId_[index] = value; }
   void setFrameWidth( size_t index, uint16_t value ) { frameWidth_[index] = value; }
   void setFrameHeight( size_t index, uint16_t value ) { frameHeight_[index] = value; }
@@ -162,7 +162,7 @@ class V3CParameterSet {
  private:
   ProfileTierLevel                  profileTierLevel_;
   uint32_t                          v3cParameterSetId_;
-  uint32_t                          atlasCountMinus1_;
+  uint8_t                           atlasCountMinus1_;
   std::vector<uint16_t>             atlasId_;
   std::vector<uint16_t>             frameWidth_;
   std::vector<uint16_t>             frameHeight_;
