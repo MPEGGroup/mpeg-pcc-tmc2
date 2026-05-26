@@ -480,47 +480,43 @@ static inline std::string toString( V3CUnitType type ) {
   }
 }
 static inline std::string toString( PCCVideoType type ) {
-  size_t typeIndex = (size_t)type;
-  if ( typeIndex == (size_t)VIDEO_OCCUPANCY )
+  const auto typeIndex = static_cast<std::underlying_type_t<PCCVideoType>>( type );
+  if ( typeIndex == VIDEO_OCCUPANCY )
     return std::string( "occupancy map video " );
-  else if ( typeIndex == (size_t)VIDEO_GEOMETRY )
+  else if ( typeIndex == VIDEO_GEOMETRY )
     return std::string( "geometry video " );
-  else if ( typeIndex >= (size_t)VIDEO_GEOMETRY_D0 && typeIndex <= (size_t)VIDEO_GEOMETRY_D15 )
-    return std::string( "geometry D" ) + std::to_string( typeIndex - (size_t)VIDEO_GEOMETRY_D0 ) +
-           std::string( " video " );
-  else if ( typeIndex == (size_t)VIDEO_GEOMETRY_RAW )
+  else if ( typeIndex >= VIDEO_GEOMETRY_D0 && typeIndex <= VIDEO_GEOMETRY_D15 )
+    return std::string( "geometry D" ) + std::to_string( typeIndex - VIDEO_GEOMETRY_D0 ) + std::string( " video " );
+  else if ( typeIndex == VIDEO_GEOMETRY_RAW )
     return std::string( "raw points geometry video " );
-  else if ( typeIndex == (size_t)VIDEO_ATTRIBUTE )
+  else if ( typeIndex == VIDEO_ATTRIBUTE )
     return std::string( "attribute video " );
-  else if ( typeIndex >= (size_t)VIDEO_ATTRIBUTE_T0 && typeIndex <= (size_t)VIDEO_ATTRIBUTE_T15 )
-    return std::string( "attribute T" ) + std::to_string( typeIndex - (size_t)VIDEO_ATTRIBUTE_T0 ) +
-           std::string( " video " );
-  else if ( typeIndex == (size_t)VIDEO_ATTRIBUTE_RAW )
+  else if ( typeIndex >= VIDEO_ATTRIBUTE_T0 && typeIndex <= VIDEO_ATTRIBUTE_T15 )
+    return std::string( "attribute T" ) + std::to_string( typeIndex - VIDEO_ATTRIBUTE_T0 ) + std::string( " video " );
+  else if ( typeIndex == VIDEO_ATTRIBUTE_RAW )
     return std::string( "raw points attribute video " );
-  else if ( typeIndex >= (size_t)VIDEO_SPHERICAL_HARMONIC_T0 && typeIndex <= (size_t)VIDEO_SPHERICAL_HARMONIC_T15 )
-    return std::string( "sphericalHarmonic T" ) + std::to_string( typeIndex - (size_t)VIDEO_SPHERICAL_HARMONIC_T0 ) +
+  else if ( typeIndex >= VIDEO_SPHERICAL_HARMONIC_T0 && typeIndex <= VIDEO_SPHERICAL_HARMONIC_T15 )
+    return std::string( "sphericalHarmonic T" ) + std::to_string( typeIndex - VIDEO_SPHERICAL_HARMONIC_T0 ) +
            std::string( " video " );
-  else if ( typeIndex >= (size_t)VIDEO_SPHERICAL_HARMONIC_RAW &&
-            typeIndex < (size_t)( VIDEO_SPHERICAL_HARMONIC_RAW + MAX_NUM_ATTR_PARTITIONS ) )
+  else if ( typeIndex >= VIDEO_SPHERICAL_HARMONIC_RAW &&
+            typeIndex < VIDEO_SPHERICAL_HARMONIC_RAW + MAX_NUM_ATTR_PARTITIONS )
     return std::string( "raw points sphericalHarmonic T" ) +
-           std::to_string( typeIndex - (size_t)VIDEO_SPHERICAL_HARMONIC_RAW ) + std::string( " video " );
-  else if ( typeIndex >= (size_t)VIDEO_ROTATION_T0 && typeIndex <= (size_t)VIDEO_ROTATION_T15 )
-    return std::string( "rotation T" ) + std::to_string( typeIndex - (size_t)VIDEO_ROTATION_T0 ) +
+           std::to_string( typeIndex - VIDEO_SPHERICAL_HARMONIC_RAW ) + std::string( " video " );
+  else if ( typeIndex >= VIDEO_ROTATION_T0 && typeIndex <= VIDEO_ROTATION_T15 )
+    return std::string( "rotation T" ) + std::to_string( typeIndex - VIDEO_ROTATION_T0 ) + std::string( " video " );
+  else if ( typeIndex >= VIDEO_ROTATION_RAW && typeIndex < VIDEO_ROTATION_RAW + MAX_NUM_ATTR_PARTITIONS )
+    return std::string( "raw points rotation T" ) + std::to_string( typeIndex - VIDEO_ROTATION_RAW ) +
            std::string( " video " );
-  else if ( typeIndex >= (size_t)VIDEO_ROTATION_RAW &&
-            typeIndex < (size_t)( VIDEO_ROTATION_RAW + MAX_NUM_ATTR_PARTITIONS ) )
-    return std::string( "raw points rotation T" ) + std::to_string( typeIndex - (size_t)VIDEO_ROTATION_RAW ) +
-           std::string( " video " );
-  else if ( typeIndex == (size_t)VIDEO_SCALE_T0 )
+  else if ( typeIndex == VIDEO_SCALE_T0 )
     return std::string( "scale video " );
-  else if ( typeIndex == (size_t)VIDEO_SCALE_RAW )
+  else if ( typeIndex == VIDEO_SCALE_RAW )
     return std::string( "raw points scale video " );
-  else if ( typeIndex == (size_t)VIDEO_OPACITY_T0 )
+  else if ( typeIndex == VIDEO_OPACITY_T0 )
     return std::string( "opacity video " );
-  else if ( typeIndex == (size_t)VIDEO_OPACITY_RAW )
+  else if ( typeIndex == VIDEO_OPACITY_RAW )
     return std::string( "raw points opacity video " );
-  else if ( typeIndex >= (size_t)VIDEO_PACKED && typeIndex < (size_t)( VIDEO_PACKED + MAX_NUM_ATTR_PARTITIONS ) )
-    return std::string( "packed T" ) + std::to_string( typeIndex - (size_t)VIDEO_PACKED ) + std::string( " video " );
+  else if ( typeIndex >= VIDEO_PACKED && typeIndex < VIDEO_PACKED + MAX_NUM_ATTR_PARTITIONS )
+    return std::string( "packed T" ) + std::to_string( typeIndex - VIDEO_PACKED ) + std::string( " video " );
   else
     return std::string( "not supported" );
 }
