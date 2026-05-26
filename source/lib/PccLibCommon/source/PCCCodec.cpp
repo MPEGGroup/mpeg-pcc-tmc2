@@ -1107,7 +1107,7 @@ bool PCCCodec::gridFiltering( const std::vector<uint32_t>    &partition,
   PCCVector3D curVector          = P;
   int         gridSize2          = gridSize * 2;
 #if CELLID_UNORDERED_MAP
-  uint64_t gridWidth3 = gridWidth * uint64_t{gridWidth} * gridWidth;
+  uint64_t gridWidth3 = gridWidth * uint64_t{ gridWidth } * gridWidth;
 #else
   int gridWidth3 = gridWidth * gridWidth * gridWidth;
 #endif
@@ -2579,14 +2579,14 @@ void PCCCodec::aspsApplicationByteString( std::vector<uint8_t>          &stringB
   }
   if ( asps.getAuxiliaryVideoEnabledFlag() && ( asps.getRawPatchEnabledFlag() || asps.getEomPatchEnabledFlag() ) ) {
     auto   &afti            = afps.getAtlasFrameTileInformationRbsp();
-    size_t  auxVideoWidthNF = ( afti.getAuxiliaryVideoTileRowWidthMinus1() + size_t{1} ) * 64;
+    size_t  auxVideoWidthNF = ( afti.getAuxiliaryVideoTileRowWidthMinus1() + size_t{ 1 } ) * 64;
     uint8_t val             = auxVideoWidthNF & 0xFF;
     stringByte.push_back( val );
     val = ( auxVideoWidthNF >> 8 ) & 0xFF;
     stringByte.push_back( val );
     size_t auxVideoHeightNF = 0;
     for ( uint32_t i = 0; i <= afti.getNumTilesInAtlasFrameMinus1(); i++ ) {
-      auxVideoHeightNF += afti.getAuxiliaryVideoTileRowHeight( i ) * size_t{64};
+      auxVideoHeightNF += afti.getAuxiliaryVideoTileRowHeight( i ) * size_t{ 64 };
     }
     val = auxVideoHeightNF & 0xFF;
     stringByte.push_back( val );
@@ -2640,7 +2640,7 @@ void PCCCodec::afpsCommonByteString( std::vector<uint8_t> &stringByte,
   if ( asps.getAuxiliaryVideoEnabledFlag() ) {
     hashAuxTileHeight.resize( afti.getNumTilesInAtlasFrameMinus1() + 1, 0 );
     for ( size_t ti = 0; ti <= afti.getNumTilesInAtlasFrameMinus1(); ti++ ) {
-      hashAuxTileHeight[ti] = afti.getAuxiliaryVideoTileRowHeight( ti ) * size_t{64};
+      hashAuxTileHeight[ti] = afti.getAuxiliaryVideoTileRowHeight( ti ) * size_t{ 64 };
     }
   } else {
     hashAuxTileHeight.resize( afti.getNumTilesInAtlasFrameMinus1() + 1, 0 );

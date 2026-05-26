@@ -1700,8 +1700,8 @@ void PCCDecoder::setTilePartitionSizeAfti( PCCContext &context ) {  // decoder
       partitionPosY[0]   = 0;
     } else {
       if ( afti.getUniformPartitionSpacingFlag() ) {
-        size_t uniformPatitionWidth  = 64 * ( afti.getPartitionColumnWidthMinus1( 0 ) + size_t{1} );
-        size_t uniformPatitionHeight = 64 * ( afti.getPartitionRowHeightMinus1( 0 ) + size_t{1} );
+        size_t uniformPatitionWidth  = 64 * ( afti.getPartitionColumnWidthMinus1( 0 ) + size_t{ 1 } );
+        size_t uniformPatitionHeight = 64 * ( afti.getPartitionRowHeightMinus1( 0 ) + size_t{ 1 } );
         partitionPosX[0]             = 0;
         partitionWidth[0]            = uniformPatitionWidth;
         for ( size_t col = 1; col < numPartitionCols - 1; col++ ) {
@@ -1727,10 +1727,10 @@ void PCCDecoder::setTilePartitionSizeAfti( PCCContext &context ) {  // decoder
         }
       } else {
         partitionPosX[0]  = 0;
-        partitionWidth[0] = 64 * ( afti.getPartitionColumnWidthMinus1( 0 ) + size_t{1} );
+        partitionWidth[0] = 64 * ( afti.getPartitionColumnWidthMinus1( 0 ) + size_t{ 1 } );
         for ( size_t col = 1; col < numPartitionCols - 1; col++ ) {
           partitionPosX[col]  = partitionPosX[col - 1] + partitionWidth[col - 1];
-          partitionWidth[col] = 64 * ( afti.getPartitionColumnWidthMinus1( col ) + size_t{1} );
+          partitionWidth[col] = 64 * ( afti.getPartitionColumnWidthMinus1( col ) + size_t{ 1 } );
         }
         if ( numPartitionCols > 1 ) {
           partitionPosX[numPartitionCols - 1] =
@@ -1739,10 +1739,10 @@ void PCCDecoder::setTilePartitionSizeAfti( PCCContext &context ) {  // decoder
         }
 
         partitionPosY[0]   = 0;
-        partitionHeight[0] = 64 * ( afti.getPartitionRowHeightMinus1( 0 ) + size_t{1} );
+        partitionHeight[0] = 64 * ( afti.getPartitionRowHeightMinus1( 0 ) + size_t{ 1 } );
         for ( size_t row = 1; row < numPartitionRows - 1; row++ ) {
           partitionPosY[row]   = partitionPosY[row - 1] + partitionHeight[row - 1];
-          partitionHeight[row] = 64 * ( afti.getPartitionRowHeightMinus1( row ) + size_t{1} );
+          partitionHeight[row] = 64 * ( afti.getPartitionRowHeightMinus1( row ) + size_t{ 1 } );
         }
         if ( numPartitionRows > 1 ) {
           partitionPosY[numPartitionRows - 1] =
@@ -1841,11 +1841,11 @@ size_t PCCDecoder::setTileSizeAndLocation( PCCContext &context, size_t frameInde
   }
 
   if ( asps.getAuxiliaryVideoEnabledFlag() ) {
-    context[frameIndex].setAuxVideoWidth( ( afti.getAuxiliaryVideoTileRowWidthMinus1() + size_t{1} ) * 64 );
+    context[frameIndex].setAuxVideoWidth( ( afti.getAuxiliaryVideoTileRowWidthMinus1() + size_t{ 1 } ) * 64 );
     context[frameIndex].resizeAuxTileLeftTopY( afti.getNumTilesInAtlasFrameMinus1() + 1, 0 );
     context[frameIndex].resizeAuxTileHeight( afti.getNumTilesInAtlasFrameMinus1() + 1, 0 );
     for ( size_t ti = 0; ti <= afti.getNumTilesInAtlasFrameMinus1(); ti++ ) {
-      context[frameIndex].setAuxTileHeight( ti, afti.getAuxiliaryVideoTileRowHeight( ti ) * size_t{64} );
+      context[frameIndex].setAuxTileHeight( ti, afti.getAuxiliaryVideoTileRowHeight( ti ) * size_t{ 64 } );
       if ( ti < afti.getNumTilesInAtlasFrameMinus1() )
         context[frameIndex].setAuxTileLeftTopY(
             ti + 1, context[frameIndex].getAuxTileLeftTopY( ti ) + context[frameIndex].getAuxTileHeight( ti ) );
@@ -2163,9 +2163,9 @@ int PCCDecoder::ReconstructIdc3( PCCContext &context, PCCGroupOfFrames &reconstr
 
             if ( tr2d.getKltFlag( i ) ) {
               PCCAdaptationParameters::PCCKltParameters klt;
-              klt.eigvec.resize( size_t{3} * size, std::vector<double>( size_t{3} * size ) );
-              klt.mean.resize( size_t{3} * size );
-              klt.sigma.resize( size_t{3} * size );
+              klt.eigvec.resize( size_t{ 3 } * size, std::vector<double>( size_t{ 3 } * size ) );
+              klt.mean.resize( size_t{ 3 } * size );
+              klt.sigma.resize( size_t{ 3 } * size );
               for ( int m = 0; m < 3 * size; m++ ) {
                 for ( int n = 0; n < 3 * size; n++ ) { klt.eigvec[m][n] = tr2d.getKltCoeff( i, m, n ); }
                 klt.sigma[m] = tr2d.getKltStdDev( i, m );

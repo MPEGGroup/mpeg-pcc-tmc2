@@ -1329,10 +1329,10 @@ bool PCCAdaptation::sphericalHarmonicsTransform2D( PCCPointSetGS &pointCloud, PC
       { { 0.29900, 0.58700, 0.11400 }, { -0.16900, -0.33100, 0.50000 }, { 0.50000, -0.41900, -0.08100 } },  // BT.601
       { { 0.33333, 0.33333, 0.33333 }, { 0.40825, 0.00000, -0.40825 }, { 0.23570, -0.47140, 0.23570 } },    // DCT-II
       { { 0.2126, 0.7152, 0.0722 }, { -0.114572, -0.385428, 0.5000 }, { 0.5000, -0.454153, -0.045847 } },   // BT.709
-      { { -1.0, -1.0, -1.0 }, { -1.0, -1.0, -1.0 }, { -1.0, -1.0, -1.0 } },    // TODO: YCoCg
-      { { -1.0, -1.0, -1.0 }, { -1.0, -1.0, -1.0 }, { -1.0, -1.0, -1.0 } },    // reserved
-      { { -1.0, -1.0, -1.0 }, { -1.0, -1.0, -1.0 }, { -1.0, -1.0, -1.0 } },    // reserved
-      { { -1.0, -1.0, -1.0 }, { -1.0, -1.0, -1.0 }, { -1.0, -1.0, -1.0 } } };  // reserved
+      { { 0.25, 0.5, 0.25 }, { 0.5, 0.0, -0.5 }, { -0.25, 0.5, -0.25 } },                                   // YCoCg
+      { { -1.0, -1.0, -1.0 }, { -1.0, -1.0, -1.0 }, { -1.0, -1.0, -1.0 } },                                 // reserved
+      { { -1.0, -1.0, -1.0 }, { -1.0, -1.0, -1.0 }, { -1.0, -1.0, -1.0 } },                                 // reserved
+      { { -1.0, -1.0, -1.0 }, { -1.0, -1.0, -1.0 }, { -1.0, -1.0, -1.0 } } };                               // reserved
 
   const double tr2x2[3][2][2] = {
       { { 1.0, 0.0 }, { 0.0, 1.0 } }, { { 1.0, 0.0 }, { 0.0, 1.0 } }, { { 0.5, 0.5 }, { 0.5, -0.5 } } };
@@ -1502,10 +1502,10 @@ bool PCCAdaptation::sphericalHarmonicsInvTransform2D( PCCPointSetGS             
 
 bool PCCAdaptation::extractSHQuantRegions( const PCCPointSetGS &input, PCCAdaptationParameters &params ) {
   if ( !params.enableShNonUniformQuantization_ ) {
-    params.shNumRegionsMinus1_.assign( size_t{16} * 3, 0 );
+    params.shNumRegionsMinus1_.assign( size_t{ 16 } * 3, 0 );
     params.shTransitionPoints_.clear();
     params.shStepSizes_.clear();
-    params.shNumBitsForTransitionPoint_.assign( size_t{16} * 3, 10 );
+    params.shNumBitsForTransitionPoint_.assign( size_t{ 16 } * 3, 10 );
     return true;
   }
 
@@ -1516,9 +1516,9 @@ bool PCCAdaptation::extractSHQuantRegions( const PCCPointSetGS &input, PCCAdapta
   const uint32_t bitDepth      = params.shBitDepth_;
   const uint32_t max_quant_val = ( 1u << bitDepth ) - 1;
 
-  params.shNumRegionsMinus1_.assign( size_t{16} * 3, 2 );
+  params.shNumRegionsMinus1_.assign( size_t{ 16 } * 3, 2 );
   params.shTransitionPoints_.clear();
-  params.shStepSizes_.assign( size_t{16} * 9, 0.0 );
+  params.shStepSizes_.assign( size_t{ 16 } * 9, 0.0 );
   for ( size_t i = 0; i < 16; ++i ) {
     params.shStepSizes_[i * 9 + 0] = 0.015625;
     params.shStepSizes_[i * 9 + 1] = 0.0078125;
@@ -1530,7 +1530,7 @@ bool PCCAdaptation::extractSHQuantRegions( const PCCPointSetGS &input, PCCAdapta
     params.shStepSizes_[i * 9 + 7] = 0.0078125;
     params.shStepSizes_[i * 9 + 8] = 0.015625;
   }
-  params.shNumBitsForTransitionPoint_.assign( size_t{16} * 3, 10 );
+  params.shNumBitsForTransitionPoint_.assign( size_t{ 16 } * 3, 10 );
 
   double       sum1 = 0.0, sumSq1 = 0.0;
   double       sum3 = 0.0, sumSq3 = 0.0;

@@ -386,10 +386,12 @@ class Gs2DTransform {
     rowTrSizeMinus1_[i] = value;
     trRowGroupIdx_[i].resize( value + 1 );
     if ( kltFlag_[i] ) {
-      kltCoeffs_[i].resize( 3 * ( value + size_t{1} ) );
-      kltMean_[i].resize( 3 * ( value + size_t{1} ) );
-      kltStdDev_[i].resize( 3* ( value + size_t{1} ) );
-      for ( size_t j = 0; j < 3 * ( value + size_t{1} ); j++ ) { kltCoeffs_[i][j].resize( 3 * ( value + size_t{1} ) ); }
+      kltCoeffs_[i].resize( 3 * ( value + size_t{ 1 } ) );
+      kltMean_[i].resize( 3 * ( value + size_t{ 1 } ) );
+      kltStdDev_[i].resize( 3 * ( value + size_t{ 1 } ) );
+      for ( size_t j = 0; j < 3 * ( value + size_t{ 1 } ); j++ ) {
+        kltCoeffs_[i][j].resize( 3 * ( value + size_t{ 1 } ) );
+      }
     }
   }
 
@@ -404,11 +406,11 @@ class Gs2DTransform {
       // The size depends on rowTrSizeMinus1_[i], which should have been set by setRowTrSizeMinus1
       // Check if rowTrSizeMinus1_[i] is already set to avoid accessing out of bounds
       if ( i < rowTrSizeMinus1_.size() ) {
-        kltMean_[i].resize( 3 * ( rowTrSizeMinus1_[i] + size_t{1} ) );
-        kltStdDev_[i].resize( 3 * ( rowTrSizeMinus1_[i] + size_t{1} ) );
-        kltCoeffs_[i].resize( 3 * ( rowTrSizeMinus1_[i] + size_t{1} ) );
-        for ( size_t j = 0; j < 3 * ( rowTrSizeMinus1_[i] + size_t{1} ); j++ ) {
-          kltCoeffs_[i][j].resize( 3 * ( rowTrSizeMinus1_[i] + size_t{1} ) );
+        kltMean_[i].resize( 3 * ( rowTrSizeMinus1_[i] + size_t{ 1 } ) );
+        kltStdDev_[i].resize( 3 * ( rowTrSizeMinus1_[i] + size_t{ 1 } ) );
+        kltCoeffs_[i].resize( 3 * ( rowTrSizeMinus1_[i] + size_t{ 1 } ) );
+        for ( size_t j = 0; j < 3 * ( rowTrSizeMinus1_[i] + size_t{ 1 } ); j++ ) {
+          kltCoeffs_[i][j].resize( 3 * ( rowTrSizeMinus1_[i] + size_t{ 1 } ) );
         }
       } else {
         // This should not happen if parsing order is correct, but add an assert for safety

@@ -89,7 +89,7 @@ PCCEncoderParameters::PCCEncoderParameters() {
   patchExpansion_                      = false;
   gridSmoothing_                       = true;
   gridSize_                            = 8;
-  neighborCountSmoothing_              = size_t{4} * 16;
+  neighborCountSmoothing_              = size_t{ 4 } * 16;
   radius2Smoothing_                    = 4.0 * 16;
   radius2BoundaryDetection_            = 4.0 * 16;
   thresholdSmoothing_                  = 64.0;
@@ -152,7 +152,7 @@ PCCEncoderParameters::PCCEncoderParameters() {
   thresholdColorPreSmoothing_              = 10.0;
   thresholdColorPreSmoothingLocalEntropy_  = 4.5;
   radius2ColorPreSmoothing_                = 4.0 * 16;
-  neighborCountColorPreSmoothing_          = size_t{4} * 16;
+  neighborCountColorPreSmoothing_          = size_t{ 4 } * 16;
   flagColorPreSmoothing_                   = true;
   groupDilation_                           = true;
   enhancedOccupancyMapCode_                = false;

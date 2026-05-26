@@ -2619,7 +2619,7 @@ void PCCEncoder::packFlexibleMultipleTiles( PCCAtlasFrameContext &atlasFrame,
   int numTilesVer = occupancySizeV / tileHeight;
 
   // initializating the tile map to -1 (not assigned)
-  partitionToTileMap.resize( static_cast<size_t>(numTilesHor) * numTilesVer, -1 );
+  partitionToTileMap.resize( static_cast<size_t>( numTilesHor ) * numTilesVer, -1 );
   width                             = occupancySizeU * params_.occupancyResolution_;
   height                            = occupancySizeV * params_.occupancyResolution_;
   size_t            maxOccupancyRow = 0;
@@ -2671,7 +2671,7 @@ void PCCEncoder::packFlexibleMultipleTiles( PCCAtlasFrameContext &atlasFrame,
         occupancyMap.resize( occupancySizeU * occupancySizeV );
         // resizing the partitionToTile as well
         int numTilesVerNew = occupancySizeV / tileHeight;
-        partitionToTileMap.resize( static_cast<size_t>(numTilesHor) * numTilesVerNew );
+        partitionToTileMap.resize( static_cast<size_t>( numTilesHor ) * numTilesVerNew );
         for ( int i = numTilesHor * numTilesVer; i < numTilesHor * numTilesVerNew; i++ ) partitionToTileMap[i] = -1;
         numTilesVer = numTilesVerNew;
       }
@@ -2732,7 +2732,7 @@ void PCCEncoder::packFlexibleMultipleTiles( PCCAtlasFrameContext &atlasFrame,
           occupancyMap.resize( occupancySizeU * occupancySizeV );
           // resizing the partitionToTile as well
           int numTilesVerNew = occupancySizeV / tileHeight;
-          partitionToTileMap.resize( static_cast<size_t>(numTilesHor) * numTilesVerNew );
+          partitionToTileMap.resize( static_cast<size_t>( numTilesHor ) * numTilesVerNew );
           for ( int i = numTilesHor * numTilesVer; i < numTilesHor * numTilesVerNew; i++ ) partitionToTileMap[i] = -1;
           numTilesVer = numTilesVerNew;
         }
@@ -3032,7 +3032,7 @@ void PCCEncoder::spatialConsistencyPackFlexibleMultipleTiles( PCCAtlasFrameConte
   occupancySizeV  = ( occupancySizeV >= tileHeight ) ? occupancySizeV : tileHeight;
   int numTilesVer = occupancySizeV / tileHeight;
   // initializating the tile map to -1 (not assigned)
-  partitionToTileMap.resize( static_cast<size_t>(numTilesHor) * numTilesVer, -1 );
+  partitionToTileMap.resize( static_cast<size_t>( numTilesHor ) * numTilesVer, -1 );
   width                             = occupancySizeU * params_.occupancyResolution_;
   height                            = occupancySizeV * params_.occupancyResolution_;
   size_t            maxOccupancyRow = 0;
@@ -3080,7 +3080,7 @@ void PCCEncoder::spatialConsistencyPackFlexibleMultipleTiles( PCCAtlasFrameConte
         occupancyMap.resize( occupancySizeU * occupancySizeV );
         // resizing the partitionToTile as well
         int numTilesVerNew = occupancySizeV / tileHeight;
-        partitionToTileMap.resize( static_cast<size_t>(numTilesHor) * numTilesVerNew );
+        partitionToTileMap.resize( static_cast<size_t>( numTilesHor ) * numTilesVerNew );
         for ( int i = numTilesHor * numTilesVer; i < numTilesHor * numTilesVerNew; i++ ) { partitionToTileMap[i] = -1; }
         numTilesVer = numTilesVerNew;
       }
@@ -3211,7 +3211,7 @@ void PCCEncoder::spatialConsistencyPackFlexibleMultipleTiles( PCCAtlasFrameConte
           occupancyMap.resize( occupancySizeU * occupancySizeV );
           // resizing the partitionToTile as well
           int numTilesVerNew = occupancySizeV / tileHeight;
-          partitionToTileMap.resize( static_cast<size_t>(numTilesHor) * numTilesVerNew );
+          partitionToTileMap.resize( static_cast<size_t>( numTilesHor ) * numTilesVerNew );
           for ( int i = numTilesHor * numTilesVer; i < numTilesHor * numTilesVerNew; i++ ) {
             partitionToTileMap[i] = -1;
           }
@@ -3597,13 +3597,13 @@ PCCVector3D PCCEncoder::calculateWeightNormal( size_t geometryBitDepth3D, const 
     for ( size_t idx = 0; idx < maxValue * maxValue * 3; idx++ ) { pjFace[idx] = false; }
     const int size1f = maxValue * maxValue;
     for ( size_t idx = 0; idx < pointCount; idx++ ) {
-      const PCCPoint3D point                  = source[idx];
-      int              p0                     = (std::max)( 0, (std::min)( int( maxValue - 1 ), int( point[0] ) ) );
-      int              p1                     = (std::max)( 0, (std::min)( int( maxValue - 1 ), int( point[1] ) ) );
-      int              p2                     = (std::max)( 0, (std::min)( int( maxValue - 1 ), int( point[2] ) ) );
-      pjFace[p2 * maxValue + p1]              = true;  // YZ: 0,3
-      pjFace[p0 * maxValue + p2 + size1f]     = true;  // ZX: 0,3
-      pjFace[p1 * maxValue + p0 + size1f * size_t{2}] = true;  // XY: 0,3
+      const PCCPoint3D point              = source[idx];
+      int              p0                 = (std::max)( 0, (std::min)( int( maxValue - 1 ), int( point[0] ) ) );
+      int              p1                 = (std::max)( 0, (std::min)( int( maxValue - 1 ), int( point[1] ) ) );
+      int              p2                 = (std::max)( 0, (std::min)( int( maxValue - 1 ), int( point[2] ) ) );
+      pjFace[p2 * maxValue + p1]          = true;                // YZ: 0,3
+      pjFace[p0 * maxValue + p2 + size1f] = true;                // ZX: 0,3
+      pjFace[p1 * maxValue + p0 + size1f * size_t{ 2 }] = true;  // XY: 0,3
     }
     mypair pjCnt[3];
     for ( int x = 0; x < 3; x++ ) {
@@ -3613,7 +3613,7 @@ PCCVector3D PCCEncoder::calculateWeightNormal( size_t geometryBitDepth3D, const 
     for ( size_t idx = 0; idx < maxValue * maxValue; idx++ ) {
       if ( pjFace[idx] ) { pjCnt[0].value = pjCnt[0].value + 1; }
       if ( pjFace[idx + size1f] ) { pjCnt[1].value = pjCnt[1].value + 1; }
-      if ( pjFace[idx + size1f * size_t{2}] ) { pjCnt[2].value = pjCnt[2].value + 1; }
+      if ( pjFace[idx + size1f * size_t{ 2 }] ) { pjCnt[2].value = pjCnt[2].value + 1; }
     }
     std::sort( pjCnt, pjCnt + 3, comp1 );
     double axisWeight[6];
@@ -4389,7 +4389,7 @@ void PCCEncoder::sortRawPointsPatchMorton( PCCFrameContext &frame, size_t index 
 void PCCEncoder::sortRawPointsPatch( PCCFrameContext &frame, size_t index ) {
   auto        &rawPointsPatch       = frame.getRawPointsPatch( index );
   const size_t maxNeighborCount     = 5;
-  const size_t neighborSearchRadius = size_t{5} * 5;
+  const size_t neighborSearchRadius = size_t{ 5 } * 5;
   size_t       numRawPoints         = rawPointsPatch.getNumberOfRawPoints();
   if ( numRawPoints != 0u ) {
     vector<size_t> sortIdx;
@@ -6203,7 +6203,7 @@ void PCCEncoder::createCoarseLayer( PCCImage<T, 3>        &image,
   while ( dyadicHeight < image.getHeight() ) { dyadicHeight *= 2; }
   // allocate the mipmap with half the resolution
   mip.resize( ( dyadicWidth / 2 ), ( dyadicHeight / 2 ), PCCCOLORFORMAT::YUV444 );
-  mipOccupancyMap.resize( ( static_cast<size_t>(dyadicWidth) / 2 ) * ( static_cast<size_t>(dyadicHeight) / 2 ), 0 );
+  mipOccupancyMap.resize( ( static_cast<size_t>( dyadicWidth ) / 2 ) * ( static_cast<size_t>( dyadicHeight ) / 2 ), 0 );
   int stride    = image.getWidth();
   int newStride = ( dyadicWidth / 2 );
   for ( size_t y = 0; y < mip.getHeight(); y++ ) {
@@ -6245,9 +6245,9 @@ void PCCEncoder::regionFill( PCCImage<T, 3> &image, std::vector<uint32_t> &occup
   std::vector<uint32_t> iSparse;
   std::vector<uint32_t> jSparse;
   std::vector<double>   valSparse;
-  iSparse.resize( numElem * size_t{5} );
-  jSparse.resize( numElem * size_t{5} );
-  valSparse.resize( numElem * size_t{5} );
+  iSparse.resize( numElem * size_t{ 5 } );
+  jSparse.resize( numElem * size_t{ 5 } );
+  valSparse.resize( numElem * size_t{ 5 } );
   // create an initial solution using the low-resolution
   std::vector<double> b[3];
   b[0].resize( numElem );

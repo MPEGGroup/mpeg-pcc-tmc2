@@ -649,8 +649,8 @@ void PCCInternalColorConverter<T>::downsampling( const std::vector<float> &chrom
   int                widthOut  = widthIn / 2;
   int                heightOut = heightIn / 2;
   std::vector<float> temp;
-  chroma_out.resize( static_cast<size_t>(widthOut) * static_cast<size_t>(heightOut) );
-  temp.resize( static_cast<size_t>(widthOut) * static_cast<size_t>(heightIn) );
+  chroma_out.resize( static_cast<size_t>( widthOut ) * static_cast<size_t>( heightOut ) );
+  temp.resize( static_cast<size_t>( widthOut ) * static_cast<size_t>( heightIn ) );
   for ( int i = 0; i < heightIn; i++ ) {
     for ( int j = 0; j < widthOut; j++ ) {
       temp[i * widthOut + j] =
@@ -674,8 +674,8 @@ void PCCInternalColorConverter<T>::upsampling( const std::vector<float> &chromaI
                                                const size_t              filter ) const {
   int                widthOut = widthIn * 2, heightOut = heightIn * 2;
   std::vector<float> temp;
-  chromaOut.resize( static_cast<size_t>(widthOut) * static_cast<size_t>(heightOut) );
-  temp.resize( static_cast<size_t>(widthIn) * static_cast<size_t>(heightOut) );
+  chromaOut.resize( static_cast<size_t>( widthOut ) * static_cast<size_t>( heightOut ) );
+  temp.resize( static_cast<size_t>( widthIn ) * static_cast<size_t>( heightOut ) );
   for ( int i = 0; i < heightIn; i++ ) {
     for ( int j = 0; j < widthIn; j++ ) {
       temp[( 2 * i ) * widthIn + j] =

@@ -123,8 +123,8 @@ void VpsPackedVideoExtension::initializeBoundingBoxes( const V3CParameterSet &vp
       }
       for ( uint8_t k = 0; k <= pin.getPackedMapCountMinus1(); ++k ) {
         for ( uint8_t j = 0; j <= pin.getConstituentFrameCountMinus1( k ); ++j ) {
-          const auto columnsCount = ( pin.getPackedMapGridColumnsMinus1( k ) + size_t{1} );
-          const auto rowsCount    = ( pin.getPackedMapGridRowsMinus1( k ) + size_t{1} );
+          const auto columnsCount = ( pin.getPackedMapGridColumnsMinus1( k ) + size_t{ 1 } );
+          const auto rowsCount    = ( pin.getPackedMapGridRowsMinus1( k ) + size_t{ 1 } );
           auto       next         = size_t{};
 
           for ( size_t i = 0; i <= pin.getRegionsCountMinus1(); ++i ) {

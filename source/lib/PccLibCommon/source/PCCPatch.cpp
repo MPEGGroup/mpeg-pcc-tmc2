@@ -709,7 +709,7 @@ void PCCPatch::setDepthFromGeometryVideo( const std::vector<uint16_t> &geometryV
                                           int16_t                     *depth ) {
   const int32_t x0 = (int32_t)( u0_ * occupancyResolution_ );
   const int32_t y0 = (int32_t)( v0_ * occupancyResolution_ );
-  depth += ptrdiff_t{v2} * depthMapWidth_;
+  depth += ptrdiff_t{ v2 } * depthMapWidth_;
   switch ( patchOrientation_ ) {
     case PATCH_ORIENTATION_DEFAULT:
       for ( int32_t j = 0, v = v2; j < occupancyPrecision; j++, v++, depth += depthMapWidth_ ) {
@@ -804,10 +804,10 @@ void PCCPatch::setLocalData( const std::vector<uint8_t>  &occupancyMapVideo,
                              const int32_t                occupancyPrecision,
                              const int32_t                threhold ) {
   border_         = occupancyPrecision >= 8 ? 16 : 8;
-  depthMapWidth_  = sizeU0_ * occupancyResolution_ + size_t{2} * border_;
-  depthMapHeight_ = sizeV0_ * occupancyResolution_ + size_t{2} * border_;
-  depthMap_.resize( static_cast<size_t>(depthMapWidth_) * static_cast<size_t>(depthMapHeight_), 0 );
-  occupancyMap_.resize( static_cast<size_t>(depthMapWidth_) * static_cast<size_t>(depthMapHeight_), 0 );
+  depthMapWidth_  = sizeU0_ * occupancyResolution_ + size_t{ 2 } * border_;
+  depthMapHeight_ = sizeV0_ * occupancyResolution_ + size_t{ 2 } * border_;
+  depthMap_.resize( static_cast<size_t>( depthMapWidth_ ) * static_cast<size_t>( depthMapHeight_ ), 0 );
+  occupancyMap_.resize( static_cast<size_t>( depthMapWidth_ ) * static_cast<size_t>( depthMapHeight_ ), 0 );
   const int32_t patchIndexPlusOne  = int32_t( indexCopy_ ) + 1;
   const auto    ocmWidth           = width / occupancyPrecision;
   const int32_t blockToPatchWidth  = width / occupancyResolution_;
@@ -817,17 +817,19 @@ void PCCPatch::setLocalData( const std::vector<uint8_t>  &occupancyMapVideo,
                                      : occupancyPrecision == 2 ? 1
                                      : occupancyPrecision == 4 ? 2
                                                                : 3;
-  uint8_t      *ocm                = occupancyMap_.data() + border_ + ptrdiff_t{depthMapWidth_} * border_;
-  int16_t      *depth              = depthMap_.data() + border_ + ptrdiff_t{depthMapWidth_} * border_;
+  uint8_t      *ocm                = occupancyMap_.data() + border_ + ptrdiff_t{ depthMapWidth_ } * border_;
+  int16_t      *depth              = depthMap_.data() + border_ + ptrdiff_t{ depthMapWidth_ } * border_;
   for ( int32_t v0 = 0; v0 < sizeV0_; ++v0 ) {
     for ( int32_t u0 = 0; u0 < sizeU0_; ++u0 ) {
       const int32_t blockIndex = patchBlock2CanvasBlock( u0, v0, blockToPatchWidth, blockToPatchHeight );
       if ( blockToPatch[blockIndex] == patchIndexPlusOne ) {
         for ( int32_t v1 = 0; v1 < occupancyResByPres; v1++ ) {
-          const int32_t v2 = static_cast<int32_t>( v0 * occupancyResolution_ + static_cast<size_t>(v1) * occupancyPrecision );
+          const int32_t v2 =
+              static_cast<int32_t>( v0 * occupancyResolution_ + static_cast<size_t>( v1 ) * occupancyPrecision );
           for ( int32_t u1 = 0; u1 < occupancyResByPres; u1++ ) {
-            const int32_t u2 = static_cast<int32_t>( u0 * occupancyResolution_ + static_cast<size_t>(u1) * occupancyPrecision );
-            size_t        x, y;
+            const int32_t u2 =
+                static_cast<int32_t>( u0 * occupancyResolution_ + static_cast<size_t>( u1 ) * occupancyPrecision );
+            size_t x, y;
             patch2Canvas( u2, v2, width, height, x, y );
             if ( occupancyMapVideo[( y >> shiftPrecision ) * ocmWidth + ( x >> shiftPrecision )] > threhold ) {
               setDepthFromGeometryVideo( geometryVideo, u2, v2, width, height, occupancyPrecision, depth );
