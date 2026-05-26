@@ -740,7 +740,7 @@ Bool PCCHMLibVideoEncoderCfg::parseCfg( Int argc, TChar *argv[] ) {
   SMultiValueInputHM<UInt> cfg_rwpSEIRwpBottomGuardBandHeight( 0, std::numeric_limits<UChar>::max(), 0,
                                                                std::numeric_limits<UChar>::max() );
   SMultiValueInputHM<Bool> cfg_rwpSEIRwpGuardBandNotUsedForPredFlag( 0, 1, 0, std::numeric_limits<UChar>::max() );
-  SMultiValueInputHM<UInt> cfg_rwpSEIRwpGuardBandType( 0, 7, 0, 4 * std::numeric_limits<UChar>::max() );
+  SMultiValueInputHM<UInt> cfg_rwpSEIRwpGuardBandType( 0, 7, 0, size_t{4} * std::numeric_limits<UChar>::max() );
 #endif
   Int         warnUnknowParameter = 0;
   po::Options opts;
@@ -1886,7 +1886,7 @@ Bool PCCHMLibVideoEncoderCfg::parseCfg( Int argc, TChar *argv[] ) {
     m_rwpSEIRwpTopGuardBandHeight.resize( m_rwpSEINumPackedRegions );
     m_rwpSEIRwpBottomGuardBandHeight.resize( m_rwpSEINumPackedRegions );
     m_rwpSEIRwpGuardBandNotUsedForPredFlag.resize( m_rwpSEINumPackedRegions );
-    m_rwpSEIRwpGuardBandType.resize( 4 * m_rwpSEINumPackedRegions );
+    m_rwpSEIRwpGuardBandType.resize( size_t{4} * m_rwpSEINumPackedRegions );
     for ( Int i = 0; i < m_rwpSEINumPackedRegions; i++ ) {
       m_rwpSEIRwpTransformType[i] = cfg_rwpSEIRwpTransformType.values[i];
       assert( m_rwpSEIRwpTransformType[i] >= 0 && m_rwpSEIRwpTransformType[i] <= 7 );

@@ -1502,10 +1502,10 @@ bool PCCAdaptation::sphericalHarmonicsInvTransform2D( PCCPointSetGS             
 
 bool PCCAdaptation::extractSHQuantRegions( const PCCPointSetGS &input, PCCAdaptationParameters &params ) {
   if ( !params.enableShNonUniformQuantization_ ) {
-    params.shNumRegionsMinus1_.assign( 16 * 3, 0 );
+    params.shNumRegionsMinus1_.assign( size_t{16} * 3, 0 );
     params.shTransitionPoints_.clear();
     params.shStepSizes_.clear();
-    params.shNumBitsForTransitionPoint_.assign( 16 * 3, 10 );
+    params.shNumBitsForTransitionPoint_.assign( size_t{16} * 3, 10 );
     return true;
   }
 
@@ -1516,9 +1516,9 @@ bool PCCAdaptation::extractSHQuantRegions( const PCCPointSetGS &input, PCCAdapta
   const uint32_t bitDepth      = params.shBitDepth_;
   const uint32_t max_quant_val = ( 1u << bitDepth ) - 1;
 
-  params.shNumRegionsMinus1_.assign( 16 * 3, 2 );
+  params.shNumRegionsMinus1_.assign( size_t{16} * 3, 2 );
   params.shTransitionPoints_.clear();
-  params.shStepSizes_.assign( 16 * 9, 0.0 );
+  params.shStepSizes_.assign( size_t{16} * 9, 0.0 );
   for ( size_t i = 0; i < 16; ++i ) {
     params.shStepSizes_[i * 9 + 0] = 0.015625;
     params.shStepSizes_[i * 9 + 1] = 0.0078125;
@@ -1530,7 +1530,7 @@ bool PCCAdaptation::extractSHQuantRegions( const PCCPointSetGS &input, PCCAdapta
     params.shStepSizes_[i * 9 + 7] = 0.0078125;
     params.shStepSizes_[i * 9 + 8] = 0.015625;
   }
-  params.shNumBitsForTransitionPoint_.assign( 16 * 3, 10 );
+  params.shNumBitsForTransitionPoint_.assign( size_t{16} * 3, 10 );
 
   double       sum1 = 0.0, sumSq1 = 0.0;
   double       sum3 = 0.0, sumSq3 = 0.0;

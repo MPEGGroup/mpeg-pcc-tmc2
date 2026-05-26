@@ -381,9 +381,9 @@ void PCCVideoEncoder::patchBasedUpsample( PCCVideo<T, 3> &video,
     // now performing up-sampling according to the patch index
     for ( size_t i = 0; i < newHeight; i++ ) {
       for ( size_t j = 0; j < newWidth; j++ ) {
-        int lowResI = ( 2 * i + ratioH ) / ( 2 * ratioH );
+        int lowResI = ( 2 * i + ratioH ) / ( size_t{2} * ratioH );
         if ( lowResI > ( newHeight / ratioH ) - 1 ) lowResI = ( newHeight / ratioH ) - 1;
-        int lowResJ = ( 2 * j + ratioW ) / ( 2 * ratioW );
+        int lowResJ = ( 2 * j + ratioW ) / ( size_t{2} * ratioW );
         if ( lowResJ > ( newWidth / ratioW ) - 1 ) lowResJ = ( newWidth / ratioW ) - 1;
         int refIndex = pixelToPatchLowRes[lowResI * ( newWidth / ratioW ) + lowResJ];
         int curIndex = pixelToPatchHighRes[i * newWidth + j];

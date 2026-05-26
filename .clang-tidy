@@ -7,7 +7,6 @@ Checks: '
     -bugprone-derived-method-shadowing-base-method,
     -bugprone-easily-swappable-parameters,
     -bugprone-exception-escape,
-    -bugprone-implicit-widening-of-multiplication-result,
     -bugprone-incorrect-roundings,
     -bugprone-integer-division,
     -bugprone-macro-parentheses,
