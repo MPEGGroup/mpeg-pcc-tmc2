@@ -2133,6 +2133,20 @@ int PCCDecoder::ReconstructIdc3( PCCContext &context, PCCGroupOfFrames &reconstr
             for ( size_t i = 0; i < 3; i++ ) {
               adaptationParams.computedScaleMin_[i] = dequant.getMinScale( i );
               adaptationParams.computedScaleMax_[i] = dequant.getMaxScale( i );
+              uint32_t M                            = dequant.getScaleNumQuantRegionsMinus1( i );
+              adaptationParams.scaleNumRegionsMinus1_.push_back( M );
+              adaptationParams.scaleNumBitsForTransitionPoint_.push_back(
+                  dequant.getScaleNumBitsForTransitionPoint( i ) );
+              if ( M > 0 ) {
+                adaptationParams.enableScaleNonUniformQuantization_ = true;
+                for ( size_t m = 0; m < M; m++ ) {
+                  adaptationParams.scaleTransitionPoints_.push_back(
+                      dequant.getScaleQuantRegionTransitionPoint( i, m ) );
+                }
+                for ( size_t m = 0; m < M + 1; m++ ) {
+                  adaptationParams.scaleStepSizes_.push_back( dequant.getScaleRegionStepSize( i, m ) );
+                }
+              }
             }
           }
 

@@ -2885,9 +2885,30 @@ void PCCBitstreamWriter::gsDequantization( PCCBitstream &bitstream, GsDequantiza
     }
     WRITE_CODE( gsd.getScalePresentFlag(), 1 );
     if ( gsd.getScalePresentFlag() ) {
+      WRITE_CODE( gsd.getScaleSameNumQuantRegionMinus1_(), 1 );
+      WRITE_CODE( gsd.getScaleSameNumBitsForTransitionPoint_(), 1 );
+      if ( gsd.getScaleSameNumQuantRegionMinus1_() ) {
+        if ( gsd.getScaleSameNumBitsForTransitionPoint_() )
+          WRITE_CODE( gsd.getScaleSameQuantRegionTransitionPoint_(), 1 );
+        WRITE_CODE( gsd.getScaleSameRegionStepSize_(), 1 );
+      }
       for ( int i = 0; i < 3; i++ ) {
         WRITE_FLOAT( gsd.getMinScale( i ) );
         WRITE_FLOAT( gsd.getMaxScale( i ) );
+        if ( ( i == 0 ) || !gsd.getScaleSameNumQuantRegionMinus1_() )
+          WRITE_UVLC( gsd.getScaleNumQuantRegionsMinus1( i ) );
+        if ( gsd.getScaleNumQuantRegionsMinus1( i ) ) {
+          uint16_t numBitsForTransitionPoint = gsd.getScaleNumBitsForTransitionPoint( i );
+          if ( ( i == 0 ) || !gsd.getScaleSameNumBitsForTransitionPoint_() ) WRITE_CODE( numBitsForTransitionPoint, 4 );
+          if ( ( i == 0 ) || !gsd.getScaleSameQuantRegionTransitionPoint_() )
+            for ( int j = 0; j < gsd.getScaleNumQuantRegionsMinus1( i ); j++ ) {
+              WRITE_CODE( gsd.getScaleQuantRegionTransitionPoint( i, j ), numBitsForTransitionPoint );
+            }
+          if ( ( i == 0 ) || !gsd.getScaleSameRegionStepSize_() )
+            for ( int j = 0; j < gsd.getScaleNumQuantRegionsMinus1( i ) + 1; j++ ) {
+              WRITE_FLOAT( gsd.getScaleRegionStepSize( i, j ) );
+            }
+        }
       }
     }
     WRITE_CODE( gsd.getOpacityPresentFlag(), 1 );

@@ -281,6 +281,76 @@ void PCCGSHlsBuilder::initializeAtlasAapsHls( PCCHighLevelSyntax            &hls
       dequant.setMinScale( i, adaptationParams.computedScaleMin_[i] );
       dequant.setMaxScale( i, adaptationParams.computedScaleMax_[i] );
     }
+    if ( adaptationParams.enableScaleNonUniformQuantization_ ) {
+      bool sameScaleNumQuantRegionsMinus1 = true;
+      for ( int i = 1; i < 3; i++ ) {
+        if ( adaptationParams.scaleNumRegionsMinus1_[i] != adaptationParams.scaleNumRegionsMinus1_[0] ) {
+          sameScaleNumQuantRegionsMinus1 = false;
+          break;
+        }
+      }
+      dequant.setScaleSameNumQuantRegionMinus1_( sameScaleNumQuantRegionsMinus1 );
+
+      bool sameScaleNumBitsForTransitionPoint_ = true;
+      for ( int i = 1; i < 3; i++ ) {
+        if ( adaptationParams.scaleNumBitsForTransitionPoint_[i] !=
+             adaptationParams.scaleNumBitsForTransitionPoint_[0] ) {
+          sameScaleNumBitsForTransitionPoint_ = false;
+          break;
+        }
+      }
+      dequant.setScaleSameNumBitsForTransitionPoint_( sameScaleNumBitsForTransitionPoint_ );
+
+      if ( sameScaleNumQuantRegionsMinus1 ) {
+        int M = adaptationParams.scaleNumRegionsMinus1_[0];
+        if ( sameScaleNumBitsForTransitionPoint_ ) {
+          bool sameScaleQuantRegionTransitionPoint = true;
+          for ( int i = 1; i < 3 && sameScaleQuantRegionTransitionPoint; i++ ) {
+            for ( int j = 0; j < M; j++ ) {
+              if ( adaptationParams.scaleTransitionPoints_[i * M + j] != adaptationParams.scaleTransitionPoints_[j] ) {
+                sameScaleQuantRegionTransitionPoint = false;
+                break;
+              }
+            }
+          }
+          dequant.setScaleSameQuantRegionTransitionPoint_( sameScaleQuantRegionTransitionPoint );
+        } else {
+          dequant.setScaleSameQuantRegionTransitionPoint_( false );
+        }
+
+        bool sameScaleRegionStepSize = true;
+        for ( int i = 1; i < 3 && sameScaleRegionStepSize; i++ ) {
+          for ( int j = 0; j < ( M + 1 ); j++ ) {
+            if ( adaptationParams.scaleStepSizes_[i * ( M + 1 ) + j] != adaptationParams.scaleStepSizes_[j] ) {
+              sameScaleRegionStepSize = false;
+              break;
+            }
+          }
+        }
+        dequant.setScaleSameRegionStepSize_( sameScaleRegionStepSize );
+      } else {
+        dequant.setScaleSameQuantRegionTransitionPoint_( false );
+        dequant.setScaleSameRegionStepSize_( false );
+      }
+
+      for ( int i = 0; i < 3; i++ ) {
+        int M = adaptationParams.scaleNumRegionsMinus1_[i];
+        dequant.setScaleNumQuantRegionsMinus1( i, M );
+        dequant.setScaleNumBitsForTransitionPoint( i, adaptationParams.scaleNumBitsForTransitionPoint_[i] );
+        for ( int j = 0; j < M; j++ ) {
+          dequant.setScaleQuantRegionTransitionPoint( i, j, adaptationParams.scaleTransitionPoints_[i * M + j] );
+        }
+        for ( int j = 0; j < M + 1; j++ ) {
+          dequant.setScaleRegionStepSize( i, j, adaptationParams.scaleStepSizes_[i * ( M + 1 ) + j] );
+        }
+      }
+    } else {
+      dequant.setScaleSameNumQuantRegionMinus1_( false );
+      dequant.setScaleSameNumBitsForTransitionPoint_( false );
+      dequant.setScaleSameQuantRegionTransitionPoint_( false );
+      dequant.setScaleSameRegionStepSize_( false );
+      for ( int i = 0; i < 3; i++ ) { dequant.setScaleNumQuantRegionsMinus1( i, 0 ); }
+    }
   }
 
   if ( adaptationParams.enableRotationQuantization_ ) {

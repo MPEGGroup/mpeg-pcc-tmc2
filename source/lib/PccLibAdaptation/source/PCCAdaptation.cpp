@@ -122,6 +122,33 @@ bool PCCAdaptationParameters::writeConfig( const std::string &filename ) const {
       << computedRotationMax_[2] << ", " << computedRotationMax_[3] << "]\n";
   ofs << "    }";
 
+  // Scale non-uniform quantization
+  if ( enableScaleNonUniformQuantization_ ) {
+    ofs << ",\n";
+    ofs << "    \"scale_quant_regions\": {\n";
+    ofs << "      \"num_regions_minus_1\": [";
+    for ( size_t i = 0; i < scaleNumRegionsMinus1_.size(); ++i ) {
+      ofs << scaleNumRegionsMinus1_[i] << ( i < scaleNumRegionsMinus1_.size() - 1 ? ", " : "" );
+    }
+    ofs << "],\n";
+    ofs << "      \"transition_points\": [";
+    for ( size_t i = 0; i < scaleTransitionPoints_.size(); ++i ) {
+      ofs << scaleTransitionPoints_[i] << ( i < scaleTransitionPoints_.size() - 1 ? ", " : "" );
+    }
+    ofs << "],\n";
+    ofs << "      \"step_sizes\": [";
+    for ( size_t i = 0; i < scaleStepSizes_.size(); ++i ) {
+      ofs << scaleStepSizes_[i] << ( i < scaleStepSizes_.size() - 1 ? ", " : "" );
+    }
+    ofs << "],\n";
+    ofs << "      \"num_bits_for_transition_point\": [";
+    for ( size_t i = 0; i < scaleNumBitsForTransitionPoint_.size(); ++i ) {
+      ofs << scaleNumBitsForTransitionPoint_[i] << ( i < scaleNumBitsForTransitionPoint_.size() - 1 ? ", " : "" );
+    }
+    ofs << "]\n";
+    ofs << "    }";
+  }
+
   if ( enableShNonUniformQuantization_ ) {
     ofs << ",\n";
     ofs << "    \"sh_quant_regions\": {\n";
@@ -363,6 +390,17 @@ bool PCCAdaptationParameters::readConfig( const std::string &filename ) {
       parseFloatArray( rotMaxPos, computedRotationMax_.data(), 4 );
     }
 
+    // Scale non-uniform quantization
+    size_t scaleQuantRegionsPos = content.find( "\"scale_quant_regions\"", limitsPos );
+    if ( scaleQuantRegionsPos != std::string::npos ) {
+      enableScaleNonUniformQuantization_ = true;
+      parseIntVector( findValue( "num_regions_minus_1", scaleQuantRegionsPos ), scaleNumRegionsMinus1_ );
+      parseIntVector( findValue( "transition_points", scaleQuantRegionsPos ), scaleTransitionPoints_ );
+      parseFloatVector( findValue( "step_sizes", scaleQuantRegionsPos ), scaleStepSizes_ );
+      parseIntVector( findValue( "num_bits_for_transition_point", scaleQuantRegionsPos ),
+                      scaleNumBitsForTransitionPoint_ );
+    }
+
     // SH non-uniform quantization
     size_t shQuantRegionsPos = content.find( "\"sh_quant_regions\"", limitsPos );
     if ( shQuantRegionsPos != std::string::npos ) {
@@ -497,6 +535,7 @@ bool PCCAdaptation::adapt( const PCCPointSetGS     &inputPointCloud,
 
   // Apply scale quantization
   if ( params.enableScaleQuantization_ && inputPointCloud.hasScales() ) {
+    extractScaleQuantRegions( inputPointCloud, params );
     if ( !quantizeScales( inputPointCloud, outputPointCloud, params ) ) {
       std::cerr << "PCCAdaptation::adapt - Scale quantization failed" << std::endl;
       return false;
@@ -822,13 +861,76 @@ bool PCCAdaptation::quantizeScales( const PCCPointSetGS     &input,
 
   const uint32_t bitDepth = params.scaleBitDepth_;
 
+  struct ScaleQuantRegion {
+    std::vector<double> region_start_real;
+    std::vector<double> region_end_real;
+    std::vector<int>    start_int;
+    std::vector<int>    end_int;
+    std::vector<double> step_size;
+  };
+  std::array<ScaleQuantRegion, 3> scaleRegions;
+  const uint32_t                  max_quant_val = ( 1u << bitDepth ) - 1;
+
+  if ( params.enableScaleNonUniformQuantization_ ) {
+    for ( size_t ch = 0; ch < 3; ++ch ) {
+      const int num_regions_minus1 = params.scaleNumRegionsMinus1_[ch];
+      for ( size_t r = 0; r < num_regions_minus1; ++r ) {
+        double step_size = params.scaleStepSizes_[ch * ( num_regions_minus1 + 1 ) + r];
+
+        if ( r == 0 ) {
+          scaleRegions[ch].start_int.push_back( 0 );
+          scaleRegions[ch].region_start_real.push_back( params.computedScaleMin_[ch] );
+          scaleRegions[ch].step_size.push_back( step_size );
+        }
+
+        int current_region_offset = params.scaleTransitionPoints_[ch * num_regions_minus1 + r];
+        scaleRegions[ch].start_int.push_back( current_region_offset );
+        scaleRegions[ch].end_int.push_back( current_region_offset - 1 );
+
+        if ( r > 0 ) current_region_offset -= params.scaleTransitionPoints_[ch * num_regions_minus1 + r - 1];
+
+        double next_region_start_real =
+            scaleRegions[ch].region_start_real[scaleRegions[ch].region_start_real.size() - 1];
+        next_region_start_real += ( step_size * current_region_offset );
+        scaleRegions[ch].region_start_real.push_back( next_region_start_real );
+        scaleRegions[ch].region_end_real.push_back( next_region_start_real );
+
+        double step_size_next = params.scaleStepSizes_[ch * ( num_regions_minus1 + 1 ) + r + 1];
+        scaleRegions[ch].step_size.push_back( step_size_next );
+
+        if ( r == ( num_regions_minus1 - 1 ) ) {
+          scaleRegions[ch].region_end_real.push_back( params.computedScaleMax_[ch] );
+          scaleRegions[ch].end_int.push_back( max_quant_val );
+        }
+      }
+    }
+  }
+
   for ( size_t i = 0; i < pointCount; ++i ) {
     const GSScale    &scale = input.getScales()[i];
     PCCAttribute16bit qScale;
 
     for ( int k = 0; k < 3; ++k ) {
-      double normalized = normalizeToUnit( scale[k], params.computedScaleMin_[k], params.computedScaleMax_[k] );
-      qScale[k]         = static_cast<uint16_t>( quantizeValue( normalized, bitDepth ) );
+      if ( params.enableScaleNonUniformQuantization_ ) {
+        int num_regions_minus1 = params.scaleNumRegionsMinus1_[k];
+        if ( num_regions_minus1 == 0 ) {
+          double normalized = normalizeToUnit( scale[k], params.computedScaleMin_[k], params.computedScaleMax_[k] );
+          qScale[k]         = static_cast<uint16_t>( quantizeValue( normalized, bitDepth ) );
+        } else {
+          const auto &region     = scaleRegions[k];
+          double      q_val      = scale[k];
+          int         region_idx = 0;
+          while ( region_idx < num_regions_minus1 && q_val >= region.region_end_real[region_idx] ) { region_idx++; }
+          int    previouds_idx = region.start_int[region_idx];
+          double step_size     = region.step_size[region_idx];
+          double base_real     = region.region_start_real[region_idx];
+          q_val                = std::round( ( q_val - base_real ) / step_size + previouds_idx );
+          qScale[k] = static_cast<uint16_t>( std::max( 0.0, std::min( static_cast<double>( max_quant_val ), q_val ) ) );
+        }
+      } else {
+        double normalized = normalizeToUnit( scale[k], params.computedScaleMin_[k], params.computedScaleMax_[k] );
+        qScale[k]         = static_cast<uint16_t>( quantizeValue( normalized, bitDepth ) );
+      }
     }
 
     output.setScale( i, qScale );
@@ -843,13 +945,75 @@ bool PCCAdaptation::dequantizeScales( const PCCPointSet3            &input,
   const size_t   pointCount = input.getPointCount();
   const uint32_t bitDepth   = params.scaleBitDepth_;
 
+  struct ScaleQuantRegion {
+    std::vector<double> region_start_real;
+    std::vector<double> region_end_real;
+    std::vector<int>    start_int;
+    std::vector<int>    end_int;
+    std::vector<double> step_size;
+  };
+  std::array<ScaleQuantRegion, 3> scaleRegions;
+  const uint32_t                  max_quant_val = ( 1u << bitDepth ) - 1;
+
+  if ( params.enableScaleNonUniformQuantization_ ) {
+    for ( size_t ch = 0; ch < 3; ++ch ) {
+      const int num_regions_minus1 = params.scaleNumRegionsMinus1_[ch];
+      for ( size_t r = 0; r < num_regions_minus1; ++r ) {
+        double step_size = params.scaleStepSizes_[ch * ( num_regions_minus1 + 1 ) + r];
+
+        if ( r == 0 ) {
+          scaleRegions[ch].start_int.push_back( 0 );
+          scaleRegions[ch].region_start_real.push_back( params.computedScaleMin_[ch] );
+          scaleRegions[ch].step_size.push_back( step_size );
+        }
+
+        int current_region_offset = params.scaleTransitionPoints_[ch * num_regions_minus1 + r];
+        scaleRegions[ch].start_int.push_back( current_region_offset );
+        scaleRegions[ch].end_int.push_back( current_region_offset - 1 );
+
+        if ( r > 0 ) current_region_offset -= params.scaleTransitionPoints_[ch * num_regions_minus1 + r - 1];
+
+        double next_region_start_real =
+            scaleRegions[ch].region_start_real[scaleRegions[ch].region_start_real.size() - 1];
+        next_region_start_real += ( step_size * current_region_offset );
+        scaleRegions[ch].region_start_real.push_back( next_region_start_real );
+        scaleRegions[ch].region_end_real.push_back( next_region_start_real );
+
+        double step_size_next = params.scaleStepSizes_[ch * ( num_regions_minus1 + 1 ) + r + 1];
+        scaleRegions[ch].step_size.push_back( step_size_next );
+
+        if ( r == ( num_regions_minus1 - 1 ) ) {
+          scaleRegions[ch].region_end_real.push_back( params.computedScaleMax_[ch] );
+          scaleRegions[ch].end_int.push_back( max_quant_val );
+        }
+      }
+    }
+  }
+
   for ( size_t i = 0; i < pointCount; ++i ) {
     const auto &qScale = input.getScale( i );
     GSScale    &scale  = output.getScales()[i];
 
     for ( int k = 0; k < 3; ++k ) {
-      double normalized = dequantizeValue( qScale[k], bitDepth );
-      scale[k]          = denormalizeFromUnit( normalized, params.computedScaleMin_[k], params.computedScaleMax_[k] );
+      if ( params.enableScaleNonUniformQuantization_ ) {
+        int num_regions_minus1 = params.scaleNumRegionsMinus1_[k];
+        if ( num_regions_minus1 == 0 ) {
+          double normalized = normalizeToUnit( qScale[k], params.computedScaleMin_[k], params.computedScaleMax_[k] );
+          scale[k]          = static_cast<uint16_t>( quantizeValue( normalized, bitDepth ) );
+        } else {
+          const auto &region     = scaleRegions[k];
+          int         region_idx = 0;
+          double      q_val      = qScale[k];
+          while ( region_idx < num_regions_minus1 && q_val > region.end_int[region_idx] ) { region_idx++; }
+          int    previous_idx = region.start_int[region_idx];
+          double step_size    = region.step_size[region_idx];
+          double base_real    = region.region_start_real[region_idx];
+          scale[k]            = ( q_val - previous_idx ) * step_size + base_real;
+        }
+      } else {
+        double normalized = dequantizeValue( qScale[k], bitDepth );
+        scale[k]          = denormalizeFromUnit( normalized, params.computedScaleMin_[k], params.computedScaleMax_[k] );
+      }
     }
   }
 
@@ -1633,6 +1797,47 @@ bool PCCAdaptation::extractSHQuantRegions( const PCCPointSetGS &input, PCCAdapta
           std::max( 0, std::min( static_cast<int>( max_quant_val ), tp_low_quant ) ) );
       params.shTransitionPoints_.push_back(
           std::max( 0, std::min( static_cast<int>( max_quant_val ), tp_high_quant ) ) );
+    }
+  }
+
+  return true;
+}
+
+// Extract the non-uniform quantization params for scale
+// Default config: 3 regions, [min, -10] step_size_base * 8, [-10, -7] step_size_base * 2, [-7, max] step_size_base
+bool PCCAdaptation::extractScaleQuantRegions( const PCCPointSetGS &input, PCCAdaptationParameters &params ) {
+  if ( !params.enableScaleNonUniformQuantization_ ) {
+    params.scaleNumRegionsMinus1_.assign( 3, 0 );
+    params.scaleTransitionPoints_.clear();
+    params.scaleStepSizes_.clear();
+    params.scaleNumBitsForTransitionPoint_.assign( 3, 10 );
+    return true;
+  }
+
+  const size_t pointCount = input.getPointCount();
+  if ( pointCount == 0 || !input.hasScales() ) return false;
+
+  const uint32_t bitDepth      = params.scaleBitDepth_;
+  const uint32_t max_quant_val = ( 1u << bitDepth ) - 1;
+
+  params.scaleNumRegionsMinus1_.assign( 3, 2 );
+  params.scaleTransitionPoints_.clear();
+  params.scaleStepSizes_.assign( size_t{ 3 } * 3, 0.0 );
+  for ( size_t ch = 0; ch < 3; ++ch ) {
+    double step_size_base              = ( params.scaleLimitMax_[ch] - params.scaleLimitMin_[ch] ) / max_quant_val;
+    params.scaleStepSizes_[ch * 3 + 0] = step_size_base * 8;
+    params.scaleStepSizes_[ch * 3 + 1] = step_size_base * 2;
+    params.scaleStepSizes_[ch * 3 + 2] = step_size_base;
+  }
+  params.scaleNumBitsForTransitionPoint_.assign( 3, 10 );
+
+  for ( size_t ch = 0; ch < 3; ++ch ) {
+    std::vector<double> ranges            = { params.scaleLimitMin_[ch], -10, -7, params.scaleLimitMax_[ch] };
+    int                 cumulative_offset = 0;
+    for ( size_t r = 0; r < 2; ++r ) {
+      cumulative_offset +=
+          static_cast<int>( std::round( ( ranges[r + 1] - ranges[r] ) / params.scaleStepSizes_[ch * 3 + r] ) );
+      params.scaleTransitionPoints_.push_back( cumulative_offset );
     }
   }
 

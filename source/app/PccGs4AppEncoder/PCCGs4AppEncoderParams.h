@@ -284,7 +284,10 @@ bool parseParameters( int                           argc,
       encoderParams.encodeLinearOpacity_,
       false,
       "Enable linear opacity encoding")
-
+    ( "enableScaleNonUniformQuantization",
+      encoderParams.enableScaleNonUniformQuantization_,
+      false,
+      "Enable non-uniform quantization for Scale (m76123)" )
     ( "keepIntermediateFiles",
       encoderParams.keepIntermediateFiles_,
       encoderParams.keepIntermediateFiles_,

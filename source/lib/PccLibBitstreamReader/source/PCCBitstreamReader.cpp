@@ -2874,11 +2874,60 @@ void PCCBitstreamReader::gsDequantization( PCCBitstream &bitstream, GsDequantiza
     READ_CODE_DESC( value, 1, "ScalePresentFlag" );
     gsd.setScalePresentFlag( value );
     if ( gsd.getScalePresentFlag() ) {
+      READ_CODE( value, 1 );
+      gsd.setScaleSameNumQuantRegionMinus1_( value );
+      READ_CODE( value, 1 );
+      gsd.setScaleSameNumBitsForTransitionPoint_( value );
+      if ( gsd.getScaleSameNumQuantRegionMinus1_() ) {
+        if ( gsd.getScaleSameNumBitsForTransitionPoint_() ) {
+          READ_CODE( value, 1 );
+          gsd.setScaleSameQuantRegionTransitionPoint_( value );
+        } else {
+          gsd.setScaleSameQuantRegionTransitionPoint_( false );
+        }
+        READ_CODE( value, 1 );
+        gsd.setScaleSameRegionStepSize_( value );
+      } else {
+        gsd.setScaleSameQuantRegionTransitionPoint_( false );
+        gsd.setScaleSameRegionStepSize_( false );
+      }
+      uint32_t numBitsForTransitionPoint{};
+      uint32_t numRegion{};
       for ( int i = 0; i < 3; i++ ) {
         READ_FLOAT_DESC( valueFlt, "MinScale" );
         gsd.setMinScale( i, valueFlt );
         READ_FLOAT_DESC( valueFlt, "MaxScale" );
         gsd.setMaxScale( i, valueFlt );
+        if ( ( i == 0 ) || !gsd.getScaleSameNumQuantRegionMinus1_() ) READ_UVLC( numRegion );
+        gsd.setScaleNumQuantRegionsMinus1( i, numRegion );
+        if ( gsd.getScaleNumQuantRegionsMinus1( i ) ) {
+          if ( ( i == 0 ) || !gsd.getScaleSameNumBitsForTransitionPoint_() ) READ_CODE( numBitsForTransitionPoint, 4 );
+          gsd.setScaleNumBitsForTransitionPoint( i, numBitsForTransitionPoint );
+          if ( ( i == 0 ) || !gsd.getScaleSameQuantRegionTransitionPoint_() ) {
+            for ( int j = 0; j < gsd.getScaleNumQuantRegionsMinus1( i ); j++ ) {
+              uint16_t transitionPoints;
+              READ_CODE( transitionPoints, numBitsForTransitionPoint );
+              gsd.setScaleQuantRegionTransitionPoint( i, j, transitionPoints );
+            }
+          } else {
+            for ( int j = 0; j < gsd.getScaleNumQuantRegionsMinus1( i ); j++ ) {
+              uint16_t transitionPoints = gsd.getScaleQuantRegionTransitionPoint( 0, j );
+              gsd.setScaleQuantRegionTransitionPoint( i, j, transitionPoints );
+            }
+          }
+          if ( ( i == 0 ) || !gsd.getScaleSameRegionStepSize_() ) {
+            for ( int j = 0; j < gsd.getScaleNumQuantRegionsMinus1( i ) + 1; j++ ) {
+              float stepSize;
+              READ_FLOAT( stepSize );
+              gsd.setScaleRegionStepSize( i, j, stepSize );
+            }
+          } else {
+            for ( int j = 0; j < gsd.getScaleNumQuantRegionsMinus1( i ) + 1; j++ ) {
+              float stepSize = gsd.getScaleRegionStepSize( 0, j );
+              gsd.setScaleRegionStepSize( i, j, stepSize );
+            }
+          }
+        }
       }
     }
     READ_CODE_DESC( value, 1, "OpacityPresentFlag" );

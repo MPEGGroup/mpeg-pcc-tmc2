@@ -183,6 +183,22 @@ struct PCCAdaptationParameters {
   std::array<double, 3> computedScaleMin_ = { 0.0, 0.0, 0.0 };
   std::array<double, 3> computedScaleMax_ = { 0.0, 0.0, 0.0 };
 
+  // ==================== Scale Non-Uniform Quantization ====================
+  /// Enable non-uniform quantization for Scale
+  bool enableScaleNonUniformQuantization_ = false;
+
+  /// Number of regions minus 1 for each Scale channel
+  std::vector<int> scaleNumRegionsMinus1_;
+
+  /// Transition points for multi-region quantization (quantized integer values)
+  std::vector<int> scaleTransitionPoints_;
+
+  /// Step sizes for each region
+  std::vector<double> scaleStepSizes_;
+
+  /// Number of bits used for transition points
+  std::vector<int> scaleNumBitsForTransitionPoint_;
+
   // ==================== Rotation Parameters ====================
   /// Bit depth for rotation quantization (default: 10)
   uint32_t rotationBitDepth_ = 10;
@@ -312,6 +328,9 @@ class PCCAdaptation {
 
   /// Extract SH quantization regions for non-uniform quantization
   bool extractSHQuantRegions( const PCCPointSetGS &input, PCCAdaptationParameters &params );
+
+  /// Extract Scale quantization regions for non-uniform quantization
+  bool extractScaleQuantRegions( const PCCPointSetGS &input, PCCAdaptationParameters &params );
 
   // ==================== Inverse Operations ====================
 
