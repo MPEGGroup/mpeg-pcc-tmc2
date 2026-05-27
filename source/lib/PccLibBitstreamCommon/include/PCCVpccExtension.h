@@ -127,6 +127,10 @@ class GsDequantization {
       dequantizationType_( 0 ),
       shMultipleRegionsEnableFlag_( false ),
       shSameMinMaxFlag_( false ),
+      shSameNumRegionMius1Flag_( false ),
+      shSameNumBitsForTransitionPointFlag_( false ),
+      shSameQuantRegionTransitionPointFlag_( false ),
+      shSameRegionStepSizeFlag_( false ),
       rotationPresentFlag_( false ),
       scalePresentFlag_( false ),
       opacityPresentFlag_( false ),
@@ -250,6 +254,10 @@ class GsDequantization {
   bool     getShPresentFlag() { return shPresentFlag_; }
   bool     getShMultipleRegionsEnableFlag() const { return shMultipleRegionsEnableFlag_; }
   bool     getShSameMinMaxFlag() const { return shSameMinMaxFlag_; }
+  bool     getShSameNumRegionMius1Flag() const { return shSameNumRegionMius1Flag_; }
+  bool     getShSameNumBitsForTransitionPointFlag() const { return shSameNumBitsForTransitionPointFlag_; }
+  bool     getShSameQuantRegionTransitionPointFlag() const { return shSameQuantRegionTransitionPointFlag_; }
+  bool     getShSameRegionStepSizeFlag() const { return shSameRegionStepSizeFlag_; }
   uint8_t  getShNumLvl() { return shNumLvl_; }
   uint8_t  getShNumChan( int i ) { return shNumChan_[i]; }
   float    getMinSh( int i, int j ) { return minSH_[i][j]; }
@@ -288,6 +296,10 @@ class GsDequantization {
   void setShPresentFlag( bool value ) { shPresentFlag_ = value; }
   void setShMultipleRegionsEnableFlag( bool value ) { shMultipleRegionsEnableFlag_ = value; }
   void setShSameMinMaxFlag( bool value ) { shSameMinMaxFlag_ = value; }
+  void setShSameNumRegionMius1Flag( bool value ) { shSameNumRegionMius1Flag_ = value; }
+  void setShSameNumBitsForTransitionPointFlag( bool value ) { shSameNumBitsForTransitionPointFlag_ = value; }
+  void setShSameQuantRegionTransitionPointFlag( bool value ) { shSameQuantRegionTransitionPointFlag_ = value; }
+  void setShSameRegionStepSizeFlag( bool value ) { shSameRegionStepSizeFlag_ = value; }
   void setShNumLvl( int value ) {
     shNumLvl_ = value;
     shNumChan_.resize( value, 0 );
@@ -346,6 +358,10 @@ class GsDequantization {
   bool                                            shPresentFlag_;
   bool                                            shMultipleRegionsEnableFlag_;
   bool                                            shSameMinMaxFlag_;
+  bool                                            shSameNumRegionMius1Flag_;
+  bool                                            shSameNumBitsForTransitionPointFlag_;
+  bool                                            shSameQuantRegionTransitionPointFlag_;
+  bool                                            shSameRegionStepSizeFlag_;
   uint32_t                                        shNumLvl_;
   std::vector<uint32_t>                           shNumChan_;
   std::vector<std::vector<float>>                 minSH_;

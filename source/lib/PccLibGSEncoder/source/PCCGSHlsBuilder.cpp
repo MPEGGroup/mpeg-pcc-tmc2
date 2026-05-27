@@ -234,6 +234,74 @@ void PCCGSHlsBuilder::initializeAtlasAapsHls( PCCHighLevelSyntax            &hls
   if ( adaptationParams.enableShQuantization_ ) {
     dequant.setShPresentFlag( true );
     dequant.setShMultipleRegionsEnableFlag( adaptationParams.enableShNonUniformQuantization_ );
+
+    if ( adaptationParams.enableShNonUniformQuantization_ ) {
+      // Compute shSameNumRegionMius1Flag
+      bool sameNumQuantRegions = true;
+      int  refNumRegions       = adaptationParams.shNumRegionsMinus1_[0];
+      for ( size_t idx = 1; idx < adaptationParams.shCoefficientCount_ * 3; idx++ ) {
+        if ( adaptationParams.shNumRegionsMinus1_[idx] != refNumRegions ) {
+          sameNumQuantRegions = false;
+          break;
+        }
+      }
+      dequant.setShSameNumRegionMius1Flag( sameNumQuantRegions );
+
+      // Compute shSameNumBitsForTransitionPointFlag
+      bool sameNumBits = true;
+      int  refNumBits  = adaptationParams.shNumBitsForTransitionPoint_[0];
+      for ( size_t idx = 1; idx < adaptationParams.shCoefficientCount_ * 3; idx++ ) {
+        if ( adaptationParams.shNumBitsForTransitionPoint_[idx] != refNumBits ) {
+          sameNumBits = false;
+          break;
+        }
+      }
+      dequant.setShSameNumBitsForTransitionPointFlag( sameNumBits );
+
+      // Compute shSameQuantRegionTransitionPointFlag
+      bool sameTransitionPoints = true;
+      int  tpRefOffset          = 0;
+      for ( size_t idx = 1; idx < adaptationParams.shCoefficientCount_ * 3; idx++ ) {
+        if ( adaptationParams.shNumRegionsMinus1_[idx] != refNumRegions ) {
+          sameTransitionPoints = false;
+          break;
+        }
+        int M        = adaptationParams.shNumRegionsMinus1_[idx];
+        int tpOffset = 0;
+        for ( size_t k = 0; k < idx; k++ ) { tpOffset += adaptationParams.shNumRegionsMinus1_[k]; }
+        for ( int m = 0; m < M; m++ ) {
+          if ( adaptationParams.shTransitionPoints_[tpOffset + m] !=
+               adaptationParams.shTransitionPoints_[tpRefOffset + m] ) {
+            sameTransitionPoints = false;
+            break;
+          }
+        }
+        if ( !sameTransitionPoints ) break;
+      }
+      dequant.setShSameQuantRegionTransitionPointFlag( sameTransitionPoints );
+
+      // Compute shSameRegionStepSizeFlag
+      bool sameStepSizes = true;
+      int  ssRefOffset   = 0;
+      for ( size_t idx = 1; idx < adaptationParams.shCoefficientCount_ * 3; idx++ ) {
+        if ( adaptationParams.shNumRegionsMinus1_[idx] != refNumRegions ) {
+          sameStepSizes = false;
+          break;
+        }
+        int M        = adaptationParams.shNumRegionsMinus1_[idx];
+        int ssOffset = 0;
+        for ( size_t k = 0; k < idx; k++ ) { ssOffset += adaptationParams.shNumRegionsMinus1_[k] + 1; }
+        for ( int m = 0; m < M + 1; m++ ) {
+          if ( adaptationParams.shStepSizes_[ssOffset + m] != adaptationParams.shStepSizes_[ssRefOffset + m] ) {
+            sameStepSizes = false;
+            break;
+          }
+        }
+        if ( !sameStepSizes ) break;
+      }
+      dequant.setShSameRegionStepSizeFlag( sameStepSizes );
+    }
+
     bool   sameMinMax = true;
     double minVal     = adaptationParams.computedShMin_[0][0];
     double maxVal     = adaptationParams.computedShMax_[0][0];
