@@ -1618,6 +1618,18 @@ bool PCCAdaptation::sphericalHarmonicsTransform( PCCPointSetGS &pointCloud, PCCA
           params.shTrGrpRow_  = newGroups;
           params.shTrTypeRow_ = newTrTypeRow;
           params.shKltFlag_.assign( newTrTypeRow.size(), 0 );
+        } else if ( params.adaptivePcaEnabled_ ) {
+          // Select global PCA vs group PCA based on inter-group correlation
+          double groupCorr = computeGroupCorr( pointCloud );
+          if ( groupCorr < 0.5 ) {
+            // low inter-group correlation → global PCA (all AC SH in one group)
+            std::vector<int> allAc;
+            for ( size_t l = 1; l < shCoefCount; ++l ) { allAc.push_back( static_cast<int>( l ) ); }
+            params.shTrGrpRow_  = { allAc };
+            params.shTrTypeRow_ = { 0 };
+            params.shKltFlag_   = { 1 };
+          }
+          // else: keep default group PCA (params already set by initializeShTransformParams)
         }
       }
     }
@@ -1658,6 +1670,70 @@ bool PCCAdaptation::sphericalHarmonicsInvTransform( PCCPointSetGS &pointCloud, c
     }
   }
   return true;
+}
+
+// Compute mean absolute correlation across default SH groups
+double PCCAdaptation::computeGroupCorr( const PCCPointSetGS &pointCloud ) {
+  const auto  &shData      = pointCloud.getSphericalHarmonics();
+  const size_t pointCount  = pointCloud.getPointCount();
+  const size_t shCoefCount = pointCloud.getSphericalHarmonicsCount();
+  if ( pointCount == 0 || shCoefCount <= 1 ) return 0.0;
+
+  const std::vector<std::vector<int>> defaultGroups = { { 1, 5, 11 }, { 3, 7, 13 }, { 4, 10 },
+                                                        { 8, 14 },    { 2, 6, 12 }, { 9, 15 } };
+
+  double groupCorrSum = 0.0;
+  int    groupCount   = 0;
+
+  for ( const auto &group : defaultGroups ) {
+    std::vector<int> validIdx;
+    for ( int g : group ) {
+      if ( static_cast<size_t>( g ) < shCoefCount ) validIdx.push_back( g );
+    }
+    if ( validIdx.size() < 2 ) continue;
+
+    auto cols = validIdx.size() * 3;
+
+    std::vector<double> mean( cols, 0.0 );
+    for ( size_t p = 0; p < pointCount; ++p ) {
+      for ( size_t j = 0; j < cols; ++j ) { mean[j] += shData[p][validIdx[j / 3]][j % 3]; }
+    }
+    for ( size_t j = 0; j < cols; ++j ) { mean[j] /= static_cast<double>( pointCount ); }
+
+    std::vector<double> cov( cols * cols, 0.0 );
+    std::vector<double> var( cols, 0.0 );
+    for ( size_t p = 0; p < pointCount; ++p ) {
+      std::vector<double> x( cols );
+      for ( size_t j = 0; j < cols; ++j ) { x[j] = shData[p][validIdx[j / 3]][j % 3] - mean[j]; }
+      for ( size_t r = 0; r < cols; ++r ) {
+        var[r] += x[r] * x[r];
+        for ( size_t c = r + 1; c < cols; ++c ) { cov[r * cols + c] += x[r] * x[c]; }
+      }
+    }
+    double N = static_cast<double>( pointCount );
+    for ( size_t j = 0; j < cols; ++j ) { var[j] /= N; }
+    for ( size_t r = 0; r < cols; ++r ) {
+      for ( size_t c = r + 1; c < cols; ++c ) { cov[r * cols + c] /= N; }
+    }
+
+    double corrSum   = 0.0;
+    int    pairCount = 0;
+    for ( size_t r = 0; r < cols; ++r ) {
+      for ( size_t c = r + 1; c < cols; ++c ) {
+        double denom = std::sqrt( var[r] * var[c] );
+        if ( denom > 1e-10 ) {
+          corrSum += std::abs( cov[r * cols + c] / denom );
+          ++pairCount;
+        }
+      }
+    }
+    if ( pairCount > 0 ) {
+      groupCorrSum += corrSum / static_cast<double>( pairCount );
+      ++groupCount;
+    }
+  }
+
+  return ( groupCount > 0 ) ? groupCorrSum / static_cast<double>( groupCount ) : 0.0;
 }
 
 bool PCCAdaptation::computeShKlt( const PCCPointSetGS                       &pointCloud,

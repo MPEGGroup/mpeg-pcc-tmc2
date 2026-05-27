@@ -97,6 +97,7 @@ int main( int argc, char *argv[] ) {
   // Map encoder flags to adaptation parameters
   adaptationParams.gsdTransform2dPresentFlag_      = encoderParams.gsdTransform2dPresentFlag_;
   adaptationParams.dataAdaptiveShTransformEnabled_ = encoderParams.dataAdaptiveShTransformEnabled_;
+  adaptationParams.adaptivePcaEnabled_             = encoderParams.adaptivePcaEnabled_;
   adaptationParams.enableShNonUniformQuantization_ = encoderParams.enableShNonUniformQuantization_;
   adaptationParams.encodeLinearOpacity_            = encoderParams.encodeLinearOpacity_;
   if ( encoderParams.encodeLinearOpacity_ ) {

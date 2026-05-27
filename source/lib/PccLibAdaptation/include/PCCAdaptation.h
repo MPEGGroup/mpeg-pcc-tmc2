@@ -99,6 +99,9 @@ struct PCCAdaptationParameters {
   /// Enable data adaptive SH transform (m75790)
   bool dataAdaptiveShTransformEnabled_ = false;
 
+  // Enable adaptive global/group PCA selection (m76164)
+  bool adaptivePcaEnabled_ = false;
+
   /// Column Transform type
   std::vector<int> shTrTypeCol_;
 
@@ -335,6 +338,9 @@ class PCCAdaptation {
   bool computeShKlt( const PCCPointSetGS                       &pointCloud,
                      const std::vector<int>                    &groupidx,
                      PCCAdaptationParameters::PCCKltParameters &klt );
+
+  // Compute mean absolute correlation across default SH groups
+  double computeGroupCorr( const PCCPointSetGS &pointCloud );
 
   /// Extract SH quantization regions for non-uniform quantization
   bool extractSHQuantRegions( const PCCPointSetGS &input, PCCAdaptationParameters &params );

@@ -91,6 +91,7 @@ struct PCCGSEncoderParameters {
   // Gaussian Splatting
   bool gsdTransform2dPresentFlag_;
   bool dataAdaptiveShTransformEnabled_;
+  bool adaptivePcaEnabled_;
   bool enableShNonUniformQuantization_;
   bool enableScaleNonUniformQuantization_;
   bool enableScalePowerTransform_ = false;
@@ -140,6 +141,7 @@ struct PCCGSEncoderParameters {
     gsColmapFolderPath_                  = "";
     gsdTransform2dPresentFlag_           = false;
     dataAdaptiveShTransformEnabled_      = false;
+    adaptivePcaEnabled_                  = false;
     enableShNonUniformQuantization_      = false;
     enableScaleNonUniformQuantization_   = false;
     enableScalePowerTransform_           = false;

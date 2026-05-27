@@ -276,6 +276,10 @@ bool parseParameters( int                           argc,
       encoderParams.dataAdaptiveShTransformEnabled_,
       false,
       "Enable data adaptive SH transform (m75790)" )
+    ( "adaptivePcaEnabled",
+      encoderParams.adaptivePcaEnabled_,
+      false,
+      "Enable adaptive global/group PCA selection (m76164)" )
     ( "enableShNonUniformQuantization",
       encoderParams.enableShNonUniformQuantization_,
       false,
