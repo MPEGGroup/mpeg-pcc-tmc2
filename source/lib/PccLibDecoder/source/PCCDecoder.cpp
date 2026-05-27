@@ -2196,6 +2196,15 @@ int PCCDecoder::ReconstructIdc3( PCCContext &context, PCCGroupOfFrames &reconstr
         adaptationParams.enableAdaptiveShQuantization_ = true;
         generateAdaptiveQuantizationInfofromRawPatchRecGS( context, frameIdx, pointCloud );
       }
+      if ( ext.getScaleTransformPresentFlag() ) {
+        addAdaptationParameters                     = true;
+        adaptationParams.enableScalePowerTransform_ = true;
+        auto &gsst                                  = ext.getGsScaleTransform();
+        for ( int k = 0; k < 3; ++k ) {
+          adaptationParams.computedScalePower_[k]         = static_cast<double>( gsst.getScalePower( k ) );
+          adaptationParams.computedScaleScalingFactor_[k] = static_cast<double>( gsst.getScaleScaling( k ) );
+        }
+      }
       if ( addAdaptationParameters ) adaptationParams_.push_back( adaptationParams );
     }
   }  // frameIdx

@@ -183,6 +183,16 @@ struct PCCAdaptationParameters {
   std::array<double, 3> computedScaleMin_ = { 0.0, 0.0, 0.0 };
   std::array<double, 3> computedScaleMax_ = { 0.0, 0.0, 0.0 };
 
+  // ==================== Scale Power Transform ====================
+  /// Enable power transform + 2-segment PLS for scale (m76151)
+  bool enableScalePowerTransform_ = false;
+
+  /// Computed power values per axis (set by encoder via R-D search, read from bitstream by decoder)
+  std::array<double, 3> computedScalePower_ = { 1.0, 1.0, 1.0 };
+
+  /// Scaling factor applied after power transform (gsst_scale_scaling, typically 1.0)
+  std::array<double, 3> computedScaleScalingFactor_ = { 1.0, 1.0, 1.0 };
+
   // ==================== Scale Non-Uniform Quantization ====================
   /// Enable non-uniform quantization for Scale
   bool enableScaleNonUniformQuantization_ = false;

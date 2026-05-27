@@ -427,6 +427,8 @@ class PCCBitstreamReader {
   static void gs2DTransform( PCCBitstream &bitstream, Gs2DTransform &gs2DTransform );
   // H.8.3.6.3.11 	Gaussian splat opacity property syntax
   static void gsOpacityProperty( PCCBitstream &bitstream, GsOpacityProperty &gsOpacityProperty );
+  // H.8.3.6.3.9  Gaussian splat scale transform syntax
+  static void gsScaleTransform( PCCBitstream &bitstream, GsScaleTransform &gsst );
   // H.8.3.9	Raw patch data unit V-PCC Gaussian Splat extension syntax
   static void rpduVpccGsExtension( PCCBitstream &bitstream, AapsVpccGsExtension &ext, RawPatchDataUnit &rpdu );
   // H.20.2	SEI payload syntax

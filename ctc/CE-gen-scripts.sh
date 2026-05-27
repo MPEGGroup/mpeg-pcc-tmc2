@@ -70,6 +70,7 @@ GSD_NON_UNIFORM_QUANT=1       # 1: enable m75025, 0: disable m75025
 ADAPTIVE_QUANTIZATION=1       # 1: enable m75039, 0: disable
 ANNOTATE_DIR=""               # m75039: path to directory of importance score files for each sequence. If string is empty, files are recomputed
 GSD_SCALE_NON_UNIFORM_QUANT=1 # 1: enable m76123, 0: disable m76123
+GSD_SCALE_POWER_TRANSFORM=1   # 1: enable m76151 power transform + 2-seg PLS (requires GSD_SCALE_NON_UNIFORM_QUANT=1), 0: disable
 
 # ==================================================================================================
 # Base directories
@@ -464,6 +465,7 @@ for SEQ in "${SEQUENCES[@]}"; do
                 echo "    --dataAdaptiveShTransformEnabled=$GSD_ADAPTIVE_SH \\"
                 echo "    --enableShNonUniformQuantization=$GSD_NON_UNIFORM_QUANT \\"
                 echo "    --enableScaleNonUniformQuantization=$GSD_SCALE_NON_UNIFORM_QUANT \\"
+                echo "    --enableScalePowerTransform=$GSD_SCALE_POWER_TRANSFORM \\"
                 echo "    --compressedStreamPath=$RESULT_DIR/${LENGTH}_${SEQ}_${RATE}.bin \\"
                 echo "    2>&1 | tee $RESULT_DIR/${LENGTH}_${SEQ}_${RATE}.encoder.log"
                 echo ""

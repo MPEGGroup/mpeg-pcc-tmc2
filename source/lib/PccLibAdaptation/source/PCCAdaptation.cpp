@@ -831,6 +831,193 @@ bool PCCAdaptation::applyCanonicalOrientation( PCCPointSetGS &pointCloud ) {
   return true;
 }
 
+// ── R-D optimal power search (port of Python find_optimal_power) ─────────────
+
+static void metricsForPower( double                     power,
+                             uint32_t                   numBins,
+                             double                     Q,
+                             double                     valRange,
+                             double                     valMin,
+                             size_t                     N,
+                             double                     sumWeights,
+                             double                     log10MaxVal,
+                             const std::vector<float>  &xSorted,
+                             const std::vector<double> &prefixW1,
+                             const std::vector<double> &prefixW2,
+                             const std::vector<double> &prefixW3,
+                             double                    &outPsnr,
+                             double                    &outEntropy ) {
+  const double        invP = 1.0 / power;
+  std::vector<size_t> splitIdx( numBins - 1 );
+  for ( uint32_t k = 1; k < numBins; ++k ) {
+    double edgeVal  = std::pow( ( k - 0.5 ) / Q, invP );
+    splitIdx[k - 1] = static_cast<size_t>(
+        std::lower_bound( xSorted.begin(), xSorted.end(), static_cast<float>( edgeVal ) ) - xSorted.begin() );
+  }
+  std::vector<size_t> starts( numBins ), ends( numBins );
+  starts[0]         = 0;
+  ends[numBins - 1] = N;
+  for ( uint32_t k = 1; k < numBins; ++k ) {
+    starts[k]   = splitIdx[k - 1];
+    ends[k - 1] = splitIdx[k - 1];
+  }
+  double entropy = 0.0;
+  for ( uint32_t k = 0; k < numBins; ++k ) {
+    size_t count = ends[k] - starts[k];
+    if ( count > 0 ) {
+      double prob = static_cast<double>( count ) / static_cast<double>( N );
+      entropy -= prob * std::log2( std::max( prob, 1e-12 ) );
+    }
+  }
+  double totalWeightedError = 0.0;
+  for ( uint32_t q = 0; q < numBins; ++q ) {
+    size_t l = starts[q], r = ends[q];
+    if ( l >= r ) continue;
+    double s1    = prefixW1[r] - prefixW1[l];
+    double s2    = prefixW2[r] - prefixW2[l];
+    double s3    = prefixW3[r] - prefixW3[l];
+    double qNorm = std::max( std::min( static_cast<double>( q ) / Q, 1.0 ), 1e-7 );
+    double rec   = std::exp( std::pow( qNorm, invP ) * valRange + valMin );
+    totalWeightedError += s3 - 2.0 * rec * s2 + rec * rec * s1;
+  }
+  double weightedMse = totalWeightedError / sumWeights;
+  outPsnr            = 20.0 * ( log10MaxVal - 0.5 * std::log10( std::max( weightedMse, 1e-12 ) ) );
+  outEntropy         = entropy;
+}
+
+static double findBestPowerFromGrid( const std::vector<float>  &powerGrid,
+                                     double                     baselineRate,
+                                     double                     baselinePsnr,
+                                     uint32_t                   numBins,
+                                     double                     Q,
+                                     double                     valRange,
+                                     double                     valMin,
+                                     size_t                     N,
+                                     double                     sumWeights,
+                                     double                     log10MaxVal,
+                                     const std::vector<float>  &xSorted,
+                                     const std::vector<double> &prefixW1,
+                                     const std::vector<double> &prefixW2,
+                                     const std::vector<double> &prefixW3,
+                                     double                     rateMin,
+                                     double                     ratePtp,
+                                     double                     psnrMin,
+                                     double                     psnrPtp,
+                                     bool                       useNormParams,
+                                     double                    &outRateMin,
+                                     double                    &outRatePtp,
+                                     double                    &outPsnrMin,
+                                     double                    &outPsnrPtp ) {
+  std::vector<double> psnrVals( powerGrid.size() ), rateVals( powerGrid.size() );
+  for ( size_t i = 0; i < powerGrid.size(); ++i ) {
+    metricsForPower( powerGrid[i], numBins, Q, valRange, valMin, N, sumWeights, log10MaxVal, xSorted, prefixW1,
+                     prefixW2, prefixW3, psnrVals[i], rateVals[i] );
+  }
+  std::vector<double> rateGain, psnrDrop;
+  std::vector<float>  validPowers;
+  for ( size_t i = 0; i < powerGrid.size(); ++i ) {
+    double rg = baselineRate - rateVals[i];
+    if ( rg > 0.0 ) {
+      rateGain.push_back( rg );
+      psnrDrop.push_back( baselinePsnr - psnrVals[i] );
+      validPowers.push_back( powerGrid[i] );
+    }
+  }
+  if ( validPowers.empty() ) return -1.0;
+  if ( !useNormParams ) {
+    outRateMin  = *std::min_element( rateGain.begin(), rateGain.end() );
+    double rMax = *std::max_element( rateGain.begin(), rateGain.end() );
+    outRatePtp  = rMax - outRateMin + 1e-12;
+    outPsnrMin  = *std::min_element( psnrDrop.begin(), psnrDrop.end() );
+    double pMax = *std::max_element( psnrDrop.begin(), psnrDrop.end() );
+    outPsnrPtp  = pMax - outPsnrMin + 1e-12;
+  } else {
+    outRateMin = rateMin;
+    outRatePtp = ratePtp;
+    outPsnrMin = psnrMin;
+    outPsnrPtp = psnrPtp;
+  }
+  double bestScore = -1e18;
+  float  bestPower = validPowers[0];
+  for ( size_t i = 0; i < validPowers.size(); ++i ) {
+    double score = ( rateGain[i] - outRateMin ) / outRatePtp - ( psnrDrop[i] - outPsnrMin ) / outPsnrPtp;
+    if ( score > bestScore ) {
+      bestScore = score;
+      bestPower = validPowers[i];
+    }
+  }
+  return static_cast<double>( bestPower );
+}
+
+static double findOptimalScalePower( const std::vector<double> &normData,
+                                     uint32_t                   bitDepth,
+                                     double                     valMin,
+                                     double                     valMax ) {
+  if ( normData.empty() ) return 4.0;
+  const uint32_t     numBins  = 1u << bitDepth;
+  const double       Q        = static_cast<double>( numBins - 1 );
+  const double       valRange = valMax - valMin;
+  const size_t       N        = normData.size();
+  std::vector<float> xSorted( N );
+  for ( size_t i = 0; i < N; ++i ) xSorted[i] = static_cast<float>( normData[i] );
+  std::sort( xSorted.begin(), xSorted.end() );
+  std::vector<double> wSorted( N );
+  for ( size_t i = 0; i < N; ++i ) wSorted[i] = std::exp( xSorted[i] * valRange + valMin );
+  double sumWeights = 0.0;
+  for ( double w : wSorted ) sumWeights += w;
+  double              log10MaxVal = std::log10( wSorted.back() );
+  std::vector<double> prefixW1( N + 1, 0.0 ), prefixW2( N + 1, 0.0 ), prefixW3( N + 1, 0.0 );
+  for ( size_t i = 0; i < N; ++i ) {
+    double w        = wSorted[i];
+    prefixW1[i + 1] = prefixW1[i] + w;
+    prefixW2[i + 1] = prefixW2[i] + w * w;
+    prefixW3[i + 1] = prefixW3[i] + w * w * w;
+  }
+  double baselinePsnr, baselineRate;
+  metricsForPower( 1.0, numBins, Q, valRange, valMin, N, sumWeights, log10MaxVal, xSorted, prefixW1, prefixW2, prefixW3,
+                   baselinePsnr, baselineRate );
+  constexpr int      COARSE_N = 40;
+  std::vector<float> coarseGrid( COARSE_N );
+  for ( int i = 0; i < COARSE_N; ++i ) coarseGrid[i] = static_cast<float>( 3.5 + ( 4.5 / ( COARSE_N - 1 ) ) * i );
+  double cRateMin, cRatePtp, cPsnrMin, cPsnrPtp;
+  double coarsePower = findBestPowerFromGrid( coarseGrid, baselineRate, baselinePsnr, numBins, Q, valRange, valMin, N,
+                                              sumWeights, log10MaxVal, xSorted, prefixW1, prefixW2, prefixW3, 0, 0, 0,
+                                              0, false, cRateMin, cRatePtp, cPsnrMin, cPsnrPtp );
+  if ( coarsePower < 0.0 ) return 3.5;
+  constexpr int      FINE_N = 20;
+  double             fLo    = std::max( 3.5, coarsePower - 0.3 );
+  double             fHi    = std::min( 8.0, coarsePower + 0.3 );
+  std::vector<float> fineGrid( FINE_N );
+  for ( int i = 0; i < FINE_N; ++i ) fineGrid[i] = static_cast<float>( fLo + ( fHi - fLo ) / ( FINE_N - 1 ) * i );
+  double fRateMin, fRatePtp, fPsnrMin, fPsnrPtp;
+  double finePower = findBestPowerFromGrid(
+      fineGrid, baselineRate, baselinePsnr, numBins, Q, valRange, valMin, N, sumWeights, log10MaxVal, xSorted, prefixW1,
+      prefixW2, prefixW3, cRateMin, cRatePtp, cPsnrMin, cPsnrPtp, true, fRateMin, fRatePtp, fPsnrMin, fPsnrPtp );
+  double optimal = ( finePower < 0.0 ) ? coarsePower : finePower;
+  return std::round( optimal * 100.0 ) / 100.0;
+}
+
+// Helper: compute 2-segment PLS nodes from power and bit depth (S_THRESH = 0.60)
+static void computePlsNodesFromPower( double   power,
+                                      uint32_t bitDepth,
+                                      int     &n1,
+                                      double  &X1,
+                                      double  &step1,
+                                      double  &step2 ) {
+  constexpr double S_THRESH       = 0.60;
+  constexpr double MAX_STEP_RATIO = 8.0;
+  const uint32_t   N              = 1u << bitDepth;
+  X1                              = std::max( 0.005, std::min( 0.49, std::pow( S_THRESH, power ) ) );
+  double dx1                      = X1;
+  double dx2                      = 1.0 - X1;
+  n1     = static_cast<int>( std::max( 1.0, std::ceil( dx1 * N / ( dx1 + MAX_STEP_RATIO * dx2 ) ) ) );
+  int n2 = static_cast<int>( N ) - n1;
+  step1  = dx1 / n1;
+  step2  = dx2 / std::max( 1, n2 );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 //============================================================================
 // PCCAdaptation - Scale Quantization
 //============================================================================
@@ -859,7 +1046,55 @@ bool PCCAdaptation::quantizeScales( const PCCPointSetGS     &input,
     params.computedScaleMax_ = params.scaleLimitMax_;
   }
 
-  const uint32_t bitDepth = params.scaleBitDepth_;
+  const uint32_t bitDepth      = params.scaleBitDepth_;
+  const uint32_t max_quant_val = ( 1u << bitDepth ) - 1;
+
+  if ( params.enableScalePowerTransform_ ) {
+    {
+      std::vector<double> normAll;
+      normAll.reserve( pointCount * 3 );
+      for ( size_t i = 0; i < pointCount; ++i ) {
+        const GSScale &scale = input.getScales()[i];
+        for ( int k = 0; k < 3; ++k ) {
+          double n = normalizeToUnit( scale[k], params.computedScaleMin_[k], params.computedScaleMax_[k] );
+          normAll.push_back( std::max( 0.0, std::min( 1.0, n ) ) );
+        }
+      }
+      double optimalPower =
+          findOptimalScalePower( normAll, bitDepth, params.computedScaleMin_[0], params.computedScaleMax_[0] );
+      for ( int k = 0; k < 3; ++k ) params.computedScalePower_[k] = optimalPower;
+    }
+    for ( size_t i = 0; i < pointCount; ++i ) {
+      const GSScale    &scale = input.getScales()[i];
+      PCCAttribute16bit qScale;
+      for ( int k = 0; k < 3; ++k ) {
+        double power   = params.computedScalePower_[k];
+        double scaling = params.computedScaleScalingFactor_[k];
+        double norm    = std::max( 0.0, std::min( 1.0, normalizeToUnit( scale[k], params.computedScaleMin_[k],
+                                                                        params.computedScaleMax_[k] ) ) );
+        double pwr     = std::pow( norm, power ) * scaling;
+        pwr            = std::max( 0.0, std::min( 1.0, pwr ) );
+        int q;
+        if ( params.enableScaleNonUniformQuantization_ ) {
+          int    n1;
+          double X1, step1, step2;
+          computePlsNodesFromPower( power, bitDepth, n1, X1, step1, step2 );
+          if ( pwr < X1 ) {
+            q = static_cast<int>( std::round( pwr / step1 ) );
+            q = std::max( 0, std::min( n1 - 1, q ) );
+          } else {
+            q = n1 + static_cast<int>( std::round( ( pwr - X1 ) / step2 ) );
+            q = std::max( n1, std::min( static_cast<int>( max_quant_val ), q ) );
+          }
+        } else {
+          q = static_cast<int>( quantizeValue( pwr, bitDepth ) );
+        }
+        qScale[k] = static_cast<uint16_t>( q );
+      }
+      output.setScale( i, qScale );
+    }
+    return true;
+  }
 
   struct ScaleQuantRegion {
     std::vector<double> region_start_real;
@@ -869,7 +1104,6 @@ bool PCCAdaptation::quantizeScales( const PCCPointSetGS     &input,
     std::vector<double> step_size;
   };
   std::array<ScaleQuantRegion, 3> scaleRegions;
-  const uint32_t                  max_quant_val = ( 1u << bitDepth ) - 1;
 
   if ( params.enableScaleNonUniformQuantization_ ) {
     for ( size_t ch = 0; ch < 3; ++ch ) {
@@ -944,6 +1178,32 @@ bool PCCAdaptation::dequantizeScales( const PCCPointSet3            &input,
                                       const PCCAdaptationParameters &params ) {
   const size_t   pointCount = input.getPointCount();
   const uint32_t bitDepth   = params.scaleBitDepth_;
+
+  if ( params.enableScalePowerTransform_ ) {
+    for ( size_t i = 0; i < pointCount; ++i ) {
+      const auto &qScale = input.getScale( i );
+      GSScale    &scale  = output.getScales()[i];
+      for ( int k = 0; k < 3; ++k ) {
+        double power   = params.computedScalePower_[k];
+        double scaling = params.computedScaleScalingFactor_[k];
+        int    q       = static_cast<int>( qScale[k] );
+        double pwr;
+        if ( params.enableScaleNonUniformQuantization_ ) {
+          int    n1;
+          double X1, step1, step2;
+          computePlsNodesFromPower( power, bitDepth, n1, X1, step1, step2 );
+          pwr = ( q < n1 ) ? ( q * step1 ) : ( ( q - n1 ) * step2 + X1 );
+        } else {
+          pwr = dequantizeValue( static_cast<uint32_t>( q ), bitDepth );
+        }
+        pwr         = pwr / std::max( scaling, 1e-10 );
+        pwr         = std::max( 1e-10, std::min( 1.0, pwr ) );
+        double norm = std::pow( pwr, 1.0 / power );
+        scale[k]    = denormalizeFromUnit( norm, params.computedScaleMin_[k], params.computedScaleMax_[k] );
+      }
+    }
+    return true;
+  }
 
   struct ScaleQuantRegion {
     std::vector<double> region_start_real;

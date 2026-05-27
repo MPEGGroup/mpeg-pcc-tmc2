@@ -2855,12 +2855,14 @@ void PCCBitstreamWriter::aapsVpccGsExtension( PCCBitstream &bitstream, AapsVpccG
   WRITE_CODE( ext.getAdaptiveQuantizationEnableFlag(), 1 );  // u(1)
   WRITE_CODE( ext.getShPropertyPresentFlag(), 1 );           // u(1)
   WRITE_CODE( ext.getTransform2DPresentFlag(), 1 );          // u(1)
+  WRITE_CODE( ext.getScaleTransformPresentFlag(), 1 );       // u(1)
   WRITE_CODE( ext.getOpacityPropertyPresentFlag(), 1 );      // u(1)
   WRITE_CODE( ext.getReservedZero8bits(), 8 );               // u(8)
 
   if ( ext.getDequantizationPresentFlag() ) { gsDequantization( bitstream, ext.getGsDequantization() ); }
   if ( ext.getShPropertyPresentFlag() ) { gsShProperty( bitstream, ext.getGsShProperty() ); }
   if ( ext.getTransform2DPresentFlag() ) { gs2DTransform( bitstream, ext.getGs2DTransform() ); }
+  if ( ext.getScaleTransformPresentFlag() ) { gsScaleTransform( bitstream, ext.getGsScaleTransform() ); }
   if ( ext.getOpacityPropertyPresentFlag() ) { gsOpacityProperty( bitstream, ext.getGsOpacityProperty() ); }
 
   byteAlignment( bitstream );
@@ -3011,6 +3013,18 @@ void PCCBitstreamWriter::gs2DTransform( PCCBitstream &bitstream, Gs2DTransform &
 void PCCBitstreamWriter::gsOpacityProperty( PCCBitstream &bitstream, GsOpacityProperty &gsop ) {
   TRACE_BITSTREAM_IN( "%s", __func__ );
   WRITE_CODE( gsop.getLinearOpacityFlag(), 1 );
+  TRACE_BITSTREAM_OUT( "%s", __func__ );
+}
+
+// H.8.3.6.3.9  Gaussian splat scale transform syntax
+void PCCBitstreamWriter::gsScaleTransform( PCCBitstream &bitstream, GsScaleTransform &gsst ) {
+  TRACE_BITSTREAM_IN( "%s", __func__ );
+  WRITE_CODE( gsst.getSameScalingFlag(), 1 );
+  WRITE_CODE( gsst.getSamePowerTransformFlag(), 1 );
+  for ( int i = 0; i < 3; i++ ) {
+    if ( i == 0 || !gsst.getSameScalingFlag() ) { WRITE_FLOAT( gsst.getScaleScaling( i ) ); }
+    if ( i == 0 || !gsst.getSamePowerTransformFlag() ) { WRITE_FLOAT( gsst.getScalePower( i ) ); }
+  }
   TRACE_BITSTREAM_OUT( "%s", __func__ );
 }
 

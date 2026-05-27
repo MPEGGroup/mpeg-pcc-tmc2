@@ -93,6 +93,7 @@ struct PCCGSEncoderParameters {
   bool dataAdaptiveShTransformEnabled_;
   bool enableShNonUniformQuantization_;
   bool enableScaleNonUniformQuantization_;
+  bool enableScalePowerTransform_ = false;
 
   // GS SEI
   std::string gsColmapFolderPath_;
@@ -141,6 +142,7 @@ struct PCCGSEncoderParameters {
     dataAdaptiveShTransformEnabled_      = false;
     enableShNonUniformQuantization_      = false;
     enableScaleNonUniformQuantization_   = false;
+    enableScalePowerTransform_           = false;
   }
 };
 

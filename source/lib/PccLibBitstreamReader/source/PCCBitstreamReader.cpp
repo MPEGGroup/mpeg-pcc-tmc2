@@ -2828,6 +2828,8 @@ void PCCBitstreamReader::aapsVpccGsExtension( PCCBitstream &bitstream, AapsVpccG
   ext.setShPropertyPresentFlag( value );  // u(1)
   READ_CODE_DESC( value, 1, "aaps_vpcc_gs_2dsh_transform_present_flag" );
   ext.setTransform2DPresentFlag( value );  // u(1)
+  READ_CODE_DESC( value, 1, "aaps_vpcc_gs_scale_transform_present_flag" );
+  ext.setScaleTransformPresentFlag( value );  // u(1)
   READ_CODE_DESC( value, 1, "aaps_vpcc_gs_opacity_property_present_flag" );
   ext.setOpacityPropertyPresentFlag( value );  // u(1)
   READ_CODE_DESC( value, 8, "aaps_vpcc_gs_reserved_zero_8bits" );
@@ -2836,6 +2838,7 @@ void PCCBitstreamReader::aapsVpccGsExtension( PCCBitstream &bitstream, AapsVpccG
   if ( ext.getDequantizationPresentFlag() ) { gsDequantization( bitstream, ext.getGsDequantization() ); }
   if ( ext.getShPropertyPresentFlag() ) { gsShProperty( bitstream, ext.getGsShProperty() ); }
   if ( ext.getTransform2DPresentFlag() ) { gs2DTransform( bitstream, ext.getGs2DTransform() ); }
+  if ( ext.getScaleTransformPresentFlag() ) { gsScaleTransform( bitstream, ext.getGsScaleTransform() ); }
   if ( ext.getOpacityPropertyPresentFlag() ) { gsOpacityProperty( bitstream, ext.getGsOpacityProperty() ); }
 
   if ( ext.getReservedZero8bits() != 0 ) {
@@ -3076,6 +3079,32 @@ void PCCBitstreamReader::gsOpacityProperty( PCCBitstream &bitstream, GsOpacityPr
   int value;
   READ_CODE_DESC( value, 1, "LinearOpacityFlag" );
   gsOpacityProperty.setLinearOpacityFlag( value );
+  TRACE_BITSTREAM_OUT( "%s", __func__ );
+}
+
+// H.8.3.6.3.9  Gaussian splat scale transform syntax
+void PCCBitstreamReader::gsScaleTransform( PCCBitstream &bitstream, GsScaleTransform &gsst ) {
+  TRACE_BITSTREAM_IN( "%s", __func__ );
+  float valueFlt;
+  int   valueInt;
+  READ_CODE_DESC( valueInt, 1, "SameScalingFlag" );
+  gsst.setSameScalingFlag( valueInt != 0 );
+  READ_CODE_DESC( valueInt, 1, "SamePowerFlag" );
+  gsst.setSamePowerTransformFlag( valueInt != 0 );
+  for ( int i = 0; i < 3; i++ ) {
+    if ( i == 0 || !gsst.getSameScalingFlag() ) {
+      READ_FLOAT_DESC( valueFlt, "ScaleScaling" );
+      gsst.setScaleScaling( i, valueFlt );
+    } else {
+      gsst.setScaleScaling( i, gsst.getScaleScaling( 0 ) );
+    }
+    if ( i == 0 || !gsst.getSamePowerTransformFlag() ) {
+      READ_FLOAT_DESC( valueFlt, "ScalePower" );
+      gsst.setScalePower( i, valueFlt );
+    } else {
+      gsst.setScalePower( i, gsst.getScalePower( 0 ) );
+    }
+  }
   TRACE_BITSTREAM_OUT( "%s", __func__ );
 }
 

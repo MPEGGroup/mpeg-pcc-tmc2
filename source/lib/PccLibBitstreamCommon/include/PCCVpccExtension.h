@@ -524,6 +524,44 @@ class GsOpacityProperty {
   uint8_t linearOpacityFlag_;
 };
 
+// H.8.3.6.3.9  GS scale transform syntax
+class GsScaleTransform {
+ public:
+  GsScaleTransform() {
+    for ( int i = 0; i < 3; i++ ) {
+      scaleScaling_[i] = 1.f;
+      scalePower_[i]   = 5.f;
+    }
+  }
+  ~GsScaleTransform() {}
+  GsScaleTransform &operator=( const GsScaleTransform & ) = default;
+
+  bool operator==( const GsScaleTransform &other ) const {
+    for ( int i = 0; i < 3; i++ ) {
+      if ( other.scaleScaling_[i] != scaleScaling_[i] ) return false;
+      if ( other.scalePower_[i] != scalePower_[i] ) return false;
+    }
+    return true;
+  }
+  bool operator!=( const GsScaleTransform &other ) const { return !( *this == other ); }
+
+  bool  getSameScalingFlag() { return sameScalingFlag_; }
+  bool  getSamePowerTransformFlag() { return samePowerTransformFlag_; }
+  float getScaleScaling( int i ) { return scaleScaling_[i]; }
+  float getScalePower( int i ) { return scalePower_[i]; }
+
+  void setSameScalingFlag( bool value ) { sameScalingFlag_ = value; }
+  void setSamePowerTransformFlag( bool value ) { samePowerTransformFlag_ = value; }
+  void setScaleScaling( int i, float value ) { scaleScaling_[i] = value; }
+  void setScalePower( int i, float value ) { scalePower_[i] = value; }
+
+ private:
+  bool  sameScalingFlag_        = true;
+  bool  samePowerTransformFlag_ = true;
+  float scaleScaling_[3];
+  float scalePower_[3];
+};
+
 // H.8.3.6.3.4	AAPS V-PCC GS extension syntax
 class AapsVpccGsExtension {
  public:
@@ -532,6 +570,7 @@ class AapsVpccGsExtension {
       adaptiveQuantizationEnableFlag_( false ),
       shPropertyPresentFlag_( false ),
       transform2DPresentFlag_( false ),
+      scaleTransformPresentFlag_( false ),
       opacityPropertyPresentFlag_( false ) {}
   ~AapsVpccGsExtension() {}
   AapsVpccGsExtension &operator=( const AapsVpccGsExtension & ) = default;
@@ -551,6 +590,10 @@ class AapsVpccGsExtension {
   Gs2DTransform &getGs2DTransform() { return gs2DTransform_; }
   void           setTransform2DPresentFlag( bool value ) { transform2DPresentFlag_ = value; }
 
+  bool              getScaleTransformPresentFlag() { return scaleTransformPresentFlag_; }
+  GsScaleTransform &getGsScaleTransform() { return gsScaleTransform_; }
+  void              setScaleTransformPresentFlag( bool value ) { scaleTransformPresentFlag_ = value; }
+
   bool               getOpacityPropertyPresentFlag() { return opacityPropertyPresentFlag_; }
   GsOpacityProperty &getGsOpacityProperty() { return gsOpacityProperty_; }
   void               setOpacityPropertyPresentFlag( bool value ) { opacityPropertyPresentFlag_ = value; }
@@ -563,10 +606,12 @@ class AapsVpccGsExtension {
   bool                         adaptiveQuantizationEnableFlag_{};
   bool                         shPropertyPresentFlag_{};
   bool                         transform2DPresentFlag_{};
+  bool                         scaleTransformPresentFlag_{};
   bool                         opacityPropertyPresentFlag_{};
   GsDequantization             gsDequantization_{};
   GsSphericalHarmonicsProperty shSphericalHarmonicsProperty_{};
   Gs2DTransform                gs2DTransform_{};
+  GsScaleTransform             gsScaleTransform_{};
   GsOpacityProperty            gsOpacityProperty_;
   uint8_t                      reservedZero8bits_{};
 };

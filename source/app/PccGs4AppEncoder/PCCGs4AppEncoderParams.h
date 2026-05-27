@@ -288,6 +288,10 @@ bool parseParameters( int                           argc,
       encoderParams.enableScaleNonUniformQuantization_,
       false,
       "Enable non-uniform quantization for Scale (m76123)" )
+    ( "enableScalePowerTransform",
+      encoderParams.enableScalePowerTransform_,
+      false,
+      "Enable power transform + 2-segment PLS for scale (m76151)" )
     ( "keepIntermediateFiles",
       encoderParams.keepIntermediateFiles_,
       encoderParams.keepIntermediateFiles_,
