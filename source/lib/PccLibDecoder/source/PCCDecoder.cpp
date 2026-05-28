@@ -2102,8 +2102,23 @@ int PCCDecoder::ReconstructIdc3( PCCContext &context, PCCGroupOfFrames &reconstr
           }
 
           if ( adaptationParams.enableOpacityQuantization_ ) {
-            adaptationParams.computedOpacityMin_ = dequant.getMinOpacity();
-            adaptationParams.computedOpacityMax_ = dequant.getMaxOpacity();
+            adaptationParams.computedOpacityMin_      = dequant.getMinOpacity();
+            adaptationParams.computedOpacityMax_      = dequant.getMaxOpacity();
+            uint32_t M                                = dequant.getOpacityNumQuantRegionsMinus1();
+            adaptationParams.opacityNumRegionsMinus1_ = M;
+            if ( M > 0 ) {
+              adaptationParams.enableOpacityNonUniformQuantization_ = true;
+              adaptationParams.opacityNumBitsForTransitionPoint_    = dequant.getOpacityNumBitsForTransitionPoint();
+              for ( uint32_t m = 0; m < M; m++ ) {
+                adaptationParams.opacityTransitionPoints_.push_back(
+                    dequant.getOpacityQuantRegionTransitionPoint( m ) );
+              }
+              for ( uint32_t m = 0; m < M + 1; m++ ) {
+                adaptationParams.opacityStepSizes_.push_back( dequant.getOpacityRegionStepSize( m ) );
+              }
+            } else {
+              dequant.setOpacityNumQuantRegionsMinus1( 0 );
+            }
           }
 
           if ( adaptationParams.enableShQuantization_ ) {

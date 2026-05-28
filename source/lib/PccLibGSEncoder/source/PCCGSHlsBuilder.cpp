@@ -229,6 +229,19 @@ void PCCGSHlsBuilder::initializeAtlasAapsHls( PCCHighLevelSyntax            &hls
     dequant.setOpacityPresentFlag( true );
     dequant.setMinOpacity( adaptationParams.computedOpacityMin_ );
     dequant.setMaxOpacity( adaptationParams.computedOpacityMax_ );
+    if ( adaptationParams.enableOpacityNonUniformQuantization_ ) {
+      uint32_t M = adaptationParams.opacityNumRegionsMinus1_;
+      dequant.setOpacityNumQuantRegionsMinus1( M );
+      dequant.setOpacityNumBitsForTransitionPoint( adaptationParams.opacityNumBitsForTransitionPoint_ );
+      for ( uint32_t m = 0; m < M; m++ ) {
+        dequant.setOpacityQuantRegionTransitionPoint( m, adaptationParams.opacityTransitionPoints_[m] );
+      }
+      for ( uint32_t m = 0; m < M + 1; m++ ) {
+        dequant.setOpacityRegionStepSize( m, adaptationParams.opacityStepSizes_[m] );
+      }
+    } else {
+      dequant.setOpacityNumQuantRegionsMinus1( 0 );
+    }
   }
 
   if ( adaptationParams.enableShQuantization_ ) {

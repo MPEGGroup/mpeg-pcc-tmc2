@@ -43,6 +43,7 @@
 #include "PCCPointSetGS.h"
 #include "PCCGSEncoder.h"
 #include <program_options_lite.h>
+#include <fstream>
 #if defined( ENABLE_TBB )
 #include <tbb/tbb.h>
 #endif
@@ -95,11 +96,12 @@ int main( int argc, char *argv[] ) {
   if ( !parseParameters( argc, argv, applicationParams, encoderParams, adaptationParams ) ) { return -1; }
 
   // Map encoder flags to adaptation parameters
-  adaptationParams.gsdTransform2dPresentFlag_      = encoderParams.gsdTransform2dPresentFlag_;
-  adaptationParams.dataAdaptiveShTransformEnabled_ = encoderParams.dataAdaptiveShTransformEnabled_;
-  adaptationParams.adaptivePcaEnabled_             = encoderParams.adaptivePcaEnabled_;
-  adaptationParams.enableShNonUniformQuantization_ = encoderParams.enableShNonUniformQuantization_;
-  adaptationParams.encodeLinearOpacity_            = encoderParams.encodeLinearOpacity_;
+  adaptationParams.gsdTransform2dPresentFlag_           = encoderParams.gsdTransform2dPresentFlag_;
+  adaptationParams.dataAdaptiveShTransformEnabled_      = encoderParams.dataAdaptiveShTransformEnabled_;
+  adaptationParams.adaptivePcaEnabled_                  = encoderParams.adaptivePcaEnabled_;
+  adaptationParams.enableShNonUniformQuantization_      = encoderParams.enableShNonUniformQuantization_;
+  adaptationParams.enableOpacityNonUniformQuantization_ = encoderParams.enableOpacityNonUniformQuantization_;
+  adaptationParams.encodeLinearOpacity_                 = encoderParams.encodeLinearOpacity_;
   if ( encoderParams.encodeLinearOpacity_ ) {
     // changing the default value of the opacity quantization
     adaptationParams.computedOpacityMin_ = 0.0;
@@ -125,6 +127,22 @@ int main( int argc, char *argv[] ) {
   encoderParams.attributeVideoEncoderConfig_ =
       applicationParams.configurationFolder_ + applicationParams.attributeConfig_;
   encoderParams.packedVideoEncoderConfig_ = applicationParams.configurationFolder_ + applicationParams.packConfig_;
+
+  if ( adaptationParams.enableOpacityNonUniformQuantization_ ) {
+    std::ifstream configFile( encoderParams.attributeVideoEncoderConfig_ );
+    bool          paletteModeEnabled = false;
+    if ( configFile.is_open() ) {
+      std::string line;
+      while ( std::getline( configFile, line ) ) {
+        size_t pos = line.find( "PaletteMode" );
+        if ( pos != std::string::npos && ( line.find( "#" ) == std::string::npos || line.find( "#" ) > pos ) ) {
+          if ( line.find( "1" ) != std::string::npos ) { paletteModeEnabled = true; }
+          break;
+        }
+      }
+    }
+    if ( !paletteModeEnabled ) { adaptationParams.enableOpacityNonUniformQuantization_ = 0; }
+  }
 
   // Timers to count elapsed wall/user time
   pcc::chrono::Stopwatch<std::chrono::steady_clock> clockWall;

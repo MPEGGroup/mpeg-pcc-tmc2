@@ -2923,6 +2923,17 @@ void PCCBitstreamWriter::gsDequantization( PCCBitstream &bitstream, GsDequantiza
     if ( gsd.getOpacityPresentFlag() ) {
       WRITE_FLOAT( gsd.getMinOpacity() );
       WRITE_FLOAT( gsd.getMaxOpacity() );
+      WRITE_UVLC( static_cast<uint32_t>( gsd.getOpacityNumQuantRegionsMinus1() ) );
+      if ( gsd.getOpacityNumQuantRegionsMinus1() > 0 ) {
+        uint32_t opacityNumBitsForTransitionPoint = gsd.getOpacityNumBitsForTransitionPoint();
+        WRITE_CODE( opacityNumBitsForTransitionPoint, 4 );
+        for ( int m = 0; m < gsd.getOpacityNumQuantRegionsMinus1(); m++ ) {
+          WRITE_CODE( gsd.getOpacityQuantRegionTransitionPoint( m ), opacityNumBitsForTransitionPoint );
+        }
+        for ( int m = 0; m < gsd.getOpacityNumQuantRegionsMinus1() + 1; m++ ) {
+          WRITE_FLOAT( gsd.getOpacityRegionStepSize( m ) );
+        }
+      }
     }
     WRITE_CODE( gsd.getShPresentFlag(), 1 );
     if ( gsd.getShPresentFlag() ) {

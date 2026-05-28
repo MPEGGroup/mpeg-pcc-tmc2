@@ -174,6 +174,18 @@ struct PCCAdaptationParameters {
   double computedOpacityMin_ = 0.0;
   double computedOpacityMax_ = 0.0;
 
+  // ==================== Opacity Non-Uniform Quantization ====================
+  /// Enable non-uniform quantization for opacity (m76122)
+  bool enableOpacityNonUniformQuantization_ = false;
+  /// Number of regions minus 1 for opacity
+  uint32_t opacityNumRegionsMinus1_;
+  /// Transition points for multi-region quantization (quantized integer values)
+  std::vector<int> opacityTransitionPoints_;
+  /// Step sizes for each region
+  std::vector<double> opacityStepSizes_;
+  /// Number of bits used for transition points
+  uint32_t opacityNumBitsForTransitionPoint_;
+
   // ==================== Scale Parameters ====================
   /// Bit depth for scale quantization (default: 10)
   uint32_t scaleBitDepth_ = 10;
@@ -348,7 +360,8 @@ class PCCAdaptation {
 
   /// Extract SH quantization regions for non-uniform quantization
   bool extractSHQuantRegions( const PCCPointSetGS &input, PCCAdaptationParameters &params );
-
+  /// Extract opacity quantization regions for non-uniform quantization, m76122
+  bool extractOpacityQuantRegions( const PCCPointSetGS &input, PCCAdaptationParameters &params );
   /// Extract Scale quantization regions for non-uniform quantization
   bool extractScaleQuantRegions( const PCCPointSetGS &input, PCCAdaptationParameters &params );
 

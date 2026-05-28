@@ -199,6 +199,16 @@ class GsDequantization {
       if ( opacityPresentFlag_ ) {
         if ( other.minOpacity_ != minOpacity_ ) retVal = false;
         if ( other.maxOpacity_ != maxOpacity_ ) retVal = false;
+
+        if ( other.opacityNumQuantRegionsMinus1_ != opacityNumQuantRegionsMinus1_ ) retVal = false;
+        if ( opacityNumQuantRegionsMinus1_ > 0 ) {
+          for ( int m = 0; m < opacityNumQuantRegionsMinus1_; m++ ) {
+            if ( other.opacityQuantRegionTransitionPoint_[m] != opacityQuantRegionTransitionPoint_[m] ) retVal = false;
+          }
+          for ( int m = 0; m < opacityNumQuantRegionsMinus1_ + 1; m++ ) {
+            if ( other.opacityRegionStepSize_[m] != opacityRegionStepSize_[m] ) retVal = false;
+          }
+        }
       }
     }
     if ( other.shPresentFlag_ != shPresentFlag_ ) {
@@ -253,6 +263,10 @@ class GsDequantization {
   bool     getOpacityPresentFlag() { return opacityPresentFlag_; }
   float    getMinOpacity() { return minOpacity_; }
   float    getMaxOpacity() { return maxOpacity_; }
+  uint32_t getOpacityNumQuantRegionsMinus1() { return opacityNumQuantRegionsMinus1_; }
+  uint32_t getOpacityNumBitsForTransitionPoint() { return opacityNumBitsForTransitionPoint_; }
+  uint16_t getOpacityQuantRegionTransitionPoint( int m ) { return opacityQuantRegionTransitionPoint_[m]; }
+  float    getOpacityRegionStepSize( int m ) { return opacityRegionStepSize_[m]; }
   bool     getShPresentFlag() { return shPresentFlag_; }
   bool     getScaleSameMinMaxFlag() { return scaleSameMinMaxFlag_; }
   bool     getRotSameMinMaxFlag() { return rotSameMinMaxFlag_; }
@@ -297,6 +311,16 @@ class GsDequantization {
   void setOpacityPresentFlag( bool value ) { opacityPresentFlag_ = value; }
   void setMinOpacity( float value ) { minOpacity_ = value; }
   void setMaxOpacity( float value ) { maxOpacity_ = value; }
+  void setOpacityNumQuantRegionsMinus1( uint32_t value ) {  // m76122
+    opacityNumQuantRegionsMinus1_ = value;
+    if ( value > 0 ) {
+      opacityQuantRegionTransitionPoint_.resize( value, 0 );
+      opacityRegionStepSize_.resize( value + 1, 0.0f );
+    }
+  }
+  void setOpacityNumBitsForTransitionPoint( int value ) { opacityNumBitsForTransitionPoint_ = value; }
+  void setOpacityQuantRegionTransitionPoint( int m, int value ) { opacityQuantRegionTransitionPoint_[m] = value; }
+  void setOpacityRegionStepSize( int m, float value ) { opacityRegionStepSize_[m] = value; }
   void setShPresentFlag( bool value ) { shPresentFlag_ = value; }
   void setScaleSameMinMaxFlag( bool value ) { scaleSameMinMaxFlag_ = value; }
   void setRotSameMinMaxFlag( bool value ) { rotSameMinMaxFlag_ = value; }
@@ -361,6 +385,10 @@ class GsDequantization {
   bool                                            opacityPresentFlag_;
   float                                           minOpacity_;
   float                                           maxOpacity_;
+  uint32_t                                        opacityNumQuantRegionsMinus1_;
+  std::vector<int>                                opacityQuantRegionTransitionPoint_;
+  std::vector<float>                              opacityRegionStepSize_;
+  int                                             opacityNumBitsForTransitionPoint_;
   bool                                            shPresentFlag_;
   bool                                            scaleSameMinMaxFlag_;
   bool                                            rotSameMinMaxFlag_;

@@ -545,6 +545,7 @@ bool PCCAdaptation::adapt( const PCCPointSetGS     &inputPointCloud,
   // Apply opacity quantization
   if ( params.enableOpacityQuantization_ && inputPointCloud.hasOpacities() ) {
     if ( params.encodeLinearOpacity_ ) logitToLinearOpacity( const_cast<PCCPointSetGS &>( inputPointCloud ) );
+    extractOpacityQuantRegions( inputPointCloud, params );  // m76122
     if ( !quantizeOpacities( inputPointCloud, outputPointCloud, params ) ) {
       std::cerr << "PCCAdaptation::adapt - Opacity quantization failed" << std::endl;
       return false;
@@ -1332,26 +1333,67 @@ bool PCCAdaptation::quantizeOpacities( const PCCPointSetGS     &input,
   if ( pointCount == 0 || !input.hasOpacities() ) return false;
 
   // Auto-compute limits if enabled
-  if ( params.autoComputeOpacityLimits_ ) {
-    params.computedOpacityMin_ = std::numeric_limits<double>::max();
-    params.computedOpacityMax_ = std::numeric_limits<double>::lowest();
-    for ( size_t i = 0; i < pointCount; ++i ) {
-      double opacity             = input.getOpacities()[i];
-      params.computedOpacityMin_ = std::min( params.computedOpacityMin_, opacity );
-      params.computedOpacityMax_ = std::max( params.computedOpacityMax_, opacity );
+  if ( !params.enableOpacityNonUniformQuantization_ ) {
+    if ( params.autoComputeOpacityLimits_ ) {
+      params.computedOpacityMin_ = std::numeric_limits<double>::max();
+      params.computedOpacityMax_ = std::numeric_limits<double>::lowest();
+      for ( size_t i = 0; i < pointCount; ++i ) {
+        double opacity             = input.getOpacities()[i];
+        params.computedOpacityMin_ = std::min( params.computedOpacityMin_, opacity );
+        params.computedOpacityMax_ = std::max( params.computedOpacityMax_, opacity );
+      }
+    } else {
+      params.computedOpacityMin_ = params.opacityLimitMin_;
+      params.computedOpacityMax_ = params.opacityLimitMax_;
     }
-  } else {
-    params.computedOpacityMin_ = params.opacityLimitMin_;
-    params.computedOpacityMax_ = params.opacityLimitMax_;
   }
-
   const uint32_t bitDepth = params.opacityBitDepth_;
 
-  for ( size_t i = 0; i < pointCount; ++i ) {
-    double   opacity    = input.getOpacities()[i];
-    double   normalized = normalizeToUnit( opacity, params.computedOpacityMin_, params.computedOpacityMax_ );
-    uint32_t quantized  = quantizeValue( normalized, bitDepth );
+  const uint32_t max_val = ( 1u << bitDepth ) - 1;  // m76122
+  struct OpacityQuantRegion {
+    std::vector<double> region_start_real;
+    std::vector<int>    tp_int;
+  };
+  OpacityQuantRegion opRegion;
+  if ( params.enableOpacityNonUniformQuantization_ ) {
+    int    M      = params.opacityNumRegionsMinus1_;
+    double minLim = params.computedOpacityMin_;
 
+    if ( M > 0 ) {
+      opRegion.tp_int.resize( M );
+      opRegion.region_start_real.resize( M + 1 );
+      opRegion.region_start_real[0] = minLim;
+      for ( int m = 0; m < M; ++m ) {
+        int tp_val         = params.opacityTransitionPoints_[m];
+        opRegion.tp_int[m] = tp_val;
+        double prev_tp     = ( m == 0 ) ? 0.0 : opRegion.tp_int[m - 1];
+        opRegion.region_start_real[m + 1] =
+            opRegion.region_start_real[m] + ( tp_val - prev_tp ) * params.opacityStepSizes_[m];
+      }
+    }
+  }
+
+  for ( size_t i = 0; i < pointCount; ++i ) {
+    double   opacity   = input.getOpacities()[i];
+    uint32_t quantized = 0;
+    if ( params.enableOpacityNonUniformQuantization_ ) {
+      int M = params.opacityNumRegionsMinus1_;
+      if ( M == 0 ) {
+        double normalized = normalizeToUnit( opacity, params.computedOpacityMin_, params.computedOpacityMax_ );
+        quantized         = quantizeValue( normalized, bitDepth );
+      } else {
+        int region_idx = 0;
+        while ( region_idx < M && opacity > opRegion.region_start_real[region_idx + 1] ) { region_idx++; }
+        double prev_idx  = ( region_idx > 0 ) ? opRegion.tp_int[region_idx - 1] : 0.0;
+        double step_vec  = params.opacityStepSizes_[region_idx];
+        double base_real = opRegion.region_start_real[region_idx];
+        double q_vals    = std::round( ( opacity - base_real ) / step_vec + prev_idx );
+        quantized        = static_cast<uint32_t>( std::max( 0.0, std::min( static_cast<double>( max_val ), q_vals ) ) );
+      }
+    } else {
+      double normalized = normalizeToUnit( opacity, params.computedOpacityMin_, params.computedOpacityMax_ );
+      quantized         = quantizeValue( normalized, bitDepth );
+    }
     // Store opacity in the first component of PCCAttribute16bit
     PCCAttribute16bit qOpacity;
     qOpacity[0] = static_cast<uint16_t>( quantized );
@@ -1370,11 +1412,53 @@ bool PCCAdaptation::dequantizeOpacities( const PCCPointSet3            &input,
   const size_t   pointCount = input.getPointCount();
   const uint32_t bitDepth   = params.opacityBitDepth_;
 
+  struct OpacityQuantRegion {
+    std::vector<double> region_start_real;
+    std::vector<int>    tp_int;
+  };
+  OpacityQuantRegion opRegion;
+  if ( params.enableOpacityNonUniformQuantization_ ) {
+    int    M      = params.opacityNumRegionsMinus1_;
+    double minLim = params.computedOpacityMin_;
+    if ( M > 0 ) {
+      opRegion.tp_int.resize( M );
+      opRegion.region_start_real.resize( M + 1 );
+      opRegion.region_start_real[0] = minLim;
+      for ( int m = 0; m < M; ++m ) {
+        int tp_val         = params.opacityTransitionPoints_[m];
+        opRegion.tp_int[m] = tp_val;
+        double prev_tp     = ( m == 0 ) ? 0.0 : opRegion.tp_int[m - 1];
+        opRegion.region_start_real[m + 1] =
+            opRegion.region_start_real[m] + ( tp_val - prev_tp ) * params.opacityStepSizes_[m];
+      }
+    }
+  }
+
   for ( size_t i = 0; i < pointCount; ++i ) {
-    const auto &qOpacity   = input.getOpacity( i );
-    double      normalized = dequantizeValue( qOpacity[0], bitDepth );
-    output.getOpacities()[i] =
-        denormalizeFromUnit( normalized, params.computedOpacityMin_, params.computedOpacityMax_ );
+    const auto &qOpacity = input.getOpacity( i );
+    if ( params.enableOpacityNonUniformQuantization_ ) {
+      int M = params.opacityNumRegionsMinus1_;
+      if ( M == 0 ) {
+        double normalized = dequantizeValue( qOpacity[0], bitDepth );
+        output.getOpacities()[i] =
+            denormalizeFromUnit( normalized, params.computedOpacityMin_, params.computedOpacityMax_ );
+      } else {
+        int q_val      = qOpacity[0];
+        int region_idx = 0;
+        while ( region_idx < M && q_val >= opRegion.tp_int[region_idx] ) { region_idx++; }
+
+        double prev_idx  = ( region_idx > 0 ) ? opRegion.tp_int[region_idx - 1] : 0.0;
+        double base_real = opRegion.region_start_real[region_idx];
+        double step_vec  = params.opacityStepSizes_[region_idx];
+        double r_opacity = base_real + ( q_val - prev_idx ) * step_vec;
+        output.getOpacities()[i] =
+            std::max( params.computedOpacityMin_, std::min( params.computedOpacityMax_, r_opacity ) );
+      }
+    } else {
+      double normalized = dequantizeValue( qOpacity[0], bitDepth );
+      output.getOpacities()[i] =
+          denormalizeFromUnit( normalized, params.computedOpacityMin_, params.computedOpacityMax_ );
+    }
   }
 
   return true;
@@ -2176,6 +2260,60 @@ bool PCCAdaptation::extractSHQuantRegions( const PCCPointSetGS &input, PCCAdapta
           std::max( 0, std::min( static_cast<int>( max_quant_val ), tp_high_quant ) ) );
     }
   }
+
+  return true;
+}
+
+bool PCCAdaptation::extractOpacityQuantRegions( const PCCPointSetGS &input, PCCAdaptationParameters &params ) {
+  if ( !params.enableOpacityNonUniformQuantization_ ) {
+    params.opacityNumRegionsMinus1_ = 0;
+    params.opacityTransitionPoints_.clear();
+    params.opacityStepSizes_.clear();
+    params.opacityNumBitsForTransitionPoint_ = 0;
+    return true;
+  }
+
+  const size_t pointCount = input.getPointCount();
+  if ( pointCount == 0 || !input.hasOpacities() ) return false;
+
+  // Auto-compute limits if enabled (Skip if non-uniform quantization is enabled, as it's already computed safely in
+  // extractOpacityQuantRegions)
+
+  if ( params.autoComputeOpacityLimits_ ) {
+    params.computedOpacityMin_ = std::numeric_limits<double>::max();
+    params.computedOpacityMax_ = std::numeric_limits<double>::lowest();
+    for ( size_t i = 0; i < pointCount; ++i ) {
+      double opacity             = input.getOpacities()[i];
+      params.computedOpacityMin_ = std::min( params.computedOpacityMin_, opacity );
+      params.computedOpacityMax_ = std::max( params.computedOpacityMax_, opacity );
+    }
+  } else {
+    params.computedOpacityMin_ = params.opacityLimitMin_;
+    params.computedOpacityMax_ = params.opacityLimitMax_;
+  }
+
+  params.opacityNumRegionsMinus1_ = 2;
+  params.opacityTransitionPoints_.clear();
+  params.opacityStepSizes_.assign( 3, 0.0 );
+  params.opacityNumBitsForTransitionPoint_ = 10;
+
+  double t1       = 0.45;
+  double t2       = 0.55;
+  double region_1 = std::log( t1 / ( 1.0 - t1 ) );
+  double region_2 = std::log( t2 / ( 1.0 - t2 ) );
+
+  const uint32_t bitDepth     = params.opacityBitDepth_;
+  const uint32_t total_levels = 1u << bitDepth;
+  uint32_t       n1           = total_levels / 8;
+  uint32_t       n3           = n1;
+  uint32_t       n2           = total_levels - n1 - n3;
+
+  params.opacityStepSizes_[0] = static_cast<float>( std::max( 1e-9, ( region_1 - params.computedOpacityMin_ ) / n1 ) );
+  params.opacityStepSizes_[1] = static_cast<float>( std::max( 1e-9, ( region_2 - region_1 ) / n2 ) );
+  params.opacityStepSizes_[2] = static_cast<float>( std::max( 1e-9, ( params.computedOpacityMax_ - region_2 ) / n3 ) );
+
+  params.opacityTransitionPoints_.push_back( n1 );
+  params.opacityTransitionPoints_.push_back( n1 + n2 );
 
   return true;
 }

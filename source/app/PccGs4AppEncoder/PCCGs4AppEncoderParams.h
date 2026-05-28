@@ -284,6 +284,10 @@ bool parseParameters( int                           argc,
       encoderParams.enableShNonUniformQuantization_,
       false,
       "Enable non-uniform quantization for SH (m75025)" )
+    ( "enableOpacityNonUniformQuantization",
+      encoderParams.enableOpacityNonUniformQuantization_,
+      false,
+      "Enable non-uniform quantization for opacity (m76122)" )
     ("linearOpacity",
       encoderParams.encodeLinearOpacity_,
       false,

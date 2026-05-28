@@ -88,6 +88,7 @@ struct PCCGSEncoderParameters {
   int              attributeRotationPackedMapIndex_{};
   int              attributeColorPackedMapIndex_{};
   std::vector<int> packedMapColumnsCount_{};
+
   // Gaussian Splatting
   bool gsdTransform2dPresentFlag_;
   bool dataAdaptiveShTransformEnabled_;
@@ -95,6 +96,7 @@ struct PCCGSEncoderParameters {
   bool enableShNonUniformQuantization_;
   bool enableScaleNonUniformQuantization_;
   bool enableScalePowerTransform_ = false;
+  bool enableOpacityNonUniformQuantization_;
 
   // GS SEI
   std::string gsColmapFolderPath_;
@@ -145,6 +147,7 @@ struct PCCGSEncoderParameters {
     enableShNonUniformQuantization_      = false;
     enableScaleNonUniformQuantization_   = false;
     enableScalePowerTransform_           = false;
+    enableOpacityNonUniformQuantization_ = false;
   }
 };
 

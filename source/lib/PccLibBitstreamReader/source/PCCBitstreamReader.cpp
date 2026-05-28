@@ -2954,6 +2954,20 @@ void PCCBitstreamReader::gsDequantization( PCCBitstream &bitstream, GsDequantiza
       gsd.setMinOpacity( valueFlt );
       READ_FLOAT_DESC( valueFlt, "MaxOpacity" );
       gsd.setMaxOpacity( valueFlt );
+      READ_UVLC_DESC( value, "OpacityNumQuantRegionsMinus1" );
+      gsd.setOpacityNumQuantRegionsMinus1( value );
+      if ( gsd.getOpacityNumQuantRegionsMinus1() > 0 ) {
+        READ_CODE_DESC( value, 4, "OpacityNumBitsForTransitionPoint" );
+        gsd.setOpacityNumBitsForTransitionPoint( value );
+        for ( int m = 0; m < gsd.getOpacityNumQuantRegionsMinus1(); m++ ) {
+          READ_CODE_DESC( value, gsd.getOpacityNumBitsForTransitionPoint(), "OpacityQuantRegionTransitionPoint" );
+          gsd.setOpacityQuantRegionTransitionPoint( m, value );
+        }
+        for ( int m = 0; m < gsd.getOpacityNumQuantRegionsMinus1() + 1; m++ ) {
+          READ_FLOAT_DESC( valueFlt, "OpacityRegionStepSize" );
+          gsd.setOpacityRegionStepSize( m, valueFlt );
+        }
+      }
     }
     READ_CODE_DESC( value, 1, "ShPresentFlag" );
     gsd.setShPresentFlag( value );
