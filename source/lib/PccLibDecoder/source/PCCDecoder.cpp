@@ -1204,16 +1204,17 @@ void PCCDecoder::createPatchFrameDataStructure( PCCContext &context, size_t atgl
       rawPointsPatch.sizeU0_            = rpdu.get2dSizeXMinus1() + 1;
       rawPointsPatch.sizeV0_            = rpdu.get2dSizeYMinus1() + 1;
       rawPointsPatch.shBitdepthDelta_   = rpdu.getShBitdepthDelta();
+      // Bug fix_m75379
+      size_t RawShift = 0;
+
       if ( afps.getRaw3dOffsetBitCountExplicitModeFlag() ) {
-        rawPointsPatch.u1_ = rpdu.get3dOffsetU();
-        rawPointsPatch.v1_ = rpdu.get3dOffsetV();
-        rawPointsPatch.d1_ = rpdu.get3dOffsetD();
+        RawShift = asps.getGeometry3dBitdepthMinus1() - ath.getRaw3dOffsetAxisBitCountMinus1();
       } else {
-        const size_t pcmU1V1D1Level = size_t( 1 ) << geometryBitDepth2D;
-        rawPointsPatch.u1_          = rpdu.get3dOffsetU() * pcmU1V1D1Level;
-        rawPointsPatch.v1_          = rpdu.get3dOffsetV() * pcmU1V1D1Level;
-        rawPointsPatch.d1_          = rpdu.get3dOffsetD() * pcmU1V1D1Level;
+        RawShift = geometryBitDepth2D;
       }
+      rawPointsPatch.u1_ = rpdu.get3dOffsetU() << RawShift;
+      rawPointsPatch.v1_ = rpdu.get3dOffsetV() << RawShift;
+      rawPointsPatch.d1_ = rpdu.get3dOffsetD() << RawShift;  // bug fix end
       rawPointsPatch.setNumberOfRawPoints( rpdu.getRawPointsMinus1() + 1 );
       rawPointsPatch.occupancyResolution_ = size_t( 1 ) << asps.getLog2PatchPackingBlockSize();
       totalNumberOfRawPoints += rawPointsPatch.getNumberOfRawPoints();

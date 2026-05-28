@@ -58,6 +58,8 @@ struct GSEncoderPatchInformation {
   PCCRawPointsPatch    patch;
   std::vector<size_t>  pointsIndicesInPatch;
   std::vector<Pixel2D> pointsPositionsIn2D[3];
+  uint32_t             m_mins[3];
+  uint32_t             m_maxs[3];
 };
 
 }  // namespace pcc

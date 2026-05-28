@@ -116,6 +116,11 @@ class PCCGSPatchGenerator {
   std::vector<GSEncoderPatchInformation> splitPatchesAdaptiveQuantization(
       const PCCPointSet3                           &source,
       const std::vector<GSEncoderPatchInformation> &patches );
+  // Create patch information from bounding box and point indices
+  uint32_t mergePatchesByAABB( const PCCPointSet3                     &source,
+                               std::vector<GSEncoderPatchInformation> &RawPatches,
+                               uint32_t                                patchSize,
+                               uint32_t                                coordPrecision );
 
   std::vector<GSEncoderPatchInformation> patches_;
   size_t                                 mapWidth_{ 0 };

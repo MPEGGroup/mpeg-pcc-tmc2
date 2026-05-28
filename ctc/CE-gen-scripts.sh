@@ -70,6 +70,7 @@ ADAPTIVE_PCA=1                  # when GSD_ADAPTIVE_SH=1, 1: enable m76164, 0: d
 GSD_NON_UNIFORM_QUANT=1         # 1: enable m75025, 0: disable m75025
 ADAPTIVE_QUANTIZATION=1         # 1: enable m75039, 0: disable
 ANNOTATE_DIR=""                 # m75039: path to directory of importance score files for each sequence. If string is empty, files are recomputed
+PATCH_MERGING=0                 # 1: enable m75379, 0: diable(CTC)
 GSD_SCALE_NON_UNIFORM_QUANT=1   # 1: enable m76123, 0: disable m76123
 GSD_SCALE_POWER_TRANSFORM=1     # 1: enable m76151 power transform + 2-seg PLS (requires GSD_SCALE_NON_UNIFORM_QUANT=1), 0: disable
 GSD_OPACITY_NON_UNIFORM_QUANT=1 # 1: enable m76122 opacity non-uniform quantization, 0: disable
@@ -459,6 +460,10 @@ for SEQ in "${SEQUENCES[@]}"; do
                 if (( $COLMAP_SEI == 1 )); then
                     FIRST_FRAME="$(printf "frame_%04i" ${START_FRAME_NR[$SEQ]})"
                     echo "    --GSColmapFolderPath=\"${COLMAP_DIRs[$SEQ]}/$FIRST_FRAME/sparse/\" \\"
+                fi
+                if (( $PATCH_MERGING == 1 )); then
+                    echo "    --raw3dOffsetBitCountExplicitModeFlag=1 \\"
+                    echo "    --raw3dOffsetAxisBitCountMinus1=13 \\"
                 fi
                 if [ "$PACKING_MODE" -ne 0 ]; then
                     echo "    --implicitPacking=$IMPLICIT_PACKING \\"

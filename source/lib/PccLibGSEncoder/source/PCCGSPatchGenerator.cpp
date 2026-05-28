@@ -87,10 +87,6 @@ void PCCGSPatchGenerator::generate3DPatches( const PCCPointSet3            &sour
                                              const PCCAdaptationParameters &adaptationParams ) {
   std::map<PCCBox3D, std::vector<size_t>> bbox2rawPoints;
   auto                                    mpsBoxSize = double( 1 << params.geometryBitDepth2D_ );
-  if ( params.raw3dOffsetBitCountExplicitModeFlag_ ) {
-    mpsBoxSize = double( 1 << ( params.raw3dOffsetAxisBitCountMinus1_ + 1 ) );
-    assert( 0 );
-  }
 
   PCCBox3D inputBbox = source.computeBoundingBox();
   inputBbox.min_     = { 0, 0, 0 };
@@ -121,10 +117,34 @@ void PCCGSPatchGenerator::generate3DPatches( const PCCPointSet3            &sour
     patches_.push_back( createPatchInfo( bboxRawPoints, rawPointsBBox ) );
   }
 
+  // merge patch
+  if ( params.raw3dOffsetAxisBitCountMinus1_ > 0 ) {
+    std::cout << "Raw patch count before merging: " << patches_.size() << std::endl;
+    uint32_t RawShift        = ( params.geometryBitDepth3D_ + 1 - 1 ) - ( params.raw3dOffsetAxisBitCountMinus1_ );
+    uint32_t coordResolution = 1 << RawShift;
+    bool     mergeSuccess    = false;
+    if ( coordResolution < mpsBoxSize ) {
+      mergeSuccess = mergePatchesByAABB( source, patches_, mpsBoxSize, coordResolution );
+    }
+    std::cout << "Raw patch count after merging: " << patches_.size() << std::endl;
+  }
+
   // adaptive quantization
   if ( adaptationParams.enableAdaptiveShQuantization_ ) {
     patches_ = splitPatchesAdaptiveQuantization( source, patches_ );
     std::cout << "Raw patch count after split for adaptive quantization: " << patches_.size() << std::endl;
+  }
+
+  // set local coordinate of points of patch after merge
+  for ( auto &rawPatch : patches_ ) {
+    const size_t numRawPointsBBox = rawPatch.patch.getNumberOfRawPoints();
+    rawPatch.patch.resize( 3 * numRawPointsBBox );  // allocation of xyz coord array
+    for ( auto i = 0; i < numRawPointsBBox; ++i ) {
+      const PCCPoint3D rawPoints                  = source[rawPatch.pointsIndicesInPatch[i]];
+      rawPatch.patch.x_[i]                        = static_cast<uint16_t>( rawPoints.x() - rawPatch.patch.u1_ );
+      rawPatch.patch.x_[numRawPointsBBox + i]     = static_cast<uint16_t>( rawPoints.y() - rawPatch.patch.v1_ );
+      rawPatch.patch.x_[2 * numRawPointsBBox + i] = static_cast<uint16_t>( rawPoints.z() - rawPatch.patch.d1_ );
+    }
   }
 }
 
@@ -364,6 +384,197 @@ GSEncoderPatchInformation PCCGSPatchGenerator::createPatchInfo( const PCCBox3D  
   patchInfo.patch.setNumberOfRawPoints( pointIndices.size() );
   patchInfo.pointsIndicesInPatch = pointIndices;
   return patchInfo;
+}
+
+static void findMinMaxInPatch( const PCCPointSet3 &source, GSEncoderPatchInformation &rawPatch ) {
+  uint32_t min_x = std::numeric_limits<uint32_t>::max();
+  uint32_t max_x = 0;
+  uint32_t min_y = std::numeric_limits<uint32_t>::max();
+  uint32_t max_y = 0;
+  uint32_t min_z = std::numeric_limits<uint32_t>::max();
+  uint32_t max_z = 0;
+
+  auto update_min_max = [&]( uint32_t x, uint32_t y, uint32_t z ) {
+    min_x = std::min( min_x, x );
+    max_x = std::max( max_x, x );
+    min_y = std::min( min_y, y );
+    max_y = std::max( max_y, y );
+    min_z = std::min( min_z, z );
+    max_z = std::max( max_z, z );
+  };
+
+  for ( uint32_t i = 0; i < rawPatch.patch.getNumberOfRawPoints(); i++ ) {
+    const PCCPoint3D &rawPoint = source[rawPatch.pointsIndicesInPatch[i]];
+    update_min_max( rawPoint.x(), rawPoint.y(), rawPoint.z() );
+  }
+  rawPatch.m_mins[0] = min_x;
+  rawPatch.m_mins[1] = min_y;
+  rawPatch.m_mins[2] = min_z;
+  rawPatch.m_maxs[0] = max_x;
+  rawPatch.m_maxs[1] = max_y;
+  rawPatch.m_maxs[2] = max_z;
+}
+
+static void findMinMaxIn2Patches( GSEncoderPatchInformation       &newPatch,
+                                  const GSEncoderPatchInformation &rawPatch1,
+                                  const GSEncoderPatchInformation &rawPatch2 ) {
+  uint32_t min_x = ( rawPatch1.m_mins[0] < rawPatch2.m_mins[0] ) ? rawPatch1.m_mins[0] : rawPatch2.m_mins[0];
+  uint32_t min_y = ( rawPatch1.m_mins[1] < rawPatch2.m_mins[1] ) ? rawPatch1.m_mins[1] : rawPatch2.m_mins[1];
+  uint32_t min_z = ( rawPatch1.m_mins[2] < rawPatch2.m_mins[2] ) ? rawPatch1.m_mins[2] : rawPatch2.m_mins[2];
+
+  uint32_t max_x = ( rawPatch1.m_maxs[0] > rawPatch2.m_maxs[0] ) ? rawPatch1.m_maxs[0] : rawPatch2.m_maxs[0];
+  uint32_t max_y = ( rawPatch1.m_maxs[1] > rawPatch2.m_maxs[1] ) ? rawPatch1.m_maxs[1] : rawPatch2.m_maxs[1];
+  uint32_t max_z = ( rawPatch1.m_maxs[2] > rawPatch2.m_maxs[2] ) ? rawPatch1.m_maxs[2] : rawPatch2.m_maxs[2];
+
+  newPatch.m_mins[0] = min_x;
+  newPatch.m_mins[1] = min_y;
+  newPatch.m_mins[2] = min_z;
+  newPatch.m_maxs[0] = max_x;
+  newPatch.m_maxs[1] = max_y;
+  newPatch.m_maxs[2] = max_z;
+}
+
+static bool isMergeFeasible( const GSEncoderPatchInformation &rawPatch1,
+                             const GSEncoderPatchInformation &rawPatch2,
+                             uint32_t                         boxSize,
+                             uint32_t                         coordResolution,
+                             PCCPoint3D                      &boxCoord /*[out]*/ ) {
+  uint32_t min_x = ( rawPatch1.m_mins[0] < rawPatch2.m_mins[0] ) ? rawPatch1.m_mins[0] : rawPatch2.m_mins[0];
+  uint32_t min_y = ( rawPatch1.m_mins[1] < rawPatch2.m_mins[1] ) ? rawPatch1.m_mins[1] : rawPatch2.m_mins[1];
+  uint32_t min_z = ( rawPatch1.m_mins[2] < rawPatch2.m_mins[2] ) ? rawPatch1.m_mins[2] : rawPatch2.m_mins[2];
+
+  uint32_t max_x = ( rawPatch1.m_maxs[0] > rawPatch2.m_maxs[0] ) ? rawPatch1.m_maxs[0] : rawPatch2.m_maxs[0];
+  uint32_t max_y = ( rawPatch1.m_maxs[1] > rawPatch2.m_maxs[1] ) ? rawPatch1.m_maxs[1] : rawPatch2.m_maxs[1];
+  uint32_t max_z = ( rawPatch1.m_maxs[2] > rawPatch2.m_maxs[2] ) ? rawPatch1.m_maxs[2] : rawPatch2.m_maxs[2];
+
+  // shift min_x/y/z by 'coordPrecision' units
+  const uint32_t coordResolutionM1 = coordResolution - 1;
+  min_x                            = ( min_x & coordResolutionM1 ) ? ( min_x - ( min_x & coordResolutionM1 ) ) : min_x;
+  min_y                            = ( min_y & coordResolutionM1 ) ? ( min_y - ( min_y & coordResolutionM1 ) ) : min_y;
+  min_z                            = ( min_z & coordResolutionM1 ) ? ( min_z - ( min_z & coordResolutionM1 ) ) : min_z;
+
+  boxCoord.x() = min_x;
+  boxCoord.y() = min_y;
+  boxCoord.z() = min_z;
+
+  // Calculate the width, height, and depth of AABB
+  size_t width  = (size_t)max_x - (size_t)min_x;
+  size_t height = (size_t)max_y - (size_t)min_y;
+  size_t depth  = (size_t)max_z - (size_t)min_z;
+
+  // All dimensions of the AABB must be less than or equal to L(boxSize).
+  return ( width < boxSize ) && ( height < boxSize ) && ( depth < boxSize );
+}
+
+static void mergeTwoPatches( const GSEncoderPatchInformation &p1,
+                             const GSEncoderPatchInformation &p2,
+                             uint32_t                         boxSize,
+                             PCCPoint3D                      &newBoxCoord,
+                             GSEncoderPatchInformation       &mergedPatch /*[out]*/ ) {
+  mergedPatch.patch.frameIndex_          = p1.patch.frameIndex_;
+  mergedPatch.patch.occupancyResolution_ = p1.patch.occupancyResolution_;
+  mergedPatch.patch.isPatchInAuxVideo_   = p1.patch.isPatchInAuxVideo_;
+  mergedPatch.patch.sizeU_               = 0;
+  mergedPatch.patch.sizeV_               = 0;
+  mergedPatch.patch.u0_                  = 0;
+  mergedPatch.patch.v0_                  = 0;
+  mergedPatch.patch.sizeV0_              = 0;
+  mergedPatch.patch.sizeU0_              = 0;
+
+  // 1) merge point indices
+  mergedPatch.pointsIndicesInPatch.reserve( p1.patch.numberOfRawPoints_ + p2.patch.numberOfRawPoints_ );
+
+  mergedPatch.pointsIndicesInPatch.insert( mergedPatch.pointsIndicesInPatch.end(), p1.pointsIndicesInPatch.begin(),
+                                           p1.pointsIndicesInPatch.end() );
+  mergedPatch.pointsIndicesInPatch.insert( mergedPatch.pointsIndicesInPatch.end(), p2.pointsIndicesInPatch.begin(),
+                                           p2.pointsIndicesInPatch.end() );
+
+  // 2) set AABB coordinates from merged patch
+  mergedPatch.patch.u1_ = size_t( newBoxCoord.x() );
+  mergedPatch.patch.v1_ = size_t( newBoxCoord.y() );
+  mergedPatch.patch.d1_ = size_t( newBoxCoord.z() );
+  mergedPatch.patch.occupancy_.resize( 0 );
+  mergedPatch.patch.setNumberOfRawPoints( mergedPatch.pointsIndicesInPatch.size() );
+
+  // 3) find new min/max
+  findMinMaxIn2Patches( mergedPatch, p1, p2 );
+}
+
+uint32_t PCCGSPatchGenerator::mergePatchesByAABB( const PCCPointSet3                     &source,
+                                                  std::vector<GSEncoderPatchInformation> &RawPatches,
+                                                  uint32_t                                patchSize,
+                                                  uint32_t                                coordResolution ) {
+  bool     wasMerged             = true;
+  int      mergePass             = 0;
+  uint32_t numMergedPatches      = 0;
+  uint32_t totalNumMergedPatches = 0;
+
+  // 1) find min/max position of each patch
+  for ( auto &rawPatch : RawPatches ) { findMinMaxInPatch( source, rawPatch ); }
+
+  std::vector<GSEncoderPatchInformation> currPatches = RawPatches;
+  std::vector<bool>                      mergedFlags( currPatches.size(), false );
+
+  std::vector<GSEncoderPatchInformation> nextPatches;
+
+  // 2) Iteration until merge is not possible
+  while ( wasMerged && ( mergePass < 2 ) ) {
+    wasMerged = false;
+    mergePass++;
+    mergedFlags.clear();
+    mergedFlags.resize( currPatches.size(), false );
+    nextPatches.clear();
+    nextPatches.reserve( currPatches.size() );
+
+    uint32_t numMergedPatches = 0;
+    std::cout << "--- Merge trial begin " << mergePass << " ---" << std::endl;
+
+    for ( size_t i = 0; i < currPatches.size(); ++i ) {
+      if ( mergedFlags[i] ) continue;
+
+      GSEncoderPatchInformation &P_A    = currPatches[i];
+      size_t                     best_j = (size_t)-1;
+      PCCPoint3D                 newBoxCoord;
+
+      for ( size_t j = i + 1; j < currPatches.size(); ++j ) {
+        if ( mergedFlags[j] ) continue;
+
+        const GSEncoderPatchInformation &P_B = currPatches[j];
+
+        // Integration Probability Check
+        if ( isMergeFeasible( P_A, P_B, patchSize, coordResolution, newBoxCoord /*[out]*/ ) ) {
+          // P_B can be integrated with P_A.
+          best_j = j;
+          break;  // find the first integrable patch, merge immediately
+        }
+      }
+
+      if ( best_j != (size_t)-1 ) {  // merge success
+        numMergedPatches++;
+        const GSEncoderPatchInformation &P_B = currPatches[best_j];
+        GSEncoderPatchInformation        P_New;
+        mergeTwoPatches( P_A, P_B, patchSize, newBoxCoord, P_New /*[out]*/ );
+        nextPatches.push_back( P_New );
+        mergedFlags[i]      = true;
+        mergedFlags[best_j] = true;
+        wasMerged           = true;
+
+      } else {
+        // No integrable patches found. Keep the current patch intact.
+        nextPatches.push_back( P_A );
+      }
+    }
+    if ( numMergedPatches ) {
+      currPatches = std::move( nextPatches );
+      totalNumMergedPatches += numMergedPatches;
+    }
+    std::cout << "--- Merge trial end : " << mergePass << ": " << numMergedPatches << " ---" << std::endl;
+  }
+
+  if ( totalNumMergedPatches ) { RawPatches = std::move( currPatches ); }
+  std::cout << "--- Total num of merged patches : " << totalNumMergedPatches << " ---" << std::endl;
+
+  return totalNumMergedPatches;
 }
 
 std::vector<GSEncoderPatchInformation> PCCGSPatchGenerator::splitPatchesAdaptiveQuantization(
