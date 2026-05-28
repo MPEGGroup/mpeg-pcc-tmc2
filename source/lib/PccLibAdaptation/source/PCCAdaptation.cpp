@@ -701,8 +701,23 @@ bool PCCAdaptation::quantizePositions( const PCCPointSetGS     &input,
   if ( params.autoComputePositionLimits_ ) {
     computeBoundingBox( input, params.computedPositionMin_, params.computedPositionMax_ );
 
-    // Use bounding box min as start, and add fixed size (256) as in Python script
-    for ( int k = 0; k < 3; ++k ) { params.computedPositionMax_[k] = params.computedPositionMin_[k] + 256.0; }
+    // Use bounding box min as start, and add fixed size (256) as in Python script, only if the range is smaller than
+    // 256 to avoid excessive quantization error
+    double range = 0.0;
+    for ( int k = 0; k < 3; ++k ) {
+      if ( range < ( params.computedPositionMax_[k] - params.computedPositionMin_[k] ) ) {
+        range = params.computedPositionMax_[k] - params.computedPositionMin_[k];
+      }
+    }
+    if ( range >= 256.0 ) {
+      std::cerr << "PCCAdaptation::quantizePositions - Warning: Computed position range is " << range
+                << ", which is larger than 256. Using actual bounding box limits for quantization." << std::endl;
+      for ( int k = 0; k < 3; ++k ) { params.computedPositionMax_[k] = params.computedPositionMin_[k] + range; }
+    } else {
+      std::cerr << "PCCAdaptation::quantizePositions - Warning: Computed position range is " << range
+                << ", which is smaller than 256. Using fixed size 256 for quantization." << std::endl;
+      for ( int k = 0; k < 3; ++k ) { params.computedPositionMax_[k] = params.computedPositionMin_[k] + 256.0; }
+    }
   } else {
     // Use provided limits
     params.computedPositionMin_ = params.positionLimitMin_;
