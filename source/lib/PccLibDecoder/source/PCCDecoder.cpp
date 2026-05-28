@@ -2130,7 +2130,6 @@ int PCCDecoder::ReconstructIdc3( PCCContext &context, PCCGroupOfFrames &reconstr
 
                 uint32_t M = dequant.getNumQuantRegionsMinus1( i, j );
                 adaptationParams.shNumRegionsMinus1_.push_back( M );
-                adaptationParams.shNumBitsForTransitionPoint_.push_back( dequant.getNumBitsForTransitionPoint( i, j ) );
                 if ( M > 0 ) {
                   adaptationParams.enableShNonUniformQuantization_ = true;
                   for ( uint32_t m = 0; m < M; m++ ) {

@@ -2977,8 +2977,6 @@ void PCCBitstreamReader::gsDequantization( PCCBitstream &bitstream, GsDequantiza
       if ( gsd.getShMultipleRegionsEnableFlag() ) {
         READ_CODE_DESC( value, 1, "ShSameNumQuantRegionsMinus1Flag" );
         gsd.setShSameNumRegionMius1Flag( value );
-        READ_CODE_DESC( value, 1, "ShSameNumBitsForTransitionPointFlag" );
-        gsd.setShSameNumBitsForTransitionPointFlag( value );
         READ_CODE_DESC( value, 1, "ShSameQuantRegionTransitionPointFlag" );
         gsd.setShSameQuantRegionTransitionPointFlag( value );
         READ_CODE_DESC( value, 1, "ShSameRegionStepSizeFlag" );
@@ -3009,16 +3007,17 @@ void PCCBitstreamReader::gsDequantization( PCCBitstream &bitstream, GsDequantiza
               gsd.setNumQuantRegionsMinus1( i, c, gsd.getNumQuantRegionsMinus1( 0, 0 ) );
             }
             if ( gsd.getNumQuantRegionsMinus1( i, c ) > 0 ) {
-              if ( !gsd.getShSameNumBitsForTransitionPointFlag() || ( ( i == 0 ) && ( c == 0 ) ) ) {
-                READ_CODE_DESC( value, 4, "NumBitsForTransitionPoint" );
-                gsd.setNumBitsForTransitionPoint( i, c, value );
-              } else {
-                gsd.setNumBitsForTransitionPoint( i, c, gsd.getNumBitsForTransitionPoint( 0, 0 ) );
-              }
               for ( int m = 0; m < gsd.getNumQuantRegionsMinus1( i, c ); m++ ) {
                 if ( !gsd.getShSameQuantRegionTransitionPointFlag() || ( ( i == 0 ) && ( c == 0 ) ) ) {
-                  READ_CODE_DESC( value, gsd.getNumBitsForTransitionPoint( i, c ), "QuantRegionTransitionPoint" );
-                  gsd.setQuantRegionTransitionPoint( i, c, m, value );
+                  READ_UVLC_DESC( value, "TransitionPoint" );
+                  gsd.setQuantRegionTransitionPointDelta( i, c, m, value );
+
+                  if ( m == 0 )
+                    gsd.setQuantRegionTransitionPoint( i, c, m, value );
+                  else
+                    gsd.setQuantRegionTransitionPoint( i, c, m,
+                                                       gsd.getQuantRegionTransitionPoint( i, c, m - 1 ) + value );
+
                 } else {
                   gsd.setQuantRegionTransitionPoint( i, c, m, gsd.getQuantRegionTransitionPoint( 0, 0, m ) );
                 }

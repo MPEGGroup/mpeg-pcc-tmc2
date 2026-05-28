@@ -128,7 +128,6 @@ class GsDequantization {
       shMultipleRegionsEnableFlag_( false ),
       shSameMinMaxFlag_( false ),
       shSameNumRegionMius1Flag_( false ),
-      shSameNumBitsForTransitionPointFlag_( false ),
       shSameQuantRegionTransitionPointFlag_( false ),
       shSameRegionStepSizeFlag_( false ),
       rotationPresentFlag_( false ),
@@ -227,6 +226,8 @@ class GsDequantization {
                 for ( int m = 0; m < numQuantRegionsMinus1_[l][c]; m++ ) {
                   if ( other.quantRegionTransitionPoint_[l][c][m] != quantRegionTransitionPoint_[l][c][m] )
                     retVal = false;
+                  if ( other.quantRegionTransitionPointDelta_[l][c][m] != quantRegionTransitionPointDelta_[l][c][m] )
+                    retVal = false;
                 }
                 for ( int m = 0; m < numQuantRegionsMinus1_[l][c] + 1; m++ ) {
                   if ( other.regionStepSize_[l][c][m] != regionStepSize_[l][c][m] ) retVal = false;
@@ -273,7 +274,6 @@ class GsDequantization {
   bool     getShMultipleRegionsEnableFlag() const { return shMultipleRegionsEnableFlag_; }
   bool     getShSameMinMaxFlag() const { return shSameMinMaxFlag_; }
   bool     getShSameNumRegionMius1Flag() const { return shSameNumRegionMius1Flag_; }
-  bool     getShSameNumBitsForTransitionPointFlag() const { return shSameNumBitsForTransitionPointFlag_; }
   bool     getShSameQuantRegionTransitionPointFlag() const { return shSameQuantRegionTransitionPointFlag_; }
   bool     getShSameRegionStepSizeFlag() const { return shSameRegionStepSizeFlag_; }
   uint8_t  getShNumLvl() { return shNumLvl_; }
@@ -281,9 +281,11 @@ class GsDequantization {
   float    getMinSh( int i, int j ) { return minSH_[i][j]; }
   float    getMaxSh( int i, int j ) { return maxSH_[i][j]; }
   uint32_t getNumQuantRegionsMinus1( int i, int j ) { return numQuantRegionsMinus1_[i][j]; }
-  uint32_t getNumBitsForTransitionPoint( int i, int j ) { return numBitsForTransitionPoint_[i][j]; }
   uint16_t getQuantRegionTransitionPoint( int i, int j, int m ) { return quantRegionTransitionPoint_[i][j][m]; }
-  float    getRegionStepSize( int i, int j, int m ) { return regionStepSize_[i][j][m]; }
+  uint16_t getQuantRegionTransitionPointDelta( int i, int j, int m ) {
+    return quantRegionTransitionPointDelta_[i][j][m];
+  }
+  float getRegionStepSize( int i, int j, int m ) { return regionStepSize_[i][j][m]; }
 
   void setDequantizationType( uint8_t value ) { dequantizationType_ = value; }
   void setMinPosition( int i, float value ) { minPosition_[i] = value; }
@@ -327,7 +329,6 @@ class GsDequantization {
   void setShMultipleRegionsEnableFlag( bool value ) { shMultipleRegionsEnableFlag_ = value; }
   void setShSameMinMaxFlag( bool value ) { shSameMinMaxFlag_ = value; }
   void setShSameNumRegionMius1Flag( bool value ) { shSameNumRegionMius1Flag_ = value; }
-  void setShSameNumBitsForTransitionPointFlag( bool value ) { shSameNumBitsForTransitionPointFlag_ = value; }
   void setShSameQuantRegionTransitionPointFlag( bool value ) { shSameQuantRegionTransitionPointFlag_ = value; }
   void setShSameRegionStepSizeFlag( bool value ) { shSameRegionStepSizeFlag_ = value; }
   void setShNumLvl( int value ) {
@@ -337,8 +338,8 @@ class GsDequantization {
     maxSH_.resize( value );
     numQuantRegionsMinus1_.resize( value );
     quantRegionTransitionPoint_.resize( value );
+    quantRegionTransitionPointDelta_.resize( value );
     regionStepSize_.resize( value );
-    numBitsForTransitionPoint_.resize( value );
   }
   void setShNumChan( int i, int value ) {
     shNumChan_[i] = value;
@@ -346,8 +347,8 @@ class GsDequantization {
     maxSH_[i].resize( value, 0 );
     numQuantRegionsMinus1_[i].resize( value, 0 );
     quantRegionTransitionPoint_[i].resize( value );
+    quantRegionTransitionPointDelta_[i].resize( value );
     regionStepSize_[i].resize( value );
-    numBitsForTransitionPoint_[i].resize( value );
   }
   void setMinSh( int i, int j, float value ) { minSH_[i][j] = value; }
   void setMaxSh( int i, int j, float value ) { maxSH_[i][j] = value; }
@@ -355,14 +356,18 @@ class GsDequantization {
     numQuantRegionsMinus1_[i][j] = value;
     if ( value > 0 ) {
       quantRegionTransitionPoint_[i][j].resize( value, 0 );
+      quantRegionTransitionPointDelta_[i][j].resize( value, 0 );
       regionStepSize_[i][j].resize( value + 1, 0 );
     }
   }
   void setQuantRegionTransitionPoint( int i, int j, int m, uint16_t value ) {
     quantRegionTransitionPoint_[i][j][m] = value;
   }
+
+  void setQuantRegionTransitionPointDelta( int i, int j, int m, uint16_t value ) {
+    quantRegionTransitionPointDelta_[i][j][m] = value;
+  }
   void setRegionStepSize( int i, int j, int m, float value ) { regionStepSize_[i][j][m] = value; }
-  void setNumBitsForTransitionPoint( int i, int j, uint32_t value ) { numBitsForTransitionPoint_[i][j] = value; }
 
  private:
   uint8_t                                         dequantizationType_;
@@ -395,7 +400,6 @@ class GsDequantization {
   bool                                            shMultipleRegionsEnableFlag_;
   bool                                            shSameMinMaxFlag_;
   bool                                            shSameNumRegionMius1Flag_;
-  bool                                            shSameNumBitsForTransitionPointFlag_;
   bool                                            shSameQuantRegionTransitionPointFlag_;
   bool                                            shSameRegionStepSizeFlag_;
   uint32_t                                        shNumLvl_;
@@ -404,8 +408,8 @@ class GsDequantization {
   std::vector<std::vector<float>>                 maxSH_;
   std::vector<std::vector<uint32_t>>              numQuantRegionsMinus1_;
   std::vector<std::vector<std::vector<uint16_t>>> quantRegionTransitionPoint_;
+  std::vector<std::vector<std::vector<uint16_t>>> quantRegionTransitionPointDelta_;
   std::vector<std::vector<std::vector<float>>>    regionStepSize_;
-  std::vector<std::vector<uint32_t>>              numBitsForTransitionPoint_;
 };
 
 // H.8.3.6.3.6	GS Spherical Harmonics Property syntax

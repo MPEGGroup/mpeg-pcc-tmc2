@@ -260,17 +260,6 @@ void PCCGSHlsBuilder::initializeAtlasAapsHls( PCCHighLevelSyntax            &hls
       }
       dequant.setShSameNumRegionMius1Flag( sameNumQuantRegions );
 
-      // Compute shSameNumBitsForTransitionPointFlag
-      bool sameNumBits = true;
-      int  refNumBits  = adaptationParams.shNumBitsForTransitionPoint_[0];
-      for ( size_t idx = 1; idx < adaptationParams.shCoefficientCount_ * 3; idx++ ) {
-        if ( adaptationParams.shNumBitsForTransitionPoint_[idx] != refNumBits ) {
-          sameNumBits = false;
-          break;
-        }
-      }
-      dequant.setShSameNumBitsForTransitionPointFlag( sameNumBits );
-
       // Compute shSameQuantRegionTransitionPointFlag
       bool sameTransitionPoints = true;
       int  tpRefOffset          = 0;
@@ -342,9 +331,15 @@ void PCCGSHlsBuilder::initializeAtlasAapsHls( PCCHighLevelSyntax            &hls
           int idx = i * 3 + j;
           int M   = adaptationParams.shNumRegionsMinus1_[idx];
           dequant.setNumQuantRegionsMinus1( i, j, M );
-          dequant.setNumBitsForTransitionPoint( i, j, adaptationParams.shNumBitsForTransitionPoint_[idx] );
           for ( int m = 0; m < M; m++ ) {
             dequant.setQuantRegionTransitionPoint( i, j, m, adaptationParams.shTransitionPoints_[tpOffset + m] );
+            uint32_t curr = adaptationParams.shTransitionPoints_[tpOffset + m];
+            if ( m == 0 ) {
+              dequant.setQuantRegionTransitionPointDelta( i, j, m, curr );
+            } else {
+              uint32_t prev = adaptationParams.shTransitionPoints_[tpOffset + m - 1];
+              dequant.setQuantRegionTransitionPointDelta( i, j, m, curr - prev );
+            }
           }
           for ( int m = 0; m < M + 1; m++ ) {
             dequant.setRegionStepSize( i, j, m, adaptationParams.shStepSizes_[ssOffset + m] );
