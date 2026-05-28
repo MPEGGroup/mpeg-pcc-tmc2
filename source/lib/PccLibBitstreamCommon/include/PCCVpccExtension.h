@@ -383,25 +383,37 @@ class GsDequantization {
 // H.8.3.6.3.6	GS Spherical Harmonics Property syntax
 class GsSphericalHarmonicsProperty {
  public:
-  GsSphericalHarmonicsProperty() : shMappingMethod_( 0 ) {}
-  ~GsSphericalHarmonicsProperty() {}
+  GsSphericalHarmonicsProperty() : shMappingMethod_( 0 ), shNumBitsMappingTableEntry_( 0 ) { shMappingTable_.clear(); }
+  ~GsSphericalHarmonicsProperty() { shMappingTable_.clear(); }
   GsSphericalHarmonicsProperty &operator=( const GsSphericalHarmonicsProperty & ) = default;
 
   bool operator==( const GsSphericalHarmonicsProperty &other ) const {
     bool retVal = true;
     if ( other.shMappingMethod_ != shMappingMethod_ ) retVal = false;
+    if ( shMappingMethod_ == 2 ) {
+      if ( other.shNumBitsMappingTableEntry_ != shNumBitsMappingTableEntry_ ) retVal = false;
+      if ( other.shMappingTable_ != shMappingTable_ ) retVal = false;
+    }
     return retVal;
   }
 
   bool operator!=( const GsSphericalHarmonicsProperty &other ) const { return !( *this == other ); }
 
-  uint8_t getShMappingMethod() { return shMappingMethod_; }
+  uint32_t getShMappingMethod() { return shMappingMethod_; }
+  void     setShMappingMethod( uint32_t value ) { shMappingMethod_ = value; }
 
-  void setShMappingMethod( uint32_t value ) { shMappingMethod_ = value; }
+  uint32_t getShNumBitsMappingTableEntry() { return shNumBitsMappingTableEntry_; }
+  void     setShNumBitsMappingTableEntry( uint32_t value ) { shNumBitsMappingTableEntry_ = value; }
+
+  std::vector<uint32_t> &getShMappingTable() { return shMappingTable_; }
+  uint32_t               getShMappingTable( size_t index ) { return shMappingTable_[index]; }
+  void                   setShMappingTable( size_t index, uint32_t value ) { shMappingTable_[index] = value; }
+  void                   resizeShMappingTable( size_t size ) { shMappingTable_.resize( size ); }
 
  private:
-  uint8_t  shSpace_;
-  uint32_t shMappingMethod_;
+  uint32_t              shMappingMethod_;
+  uint32_t              shNumBitsMappingTableEntry_;
+  std::vector<uint32_t> shMappingTable_;
 };
 
 // H.8.3.6.3.7	GS spherical harmonics transform syntax

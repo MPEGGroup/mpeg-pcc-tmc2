@@ -62,7 +62,7 @@ GENERATE_PNGs=0             # 0 or 1
 MAPMODE=1                     # 0: INTERLEAVED, 1: PLANAR(CTC)
 PACKING_MODE=1                # 0: pack-none, 1: pack-attr, 2: pack-all
 IMPLICIT_PACKING=1            # 0: OFF(explicit), 1:ON (implicit)
-SH_MAPPING=1                  # set to 0 to use interleaved maping in the video bitstream (1 corresponds to CTC, i.e. planar mapping)
+SH_MAPPING=2                  # set to 0 to use interleaved maping in the video bitstream (1 corresponds to CTC, i.e. planar mapping)
 COLMAP_SEI=0                  # set it to 1 if you want to send the camera pareters as an SEI message
 GSD_TRANSFORM_2D=1            # 1: enable 2D transform for sphereical harmnoics, 0: disable
 GSD_ADAPTIVE_SH=1             # when GSD_TRANSFORM_2D=1, 1: enable m75790, 0: enable m75380
@@ -452,8 +452,8 @@ for SEQ in "${SEQUENCES[@]}"; do
                     MKDIRCK "$RESULT_DIR/debug"
                     echo "    --keepIntermediateFiles=1 --debugPath=$RESULT_DIR/debug \\"
                 fi
-                if (( $SH_MAPPING == 0 )); then
-                    echo "    --shMappingMode=0 \\"
+                if (( $SH_MAPPING != 1 )); then
+                    echo "    --shMappingMode=$SH_MAPPING \\"
                 fi
                 if (( $COLMAP_SEI == 1 )); then
                     FIRST_FRAME="$(printf "frame_%04i" ${START_FRAME_NR[$SEQ]})"

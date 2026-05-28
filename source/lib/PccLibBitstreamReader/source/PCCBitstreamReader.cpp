@@ -3029,9 +3029,19 @@ void PCCBitstreamReader::gsDequantization( PCCBitstream &bitstream, GsDequantiza
 // H.8.3.6.3.6	Gaussian splat spherical harmonics property syntax
 void PCCBitstreamReader::gsShProperty( PCCBitstream &bitstream, GsSphericalHarmonicsProperty &gshp ) {
   TRACE_BITSTREAM_IN( "%s", __func__ );
-  int value;
+  uint32_t value;
   READ_UVLC_DESC( value, "ShMappingMethod" );
   gshp.setShMappingMethod( value );
+  if ( gshp.getShMappingMethod() == 2 ) {
+    READ_CODE_DESC( value, 6, "ShNumBitsMappingTableEntry" );
+    gshp.setShNumBitsMappingTableEntry( value );
+    uint32_t shNumACCoeff = 45;
+    gshp.resizeShMappingTable( shNumACCoeff );
+    for ( int m = 0; m < shNumACCoeff; m++ ) {
+      READ_CODE_DESC( value, gshp.getShNumBitsMappingTableEntry(), "ShMappingTable" );
+      gshp.setShMappingTable( m, value );
+    }
+  }
   TRACE_BITSTREAM_OUT( "%s", __func__ );
 }
 

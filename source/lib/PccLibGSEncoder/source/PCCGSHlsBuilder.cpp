@@ -480,6 +480,11 @@ void PCCGSHlsBuilder::initializeAtlasAapsHls( PCCHighLevelSyntax            &hls
 
   auto &shProp = ext.getGsShProperty();
   shProp.setShMappingMethod( adaptationParams.shMappingMode_ );
+  if ( adaptationParams.shMappingMode_ == 2 ) {
+    shProp.setShNumBitsMappingTableEntry( adaptationParams.shNumBitsMappingTableEntry_ );
+    shProp.resizeShMappingTable( 45 );
+    for ( int m = 0; m < 45; ++m ) { shProp.setShMappingTable( m, adaptationParams.shMappingTable_[m] ); }
+  }
 
   if ( adaptationParams.gsdTransform2dPresentFlag_ ) {
     ext.setTransform2DPresentFlag( true );

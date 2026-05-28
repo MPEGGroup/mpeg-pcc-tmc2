@@ -553,10 +553,47 @@ bool PCCAdaptation::adapt( const PCCPointSetGS     &inputPointCloud,
 
   // Apply spherical harmonics quantization
   if ( params.enableShQuantization_ && inputPointCloud.hasSphericalHarmonics() ) {
-    reorderSphericalHarmonicsAC( const_cast<PCCPointSetGS &>( inputPointCloud ), true );
+    if ( params.shMappingMode_ != 2 )
+      reorderSphericalHarmonicsAC( const_cast<PCCPointSetGS &>( inputPointCloud ), true );
     initializeShTransformParams( params );
     if ( params.shConvertToYUV_ || params.gsdTransform2dPresentFlag_ ) {
       sphericalHarmonicsTransform( const_cast<PCCPointSetGS &>( inputPointCloud ), params );
+    }
+
+    if ( params.shMappingMode_ == 2 ) {
+      const size_t pointCount  = inputPointCloud.getPointCount();
+      const size_t shCoefCount = inputPointCloud.getSphericalHarmonicsCount();
+      const size_t numACCoeff  = shCoefCount - 1;  // 15
+      const auto  &shData      = inputPointCloud.getSphericalHarmonics();
+
+      std::array<double, 45> mean;
+      mean.fill( 0.0 );
+      for ( size_t p = 0; p < pointCount; ++p ) {
+        for ( size_t l = 1; l < shCoefCount; ++l ) {
+          for ( int ch = 0; ch < 3; ++ch ) { mean[ch * numACCoeff + ( l - 1 )] += shData[p][l][ch]; }
+        }
+      }
+      for ( int i = 0; i < 45; ++i ) { mean[i] /= pointCount; }
+
+      std::array<double, 45> stddev;
+      stddev.fill( 0.0 );
+      for ( size_t p = 0; p < pointCount; ++p ) {
+        for ( size_t l = 1; l < shCoefCount; ++l ) {
+          for ( int ch = 0; ch < 3; ++ch ) {
+            int    idx = ch * numACCoeff + ( l - 1 );
+            double d   = shData[p][l][ch] - mean[idx];
+            stddev[idx] += d * d;
+          }
+        }
+      }
+      for ( int i = 0; i < 45; ++i ) { stddev[i] = std::sqrt( stddev[i] / pointCount ); }
+
+      std::array<int, 45> indices;
+      for ( int i = 0; i < 45; ++i ) { indices[i] = i; }
+      std::sort( indices.begin(), indices.end(), [&stddev]( int a, int b ) { return stddev[a] > stddev[b]; } );
+
+      params.shMappingTable_.fill( 0 );
+      for ( int j = 0; j < 45; ++j ) { params.shMappingTable_[j] = indices[j]; }
     }
 
     extractSHQuantRegions( inputPointCloud, params );
@@ -566,6 +603,8 @@ bool PCCAdaptation::adapt( const PCCPointSetGS     &inputPointCloud,
     }
     if ( params.shMappingMode_ == 1 )
       reorderSphericalHarmonicsAC( const_cast<PCCPointSet3 &>( outputPointCloud ), false );
+    else if ( params.shMappingMode_ == 2 )
+      reorderSphericalHarmonicsAdaptive( const_cast<PCCPointSet3 &>( outputPointCloud ), params, true );
 
     if ( params.enableAdaptiveShQuantization_ ) {
       outputPointCloud.getQuantizationGroupIds()            = inputPointCloud.getQuantizationGroupIds();
@@ -625,11 +664,13 @@ bool PCCAdaptation::inverseAdapt( const PCCPointSet3            &inputPointCloud
   if ( params.enableShQuantization_ && inputPointCloud.hasSphericalHarmonics() ) {
     if ( params.shMappingMode_ == 1 )
       reorderSphericalHarmonicsAC( const_cast<PCCPointSet3 &>( inputPointCloud ), true );
+    else if ( params.shMappingMode_ == 2 )
+      reorderSphericalHarmonicsAdaptive( const_cast<PCCPointSet3 &>( inputPointCloud ), params, false );
     if ( !dequantizeSphericalHarmonics( inputPointCloud, outputPointCloud, params ) ) { return false; }
     if ( params.shConvertToYUV_ || params.gsdTransform2dPresentFlag_ ) {
       sphericalHarmonicsInvTransform( outputPointCloud, params );
     }
-    reorderSphericalHarmonicsAC( outputPointCloud, false );
+    if ( params.shMappingMode_ != 2 ) reorderSphericalHarmonicsAC( outputPointCloud, false );
 
     if ( params.enableAdaptiveShQuantization_ ) {
       outputPointCloud.getQuantizationGroupIds()            = inputPointCloud.getQuantizationGroupIds();
@@ -2458,6 +2499,133 @@ bool PCCAdaptation::reorderSphericalHarmonicsAC( PCCPointSet3 &pointCloud, bool 
     }
 
     // Copy back
+    for ( size_t i = 0; i < shCoefCount; ++i ) {
+      sh[i][0] = temp[i][0];
+      sh[i][1] = temp[i][1];
+      sh[i][2] = temp[i][2];
+    }
+  }
+
+  return true;
+}
+
+//============================================================================
+// Spherical Harmonics Adaptive Reordering (Mode 2)
+//============================================================================
+
+bool PCCAdaptation::reorderSphericalHarmonicsAdaptive( PCCPointSet3                  &pointCloud,
+                                                       const PCCAdaptationParameters &params,
+                                                       bool                           toInterleaved ) {
+  if ( !pointCloud.hasSphericalHarmonics() ) return false;
+
+  const size_t pointCount  = pointCloud.getPointCount();
+  const size_t shCoefCount = 16;
+  const size_t numACCoeff  = 15;
+
+  auto                &sphericalHarmonics = pointCloud.getSphericalHarmonics();
+  GSSphericalHarmonics temp;
+
+  std::array<int, 45> invMappingTable;
+  invMappingTable.fill( 0 );
+  for ( int i = 0; i < 45; ++i ) { invMappingTable[params.shMappingTable_[i]] = i; }
+
+  for ( size_t p = 0; p < pointCount; ++p ) {
+    auto &sh = sphericalHarmonics[p];
+
+    for ( size_t i = 0; i < GSSphericalHarmonics::MAX_SH_COEFFS; ++i ) {
+      temp[i][0] = 0.0f;
+      temp[i][1] = 0.0f;
+      temp[i][2] = 0.0f;
+    }
+
+    temp[0][0] = sh[0][0];
+    temp[0][1] = sh[0][1];
+    temp[0][2] = sh[0][2];
+
+    if ( toInterleaved ) {
+      for ( int p = 1; p < 16; ++p ) {
+        for ( int c = 0; c < 3; ++c ) {
+          int bitstreamPos = ( p - 1 ) * 3 + c;
+          int planarPos    = params.shMappingTable_[bitstreamPos];
+          int level        = 1 + ( planarPos % numACCoeff );
+          int channel      = planarPos / numACCoeff;
+          temp[p][c]       = sh[level][channel];
+        }
+      }
+    } else {
+      for ( int l = 1; l < 16; ++l ) {
+        for ( int ch = 0; ch < 3; ++ch ) {
+          int planarPos     = ch * numACCoeff + ( l - 1 );
+          int bitstreamPos  = invMappingTable[planarPos];
+          int partition     = bitstreamPos / 3 + 1;
+          int channelInPart = bitstreamPos % 3;
+          temp[l][ch]       = sh[partition][channelInPart];
+        }
+      }
+    }
+
+    for ( size_t i = 0; i < shCoefCount; ++i ) {
+      sh[i][0] = temp[i][0];
+      sh[i][1] = temp[i][1];
+      sh[i][2] = temp[i][2];
+    }
+  }
+
+  return true;
+}
+
+bool PCCAdaptation::reorderSphericalHarmonicsAdaptive( PCCPointSetGS                 &pointCloud,
+                                                       const PCCAdaptationParameters &params,
+                                                       bool                           toInterleaved ) {
+  if ( !pointCloud.hasSphericalHarmonics() ) return false;
+
+  const size_t pointCount  = pointCloud.getPointCount();
+  const size_t shCoefCount = pointCloud.getSphericalHarmonicsCount();
+  const size_t numACCoeff  = shCoefCount > 0 ? shCoefCount - 1 : 15;
+  const int    numAC       = static_cast<int>( numACCoeff );
+
+  auto                &sphericalHarmonics = pointCloud.getSphericalHarmonics();
+  GSSphericalHarmonics temp;
+
+  std::array<int, 45> invMappingTable;
+  invMappingTable.fill( 0 );
+  for ( int i = 0; i < 45; ++i ) { invMappingTable[params.shMappingTable_[i]] = i; }
+
+  for ( size_t p = 0; p < pointCount; ++p ) {
+    auto &sh = sphericalHarmonics[p];
+
+    for ( size_t i = 0; i < GSSphericalHarmonics::MAX_SH_COEFFS; ++i ) {
+      temp[i][0] = 0.0f;
+      temp[i][1] = 0.0f;
+      temp[i][2] = 0.0f;
+    }
+
+    temp[0][0] = sh[0][0];
+    temp[0][1] = sh[0][1];
+    temp[0][2] = sh[0][2];
+
+    if ( toInterleaved ) {
+      for ( int pIdx = 1; pIdx < static_cast<int>( shCoefCount ); ++pIdx ) {
+        for ( int c = 0; c < 3; ++c ) {
+          int bitstreamPos = ( pIdx - 1 ) * 3 + c;
+          int planarPos    = params.shMappingTable_[bitstreamPos];
+          int level        = 1 + ( planarPos % numAC );
+          int channel      = planarPos / numAC;
+          temp[pIdx][c]    = sh[level][channel];
+        }
+      }
+    } else {
+      for ( int l = 1; l < static_cast<int>( shCoefCount ); ++l ) {
+        for ( int ch = 0; ch < 3; ++ch ) {
+          int planarPos     = ch * numAC + ( l - 1 );
+          int bitstreamPos  = invMappingTable[planarPos];
+          int partition     = bitstreamPos / 3 + 1;
+          int channelInPart = bitstreamPos % 3;
+          temp[l][ch]       = sh[partition][channelInPart];
+        }
+      }
+    }
+
     for ( size_t i = 0; i < shCoefCount; ++i ) {
       sh[i][0] = temp[i][0];
       sh[i][1] = temp[i][1];

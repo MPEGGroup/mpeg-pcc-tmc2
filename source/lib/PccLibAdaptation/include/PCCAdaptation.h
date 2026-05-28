@@ -89,8 +89,12 @@ struct PCCAdaptationParameters {
   std::array<std::array<double, 3>, 16> computedShMin_;
   std::array<std::array<double, 3>, 16> computedShMax_;
 
+  //===============SH property syntax ======================
   // current CTC sets internal data arrangement to planar
-  size_t shMappingMode_ = 1;
+  size_t              shMappingMode_              = 1;
+  int                 shNumBitsMappingTableEntry_ = 6;
+  std::array<int, 45> shMappingTable_;
+  //========================================
 
   // ==================== SH 2D Transform Parameters ====================
   /// Enable 2D transform for SH (m75038 or m75790)
@@ -400,6 +404,13 @@ class PCCAdaptation {
    * @return true on success, false if point cloud has no spherical harmonics
    */
   static bool reorderSphericalHarmonicsAC( PCCPointSet3 &pointCloud, bool toInterleaved );
+
+  static bool reorderSphericalHarmonicsAdaptive( PCCPointSet3                  &pointCloud,
+                                                 const PCCAdaptationParameters &params,
+                                                 bool                           toInterleaved );
+  static bool reorderSphericalHarmonicsAdaptive( PCCPointSetGS                 &pointCloud,
+                                                 const PCCAdaptationParameters &params,
+                                                 bool                           toInterleaved );
 
  private:
   // ==================== Helper Functions ====================

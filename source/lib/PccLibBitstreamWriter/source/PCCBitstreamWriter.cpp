@@ -2974,6 +2974,13 @@ void PCCBitstreamWriter::gsDequantization( PCCBitstream &bitstream, GsDequantiza
 void PCCBitstreamWriter::gsShProperty( PCCBitstream &bitstream, GsSphericalHarmonicsProperty &gshp ) {
   TRACE_BITSTREAM_IN( "%s", __func__ );
   WRITE_UVLC( gshp.getShMappingMethod() );
+  if ( gshp.getShMappingMethod() == 2 ) {
+    WRITE_CODE( gshp.getShNumBitsMappingTableEntry(), 6 );
+    uint32_t shNumACCoeff = 45;
+    for ( int m = 0; m < shNumACCoeff; m++ ) {
+      WRITE_CODE( gshp.getShMappingTable( m ), gshp.getShNumBitsMappingTableEntry() );
+    }
+  }
   TRACE_BITSTREAM_OUT( "%s", __func__ );
 }
 

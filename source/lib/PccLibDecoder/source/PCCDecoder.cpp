@@ -2161,6 +2161,10 @@ int PCCDecoder::ReconstructIdc3( PCCContext &context, PCCGroupOfFrames &reconstr
       if ( ext.getShPropertyPresentFlag() ) {
         auto &shProp                    = ext.getGsShProperty();
         adaptationParams.shMappingMode_ = shProp.getShMappingMethod();
+        if ( shProp.getShMappingMethod() == 2 ) {
+          adaptationParams.shNumBitsMappingTableEntry_ = shProp.getShNumBitsMappingTableEntry();
+          for ( int m = 0; m < 45; ++m ) { adaptationParams.shMappingTable_[m] = shProp.getShMappingTable( m ); }
+        }
 
         if ( ext.getTransform2DPresentFlag() ) {
           addAdaptationParameters                     = true;
