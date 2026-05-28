@@ -345,6 +345,17 @@ void PCCGSHlsBuilder::initializeAtlasAapsHls( PCCHighLevelSyntax            &hls
 
   if ( adaptationParams.enableScaleQuantization_ ) {
     dequant.setScalePresentFlag( true );
+    bool   scaleSameMinMax = true;
+    double minVal          = adaptationParams.computedScaleMin_[0];
+    double maxVal          = adaptationParams.computedScaleMax_[0];
+    for ( size_t i = 0; i < 3; i++ ) {
+      if ( adaptationParams.computedScaleMin_[i] != minVal || adaptationParams.computedScaleMax_[i] != maxVal ) {
+        scaleSameMinMax = false;
+        break;
+      }
+    }
+    dequant.setScaleSameMinMaxFlag( scaleSameMinMax );
+
     for ( size_t i = 0; i < 3; i++ ) {
       dequant.setMinScale( i, adaptationParams.computedScaleMin_[i] );
       dequant.setMaxScale( i, adaptationParams.computedScaleMax_[i] );
@@ -450,6 +461,16 @@ void PCCGSHlsBuilder::initializeAtlasAapsHls( PCCHighLevelSyntax            &hls
 
   if ( adaptationParams.enableRotationQuantization_ ) {
     dequant.setRotationPresentFlag( true );
+    bool   rotSameMinMax = true;
+    double minVal        = adaptationParams.computedRotationMin_[0];
+    double maxVal        = adaptationParams.computedRotationMax_[0];
+    for ( size_t i = 0; i < 4; i++ ) {
+      if ( adaptationParams.computedRotationMin_[i] != minVal || adaptationParams.computedRotationMax_[i] != maxVal ) {
+        rotSameMinMax = false;
+        break;
+      }
+    }
+    dequant.setRotSameMinMaxFlag( rotSameMinMax );
     for ( size_t i = 0; i < 4; i++ ) {
       dequant.setMinRotation( i, adaptationParams.computedRotationMin_[i] );
       dequant.setMaxRotation( i, adaptationParams.computedRotationMax_[i] );

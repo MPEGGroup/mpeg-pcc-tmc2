@@ -2880,13 +2880,17 @@ void PCCBitstreamWriter::gsDequantization( PCCBitstream &bitstream, GsDequantiza
     }
     WRITE_CODE( gsd.getRotationPresentFlag(), 1 );
     if ( gsd.getRotationPresentFlag() ) {
+      WRITE_CODE( gsd.getRotSameMinMaxFlag(), 1 );
       for ( int i = 0; i < 4; i++ ) {
-        WRITE_FLOAT( gsd.getMinRotation( i ) );
-        WRITE_FLOAT( gsd.getMaxRotation( i ) );
+        if ( !gsd.getRotSameMinMaxFlag() || i == 0 ) {
+          WRITE_FLOAT( gsd.getMinRotation( i ) );
+          WRITE_FLOAT( gsd.getMaxRotation( i ) );
+        }
       }
     }
     WRITE_CODE( gsd.getScalePresentFlag(), 1 );
     if ( gsd.getScalePresentFlag() ) {
+      WRITE_CODE( gsd.getScaleSameMinMaxFlag(), 1 );
       WRITE_CODE( gsd.getScaleSameNumQuantRegionMinus1_(), 1 );
       WRITE_CODE( gsd.getScaleSameNumBitsForTransitionPoint_(), 1 );
       if ( gsd.getScaleSameNumQuantRegionMinus1_() ) {
@@ -2895,8 +2899,10 @@ void PCCBitstreamWriter::gsDequantization( PCCBitstream &bitstream, GsDequantiza
         WRITE_CODE( gsd.getScaleSameRegionStepSize_(), 1 );
       }
       for ( int i = 0; i < 3; i++ ) {
-        WRITE_FLOAT( gsd.getMinScale( i ) );
-        WRITE_FLOAT( gsd.getMaxScale( i ) );
+        if ( !gsd.getScaleSameMinMaxFlag() || i == 0 ) {
+          WRITE_FLOAT( gsd.getMinScale( i ) );
+          WRITE_FLOAT( gsd.getMaxScale( i ) );
+        }
         if ( ( i == 0 ) || !gsd.getScaleSameNumQuantRegionMinus1_() )
           WRITE_UVLC( gsd.getScaleNumQuantRegionsMinus1( i ) );
         if ( gsd.getScaleNumQuantRegionsMinus1( i ) ) {

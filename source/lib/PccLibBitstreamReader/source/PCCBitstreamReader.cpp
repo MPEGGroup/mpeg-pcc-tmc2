@@ -2867,16 +2867,25 @@ void PCCBitstreamReader::gsDequantization( PCCBitstream &bitstream, GsDequantiza
     READ_CODE_DESC( value, 1, "RotationPresentFlag" );
     gsd.setRotationPresentFlag( value );
     if ( gsd.getRotationPresentFlag() ) {
+      READ_CODE_DESC( value, 1, "RotationSameMinMaxFlag" );
+      gsd.setRotSameMinMaxFlag( value );
       for ( int i = 0; i < 4; i++ ) {
-        READ_FLOAT_DESC( valueFlt, "MinRotation" );
-        gsd.setMinRotation( i, valueFlt );
-        READ_FLOAT_DESC( valueFlt, "MaxRotation" );
-        gsd.setMaxRotation( i, valueFlt );
+        if ( !gsd.getRotSameMinMaxFlag() || i == 0 ) {
+          READ_FLOAT_DESC( valueFlt, "MinRotation" );
+          gsd.setMinRotation( i, valueFlt );
+          READ_FLOAT_DESC( valueFlt, "MaxRotation" );
+          gsd.setMaxRotation( i, valueFlt );
+        } else {
+          gsd.setMinRotation( i, gsd.getMinRotation( 0 ) );
+          gsd.setMaxRotation( i, gsd.getMaxRotation( 0 ) );
+        }
       }
     }
     READ_CODE_DESC( value, 1, "ScalePresentFlag" );
     gsd.setScalePresentFlag( value );
     if ( gsd.getScalePresentFlag() ) {
+      READ_CODE_DESC( value, 1, "ScaleSameMinMaxFlag" );
+      gsd.setScaleSameMinMaxFlag( value );
       READ_CODE( value, 1 );
       gsd.setScaleSameNumQuantRegionMinus1_( value );
       READ_CODE( value, 1 );
@@ -2897,10 +2906,15 @@ void PCCBitstreamReader::gsDequantization( PCCBitstream &bitstream, GsDequantiza
       uint32_t numBitsForTransitionPoint{};
       uint32_t numRegion{};
       for ( int i = 0; i < 3; i++ ) {
-        READ_FLOAT_DESC( valueFlt, "MinScale" );
-        gsd.setMinScale( i, valueFlt );
-        READ_FLOAT_DESC( valueFlt, "MaxScale" );
-        gsd.setMaxScale( i, valueFlt );
+        if ( !gsd.getScaleSameMinMaxFlag() || i == 0 ) {
+          READ_FLOAT_DESC( valueFlt, "MinScale" );
+          gsd.setMinScale( i, valueFlt );
+          READ_FLOAT_DESC( valueFlt, "MaxScale" );
+          gsd.setMaxScale( i, valueFlt );
+        } else {
+          gsd.setMinScale( i, gsd.getMinScale( 0 ) );
+          gsd.setMaxScale( i, gsd.getMaxScale( 0 ) );
+        }
         if ( ( i == 0 ) || !gsd.getScaleSameNumQuantRegionMinus1_() ) READ_UVLC( numRegion );
         gsd.setScaleNumQuantRegionsMinus1( i, numRegion );
         if ( gsd.getScaleNumQuantRegionsMinus1( i ) ) {
