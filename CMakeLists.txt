@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.17 FATAL_ERROR)
 
-project(TMC2 CXX C Fortran)
+project(TMC2 CXX C)
 set(TMC2_VERSION_MAJOR 26)
 set(TMC2_VERSION_MINOR 0)
 
@@ -44,9 +44,6 @@ option(CONFORMANCE_TRACE "Enable conformance traces" FALSE)
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
-# LAPACK dependency
-include(${CMAKE_SOURCE_DIR}/dependencies/cmake/lapack.cmake)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
                       "${CMAKE_SOURCE_DIR}/dependencies/cmake")

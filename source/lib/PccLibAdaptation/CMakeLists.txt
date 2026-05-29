@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.2)
 
 get_filename_component(MYNAME ${CMAKE_CURRENT_LIST_DIR} NAME)
 string(REPLACE " " "_" MYNAME ${MYNAME})
-project(${MYNAME} C CXX Fortran)
+project(${MYNAME} C CXX)
 
 file(GLOB SRC include/*.h source/*.cpp)
 
@@ -17,6 +17,6 @@ set(LIBS PccLibCommon)
 
 add_library(${MYNAME} ${LINKER} ${SRC})
 
-target_link_libraries(${MYNAME} ${LIBS} ${LAPACK_LIBRARIES})
+target_link_libraries(${MYNAME} ${LIBS})
 
 set_target_properties(${MYNAME} PROPERTIES LINKER_LANGUAGE CXX)

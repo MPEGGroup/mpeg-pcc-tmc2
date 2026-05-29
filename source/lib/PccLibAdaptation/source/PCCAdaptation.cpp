@@ -32,6 +32,7 @@
  */
 
 #include "PCCAdaptation.h"
+#include "PCCSymEigen.h"
 
 #include <algorithm>
 #include <cmath>
@@ -40,12 +41,6 @@
 #include <iomanip>
 #include <limits>
 #include <sstream>
-
-extern "C" {
-// LAPACK dsyev for symmetric eigenvalue decomposition
-extern void
-    dsyev_( char *jobz, char *uplo, int *n, double *a, int *lda, double *w, double *work, int *lwork, int *info );
-}
 
 namespace pcc {
 
@@ -1925,37 +1920,22 @@ bool PCCAdaptation::computeShKlt( const PCCPointSetGS                       &poi
 
   double div = double( pointCount > 1 ? pointCount - 1 : 1 );
   for ( int i = 0; i < fullSize * fullSize; ++i ) { cov[i] /= div; }
-  // Eigen Decomposition using LAPACK dsyev_
-  char   jobz = 'V';
-  char   uplo = 'L';
-  int    n    = (int)fullSize;
-  int    lda  = n;
-  int    info = 0;
-  double lwork_query;
-  int    lwork = -1;
-
-  std::vector<double> w( n );
-
-  dsyev_( &jobz, &uplo, &n, cov.data(), &lda, w.data(), &lwork_query, &lwork, &info );
-  lwork = (int)lwork_query;
-  std::vector<double> work( lwork );
-
-  dsyev_( &jobz, &uplo, &n, cov.data(), &lda, w.data(), work.data(), &lwork, &info );
-
-  if ( info != 0 ) {
-    std::cerr << "LAPACK dsyev failed with info = " << info << std::endl;
+  // Symmetric eigendecomposition (in-tree Jacobi solver).
+  SymEigenResult eig;
+  if ( !symEigenDecomposeJacobi( cov, fullSize, eig ) ) {
+    std::cerr << "Jacobi eigendecomposition failed to converge" << std::endl;
     return false;
   }
 
-  // Sort in descending order (LAPACK returns ascending)
-  std::vector<std::pair<double, int>> eigPairs( n );
-  for ( int i = 0; i < n; ++i ) { eigPairs[i] = { w[i], i }; }
+  // Sort in descending order (solver returns ascending).
+  std::vector<std::pair<double, std::size_t>> eigPairs( fullSize );
+  for ( std::size_t i = 0; i < fullSize; ++i ) { eigPairs[i] = { eig.eigenvalues[i], i }; }
   std::sort( eigPairs.rbegin(), eigPairs.rend() );
 
-  // LAPACK returns eigenvectors in columns of cov. cov is column-major.
-  for ( int j = 0; j < n; ++j ) {
-    int srcIdx = eigPairs[j].second;
-    for ( int i = 0; i < n; ++i ) { klt.eigvec[j][i] = cov[i + srcIdx * n]; }
+  // Eigenvectors are columns of eig.eigenvectors (column-major).
+  for ( std::size_t j = 0; j < fullSize; ++j ) {
+    const std::size_t src = eigPairs[j].second;
+    for ( std::size_t i = 0; i < fullSize; ++i ) { klt.eigvec[j][i] = eig.eigenvectors[i + src * fullSize]; }
   }
   return true;
 }
