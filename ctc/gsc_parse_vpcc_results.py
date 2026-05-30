@@ -42,10 +42,7 @@ COLUMN_ORDER = [
     "rate",
     "total_Byte",
     "pos_Byte",
-    "sh0_Byte",
-    "sh1_Byte",
-    "sh2_Byte",
-    "sh3_Byte",
+    "sh_Byte",
     "rot_Byte",
     "scale_Byte",
     "opacity_Byte",
@@ -111,7 +108,7 @@ def parse_bitstream_file(path):
                     if attribute == "rotation":
                         key = "rot_Byte"
                     elif attribute == "sphericalHarmonic":
-                        key = "sh0_Byte"  # Difficult to distinguish between sh0 .. sh3 with the remappings
+                        key = "sh_Byte"  # Difficult to distinguish between sh0 .. sh3 with the remappings
                     else:
                         key = f"{attribute}_Byte"
                 elif v3c_unit_type == "V3C_PVD":
