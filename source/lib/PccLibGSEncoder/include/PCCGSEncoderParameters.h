@@ -93,6 +93,7 @@ struct PCCGSEncoderParameters {
   bool gsdTransform2dPresentFlag_;
   bool dataAdaptiveShTransformEnabled_;
   bool adaptivePcaEnabled_;
+  bool gsdPcaDcFlag_;
   bool enableShNonUniformQuantization_;
   bool enableScaleNonUniformQuantization_;
   bool enableScalePowerTransform_ = false;
@@ -144,6 +145,7 @@ struct PCCGSEncoderParameters {
     gsdTransform2dPresentFlag_           = false;
     dataAdaptiveShTransformEnabled_      = false;
     adaptivePcaEnabled_                  = false;
+    gsdPcaDcFlag_                        = false;
     enableShNonUniformQuantization_      = false;
     enableScaleNonUniformQuantization_   = false;
     enableScalePowerTransform_           = false;

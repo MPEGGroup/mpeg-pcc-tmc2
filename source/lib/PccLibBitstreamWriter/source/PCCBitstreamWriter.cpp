@@ -3006,8 +3006,9 @@ void PCCBitstreamWriter::gs2DTransform( PCCBitstream &bitstream, Gs2DTransform &
           WRITE_FLOAT( gs2DTransform.getKltCoeff( i, m, n ) );
         }
       }
+      bool isDcGroup = ( gs2DTransform.getRowTrSizeMinus1( i ) == 0 && gs2DTransform.getTrRowGroupIdx( i, 0 ) == 0 );
       for ( int m = 0; m < 3 * ( gs2DTransform.getRowTrSizeMinus1( i ) + 1 ); m++ ) {
-        WRITE_FLOAT( gs2DTransform.getKltStdDev( i, m ) );
+        if ( !isDcGroup ) { WRITE_FLOAT( gs2DTransform.getKltStdDev( i, m ) ); }
         WRITE_FLOAT( gs2DTransform.getKltMean( i, m ) );
       }
     } else {

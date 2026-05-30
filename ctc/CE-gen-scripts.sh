@@ -62,10 +62,11 @@ GENERATE_PNGs=0             # 0 or 1
 MAPMODE=1                       # 0: INTERLEAVED, 1: PLANAR(CTC)
 PACKING_MODE=1                  # 0: pack-none, 1: pack-attr, 2: pack-all
 IMPLICIT_PACKING=1              # 0: OFF(explicit), 1:ON (implicit)
-SH_MAPPING=2                    # set to 0 to use interleaved maping in the video bitstream (1 corresponds to CTC, i.e. planar mapping)
+SH_MAPPING=1                    # 0: interleaved, 1: planar (CTC), 2: adaptive
 COLMAP_SEI=0                    # set it to 1 if you want to send the camera pareters as an SEI message
 GSD_TRANSFORM_2D=1              # 1: enable 2D transform for sphereical harmnoics, 0: disable
 GSD_ADAPTIVE_SH=1               # when GSD_TRANSFORM_2D=1, 1: enable m75790, 0: enable m75380
+GSD_PCA_DC=1                    # when GSD_ADAPTIVE_SH=1, 1: enable DC PCA (m76858), 0: disable
 ADAPTIVE_PCA=1                  # when GSD_ADAPTIVE_SH=1, 1: enable m76164, 0: disable m76164
 GSD_NON_UNIFORM_QUANT=1         # 1: enable m75025, 0: disable m75025
 ADAPTIVE_QUANTIZATION=1         # 1: enable m75039, 0: disable
@@ -471,6 +472,7 @@ for SEQ in "${SEQUENCES[@]}"; do
                 echo "    --gsdTransform2dPresentFlag=$GSD_TRANSFORM_2D \\"
                 echo "    --dataAdaptiveShTransformEnabled=$GSD_ADAPTIVE_SH \\"
                 echo "    --adaptivePcaEnabled=$ADAPTIVE_PCA \\"
+                echo "    --gsdPcaDcFlag=$GSD_PCA_DC \\"
                 echo "    --enableShNonUniformQuantization=$GSD_NON_UNIFORM_QUANT \\"
                 echo "    --enableScaleNonUniformQuantization=$GSD_SCALE_NON_UNIFORM_QUANT \\"
                 echo "    --enableScalePowerTransform=$GSD_SCALE_POWER_TRANSFORM \\"

@@ -1698,6 +1698,12 @@ void PCCAdaptation::initializeShTransformParams( PCCAdaptationParameters &params
     params.shTrGrpRow_ = { { 1, 5, 11 }, { 3, 7, 13 }, { 4, 10 }, { 8, 14 }, { 2, 6, 12 }, { 9, 15 } };
     params.shTrTypeRow_.assign( 6, 0 );
     params.shKltFlag_.assign( 6, 1 );
+    // m76858: add DC PCA group
+    if ( params.gsdPcaDcFlag_ ) {
+      params.shTrGrpRow_.push_back( { 0 } );
+      params.shTrTypeRow_.push_back( 0 );
+      params.shKltFlag_.push_back( 1 );
+    }
   } else {
     // parameter for 2D transform m75038
     params.shTrTypeCol_.assign( 16, 2 );
@@ -1744,15 +1750,19 @@ bool PCCAdaptation::sphericalHarmonicsTransform( PCCPointSetGS &pointCloud, PCCA
         if ( meanStd < 0.05 ) {
           std::vector<std::vector<int>> newGroups;
           std::vector<int>              newTrTypeRow;
+          std::vector<int>              newKltFlag;
           for ( size_t i = 0; i < params.shTrGrpRow_.size(); ++i ) {
-            if ( params.shKltFlag_[i] == 0 ) {
+            bool isDcGroup = ( params.shTrGrpRow_[i].size() == 1 && params.shTrGrpRow_[i][0] == 0 );
+            if ( params.shKltFlag_[i] == 0 || isDcGroup ) {
               newGroups.push_back( params.shTrGrpRow_[i] );
               newTrTypeRow.push_back( params.shTrTypeRow_[i] );
+              newKltFlag.push_back( params.shKltFlag_[i] );
             }
           }
           params.shTrGrpRow_  = newGroups;
           params.shTrTypeRow_ = newTrTypeRow;
           params.shKltFlag_.assign( newTrTypeRow.size(), 0 );
+          params.shKltFlag_ = newKltFlag;
         } else if ( params.adaptivePcaEnabled_ ) {
           // Select global PCA vs group PCA based on inter-group correlation
           double groupCorr = computeGroupCorr( pointCloud );
@@ -1763,6 +1773,11 @@ bool PCCAdaptation::sphericalHarmonicsTransform( PCCPointSetGS &pointCloud, PCCA
             params.shTrGrpRow_  = { allAc };
             params.shTrTypeRow_ = { 0 };
             params.shKltFlag_   = { 1 };
+            if ( params.gsdPcaDcFlag_ ) {
+              params.shTrGrpRow_.push_back( { 0 } );
+              params.shTrTypeRow_.push_back( 0 );
+              params.shKltFlag_.push_back( 1 );
+            }
           }
           // else: keep default group PCA (params already set by initializeShTransformParams)
         }
@@ -1940,6 +1955,113 @@ bool PCCAdaptation::computeShKlt( const PCCPointSetGS                       &poi
   return true;
 }
 
+double PCCAdaptation::computeShAcTop10Correlation( const PCCPointSetGS &pointCloud ) {
+  const size_t pointCount  = pointCloud.getPointCount();
+  const size_t shCoefCount = pointCloud.getSphericalHarmonicsCount();
+  if ( pointCount == 0 || shCoefCount <= 1 ) return 0.0;
+
+  const size_t acCount = shCoefCount - 1;  // indices 1..15
+  const auto  &shData  = pointCloud.getSphericalHarmonics();
+
+  std::vector<double> acMeanSum( acCount, 0.0 );
+  for ( size_t p = 0; p < pointCount; ++p ) {
+    for ( size_t l = 0; l < acCount; ++l ) {
+      acMeanSum[l] += ( (double)shData[p][l + 1][0] + (double)shData[p][l + 1][1] + (double)shData[p][l + 1][2] ) / 3.0;
+    }
+  }
+  std::vector<double> acMean( acMeanSum );
+  for ( size_t l = 0; l < acCount; ++l ) { acMean[l] = acMeanSum[l] / (double)pointCount; }
+
+  std::vector<double> var( acCount, 0.0 );
+  std::vector<double> cov( acCount * acCount, 0.0 );
+  for ( size_t p = 0; p < pointCount; ++p ) {
+    std::vector<double> centered( acCount );
+    for ( size_t l = 0; l < acCount; ++l ) {
+      centered[l] =
+          ( (double)shData[p][l + 1][0] + (double)shData[p][l + 1][1] + (double)shData[p][l + 1][2] ) / 3.0 - acMean[l];
+    }
+    for ( size_t r = 0; r < acCount; ++r ) {
+      var[r] += centered[r] * centered[r];
+      for ( size_t c = r + 1; c < acCount; ++c ) { cov[r * acCount + c] += centered[r] * centered[c]; }
+    }
+  }
+  for ( size_t r = 0; r < acCount; ++r ) {
+    var[r] /= (double)( pointCount > 1 ? pointCount - 1 : 1 );
+    for ( size_t c = r + 1; c < acCount; ++c ) {
+      cov[r * acCount + c] /= (double)( pointCount > 1 ? pointCount - 1 : 1 );
+    }
+  }
+
+  std::vector<double> absCorrs;
+  for ( size_t r = 0; r < acCount; ++r ) {
+    for ( size_t c = r + 1; c < acCount; ++c ) {
+      double denom = std::sqrt( std::max( 1e-20, var[r] * var[c] ) );
+      absCorrs.push_back( std::abs( cov[r * acCount + c] / denom ) );
+    }
+  }
+
+  std::sort( absCorrs.rbegin(), absCorrs.rend() );
+  int    topN = std::min( 10, (int)absCorrs.size() );
+  double sum  = 0.0;
+  for ( int i = 0; i < topN; ++i ) { sum += absCorrs[i]; }
+  return sum / topN;
+}
+
+bool PCCAdaptation::computeShDcPca( const PCCPointSetGS                       &pointCloud,
+                                    double                                     top10corr,
+                                    PCCAdaptationParameters::PCCKltParameters &klt ) {
+  const size_t pointCount = pointCloud.getPointCount();
+  if ( pointCount == 0 ) return false;
+
+  const int   fullSize = 3;
+  const auto &shData   = pointCloud.getSphericalHarmonics();
+
+  klt.eigvec.assign( fullSize, std::vector<double>( fullSize, 0.0 ) );
+  klt.mean.assign( fullSize, 0.0 );
+  klt.sigma.assign( fullSize, 1.0 );
+
+  for ( size_t p = 0; p < pointCount; ++p ) {
+    for ( int ch = 0; ch < fullSize; ++ch ) { klt.mean[ch] += (double)shData[p][0][ch]; }
+  }
+  for ( int j = 0; j < fullSize; ++j ) { klt.mean[j] /= (double)pointCount; }
+
+  std::vector<double> cov( static_cast<size_t>( fullSize ) * fullSize, 0.0 );
+  for ( size_t p = 0; p < pointCount; ++p ) {
+    std::vector<double> centered( fullSize );
+    for ( int j = 0; j < fullSize; ++j ) { centered[j] = (double)shData[p][0][j] - klt.mean[j]; }
+    for ( int r = 0; r < fullSize; ++r ) {
+      for ( int c = 0; c < fullSize; ++c ) { cov[r + c * fullSize] += centered[r] * centered[c]; }
+    }
+  }
+  double div = double( pointCount > 1 ? pointCount - 1 : 1 );
+  for ( int i = 0; i < fullSize * fullSize; ++i ) { cov[i] /= div; }
+
+  SymEigenResult eig;
+  if ( !symEigenDecomposeJacobi( cov, static_cast<std::size_t>( fullSize ), eig ) ) {
+    std::cerr << "Jacobi eigendecomposition failed in computeShDcPca" << std::endl;
+    return false;
+  }
+
+  // Sort in descending order (solver returns ascending).
+  std::vector<std::pair<double, std::size_t>> eigPairs( fullSize );
+  for ( int i = 0; i < fullSize; ++i ) { eigPairs[i] = { eig.eigenvalues[i], static_cast<std::size_t>( i ) }; }
+  std::sort( eigPairs.rbegin(), eigPairs.rend() );
+
+  // Eigenvectors are columns of eig.eigenvectors (column-major).
+  for ( int j = 0; j < fullSize; ++j ) {
+    const std::size_t src = eigPairs[j].second;
+    for ( int i = 0; i < fullSize; ++i ) { klt.eigvec[j][i] = eig.eigenvectors[i + src * fullSize]; }
+  }
+
+  double scaleFactor = ( top10corr > 0.5 ) ? 1.25 : 2.25;
+  for ( int j = 0; j < fullSize; ++j ) {
+    for ( int i = 0; i < fullSize; ++i ) { klt.eigvec[j][i] *= scaleFactor; }
+  }
+  klt.scaleFactor = scaleFactor;
+
+  return true;
+}
+
 bool PCCAdaptation::sphericalHarmonicsTransform2D( PCCPointSetGS &pointCloud, PCCAdaptationParameters &params ) {
   if ( !pointCloud.hasSphericalHarmonics() ) return false;
   const size_t pointCount = pointCloud.getPointCount();
@@ -1986,25 +2108,50 @@ bool PCCAdaptation::sphericalHarmonicsTransform2D( PCCPointSetGS &pointCloud, PC
     const auto &groupidx = params.shTrGrpRow_[gi];
     int         size     = groupidx.size();
     if ( params.shKltFlag_[gi] == 1 ) {
-      PCCAdaptationParameters::PCCKltParameters klt;
-      if ( !computeShKlt( pointCloud, groupidx, klt ) ) continue;
+      bool isDcGroup = ( groupidx.size() == 1 && groupidx[0] == 0 );
 
-      int fullSize = size * 3;
-      for ( size_t p = 0; p < pointCount; ++p ) {
-        auto               &sh = shData[p];
-        std::vector<double> X( fullSize );
-        for ( int j = 0; j < fullSize; j++ ) {
-          X[j] = ( (double)sh[groupidx[j / 3]][j % 3] - klt.mean[j] ) / klt.sigma[j];
+      if ( isDcGroup ) {
+        // DC PCA path (m76858)
+        PCCAdaptationParameters::PCCKltParameters klt;
+        double                                    top10corr = computeShAcTop10Correlation( pointCloud );
+        if ( !computeShDcPca( pointCloud, top10corr, klt ) ) continue;
+
+        const int fullSize = 3;
+
+        for ( size_t p = 0; p < pointCount; ++p ) {
+          auto               &sh = shData[p];
+          std::vector<double> X( fullSize );
+          for ( int j = 0; j < fullSize; j++ ) { X[j] = (double)sh[0][j] - klt.mean[j]; }
+
+          for ( int j = 0; j < fullSize; j++ ) {
+            double y = 0.0;
+            for ( int i = 0; i < fullSize; i++ ) { y += klt.eigvec[j][i] * X[i]; }
+            sh[0][j] = static_cast<float>( y / ( klt.scaleFactor * klt.scaleFactor ) );
+          }
         }
 
-        for ( int j = 0; j < fullSize; j++ ) {
-          double y = 0.0;
-          for ( int i = 0; i < fullSize; i++ ) { y += klt.eigvec[j][i] * X[i]; }
-          sh[groupidx[j / 3]][j % 3] = static_cast<float>( y / 17.5 );
+        params.shKltParams_.push_back( klt );
+      } else {
+        PCCAdaptationParameters::PCCKltParameters klt;
+        if ( !computeShKlt( pointCloud, groupidx, klt ) ) continue;
+
+        int fullSize = size * 3;
+        for ( size_t p = 0; p < pointCount; ++p ) {
+          auto               &sh = shData[p];
+          std::vector<double> X( fullSize );
+          for ( int j = 0; j < fullSize; j++ ) {
+            X[j] = ( (double)sh[groupidx[j / 3]][j % 3] - klt.mean[j] ) / klt.sigma[j];
+          }
+
+          for ( int j = 0; j < fullSize; j++ ) {
+            double y = 0.0;
+            for ( int i = 0; i < fullSize; i++ ) { y += klt.eigvec[j][i] * X[i]; }
+            sh[groupidx[j / 3]][j % 3] = static_cast<float>( y / 17.5 );
+          }
         }
+
+        params.shKltParams_.push_back( klt );
       }
-
-      params.shKltParams_.push_back( klt );
       for ( int idx : groupidx ) { params.shTrTypeCol_[idx] = -1; }
     } else {
       int type = params.shTrTypeRow_[gi];
@@ -2065,18 +2212,35 @@ bool PCCAdaptation::sphericalHarmonicsInvTransform2D( PCCPointSetGS             
     const auto &groupidx = params.shTrGrpRow_[i];
     int         size     = groupidx.size();
     if ( params.shKltFlag_[i] == 1 ) {
-      const auto &klt      = params.shKltParams_[ki++];
-      int         fullSize = size * 3;
+      const auto &klt       = params.shKltParams_[ki++];
+      int         fullSize  = size * 3;
+      bool        isDcGroup = ( groupidx.size() == 1 && groupidx[0] == 0 );
 
-      for ( size_t p = 0; p < pointCount; ++p ) {
-        auto               &sh = shData[p];
-        std::vector<double> Y( fullSize );
-        for ( int j = 0; j < fullSize; j++ ) { Y[j] = sh[groupidx[j / 3]][j % 3]; }
+      if ( isDcGroup ) {
+        // DC PCA inverse path (m76858)
+        const int dcSize = 3;
+        for ( size_t p = 0; p < pointCount; ++p ) {
+          auto               &sh = shData[p];
+          std::vector<double> Y( dcSize );
+          for ( int j = 0; j < dcSize; j++ ) { Y[j] = sh[0][j]; }
 
-        for ( int i_ = 0; i_ < fullSize; i_++ ) {
-          double x_norm = 0.0;
-          for ( int j = 0; j < fullSize; j++ ) { x_norm += klt.eigvec[j][i_] * Y[j] * 17.5; }
-          sh[groupidx[i_ / 3]][i_ % 3] = static_cast<float>( x_norm * klt.sigma[i_] + klt.mean[i_] );
+          for ( int i_ = 0; i_ < dcSize; i_++ ) {
+            double x_norm = 0.0;
+            for ( int j = 0; j < dcSize; j++ ) { x_norm += klt.eigvec[j][i_] * Y[j]; }
+            sh[0][i_] = static_cast<float>( x_norm + klt.mean[i_] );
+          }
+        }
+      } else {
+        for ( size_t p = 0; p < pointCount; ++p ) {
+          auto               &sh = shData[p];
+          std::vector<double> Y( fullSize );
+          for ( int j = 0; j < fullSize; j++ ) { Y[j] = sh[groupidx[j / 3]][j % 3]; }
+
+          for ( int i_ = 0; i_ < fullSize; i_++ ) {
+            double x_norm = 0.0;
+            for ( int j = 0; j < fullSize; j++ ) { x_norm += klt.eigvec[j][i_] * Y[j] * 17.5; }
+            sh[groupidx[i_ / 3]][i_ % 3] = static_cast<float>( x_norm * klt.sigma[i_] + klt.mean[i_] );
+          }
         }
       }
     } else {

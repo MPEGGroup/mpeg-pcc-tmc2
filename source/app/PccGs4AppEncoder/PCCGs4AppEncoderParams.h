@@ -280,6 +280,10 @@ bool parseParameters( int                           argc,
       encoderParams.adaptivePcaEnabled_,
       false,
       "Enable adaptive global/group PCA selection (m76164)" )
+    ( "gsdPcaDcFlag",
+      encoderParams.gsdPcaDcFlag_,
+      false,
+      "Enable PCA for DC component of SH (m76858)" )
     ( "enableShNonUniformQuantization",
       encoderParams.enableShNonUniformQuantization_,
       false,

@@ -3081,9 +3081,14 @@ void PCCBitstreamReader::gs2DTransform( PCCBitstream &bitstream, Gs2DTransform &
           gs2DTransform.setKltCoeff( i, m, n, valueFlt );
         }
       }
+      bool isDcGroup = ( gs2DTransform.getRowTrSizeMinus1( i ) == 0 && gs2DTransform.getTrRowGroupIdx( i, 0 ) == 0 );
       for ( int m = 0; m < 3 * ( gs2DTransform.getRowTrSizeMinus1( i ) + 1 ); m++ ) {
-        READ_FLOAT_DESC( valueFlt, "KltStdDev" );
-        gs2DTransform.setKltStdDev( i, m, valueFlt );
+        if ( !isDcGroup ) {
+          READ_FLOAT_DESC( valueFlt, "KltStdDev" );
+          gs2DTransform.setKltStdDev( i, m, valueFlt );
+        } else {
+          gs2DTransform.setKltStdDev( i, m, 1.0f );
+        }
         READ_FLOAT_DESC( valueFlt, "KltMean" );
         gs2DTransform.setKltMean( i, m, valueFlt );
       }

@@ -106,6 +106,9 @@ struct PCCAdaptationParameters {
   // Enable adaptive global/group PCA selection (m76164)
   bool adaptivePcaEnabled_ = false;
 
+  /// Enable PCA for DC component of SH (m76858)
+  bool gsdPcaDcFlag_ = false;
+
   /// Column Transform type
   std::vector<int> shTrTypeCol_;
 
@@ -123,6 +126,7 @@ struct PCCAdaptationParameters {
     std::vector<std::vector<double>> eigvec;
     std::vector<double>              mean;
     std::vector<double>              sigma;
+    double                           scaleFactor = 1.0;  // DC PCA scale factor (m76858)
   };
   std::vector<PCCKltParameters> shKltParams_;
 
@@ -357,6 +361,14 @@ class PCCAdaptation {
 
   // Compute mean absolute correlation across default SH groups
   double computeGroupCorr( const PCCPointSetGS &pointCloud );
+
+  /// Compute KLT parameters for DC component (SH index 0) with adaptive scale factor
+  bool computeShDcPca( const PCCPointSetGS                       &pointCloud,
+                       double                                     top10corr,
+                       PCCAdaptationParameters::PCCKltParameters &klt );
+
+  /// Compute top-10 absolute correlation metric from AC SH coefficients
+  double computeShAcTop10Correlation( const PCCPointSetGS &pointCloud );
 
   /// Extract SH quantization regions for non-uniform quantization
   bool extractSHQuantRegions( const PCCPointSetGS &input, PCCAdaptationParameters &params );
