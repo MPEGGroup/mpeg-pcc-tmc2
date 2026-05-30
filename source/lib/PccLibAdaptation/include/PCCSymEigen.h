@@ -36,6 +36,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
 #include <numeric>
 #include <vector>
 
@@ -59,10 +60,15 @@ inline bool symEigenDecomposeJacobi( const std::vector<double> &a,
                                      std::size_t                n,
                                      SymEigenResult            &result,
                                      std::size_t                maxSweeps = 100,
-                                     double                     tol       = 1e-14 ) {
+                                     double                     tol       = 0.0 ) {
   result.eigenvalues.assign( n, 0.0 );
   result.eigenvectors.assign( n * n, 0.0 );
   if ( n == 0 ) return true;
+
+  const double eps = std::numeric_limits<double>::epsilon();
+  // Default tolerance: a small multiple of machine epsilon, matching the
+  // relative accuracy delivered by LAPACK dsyev.
+  if ( tol <= 0.0 ) tol = 8.0 * eps;
 
   // Symmetrise the lower triangle of `a` into the working matrix `m`
   // (column-major, same layout as `a`).
@@ -75,11 +81,35 @@ inline bool symEigenDecomposeJacobi( const std::vector<double> &a,
     }
   }
 
+  // Frobenius norm is invariant under Jacobi rotations, so compute it once
+  // and use it as the reference scale for the convergence test. This matches
+  // the norm-relative threshold used inside dsyev.
+  double frobSq = 0.0;
+  for ( std::size_t j = 0; j < n; ++j ) {
+    for ( std::size_t i = 0; i < n; ++i ) {
+      const double x = m[i + j * n];
+      frobSq += x * x;
+    }
+  }
+  const double frobNorm = std::sqrt( frobSq );
+  // For an exactly-zero matrix every off-diagonal is already zero; return the
+  // identity eigenvectors immediately rather than risk a divide-by-zero in the
+  // tolerance test below.
+  if ( frobNorm == 0.0 ) {
+    for ( std::size_t i = 0; i < n; ++i ) { result.eigenvectors[i + i * n] = 1.0; }
+    return true;
+  }
+  const double offTol     = tol * frobNorm;
+  const double offTolSq   = offTol * offTol;
+  // Per-element skip threshold (Rutishauser): treat a_pq as zero when it is
+  // negligible relative to the geometric mean of its two diagonal anchors.
+  const double skipFactor = eps;
+
   // Eigenvector accumulator, initialised to identity.
   std::vector<double> v( n * n, 0.0 );
   for ( std::size_t i = 0; i < n; ++i ) { v[i + i * n] = 1.0; }
 
-  auto offDiagNorm = [&]() {
+  auto offDiagNormSq = [&]() {
     double s = 0.0;
     for ( std::size_t p = 0; p < n; ++p ) {
       for ( std::size_t q = p + 1; q < n; ++q ) {
@@ -87,18 +117,12 @@ inline bool symEigenDecomposeJacobi( const std::vector<double> &a,
         s += x * x;
       }
     }
-    return std::sqrt( s );
+    return s;
   };
 
   bool converged = false;
   for ( std::size_t sweep = 0; sweep < maxSweeps; ++sweep ) {
-    double diagNorm = 0.0;
-    for ( std::size_t i = 0; i < n; ++i ) {
-      const double d = m[i + i * n];
-      diagNorm += d * d;
-    }
-    diagNorm = std::sqrt( diagNorm );
-    if ( offDiagNorm() <= tol * ( diagNorm + tol ) ) {
+    if ( offDiagNormSq() <= offTolSq ) {
       converged = true;
       break;
     }
@@ -106,9 +130,17 @@ inline bool symEigenDecomposeJacobi( const std::vector<double> &a,
     for ( std::size_t p = 0; p + 1 < n; ++p ) {
       for ( std::size_t q = p + 1; q < n; ++q ) {
         const double apq = m[p + q * n];
-        if ( std::abs( apq ) < 1e-300 ) continue;
         const double app = m[p + p * n];
         const double aqq = m[q + q * n];
+        // Rutishauser skip: after a few warm-up sweeps, snap negligible
+        // off-diagonals to zero exactly rather than performing tiny rotations
+        // that only add round-off noise to the eigenvectors.
+        const double thresh = skipFactor * std::sqrt( std::abs( app ) * std::abs( aqq ) );
+        if ( std::abs( apq ) <= thresh ) {
+          m[p + q * n] = 0.0;
+          m[q + p * n] = 0.0;
+          continue;
+        }
 
         const double theta = ( aqq - app ) / ( 2.0 * apq );
         double       t;
@@ -120,9 +152,10 @@ inline bool symEigenDecomposeJacobi( const std::vector<double> &a,
         }
         const double c = 1.0 / std::sqrt( t * t + 1.0 );
         const double s = t * c;
+        const double h = t * apq;
 
-        m[p + p * n] = app - t * apq;
-        m[q + q * n] = aqq + t * apq;
+        m[p + p * n] = app - h;
+        m[q + q * n] = aqq + h;
         m[p + q * n] = 0.0;
         m[q + p * n] = 0.0;
 
