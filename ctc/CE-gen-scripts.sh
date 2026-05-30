@@ -71,11 +71,13 @@ ADAPTIVE_PCA=1                  # when GSD_ADAPTIVE_SH=1, 1: enable m76164, 0: d
 GSD_NON_UNIFORM_QUANT=1         # 1: enable m75025, 0: disable m75025
 ADAPTIVE_QUANTIZATION=1         # 1: enable m75039, 0: disable
 SH_PREDICTION=1                 # 1: enable m76155 SH linear prediction, 0: disable
+GSD_DIMENSION_REDUCTION=0       # 1: enable m76859 SH dimension reduction, 0: disable
 ANNOTATE_DIR=""                 # m75039: path to directory of importance score files for each sequence. If string is empty, files are recomputed
 PATCH_MERGING=0                 # 1: enable m75379, 0: diable(CTC)
 GSD_SCALE_NON_UNIFORM_QUANT=1   # 1: enable m76123, 0: disable m76123
 GSD_SCALE_POWER_TRANSFORM=1     # 1: enable m76151 power transform + 2-seg PLS (requires GSD_SCALE_NON_UNIFORM_QUANT=1), 0: disable
 GSD_OPACITY_NON_UNIFORM_QUANT=1 # 1: enable m76122 opacity non-uniform quantization, 0: disable
+
 
 # ==================================================================================================
 # Base directories
@@ -479,6 +481,7 @@ for SEQ in "${SEQUENCES[@]}"; do
                 echo "    --shPredictionEnabled=$SH_PREDICTION \\"
                 echo "    --enableScalePowerTransform=$GSD_SCALE_POWER_TRANSFORM \\"
                 echo "    --enableOpacityNonUniformQuantization=$GSD_OPACITY_NON_UNIFORM_QUANT \\"
+                echo "    --enableShDimensionReduction=$GSD_DIMENSION_REDUCTION \\"
                 echo "    --compressedStreamPath=$RESULT_DIR/${LENGTH}_${SEQ}_${RATE}.bin \\"
                 echo "    2>&1 | tee $RESULT_DIR/${LENGTH}_${SEQ}_${RATE}.encoder.log"
                 echo ""

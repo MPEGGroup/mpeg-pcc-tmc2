@@ -126,7 +126,9 @@ struct PCCAdaptationParameters {
     std::vector<std::vector<double>> eigvec;
     std::vector<double>              mean;
     std::vector<double>              sigma;
-    double                           scaleFactor = 1.0;  // DC PCA scale factor (m76858)
+    double                           scaleFactor = 1.0;        // DC PCA scale factor (m76858)
+    std::vector<double>              eigvals;                  // sorted eigenvalues (descending)
+    int                              retainedComponents_ = 0;  // number of components to retain (0 = keep all)
   };
   std::vector<PCCKltParameters> shKltParams_;
 
@@ -142,6 +144,13 @@ struct PCCAdaptationParameters {
     std::vector<double>  predCoeff;   // prediction coefficients
   };
   std::vector<PCCShPredictionEntry> shPredictionEntries_;
+
+  // ==================== SH Dimensional Reduction ====================
+  /// Enable dimension reduction for SH (m76859)
+  bool enableShDimensionReduction_ = false;
+
+  /// Number of retained components per KLT group (99.5% variance threshold)
+  std::vector<int> shNumRetainComponents_;
 
   // ==================== SH Non-Uniform Quantization ====================
   /// Enable non-uniform quantization for SH (m75025)
@@ -382,6 +391,21 @@ class PCCAdaptation {
 
   /// Compute top-10 absolute correlation metric from AC SH coefficients
   double computeShAcTop10Correlation( const PCCPointSetGS &pointCloud );
+
+  // ==================== SH Dimensional Reduction ====================
+
+  /// Compute retain count per KLT group using 99.5% variance threshold
+  void computeDimensionReductionParams( const PCCPointSetGS &pointCloud, PCCAdaptationParameters &params );
+
+  /// Forward dimension reduction on quantized uint16 data: pack retained components contiguously
+  void applyDimensionReductionQuantized( PCCPointSet3 &pointCloud, const PCCAdaptationParameters &params );
+
+  /// Inverse dimension reduction on quantized uint16 data: unpack retained components to original positions,
+  /// setting non-retained positions to the uint16 value that dequantizes to 0.0f
+  void removeDimensionReductionQuantized( PCCPointSet3 &pointCloud, const PCCAdaptationParameters &params );
+
+  /// Build retained component map (shared between apply/remove on quantized data)
+  std::vector<std::pair<int, int>> buildRetainedMap( const PCCAdaptationParameters &params ) const;
 
   /// Extract SH quantization regions for non-uniform quantization
   bool extractSHQuantRegions( const PCCPointSetGS &input, PCCAdaptationParameters &params );

@@ -498,6 +498,17 @@ void PCCGSHlsBuilder::initializeAtlasAapsHls( PCCHighLevelSyntax            &hls
     ext.setTransform2DPresentFlag( true );
     auto &tr2d = ext.getGs2DTransform();
     tr2d.setTrRowNumGroups( adaptationParams.shTrGrpRow_.size() );
+    bool hasDimReduction =
+        adaptationParams.enableShDimensionReduction_ && !adaptationParams.shNumRetainComponents_.empty();
+    tr2d.setDimensionReductionEnableFlag( hasDimReduction );
+    for ( size_t i = 0; i < adaptationParams.shTrGrpRow_.size(); ++i ) {
+      if ( hasDimReduction && i < adaptationParams.shNumRetainComponents_.size() ) {
+        int fullSize = adaptationParams.shTrGrpRow_[i].size() * 3;
+        int retain   = adaptationParams.shNumRetainComponents_[i];
+        int minus1   = ( retain > 0 && retain <= fullSize ) ? ( retain - 1 ) : ( fullSize - 1 );
+        tr2d.setNumOfRetainComponentsMinus1( i, minus1 );
+      }
+    }
     int ki = 0;
     for ( size_t i = 0; i < adaptationParams.shTrGrpRow_.size(); ++i ) {
       tr2d.setRowTrSizeMinus1( i, adaptationParams.shTrGrpRow_[i].size() - 1 );

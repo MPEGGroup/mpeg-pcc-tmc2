@@ -308,6 +308,10 @@ bool parseParameters( int                           argc,
       encoderParams.enableScalePowerTransform_,
       false,
       "Enable power transform + 2-segment PLS for scale (m76151)" )
+    ( "enableShDimensionReduction",
+      adaptationParams.enableShDimensionReduction_,
+      adaptationParams.enableShDimensionReduction_,
+      "Enable SH dimension reduction after 2D transform (m76859)" )
     ( "keepIntermediateFiles",
       encoderParams.keepIntermediateFiles_,
       encoderParams.keepIntermediateFiles_,

@@ -451,7 +451,7 @@ class GsSphericalHarmonicsProperty {
 // H.8.3.6.3.7	GS spherical harmonics transform syntax
 class Gs2DTransform {
  public:
-  Gs2DTransform() : trRowNumGroups_( 0 ) {
+  Gs2DTransform() : trRowNumGroups_( 0 ), dimensionReductionEnableFlag_( false ) {
     trColType_.resize( 16, 0 );
     rowTrSizeMinus1_.resize( 0 );
     trRowGroupIdx_.resize( 0 );
@@ -460,6 +460,7 @@ class Gs2DTransform {
     kltCoeffs_.resize( 0 );
     kltMean_.resize( 0 );
     kltStdDev_.resize( 0 );
+    numOfRetainComponentsMinus1_.resize( 0 );
   }
   ~Gs2DTransform() {}
   Gs2DTransform &operator=( const Gs2DTransform & ) = default;
@@ -469,7 +470,9 @@ class Gs2DTransform {
     if ( trColType_ != other.trColType_ || trRowNumGroups_ != other.trRowNumGroups_ ||
          rowTrSizeMinus1_ != other.rowTrSizeMinus1_ || trRowGroupIdx_ != other.trRowGroupIdx_ ||
          kltFlag_ != other.kltFlag_ || kltCoeffs_ != other.kltCoeffs_ || kltMean_ != other.kltMean_ ||
-         kltStdDev_ != other.kltStdDev_ || trRowType_ != other.trRowType_ ) {
+         kltStdDev_ != other.kltStdDev_ || trRowType_ != other.trRowType_ ||
+         dimensionReductionEnableFlag_ != other.dimensionReductionEnableFlag_ ||
+         numOfRetainComponentsMinus1_ != other.numOfRetainComponentsMinus1_ ) {
       retVal = false;
     }
     return retVal;
@@ -490,7 +493,15 @@ class Gs2DTransform {
     kltCoeffs_.resize( value );
     kltMean_.resize( value );
     kltStdDev_.resize( value );
+    numOfRetainComponentsMinus1_.resize( value, 0 );
   }
+
+  bool getDimensionReductionEnableFlag() { return dimensionReductionEnableFlag_; }
+  void setDimensionReductionEnableFlag( bool value ) { dimensionReductionEnableFlag_ = value; }
+
+  uint8_t getNumOfRetainComponentsMinus1( size_t i ) { return numOfRetainComponentsMinus1_[i]; }
+  uint8_t getNumOfRetainComponents( size_t i ) { return numOfRetainComponentsMinus1_[i] + 1; }
+  void    setNumOfRetainComponentsMinus1( size_t i, uint8_t value ) { numOfRetainComponentsMinus1_[i] = value; }
 
   uint8_t getRowTrSizeMinus1( size_t i ) { return rowTrSizeMinus1_[i]; }
   void    setRowTrSizeMinus1( size_t i, uint8_t value ) {
@@ -556,6 +567,8 @@ class Gs2DTransform {
   std::vector<std::vector<float>>              kltMean_;
   std::vector<std::vector<float>>              kltStdDev_;
   std::vector<uint8_t>                         trRowType_;
+  bool                                         dimensionReductionEnableFlag_;
+  std::vector<uint8_t>                         numOfRetainComponentsMinus1_;
 };
 
 // H.8.3.6.3.11	GS Opacity Property syntax

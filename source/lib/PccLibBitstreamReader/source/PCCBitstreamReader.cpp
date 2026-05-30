@@ -3068,7 +3068,13 @@ void PCCBitstreamReader::gs2DTransform( PCCBitstream &bitstream, Gs2DTransform &
   TRACE_BITSTREAM_IN( "%s", __func__ );
   READ_CODE_DESC( value, 4, "TrRowNumGroups" );
   gs2DTransform.setTrRowNumGroups( value );
+  READ_CODE_DESC( value, 1, "DimensionReductionEnableFlag" );
+  gs2DTransform.setDimensionReductionEnableFlag( value != 0 );
   for ( int i = 0; i < gs2DTransform.getTrRowNumGroups(); i++ ) {
+    if ( gs2DTransform.getDimensionReductionEnableFlag() ) {
+      READ_CODE_DESC( value, 4, "NumOfRetainComponentsMinus1" );
+      gs2DTransform.setNumOfRetainComponentsMinus1( i, value );
+    }
     READ_CODE_DESC( value, 4, "RowTrSizeMinus1" );
     gs2DTransform.setRowTrSizeMinus1( i, value );
     for ( int j = 0; j < ( gs2DTransform.getRowTrSizeMinus1( i ) + 1 ); j++ ) {

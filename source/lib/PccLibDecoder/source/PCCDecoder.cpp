@@ -2228,6 +2228,14 @@ int PCCDecoder::ReconstructIdc3( PCCContext &context, PCCGroupOfFrames &reconstr
             }
           }
           for ( int i = 0; i < 16; ++i ) { adaptationParams.shTrTypeCol_.push_back( tr2d.getTrColType( i ) ); }
+
+          // Load dimension reduction parameters
+          if ( tr2d.getDimensionReductionEnableFlag() ) {
+            adaptationParams.enableShDimensionReduction_ = true;
+            for ( int i = 0; i < numGroups; ++i ) {
+              adaptationParams.shNumRetainComponents_.push_back( tr2d.getNumOfRetainComponents( i ) );
+            }
+          }
         }
       }
       if ( ext.getPredEnableFlag() ) {

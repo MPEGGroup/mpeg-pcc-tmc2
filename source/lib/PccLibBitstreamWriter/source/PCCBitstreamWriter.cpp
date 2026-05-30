@@ -2996,7 +2996,11 @@ void PCCBitstreamWriter::gsShProperty( PCCBitstream &bitstream, GsSphericalHarmo
 void PCCBitstreamWriter::gs2DTransform( PCCBitstream &bitstream, Gs2DTransform &gs2DTransform ) {
   TRACE_BITSTREAM_IN( "%s", __func__ );
   WRITE_CODE( gs2DTransform.getTrRowNumGroups(), 4 );
+  WRITE_CODE( gs2DTransform.getDimensionReductionEnableFlag(), 1 );
   for ( int i = 0; i < gs2DTransform.getTrRowNumGroups(); i++ ) {
+    if ( gs2DTransform.getDimensionReductionEnableFlag() ) {
+      WRITE_CODE( gs2DTransform.getNumOfRetainComponentsMinus1( i ), 4 );
+    }
     WRITE_CODE( gs2DTransform.getRowTrSizeMinus1( i ), 4 );
     for ( int j = 0; j < ( gs2DTransform.getRowTrSizeMinus1( i ) + 1 ); j++ ) {
       WRITE_CODE( gs2DTransform.getTrRowGroupIdx( i, j ), 4 );
