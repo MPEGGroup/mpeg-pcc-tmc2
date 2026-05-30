@@ -300,6 +300,10 @@ bool parseParameters( int                           argc,
       encoderParams.enableScaleNonUniformQuantization_,
       false,
       "Enable non-uniform quantization for Scale (m76123)" )
+    ( "shPredictionEnabled",
+      encoderParams.shPredictionEnabled_,
+      false,
+      "Enable SH linear prediction (m76155)" )
     ( "enableScalePowerTransform",
       encoderParams.enableScalePowerTransform_,
       false,

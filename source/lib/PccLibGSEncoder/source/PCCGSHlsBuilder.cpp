@@ -542,6 +542,22 @@ void PCCGSHlsBuilder::initializeAtlasAapsHls( PCCHighLevelSyntax            &hls
     opacityProp.setLinearOpacityFlag( adaptationParams.encodeLinearOpacity_ );
   }
 
+  ext.setPredEnableFlag( adaptationParams.shPredictionEnabled_ );
+  if ( adaptationParams.shPredictionEnabled_ && !adaptationParams.shPredictionEntries_.empty() ) {
+    auto &pred = ext.getGsPrediction();
+    pred.setShNumComponents( adaptationParams.shPredictionEntries_.size() );
+    for ( size_t i = 0; i < adaptationParams.shPredictionEntries_.size(); i++ ) {
+      const auto &entry = adaptationParams.shPredictionEntries_[i];
+      pred.setUsePredictionFlag( i, entry.usePrediction );
+      if ( entry.usePrediction ) {
+        pred.setNumPredSrcMinus1( i, entry.numPredSrcMinus1 );
+        for ( size_t j = 0; j <= entry.numPredSrcMinus1; j++ ) {
+          pred.setPredSrcIdx( i, j, entry.predSrcIdx[j] );
+          pred.setPredCoeff( i, j, static_cast<float>( entry.predCoeff[j] ) );
+        }
+      }
+    }
+  }
   return;
 }
 

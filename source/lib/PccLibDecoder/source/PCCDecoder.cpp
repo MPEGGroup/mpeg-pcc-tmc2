@@ -2181,6 +2181,26 @@ int PCCDecoder::ReconstructIdc3( PCCContext &context, PCCGroupOfFrames &reconstr
           for ( int m = 0; m < 45; ++m ) { adaptationParams.shMappingTable_[m] = shProp.getShMappingTable( m ); }
         }
 
+        if ( ext.getPredEnableFlag() ) {
+          adaptationParams.shPredictionEnabled_ = true;
+          auto &pred                            = ext.getGsPrediction();
+          int   numComp                         = pred.getShNumComponents();
+          adaptationParams.shPredictionEntries_.resize( numComp );
+          for ( int i = 0; i < numComp; i++ ) {
+            auto &entry         = adaptationParams.shPredictionEntries_[i];
+            entry.usePrediction = pred.getUsePredictionFlag( i );
+            if ( entry.usePrediction ) {
+              entry.numPredSrcMinus1 = pred.getNumPredSrcMinus1( i );
+              entry.predSrcIdx.resize( entry.numPredSrcMinus1 + 1 );
+              entry.predCoeff.resize( entry.numPredSrcMinus1 + 1 );
+              for ( int j = 0; j <= entry.numPredSrcMinus1; j++ ) {
+                entry.predSrcIdx[j] = pred.getPredSrcIdx( i, j );
+                entry.predCoeff[j]  = pred.getPredCoeff( i, j );
+              }
+            }
+          }
+        }
+
         if ( ext.getTransform2DPresentFlag() ) {
           addAdaptationParameters                     = true;
           adaptationParams.gsdTransform2dPresentFlag_ = true;
@@ -2208,6 +2228,25 @@ int PCCDecoder::ReconstructIdc3( PCCContext &context, PCCGroupOfFrames &reconstr
             }
           }
           for ( int i = 0; i < 16; ++i ) { adaptationParams.shTrTypeCol_.push_back( tr2d.getTrColType( i ) ); }
+        }
+      }
+      if ( ext.getPredEnableFlag() ) {
+        adaptationParams.shPredictionEnabled_ = true;
+        auto &pred                            = ext.getGsPrediction();
+        int   numComp                         = pred.getShNumComponents();
+        adaptationParams.shPredictionEntries_.resize( numComp );
+        for ( int i = 0; i < numComp; i++ ) {
+          auto &entry         = adaptationParams.shPredictionEntries_[i];
+          entry.usePrediction = pred.getUsePredictionFlag( i );
+          if ( entry.usePrediction ) {
+            entry.numPredSrcMinus1 = pred.getNumPredSrcMinus1( i );
+            entry.predSrcIdx.resize( entry.numPredSrcMinus1 + 1 );
+            entry.predCoeff.resize( entry.numPredSrcMinus1 + 1 );
+            for ( int j = 0; j <= entry.numPredSrcMinus1; j++ ) {
+              entry.predSrcIdx[j] = pred.getPredSrcIdx( i, j );
+              entry.predCoeff[j]  = pred.getPredCoeff( i, j );
+            }
+          }
         }
       }
       if ( ext.getAdaptiveQuantizationEnableFlag() ) {

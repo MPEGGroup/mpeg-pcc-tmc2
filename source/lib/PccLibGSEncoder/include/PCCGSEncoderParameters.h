@@ -96,6 +96,7 @@ struct PCCGSEncoderParameters {
   bool gsdPcaDcFlag_;
   bool enableShNonUniformQuantization_;
   bool enableScaleNonUniformQuantization_;
+  bool shPredictionEnabled_;
   bool enableScalePowerTransform_ = false;
   bool enableOpacityNonUniformQuantization_;
 
@@ -148,6 +149,7 @@ struct PCCGSEncoderParameters {
     gsdPcaDcFlag_                        = false;
     enableShNonUniformQuantization_      = false;
     enableScaleNonUniformQuantization_   = false;
+    shPredictionEnabled_                 = false;
     enableScalePowerTransform_           = false;
     enableOpacityNonUniformQuantization_ = false;
   }

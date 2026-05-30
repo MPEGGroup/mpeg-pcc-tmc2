@@ -2826,6 +2826,8 @@ void PCCBitstreamReader::aapsVpccGsExtension( PCCBitstream &bitstream, AapsVpccG
   ext.setAdaptiveQuantizationEnableFlag( value );  // u(1)
   READ_CODE_DESC( value, 1, "aaps_vpcc_gs_sh_property_present_flag" );
   ext.setShPropertyPresentFlag( value );  // u(1)
+  READ_CODE_DESC( value, 1, "aaps_vpcc_gs_pred_enable_flag" );
+  ext.setPredEnableFlag( value );  // u(1)
   READ_CODE_DESC( value, 1, "aaps_vpcc_gs_2dsh_transform_present_flag" );
   ext.setTransform2DPresentFlag( value );  // u(1)
   READ_CODE_DESC( value, 1, "aaps_vpcc_gs_scale_transform_present_flag" );
@@ -2837,6 +2839,7 @@ void PCCBitstreamReader::aapsVpccGsExtension( PCCBitstream &bitstream, AapsVpccG
 
   if ( ext.getDequantizationPresentFlag() ) { gsDequantization( bitstream, ext.getGsDequantization() ); }
   if ( ext.getShPropertyPresentFlag() ) { gsShProperty( bitstream, ext.getGsShProperty() ); }
+  if ( ext.getPredEnableFlag() ) { gsPrediction( bitstream, ext.getGsPrediction() ); }
   if ( ext.getTransform2DPresentFlag() ) { gs2DTransform( bitstream, ext.getGs2DTransform() ); }
   if ( ext.getScaleTransformPresentFlag() ) { gsScaleTransform( bitstream, ext.getGsScaleTransform() ); }
   if ( ext.getOpacityPropertyPresentFlag() ) { gsOpacityProperty( bitstream, ext.getGsOpacityProperty() ); }
@@ -3121,6 +3124,28 @@ void PCCBitstreamReader::gsOpacityProperty( PCCBitstream &bitstream, GsOpacityPr
   int value;
   READ_CODE_DESC( value, 1, "LinearOpacityFlag" );
   gsOpacityProperty.setLinearOpacityFlag( value );
+}
+// H.8.3.6.3.7  Gaussian splat spherical harmonics prediction syntax
+void PCCBitstreamReader::gsPrediction( PCCBitstream &bitstream, GsPrediction &pred ) {
+  int   value;
+  float valueFlt;
+  TRACE_BITSTREAM_IN( "%s", __func__ );
+  READ_UVLC_DESC( value, "gsp_sh_num_components" );
+  pred.setShNumComponents( value );
+  for ( int i = 0; i < pred.getShNumComponents(); i++ ) {
+    READ_CODE_DESC( value, 1, "gsp_use_prediction_flag" );
+    pred.setUsePredictionFlag( i, value != 0 );
+    if ( pred.getUsePredictionFlag( i ) ) {
+      READ_CODE_DESC( value, 4, "gsp_num_pred_src_minus1" );
+      pred.setNumPredSrcMinus1( i, value );
+      for ( int j = 0; j <= pred.getNumPredSrcMinus1( i ); j++ ) {
+        READ_CODE_DESC( value, 6, "gsp_pred_src_idx" );
+        pred.setPredSrcIdx( i, j, value );
+        READ_FLOAT_DESC( valueFlt, "gsp_pred_coeff" );
+        pred.setPredCoeff( i, j, valueFlt );
+      }
+    }
+  }
   TRACE_BITSTREAM_OUT( "%s", __func__ );
 }
 

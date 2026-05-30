@@ -32,6 +32,7 @@
  */
 
 #include "PCCAdaptation.h"
+#include "PCCLeastSquares.h"
 #include "PCCSymEigen.h"
 
 #include <algorithm>
@@ -200,6 +201,33 @@ bool PCCAdaptationParameters::writeConfig( const std::string &filename ) const {
     ofs << "    }\n";
   } else {
     ofs << "\n";
+  }
+
+  if ( shPredictionEnabled_ && !shPredictionEntries_.empty() ) {
+    ofs << ",\n";
+    ofs << "    \"shPrediction\": {\n";
+    ofs << "      \"numComponents\": " << shPredictionEntries_.size() << ",\n";
+    ofs << "      \"entries\": [";
+    for ( size_t i = 0; i < shPredictionEntries_.size(); i++ ) {
+      const auto &entry = shPredictionEntries_[i];
+      if ( i > 0 ) ofs << ",";
+      ofs << "\n        {\"usePrediction\": " << ( entry.usePrediction ? "true" : "false" )
+          << ", \"numPredSrcMinus1\": " << (int)entry.numPredSrcMinus1;
+      if ( entry.usePrediction ) {
+        ofs << ", \"predSrcIdx\": [";
+        for ( size_t j = 0; j < entry.predSrcIdx.size(); j++ ) {
+          ofs << (int)entry.predSrcIdx[j] << ( j < entry.predSrcIdx.size() - 1 ? ", " : "" );
+        }
+        ofs << "], \"predCoeff\": [";
+        for ( size_t j = 0; j < entry.predCoeff.size(); j++ ) {
+          ofs << entry.predCoeff[j] << ( j < entry.predCoeff.size() - 1 ? ", " : "" );
+        }
+        ofs << "]";
+      }
+      ofs << "}";
+    }
+    ofs << "\n      ]\n";
+    ofs << "    }";
   }
   ofs << "  }";
 
@@ -448,6 +476,74 @@ bool PCCAdaptationParameters::readConfig( const std::string &filename ) {
             } else {
               p++;
             }
+          }
+        }
+      }
+    }
+
+    // SH linear prediction
+    size_t shPredPos = content.find( "\"shPrediction\"", limitsPos );
+    if ( shPredPos != std::string::npos ) {
+      shPredictionEnabled_ = true;
+      size_t entriesPos    = content.find( "\"entries\"", shPredPos );
+      if ( entriesPos != std::string::npos ) {
+        size_t ncPos   = content.find( "\"numComponents\"", shPredPos );
+        int    numComp = 0;
+        if ( ncPos != std::string::npos && ncPos < entriesPos ) {
+          numComp = std::stoi( content.substr( content.find( ":", ncPos ) + 1 ) );
+        }
+        shPredictionEntries_.resize( numComp > 0 ? numComp : 48 );
+        entriesPos = content.find( "[", entriesPos );
+        if ( entriesPos != std::string::npos ) {
+          size_t p = entriesPos + 1;
+          for ( size_t i = 0; i < shPredictionEntries_.size(); i++ ) {
+            size_t entryStart = content.find( "{", p );
+            if ( entryStart == std::string::npos ) break;
+            size_t      entryEnd = content.find( "}", entryStart );
+            std::string entryStr = content.substr( entryStart, entryEnd - entryStart + 1 );
+            size_t      upPos    = entryStr.find( "\"usePrediction\"" );
+            if ( upPos != std::string::npos ) {
+              size_t truePos                        = entryStr.find( "true", upPos );
+              size_t commaPos                       = entryStr.find( ",", upPos );
+              shPredictionEntries_[i].usePrediction = ( truePos < commaPos );
+            }
+            size_t npsPos = entryStr.find( "\"numPredSrcMinus1\"" );
+            if ( npsPos != std::string::npos ) {
+              shPredictionEntries_[i].numPredSrcMinus1 =
+                  std::stoi( entryStr.substr( entryStr.find( ":", npsPos ) + 1 ) );
+            }
+            if ( shPredictionEntries_[i].usePrediction ) {
+              int ns = shPredictionEntries_[i].numPredSrcMinus1 + 1;
+              shPredictionEntries_[i].predSrcIdx.resize( ns );
+              shPredictionEntries_[i].predCoeff.resize( ns );
+              size_t idxPos = entryStr.find( "\"predSrcIdx\"" );
+              if ( idxPos != std::string::npos ) {
+                size_t      arrStart = entryStr.find( "[", idxPos );
+                size_t      arrEnd   = entryStr.find( "]", arrStart );
+                std::string arrStr   = entryStr.substr( arrStart + 1, arrEnd - arrStart - 1 );
+                size_t      pp       = 0;
+                for ( int j = 0; j < ns; j++ ) {
+                  while ( pp < arrStr.size() && !isdigit( arrStr[pp] ) ) pp++;
+                  shPredictionEntries_[i].predSrcIdx[j] = std::stoi( arrStr.substr( pp ) );
+                  while ( pp < arrStr.size() && ( isdigit( arrStr[pp] ) ) ) pp++;
+                }
+              }
+              size_t coeffPos = entryStr.find( "\"predCoeff\"" );
+              if ( coeffPos != std::string::npos ) {
+                size_t      arrStart = entryStr.find( "[", coeffPos );
+                size_t      arrEnd   = entryStr.find( "]", arrStart );
+                std::string arrStr   = entryStr.substr( arrStart + 1, arrEnd - arrStart - 1 );
+                size_t      pp       = 0;
+                for ( int j = 0; j < ns; j++ ) {
+                  while ( pp < arrStr.size() && arrStr[pp] != '-' && !isdigit( arrStr[pp] ) && arrStr[pp] != '.' ) pp++;
+                  shPredictionEntries_[i].predCoeff[j] = std::stod( arrStr.substr( pp ) );
+                  while ( pp < arrStr.size() && ( isdigit( arrStr[pp] ) || arrStr[pp] == '-' || arrStr[pp] == '.' ||
+                                                  arrStr[pp] == 'e' || arrStr[pp] == 'E' || arrStr[pp] == '+' ) )
+                    pp++;
+                }
+              }
+            }
+            p = entryEnd + 1;
           }
         }
       }
@@ -2177,6 +2273,195 @@ bool PCCAdaptation::sphericalHarmonicsTransform2D( PCCPointSetGS &pointCloud, PC
       }
     }
   }
+
+  // Apply linear prediction after 2D transform
+  if ( params.shPredictionEnabled_ ) { sphericalHarmonicsLinearPrediction( pointCloud, params ); }
+
+  return true;
+}
+
+//============================================================================
+// Spherical harmonics linear prediction (encoder side)
+//============================================================================
+bool PCCAdaptation::sphericalHarmonicsLinearPrediction( PCCPointSetGS &pointCloud, PCCAdaptationParameters &params ) {
+  if ( !pointCloud.hasSphericalHarmonics() ) return false;
+  const size_t pointCount  = pointCloud.getPointCount();
+  const size_t shCoefCount = pointCloud.getSphericalHarmonicsCount();
+  if ( pointCount == 0 || shCoefCount < 16 ) return false;
+
+  auto &shData = pointCloud.getSphericalHarmonics();
+
+  // std ratio gate (matching Python: idx3 = [11, 13, 12])
+  double sumStd1 = 0.0, sumStd3 = 0.0;
+  {
+    int idx3[3] = { 11, 13, 12 };
+    for ( int l = 1; l <= 9; l++ ) {
+      for ( int ch = 0; ch < 3; ch++ ) {
+        double sum = 0.0, sumSq = 0.0;
+        for ( size_t p = 0; p < pointCount; p++ ) {
+          double v = shData[p][l][ch];
+          sum += v;
+          sumSq += v * v;
+        }
+        double mean = sum / pointCount;
+        double var  = sumSq / pointCount - mean * mean;
+        sumStd1 += std::sqrt( std::max( 0.0, var ) );
+      }
+    }
+    for ( int k = 0; k < 3; k++ ) {
+      for ( int ch = 0; ch < 3; ch++ ) {
+        double sum = 0.0, sumSq = 0.0;
+        for ( size_t p = 0; p < pointCount; p++ ) {
+          double v = shData[p][idx3[k]][ch];
+          sum += v;
+          sumSq += v * v;
+        }
+        double mean = sum / pointCount;
+        double var  = sumSq / pointCount - mean * mean;
+        sumStd3 += std::sqrt( std::max( 0.0, var ) );
+      }
+    }
+  }
+  double meanStd1 = sumStd1 / ( 9 * 3 );
+  double meanStd3 = sumStd3 / ( 3 * 3 );
+  if ( meanStd3 < 1e-9 || meanStd1 / meanStd3 <= 8.0 ) { return true; }
+
+  const int   fullDim     = 48;
+  const int   maxSrc      = 3;
+  const float reductionth = 0.05;
+  const int   srcStart    = 0;
+  const int   srcEnd      = 27;
+  const int   tgtStart    = 27;
+  const int   tgtEnd      = 48;
+
+  params.shPredictionEntries_.resize( fullDim );
+
+  int numSources = srcEnd - srcStart;
+
+  for ( int tgt = tgtStart; tgt < tgtEnd; tgt++ ) {
+    int tgtSh = tgt / 3;
+    int tgtCh = tgt % 3;
+
+    double tgtMean = 0.0;
+    for ( size_t p = 0; p < pointCount; p++ ) { tgtMean += shData[p][tgtSh][tgtCh]; }
+    tgtMean /= pointCount;
+    double tgtVar = 0.0;
+    for ( size_t p = 0; p < pointCount; p++ ) {
+      double v = shData[p][tgtSh][tgtCh] - tgtMean;
+      tgtVar += v * v;
+    }
+    tgtVar /= pointCount;
+    if ( tgtVar < 1e-9 ) continue;
+
+    std::vector<double> srcMean( numSources, 0.0 );
+    for ( int s = 0; s < numSources; s++ ) {
+      int sSh = ( srcStart + s ) / 3;
+      int sCh = ( srcStart + s ) % 3;
+      for ( size_t p = 0; p < pointCount; p++ ) { srcMean[s] += shData[p][sSh][sCh]; }
+      srcMean[s] /= pointCount;
+    }
+
+    std::vector<std::pair<double, int>> corrWithSrc( numSources );
+    for ( int s = 0; s < numSources; s++ ) {
+      int    sSh = ( srcStart + s ) / 3;
+      int    sCh = ( srcStart + s ) % 3;
+      double cov = 0.0, srcVar = 0.0;
+      for ( size_t p = 0; p < pointCount; p++ ) {
+        double dv = shData[p][tgtSh][tgtCh] - tgtMean;
+        double sv = shData[p][sSh][sCh] - srcMean[s];
+        cov += dv * sv;
+        srcVar += sv * sv;
+      }
+      cov /= pointCount;
+      srcVar /= pointCount;
+      double corr = 0.0;
+      if ( srcVar > 1e-9 ) { corr = cov / ( std::sqrt( tgtVar ) * std::sqrt( srcVar ) ); }
+      corrWithSrc[s] = { std::abs( corr ), s };
+    }
+
+    std::sort( corrWithSrc.begin(), corrWithSrc.end(),
+               []( const auto &a, const auto &b ) { return a.first > b.first; } );
+
+    std::vector<int> selectedSrc;
+    for ( int k = 0; k < maxSrc && k < numSources; k++ ) {
+      if ( corrWithSrc[k].first > 0.01 ) { selectedSrc.push_back( srcStart + corrWithSrc[k].second ); }
+    }
+    if ( selectedSrc.empty() ) continue;
+
+    int ns = selectedSrc.size();
+
+    std::vector<double> A( pointCount * ns );
+    std::vector<double> B( pointCount );
+    for ( size_t p = 0; p < pointCount; p++ ) {
+      for ( int j = 0; j < ns; j++ ) {
+        int sSh               = selectedSrc[j] / 3;
+        int sCh               = selectedSrc[j] % 3;
+        A[j * pointCount + p] = shData[p][sSh][sCh];
+      }
+      B[p] = shData[p][tgtSh][tgtCh];
+    }
+
+    LeastSquaresResult lsResult;
+    if ( !leastSquaresSolve( A, pointCount, ns, B, 1, lsResult ) ) continue;
+
+    std::vector<double> weights( ns );
+    for ( int j = 0; j < ns; j++ ) { weights[j] = lsResult.x[j]; }
+
+    double resVar = 0.0;
+    for ( size_t p = 0; p < pointCount; p++ ) {
+      double pred = 0.0;
+      for ( int j = 0; j < ns; j++ ) {
+        int sSh = selectedSrc[j] / 3;
+        int sCh = selectedSrc[j] % 3;
+        pred += weights[j] * shData[p][sSh][sCh];
+      }
+      double residual         = shData[p][tgtSh][tgtCh] - pred;
+      shData[p][tgtSh][tgtCh] = static_cast<float>( residual );
+      resVar += residual * residual;
+    }
+    resVar /= pointCount;
+
+    double reduction = ( tgtVar - resVar ) / tgtVar;
+    if ( reduction >= reductionth ) {
+      auto &entry            = params.shPredictionEntries_[tgt];
+      entry.usePrediction    = true;
+      entry.numPredSrcMinus1 = ns - 1;
+      entry.predSrcIdx.resize( ns );
+      entry.predCoeff.resize( ns );
+      for ( int j = 0; j < ns; j++ ) {
+        entry.predSrcIdx[j] = selectedSrc[j];
+        entry.predCoeff[j]  = weights[j];
+      }
+    }
+  }
+  return true;
+}
+
+//============================================================================
+// Spherical harmonics inverse linear prediction (decoder side)
+//============================================================================
+bool PCCAdaptation::sphericalHarmonicsInvLinearPrediction( PCCPointSetGS                 &pointCloud,
+                                                           const PCCAdaptationParameters &params ) {
+  if ( !pointCloud.hasSphericalHarmonics() ) return false;
+  if ( params.shPredictionEntries_.empty() ) return true;
+
+  const size_t pointCount = pointCloud.getPointCount();
+  auto        &shData     = pointCloud.getSphericalHarmonics();
+
+  for ( size_t p = 0; p < pointCount; p++ ) {
+    auto &sh = shData[p];
+    for ( size_t i = 0; i < params.shPredictionEntries_.size(); i++ ) {
+      const auto &entry = params.shPredictionEntries_[i];
+      if ( !entry.usePrediction ) continue;
+      int iSh = i / 3;
+      int iCh = i % 3;
+      for ( size_t s = 0; s <= entry.numPredSrcMinus1; s++ ) {
+        int srcSh = entry.predSrcIdx[s] / 3;
+        int srcCh = entry.predSrcIdx[s] % 3;
+        sh[iSh][iCh] += static_cast<float>( entry.predCoeff[s] * sh[srcSh][srcCh] );
+      }
+    }
+  }
   return true;
 }
 
@@ -2195,6 +2480,15 @@ bool PCCAdaptation::sphericalHarmonicsInvTransform2D( PCCPointSetGS             
       { { -1.0, -1.0, -1.0 }, { -1.0, -1.0, -1.0 }, { -1.0, -1.0, -1.0 } },                               // reserved
       { { -1.0, -1.0, -1.0 }, { -1.0, -1.0, -1.0 }, { -1.0, -1.0, -1.0 } } };                             // reserved
 
+  // Apply inverse linear prediction before inverse 2D transform
+  if ( params.shPredictionEnabled_ && !params.shPredictionEntries_.empty() ) {
+    sphericalHarmonicsInvLinearPrediction( pointCloud, params );
+  }
+
+  // const double itr3x3[3][3][3] = {
+  //     { { 1.00000, 0.00000, 1.13983 }, { 1.00000, -0.39465, -0.58060 }, { 1.00000, 2.03211, 0.00000 } },
+  //     { { 1.00000, 0.00000, 1.40200 }, { 1.00000, -0.34000, -0.71400 }, { 1.00000, 1.77200, 0.00000 } },
+  //     { { 1.00000, 1.22474, 0.70711 }, { 1.00000, 0.00000, -1.41421 }, { 1.00000, -1.22474, 0.70711 } } };
   const double itr2x2[3][2][2] = {
       { { 1.0, 0.0 }, { 0.0, 1.0 } }, { { 1.0, 0.0 }, { 0.0, 1.0 } }, { { 1.0, 1.0 }, { 1.0, -1.0 } } };
 

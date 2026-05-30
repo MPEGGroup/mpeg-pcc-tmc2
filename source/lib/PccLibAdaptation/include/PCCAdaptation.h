@@ -130,6 +130,19 @@ struct PCCAdaptationParameters {
   };
   std::vector<PCCKltParameters> shKltParams_;
 
+  // ==================== SH Linear Prediction Parameters ====================
+  /// Enable SH linear prediction (m76155)
+  bool shPredictionEnabled_ = false;
+
+  /// Prediction entry for one component in the flattened 48-dim space
+  struct PCCShPredictionEntry {
+    bool                 usePrediction    = false;
+    uint8_t              numPredSrcMinus1 = 0;
+    std::vector<uint8_t> predSrcIdx;  // source indices in 0..47
+    std::vector<double>  predCoeff;   // prediction coefficients
+  };
+  std::vector<PCCShPredictionEntry> shPredictionEntries_;
+
   // ==================== SH Non-Uniform Quantization ====================
   /// Enable non-uniform quantization for SH (m75025)
   bool enableShNonUniformQuantization_ = false;
@@ -376,6 +389,11 @@ class PCCAdaptation {
   bool extractOpacityQuantRegions( const PCCPointSetGS &input, PCCAdaptationParameters &params );
   /// Extract Scale quantization regions for non-uniform quantization
   bool extractScaleQuantRegions( const PCCPointSetGS &input, PCCAdaptationParameters &params );
+  /// Compute and apply SH linear prediction (encoder side, after 2D transform)
+  bool sphericalHarmonicsLinearPrediction( PCCPointSetGS &pointCloud, PCCAdaptationParameters &params );
+
+  /// Apply inverse SH linear prediction (decoder side, before inverse 2D transform)
+  bool sphericalHarmonicsInvLinearPrediction( PCCPointSetGS &pointCloud, const PCCAdaptationParameters &params );
 
   // ==================== Inverse Operations ====================
 

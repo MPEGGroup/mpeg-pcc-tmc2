@@ -576,6 +576,57 @@ class GsOpacityProperty {
   uint8_t linearOpacityFlag_;
 };
 
+// H.8.3.6.3.7  Gaussian splat spherical harmonics prediction syntax
+class GsPrediction {
+ public:
+  GsPrediction() : shNumComponents_( 0 ) {}
+  ~GsPrediction() {}
+  GsPrediction &operator=( const GsPrediction & ) = default;
+
+  bool operator==( const GsPrediction &other ) const {
+    bool retVal = true;
+    if ( shNumComponents_ != other.shNumComponents_ || usePredictionFlag_ != other.usePredictionFlag_ ||
+         numPredSrcMinus1_ != other.numPredSrcMinus1_ || predSrcIdx_ != other.predSrcIdx_ ||
+         predCoeff_ != other.predCoeff_ ) {
+      retVal = false;
+    }
+    return retVal;
+  }
+  bool operator!=( const GsPrediction &other ) const { return !( *this == other ); }
+
+  uint8_t getShNumComponents() { return shNumComponents_; }
+  void    setShNumComponents( uint8_t value ) {
+    shNumComponents_ = value;
+    usePredictionFlag_.resize( value, false );
+    numPredSrcMinus1_.resize( value, 0 );
+    predSrcIdx_.resize( value );
+    predCoeff_.resize( value );
+  }
+
+  bool getUsePredictionFlag( size_t i ) { return usePredictionFlag_[i]; }
+  void setUsePredictionFlag( size_t i, bool value ) { usePredictionFlag_[i] = value; }
+
+  uint8_t getNumPredSrcMinus1( size_t i ) { return numPredSrcMinus1_[i]; }
+  void    setNumPredSrcMinus1( size_t i, uint8_t value ) {
+    numPredSrcMinus1_[i] = value;
+    predSrcIdx_[i].resize( value + 1, 0 );
+    predCoeff_[i].resize( value + 1, 0.0f );
+  }
+
+  uint8_t getPredSrcIdx( size_t i, size_t j ) { return predSrcIdx_[i][j]; }
+  void    setPredSrcIdx( size_t i, size_t j, uint8_t value ) { predSrcIdx_[i][j] = value; }
+
+  float getPredCoeff( size_t i, size_t j ) { return predCoeff_[i][j]; }
+  void  setPredCoeff( size_t i, size_t j, float value ) { predCoeff_[i][j] = value; }
+
+ private:
+  uint8_t                           shNumComponents_;
+  std::vector<bool>                 usePredictionFlag_;
+  std::vector<uint8_t>              numPredSrcMinus1_;
+  std::vector<std::vector<uint8_t>> predSrcIdx_;
+  std::vector<std::vector<float>>   predCoeff_;
+};
+
 // H.8.3.6.3.9  GS scale transform syntax
 class GsScaleTransform {
  public:
@@ -649,6 +700,9 @@ class AapsVpccGsExtension {
   bool               getOpacityPropertyPresentFlag() { return opacityPropertyPresentFlag_; }
   GsOpacityProperty &getGsOpacityProperty() { return gsOpacityProperty_; }
   void               setOpacityPropertyPresentFlag( bool value ) { opacityPropertyPresentFlag_ = value; }
+  bool               getPredEnableFlag() { return predEnableFlag_; }
+  GsPrediction      &getGsPrediction() { return gsPrediction_; }
+  void               setPredEnableFlag( bool value ) { predEnableFlag_ = value; }
 
   uint8_t getReservedZero8bits() const { return reservedZero8bits_; }
   void    setReservedZero8bits( uint8_t value ) { reservedZero8bits_ = value; }
@@ -660,6 +714,8 @@ class AapsVpccGsExtension {
   bool                         transform2DPresentFlag_{};
   bool                         scaleTransformPresentFlag_{};
   bool                         opacityPropertyPresentFlag_{};
+  bool                         predEnableFlag_{};
+  GsPrediction                 gsPrediction_{};
   GsDequantization             gsDequantization_{};
   GsSphericalHarmonicsProperty shSphericalHarmonicsProperty_{};
   Gs2DTransform                gs2DTransform_{};

@@ -2854,6 +2854,7 @@ void PCCBitstreamWriter::aapsVpccGsExtension( PCCBitstream &bitstream, AapsVpccG
   WRITE_CODE( ext.getDequantizationPresentFlag(), 1 );       // u(1)
   WRITE_CODE( ext.getAdaptiveQuantizationEnableFlag(), 1 );  // u(1)
   WRITE_CODE( ext.getShPropertyPresentFlag(), 1 );           // u(1)
+  WRITE_CODE( ext.getPredEnableFlag() ? 1 : 0, 1 );          // u(1)
   WRITE_CODE( ext.getTransform2DPresentFlag(), 1 );          // u(1)
   WRITE_CODE( ext.getScaleTransformPresentFlag(), 1 );       // u(1)
   WRITE_CODE( ext.getOpacityPropertyPresentFlag(), 1 );      // u(1)
@@ -2861,6 +2862,7 @@ void PCCBitstreamWriter::aapsVpccGsExtension( PCCBitstream &bitstream, AapsVpccG
 
   if ( ext.getDequantizationPresentFlag() ) { gsDequantization( bitstream, ext.getGsDequantization() ); }
   if ( ext.getShPropertyPresentFlag() ) { gsShProperty( bitstream, ext.getGsShProperty() ); }
+  if ( ext.getPredEnableFlag() ) { gsPrediction( bitstream, ext.getGsPrediction() ); }
   if ( ext.getTransform2DPresentFlag() ) { gs2DTransform( bitstream, ext.getGs2DTransform() ); }
   if ( ext.getScaleTransformPresentFlag() ) { gsScaleTransform( bitstream, ext.getGsScaleTransform() ); }
   if ( ext.getOpacityPropertyPresentFlag() ) { gsOpacityProperty( bitstream, ext.getGsOpacityProperty() ); }
@@ -3033,6 +3035,23 @@ void PCCBitstreamWriter::gs2DTransform( PCCBitstream &bitstream, Gs2DTransform &
 void PCCBitstreamWriter::gsOpacityProperty( PCCBitstream &bitstream, GsOpacityProperty &gsop ) {
   TRACE_BITSTREAM_IN( "%s", __func__ );
   WRITE_CODE( gsop.getLinearOpacityFlag(), 1 );
+  TRACE_BITSTREAM_OUT( "%s", __func__ );
+}
+
+// H.8.3.6.3.7  Gaussian splat spherical harmonics prediction syntax
+void PCCBitstreamWriter::gsPrediction( PCCBitstream &bitstream, GsPrediction &pred ) {
+  TRACE_BITSTREAM_IN( "%s", __func__ );
+  WRITE_UVLC( pred.getShNumComponents() );
+  for ( int i = 0; i < pred.getShNumComponents(); i++ ) {
+    WRITE_CODE( pred.getUsePredictionFlag( i ) ? 1 : 0, 1 );
+    if ( pred.getUsePredictionFlag( i ) ) {
+      WRITE_CODE( pred.getNumPredSrcMinus1( i ), 4 );
+      for ( int j = 0; j <= pred.getNumPredSrcMinus1( i ); j++ ) {
+        WRITE_CODE( pred.getPredSrcIdx( i, j ), 6 );
+        WRITE_FLOAT( pred.getPredCoeff( i, j ) );
+      }
+    }
+  }
   TRACE_BITSTREAM_OUT( "%s", __func__ );
 }
 

@@ -109,6 +109,7 @@ int main( int argc, char *argv[] ) {
     adaptationParams.computedOpacityMax_ = 1.0;
   }
   adaptationParams.enableScaleNonUniformQuantization_ = encoderParams.enableScaleNonUniformQuantization_;
+  adaptationParams.shPredictionEnabled_               = encoderParams.shPredictionEnabled_;
   adaptationParams.enableScalePowerTransform_         = encoderParams.enableScalePowerTransform_;
 
 #if defined( ENABLE_TBB )

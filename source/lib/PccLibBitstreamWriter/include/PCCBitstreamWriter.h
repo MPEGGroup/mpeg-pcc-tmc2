@@ -408,10 +408,12 @@ class PCCBitstreamWriter {
   static void gsDequantization( PCCBitstream &bitstream, GsDequantization &gsd );
   // H.8.3.6.3.6	Gaussian splat spherical harmonics property syntax
   static void gsShProperty( PCCBitstream &bitstream, GsSphericalHarmonicsProperty &gshp );
-  // H.8.3.6.3.7	Gaussian splat spherical harmonics transform syntax
+  // H.8.3.6.3.8	Gaussian splat spherical harmonics transform syntax
   static void gs2DTransform( PCCBitstream &bitstream, Gs2DTransform &gs2DTransform );
   // H.8.3.6.3.11 Gaussian splat opacity property syntax
   static void gsOpacityProperty( PCCBitstream &bitstream, GsOpacityProperty &gsop );
+  // H.8.3.6.3.7  Gaussian splat spherical harmonics prediction syntax
+  static void gsPrediction( PCCBitstream &bitstream, GsPrediction &gsPrediction );
   // H.8.3.6.3.9  Gaussian splat scale transform syntax
   static void gsScaleTransform( PCCBitstream &bitstream, GsScaleTransform &gsst );
   // H.8.3.9	Raw patch data unit V-PCC Gaussian Splat extension syntax
