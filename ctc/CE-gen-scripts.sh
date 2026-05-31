@@ -67,17 +67,16 @@ COLMAP_SEI=0                    # set it to 1 if you want to send the camera par
 GSD_TRANSFORM_2D=1              # 1: enable 2D transform for sphereical harmnoics, 0: disable
 GSD_ADAPTIVE_SH=1               # when GSD_TRANSFORM_2D=1, 1: enable m75790, 0: enable m75380
 GSD_PCA_DC=1                    # when GSD_ADAPTIVE_SH=1, 1: enable DC PCA (m76858), 0: disable
-ADAPTIVE_PCA=1                  # when GSD_ADAPTIVE_SH=1, 1: enable m76164, 0: disable m76164
+ADAPTIVE_PCA=0                  # when GSD_ADAPTIVE_SH=1, 1: enable m76164, 0: disable m76164
 GSD_NON_UNIFORM_QUANT=1         # 1: enable m75025, 0: disable m75025
 ADAPTIVE_QUANTIZATION=1         # 1: enable m75039, 0: disable
-SH_PREDICTION=1                 # 1: enable m76155 SH linear prediction, 0: disable
+SH_PREDICTION=0                 # 1: enable m76155 SH linear prediction, 0: disable
 GSD_DIMENSION_REDUCTION=0       # 1: enable m76859 SH dimension reduction, 0: disable
 ANNOTATE_DIR=""                 # m75039: path to directory of importance score files for each sequence. If string is empty, files are recomputed
 PATCH_MERGING=0                 # 1: enable m75379, 0: diable(CTC)
 GSD_SCALE_NON_UNIFORM_QUANT=1   # 1: enable m76123, 0: disable m76123
 GSD_SCALE_POWER_TRANSFORM=1     # 1: enable m76151 power transform + 2-seg PLS (requires GSD_SCALE_NON_UNIFORM_QUANT=1), 0: disable
 GSD_OPACITY_NON_UNIFORM_QUANT=1 # 1: enable m76122 opacity non-uniform quantization, 0: disable
-
 
 # ==================================================================================================
 # Base directories
