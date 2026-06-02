@@ -55,6 +55,9 @@ GENERATE_PNGs=0             # 0 or 1
 : "${EXPERIMENT_MODE:=2}"   # 0: mandatory, 1: all, 2: man_with_fruit_tracked only, 3: subset
 : "${METRICS_THREADS:=1}"   # Number of threads for mpeg-gsc-metrics (optimize for your system resources)
 
+# Custom time format to improve platform independence of parsing time results
+TIME="/usr/bin/time -f 'user_time=%U wall_time=%E max_rss_KB=%M'"
+
 # ==================================================================================================
 # Coding settings
 # ==================================================================================================
@@ -72,7 +75,7 @@ GSD_NON_UNIFORM_QUANT=1         # 1: enable m75025, 0: disable m75025
 ADAPTIVE_QUANTIZATION=1         # 1: enable m75039, 0: disable
 SH_PREDICTION=0                 # 1: enable m76155 SH linear prediction, 0: disable
 GSD_DIMENSION_REDUCTION=0       # 1: enable m76859 SH dimension reduction, 0: disable
-ANNOTATE_DIR=""                 # m75039: path to directory of importance score files for each sequence. If string is empty, files are recomputed
+IMPORTANCE_SCORES_DIR=""        # m75039: path to directory of importance score files for each sequence. If string is empty, files are recomputed
 PATCH_MERGING=0                 # 1: enable m75379, 0: diable(CTC)
 GSD_SCALE_NON_UNIFORM_QUANT=1   # 1: enable m76123, 0: disable m76123
 GSD_SCALE_POWER_TRANSFORM=1     # 1: enable m76151 power transform + 2-seg PLS (requires GSD_SCALE_NON_UNIFORM_QUANT=1), 0: disable
@@ -90,7 +93,6 @@ GSD_OPACITY_NON_UNIFORM_QUANT=1 # 1: enable m76122 opacity non-uniform quantizat
 : "${CAMERAPOS_DIR:=$GSCTOOL_DIR/gsTools/build}"
 : "${TMC_DIR:=/path/to/mpeg-pcc-tmc2}"
 : "${BASE_OUTPUT:=/path/to/CE}"
-: "${TIME:=/bin/time }"
 : "${PYTHON:=python3}"
 
 SCRIPT_PATH="$(readlink -f "$0" 2>/dev/null || realpath "$0")"
@@ -289,24 +291,25 @@ done
 
 CURTIME="$(date "+%y-%m-%d-%H%M%S")"
 OUT="$BASE_OUTPUT/$JOBNAME-$CURTIME"
-BATCH_ANNOTATE="$OUT/jobs/batch_annotate"
-BATCH_CODEC="$OUT/jobs/batch_codec"
+BATCH_IMPORTANCE="$OUT/jobs/batch_importance"
+BATCH_ENCODER="$OUT/jobs/batch_encoder"
+BATCH_DECODER="$OUT/jobs/batch_decoder"
 BATCH_METRIC="$OUT/jobs/batch_metric"
-LOG_DIR="$OUT/jobs/logs"
 
 MKDIRCK() { [[ -d "$1" ]] || mkdir -p "$1"; }
 
-MKDIRCK "$OUT/metrics"
-MKDIRCK "$BATCH_CODEC"
+MKDIRCK "$BATCH_ENCODER"
+MKDIRCK "$BATCH_DECODER"
 MKDIRCK "$BATCH_METRIC"
 MKDIRCK "$OUT/bin"
-MKDIRCK "$LOG_DIR"
-MKDIRCK "$OUT/jobs/done/codec"
+MKDIRCK "$OUT/jobs/done/encoder"
+MKDIRCK "$OUT/jobs/done/decoder"
 MKDIRCK "$OUT/jobs/done/metric"
+MKDIRCK "$OUT/metrics"
 
-if [ -z "$ANNOTATE_DIR" ] && [ $ADAPTIVE_QUANTIZATION == 1 ]; then
-    MKDIRCK "$BATCH_ANNOTATE"
-    MKDIRCK "$OUT/jobs/done/annotate"
+if [ -z "$IMPORTANCE_SCORES_DIR" ] && [ $ADAPTIVE_QUANTIZATION == 1 ]; then
+    MKDIRCK "$BATCH_IMPORTANCE"
+    MKDIRCK "$OUT/jobs/done/importance"
 fi
 
 cp "$TMC_ENC_BIN" "$OUT/bin/$(basename $TMC_ENC_BIN)"
@@ -326,16 +329,19 @@ if [ -f "$IMP_BIN" ]; then
 fi
 
 cd "$OUT/jobs"
-RUN_ANNOTATE="$OUT/jobs/step0_run_annotate.sh"
-RUN_CODEC="$OUT/jobs/step1_run_codec.sh"
-RUN_METRIC="$OUT/jobs/step2_run_metric.sh"
-RUN_SUMMARY="$OUT/jobs/step3_run_summary.sh"
+RUN_IMPORTANCE="$OUT/jobs/step1_run_importance.sh"
+RUN_ENCODER="$OUT/jobs/step2_run_encoder.sh"
+RUN_DECODER="$OUT/jobs/step3_run_decoder.sh"
+RUN_METRIC="$OUT/jobs/step4_run_metric.sh"
+RUN_SUMMARY="$OUT/jobs/step5_run_summary.sh"
 
 # ==================================================================================================
 # Generate the scripts
 # ==================================================================================================
 
-: > "$RUN_CODEC"
+: > "$RUN_IMPORTANCE"
+: > "$RUN_ENCODER"
+: > "$RUN_DECODER"
 : > "$RUN_METRIC"
 : > "$RUN_SUMMARY"
 
@@ -367,8 +373,8 @@ for SEQ in "${SEQUENCES[@]}"; do
         echo "Printing the md5sum of the first input file:"
         md5sum $(printf ${UNCOMPRESSED_DATA_PATHs[$SEQ]} ${START_FRAME_NR[$SEQ]})
         
-        if [ -z "$ANNOTATE_DIR" ] && [ $ADAPTIVE_QUANTIZATION == 1 ]; then
-            SEQ_GROUP_DIR="$OUT/importance_scores/$LENGTH/$SEQ"
+        if [ -z "$IMPORTANCE_SCORES_DIR" ] && [ $ADAPTIVE_QUANTIZATION == 1 ]; then
+            SEQ_GROUP_DIR="$OUT/results/$LENGTH/$SEQ/importance_scores"
             MKDIRCK "$SEQ_GROUP_DIR"
             
             for ((i = START_FRAME_NR[$SEQ]; i < START_FRAME_NR[$SEQ] + FRAME_COUNT; i++)); do
@@ -377,10 +383,13 @@ for SEQ in "${SEQUENCES[@]}"; do
                 FRAME="frame_$FRAME_NR"
 
                 # Compute importance-score based quantization groups
-                JOBFILE_ANO="$BATCH_ANNOTATE/$JOBNAME-$CURTIME-$LENGTH-$SEQ-$FRAME.sh"
+                LOGFILE="$SEQ_GROUP_DIR/${LENGTH}_${SEQ}_${FRAME_NR}.importance.log"
+                ERRFILE="$SEQ_GROUP_DIR/${LENGTH}_${SEQ}_${FRAME_NR}.importance.err"
+                JOBFILE="$BATCH_IMPORTANCE/$JOBNAME-$CURTIME-$LENGTH-$SEQ-$FRAME_NR.sh"
                 {
                     echo "#!/bin/bash"
-                    echo "#SBATCH --output=$OUT/jobs/logs/%j.out"
+                    echo "#SBATCH --output=$LOGFILE"
+                    echo "#SBATCH --error=$ERRFILE"
                     echo "#SBATCH --ntasks-per-node=1"
                     echo "#SBATCH --nodes=1"
                     echo "#SBATCH --mem-per-cpu=8G"
@@ -397,17 +406,17 @@ for SEQ in "${SEQUENCES[@]}"; do
                     echo "    --camera=\"${COLMAP_DIRs[$SEQ]}/$FRAME/sparse/cameras.bin\""
                     echo
                     echo "# Calculate importance scores"
-                    echo "$TIME$IMP_BIN --threads=$METRICS_THREADS \\"
+                    echo "$TIME $IMP_BIN --threads=$METRICS_THREADS \\"
                     echo "    -a \"$SEQ_GROUP_DIR/$FRAME.camerpos.ply\" \\"
                     echo "    \"--impScore=$SEQ_GROUP_DIR/$FRAME.impScores.txt\" \\"
                     echo "    \"--width=$REN_W\" \"--height=$REN_H\" "
-                    echo "touch $OUT/jobs/done/annotate/\$SLURM_JOB_ID"
-                } > "$JOBFILE_ANO"
-                chmod +x "$JOBFILE_ANO"
-                echo "$JOBFILE_ANO > $LOG_DIR/$JOBNAME-$CURTIME-$LENGTH-$SEQ-$FRAME.annotate.log " >> "$RUN_ANNOTATE"
+                    echo "touch $OUT/jobs/done/importance/\$SLURM_JOB_ID"
+                } > "$JOBFILE"
+                chmod +x "$JOBFILE"
+                echo "$JOBFILE > $LOGFILE 2> $ERRFILE" >> "$RUN_IMPORTANCE"
             done
         else
-            SEQ_GROUP_DIR="$ANNOTATE_DIR/$LENGTH/$SEQ"
+            SEQ_GROUP_DIR="$IMPORTANCE_SCORES_DIR/$LENGTH/$SEQ"
         fi
 
         echo "Configuration path: ${CFG_PATH}"
@@ -432,16 +441,19 @@ for SEQ in "${SEQUENCES[@]}"; do
 
             echo "Rate point: $SEQ/$RATE"
 
-            JOBFILE="$BATCH_CODEC/$JOBNAME-$CURTIME-$LENGTH-$SEQ-$RATE.sh"
+            LOGFILE="$RESULT_DIR/${LENGTH}_${SEQ}_${RATE}.encoder.log"
+            ERRFILE="$RESULT_DIR/${LENGTH}_${SEQ}_${RATE}.encoder.err"
+            JOBFILE="$BATCH_ENCODER/$JOBNAME-$CURTIME-$LENGTH-$SEQ-$RATE.sh"
             {
                 echo "#!/bin/bash"
-                echo "#SBATCH --output=$OUT/jobs/logs/codec/%j-$LENGTH-$SEQ-$RATE.out"
+                echo "#SBATCH --output=$LOGFILE"
+                echo "#SBATCH --error=$ERRFILE"
                 echo "#SBATCH --ntasks-per-node=1"
                 echo "#SBATCH --nodes=1"
                 echo "#SBATCH --mem-per-cpu=8G"
                 echo ""
                 echo "# Encode all $FRAME_COUNT frames in one invocation"
-                echo "$TIME$TMC_ENC_BIN \\"
+                echo "$TIME $TMC_ENC_BIN \\"
                 echo "    --uncompressedDataPath=${UNCOMPRESSED_DATA_PATHs[$SEQ]} \\"
                 echo "    --configurationFolder=$CFG_PATH/ \\"
                 echo "    --config=$CFG_PATH/gs-main10-common.cfg \\"
@@ -481,11 +493,26 @@ for SEQ in "${SEQUENCES[@]}"; do
                 echo "    --enableScalePowerTransform=$GSD_SCALE_POWER_TRANSFORM \\"
                 echo "    --enableOpacityNonUniformQuantization=$GSD_OPACITY_NON_UNIFORM_QUANT \\"
                 echo "    --enableShDimensionReduction=$GSD_DIMENSION_REDUCTION \\"
-                echo "    --compressedStreamPath=$RESULT_DIR/${LENGTH}_${SEQ}_${RATE}.bin \\"
-                echo "    2>&1 | tee $RESULT_DIR/${LENGTH}_${SEQ}_${RATE}.encoder.log"
+                echo "    --compressedStreamPath=$RESULT_DIR/${LENGTH}_${SEQ}_${RATE}.bin"
+                echo ""
+                echo "touch $OUT/jobs/done/encoder/\$SLURM_JOB_ID"
+            } > "$JOBFILE"
+            chmod +x "$JOBFILE"
+            echo "$JOBFILE > $LOGFILE 2> $ERRFILE" >> "$RUN_ENCODER"
+
+            LOGFILE="$RESULT_DIR/${LENGTH}_${SEQ}_${RATE}.decoder.log"
+            ERRFILE="$RESULT_DIR/${LENGTH}_${SEQ}_${RATE}.decoder.err"
+            JOBFILE="$BATCH_DECODER/$JOBNAME-$CURTIME-$LENGTH-$SEQ-$RATE.sh"
+            {
+                echo "#!/bin/bash"
+                echo "#SBATCH --output=$LOGFILE"
+                echo "#SBATCH --error=$ERRFILE"
+                echo "#SBATCH --ntasks-per-node=1"
+                echo "#SBATCH --nodes=1"
+                echo "#SBATCH --mem-per-cpu=8G"
                 echo ""
                 echo "# Decode all frames from single bitstream"
-                echo "$TIME$TMC_DEC_BIN \\"
+                echo "$TIME $TMC_DEC_BIN \\"
                 echo "    --compressedStreamPath=$RESULT_DIR/${LENGTH}_${SEQ}_${RATE}.bin \\"
                 echo "    --reconstructedDataPath=$RESULT_DIR/plys/${LENGTH}_${SEQ}_${RATE}_%04i.decoded.ply \\"
                 echo "    --computeMetrics=0 --computeChecksum=0 \\"
@@ -493,13 +520,12 @@ for SEQ in "${SEQUENCES[@]}"; do
                     MKDIRCK "$RESULT_DIR/debug"
                     echo "    --keepIntermediateFiles=1 --debugPath=$RESULT_DIR/debug \\"                    
                 fi
-                echo "    --startFrameNumber=${START_FRAME_NR[$SEQ]} \\"
-                echo "    2>&1 | tee $RESULT_DIR/${LENGTH}_${SEQ}_${RATE}.decoder.log"
+                echo "    --startFrameNumber=${START_FRAME_NR[$SEQ]}"
                 echo ""
-                echo "touch $OUT/jobs/done/codec/\$SLURM_JOB_ID"
+                echo "touch $OUT/jobs/done/decoder/\$SLURM_JOB_ID"
             } > "$JOBFILE"
             chmod +x "$JOBFILE"
-            echo "$JOBFILE > $LOG_DIR/$JOBNAME-$CURTIME-$LENGTH-$SEQ-$RATE.codec.log " >> "$RUN_CODEC"
+            echo "$JOBFILE > $LOGFILE 2> $ERRFILE" >> "$RUN_DECODER"
 
             # Metrics are run per frame to allow for parallel execution
             for ((i = START_FRAME_NR[$SEQ]; i < START_FRAME_NR[$SEQ] + FRAME_COUNT; i++)); do
@@ -508,10 +534,13 @@ for SEQ in "${SEQUENCES[@]}"; do
                 FRAME="frame_$FRAME_NR"
 
                 # Metrics per decoded frame
-                JOBFILE_MET="$BATCH_METRIC/$JOBNAME-$CURTIME-$LENGTH-$SEQ-$RATE-$FRAME_NR.sh"
+                LOGFILE="$RESULT_DIR/metrics/${LENGTH}_${SEQ}_${RATE}_${FRAME_NR}.metric.log"
+                ERRFILE="$RESULT_DIR/metrics/${LENGTH}_${SEQ}_${RATE}_${FRAME_NR}.metric.err"
+                JOBFILE="$BATCH_METRIC/$JOBNAME-$CURTIME-$LENGTH-$SEQ-$RATE-$FRAME_NR.sh"
                 {
                     echo "#!/bin/bash"
-                    echo "#SBATCH --output=$OUT/jobs/logs/metric/%j-$LENGTH-$SEQ-$RATE-$FRAME_NR.out"
+                    echo "#SBATCH --output=$LOGFILE"
+                    echo "#SBATCH --error=$ERRFILE"
                     echo "#SBATCH --ntasks-per-node=1"
                     echo "#SBATCH --nodes=1"
                     echo "#SBATCH --mem-per-cpu=8G"
@@ -529,7 +558,7 @@ for SEQ in "${SEQUENCES[@]}"; do
                     echo "    --camera=\"${COLMAP_DIRs[$SEQ]}/$FRAME/sparse/cameras.bin\""
                     echo
                     echo "# Calculate all metrics"
-                    echo "$TIME$METRIC -v 1 --startFrame=0 --frameCount=1 --cpu=$METRIC_CPU --useCameraPosition=1 --threads=$METRICS_THREADS \\"
+                    echo "$TIME $METRIC -v 1 --startFrame=0 --frameCount=1 --cpu=$METRIC_CPU --useCameraPosition=1 --threads=$METRICS_THREADS \\"
                     echo "    --width=$REN_W --height=$REN_H \\"
                     echo "    --source=\"$RESULT_DIR/pos_plys/$FRAME.camerpos.ply\" \\"
                     echo "    --decode=\"$RESULT_DIR/plys/${LENGTH}_${SEQ}_${RATE}_${FRAME_NR}.decoded.ply\" \\"
@@ -549,9 +578,9 @@ for SEQ in "${SEQUENCES[@]}"; do
                         echo 'fi'
                     fi
                     echo "touch $OUT/jobs/done/metric/\$SLURM_JOB_ID"
-                } > "$JOBFILE_MET"
-                chmod +x "$JOBFILE_MET"
-                echo "$JOBFILE_MET > $LOG_DIR/$JOBNAME-$CURTIME-$LENGTH-$SEQ-$RATE-$FRAME.metric.log" >> "$RUN_METRIC"
+                } > "$JOBFILE"
+                chmod +x "$JOBFILE"
+                echo "$JOBFILE > $LOGFILE 2> $ERRFILE" >> "$RUN_METRIC"
             done
 
             echo "$PYTHON $PARSER_SCRIPT -d \"$RESULT_DIR\" -l \"$LENGTH\" -s \"$SEQ\" -r \"$RATE\" -f ${START_FRAME_NR[$SEQ]} -n $FRAME_COUNT >> \"$csv_file\"" >> "$RUN_SUMMARY"
@@ -605,7 +634,8 @@ run_with_progress_sbatch_wait() {
             done_percent=$((done_count*100/total))
             echo -ne "Submited: $submitted/$total (${submit_percent}%). Progress: $done_count/$total (${done_percent}%)\r"
         done
-        sbatch $job >/dev/null
+        script_path=$(echo "$job" | cut -d' ' -f1)
+        sbatch $script_path > /dev/null
         submitted=$((submitted+1))
         submit_percent=$((submitted*100/total))
         done_count=`ls $done_dir | wc -l`
@@ -642,18 +672,21 @@ declare -f run_with_progress_sbatch_wait >> "$MASTER_RUN_SLURM"
     echo
     echo "echo '🔧 Detected nproc = $(nproc)'"
     echo
-    if [ -z $ANNOTATE_DIR ] && [ $ADAPTIVE_QUANTIZATION == 1 ]; then
-        echo "echo '▶ Step 0: ANNOTATE_DIR not set -> Run importance score computation in parallel'"
-        echo "run_with_progress_sbatch_wait \"$RUN_ANNOTATE\" \"$OUT/jobs/done/annotate/\""
+    if [ -z $IMPORTANCE_SCORES_DIR ] && [ $ADAPTIVE_QUANTIZATION == 1 ]; then
+        echo "echo '▶ Step 1: IMPORTANCE_SCORES_DIR not set -> Run importance score computation in parallel'"
+        echo "run_with_progress_sbatch_wait \"$RUN_IMPORTANCE\" \"$OUT/jobs/done/importance/\""
         echo
     fi
-    echo "echo '▶ Step 1: VPCC encode/decode in parallel'"
-    echo "run_with_progress_sbatch_wait \"$RUN_CODEC\" \"$OUT/jobs/done/codec/\" "
+    echo "echo '▶ Step 2: VPCC encode/decode in parallel'"
+    echo "run_with_progress_sbatch_wait \"$RUN_ENCODER\" \"$OUT/jobs/done/encoder/\" "
     echo
-    echo "echo '▶ Step 2: Metric calculation in parallel'"
+    echo "echo '▶ Step 3: VPCC encode/decode in parallel'"
+    echo "run_with_progress_sbatch_wait \"$RUN_DECODER\" \"$OUT/jobs/done/decoder/\" "
+    echo
+    echo "echo '▶ Step 4: Metric calculation in parallel'"
     echo "run_with_progress_sbatch_wait \"$RUN_METRIC\" \"$OUT/jobs/done/metric/\""
     echo
-    echo "echo '▶ Step 3: Summary generation'"
+    echo "echo '▶ Step 5: Summary generation'"
     echo "bash \"$RUN_SUMMARY\""
     echo "echo '✅ All tasks completed'"
 } >> "$MASTER_RUN_SLURM"
@@ -672,18 +705,21 @@ declare -f run_with_progress >> "$MASTER_RUN"
     echo
     echo "echo '🔧 Detected nproc = $(nproc)'"
     echo
-    if [ -z $ANNOTATE_DIR ] && [ $ADAPTIVE_QUANTIZATION == 1 ]; then
-        echo "echo '▶ Step 0: ANNOTATE_DIR not set -> importance score calculation in parallel'"
-        echo "run_with_progress \"$RUN_ANNOTATE\"" 1
+    if [ -z $IMPORTANCE_SCORES_DIR ] && [ $ADAPTIVE_QUANTIZATION == 1 ]; then
+        echo "echo '▶ Step 1: IMPORTANCE_SCORES_DIR not set -> importance score calculation in parallel'"
+        echo "run_with_progress \"$RUN_IMPORTANCE\"" 1
         echo
     fi
-    echo "echo '▶ Step 1: VPCC encode/decode in parallel'"
-    echo "run_with_progress \"$RUN_CODEC\" \$(nproc)"
+    echo "echo '▶ Step 2: VPCC encode/decode in parallel'"
+    echo "run_with_progress \"$RUN_ENCODER\" \$(nproc)"
     echo
-    echo "echo '▶ Step 2: Metric calculation in parallel'"
+    echo "echo '▶ Step 3: VPCC encode/decode in parallel'"
+    echo "run_with_progress \"$RUN_DECODER\" \$(nproc)"
+    echo
+    echo "echo '▶ Step 4: Metric calculation in parallel'"
     echo "run_with_progress \"$RUN_METRIC\"" 1
     echo
-    echo "echo '▶ Step 3: Summary generation'"
+    echo "echo '▶ Step 5: Summary generation'"
     echo "bash \"$RUN_SUMMARY\""
     echo "echo '✅ All tasks completed'"
 } >> "$MASTER_RUN"
@@ -695,10 +731,11 @@ chmod +x "$MASTER_RUN"
 
 echo
 echo "[Generated scripts]"
-if [ -z $ANNOTATE_DIR ] && [ $ADAPTIVE_QUANTIZATION == 1 ]; then
-    echo "$RUN_ANNOTATE"
+if [ -z $IMPORTANCE_SCORES_DIR ] && [ $ADAPTIVE_QUANTIZATION == 1 ]; then
+    echo "$RUN_IMPORTANCE"
 fi
-echo "$RUN_CODEC"
+echo "$RUN_ENCODER"
+echo "$RUN_DECODER"
 echo "$RUN_METRIC"
 echo "$RUN_SUMMARY"
 echo "$MASTER_RUN"

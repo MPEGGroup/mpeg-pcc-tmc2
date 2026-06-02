@@ -210,7 +210,7 @@ std::vector<PCCAttribute16bit> PCCGSMapGenerator::getAttributeValuesByType( cons
 
 void PCCGSMapGenerator::generatePackedMaps( PCCHighLevelSyntax              &hls,
                                             std::vector<PCCVideoAttributes> &packedVideoFrames ) {
-  std::clog << "Generate packed maps" << std::endl;
+  std::cout << "Generate packed maps" << std::endl;
   auto &pin = hls.getVps().getVpsPackedVideoExtension().getPackingInformation( ATLAS_INDEX );
 
   packedVideoFrames.resize( pin.getPackedMapCountMinus1() + 1 );
@@ -231,7 +231,7 @@ void PCCGSMapGenerator::generatePackedMaps( PCCHighLevelSyntax              &hls
     auto &video = packedVideoFrames[packedMapIndex];
     video.resize( 1 );
     video[0].resize( width, height, YUV420 );
-    std::clog << "  packedMapIndex = " << int( packedMapIndex ) << ", frameIndex=" << 0 << ", width=" << width
+    std::cout << "  packedMapIndex = " << int( packedMapIndex ) << ", frameIndex=" << 0 << ", width=" << width
               << ", height=" << height << "\n";
   }
 }
