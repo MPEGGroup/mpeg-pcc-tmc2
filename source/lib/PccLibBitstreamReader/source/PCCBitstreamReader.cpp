@@ -721,10 +721,14 @@ void PCCBitstreamReader::packingInformation( PackingInformation &pin,
     READ_CODE_DESC( value, 5, "pin_geometry_3d_coordinates_bit_depth_minus1" )  // u(5)
     gi.setGeometry3dCoordinatesBitdepthMinus1( value );
   }
+
+  auto nextAttributePartitionIndex = std::vector<uint8_t>{};
+
   if ( pin.getAttributePresentFlag() ) {
     auto &ai = vps.getAttributeInformation( j );
     READ_CODE_DESC( value, 7, "pin_attribute_count" )  // u(7)
     ai.setAttributeCount( value );
+    nextAttributePartitionIndex.assign( ai.getAttributeCount(), 0 );
     ai.allocate();
     for ( size_t i = 0; i < ai.getAttributeCount(); i++ ) {
       READ_CODE_DESC( value, 4, "pin_attribute_type_id" )  // u(4)
@@ -790,13 +794,16 @@ void PCCBitstreamReader::packingInformation( PackingInformation &pin,
     }
   }
 
-  for ( size_t i = 0; i <= regionsCountMinus1; i++ ) { packedRegion( pin.addRegion(), pin, j, vps, bitstream ); }
+  for ( size_t i = 0; i <= regionsCountMinus1; i++ ) {
+    packedRegion( pin.addRegion(), pin, j, vps, nextAttributePartitionIndex, bitstream );
+  }
 }
 
 void PCCBitstreamReader::packedRegion( PackedRegion             &region,
                                        const PackingInformation &pin,
                                        uint8_t                   j,
                                        V3CParameterSet          &vps,
+                                       std::vector<uint8_t>     &nextAttributePartitionIndex,
                                        PCCBitstream             &bitstream ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
   const auto &pve = vps.getVpsPackedVideoExtension();
@@ -856,10 +863,13 @@ void PCCBitstreamReader::packedRegion( PackedRegion             &region,
   if ( typeId == V3C_AVD ) {
     READ_CODE_DESC( value, 7, "pin_region_attr_index" )  // u(7)
     region.setAttrIndex( value );
-    size_t k  = region.getAttrIndex();
-    auto  &ai = vps.getAttributeInformation( j );
+    size_t k = region.getAttrIndex();
+
+    auto &ai = vps.getAttributeInformation( j );
     if ( ai.getAttributeDimensionMinus1( k ) > 0 ) {
-      READ_CODE_DESC( value, 5, "pin_region_attr_partition_index" )  // u(5)
+      if ( pve.getImplicitPackingMode() == ImplicitPackingMode::explicit_mode )
+        READ_CODE_DESC( value, 5, "pin_region_attr_partition_index" )  // u(5)
+      else { value = nextAttributePartitionIndex[k]++; }
       region.setAttrPartitionIndex( value );
     }
   }

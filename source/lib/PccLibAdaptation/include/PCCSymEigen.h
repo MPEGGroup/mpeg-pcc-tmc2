@@ -99,8 +99,8 @@ inline bool symEigenDecomposeJacobi( const std::vector<double> &a,
     for ( std::size_t i = 0; i < n; ++i ) { result.eigenvectors[i + i * n] = 1.0; }
     return true;
   }
-  const double offTol     = tol * frobNorm;
-  const double offTolSq   = offTol * offTol;
+  const double offTol   = tol * frobNorm;
+  const double offTolSq = offTol * offTol;
   // Per-element skip threshold (Rutishauser): treat a_pq as zero when it is
   // negligible relative to the geometric mean of its two diagonal anchors.
   const double skipFactor = eps;

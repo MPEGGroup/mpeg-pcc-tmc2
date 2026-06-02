@@ -172,6 +172,7 @@ class PCCBitstreamReader {
                             const PackingInformation &pin,
                             uint8_t                   j,
                             V3CParameterSet          &vps,
+                            std::vector<uint8_t>     &nextAttributePartitionIndex,
                             PCCBitstream             &bitstream );
 
   // 8.3.4.8 VPS extension syntax

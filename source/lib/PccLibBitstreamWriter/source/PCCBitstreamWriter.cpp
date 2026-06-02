@@ -1016,7 +1016,8 @@ void PCCBitstreamWriter::packedRegion( PackedRegion             &region,
     size_t k  = region.getAttrIndex();
     auto  &ai = vps.getAttributeInformation( j );
     if ( ai.getAttributeDimensionMinus1( k ) > 0 ) {
-      WRITE_CODE( region.getAttrPartitionIndex(), 5 );  // u(5)
+      if ( pve.getImplicitPackingMode() == ImplicitPackingMode::explicit_mode )
+        WRITE_CODE( region.getAttrPartitionIndex(), 5 );  // u(5)
     }
   }
   TRACE_BITSTREAM_OUT( "%s", __func__ );
