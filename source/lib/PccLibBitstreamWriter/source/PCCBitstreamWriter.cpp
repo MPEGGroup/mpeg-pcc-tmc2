@@ -2858,8 +2858,9 @@ void PCCBitstreamWriter::aapsVpccGsExtension( PCCBitstream &bitstream, AapsVpccG
   WRITE_CODE( ext.getPredEnableFlag() ? 1 : 0, 1 );          // u(1)
   WRITE_CODE( ext.getTransform2DPresentFlag(), 1 );          // u(1)
   WRITE_CODE( ext.getScaleTransformPresentFlag(), 1 );       // u(1)
-  WRITE_CODE( ext.getOpacityPropertyPresentFlag(), 1 );      // u(1)
-  WRITE_CODE( ext.getReservedZero8bits(), 8 );               // u(8)
+  WRITE_CODE( 0, 1 );  // u(1) placeholder for aaps_vpcc_gs_raw_patch_data_arrangement_flag
+  WRITE_CODE( ext.getOpacityPropertyPresentFlag(), 1 );  // u(1)
+  WRITE_CODE( ext.getReservedZero8bits(), 8 );           // u(8)
 
   if ( ext.getDequantizationPresentFlag() ) { gsDequantization( bitstream, ext.getGsDequantization() ); }
   if ( ext.getShPropertyPresentFlag() ) { gsShProperty( bitstream, ext.getGsShProperty() ); }
@@ -2884,6 +2885,7 @@ void PCCBitstreamWriter::gsDequantization( PCCBitstream &bitstream, GsDequantiza
     WRITE_CODE( gsd.getRotationPresentFlag(), 1 );
     if ( gsd.getRotationPresentFlag() ) {
       WRITE_CODE( gsd.getRotSameMinMaxFlag(), 1 );
+      WRITE_CODE( 0, 1 );  // u(1) placeholder for gsd_rot_quaternion_representation_type_flag
       for ( int i = 0; i < 4; i++ ) {
         if ( !gsd.getRotSameMinMaxFlag() || i == 0 ) {
           WRITE_FLOAT( gsd.getMinRotation( i ) );
@@ -2893,7 +2895,6 @@ void PCCBitstreamWriter::gsDequantization( PCCBitstream &bitstream, GsDequantiza
     }
     WRITE_CODE( gsd.getScalePresentFlag(), 1 );
     if ( gsd.getScalePresentFlag() ) {
-      WRITE_CODE( gsd.getScaleSameMinMaxFlag(), 1 );
       WRITE_CODE( gsd.getScaleSameNumQuantRegionMinus1_(), 1 );
       WRITE_CODE( gsd.getScaleSameNumBitsForTransitionPoint_(), 1 );
       if ( gsd.getScaleSameNumQuantRegionMinus1_() ) {
@@ -2901,6 +2902,7 @@ void PCCBitstreamWriter::gsDequantization( PCCBitstream &bitstream, GsDequantiza
           WRITE_CODE( gsd.getScaleSameQuantRegionTransitionPoint_(), 1 );
         WRITE_CODE( gsd.getScaleSameRegionStepSize_(), 1 );
       }
+      WRITE_CODE( gsd.getScaleSameMinMaxFlag(), 1 );
       for ( int i = 0; i < 3; i++ ) {
         if ( !gsd.getScaleSameMinMaxFlag() || i == 0 ) {
           WRITE_FLOAT( gsd.getMinScale( i ) );
@@ -2943,6 +2945,7 @@ void PCCBitstreamWriter::gsDequantization( PCCBitstream &bitstream, GsDequantiza
       WRITE_CODE( gsd.getShMultipleRegionsEnableFlag(), 1 );
       if ( gsd.getShMultipleRegionsEnableFlag() ) {
         WRITE_CODE( gsd.getShSameNumRegionMius1Flag(), 1 );
+        WRITE_CODE( 0, 1 );  // u(1) placeholder for gsd_sh_same_num_bits_for_transition_point_flag
         WRITE_CODE( gsd.getShSameQuantRegionTransitionPointFlag(), 1 );
         WRITE_CODE( gsd.getShSameRegionStepSizeFlag(), 1 );
       }
@@ -2996,6 +2999,7 @@ void PCCBitstreamWriter::gsShProperty( PCCBitstream &bitstream, GsSphericalHarmo
 // H.8.3.6.3.7	Gaussian splat spherical harmonics transform syntax
 void PCCBitstreamWriter::gs2DTransform( PCCBitstream &bitstream, Gs2DTransform &gs2DTransform ) {
   TRACE_BITSTREAM_IN( "%s", __func__ );
+  WRITE_CODE( 15, 4 );  // u(4) placeholder for gsht_num_sh_minus1, it is hardcoded on line 3038
   WRITE_CODE( gs2DTransform.getTrRowNumGroups(), 4 );
   WRITE_CODE( gs2DTransform.getDimensionReductionEnableFlag(), 1 );
   for ( int i = 0; i < gs2DTransform.getTrRowNumGroups(); i++ ) {

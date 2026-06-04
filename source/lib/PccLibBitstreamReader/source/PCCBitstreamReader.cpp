@@ -2842,6 +2842,12 @@ void PCCBitstreamReader::aapsVpccGsExtension( PCCBitstream &bitstream, AapsVpccG
   ext.setTransform2DPresentFlag( value );  // u(1)
   READ_CODE_DESC( value, 1, "aaps_vpcc_gs_scale_transform_present_flag" );
   ext.setScaleTransformPresentFlag( value );  // u(1)
+  READ_CODE_DESC( value, 1, "placeholder_for_aaps_vpcc_gs_raw_patch_data_arrangement_flag" );
+  if ( value != 0 ) {
+    TRACE_BITSTREAM(
+        "Error: placeholder_for_aaps_vpcc_gs_raw_patch_data_arrangement_flag is set to 1, but should be 0\n" );
+    exit( EXIT_FAILURE );
+  }
   READ_CODE_DESC( value, 1, "aaps_vpcc_gs_opacity_property_present_flag" );
   ext.setOpacityPropertyPresentFlag( value );  // u(1)
   READ_CODE_DESC( value, 8, "aaps_vpcc_gs_reserved_zero_8bits" );
@@ -2882,6 +2888,12 @@ void PCCBitstreamReader::gsDequantization( PCCBitstream &bitstream, GsDequantiza
     if ( gsd.getRotationPresentFlag() ) {
       READ_CODE_DESC( value, 1, "RotationSameMinMaxFlag" );
       gsd.setRotSameMinMaxFlag( value );
+      READ_CODE_DESC( value, 1, "placeholder_for_gsd_rot_quaternion_representation_type_flag" );
+      if ( value != 0 ) {
+        TRACE_BITSTREAM(
+            "Error: placeholder_for_gsd_rot_quaternion_representation_type_flag is set to 1, but should be 0\n" );
+        exit( EXIT_FAILURE );
+      }
       for ( int i = 0; i < 4; i++ ) {
         if ( !gsd.getRotSameMinMaxFlag() || i == 0 ) {
           READ_FLOAT_DESC( valueFlt, "MinRotation" );
@@ -2897,8 +2909,6 @@ void PCCBitstreamReader::gsDequantization( PCCBitstream &bitstream, GsDequantiza
     READ_CODE_DESC( value, 1, "ScalePresentFlag" );
     gsd.setScalePresentFlag( value );
     if ( gsd.getScalePresentFlag() ) {
-      READ_CODE_DESC( value, 1, "ScaleSameMinMaxFlag" );
-      gsd.setScaleSameMinMaxFlag( value );
       READ_CODE( value, 1 );
       gsd.setScaleSameNumQuantRegionMinus1_( value );
       READ_CODE( value, 1 );
@@ -2916,6 +2926,8 @@ void PCCBitstreamReader::gsDequantization( PCCBitstream &bitstream, GsDequantiza
         gsd.setScaleSameQuantRegionTransitionPoint_( false );
         gsd.setScaleSameRegionStepSize_( false );
       }
+      READ_CODE_DESC( value, 1, "ScaleSameMinMaxFlag" );
+      gsd.setScaleSameMinMaxFlag( value );
       uint32_t numBitsForTransitionPoint{};
       uint32_t numRegion{};
       for ( int i = 0; i < 3; i++ ) {
@@ -2990,6 +3002,12 @@ void PCCBitstreamReader::gsDequantization( PCCBitstream &bitstream, GsDequantiza
       if ( gsd.getShMultipleRegionsEnableFlag() ) {
         READ_CODE_DESC( value, 1, "ShSameNumQuantRegionsMinus1Flag" );
         gsd.setShSameNumRegionMius1Flag( value );
+        READ_CODE_DESC( value, 1, "placeholder_for_gsd_sh_same_num_bits_for_transition_point_flag" );
+        if ( value != 0 ) {
+          TRACE_BITSTREAM(
+              "Error: placeholder_for_gsd_sh_same_num_bits_for_transition_point_flag is set to 1, but should be 0\n" );
+          exit( EXIT_FAILURE );
+        }
         READ_CODE_DESC( value, 1, "ShSameQuantRegionTransitionPointFlag" );
         gsd.setShSameQuantRegionTransitionPointFlag( value );
         READ_CODE_DESC( value, 1, "ShSameRegionStepSizeFlag" );
@@ -3076,6 +3094,11 @@ void PCCBitstreamReader::gs2DTransform( PCCBitstream &bitstream, Gs2DTransform &
   int   value;
   float valueFlt;
   TRACE_BITSTREAM_IN( "%s", __func__ );
+  READ_CODE_DESC( value, 4, "placeholder_for_gsht_num_sh_minus1" );
+  if ( value != 15 ) {
+    TRACE_BITSTREAM( "Error: placeholder_for_gsht_num_sh_minus1 should be 15 \n" );
+    exit( EXIT_FAILURE );
+  }
   READ_CODE_DESC( value, 4, "TrRowNumGroups" );
   gs2DTransform.setTrRowNumGroups( value );
   READ_CODE_DESC( value, 1, "DimensionReductionEnableFlag" );
