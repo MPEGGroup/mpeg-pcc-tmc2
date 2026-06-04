@@ -721,7 +721,7 @@ void PCCGSHlsBuilder::updateVps( PCCHighLevelSyntax           &hls,
         region.setConstituentFrameIndex( nextConstituentFrameIndex[region.getPackedMapIndex()]++ );
 
       std::cout << "region: typeIdMinus2=V3C_GVD - 2, packedMapIndex=" << int( region.getPackedMapIndex() )
-                << ", constituentFrameIndex=" << int( region.getConstituentFrameIndex() ) << "\n";
+                << ", constituentFrameIndex=" << int( region.getConstituentFrameIndex() ) << std::endl;
     }
 
     if ( params.packAttributes_ ) {
@@ -741,14 +741,14 @@ void PCCGSHlsBuilder::updateVps( PCCHighLevelSyntax           &hls,
           std::cout << "region: typeIdMinus2=V3C_AVD - 2, packedMapIndex=" << int( region.getPackedMapIndex() )
                     << ", constituentFrameIndex=" << int( region.getConstituentFrameIndex() )
                     << ", attrIndex= " << int( region.getAttrIndex() )
-                    << ", attrPartitionIndex=" << int( region.getAttrPartitionIndex() ) << "\n";
+                    << ", attrPartitionIndex=" << int( region.getAttrPartitionIndex() ) << std::endl;
         }
       }
     }
 
-    for ( size_t i = 0; i < nextConstituentFrameIndex.size(); ++i ) {
-      pin.setConstituentFrameCountMinus1( i, nextConstituentFrameIndex[i] - 1 );
-    }
+    if ( params.temporalPacking_ )
+      for ( size_t i = 0; i < nextConstituentFrameIndex.size(); ++i )
+        pin.setConstituentFrameCountMinus1( i, nextConstituentFrameIndex[i] - 1 );
 
     if ( params.implicitPacking_ ) {
       vpe.setImplicitPackingMode( ImplicitPackingMode::implicit_mode );

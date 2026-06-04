@@ -218,14 +218,15 @@ void PCCGSMapGenerator::generatePackedMaps( PCCHighLevelSyntax              &hls
   else
     std::cout << "Generate spatially-packed maps" << std::endl;
 
-  auto &pin    = hls.getVps().getVpsPackedVideoExtension().getPackingInformation( ATLAS_INDEX );
-  auto  width  = int{};
-  auto  height = int{};
+  auto &pin = hls.getVps().getVpsPackedVideoExtension().getPackingInformation( ATLAS_INDEX );
 
   if ( !params.temporalPacking_ ) {
     packedVideoFrames.resize( pin.getPackedMapCountMinus1() + 1 );
 
     for ( uint8_t packedMapIndex = 0; packedMapIndex <= pin.getPackedMapCountMinus1(); ++packedMapIndex ) {
+      auto width  = int{};
+      auto height = int{};
+
       for ( size_t regionIndex = 0; regionIndex <= pin.getRegionsCountMinus1(); ++regionIndex ) {
         auto &region = pin.getRegion( regionIndex );
 
@@ -239,11 +240,14 @@ void PCCGSMapGenerator::generatePackedMaps( PCCHighLevelSyntax              &hls
       video.resize( 1 );
       video[0].resize( width, height, YUV420 );
       std::cout << "  packedMapIndex = " << int( packedMapIndex ) << ", frameIndex=" << 0 << ", width=" << width
-                << ", height=" << height << "\n";
+                << ", height=" << height << std::endl;
     }
   } else {
     size_t packedMapCount = pin.getPackedMapCountMinus1() + 1;
     packedVideoFrames.resize( packedMapCount );  // allocate one frame per packed map
+
+    auto width  = int{};
+    auto height = int{};
 
     for ( size_t packedMapIndex = 0; packedMapIndex < packedMapCount; packedMapIndex++ ) {
       // Count regions belonging to this packed map
@@ -271,7 +275,7 @@ void PCCGSMapGenerator::generatePackedMaps( PCCHighLevelSyntax              &hls
       }
 
       std::cout << "  packedMapIndex = " << int( packedMapIndex ) << ", frameIndex=" << 0 << ", width=" << width
-                << ", height=" << height << "\n";
+                << ", height=" << height << std::endl;
     }
   }
 }

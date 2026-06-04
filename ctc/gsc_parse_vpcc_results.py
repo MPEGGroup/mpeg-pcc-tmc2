@@ -142,8 +142,11 @@ def parse_err_file(path: str, total_time: str, max_rss: str) -> dict[str, float]
     return metrics
 
 
-def parse_imp_err_file(path: str) -> dict[str, float]:
-    return parse_err_file(path, "total_impT", "imp_MaxRSS")
+def opt_parse_imp_err_file(path: str) -> dict[str, float]:
+    if os.path.exists(path):
+        return parse_err_file(path, "total_impT", "imp_MaxRSS")
+
+    return {"total_impT": 0.0, "imp_MaxRSS": 0.0}
 
 
 def parse_enc_err_file(path: str) -> dict[str, float]:
@@ -200,13 +203,13 @@ def per_frame_results(
             f"{imp_base}_{i:04d}.importance.err",
         )
 
-        for file in (frame_path, metric_path, met_err_path, imp_err_path):
+        for file in (frame_path, metric_path, met_err_path):
             if not os.path.exists(file):
                 raise FileNotFoundError(f"Missing file: {file}")
 
         frame_results = parse_metric_file(metric_path)
         frame_results.update(parse_met_err_file(met_err_path))
-        frame_results.update(parse_imp_err_file(imp_err_path))
+        frame_results.update(opt_parse_imp_err_file(imp_err_path))
         results.append(frame_results)
 
     return results
@@ -295,8 +298,8 @@ def main(
     result["netto_enc_MaxRSS"] = result["enc_MaxRSS"]
 
     # Add importance scoring complexity to the encoding complexity
-    result["total_encT"] = result["total_encT"] + result["total_impT"]
-    result["enc_MaxRSS"] = max(result["enc_MaxRSS"], result["imp_MaxRSS"])
+    result["total_encT"] = result["total_encT"] + result.get("total_impT", 0.0)
+    result["enc_MaxRSS"] = max(result["enc_MaxRSS"], result.get("imp_MaxRSS", 0.0))
 
     info: dict[str, str | float] = {"length": length, "seq": seq, "rate": rate}
     info.update(result)
