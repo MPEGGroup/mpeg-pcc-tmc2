@@ -234,6 +234,10 @@ bool parseParameters( int                           argc,
       encoderParams.implicitPacking_,
       encoderParams.implicitPacking_,
       "Enable implicit packing (0(default): explicit mode, 1: implicit mode)")
+    ("temporalPacking", //m76086
+      encoderParams.temporalPacking_,
+      encoderParams.temporalPacking_,
+      "Temporal packing (0(default): disabled, 1: enabled)")
     ( "geometryPackedMapIndex",
       encoderParams.geometryPackedMapIndex_,
       encoderParams.geometryPackedMapIndex_,

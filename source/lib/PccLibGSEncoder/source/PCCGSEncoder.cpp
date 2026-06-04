@@ -68,8 +68,9 @@ int PCCGSEncoder::encode( const PCCPointSet3            &inputPointCloud,
 
   std::cout << "Number of points: " << inputPointCloud.getPointCount() << std::endl;
   // 5. Generate maps (geometry, attributes, packed)
-  auto videoFrames =
-      mapGenerator_.generate( inputPointCloud, patchResult.patches, hls_, patchResult.mapWidth, patchResult.mapHeight );
+
+  auto videoFrames = mapGenerator_.generate( inputPointCloud, params, patchResult.patches, hls_, patchResult.mapWidth,
+                                             patchResult.mapHeight );
 
   // 6. Encode videos
   videoEncoder_.encode( videoFrames, hls_, params );

@@ -78,6 +78,7 @@ class PCCGSMapGenerator {
    * @return Generated video frames
    */
   PCCGSVideoFrames generate( const PCCPointSet3                     &source,
+                             const PCCGSEncoderParameters           &params,
                              std::vector<GSEncoderPatchInformation> &patches,
                              PCCHighLevelSyntax                     &hls,
                              size_t                                  mapWidth,
@@ -125,7 +126,9 @@ class PCCGSMapGenerator {
   /**
    * @brief Generate packed maps and allocate video frames
    */
-  void generatePackedMaps( PCCHighLevelSyntax &hls, std::vector<PCCVideoAttributes> &packedVideoFrames );
+  void generatePackedMaps( PCCHighLevelSyntax              &hls,
+                           const PCCGSEncoderParameters    &params,
+                           std::vector<PCCVideoAttributes> &packedVideoFrames );
 };
 
 }  // namespace pcc

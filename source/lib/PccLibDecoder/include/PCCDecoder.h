@@ -97,7 +97,8 @@ class PCCDecoder : public PCCCodec {
   void unpackRegion( const PCCVideoPacked &packedVideo,
                      PCCVideo<T, N>       &outputVideo,
                      const PackedRegion   &region,
-                     size_t                frameCount );
+                     size_t                frameCount,
+                     size_t                constituentFrameCount );
 
   int ReconstructIdc0Idc1Idc2Idc255( PCCContext &context, PCCGroupOfFrames &reconstructs, int32_t atlasIndex = 0 );
   int ReconstructIdc3( PCCContext &context, PCCGroupOfFrames &reconstructs, int32_t atlasIndex = 0 );

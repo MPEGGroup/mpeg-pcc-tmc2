@@ -64,7 +64,8 @@ TIME="/usr/bin/time -f 'user_time=%U wall_time=%E max_rss_KB=%M'"
 
 MAPMODE=1                       # 0: INTERLEAVED, 1: PLANAR(CTC)
 PACKING_MODE=1                  # 0: pack-none, 1: pack-attr, 2: pack-all
-IMPLICIT_PACKING=1              # 0: OFF(explicit), 1:ON (implicit)
+IMPLICIT_PACKING=1              # 0: OFF(explicit), 1:ON(implicit, m76092)
+TEMPORAL_PACKING=0              # 0: OFF, 1: ON (m76086)
 SH_MAPPING=1                    # 0: interleaved, 1: planar (CTC), 2: adaptive
 COLMAP_SEI=0                    # set it to 1 if you want to send the camera pareters as an SEI message
 GSD_TRANSFORM_2D=1              # 1: enable 2D transform for sphereical harmnoics, 0: disable
@@ -482,6 +483,7 @@ for SEQ in "${SEQUENCES[@]}"; do
                 fi
                 if [ "$PACKING_MODE" -ne 0 ]; then
                     echo "    --implicitPacking=$IMPLICIT_PACKING \\"
+                    echo "    --temporalPacking=$TEMPORAL_PACKING \\"
                 fi
                 echo "    --gsdTransform2dPresentFlag=$GSD_TRANSFORM_2D \\"
                 echo "    --dataAdaptiveShTransformEnabled=$GSD_ADAPTIVE_SH \\"

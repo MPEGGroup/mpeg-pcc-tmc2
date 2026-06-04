@@ -42,6 +42,7 @@ constexpr size_t ATLAS_INDEX = 0;
 }  // namespace
 
 PCCGSVideoFrames PCCGSMapGenerator::generate( const PCCPointSet3                     &source,
+                                              const PCCGSEncoderParameters           &params,
                                               std::vector<GSEncoderPatchInformation> &patches,
                                               PCCHighLevelSyntax                     &hls,
                                               size_t                                  mapWidth,
@@ -83,7 +84,7 @@ PCCGSVideoFrames PCCGSMapGenerator::generate( const PCCPointSet3                
 
   // Generate packed video if present
   if ( vps.getVpsPackedVideoExtension().getPackedVideoPresentFlag( ATLAS_INDEX ) ) {
-    generatePackedMaps( hls, frames.packed );
+    generatePackedMaps( hls, params, frames.packed );
 
     auto &pin       = vps.getVpsPackedVideoExtension().getPackingInformation( ATLAS_INDEX );
     auto  mapsCount = pin.getPackedMapCountMinus1() + 1;
@@ -96,9 +97,10 @@ PCCGSVideoFrames PCCGSMapGenerator::generate( const PCCPointSet3                
 
         size_t topLeftX = region.getTopLeftX();
         size_t topLeftY = region.getTopLeftY();
+        auto  &frame    = frames.packed[packedMapIndex].getFrame( region.getConstituentFrameIndex() );
 
         if ( region.getTypeIdMinus2() == V3C_GVD - 2 ) {
-          generateGeometryMap( source, patches, frames.packed[packedMapIndex].getFrame( 0 ), topLeftX, topLeftY );
+          generateGeometryMap( source, patches, frame, topLeftX, topLeftY );
         } else if ( region.getTypeIdMinus2() == V3C_AVD - 2 ) {
           size_t attributeIdx  = region.getAttrIndex();
           size_t partitionIdx  = region.getAttrPartitionIndex();
@@ -107,8 +109,8 @@ PCCGSVideoFrames PCCGSMapGenerator::generate( const PCCPointSet3                
                                      .getAttributePartitionChannelsMinus1( attributeIdx, partitionIdx ) +
                                  1;
 
-          generateAttributeMapsForRegion( source, patches, frames.packed[packedMapIndex].getFrame( 0 ), attributeType,
-                                          channelCount, partitionIdx, topLeftX, topLeftY );
+          generateAttributeMapsForRegion( source, patches, frame, attributeType, channelCount, partitionIdx, topLeftX,
+                                          topLeftY );
         }
       }
     }
@@ -209,29 +211,67 @@ std::vector<PCCAttribute16bit> PCCGSMapGenerator::getAttributeValuesByType( cons
 }
 
 void PCCGSMapGenerator::generatePackedMaps( PCCHighLevelSyntax              &hls,
+                                            const PCCGSEncoderParameters    &params,
                                             std::vector<PCCVideoAttributes> &packedVideoFrames ) {
-  std::cout << "Generate packed maps" << std::endl;
-  auto &pin = hls.getVps().getVpsPackedVideoExtension().getPackingInformation( ATLAS_INDEX );
+  if ( params.temporalPacking_ )
+    std::cout << "Generate temporally-packed maps" << std::endl;
+  else
+    std::cout << "Generate spatially-packed maps" << std::endl;
 
-  packedVideoFrames.resize( pin.getPackedMapCountMinus1() + 1 );
+  auto &pin    = hls.getVps().getVpsPackedVideoExtension().getPackingInformation( ATLAS_INDEX );
+  auto  width  = int{};
+  auto  height = int{};
 
-  for ( uint8_t packedMapIndex = 0; packedMapIndex <= pin.getPackedMapCountMinus1(); ++packedMapIndex ) {
-    auto width  = int{};
-    auto height = int{};
+  if ( !params.temporalPacking_ ) {
+    packedVideoFrames.resize( pin.getPackedMapCountMinus1() + 1 );
 
-    for ( size_t regionIndex = 0; regionIndex <= pin.getRegionsCountMinus1(); ++regionIndex ) {
-      auto &region = pin.getRegion( regionIndex );
+    for ( uint8_t packedMapIndex = 0; packedMapIndex <= pin.getPackedMapCountMinus1(); ++packedMapIndex ) {
+      for ( size_t regionIndex = 0; regionIndex <= pin.getRegionsCountMinus1(); ++regionIndex ) {
+        auto &region = pin.getRegion( regionIndex );
 
-      if ( region.getPackedMapIndex() != packedMapIndex ) { continue; }
+        if ( region.getPackedMapIndex() != packedMapIndex ) { continue; }
 
-      width  = std::max( width, region.getTopLeftX() + region.getWidthMinus1() + 1 );
-      height = std::max( height, region.getTopLeftY() + region.getHeightMinus1() + 1 );
+        width  = std::max( width, region.getTopLeftX() + region.getWidthMinus1() + 1 );
+        height = std::max( height, region.getTopLeftY() + region.getHeightMinus1() + 1 );
+      }
+
+      auto &video = packedVideoFrames[packedMapIndex];
+      video.resize( 1 );
+      video[0].resize( width, height, YUV420 );
+      std::cout << "  packedMapIndex = " << int( packedMapIndex ) << ", frameIndex=" << 0 << ", width=" << width
+                << ", height=" << height << "\n";
     }
+  } else {
+    size_t packedMapCount = pin.getPackedMapCountMinus1() + 1;
+    packedVideoFrames.resize( packedMapCount );  // allocate one frame per packed map
 
-    auto &video = packedVideoFrames[packedMapIndex];
-    video.resize( 1 );
-    video[0].resize( width, height, YUV420 );
-    std::cout << "  packedMapIndex = " << int( packedMapIndex ) << ", frameIndex=" << 0 << ", width=" << width
-              << ", height=" << height << "\n";
+    for ( size_t packedMapIndex = 0; packedMapIndex < packedMapCount; packedMapIndex++ ) {
+      // Count regions belonging to this packed map
+      std::vector<size_t> regionIndices;
+      for ( size_t regionIndex = 0; regionIndex <= pin.getRegionsCountMinus1(); ++regionIndex ) {
+        if ( pin.getRegion( regionIndex ).getPackedMapIndex() == packedMapIndex ) {
+          regionIndices.push_back( regionIndex );
+        }
+      }
+
+      auto &video = packedVideoFrames[packedMapIndex];
+
+      // Allocate one frame per region
+      video.resize( regionIndices.size() );
+
+      // Loop over all regions assigned to this packed map
+      for ( size_t f = 0; f < regionIndices.size(); f++ ) {
+        auto &region = pin.getRegion( regionIndices[f] );
+
+        size_t width  = region.getWidthMinus1() + 1;
+        size_t height = region.getHeightMinus1() + 1;
+
+        video[f].resize( width, height, YUV420 );
+        video[f].set( 0 );
+      }
+
+      std::cout << "  packedMapIndex = " << int( packedMapIndex ) << ", frameIndex=" << 0 << ", width=" << width
+                << ", height=" << height << "\n";
+    }
   }
 }

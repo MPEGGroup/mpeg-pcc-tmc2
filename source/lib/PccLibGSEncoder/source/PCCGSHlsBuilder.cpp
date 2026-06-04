@@ -702,17 +702,26 @@ void PCCGSHlsBuilder::updateVps( PCCHighLevelSyntax           &hls,
       exit( -1 );
     }
     auto &vpe = vps.getVpsPackedVideoExtension();
+
+    vpe.setTemporalPackingEnabledFlag( params.temporalPacking_ );
     vpe.setMultiplePackedMapsEnabledFlag( packedRegionsPerMap.size() > 1 );
 
     auto &pin = vpe.getPackingInformation( ATLAS_INDEX );
     pin.setPackedMapCountMinus1( static_cast<uint8_t>( packedRegionsPerMap.size() - 1 ) );
+
+    auto nextConstituentFrameIndex = std::vector<uint8_t>( packedRegionsPerMap.size(), 0 );
 
     if ( params.packGeometry_ ) {
       pin.setGeometryPresentFlag( true );
       auto &region = pin.addRegion();
       region.setTypeIdMinus2( V3C_GVD - 2 );
       region.setPackedMapIndex( params.geometryPackedMapIndex_ );
-      std::cout << "region: typeIdMinus2=V3C_GVD - 2, packedMapIndex=" << int( region.getPackedMapIndex() ) << "\n";
+
+      if ( params.temporalPacking_ )
+        region.setConstituentFrameIndex( nextConstituentFrameIndex[region.getPackedMapIndex()]++ );
+
+      std::cout << "region: typeIdMinus2=V3C_GVD - 2, packedMapIndex=" << int( region.getPackedMapIndex() )
+                << ", constituentFrameIndex=" << int( region.getConstituentFrameIndex() ) << "\n";
     }
 
     if ( params.packAttributes_ ) {
@@ -726,32 +735,48 @@ void PCCGSHlsBuilder::updateVps( PCCHighLevelSyntax           &hls,
           region.setAttrIndex( attrIdx );
           region.setAttrPartitionIndex( partIdx );
 
+          if ( params.temporalPacking_ )
+            region.setConstituentFrameIndex( nextConstituentFrameIndex[region.getPackedMapIndex()]++ );
+
           std::cout << "region: typeIdMinus2=V3C_AVD - 2, packedMapIndex=" << int( region.getPackedMapIndex() )
+                    << ", constituentFrameIndex=" << int( region.getConstituentFrameIndex() )
                     << ", attrIndex= " << int( region.getAttrIndex() )
                     << ", attrPartitionIndex=" << int( region.getAttrPartitionIndex() ) << "\n";
         }
       }
     }
 
+    for ( size_t i = 0; i < nextConstituentFrameIndex.size(); ++i ) {
+      pin.setConstituentFrameCountMinus1( i, nextConstituentFrameIndex[i] - 1 );
+    }
+
     if ( params.implicitPacking_ ) {
       vpe.setImplicitPackingMode( ImplicitPackingMode::implicit_mode );
 
-      if ( params.packedMapColumnsCount_.size() != pin.getPackedMapCountMinus1() + 1 ) {
-        std::cerr << "Expected packedMapColumnsCount with " << pin.getPackedMapCountMinus1() + 1 << " values\n";
-        exit( -1 );
-      }
-      for ( uint8_t k = 0; k <= pin.getPackedMapCountMinus1(); ++k ) {
-        for ( uint8_t j = 0; j <= pin.getConstituentFrameCountMinus1( k ); ++j ) {
-          auto count = 0;
+      if ( params.temporalPacking_ ) {
+        for ( uint8_t k = 0; k <= pin.getPackedMapCountMinus1(); ++k ) {
+          // We are not using spatial multiplexing in this implementation
+          pin.setPackedMapGridColumnsMinus1( k, 0 );
+          pin.setPackedMapGridRowsMinus1( k, 0 );
+        }
+      } else {
+        if ( params.packedMapColumnsCount_.size() != pin.getPackedMapCountMinus1() + 1 ) {
+          std::cerr << "Expected packedMapColumnsCount with " << pin.getPackedMapCountMinus1() + 1 << " values\n";
+          exit( -1 );
+        }
+        for ( uint8_t k = 0; k <= pin.getPackedMapCountMinus1(); ++k ) {
+          for ( uint8_t j = 0; j <= pin.getConstituentFrameCountMinus1( k ); ++j ) {
+            auto count = 0;
 
-          for ( size_t i = 0; i <= pin.getRegionsCountMinus1(); ++i ) {
-            const auto &region = pin.getRegion( i );
-            if ( region.getPackedMapIndex() == k && region.getConstituentFrameIndex() == j ) { ++count; }
+            for ( size_t i = 0; i <= pin.getRegionsCountMinus1(); ++i ) {
+              const auto &region = pin.getRegion( i );
+              if ( region.getPackedMapIndex() == k && region.getConstituentFrameIndex() == j ) { ++count; }
+            }
+            const auto columnsCount = params.packedMapColumnsCount_[k];
+            const auto rowsCount    = ( count + columnsCount - 1 ) / columnsCount;
+            pin.setPackedMapGridColumnsMinus1( k, columnsCount - 1 );
+            pin.setPackedMapGridRowsMinus1( k, rowsCount - 1 );
           }
-          const auto columnsCount = params.packedMapColumnsCount_[k];
-          const auto rowsCount    = ( count + columnsCount - 1 ) / columnsCount;
-          pin.setPackedMapGridColumnsMinus1( k, columnsCount - 1 );
-          pin.setPackedMapGridRowsMinus1( k, rowsCount - 1 );
         }
       }
     }

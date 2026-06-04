@@ -160,8 +160,8 @@ int PCCDecoder::decode( PCCContext &context, PCCGroupOfFrames &reconstructs, int
             std::cout << "*******Video Unpacking: Occupancy from Packed Video ["
                       << static_cast<int>( region.getPackedMapIndex() ) << "] ********" << std::endl;
             auto start = steady_clock::now();
-            unpackRegion( packedVideos[region.getPackedMapIndex()], context.getVideoOccupancyMap(), region,
-                          frameCount );
+            unpackRegion( packedVideos[region.getPackedMapIndex()], context.getVideoOccupancyMap(), region, frameCount,
+                          packingInfo.getConstituentFrameCountMinus1( region.getPackedMapIndex() ) + 1 );
             auto stop         = steady_clock::now();
             auto avg_duration = duration_cast<microseconds>( stop - start ).count();
             std::cout << "Execution time Occupancy Unpack: " << avg_duration << " microseconds" << std::endl;
@@ -244,7 +244,8 @@ int PCCDecoder::decode( PCCContext &context, PCCGroupOfFrames &reconstructs, int
                         << static_cast<int>( region.getPackedMapIndex() ) << "] ********" << std::endl;
               auto start = steady_clock::now();
               unpackRegion( packedVideos[region.getPackedMapIndex()], context.getVideoGeometryMultiple( mapIndex ),
-                            region, frameCount );
+                            region, frameCount,
+                            packingInfo.getConstituentFrameCountMinus1( region.getPackedMapIndex() ) + 1 );
               auto stop         = steady_clock::now();
               auto avg_duration = duration_cast<microseconds>( stop - start ).count();
               std::cout << "Execution time Geometry[" << mapIndex << "] Unpack: " << avg_duration << " microseconds"
@@ -310,7 +311,7 @@ int PCCDecoder::decode( PCCContext &context, PCCGroupOfFrames &reconstructs, int
                       << static_cast<int>( region.getPackedMapIndex() ) << "] ********" << std::endl;
             auto start = steady_clock::now();
             unpackRegion( packedVideos[region.getPackedMapIndex()], context.getVideoGeometryMultiple( 0 ), region,
-                          frameCount );
+                          frameCount, packingInfo.getConstituentFrameCountMinus1( region.getPackedMapIndex() ) + 1 );
             auto stop         = steady_clock::now();
             auto avg_duration = duration_cast<microseconds>( stop - start ).count();
             std::cout << "Execution time Geometry Unpack: " << avg_duration << " microseconds" << std::endl;
@@ -420,7 +421,8 @@ int PCCDecoder::decode( PCCContext &context, PCCGroupOfFrames &reconstructs, int
                               << static_cast<int>( region.getPackedMapIndex() ) << "] ********" << std::endl;
                     auto start = steady_clock::now();
                     unpackRegion( packedVideos[region.getPackedMapIndex()],
-                                  context.getVideoAttributesMultiple( mapIndex ), region, frameCount );
+                                  context.getVideoAttributesMultiple( mapIndex ), region, frameCount,
+                                  packingInfo.getConstituentFrameCountMinus1( region.getPackedMapIndex() ) + 1 );
                     auto stop         = steady_clock::now();
                     auto avg_duration = duration_cast<microseconds>( stop - start ).count();
                     std::cout << "Execution time Attribute [" << mapIndex << "] Unpack: " << avg_duration
@@ -497,7 +499,8 @@ int PCCDecoder::decode( PCCContext &context, PCCGroupOfFrames &reconstructs, int
                   auto start = steady_clock::now();
                   unpackRegion( packedVideos[region.getPackedMapIndex()],
                                 context.getVideoAttributesMultiple( attrIndex, attrPartitionIndex )[0], region,
-                                frameCount );
+                                frameCount,
+                                packingInfo.getConstituentFrameCountMinus1( region.getPackedMapIndex() ) + 1 );
                   auto stop         = steady_clock::now();
                   auto avg_duration = duration_cast<microseconds>( stop - start ).count();
                   std::cout << "Execution time Attribute Unpack: " << avg_duration << " microseconds" << std::endl;
@@ -1998,7 +2001,8 @@ template <typename T, size_t N>
 void PCCDecoder::unpackRegion( const PCCVideoPacked &packedVideo,
                                PCCVideo<T, N>       &outputVideo,
                                const PackedRegion   &region,
-                               size_t                frameCount ) {
+                               size_t                frameCount,
+                               size_t                constituentFrameCount ) {
   size_t srcWidth  = packedVideo.getWidth();
   size_t srcHeight = packedVideo.getHeight();
   size_t dstWidth  = region.getPackedRegionWidth();
@@ -2009,7 +2013,7 @@ void PCCDecoder::unpackRegion( const PCCVideoPacked &packedVideo,
   outputVideo.resize( frameCount );
 
   for ( size_t frameIndex = 0; frameIndex < frameCount; ++frameIndex ) {
-    auto &srcFrame = packedVideo.getFrame( frameIndex );
+    auto &srcFrame = packedVideo.getFrame( frameIndex * constituentFrameCount + region.getConstituentFrameIndex() );
     outputVideo.getFrame( frameIndex ).resize( dstWidth, dstHeight, PCCCOLORFORMAT::YUV420 );
     auto &dstFrame = outputVideo.getFrame( frameIndex );
 
@@ -2035,10 +2039,12 @@ void PCCDecoder::unpackRegion( const PCCVideoPacked &packedVideo,
 template void PCCDecoder::unpackRegion<uint8_t, 3>( const PCCVideoPacked &,
                                                     PCCVideo<uint8_t, 3> &,
                                                     const PackedRegion &,
+                                                    size_t,
                                                     size_t );
 template void PCCDecoder::unpackRegion<uint16_t, 3>( const PCCVideoPacked &,
                                                      PCCVideo<uint16_t, 3> &,
                                                      const PackedRegion &,
+                                                     size_t,
                                                      size_t );
 
 int PCCDecoder::ReconstructIdc3( PCCContext &context, PCCGroupOfFrames &reconstructs, int32_t atlasIndex ) {

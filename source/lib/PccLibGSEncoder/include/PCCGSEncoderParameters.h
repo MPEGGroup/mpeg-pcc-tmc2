@@ -82,6 +82,7 @@ struct PCCGSEncoderParameters {
   bool             packGeometry_{};
   bool             packAttributes_{};
   bool             implicitPacking_{};  // m76092
+  bool             temporalPacking_{};  // m76086
   int              geometryPackedMapIndex_{};
   int              attributeScalePackedMapIndex_{};
   int              attributeOpacityPackedMapIndex_{};
