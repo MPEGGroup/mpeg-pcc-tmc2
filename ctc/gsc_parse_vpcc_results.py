@@ -73,7 +73,7 @@ COLUMN_ORDER: list[str] = [
 ]
 
 TIME_PATTERN = re.compile(
-    r"user_time=(\d+\.\d+) wall_time=(\d+:\d+\.\d+) max_rss_KB=(\d+)\s*"
+    r"user_time=(\d+\.\d+) wall_time=.+ max_rss_KB=(\d+)\s*"
 )
 
 
@@ -132,12 +132,17 @@ def parse_bitstream_file(path: str) -> dict[str, float]:
 def parse_err_file(path: str, total_time: str, max_rss: str) -> dict[str, float]:
     # initialize all metrics with 0.0
     metrics: dict[str, float] = {total_time: 0.0, max_rss: 0.0}
+    count = 0
 
     with open(path, "rt") as f:
         for line in f:
             if m := TIME_PATTERN.match(line):
+                count += 1
                 metrics[total_time] += float(m.group(1))
-                metrics[max_rss] += float(m.group(3))
+                metrics[max_rss] += float(m.group(2))
+
+    if count != 1:
+        raise ValueError(f"Expected exactly one line matching the time pattern in {path}, but found {count}")
 
     return metrics
 
