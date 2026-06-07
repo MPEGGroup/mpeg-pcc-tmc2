@@ -539,10 +539,12 @@ void PCCBitstreamWriter::atlasSubStream( PCCHighLevelSyntax &syntax, PCCBitstrea
   if ( maxUnitSize < afpsSizeList[afpsIdx] ) { maxUnitSize = afpsSizeList[afpsIdx]; }
 
   int8_t aapsIdx = syntax.getAtlasHighLevelSyntax( 0 ).getActiveAAPS();  // TODO: get correct value of atlas id
-  atlasAdaptationParameterSetRbsp( syntax.getAtlasAdaptationParameterSet( aapsIdx ), tempBitStream );
-  aapsSizeList[aapsIdx] = tempBitStream.size() - lastSize + nalHeaderSize;
-  lastSize              = tempBitStream.size();
-  if ( maxUnitSize < aapsSizeList[aapsIdx] ) { maxUnitSize = aapsSizeList[aapsIdx]; }
+  if ( syntax.getAtlasAdaptationParameterSetList().size() > 0 ) {
+    atlasAdaptationParameterSetRbsp( syntax.getAtlasAdaptationParameterSet( aapsIdx ), tempBitStream );
+    aapsSizeList[aapsIdx] = tempBitStream.size() - lastSize + nalHeaderSize;
+    lastSize              = tempBitStream.size();
+    if ( maxUnitSize < aapsSizeList[aapsIdx] ) { maxUnitSize = aapsSizeList[aapsIdx]; }
+  }
 
   for ( size_t atglIndex = 0; atglIndex < atglSize; atglIndex++ ) {
     auto &atgl = syntax.getAtlasTileLayer( atglIndex );
@@ -605,7 +607,7 @@ void PCCBitstreamWriter::atlasSubStream( PCCHighLevelSyntax &syntax, PCCBitstrea
   }
 
   // for ( size_t aapsCount = 0; aapsCount < syntax.getAtlasAdaptationParameterSetList().size(); aapsCount++ )
-  {
+  if ( aapsSizeList.size() > 0 ) {
     int8_t  aapsIdx = syntax.getAtlasHighLevelSyntax( 0 ).getActiveAAPS();
     NalUnit nu( NAL_AAPS, 0, 1 );
     nu.setSize( aapsSizeList[aapsIdx] );

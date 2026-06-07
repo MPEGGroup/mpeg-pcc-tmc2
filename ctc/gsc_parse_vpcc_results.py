@@ -72,9 +72,7 @@ COLUMN_ORDER: list[str] = [
     "met_MaxRSS",  # Maximum resident set size during metric computation
 ]
 
-TIME_PATTERN = re.compile(
-    r"user_time=(\d+\.\d+) wall_time=.+ max_rss_KB=(\d+)\s*"
-)
+TIME_PATTERN = re.compile(r"user_time=(\d+\.\d+) wall_time=.+ max_rss_KB=(\d+)\s*")
 
 
 def parse_bitstream_file(path: str) -> dict[str, float]:
@@ -142,7 +140,9 @@ def parse_err_file(path: str, total_time: str, max_rss: str) -> dict[str, float]
                 metrics[max_rss] += float(m.group(2))
 
     if count != 1:
-        raise ValueError(f"Expected exactly one line matching the time pattern in {path}, but found {count}")
+        raise ValueError(
+            f"Expected exactly one line matching the time pattern in {path}, but found {count}"
+        )
 
     return metrics
 
