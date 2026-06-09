@@ -108,6 +108,12 @@ struct PCCGSEncoderParameters {
 
   bool encodeLinearOpacity_ = false;
 
+  bool ptlPriorityOrderEnableFlag_ = false;
+
+  // Comma-separated AttributeTypeId integers controlling VPS/V3C attribute order.
+  // Empty = default order {TRANSPARENCY=2, SPHERICAL_HARMONICS=5, SCALE=6, ROTATION=7}.
+  std::vector<int> attributeOrder_{};
+
   uint8_t getPackedMapIndexByAttributeTypeId( AttributeTypeId attrTypeId ) const {
     switch ( attrTypeId ) {
       case ATTR_TEXTURE:

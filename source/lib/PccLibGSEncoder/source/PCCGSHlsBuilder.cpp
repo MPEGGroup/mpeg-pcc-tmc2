@@ -91,6 +91,7 @@ void PCCGSHlsBuilder::initializeV3CHls( PCCHighLevelSyntax &hls, const PCCGSEnco
   ptl.setProfileCodecGroupIdc( PROFILE_CODEC_GROUP_IDC );
   ptl.setProfileToolsetIdc( PROFILE_TOOLSET_IDC );
   ptl.setProfileReconstructionIdc( PROFILE_RECONSTRUCTION_IDC );
+  ptl.setPriorityOrderEnableFlag( params.ptlPriorityOrderEnableFlag_ );
   ptl.setLevelIdc( LEVEL_IDC );
   ptl.setToolConstraintsPresentFlag( false );
 
@@ -102,9 +103,13 @@ void PCCGSHlsBuilder::initializeV3CHls( PCCHighLevelSyntax &hls, const PCCGSEnco
   gi.setGeometryCodecId( 0 );
 
   // Attribute information
-  auto                        &ai               = vps.getAttributeInformation( ATLAS_INDEX );
-  std::vector<AttributeTypeId> attributeTypeIds = { ATTR_TRANSPARENCY, ATTR_SPHERICAL_HARMONICS, ATTR_SCALE,
-                                                    ATTR_ROTATION };
+  auto                        &ai = vps.getAttributeInformation( ATLAS_INDEX );
+  std::vector<AttributeTypeId> attributeTypeIds;
+  if ( params.attributeOrder_.empty() ) {
+    attributeTypeIds = { ATTR_TRANSPARENCY, ATTR_SPHERICAL_HARMONICS, ATTR_SCALE, ATTR_ROTATION };
+  } else {
+    for ( int id : params.attributeOrder_ ) { attributeTypeIds.push_back( static_cast<AttributeTypeId>( id ) ); }
+  }
 
   ai.setAttributeCount( 4 );
   ai.allocate();

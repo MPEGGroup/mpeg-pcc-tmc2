@@ -37,6 +37,7 @@
 #include "PCCGSEncoder.h"
 #include "PCCAdaptation.h"
 #include <program_options_lite.h>
+#include <set>
 
 using namespace std;
 
@@ -319,7 +320,16 @@ bool parseParameters( int                           argc,
     ( "keepIntermediateFiles",
       encoderParams.keepIntermediateFiles_,
       encoderParams.keepIntermediateFiles_,
-      "Keep intermediate files: RGB, YUV and bin" );
+      "Keep intermediate files: RGB, YUV and bin" )
+    ( "attributeOrder",
+      encoderParams.attributeOrder_,
+      encoderParams.attributeOrder_,
+      "Comma-separated AttributeTypeId integers for VPS/V3C attribute order "
+      "(e.g. '2,5,6,7' = opacity,SH,scale,rotation). Empty = default order." )
+    ( "ptlPriorityOrderEnableFlag",
+      encoderParams.ptlPriorityOrderEnableFlag_,
+      false,
+      "Enable ptl_priority_order_enable_flag in profile_tier_level()" );
 
   // clang-format on
   po::setDefaults( opts );
@@ -333,6 +343,26 @@ bool parseParameters( int                           argc,
   }
 
   applicationParams.print();
+
+  // Validate attributeOrder if specified
+  if ( !encoderParams.attributeOrder_.empty() ) {
+    static const std::set<int> validIds = { 2, 5, 6, 7 };  // TRANSPARENCY, SH, SCALE, ROTATION
+    if ( encoderParams.attributeOrder_.size() != 4 ) {
+      std::cerr << "Error: attributeOrder must contain exactly 4 AttributeTypeId values\n";
+      return false;
+    }
+    std::set<int> seen;
+    for ( int id : encoderParams.attributeOrder_ ) {
+      if ( !validIds.count( id ) ) {
+        std::cerr << "Error: unsupported AttributeTypeId in attributeOrder: " << id << "\n";
+        return false;
+      }
+      if ( !seen.insert( id ).second ) {
+        std::cerr << "Error: duplicate AttributeTypeId in attributeOrder: " << id << "\n";
+        return false;
+      }
+    }
+  }
 
   // report the current configuration (only in the absence of errors so
   // that errors/warnings are more obvious and in the same place).
