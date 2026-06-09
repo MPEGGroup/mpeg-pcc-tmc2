@@ -177,7 +177,36 @@ void PCCGSHlsBuilder::initializeAtlasAspsHls( PCCHighLevelSyntax &hls, const PCC
   asps.setPatchSizeQuantizerPresentFlag( false );
   asps.setEomPatchEnabledFlag( false );
   asps.setPLREnabledFlag( false );
-  asps.setVuiParametersPresentFlag( false );
+  asps.setVuiParametersPresentFlag( params.aspsVuiParametersPresentFlag_ );
+  if ( params.aspsVuiParametersPresentFlag_ ) {
+    auto &vp = asps.getVuiParameters();
+    vp.setTimingInfoPresentFlag( params.vuiTimingInfoPresentFlag_ );
+    if ( params.vuiTimingInfoPresentFlag_ ) {
+      vp.setNumUnitsInTick( params.vuiNumUnitsInTick_ );
+      vp.setTimeScale( params.vuiTimeScale_ );
+      vp.setPocProportionalToTimingFlag( params.vuiPocProportionalToTimingFlag_ );
+      if ( params.vuiPocProportionalToTimingFlag_ ) {
+        vp.setNumTicksPocDiffOneMinus1( params.vuiNumTicksPocDiffOneMinus1_ );
+      }
+      vp.setHrdParametersPresentFlag( params.vuiHrdParametersPresentFlag_ );
+    }
+    vp.setUnitInMetresFlag( params.vuiUnitInMetresFlag_ );
+    vp.setDisplayBoxInfoPresentFlag( params.vuiDisplayBoxInfoPresentFlag_ );
+    if ( params.vuiDisplayBoxInfoPresentFlag_ ) {
+      vp.setDisplayBoxOrigin( 0, params.vuiDisplayBoxOriginX_ );
+      vp.setDisplayBoxOrigin( 1, params.vuiDisplayBoxOriginY_ );
+      vp.setDisplayBoxOrigin( 2, params.vuiDisplayBoxOriginZ_ );
+      vp.setDisplayBoxSize( 0, params.vuiDisplayBoxSizeX_ );
+      vp.setDisplayBoxSize( 1, params.vuiDisplayBoxSizeY_ );
+      vp.setDisplayBoxSize( 2, params.vuiDisplayBoxSizeZ_ );
+      vp.setAnchorPointPresentFlag( params.vuiAnchorPointPresentFlag_ );
+      if ( params.vuiAnchorPointPresentFlag_ ) {
+        vp.setAnchorPoint( 0, params.vuiAnchorPointX_ );
+        vp.setAnchorPoint( 1, params.vuiAnchorPointY_ );
+        vp.setAnchorPoint( 2, params.vuiAnchorPointZ_ );
+      }
+    }
+  }
   asps.setExtensionFlag( true );
   asps.setVpccExtensionFlag( true );
   asps.setExtension7Bits( 0 );

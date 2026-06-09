@@ -317,6 +317,85 @@ bool parseParameters( int                           argc,
       adaptationParams.enableShDimensionReduction_,
       adaptationParams.enableShDimensionReduction_,
       "Enable SH dimension reduction after 2D transform (m76859)" )
+
+    // VUI parameters (Annex G – ISO/IEC 23090-5)
+    ( "aspsVuiParametersPresentFlag",
+      encoderParams.aspsVuiParametersPresentFlag_,
+      encoderParams.aspsVuiParametersPresentFlag_,
+      "Enable VUI parameters in ASPS (asps_vui_parameters_present_flag)" )
+    ( "vuiTimingInfoPresentFlag",
+      encoderParams.vuiTimingInfoPresentFlag_,
+      encoderParams.vuiTimingInfoPresentFlag_,
+      "VUI: timing info present flag (vui_timing_info_present_flag)" )
+    ( "vuiNumUnitsInTick",
+      encoderParams.vuiNumUnitsInTick_,
+      encoderParams.vuiNumUnitsInTick_,
+      "VUI: number of time units per clock tick (vui_num_units_in_tick)" )
+    ( "vuiTimeScale",
+      encoderParams.vuiTimeScale_,
+      encoderParams.vuiTimeScale_,
+      "VUI: time scale in Hz (vui_time_scale)" )
+    ( "vuiPocProportionalToTimingFlag",
+      encoderParams.vuiPocProportionalToTimingFlag_,
+      encoderParams.vuiPocProportionalToTimingFlag_,
+      "VUI: POC proportional to timing flag (vui_poc_proportional_to_timing_flag)" )
+    ( "vuiNumTicksPocDiffOneMinus1",
+      encoderParams.vuiNumTicksPocDiffOneMinus1_,
+      encoderParams.vuiNumTicksPocDiffOneMinus1_,
+      "VUI: num ticks poc diff one minus 1 (vui_num_ticks_poc_diff_one_minus1)" )
+    ( "vuiHrdParametersPresentFlag",
+      encoderParams.vuiHrdParametersPresentFlag_,
+      encoderParams.vuiHrdParametersPresentFlag_,
+      "VUI: HRD parameters present flag (vui_hrd_parameters_present_flag)" )
+    ( "vuiUnitInMetresFlag",
+      encoderParams.vuiUnitInMetresFlag_,
+      encoderParams.vuiUnitInMetresFlag_,
+      "VUI: coordinates expressed in metres (vui_unit_in_metres_flag)" )
+    ( "vuiDisplayBoxInfoPresentFlag",
+      encoderParams.vuiDisplayBoxInfoPresentFlag_,
+      encoderParams.vuiDisplayBoxInfoPresentFlag_,
+      "VUI: display box info present flag (vui_display_box_info_present_flag)" )
+    ( "vuiDisplayBoxOriginX",
+      encoderParams.vuiDisplayBoxOriginX_,
+      encoderParams.vuiDisplayBoxOriginX_,
+      "VUI: display box origin X (vui_display_box_origin[0])" )
+    ( "vuiDisplayBoxOriginY",
+      encoderParams.vuiDisplayBoxOriginY_,
+      encoderParams.vuiDisplayBoxOriginY_,
+      "VUI: display box origin Y (vui_display_box_origin[1])" )
+    ( "vuiDisplayBoxOriginZ",
+      encoderParams.vuiDisplayBoxOriginZ_,
+      encoderParams.vuiDisplayBoxOriginZ_,
+      "VUI: display box origin Z (vui_display_box_origin[2])" )
+    ( "vuiDisplayBoxSizeX",
+      encoderParams.vuiDisplayBoxSizeX_,
+      encoderParams.vuiDisplayBoxSizeX_,
+      "VUI: display box size X (vui_display_box_size[0])" )
+    ( "vuiDisplayBoxSizeY",
+      encoderParams.vuiDisplayBoxSizeY_,
+      encoderParams.vuiDisplayBoxSizeY_,
+      "VUI: display box size Y (vui_display_box_size[1])" )
+    ( "vuiDisplayBoxSizeZ",
+      encoderParams.vuiDisplayBoxSizeZ_,
+      encoderParams.vuiDisplayBoxSizeZ_,
+      "VUI: display box size Z (vui_display_box_size[2])" )
+    ( "vuiAnchorPointPresentFlag",
+      encoderParams.vuiAnchorPointPresentFlag_,
+      encoderParams.vuiAnchorPointPresentFlag_,
+      "VUI: anchor point present flag (vui_anchor_point_present_flag)" )
+    ( "vuiAnchorPointX",
+      encoderParams.vuiAnchorPointX_,
+      encoderParams.vuiAnchorPointX_,
+      "VUI: anchor point X integer coordinate (vui_anchor_point[0])" )
+    ( "vuiAnchorPointY",
+      encoderParams.vuiAnchorPointY_,
+      encoderParams.vuiAnchorPointY_,
+      "VUI: anchor point Y integer coordinate (vui_anchor_point[1])" )
+    ( "vuiAnchorPointZ",
+      encoderParams.vuiAnchorPointZ_,
+      encoderParams.vuiAnchorPointZ_,
+      "VUI: anchor point Z integer coordinate (vui_anchor_point[2])" )
+
     ( "keepIntermediateFiles",
       encoderParams.keepIntermediateFiles_,
       encoderParams.keepIntermediateFiles_,

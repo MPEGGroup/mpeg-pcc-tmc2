@@ -401,7 +401,7 @@ class PCCBitstreamReader {
 
   // G.2  VUI syntax
   // G.2.1  VUI parameters syntax
-  static void vuiParameters( PCCBitstream &bitstream, VUIParameters &vp );
+  static void vuiParameters( PCCBitstream &bitstream, VUIParameters &vp, uint32_t geometry3dBitdepthMinus1 );
   // G.2.2  HRD parameters syntax
   static void hrdParameters( PCCBitstream &bitstream, HrdParameters &hp );
   // G.2.3  Sub-layer HRD parameters syntax

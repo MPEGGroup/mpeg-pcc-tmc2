@@ -1159,7 +1159,9 @@ void PCCBitstreamWriter::atlasSequenceParameterSetRbsp( AtlasSequenceParameterSe
   WRITE_CODE( asps.getPLREnabledFlag(), 1 );  // u(1)
   if ( asps.getPLREnabledFlag() ) { plrInformation( asps, syntax, bitstream ); }
   WRITE_CODE( asps.getVuiParametersPresentFlag(), 1 );  // u(1)
-  if ( asps.getVuiParametersPresentFlag() ) { vuiParameters( bitstream, asps.getVuiParameters() ); }
+  if ( asps.getVuiParametersPresentFlag() ) {
+    vuiParameters( bitstream, asps.getVuiParameters(), asps.getGeometry3dBitdepthMinus1() );
+  }
 
   WRITE_CODE( asps.getExtensionFlag(), 1 );  // u(1)
   if ( asps.getExtensionFlag() ) {
@@ -2695,8 +2697,11 @@ void PCCBitstreamWriter::timeCode( PCCBitstream &bitstream, SEI &seiAbstract ) {
 
 // G.2 VUI syntax
 // G.2.1 VUI parameters syntax
-void PCCBitstreamWriter::vuiParameters( PCCBitstream &bitstream, VUIParameters &vp ) {
+void PCCBitstreamWriter::vuiParameters( PCCBitstream  &bitstream,
+                                        VUIParameters &vp,
+                                        uint32_t       geometry3dBitdepthMinus1 ) {
   TRACE_BITSTREAM( "%s \n", __func__ );
+  const uint32_t n = geometry3dBitdepthMinus1 + 1;
   WRITE_CODE( vp.getTimingInfoPresentFlag(), 1 );  // u(1)
   if ( vp.getTimingInfoPresentFlag() ) {
     WRITE_CODE( vp.getNumUnitsInTick(), 32 );              // u(32)
@@ -2727,13 +2732,13 @@ void PCCBitstreamWriter::vuiParameters( PCCBitstream &bitstream, VUIParameters &
   WRITE_CODE( vp.getDisplayBoxInfoPresentFlag(), 1 );  // u(1)
   if ( vp.getDisplayBoxInfoPresentFlag() ) {
     for ( size_t d = 0; d < 3; d++ ) {
-      WRITE_UVLC( vp.getDisplayBoxOrigin( d ) );  // ue(v)
-      WRITE_UVLC( vp.getDisplayBoxSize( d ) );    // ue(v)
+      WRITE_CODE( vp.getDisplayBoxOrigin( d ), n );  // u(v)
+      WRITE_CODE( vp.getDisplayBoxSize( d ), n );    // u(v)
     }
     WRITE_CODE( vp.getAnchorPointPresentFlag(), 1 );  // u(1)
     if ( vp.getAnchorPointPresentFlag() ) {
       for ( size_t d = 0; d < 3; d++ ) {
-        WRITE_UVLC( vp.getAnchorPoint( d ) );  // u(v)
+        WRITE_CODE( vp.getAnchorPoint( d ), n );  // u(v)
       }
     }
   }

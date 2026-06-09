@@ -229,7 +229,7 @@ class VUIParameters {
       displayBoxOrigin_{ 0, 0, 0 },
       displayBoxSize_{ 0, 0, 0 },
       anchorPointPresentFlag_( false ),
-      anchorPoint_{ 0.f, 0.f, 0.f } {}
+      anchorPoint_{ 0, 0, 0 } {}
 
   ~VUIParameters() {}
   VUIParameters &operator=( const VUIParameters & ) = default;
@@ -255,7 +255,7 @@ class VUIParameters {
   uint32_t getDisplayBoxOrigin( size_t i ) { return displayBoxOrigin_[i]; }
   uint32_t getDisplayBoxSize( size_t i ) { return displayBoxSize_[i]; }
   bool     getAnchorPointPresentFlag() { return anchorPointPresentFlag_; }
-  float    getAnchorPoint( size_t i ) { return anchorPoint_[i]; }
+  uint32_t getAnchorPoint( size_t i ) { return anchorPoint_[i]; }
 
   void setTimingInfoPresentFlag( bool value ) { timingInfoPresentFlag_ = value; }
   void setNumUnitsInTick( uint32_t value ) { numUnitsInTick_ = value; }
@@ -275,7 +275,7 @@ class VUIParameters {
   void setDisplayBoxOrigin( size_t i, uint32_t value ) { displayBoxOrigin_[i] = value; }
   void setDisplayBoxSize( size_t i, uint32_t value ) { displayBoxSize_[i] = value; }
   void setAnchorPointPresentFlag( bool value ) { anchorPointPresentFlag_ = value; }
-  void setAnchorPoint( size_t i, float value ) { anchorPoint_[i] = value; }
+  void setAnchorPoint( size_t i, uint32_t value ) { anchorPoint_[i] = value; }
 
  private:
   bool                       timingInfoPresentFlag_;
@@ -296,7 +296,7 @@ class VUIParameters {
   uint32_t                   displayBoxOrigin_[3];
   uint32_t                   displayBoxSize_[3];
   bool                       anchorPointPresentFlag_;
-  float                      anchorPoint_[3];
+  uint32_t                   anchorPoint_[3];
   HrdParameters              hrdParameters_;
   CoordinateSystemParameters coordinateSystemParameters_;
   MaxCodedVideoResolution    maxCodedVideoResolution_;

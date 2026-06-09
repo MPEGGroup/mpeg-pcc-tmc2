@@ -114,6 +114,27 @@ struct PCCGSEncoderParameters {
   // Empty = default order {TRANSPARENCY=2, SPHERICAL_HARMONICS=5, SCALE=6, ROTATION=7}.
   std::vector<int> attributeOrder_{};
 
+  // VUI parameters (ASPS, Annex G – ISO/IEC 23090-5)
+  bool     aspsVuiParametersPresentFlag_;
+  bool     vuiTimingInfoPresentFlag_;
+  uint32_t vuiNumUnitsInTick_;
+  uint32_t vuiTimeScale_;
+  bool     vuiPocProportionalToTimingFlag_;
+  uint32_t vuiNumTicksPocDiffOneMinus1_;
+  bool     vuiHrdParametersPresentFlag_;
+  bool     vuiUnitInMetresFlag_;
+  bool     vuiDisplayBoxInfoPresentFlag_;
+  uint32_t vuiDisplayBoxOriginX_;
+  uint32_t vuiDisplayBoxOriginY_;
+  uint32_t vuiDisplayBoxOriginZ_;
+  uint32_t vuiDisplayBoxSizeX_;
+  uint32_t vuiDisplayBoxSizeY_;
+  uint32_t vuiDisplayBoxSizeZ_;
+  bool     vuiAnchorPointPresentFlag_;
+  uint32_t vuiAnchorPointX_;
+  uint32_t vuiAnchorPointY_;
+  uint32_t vuiAnchorPointZ_;
+
   uint8_t getPackedMapIndexByAttributeTypeId( AttributeTypeId attrTypeId ) const {
     switch ( attrTypeId ) {
       case ATTR_TEXTURE:
@@ -159,6 +180,25 @@ struct PCCGSEncoderParameters {
     shPredictionEnabled_                 = false;
     enableScalePowerTransform_           = false;
     enableOpacityNonUniformQuantization_ = false;
+    aspsVuiParametersPresentFlag_        = false;
+    vuiTimingInfoPresentFlag_            = false;
+    vuiNumUnitsInTick_                   = 1001;
+    vuiTimeScale_                        = 60000;
+    vuiPocProportionalToTimingFlag_      = false;
+    vuiNumTicksPocDiffOneMinus1_         = 0;
+    vuiHrdParametersPresentFlag_         = false;
+    vuiUnitInMetresFlag_                 = false;
+    vuiDisplayBoxInfoPresentFlag_        = false;
+    vuiDisplayBoxOriginX_                = 0;
+    vuiDisplayBoxOriginY_                = 0;
+    vuiDisplayBoxOriginZ_                = 0;
+    vuiDisplayBoxSizeX_                  = 0;
+    vuiDisplayBoxSizeY_                  = 0;
+    vuiDisplayBoxSizeZ_                  = 0;
+    vuiAnchorPointPresentFlag_           = false;
+    vuiAnchorPointX_                     = 0;
+    vuiAnchorPointY_                     = 0;
+    vuiAnchorPointZ_                     = 0;
   }
 };
 
