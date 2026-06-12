@@ -70,6 +70,7 @@ class PCCGSVideoEncoder {
                     PCCHighLevelSyntax           &hls,
                     const PCCGSEncoderParameters &params,
                     int32_t                       videoQP,
+                    uint8_t                       bitDepth,
                     const std::string            &encoderConfig );
   /**
    * @brief Get video type for an attribute type

@@ -48,8 +48,14 @@ void PCCGSVideoEncoder::encode( PCCGSVideoFrames             &frames,
                                 const PCCGSEncoderParameters &params ) {
   auto vps = hls.getVpsList().front();
 
+  const uint8_t geometryBitDepth  = static_cast<uint8_t>( params.geometryBitDepth2D_ );
+  const uint8_t attributeBitDepth = static_cast<uint8_t>( params.attributeBitDepth2D_ );
+  const uint8_t packedBitDepth    = static_cast<uint8_t>( params.geometryBitDepth2D_ > params.attributeBitDepth2D_
+                                                               ? params.geometryBitDepth2D_
+                                                               : params.attributeBitDepth2D_ );
+
   if ( vps.getGeometryVideoPresentFlag( ATLAS_INDEX ) ) {
-    encodeVideo( frames.geometry, PCCVideoType::VIDEO_GEOMETRY, hls, params, params.geometryQP_,
+    encodeVideo( frames.geometry, PCCVideoType::VIDEO_GEOMETRY, hls, params, params.geometryQP_, geometryBitDepth,
                  params.geometryVideoEncoderConfig_ );
   }
 
@@ -64,7 +70,8 @@ void PCCGSVideoEncoder::encode( PCCGSVideoFrames             &frames,
       for ( size_t partitionIdx = 0; partitionIdx <= partitionCount; partitionIdx++ ) {
         PCCVideoType videoType = getVideoTypeByAttributeType( attributeType, partitionIdx );
         encodeVideo( frames.attributes[attributeIdx][partitionIdx], videoType, hls, params,
-                     getVideoQPByAttributeType( attributeType, params ), params.attributeVideoEncoderConfig_ );
+                     getVideoQPByAttributeType( attributeType, params ), attributeBitDepth,
+                     params.attributeVideoEncoderConfig_ );
       }
     }
   }
@@ -76,7 +83,7 @@ void PCCGSVideoEncoder::encode( PCCGSVideoFrames             &frames,
     for ( size_t packedMapIndex = 0; packedMapIndex < mapsCount; packedMapIndex++ ) {
       encodeVideo( frames.packed[packedMapIndex],
                    static_cast<PCCVideoType>( PCCVideoType::VIDEO_PACKED + packedMapIndex ), hls, params,
-                   getPackedVideoQP( packedMapIndex, params ), params.packedVideoEncoderConfig_ );
+                   getPackedVideoQP( packedMapIndex, params ), packedBitDepth, params.packedVideoEncoderConfig_ );
     }
   }
 }
@@ -86,9 +93,14 @@ void PCCGSVideoEncoder::encodeVideo( PCCVideo<uint16_t, 3>        &videoFrames,
                                      PCCHighLevelSyntax           &hls,
                                      const PCCGSEncoderParameters &params,
                                      const int32_t                 videoQP,
+                                     const uint8_t                 bitDepth,
                                      const std::string            &encoderConfig ) {
   PCCVideoBitstream &bitstream = hls.createVideoBitstream( videoType );
-  int                nbyte     = 2;
+  if ( bitDepth != 8 && bitDepth != 10 ) {
+    std::cerr << "Error: unsupported GS video bit depth " << int( bitDepth ) << " (expected 8 or 10)." << std::endl;
+    exit( -1 );
+  }
+  const int nbyte = bitDepth == 8 ? 1 : 2;
   // Check if encoder config file exists
   FILE *file = fopen( encoderConfig.c_str(), "r" );
   if ( !file ) {
@@ -104,7 +116,7 @@ void PCCGSVideoEncoder::encodeVideo( PCCVideo<uint16_t, 3>        &videoFrames,
   const std::string type         = bitstream.getExtension();
   const std::string baseFileName = params.debugPath_ + "/" + params.frameNameBase_ + "_" + type;
   const std::string binFileName  = baseFileName + ".bin";
-  const char       *bitdepth     = nbyte == 2 ? "10" : "8";
+  const char       *bitdepth     = bitDepth == 8 ? "8" : "10";
 
   const std::string srcYuvFileName = addVideoFormat( baseFileName, width, height, true, true, bitdepth );
   const std::string recYuvFileName = addVideoFormat( baseFileName + "_rec", width, height, true, true, bitdepth );
@@ -119,9 +131,9 @@ void PCCGSVideoEncoder::encodeVideo( PCCVideo<uint16_t, 3>        &videoFrames,
   encParams.recYuvFileName_              = recYuvFileName;
   encParams.encoderConfig_               = encoderConfig;
   encParams.qp_                          = videoQP;
-  encParams.inputBitDepth_               = 10;
-  encParams.internalBitDepth_            = 10;
-  encParams.outputBitDepth_              = 10;
+  encParams.inputBitDepth_               = bitDepth;
+  encParams.internalBitDepth_            = bitDepth;
+  encParams.outputBitDepth_              = bitDepth;
   encParams.use444CodecIo_               = false;
   encParams.usePccMotionEstimation_      = false;
   encParams.blockToPatchFile_            = "";

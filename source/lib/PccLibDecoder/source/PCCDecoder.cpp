@@ -87,6 +87,8 @@ int PCCDecoder::decode( PCCContext &context, PCCGroupOfFrames &reconstructs, int
   auto             &plt              = sps.getProfileTierLevel();
   const size_t      mapCount         = sps.getMapCountMinus1( atlasIndex ) + 1;
   int               geometryBitDepth = gi.getGeometry2dBitdepthMinus1() + 1;
+  const auto        debugBitDepthTag = []( int bitDepth ) { return bitDepth <= 8 ? "8" : "10"; };
+  const auto        debugByteCount   = []( int bitDepth ) { return bitDepth <= 8 ? 1 : 2; };
   setConsitantFourCCCode( context, 0 );  //
   auto occupancyCodecId = getCodedCodecId( context, oi.getOccupancyCodecId(), params_.videoDecoderOccupancyPath_ );
   auto geometryCodecId  = getCodedCodecId( context, gi.getGeometryCodecId(), params_.videoDecoderGeometryPath_ );
@@ -255,7 +257,9 @@ int PCCDecoder::decode( PCCContext &context, PCCGroupOfFrames &reconstructs, int
               if ( params_.keepIntermediateFiles_ ) {
                 std::string unpackFileName = path.str() + "geometry_d" + std::to_string( mapIndex ) + "_unpacked";
                 context.getVideoGeometryMultiple( mapIndex )
-                    .write( context.getVideoGeometryMultiple( mapIndex ).addFormat( unpackFileName, "10" ), 2 );
+                    .write( context.getVideoGeometryMultiple( mapIndex ).addFormat( unpackFileName,
+                                                                                    debugBitDepthTag( geometryBitDepth ) ),
+                            debugByteCount( geometryBitDepth ) );
                 std::cout << "Written unpacked geometry[" << mapIndex << "] video to: " << unpackFileName << std::endl;
               }
 
@@ -320,7 +324,8 @@ int PCCDecoder::decode( PCCContext &context, PCCGroupOfFrames &reconstructs, int
             if ( params_.keepIntermediateFiles_ ) {
               std::string unpackFileName = path.str() + "geometry_unpacked";
               context.getVideoGeometryMultiple( 0 ).write(
-                  context.getVideoGeometryMultiple( 0 ).addFormat( unpackFileName, "10" ), 2 );
+                  context.getVideoGeometryMultiple( 0 ).addFormat( unpackFileName, debugBitDepthTag( geometryBitDepth ) ),
+                  debugByteCount( geometryBitDepth ) );
               std::cout << "Written unpacked geometry video to: " << unpackFileName << std::endl;
             }
 
@@ -434,7 +439,9 @@ int PCCDecoder::decode( PCCContext &context, PCCGroupOfFrames &reconstructs, int
                                                    std::to_string( attrIndex ) + "_part" +
                                                    std::to_string( attrPartitionIndex ) + "_unpacked";
                       context.getVideoAttributesMultiple( mapIndex )
-                          .write( context.getVideoAttributesMultiple( mapIndex ).addFormat( unpackFileName, "10" ), 2 );
+                        .write( context.getVideoAttributesMultiple( mapIndex ).addFormat(
+                              unpackFileName, debugBitDepthTag( attributeBitDepth ) ),
+                            debugByteCount( attributeBitDepth ) );
                       std::cout << "Written unpacked attribute[" << mapIndex << "] video to: " << unpackFileName
                                 << std::endl;
                     }
@@ -510,9 +517,9 @@ int PCCDecoder::decode( PCCContext &context, PCCGroupOfFrames &reconstructs, int
                     std::string unpackFileName = path.str() + "attribute_attr" + std::to_string( attrIndex ) + "_part" +
                                                  std::to_string( attrPartitionIndex ) + "_unpacked";
                     context.getVideoAttributesMultiple( attrIndex, attrPartitionIndex )[0].write(
-                        context.getVideoAttributesMultiple( attrIndex, attrPartitionIndex )[0].addFormat(
-                            unpackFileName, "10" ),
-                        2 );
+                      context.getVideoAttributesMultiple( attrIndex, attrPartitionIndex )[0].addFormat(
+                        unpackFileName, debugBitDepthTag( attributeBitDepth ) ),
+                      debugByteCount( attributeBitDepth ) );
                     std::cout << "Written unpacked attribute video to: " << unpackFileName << std::endl;
                   }
 
@@ -2175,6 +2182,23 @@ int PCCDecoder::ReconstructIdc3( PCCContext &context, PCCGroupOfFrames &reconstr
             for ( size_t i = 0; i < 4; i++ ) {
               adaptationParams.computedRotationMin_[i] = dequant.getMinRotation( i );
               adaptationParams.computedRotationMax_[i] = dequant.getMaxRotation( i );
+            }
+          }
+
+          // Extract adaptation bit depths from attribute information (ISO/IEC 23090-5 H.13.3)
+          // The dequantization formulas use ai_attribute_2d_bit_depth_minus1 for each attribute type
+          for ( int attrIdx = 0; attrIdx < ai.getAttributeCount(); attrIdx++ ) {
+            uint32_t attrBitDepth = ai.getAttribute2dBitdepthMinus1( attrIdx ) + 1;
+            auto     attrTypeId   = ai.getAttributeTypeId( attrIdx );
+
+            if ( attrTypeId == ATTR_SPHERICAL_HARMONICS ) {
+              adaptationParams.shBitDepth_ = attrBitDepth;
+            } else if ( attrTypeId == ATTR_TRANSPARENCY ) {
+              adaptationParams.opacityBitDepth_ = attrBitDepth;
+            } else if ( attrTypeId == ATTR_SCALE ) {
+              adaptationParams.scaleBitDepth_ = attrBitDepth;
+            } else if ( attrTypeId == ATTR_ROTATION ) {
+              adaptationParams.rotationBitDepth_ = attrBitDepth;
             }
           }
         }

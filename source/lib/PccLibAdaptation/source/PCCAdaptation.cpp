@@ -2724,7 +2724,7 @@ bool PCCAdaptation::extractSHQuantRegions( const PCCPointSetGS &input, PCCAdapta
     params.shNumRegionsMinus1_.assign( size_t{ 16 } * 3, 0 );
     params.shTransitionPoints_.clear();
     params.shStepSizes_.clear();
-    params.shNumBitsForTransitionPoint_.assign( size_t{ 16 } * 3, 10 );
+    params.shNumBitsForTransitionPoint_.assign( size_t{ 16 } * 3, static_cast<int>( params.shBitDepth_ ) );
     return true;
   }
 
@@ -2739,17 +2739,15 @@ bool PCCAdaptation::extractSHQuantRegions( const PCCPointSetGS &input, PCCAdapta
   params.shTransitionPoints_.clear();
   params.shStepSizes_.assign( size_t{ 16 } * 9, 0.0 );
   for ( size_t i = 0; i < 16; ++i ) {
-    params.shStepSizes_[i * 9 + 0] = 0.015625;
-    params.shStepSizes_[i * 9 + 1] = 0.0078125;
-    params.shStepSizes_[i * 9 + 2] = 0.015625;
-    params.shStepSizes_[i * 9 + 3] = 0.015625;
-    params.shStepSizes_[i * 9 + 4] = 0.0078125;
-    params.shStepSizes_[i * 9 + 5] = 0.015625;
-    params.shStepSizes_[i * 9 + 6] = 0.015625;
-    params.shStepSizes_[i * 9 + 7] = 0.0078125;
-    params.shStepSizes_[i * 9 + 8] = 0.015625;
+    for ( int ch = 0; ch < 3; ++ch ) {
+      const double channelRange = params.shLimitMax_[i][ch] - params.shLimitMin_[i][ch];
+      const double baseStep     = std::max( 1e-9, channelRange / static_cast<double>( max_quant_val ) );
+      params.shStepSizes_[i * 9 + ch * 3 + 0] = 2.0 * baseStep;
+      params.shStepSizes_[i * 9 + ch * 3 + 1] = 1.0 * baseStep;
+      params.shStepSizes_[i * 9 + ch * 3 + 2] = 2.0 * baseStep;
+    }
   }
-  params.shNumBitsForTransitionPoint_.assign( size_t{ 16 } * 3, 10 );
+  params.shNumBitsForTransitionPoint_.assign( size_t{ 16 } * 3, static_cast<int>( bitDepth ) );
 
   double       sum1 = 0.0, sumSq1 = 0.0;
   double       sum3 = 0.0, sumSq3 = 0.0;
@@ -2889,7 +2887,7 @@ bool PCCAdaptation::extractOpacityQuantRegions( const PCCPointSetGS &input, PCCA
   params.opacityNumRegionsMinus1_ = 2;
   params.opacityTransitionPoints_.clear();
   params.opacityStepSizes_.assign( 3, 0.0 );
-  params.opacityNumBitsForTransitionPoint_ = 10;
+  params.opacityNumBitsForTransitionPoint_ = params.opacityBitDepth_;
 
   double t1       = 0.45;
   double t2       = 0.55;
@@ -2919,7 +2917,7 @@ bool PCCAdaptation::extractScaleQuantRegions( const PCCPointSetGS &input, PCCAda
     params.scaleNumRegionsMinus1_.assign( 3, 0 );
     params.scaleTransitionPoints_.clear();
     params.scaleStepSizes_.clear();
-    params.scaleNumBitsForTransitionPoint_.assign( 3, 10 );
+    params.scaleNumBitsForTransitionPoint_.assign( 3, static_cast<int>( params.scaleBitDepth_ ) );
     return true;
   }
 
@@ -2938,7 +2936,7 @@ bool PCCAdaptation::extractScaleQuantRegions( const PCCPointSetGS &input, PCCAda
     params.scaleStepSizes_[ch * 3 + 1] = step_size_base * 2;
     params.scaleStepSizes_[ch * 3 + 2] = step_size_base;
   }
-  params.scaleNumBitsForTransitionPoint_.assign( 3, 10 );
+  params.scaleNumBitsForTransitionPoint_.assign( 3, static_cast<int>( bitDepth ) );
 
   for ( size_t ch = 0; ch < 3; ++ch ) {
     std::vector<double> ranges            = { params.scaleLimitMin_[ch], -10, -7, params.scaleLimitMax_[ch] };
@@ -2946,6 +2944,7 @@ bool PCCAdaptation::extractScaleQuantRegions( const PCCPointSetGS &input, PCCAda
     for ( size_t r = 0; r < 2; ++r ) {
       cumulative_offset +=
           static_cast<int>( std::round( ( ranges[r + 1] - ranges[r] ) / params.scaleStepSizes_[ch * 3 + r] ) );
+      cumulative_offset = std::max( 0, std::min( static_cast<int>( max_quant_val ), cumulative_offset ) );
       params.scaleTransitionPoints_.push_back( cumulative_offset );
     }
   }

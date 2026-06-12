@@ -95,6 +95,23 @@ int main( int argc, char *argv[] ) {
 
   if ( !parseParameters( argc, argv, applicationParams, encoderParams, adaptationParams ) ) { return -1; }
 
+  // Keep adaptation quantization depth aligned with 2D attribute coding depth.
+  // This avoids 10-bit quantized attributes when running in 8-bit GS4 mode.
+  adaptationParams.shBitDepth_       = static_cast<uint32_t>( encoderParams.attributeBitDepth2D_ );
+  adaptationParams.opacityBitDepth_  = static_cast<uint32_t>( encoderParams.attributeBitDepth2D_ );
+  adaptationParams.scaleBitDepth_    = static_cast<uint32_t>( encoderParams.attributeBitDepth2D_ );
+  adaptationParams.rotationBitDepth_ = static_cast<uint32_t>( encoderParams.attributeBitDepth2D_ );
+
+  if ( encoderParams.geometryBitDepth2D_ != 8 && encoderParams.geometryBitDepth2D_ != 10 ) {
+    std::cerr << "Error: geometryBitDepth2D must be 8 or 10, got " << encoderParams.geometryBitDepth2D_ << std::endl;
+    return -1;
+  }
+  if ( encoderParams.attributeBitDepth2D_ != 8 && encoderParams.attributeBitDepth2D_ != 10 ) {
+    std::cerr << "Error: attributeBitDepth2D must be 8 or 10, got " << encoderParams.attributeBitDepth2D_
+              << std::endl;
+    return -1;
+  }
+
   // Map encoder flags to adaptation parameters
   adaptationParams.gsdTransform2dPresentFlag_           = encoderParams.gsdTransform2dPresentFlag_;
   adaptationParams.dataAdaptiveShTransformEnabled_      = encoderParams.dataAdaptiveShTransformEnabled_;
