@@ -54,7 +54,7 @@ KEEP_INTERMEDIATE_FILES=0   # 0: reduce diskspace, or 1: keep intermediate files
 GENERATE_PNGs=0             # 0 or 1
 : "${EXPERIMENT_MODE:=2}"   # 0: mandatory, 1: all, 2: man_with_fruit_tracked only, 3: subset
 : "${METRICS_THREADS:=1}"   # Number of threads for mpeg-gsc-metrics (optimize for your system resources)
-
+V3C_PARSER_CHECK=1          # 0: disable , 1: enable - check HLS of encoded bitstreams
 # Custom time format to improve platform independence of parsing time results
 TIME="/usr/bin/time -f 'user_time=%U wall_time=%E max_rss_KB=%M'"
 
@@ -243,6 +243,7 @@ CFG_PATH="$TMC_DIR/cfg/gs4"
 IMP_BIN="$TMC_DIR/build/bin/importance-scores"
 TMC_ENC_BIN="$TMC_DIR/bin/PccGs4AppEncoder"
 TMC_DEC_BIN="$TMC_DIR/bin/PccAppDecoder"
+V3C_PARSER_BIN="$TMC_DIR/bin/parse_v3c_sample_stream"
 PARSER_SCRIPT="$SCRIPT_DIR/gsc_parse_vpcc_results.py"
 EXTRACT_IMAGES_SCRIPT="$SCRIPT_DIR/extract_images.py"
 
@@ -395,6 +396,7 @@ for SEQ in "${SEQUENCES[@]}"; do
                     echo "#SBATCH --nodes=1"
                     echo "#SBATCH --mem-per-cpu=8G"
                     echo "#SBATCH --cpus-per-task=$METRICS_THREADS"
+                    echo "set -euo pipefail"
                     echo ""
                     echo "# Printing the md5sum of the input PLY for debugging"
                     echo "md5sum $INPUT_FILE"
@@ -452,6 +454,7 @@ for SEQ in "${SEQUENCES[@]}"; do
                 echo "#SBATCH --ntasks-per-node=1"
                 echo "#SBATCH --nodes=1"
                 echo "#SBATCH --mem-per-cpu=8G"
+                echo "set -euo pipefail"
                 echo ""
                 echo "# Encode all $FRAME_COUNT frames in one invocation"
                 echo "$TIME $TMC_ENC_BIN \\"
@@ -497,6 +500,11 @@ for SEQ in "${SEQUENCES[@]}"; do
                 echo "    --enableShDimensionReduction=$GSD_DIMENSION_REDUCTION \\"
                 echo "    --compressedStreamPath=$RESULT_DIR/${LENGTH}_${SEQ}_${RATE}.bin"
                 echo ""
+                if [ "$V3C_PARSER_CHECK" -eq 1 ]; then
+                    echo "# Try to parse the bitstream with the V3C parser"
+                    echo "$V3C_PARSER_BIN $RESULT_DIR/${LENGTH}_${SEQ}_${RATE}.bin > $RESULT_DIR/${LENGTH}_${SEQ}_${RATE}.hls || true"
+                fi 
+                echo ""
                 echo "touch $OUT/jobs/done/encoder/\$SLURM_JOB_ID"
             } > "$JOBFILE"
             chmod +x "$JOBFILE"
@@ -512,6 +520,7 @@ for SEQ in "${SEQUENCES[@]}"; do
                 echo "#SBATCH --ntasks-per-node=1"
                 echo "#SBATCH --nodes=1"
                 echo "#SBATCH --mem-per-cpu=8G"
+                echo "set -euo pipefail"
                 echo ""
                 echo "# Decode all frames from single bitstream"
                 echo "$TIME $TMC_DEC_BIN \\"
@@ -547,6 +556,7 @@ for SEQ in "${SEQUENCES[@]}"; do
                     echo "#SBATCH --nodes=1"
                     echo "#SBATCH --mem-per-cpu=8G"
                     echo "#SBATCH --cpus-per-task=$METRICS_THREADS"
+                    echo "set -euo pipefail"
                     
                     if [ $METRIC_CPU -eq 0 ]; then
                         echo "#SBATCH --gpus=1"

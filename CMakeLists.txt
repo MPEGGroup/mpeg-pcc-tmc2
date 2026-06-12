@@ -40,9 +40,20 @@ option(CODEC_TRACE "Enable encoder and decoder process traces" FALSE)
 option(SEI_TRACE "Enable SEI bitstream traces" FALSE)
 option(CONFORMANCE_TRACE "Enable conformance traces" FALSE)
 
-# CLANG-TIDY CHECK
-set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+if(NOT DEFINED CMAKE_CXX_EXTENSIONS)
+  set(CMAKE_CXX_EXTENSIONS OFF)
+endif()
+
+if(NOT DEFINED CMAKE_CXX_STANDARD)
+  list(FIND CMAKE_CXX_COMPILE_FEATURES cxx_std_23 have_cxx_std_23)
+
+  if(${have_cxx_std_23} GREATER_EQUAL 0)
+    set(CMAKE_CXX_STANDARD 23)
+  else()
+    set(CMAKE_CXX_STANDARD 20)
+  endif()
+endif()
+
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
@@ -125,3 +136,6 @@ add_subdirectory(source/app/PccAppNormalGenerator)
 add_subdirectory(source/app/PccGs4AppEncoder)
 
 add_subdirectory(mpeg-gsc-metrics)
+
+set(v3c_coder_BUILD_TESTING OFF)
+add_subdirectory(v3c-cpp-coder)
