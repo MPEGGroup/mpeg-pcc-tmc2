@@ -571,6 +571,9 @@ for SEQ in "${SEQUENCES[@]}"; do
                     echo
                     echo "# Calculate all metrics"
                     echo "$TIME $METRIC -v 1 --startFrame=0 --frameCount=1 --cpu=$METRIC_CPU --useCameraPosition=1 --threads=$METRICS_THREADS \\"
+                    if [ $GENERATE_PNGs == 1 ]; then
+                        echo "    --save=1 \\"
+                    fi
                     echo "    --width=$REN_W --height=$REN_H \\"
                     echo "    --source=\"$RESULT_DIR/pos_plys/$FRAME.camerpos.ply\" \\"
                     echo "    --decode=\"$RESULT_DIR/plys/${LENGTH}_${SEQ}_${RATE}_${FRAME_NR}.decoded.ply\" \\"
@@ -586,7 +589,7 @@ for SEQ in "${SEQUENCES[@]}"; do
                         echo '        echo "Could not detect planar/interleaved from: $RGB_PATH"'
                         echo '        echo "Default: PLANAR=$PLANAR"'
                         echo '    fi'
-                        echo "    $PYTHON $SCRIPT_DIR/$EXTRACT_IMAGES_SCRIPT --input=\"\$RGB_PATH\" --output="$RESULT_DIR" --width=$REN_W  --height=$REN_H --planar=\$PLANAR"
+                        echo "    $PYTHON $EXTRACT_IMAGES_SCRIPT --input=\"\$RGB_PATH\" --output="$RESULT_DIR" --width=$REN_W  --height=$REN_H --planar=\$PLANAR"
                         echo 'fi'
                     fi
                     echo "touch $OUT/jobs/done/metric/\$SLURM_JOB_ID"
