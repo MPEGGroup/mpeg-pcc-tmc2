@@ -50,9 +50,9 @@ void PCCGSVideoEncoder::encode( PCCGSVideoFrames             &frames,
 
   const uint8_t geometryBitDepth  = static_cast<uint8_t>( params.geometryBitDepth2D_ );
   const uint8_t attributeBitDepth = static_cast<uint8_t>( params.attributeBitDepth2D_ );
-  const uint8_t packedBitDepth    = static_cast<uint8_t>( params.geometryBitDepth2D_ > params.attributeBitDepth2D_
-                                                               ? params.geometryBitDepth2D_
-                                                               : params.attributeBitDepth2D_ );
+  const uint8_t packedBitDepth =
+      static_cast<uint8_t>( params.geometryBitDepth2D_ > params.attributeBitDepth2D_ ? params.geometryBitDepth2D_
+                                                                                     : params.attributeBitDepth2D_ );
 
   if ( vps.getGeometryVideoPresentFlag( ATLAS_INDEX ) ) {
     encodeVideo( frames.geometry, PCCVideoType::VIDEO_GEOMETRY, hls, params, params.geometryQP_, geometryBitDepth,

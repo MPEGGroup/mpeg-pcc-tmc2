@@ -1891,9 +1891,15 @@ void PCCBitstreamWriter::seiMessage( PCCBitstream       &bitstream,
   WRITE_CODE( payloadType, 8 );  // u(8)
 
   // Note: calculating the size of the sei message before writing it into the bitstream
-  PCCBitstream tempbitstream;
+  auto                startRealPos = bitstream.getPosition();
+  PCCBitstream        tempbitstream;
+  PCCBistreamPosition tempStartPos{ 0, startRealPos.bits_ };
   seiPayload( tempbitstream, syntax, sei, nalUnitType, atglIndex );
-  sei.setPayloadSize( tempbitstream.size() );
+  auto    endPos       = tempbitstream.getPosition();
+  int64_t payloadBits  = int64_t( endPos.bytes_ ) * 8 + int64_t( endPos.bits_ ) - int64_t( startRealPos.bits_ );
+  size_t  payloadBytes = size_t( ( payloadBits + 7 ) >> 3 );
+
+  sei.setPayloadSize( payloadBytes );
 
   auto payloadSize = static_cast<int32_t>( sei.getPayloadSize() );
   for ( ; payloadSize >= 0xff; payloadSize -= 0xff ) {
@@ -2209,8 +2215,12 @@ void PCCBitstreamWriter::componentCodecMapping( PCCBitstream &bitstream, SEI &se
   if ( !sei.getComponentCodecCancelFlag() ) {
     WRITE_CODE( sei.getCodecMappingsCountMinus1(), 8 );  // u(8)
     sei.allocate();
+    uint8_t ccm_bit_equal_to_zero = 0;
     for ( size_t i = 0; i <= sei.getCodecMappingsCountMinus1(); i++ ) {
-      WRITE_CODE( sei.getCodecId( i ), 8 );                    // u(8)
+      WRITE_CODE( sei.getCodecId( i ), 8 );  // u(8)
+      while ( !bitstream.byteAligned() ) {
+        WRITE_CODE( ccm_bit_equal_to_zero, 1 );  // u(1): equal to 0
+      }
       WRITE_STRING( sei.getCodec4cc( sei.getCodecId( i ) ) );  // st(v)
     }
   }
@@ -3160,7 +3170,7 @@ void PCCBitstreamWriter::geometrySmoothing( PCCBitstream &bitstream, SEI &seiAbs
       WRITE_UVLC( sei.getMethodType( k ) );  // ue(v)
       if ( sei.getMethodType( k ) == 1 ) {
         WRITE_CODE( sei.getFilterEomPointsFlag( k ), 1 );  // u(1)
-        WRITE_CODE( sei.getGridSizeMinus2( k ), 7 );       // u(7)
+        WRITE_CODE( sei.getGridSizeMinus2( k ), 5 );       // u(5)
         WRITE_CODE( sei.getThreshold( k ), 8 );            // u(8)
       }
     }

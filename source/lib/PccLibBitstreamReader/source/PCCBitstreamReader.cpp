@@ -2176,8 +2176,12 @@ void PCCBitstreamReader::componentCodecMapping( PCCBitstream &bitstream, SEI &se
   if ( !sei.getComponentCodecCancelFlag() ) {
     sei.setCodecMappingsCountMinus1( bitstream.read( 8 ) );  // u(8)
     sei.allocate();
+    uint8_t ccm_bit_equal_to_zero = 0;
     for ( size_t i = 0; i <= sei.getCodecMappingsCountMinus1(); i++ ) {
-      sei.setCodecId( i, bitstream.read( 8 ) );                        // u(8)
+      sei.setCodecId( i, bitstream.read( 8 ) );  // u(8)
+      while ( !bitstream.byteAligned() ) {
+        READ_CODE( ccm_bit_equal_to_zero, 1 );  // u(1): equal to 0
+      }
       sei.setCodec4cc( sei.getCodecId( i ), bitstream.readString() );  // st(v)
     }
   }
@@ -3302,7 +3306,7 @@ void PCCBitstreamReader::geometrySmoothing( PCCBitstream &bitstream, SEI &seiAbs
       sei.setMethodType( k, bitstream.readUvlc() );  // ue(v)
       if ( sei.getMethodType( k ) == 1 ) {
         sei.setFilterEomPointsFlag( k, bitstream.read( 1 ) );  // u(1)
-        sei.setGridSizeMinus2( k, bitstream.read( 7 ) );       // u(7)
+        sei.setGridSizeMinus2( k, bitstream.read( 5 ) );       // u(5)
         sei.setThreshold( k, bitstream.read( 8 ) );            // u(8)
       }
     }

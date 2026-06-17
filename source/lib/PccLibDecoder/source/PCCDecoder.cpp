@@ -257,8 +257,8 @@ int PCCDecoder::decode( PCCContext &context, PCCGroupOfFrames &reconstructs, int
               if ( params_.keepIntermediateFiles_ ) {
                 std::string unpackFileName = path.str() + "geometry_d" + std::to_string( mapIndex ) + "_unpacked";
                 context.getVideoGeometryMultiple( mapIndex )
-                    .write( context.getVideoGeometryMultiple( mapIndex ).addFormat( unpackFileName,
-                                                                                    debugBitDepthTag( geometryBitDepth ) ),
+                    .write( context.getVideoGeometryMultiple( mapIndex )
+                                .addFormat( unpackFileName, debugBitDepthTag( geometryBitDepth ) ),
                             debugByteCount( geometryBitDepth ) );
                 std::cout << "Written unpacked geometry[" << mapIndex << "] video to: " << unpackFileName << std::endl;
               }
@@ -323,9 +323,9 @@ int PCCDecoder::decode( PCCContext &context, PCCGroupOfFrames &reconstructs, int
             // Write unpacked geometry video to disk if keeping intermediate files
             if ( params_.keepIntermediateFiles_ ) {
               std::string unpackFileName = path.str() + "geometry_unpacked";
-              context.getVideoGeometryMultiple( 0 ).write(
-                  context.getVideoGeometryMultiple( 0 ).addFormat( unpackFileName, debugBitDepthTag( geometryBitDepth ) ),
-                  debugByteCount( geometryBitDepth ) );
+              context.getVideoGeometryMultiple( 0 ).write( context.getVideoGeometryMultiple( 0 ).addFormat(
+                                                               unpackFileName, debugBitDepthTag( geometryBitDepth ) ),
+                                                           debugByteCount( geometryBitDepth ) );
               std::cout << "Written unpacked geometry video to: " << unpackFileName << std::endl;
             }
 
@@ -439,9 +439,9 @@ int PCCDecoder::decode( PCCContext &context, PCCGroupOfFrames &reconstructs, int
                                                    std::to_string( attrIndex ) + "_part" +
                                                    std::to_string( attrPartitionIndex ) + "_unpacked";
                       context.getVideoAttributesMultiple( mapIndex )
-                        .write( context.getVideoAttributesMultiple( mapIndex ).addFormat(
-                              unpackFileName, debugBitDepthTag( attributeBitDepth ) ),
-                            debugByteCount( attributeBitDepth ) );
+                          .write( context.getVideoAttributesMultiple( mapIndex )
+                                      .addFormat( unpackFileName, debugBitDepthTag( attributeBitDepth ) ),
+                                  debugByteCount( attributeBitDepth ) );
                       std::cout << "Written unpacked attribute[" << mapIndex << "] video to: " << unpackFileName
                                 << std::endl;
                     }
@@ -517,9 +517,9 @@ int PCCDecoder::decode( PCCContext &context, PCCGroupOfFrames &reconstructs, int
                     std::string unpackFileName = path.str() + "attribute_attr" + std::to_string( attrIndex ) + "_part" +
                                                  std::to_string( attrPartitionIndex ) + "_unpacked";
                     context.getVideoAttributesMultiple( attrIndex, attrPartitionIndex )[0].write(
-                      context.getVideoAttributesMultiple( attrIndex, attrPartitionIndex )[0].addFormat(
-                        unpackFileName, debugBitDepthTag( attributeBitDepth ) ),
-                      debugByteCount( attributeBitDepth ) );
+                        context.getVideoAttributesMultiple( attrIndex, attrPartitionIndex )[0].addFormat(
+                            unpackFileName, debugBitDepthTag( attributeBitDepth ) ),
+                        debugByteCount( attributeBitDepth ) );
                     std::cout << "Written unpacked attribute video to: " << unpackFileName << std::endl;
                   }
 

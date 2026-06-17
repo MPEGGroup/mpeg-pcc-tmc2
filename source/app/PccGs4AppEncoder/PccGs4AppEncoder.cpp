@@ -107,8 +107,7 @@ int main( int argc, char *argv[] ) {
     return -1;
   }
   if ( encoderParams.attributeBitDepth2D_ != 8 && encoderParams.attributeBitDepth2D_ != 10 ) {
-    std::cerr << "Error: attributeBitDepth2D must be 8 or 10, got " << encoderParams.attributeBitDepth2D_
-              << std::endl;
+    std::cerr << "Error: attributeBitDepth2D must be 8 or 10, got " << encoderParams.attributeBitDepth2D_ << std::endl;
     return -1;
   }
 

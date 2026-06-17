@@ -2740,8 +2740,8 @@ bool PCCAdaptation::extractSHQuantRegions( const PCCPointSetGS &input, PCCAdapta
   params.shStepSizes_.assign( size_t{ 16 } * 9, 0.0 );
   for ( size_t i = 0; i < 16; ++i ) {
     for ( int ch = 0; ch < 3; ++ch ) {
-      const double channelRange = params.shLimitMax_[i][ch] - params.shLimitMin_[i][ch];
-      const double baseStep     = std::max( 1e-9, channelRange / static_cast<double>( max_quant_val ) );
+      const double channelRange               = params.shLimitMax_[i][ch] - params.shLimitMin_[i][ch];
+      const double baseStep                   = std::max( 1e-9, channelRange / static_cast<double>( max_quant_val ) );
       params.shStepSizes_[i * 9 + ch * 3 + 0] = 2.0 * baseStep;
       params.shStepSizes_[i * 9 + ch * 3 + 1] = 1.0 * baseStep;
       params.shStepSizes_[i * 9 + ch * 3 + 2] = 2.0 * baseStep;
