@@ -324,11 +324,27 @@ class PCCBitstream {
     memcpy( &code, &value, sizeof( float ) );
     write( code, 32 );
   }
+  
+  inline void writeDouble(double value) { //AJT:: added to support WRITE_DOUBLE
+    uint64_t code;
+    memcpy(&code, &value, sizeof(code));
+    write(static_cast<uint32_t>(code >> 32), 32);
+    write(static_cast<uint32_t>(code & 0xffffffff), 32);
+  }
 
   inline float readFloat() {
     uint32_t code  = read( 32 );
     float    value = 0;
     memcpy( &value, &code, sizeof( float ) );
+    return value;
+  }
+  
+  inline double readDouble() { //AJT:: added to support READ_DOUBLE
+    uint64_t hi = read(32);
+    uint64_t lo = read(32);
+    uint64_t code = (hi << 32) | lo;
+    double value;
+    memcpy(&value, &code, sizeof(value));
     return value;
   }
 

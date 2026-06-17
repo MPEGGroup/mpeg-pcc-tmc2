@@ -338,7 +338,7 @@ enum SeiPayloadType {
 };
 
 enum VpccSeiPayloadType {
-  GS_CAMERA_POSE_INFO   = 0,  //  0: camera pose info
+  GS_CAMERA_MODEL_INFO   = 0,  //  0: camera model info
   RESERVED_MESSAGE_VPCC = 1
 };
 

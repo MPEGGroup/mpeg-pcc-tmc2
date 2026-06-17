@@ -37,203 +37,303 @@
 #include <sstream>
 #include <stdexcept>
 #include <iostream>
+#include <unordered_map>
+#include <algorithm>
 
-template <typename T>
-static void readBinary( std::ifstream &file, T &value ) {
-  file.read( reinterpret_cast<char *>( &value ), sizeof( T ) );
+CameraModel stringToModel(const std::string& modelStr)
+{
+    static const std::unordered_map<std::string, CameraModel> kMap = {
+        {"SIMPLE_PINHOLE", CameraModel::SIMPLE_PINHOLE},
+        {"PINHOLE", CameraModel::PINHOLE}
+    };
+
+    auto it = kMap.find(modelStr);
+    if (it != kMap.end())
+        return it->second;
+
+    throw std::runtime_error("Unknown camera model: " + modelStr);
 }
 
-bool CameraModelInfo::isBinary( const std::string &file ) { return file.find( ".bin" ) != std::string::npos; }
-
-bool CameraModelInfo::hasSameIntrinsics() const {
-  if ( cameras_.empty() ) return false;
-
-  auto        it    = cameras_.begin();
-  const auto &first = it->second;
-  ++it;
-
-  for ( ; it != cameras_.end(); ++it ) {
-    const auto &c = it->second;
-
-    if ( c.fx != first.fx || c.fy != first.fy || c.cx != first.cx || c.cy != first.cy || c.width != first.width ||
-         c.height != first.height )
-      return false;
-  }
-
-  return true;
+const char* modelToString(CameraModel m)
+{
+    switch (m)
+    {
+    case CameraModel::SIMPLE_PINHOLE:        return "SIMPLE_PINHOLE";
+    case CameraModel::PINHOLE:               return "PINHOLE";
+    default:                                 return "UNKNOWN";
+    }
 }
 
-void CameraModelInfo::load( const std::string &cameras_file, const std::string &images_file ) {
-  frames_.clear();
+size_t numParams(CameraModel model)
+{
+    switch (model)
+    {
+    case CameraModel::SIMPLE_PINHOLE:        return 3;
+    case CameraModel::PINHOLE:               return 4;
+    default:                                 return 0;
+    }
+}
+
+namespace
+{
+    std::string readString(std::ifstream& in)
+    {
+        std::string s;
+        char c;
+        while (in.get(c) && c != '\0')
+            s.push_back(c);
+        return s;
+    }
+
+    template<typename T>
+    void readBinary(std::ifstream& in, T& value)
+    {
+        in.read(reinterpret_cast<char*>(&value), sizeof(T));
+    }
+}
+
+CameraModelInfo::PinholeParams
+CameraModelInfo::getPinholeParams(uint32_t camera_id) const
+{
+    const auto& intr = cameras_.at(camera_id);
+    return convertToPinhole(intr);
+}
+
+bool CameraModelInfo::isBinary(const std::string& file)
+{
+  return file.find(".bin") != std::string::npos;
+}
+
+CameraModelInfo::PinholeParams
+CameraModelInfo::convertToPinhole(const CamIntrinsics& cam)
+{
+    PinholeParams p{};
+    p.width  = cam.width;
+    p.height = cam.height;
+
+    const auto& v = cam.params;
+
+    switch (cam.model)
+    {
+    case CameraModel::SIMPLE_PINHOLE:
+        // [f, cx, cy]
+        p.fx = v[0];
+        p.fy = v[0];
+        p.cx = v[1];
+        p.cy = v[2];
+        break;
+
+    case CameraModel::PINHOLE:
+        // [fx, fy, cx, cy]
+        p.fx = v[0];
+        p.fy = v[1];
+        p.cx = v[2];
+        p.cy = v[3];
+        break;
+
+    default:
+        throw std::runtime_error("pinhole conversion does not exist for the model");
+    }
+
+    return p;
+}
+
+bool CameraModelInfo::hasSameIntrinsics() const
+{
+    if (cameras_.size() <= 1)
+        return true;
+
+    auto it = cameras_.begin();
+    const auto& first = it->second;
+    ++it;
+
+    for (; it != cameras_.end(); ++it)
+    {
+        const auto& cam = it->second;
+
+        if (cam.model  != first.model  ||
+            cam.width  != first.width  ||
+            cam.height != first.height ||
+            cam.params != first.params)
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+
+void CameraModelInfo::readColmapData(const std::string& cameras_file,
+                       const std::string& images_file)
+{
+  images_.clear();
   cameras_.clear();
 
-  if ( isBinary( cameras_file ) )
-    loadCamerasBin( cameras_file, cameras_ );
+  if (isBinary(cameras_file))
+    readCamerasBin(cameras_file, cameras_);
   else
-    loadCamerasTxt( cameras_file, cameras_ );
+    readCamerasTxt(cameras_file, cameras_);
 
-  if ( isBinary( images_file ) )
-    loadImagesBin( images_file, cameras_ );
+  if (isBinary(images_file))
+    readImagesBin(images_file, cameras_);
   else
-    loadImagesTxt( images_file, cameras_ );
+    readImagesTxt(images_file, cameras_);
 }
 
-size_t CameraModelInfo::numCameras() const { return cameras_.size(); }
-
-void CameraModelInfo::loadCamerasTxt( const std::string                               &file,
-                                      std::unordered_map<uint32_t, CameraModelParams> &camMap ) {
-  std::ifstream f( file );
-  if ( !f ) throw std::runtime_error( "Cannot open cameras file: " + file );
-
-  std::string line;
-
-  while ( std::getline( f, line ) ) {
-    if ( line.empty() || line[0] == '#' ) continue;
-
-    std::stringstream ss( line );
-
-    uint32_t    cam_id, width, height;
-    std::string model;
-    double      fx, fy, cx, cy;
-
-    ss >> cam_id >> model >> width >> height >> fx >> fy >> cx >> cy;
-
-    CameraModelParams cam;
-    cam.camera_id = cam_id;
-    cam.width     = width;
-    cam.height    = height;
-    cam.fx        = fx;
-    cam.fy        = fy;
-    cam.cx        = cx;
-    cam.cy        = cy;
-
-    camMap[cam_id] = cam;
-  }
+size_t CameraModelInfo::numCameras() const
+{
+   return cameras_.size();
 }
 
-void CameraModelInfo::loadImagesTxt( const std::string                                     &file,
-                                     const std::unordered_map<uint32_t, CameraModelParams> &camMap ) {
-  std::ifstream f( file );
-  if ( !f ) throw std::runtime_error( "Cannot open images file: " + file );
+void CameraModelInfo::readCamerasTxt(
+    const std::string& file,
+    std::unordered_map<uint32_t, CamIntrinsics>& camMap)
+{
+    std::ifstream in(file);
+    if (!in)
+        throw std::runtime_error("Cannot open cameras.txt");
 
-  std::string line;
+    std::string line;
 
-  while ( std::getline( f, line ) ) {
-    if ( line.empty() || line[0] == '#' ) continue;
+    while (std::getline(in, line))
+    {
+        if (line.empty() || line[0] == '#')
+            continue;
 
-    std::stringstream ss( line );
+        std::istringstream iss(line);
 
-    CameraModelParams frame;
+        CamIntrinsics cam;
+        std::string modelStr;
 
-    ss >> frame.image_id >> frame.qw >> frame.qx >> frame.qy >> frame.qz >> frame.tx >> frame.ty >> frame.tz >>
-        frame.camera_id >> frame.image_name;
+        iss >> cam.camera_id
+            >> modelStr
+            >> cam.width
+            >> cam.height;
 
-    auto it = camMap.find( frame.camera_id );
-    if ( it == camMap.end() ) throw std::runtime_error( "Camera ID mismatch in images file." );
+        cam.model = stringToModel(modelStr);
 
-    frame.width  = it->second.width;
-    frame.height = it->second.height;
-    frame.fx     = it->second.fx;
-    frame.fy     = it->second.fy;
-    frame.cx     = it->second.cx;
-    frame.cy     = it->second.cy;
+        size_t n = numParams(cam.model);
+        cam.params.resize(n);
 
-    frames_.push_back( frame );
+        for (size_t i = 0; i < n; ++i)
+            iss >> cam.params[i];
 
-    // Skip POINTS2D line
-    std::getline( f, line );
-  }
+        camMap[cam.camera_id] = std::move(cam);
+    }
 }
 
-void CameraModelInfo::loadCamerasBin( const std::string                               &file,
-                                      std::unordered_map<uint32_t, CameraModelParams> &camMap ) {
-  std::ifstream f( file, std::ios::binary );
-  if ( !f ) throw std::runtime_error( "Cannot open cameras bin file: " + file );
+void CameraModelInfo::readImagesTxt(
+    const std::string& file,
+    const std::unordered_map<uint32_t, CamIntrinsics>& camMap)
+{
+    std::ifstream in(file);
+    if (!in)
+        throw std::runtime_error("Cannot open images.txt");
 
-  uint64_t num_cameras;
-  readBinary( f, num_cameras );
+    std::string line;
 
-  for ( uint64_t i = 0; i < num_cameras; ++i ) {
-    uint32_t cam_id;
-    int32_t  model_id;
-    uint64_t width, height;
+    while (std::getline(in, line))
+    {
+        if (line.empty() || line[0] == '#')
+            continue;
 
-    readBinary( f, cam_id );
-    readBinary( f, model_id );
-    readBinary( f, width );
-    readBinary( f, height );
+        std::istringstream iss(line);
 
-    double params[4];
-    f.read( reinterpret_cast<char *>( params ), 4 * sizeof( double ) );
+       CamExtrinsics img;
 
-    CameraModelParams cam;
-    cam.camera_id = cam_id;
-    cam.width     = width;
-    cam.height    = height;
-    cam.fx        = params[0];
-    cam.fy        = params[1];
-    cam.cx        = params[2];
-    cam.cy        = params[3];
+        iss >> img.image_id
+            >> img.qw >> img.qx >> img.qy >> img.qz
+            >> img.tx >> img.ty >> img.tz
+            >> img.camera_id
+            >> img.image_name;
 
-    camMap[cam_id] = cam;
-  }
+        if (camMap.find(img.camera_id) == camMap.end())
+            throw std::runtime_error("unknown camera_id for image reference");
+
+        images_.push_back(std::move(img));
+
+        std::getline(in, line);
+    }
 }
 
-void CameraModelInfo::loadImagesBin( const std::string                                     &file,
-                                     const std::unordered_map<uint32_t, CameraModelParams> &camMap ) {
-  std::ifstream f( file, std::ios::binary );
-  if ( !f ) throw std::runtime_error( "Cannot open images bin file: " + file );
+void CameraModelInfo::readCamerasBin(
+    const std::string& file,
+    std::unordered_map<uint32_t, CamIntrinsics>& camMap)
+{
+    std::ifstream in(file, std::ios::binary);
+    if (!in)
+        throw std::runtime_error("Cannot open cameras.bin");
 
-  uint64_t num_images;
-  readBinary( f, num_images );
-  CameraModelParams frame;
-  double            qw, qx, qy, qz;
-  double            tx, ty, tz;
+    uint64_t num_cameras = 0;
+    readBinary(in, num_cameras);
 
-  for ( uint64_t i = 0; i < num_images; ++i ) {
-    CameraModelParams frame;
+    for (uint64_t i = 0; i < num_cameras; ++i)
+    {
+        CamIntrinsics cam;
 
-    readBinary( f, frame.image_id );
+        uint32_t model_id;
 
-    double qw, qx, qy, qz;
-    double tx, ty, tz;
+        readBinary(in, cam.camera_id);
+        readBinary(in, model_id);
+        readBinary(in, cam.width);
+        readBinary(in, cam.height);
 
-    readBinary( f, qw );
-    readBinary( f, qx );
-    readBinary( f, qy );
-    readBinary( f, qz );
-    readBinary( f, tx );
-    readBinary( f, ty );
-    readBinary( f, tz );
+        cam.model = static_cast<CameraModel>(model_id);
 
-    readBinary( f, frame.camera_id );
+        size_t n = numParams(cam.model);
+        cam.params.resize(n);
 
-    frame.qw = qw;
-    frame.qx = qx;
-    frame.qy = qy;
-    frame.qz = qz;
-    frame.tx = tx;
-    frame.ty = ty;
-    frame.tz = tz;
+        for (size_t j = 0; j < n; ++j)
+            readBinary(in, cam.params[j]);
 
-    char ch;
-    while ( f.get( ch ) && ch != '\0' ) frame.image_name += ch;
+        camMap[cam.camera_id] = std::move(cam);
+    }
+}
 
-    uint64_t num_points2D;
-    readBinary( f, num_points2D );
+void CameraModelInfo::readImagesBin(
+    const std::string& file,
+    const std::unordered_map<uint32_t, CamIntrinsics>& camMap)
+{
+    std::ifstream in(file, std::ios::binary);
+    if (!in)
+        throw std::runtime_error("Cannot open images.bin");
 
-    f.seekg( num_points2D * ( 2 * sizeof( double ) + sizeof( int64_t ) ), std::ios::cur );
+    uint64_t num_images = 0;
+    readBinary(in, num_images);
 
-    auto it = camMap.find( frame.camera_id );
-    if ( it == camMap.end() ) throw std::runtime_error( "Camera ID mismatch in images bin file." );
+    for (uint64_t i = 0; i < num_images; ++i)
+    {
+        CamExtrinsics img;
 
-    frame.width  = it->second.width;
-    frame.height = it->second.height;
-    frame.fx     = it->second.fx;
-    frame.fy     = it->second.fy;
-    frame.cx     = it->second.cx;
-    frame.cy     = it->second.cy;
+        readBinary(in, img.image_id);
+        readBinary(in, img.qw);
+        readBinary(in, img.qx);
+        readBinary(in, img.qy);
+        readBinary(in, img.qz);
+        readBinary(in, img.tx);
+        readBinary(in, img.ty);
+        readBinary(in, img.tz);
+        readBinary(in, img.camera_id);
 
-    frames_.push_back( frame );
-  }
+        img.image_name = readString(in);
+
+        if (camMap.find(img.camera_id) == camMap.end())
+            throw std::runtime_error("unknown camera_id for image reference");
+
+        uint64_t num_points2D;
+        readBinary(in, num_points2D);
+
+        for (uint64_t j = 0; j < num_points2D; ++j)
+        {
+            double x, y;
+            uint64_t id;
+
+            readBinary(in, x);
+            readBinary(in, y);
+            readBinary(in, id);
+        }
+
+        images_.push_back(std::move(img));
+    }
 }

@@ -39,54 +39,81 @@
 #include <unordered_set>
 #include <cstdint>
 
-class CameraModelInfo {
- public:
-  struct CameraModelParams {
-    uint32_t image_id;  // AJT: This is important and needs to be discussed and consdidered: pose numbers are determined
-                        // by number of images?
-    uint32_t    camera_id;
-    std::string image_name = "";  // AJT: I have included this just in case for future extension?
+enum class CameraModel : uint32_t
+{
+    SIMPLE_PINHOLE = 0,
+    PINHOLE        = 1
+};
 
-    uint32_t width  = 0;
-    uint32_t height = 0;
+CameraModel stringToModel(const std::string&);
+const char* modelToString(CameraModel);
+size_t numParams(CameraModel);
 
-    double fx = 0.f;
-    double fy = 0.f;
-    double cx = 0.f;
-    double cy = 0.f;
 
-    double qw = 1.0f;
-    double qx = 0.f;
-    double qy = 0.f;
-    double qz = 0.f;
+class CameraModelInfo
+{
 
-    double tx = 0.f;
-    double ty = 0.f;
-    double tz = 0.f;
-  };
+public:
 
- public:
-  CameraModelInfo() = default;
+    struct CamIntrinsics
+    {
+        uint32_t camera_id;
+        CameraModel model;
+        uint64_t width;
+        uint64_t height;
+        std::vector<double> params;
+    };
 
-  void load( const std::string &cameras_file, const std::string &images_file );
+    struct CamExtrinsics
+    {
+        uint32_t image_id;
+        uint32_t camera_id;
+        std::string image_name;
 
-  const std::vector<CameraModelParams> &getCamPoseParams() const { return frames_; }
+        double qw, qx, qy, qz;
+        double tx, ty, tz;
+    };
 
-  size_t numImages() const { return frames_.size(); }
-  size_t numCameras() const;
-  bool   hasSameIntrinsics() const;
+    struct PinholeParams
+    {
+        uint64_t width = 0;
+        uint64_t height = 0;
 
- private:
-  std::vector<CameraModelParams>                  frames_;
-  std::unordered_map<uint32_t, CameraModelParams> cameras_;
+        double fx = 0.0;
+        double fy = 0.0;
+        double cx = 0.0;
+        double cy = 0.0;
+    };
+    
+    CameraModelInfo() = default;
 
-  void loadCamerasTxt( const std::string &file, std::unordered_map<uint32_t, CameraModelParams> &camMap );
+    void readColmapData(const std::string& cameras_file,
+              const std::string& images_file);
 
-  void loadCamerasBin( const std::string &file, std::unordered_map<uint32_t, CameraModelParams> &camMap );
+    const std::unordered_map<uint32_t, CamIntrinsics>& getIntrParams() const { return cameras_; }
+    PinholeParams getPinholeParams(uint32_t camera_id) const ;
+    const std::vector<CamExtrinsics>& getExtrParams() const { return images_; }
 
-  void loadImagesTxt( const std::string &file, const std::unordered_map<uint32_t, CameraModelParams> &camMap );
+    size_t numImages() const { return images_.size(); }
+    size_t numCameras() const;
+    bool   hasSameIntrinsics() const;
 
-  void loadImagesBin( const std::string &file, const std::unordered_map<uint32_t, CameraModelParams> &camMap );
+private:
+    std::unordered_map<uint32_t, CamIntrinsics> cameras_;
+    std::vector<CamExtrinsics> images_;
 
-  static bool isBinary( const std::string &file );
+    void readCamerasTxt(const std::string& file,
+                        std::unordered_map<uint32_t, CamIntrinsics>& camMap);
+
+    void readCamerasBin(const std::string& file,
+                        std::unordered_map<uint32_t, CamIntrinsics>& camMap);
+
+    void readImagesTxt(const std::string& file,
+                       const std::unordered_map<uint32_t, CamIntrinsics>& camMap);
+
+    void readImagesBin(const std::string& file,
+                       const std::unordered_map<uint32_t, CamIntrinsics>& camMap);
+
+    static bool isBinary(const std::string& file);
+    static PinholeParams convertToPinhole(const CamIntrinsics&);
 };
