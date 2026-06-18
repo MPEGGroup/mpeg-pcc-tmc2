@@ -20,6 +20,7 @@ esac
 MODE=Release;
 FORMAT=0;
 TIDY=0;
+CPU_ONLY=ON;
 CMAKE_FLAGS=();
 if [ "$MACHINE" == "Linux" ] ; then NUMBER_OF_PROCESSORS=$( grep -c ^processor /proc/cpuinfo ); fi
 
@@ -29,14 +30,15 @@ do
     doc       ) make -C "${CURDIR}/doc/"; exit 0;;
     debug     ) MODE=Debug; CMAKE_FLAGS+=("-DCMAKE_C_FLAGS=\"-g3\"" "-DCMAKE_CXX_FLAGS=\"-g3\"" );;
     release   ) MODE=Release;;
+    cpu_only  ) CPU_ONLY=ON;;
     profiling ) CMAKE_FLAGS+=("-DENABLE_PAPI_PROFILING=ON");;
     format    ) FORMAT=1;;
     tidy      ) TIDY=1;;
-    *         ) echo "ERROR: arguments \"$i\" not supported: option = [debug|release]"; exit 1;;
+    *         ) echo "ERROR: arguments \"$i\" not supported: option = [debug|release|cpu_only|profiling|format|tidy|doc]"; exit 1;;
   esac
 done
 
-CMAKE_FLAGS+=( "-DCMAKE_BUILD_TYPE=$MODE" "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON" );
+CMAKE_FLAGS+=( "-DCMAKE_BUILD_TYPE=$MODE" "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON" "-DUSE_CPU_ONLY=${CPU_ONLY}" );
 
 echo -e "\033[0;32mCmake: ${CURDIR} \033[0m";
 ${CMAKE} -H${CURDIR} -B"${CURDIR}/build/${MODE}" "${CMAKE_FLAGS[@]}"
