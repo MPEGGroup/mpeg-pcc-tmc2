@@ -38,6 +38,9 @@
 #include "PCCCommon.h"
 
 #ifdef USE_HMLIB_VIDEO_CODEC
+#ifdef PCC_HM_UNPATCHED
+#define pcc_hm
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <cassert>
@@ -46,19 +49,37 @@
 #include <limits>
 #include "TLibCommon/TComRom.h"
 #include "PCCHMLibVideoEncoderCfg.h"
+#if __has_include( "TAppCommon/program_options_lite.h" )
 #include "TAppCommon/program_options_lite.h"
+#else
+#include "Utilities/program_options_lite.h"
+#endif
 #include "TLibEncoder/TEncRateCtrl.h"
 #ifdef WIN32
 #define strdup _strdup
+#endif
+
+#ifdef PCC_HM_UNPATCHED
+#define pcc_hm
 #endif
 
 #define MACRO_TO_STRING_HELPER( val ) #val
 #define MACRO_TO_STRING( val ) MACRO_TO_STRING_HELPER( val )
 
 using namespace std;
+#ifndef PCC_HM_UNPATCHED
 using namespace pcc_hm;
+#endif
 
-namespace po = pcc_hm::df::program_options_lite;
+#ifdef PCC_HM_UNPATCHED
+namespace po                                             = df::program_options_lite;
+static constexpr Profile::Name kProfileMainScc           = Profile::MAINREXT;
+static constexpr Profile::Name kProfileHighThroughputScc = Profile::HIGHTHROUGHPUTREXT;
+#else
+namespace po                                             = pcc_hm::df::program_options_lite;
+static constexpr Profile::Name kProfileMainScc           = Profile::MAINSCC;
+static constexpr Profile::Name kProfileHighThroughputScc = Profile::HIGHTHROUGHPUTSCC;
+#endif
 
 enum UIProfileName  // this is used for determining profile strings, where
                     // multiple profiles map to a single profile idc with
@@ -145,6 +166,12 @@ PCCHMLibVideoEncoderCfg::PCCHMLibVideoEncoderCfg() :
     ,
     m_ext360( *this )
 #endif
+
+#ifdef PCC_HM_UNPATCHED
+#undef MAINSCC
+#undef HIGHTHROUGHPUTSCC
+#undef pcc_hm
+#endif
 {
   m_aidQP                = NULL;
   m_startOfCodedInterval = NULL;
@@ -172,7 +199,9 @@ Void PCCHMLibVideoEncoderCfg::create() {}
 
 Void PCCHMLibVideoEncoderCfg::destroy() {}
 
+#ifndef PCC_HM_UNPATCHED
 namespace pcc_hm {
+#endif
 std::istringstream &operator>>( std::istringstream &in,
                                 GOPEntry           &entry )  // input
 {
@@ -203,7 +232,9 @@ std::istringstream &operator>>( std::istringstream &in,
   return in;
 }
 Bool confirmPara( Bool bflag, const TChar *message );
+#ifndef PCC_HM_UNPATCHED
 }  // namespace pcc_hm
+#endif
 
 static inline ChromaFormat numberToChromaFormat( const Int val ) {
   switch ( val ) {
@@ -225,8 +256,8 @@ static const struct MapStrToProfile {
                      { "main10-still-picture", Profile::MAIN10 },
                      { "main-RExt", Profile::MAINREXT },
                      { "high-throughput-RExt", Profile::HIGHTHROUGHPUTREXT },
-                     { "main-SCC", Profile::MAINSCC },
-                     { "high-throughput-SCC", Profile::HIGHTHROUGHPUTSCC } };
+                     { "main-SCC", kProfileMainScc },
+                     { "high-throughput-SCC", kProfileHighThroughputScc } };
 
 static const struct MapStrToUIProfileName {
   const TChar  *str;
@@ -352,7 +383,9 @@ static const struct MapStrToLevel {
     { "6.1", Level::LEVEL6_1 }, { "6.2", Level::LEVEL6_2 }, { "8.5", Level::LEVEL8_5 },
 };
 
+#ifndef PCC_HM_UNPATCHED
 namespace pcc_hm {
+#endif
 UInt g_uiMaxCpbSize[2][21] = {
     //         LEVEL1,        LEVEL2,LEVEL2_1,     LEVEL3, LEVEL3_1,
     // LEVEL4, LEVEL4_1,       LEVEL5,  LEVEL5_1,  LEVEL5_2,    LEVEL6,
@@ -362,7 +395,9 @@ UInt g_uiMaxCpbSize[2][21] = {
     { 0, 0,        0,        0, 0,         0,         0,         0,         0,         0,        0,
       0, 30000000, 50000000, 0, 100000000, 160000000, 240000000, 240000000, 480000000, 800000000 } };
 
+#ifndef PCC_HM_UNPATCHED
 }  // namespace pcc_hm
+#endif
 
 static const struct MapStrToCostMode {
   const TChar *str;
@@ -549,6 +584,24 @@ static inline istream &operator>>( std::istream &in, PCCHMLibVideoEncoderCfg::Op
 #endif
 //}  // namespace pcc_hm
 
+#ifdef PCC_HM_UNPATCHED
+static inline istream &operator>>( istream &in, CostMode &mode ) {
+  return readStrToEnum( strToCostMode, sizeof( strToCostMode ) / sizeof( *strToCostMode ), in, mode );
+}
+static inline istream &operator>>( istream &in, ScalingListMode &mode ) {
+  return readStrToEnum( strToScalingListMode, sizeof( strToScalingListMode ) / sizeof( *strToScalingListMode ), in,
+                        mode );
+}
+namespace Level {
+static inline istream &operator>>( istream &in, Tier &tier ) {
+  return readStrToEnum( strToTier, sizeof( strToTier ) / sizeof( *strToTier ), in, tier );
+}
+
+static inline istream &operator>>( istream &in, Name &level ) {
+  return readStrToEnum( strToLevel, sizeof( strToLevel ) / sizeof( *strToLevel ), in, level );
+}
+}  // namespace Level
+#else
 namespace pcc_hm {
 
 static inline istream &operator>>( istream &in, CostMode &mode ) {
@@ -568,6 +621,7 @@ static inline istream &operator>>( istream &in, Name &level ) {
 }
 }  // namespace Level
 }  // namespace pcc_hm
+#endif
 
 static Void automaticallySelectRExtProfile( const Bool         bUsingGeneralRExtTools,
                                             const Bool         bUsingChromaQPAdjustment,
@@ -863,9 +917,9 @@ Bool PCCHMLibVideoEncoderCfg::parseCfg( Int argc, TChar *argv[] ) {
   ("IntraPeriod,-ip",                                 m_iIntraPeriod,                                      -1, "Intra period in frames, (-1: only first frame)")
   ("DecodingRefreshType,-dr",                         m_iDecodingRefreshType,                               0, "Intra refresh type (0:none 1:CRA 2:IDR 3:RecPointSEI)")
   ("GOPSize,g",                                       m_iGOPSize,                                           1, "GOP size of temporal structure")
-#if JCTVC_Y0038_PARAMS
+#if JCTVC_Y0038_PARAMS || defined(PCC_HM_UNPATCHED)
   ("ReWriteParamSetsFlag",                            m_bReWriteParamSetsFlag,                           true, "Enable rewriting of Parameter sets before every (intra) random access point")
-#endif 
+#endif
 
   // motion search options
   ("DisableIntraInInter",                             m_bDisableIntraPUsInInterSlices,                  false, "Flag to disable intra PUs in inter slices")
@@ -901,6 +955,10 @@ Bool PCCHMLibVideoEncoderCfg::parseCfg( Int argc, TChar *argv[] ) {
 #endif
 #if X0038_LAMBDA_FROM_QP_CAPABILITY
   ("IntraQPOffset",                                   m_intraQPOffset,                                      0, "Qp offset value for intra slice, typically determined based on GOP size")
+  ("LambdaFromQpEnable",                              m_lambdaFromQPEnable,                             false, "Enable flag for derivation of lambda from QP")
+#elif defined( PCC_HM_UNPATCHED )
+  // HM-18.0 uses IntraQPOffset unconditionally; register so the default 0 is applied.
+  ("IntraQPOffset",                                   m_intraQPOffset,                                      0, "Qp offset value for intra slice")
   ("LambdaFromQpEnable",                              m_lambdaFromQPEnable,                             false, "Enable flag for derivation of lambda from QP")
 #endif
   ("DeltaQpRD,-dqr",                                  m_uiDeltaQpRD,                                       0u, "max dQp offset for slice")
@@ -1459,11 +1517,11 @@ Bool PCCHMLibVideoEncoderCfg::parseCfg( Int argc, TChar *argv[] ) {
       m_onePictureOnlyConstraintFlag = false;
       break;
     case UI_MAINSCC:
-      m_profile                      = Profile::MAINSCC;
+      m_profile                      = kProfileMainScc;
       m_onePictureOnlyConstraintFlag = false;
       break;
     case UI_HIGHTHROUGHPUTSCC:
-      m_profile                      = Profile::HIGHTHROUGHPUTSCC;
+      m_profile                      = kProfileHighThroughputScc;
       m_onePictureOnlyConstraintFlag = false;
       break;
     default:
@@ -1505,7 +1563,7 @@ Bool PCCHMLibVideoEncoderCfg::parseCfg( Int argc, TChar *argv[] ) {
           default: tmpConstraintChromaFormat = 444; break;
         }
       } else if ( UIProfile >= 121108 && UIProfile <= 221314 ) {
-        m_profile = Profile::MAINSCC;
+        m_profile = kProfileMainScc;
         if ( m_bitDepthConstraint != 0 || tmpConstraintChromaFormat != 0 ) {
           fprintf( stderr,
                    "Error: The bit depth and chroma format constraints are not "
@@ -1534,7 +1592,10 @@ Bool PCCHMLibVideoEncoderCfg::parseCfg( Int argc, TChar *argv[] ) {
 
   switch ( m_profile ) {
     case Profile::HIGHTHROUGHPUTREXT:
-    case Profile::HIGHTHROUGHPUTSCC: {
+#ifndef PCC_HM_UNPATCHED
+    case kProfileHighThroughputScc:
+#endif
+    {
       if ( m_bitDepthConstraint == 0 ) { m_bitDepthConstraint = 16; }
       m_chromaFormatConstraint =
           ( tmpConstraintChromaFormat == 0 ) ? CHROMA_444 : numberToChromaFormat( tmpConstraintChromaFormat );
@@ -1581,7 +1642,8 @@ Bool PCCHMLibVideoEncoderCfg::parseCfg( Int argc, TChar *argv[] ) {
         m_chromaFormatConstraint = numberToChromaFormat( tmpConstraintChromaFormat );
       }
     } break;
-    case Profile::MAINSCC: {
+#ifndef PCC_HM_UNPATCHED
+    case kProfileMainScc: {
       if ( m_bitDepthConstraint == 0 && tmpConstraintChromaFormat == 0 ) {
         int tmpMaximumBitDepth = m_chromaFormatIDC == CHROMA_400 ? m_internalBitDepth[CHANNEL_TYPE_LUMA]
                                                                  : std::max( m_internalBitDepth[CHANNEL_TYPE_LUMA],
@@ -1608,6 +1670,7 @@ Bool PCCHMLibVideoEncoderCfg::parseCfg( Int argc, TChar *argv[] ) {
         m_chromaFormatConstraint = numberToChromaFormat( tmpConstraintChromaFormat );
       }
     } break;
+#endif  // PCC_HM_UNPATCHED
     case Profile::MAIN:
     case Profile::MAIN10:
     case Profile::MAINSTILLPICTURE:
@@ -2024,18 +2087,20 @@ Void PCCHMLibVideoEncoderCfg::xCheckParameter() {
   switch ( m_profile ) {
     case Profile::MAINREXT:
     case Profile::HIGHTHROUGHPUTREXT:
-    case Profile::MAINSCC:
-    case Profile::HIGHTHROUGHPUTSCC: {
+#ifndef PCC_HM_UNPATCHED
+    case kProfileMainScc:
+    case kProfileHighThroughputScc:
+#endif
+    {
       xConfirmPara( m_lowerBitRateConstraintFlag == false && m_intraConstraintFlag == false,
                     "The lowerBitRateConstraint flag cannot be false when "
                     "intraConstraintFlag is false" );
       xConfirmPara( m_cabacBypassAlignmentEnabledFlag && m_profile != Profile::HIGHTHROUGHPUTREXT,
                     "AlignCABACBeforeBypass must not be enabled unless the high "
                     "throughput profile is being used." );
-      xConfirmPara(
-          m_useIntraBlockCopy && !( m_profile == Profile::MAINSCC || m_profile == Profile::HIGHTHROUGHPUTSCC ),
-          "UseIntraBlockCopy must not be enabled unless the SCC profile is "
-          "being used." );
+      xConfirmPara( m_useIntraBlockCopy && !( m_profile == kProfileMainScc || m_profile == kProfileHighThroughputScc ),
+                    "UseIntraBlockCopy must not be enabled unless the SCC profile is "
+                    "being used." );
       if ( m_profile == Profile::MAINREXT ) {
         const UInt intraIdx = m_intraConstraintFlag ? 1 : 0;
         const UInt bitDepthIdx =
@@ -2093,7 +2158,7 @@ Void PCCHMLibVideoEncoderCfg::xCheckParameter() {
                    "************************************************************"
                    "********************************************\n" );
         }
-      } else if ( m_profile == Profile::MAINSCC || m_profile == Profile::HIGHTHROUGHPUTSCC ) {
+      } else if ( m_profile == kProfileMainScc || m_profile == kProfileHighThroughputScc ) {
         xConfirmPara( m_intraConstraintFlag, "intra constraint flag must be 0 for SCC profiles" );
         xConfirmPara( m_onePictureOnlyConstraintFlag, "one-picture-only constraint flag shall be 0 for SCC profiles" );
 
@@ -2312,7 +2377,7 @@ Void PCCHMLibVideoEncoderCfg::xCheckParameter() {
 
     m_useColourTrans = false;
   }
-  if ( m_useColourTrans && !( m_profile == Profile::MAINSCC || m_profile == Profile::HIGHTHROUGHPUTSCC ) ) {
+  if ( m_useColourTrans && !( m_profile == kProfileMainScc || m_profile == kProfileHighThroughputScc ) ) {
     fprintf( stderr,
              "******************************************************************"
              "*********\n" );
@@ -2343,7 +2408,7 @@ Void PCCHMLibVideoEncoderCfg::xCheckParameter() {
     m_useColourTrans = false;
   }
 
-  if ( m_usePaletteMode && !( m_profile == Profile::MAINSCC || m_profile == Profile::HIGHTHROUGHPUTSCC ) ) {
+  if ( m_usePaletteMode && !( m_profile == kProfileMainScc || m_profile == kProfileHighThroughputScc ) ) {
     fprintf( stderr,
              "******************************************************************"
              "*********\n" );
@@ -3475,14 +3540,18 @@ Void PCCHMLibVideoEncoderCfg::xPrintParameter() {
   fflush( stdout );
 }
 
+#ifndef PCC_HM_UNPATCHED
 namespace pcc_hm {
+#endif
 Bool confirmPara( Bool bflag, const TChar *message ) {
   if ( !bflag ) { return false; }
 
   printf( "Error: %s\n", message );
   return true;
 }
+#ifndef PCC_HM_UNPATCHED
 }  // namespace pcc_hm
+#endif
 
 //! \}
 

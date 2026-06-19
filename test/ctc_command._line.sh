@@ -1,16 +1,17 @@
-  
+HM_VERSION=${HM_VERSION:-HM-16.20+SCM-8.8}
+
 ENCODER="\
   --configurationFolder=./cfg/ \
   --colorSpaceConversionPath=./HDRTools/bin/HDRConvert\
-  --videoEncoderPath=./HM-16.20+SCM-8.8/bin/TAppEncoderHighBitDepthStatic \
-  --videoEncoderAuxPath=./HM-16.20+SCM-8.8/bin/TAppEncoderHighBitDepthStatic \
-  --videoEncoderOccupancyMapPath=./HM-16.20+SCM-8.8/bin/TAppEncoderHighBitDepthStatic \
+  --videoEncoderPath=./${HM_VERSION}/bin/TAppEncoderHighBitDepthStatic \
+  --videoEncoderAuxPath=./${HM_VERSION}/bin/TAppEncoderHighBitDepthStatic \
+  --videoEncoderOccupancyMapPath=./${HM_VERSION}/bin/TAppEncoderHighBitDepthStatic \
   --colorTransform=0 \
   --nbThread=1 \
   --uncompressedDataFolder=./mpeg_datasets/CfP/datasets/Dynamic_Objects/People/ ";
 
 DECODER="\
-  --videoDecoderPath=./HM-16.20+SCM-8.8/bin/TAppDecoderHighBitDepthStatic \
+  --videoDecoderPath=./${HM_VERSION}/bin/TAppDecoderHighBitDepthStatic \
   --colorSpaceConversionPath=./HDRTools/bin/HDRConvert \
   --inverseColorSpaceConversionConfig=./cfg/hdrconvert/yuv420toyuv444_16bit.cfg \
   --nbThread=1 \
@@ -259,7 +260,7 @@ DECODER="\
   --startFrameNumber=0000 \
   --compressedStreamPath=S22C2AI_queen/S22C2AIR01_queen.bin \
   --inverseColorSpaceConversionConfig=./cfg/hdrconvert/yuv420toyuv444_16bit.cfg \
-  --videoDecoderOccupancyMapPath=./HM-16.20+SCM-8.8/bin/TAppDecoderHighBitDepthStatic \
+  --videoDecoderOccupancyMapPath=./${HM_VERSION}/bin/TAppDecoderHighBitDepthStatic \
   --colorTransform=0 > S22C2AI_queen/S22C2AIR01_queen_decoder.log 
 
 ./bin/PccAppEncoder \
@@ -278,7 +279,7 @@ DECODER="\
   --startFrameNumber=0000 \
   --compressedStreamPath=S22C2AI_queen/S22C2AIR02_queen.bin \
   --inverseColorSpaceConversionConfig=./cfg/hdrconvert/yuv420toyuv444_16bit.cfg \
-  --videoDecoderOccupancyMapPath=./HM-16.20+SCM-8.8/bin/TAppDecoderHighBitDepthStatic \
+  --videoDecoderOccupancyMapPath=./${HM_VERSION}/bin/TAppDecoderHighBitDepthStatic \
   --colorTransform=0 > S22C2AI_queen/S22C2AIR02_queen_decoder.log 
 
 ./bin/PccAppEncoder \

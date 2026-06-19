@@ -15,8 +15,8 @@ if [ "$#" -gt "0" ]
 then 
   if [ "$1" == "hm" ] || [ "$1" == "all" ]
   then 
-    echo -e "\033[0;32mClean: ${CURDIR}/dependencies/HM-16.20+SCM-8.8 \033[0m";
-    rm -rf "${CURDIR}/dependencies/HM-16.20+SCM-8.8";
+    echo -e "\033[0;32mClean: ${CURDIR}/dependencies/HM-* \033[0m";
+    rm -rf "${CURDIR}"/dependencies/HM-*;
   fi
   if [ "$1" == "shm" ] || [ "$1" == "all" ]
   then 

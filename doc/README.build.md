@@ -84,13 +84,17 @@ The video encoder softwares and libraries can be found in the corresponding repo
 * VTM: https://vcgit.hhi.fraunhofer.de/jvet/VVCSoftware_VTM.git
 * SHM: https://vcgit.hhi.fraunhofer.de/jvet/SHM.git
 
-Some changes have been made on these libraries to allow to use the three libraries at the same time and to increase the codec efficiencies for the V3C contents. the three codecs must be patch with the files:
+Some changes have been made on these libraries to allow to use the three libraries at the same time and to increase the codec efficiencies for the V3C contents. The three codecs must be patched with the files:
 
 * JM: dependencies/jm-modification/PCC_JM.patch
-* HM: dependencies/hm-modification/pcc_me-ext_and_namespace_for_HM-16.20+SCM-8.8.patch
+* HM: dependencies/hm-modification/<HM_VERSION>.patch
 * VTM: dependencies/vtm-modification/adaptions_for_vtm_11_2.patch
 
-By default according the the CMake options, the dependencies are cloned and patched by the cmake process. 
+By default according the the CMake options, the dependencies are cloned and patched by the cmake process.
+For HM, CMake uses `HM_VERSION` (default: `HM-16.20+SCM-8.8`) and applies one of:
+
+* dependencies/hm-modification/<HM_VERSION>.patch
+* dependencies/hm-modification/<HM_VERSION>_with_RDO.patch (when `USE_HM_PCC_RDO=ON`)
  
 The external dependencies could be downloaded, built and linked independenly.
 
@@ -105,12 +109,22 @@ JM:
 
 HM: 
 ```console
+   $ HM_VERSION=HM-16.20+SCM-8.8
    $ git clone checkout \
        https://vcgit.hhi.fraunhofer.de/jvet/HM.git \
-       dependencies/HM-16.20+SCM-8.8
-   $ cd dependencies/HM-16.20+SCM-8.8
-   $ git patch ../hm-modification/\
-               pcc_me-ext_and_namespace_for_HM-16.20+SCM-8.8.patch
+       dependencies/${HM_VERSION}
+   $ cd dependencies/${HM_VERSION}
+   $ git apply ../hm-modification/${HM_VERSION}.patch --whitespace=nowarn
+```
+
+To test another HM baseline during migration:
+```console
+   $ cmake -S . -B build -DHM_VERSION=HM-18.0
+```
+
+For bootstrap configuration before patch porting:
+```console
+   $ cmake -S . -B build -DHM_VERSION=HM-18.0 -DHM_SKIP_PATCH=ON
 ```
 
 VTM: 

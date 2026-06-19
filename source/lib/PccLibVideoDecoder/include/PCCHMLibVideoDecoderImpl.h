@@ -37,6 +37,10 @@
 
 #ifdef USE_HMLIB_VIDEO_CODEC
 
+#ifdef PCC_HM_UNPATCHED
+#define pcc_hm
+#endif
+
 #include "PCCVideo.h"
 #include "PCCVideoBitstream.h"
 
@@ -73,6 +77,10 @@ class PCCHMLibVideoDecoderImpl {
 
 };  // namespace pcc
 
+#endif
+
+#ifdef PCC_HM_UNPATCHED
+#undef pcc_hm
 #endif
 
 #endif /* PCCVirtualVideoDecoder_h */

@@ -37,6 +37,10 @@
 
 #ifdef USE_HMLIB_VIDEO_CODEC
 
+#ifdef PCC_HM_UNPATCHED
+#define pcc_hm
+#endif
+
 #include "TLibCommon/CommonDef.h"
 
 #include "TLibEncoder/TEncCfg.h"
@@ -51,7 +55,9 @@
 // ====================================================================================================================
 // Class definition
 // ====================================================================================================================
+#ifndef PCC_HM_UNPATCHED
 using namespace pcc_hm;
+#endif
 
 /// encoder configuration class
 class PCCHMLibVideoEncoderCfg {
@@ -178,7 +184,7 @@ class PCCHMLibVideoEncoderCfg {
   Int m_iIntraPeriod;          ///< period of I-slice (random access period)
   Int m_iDecodingRefreshType;  ///< random access type
   Int m_iGOPSize;              ///< GOP size of hierarchical structure
-#if JCTVC_Y0038_PARAMS
+#if JCTVC_Y0038_PARAMS || defined( PCC_HM_UNPATCHED )
   Bool m_bReWriteParamSetsFlag;  ///< Flag to enable rewriting of parameter sets
                                  /// at random access points
 #endif
@@ -233,6 +239,11 @@ class PCCHMLibVideoEncoderCfg {
 #if X0038_LAMBDA_FROM_QP_CAPABILITY
   Int  m_intraQPOffset;       ///< QP offset for intra slice (integer)
   Bool m_lambdaFromQPEnable;  ///< enable flag for QP:lambda fix
+#elif defined( PCC_HM_UNPATCHED )
+  // HM-18.0 always has these fields; keep them unconditionally so that
+  // xInitLibCfg can always forward the parsed values to TEncCfg.
+  Int  m_intraQPOffset;
+  Bool m_lambdaFromQPEnable;
 #endif
   std::string m_dQPFileName;         ///< QP offset for each slice (initialized from
                                      /// external file)
@@ -721,6 +732,10 @@ class PCCHMLibVideoEncoderCfg {
 };  // END CLASS DEFINITION PCCHMLibVideoEncoderCfg
 
 //! \}
+#endif
+
+#ifdef PCC_HM_UNPATCHED
+#undef pcc_hm
 #endif
 
 #endif  // __TAPPENCCFG__

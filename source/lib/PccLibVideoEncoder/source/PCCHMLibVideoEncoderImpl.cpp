@@ -35,11 +35,16 @@
 #include "PCCLogger.h"
 
 #ifdef USE_HMLIB_VIDEO_CODEC
+#ifdef PCC_HM_UNPATCHED
+#define pcc_hm
+#endif
 
 #include "PCCHMLibVideoEncoderImpl.h"
 
 using namespace pcc;
+#ifndef PCC_HM_UNPATCHED
 using namespace pcc_hm;
+#endif
 
 /// encoder application class
 
@@ -149,12 +154,33 @@ Void PCCHMLibVideoEncoderImpl<T>::encode( PCCVideo<T, 3>    &videoSrc,
     bEos = ( m_isField && ( m_iFrameRcvd == ( m_framesToBeEncoded >> 1 ) ) ) ||
            ( !m_isField && ( m_iFrameRcvd == m_framesToBeEncoded ) );
     // call encoding function for one frame
+#ifdef PCC_HM_UNPATCHED
+    // HM-18: encode takes ipCSC+snrCSC explicitly; field uses Bool isTff.
+    // When JVET_X0048_X0103_FILM_GRAIN is defined (HM-18.0), the non-field
+    // encode overload gains an extra TComPicYuv* pcfilteredOrgPicForFG arg
+    // that would otherwise cause the call to silently resolve to the field
+    // overload.  Pass nullptr — film grain analysis is disabled.
+    if ( m_isField ) {
+      m_cTEncTop.encode( bEos, pcPicYuvOrg, &cPicYuvTrueOrg, ipCSC, snrCSC, m_cListPicYuvRec, outputAccessUnits,
+                         iNumEncoded, m_isTopFieldFirst );
+    } else {
+#if JVET_X0048_X0103_FILM_GRAIN
+      m_cTEncTop.encode( bEos, pcPicYuvOrg, &cPicYuvTrueOrg, static_cast<TComPicYuv *>( nullptr ), ipCSC, snrCSC,
+                         m_cListPicYuvRec, outputAccessUnits, iNumEncoded );
+#else
+      m_cTEncTop.encode( bEos, pcPicYuvOrg, &cPicYuvTrueOrg, ipCSC, snrCSC, m_cListPicYuvRec, outputAccessUnits,
+                         iNumEncoded );
+#endif
+    }
+#else
+    // HM-16: snrCSC is a separate parameter passed before the list
     if ( m_isField ) {
       m_cTEncTop.encode( bEos, pcPicYuvOrg, &cPicYuvTrueOrg, snrCSC, m_cListPicYuvRec, outputAccessUnits, iNumEncoded,
                          m_isTopFieldFirst );
     } else {
       m_cTEncTop.encode( bEos, pcPicYuvOrg, &cPicYuvTrueOrg, snrCSC, m_cListPicYuvRec, outputAccessUnits, iNumEncoded );
     }
+#endif
     // write bistream to file if necessary
     if ( iNumEncoded > 0 ) {
       xWriteOutput( bitstreamFile, iNumEncoded, outputAccessUnits, videoRec );
@@ -217,7 +243,9 @@ Void PCCHMLibVideoEncoderImpl<T>::xInitLibCfg() {
   m_cTEncTop.setPrintHexPsnr( m_printHexPsnr );
   m_cTEncTop.setPrintFrameMSE( m_printFrameMSE );
   m_cTEncTop.setPrintSequenceMSE( m_printSequenceMSE );
+#ifndef PCC_HM_UNPATCHED
   m_cTEncTop.setPrintClippedPSNR( m_printClippedPSNR );
+#endif
 #if JVET_F0064_MSSSIM
   m_cTEncTop.setPrintMSSSIM( m_printMSSSIM );
 #endif
@@ -258,8 +286,18 @@ Void PCCHMLibVideoEncoderImpl<T>::xInitLibCfg() {
 #if X0038_LAMBDA_FROM_QP_CAPABILITY
   m_cTEncTop.setIntraQPOffset( m_intraQPOffset );
   m_cTEncTop.setLambdaFromQPEnable( m_lambdaFromQPEnable );
-#endif
+#elif defined( PCC_HM_UNPATCHED )
+  // HM-18.0 exposes these setters unconditionally (not behind X0038_LAMBDA).
+  // Always forward the parsed values so that --QP is applied correctly.
+  m_cTEncTop.setIntraQPOffset( m_intraQPOffset );
+  m_cTEncTop.setLambdaFromQPEnable( m_lambdaFromQPEnable );
+
+  // HM-18.0 path: propagate padding as source padding.
+  // This keeps behavior aligned with HM-16 path where padding is forwarded.
+  m_cTEncTop.setSourcePadding( m_aiPad );
+#else
   m_cTEncTop.setPad( m_aiPad );
+#endif
   m_cTEncTop.setAccessUnitDelimiter( m_AccessUnitDelimiter );
   m_cTEncTop.setMaxTempLayer( m_maxTempLayer );
   m_cTEncTop.setUseAMP( m_enableAMP );
@@ -386,7 +424,11 @@ Void PCCHMLibVideoEncoderImpl<T>::xInitLibCfg() {
 #if ADD_RESET_ENCODER_DECISIONS_AFTER_IRAP
   m_cTEncTop.setResetEncoderStateAfterIRAP( m_resetEncoderStateAfterIRAP );
 #else
+#ifdef PCC_HM_UNPATCHED
+  m_cTEncTop.setResetEncoderStateAfterIRAP( m_saoResetEncoderStateAfterIRAP );
+#else
   m_cTEncTop.setSaoResetEncoderStateAfterIRAP( m_saoResetEncoderStateAfterIRAP );
+#endif
 #endif
   m_cTEncTop.setPCMInputBitDepthFlag( m_bPCMInputBitDepthFlag );
   m_cTEncTop.setPCMFilterDisableFlag( m_bPCMFilterDisableFlag );
@@ -610,6 +652,7 @@ Void PCCHMLibVideoEncoderImpl<T>::xInitLibCfg() {
   m_cTEncTop.setSummaryVerboseness( m_summaryVerboseness );
 
   // SCM new added variables
+#ifndef PCC_HM_UNPATCHED
   m_cTEncTop.setUseIntraBlockCopy( m_useIntraBlockCopy );
   m_cTEncTop.setUseIntraBlockCopyFastSearch( m_intraBlockCopyFastSearch );
   m_cTEncTop.setUseHashBasedIntraBCSearch( m_useHashBasedIntraBlockCopySearch );
@@ -631,6 +674,7 @@ Void PCCHMLibVideoEncoderImpl<T>::xInitLibCfg() {
   m_cTEncTop.setPaletteMaxPredSize( m_paletteMaxPredSize );
   m_cTEncTop.setPalettePredInSPSEnabled( m_palettePredInSPSEnabled );
   m_cTEncTop.setPalettePredInPPSEnabled( m_palettePredInPPSEnabled );
+#endif
 }
 
 template <typename T>
@@ -796,4 +840,8 @@ Void PCCHMLibVideoEncoderImpl<T>::xReadPicture( TComPicYuv *pic, PCCVideo<T, 3> 
 template class pcc::PCCHMLibVideoEncoderImpl<uint8_t>;
 template class pcc::PCCHMLibVideoEncoderImpl<uint16_t>;
 
+#endif
+
+#ifdef PCC_HM_UNPATCHED
+#undef pcc_hm
 #endif

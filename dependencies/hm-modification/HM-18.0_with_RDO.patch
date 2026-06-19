@@ -1,0 +1,110 @@
+diff --git a/source/Lib/TLibEncoder/TEncCfg.h b/source/Lib/TLibEncoder/TEncCfg.h
+index 07886af..50a7884 100644
+--- a/source/Lib/TLibEncoder/TEncCfg.h
++++ b/source/Lib/TLibEncoder/TEncCfg.h
+@@ -577,6 +577,91 @@ public:
+   {
+     m_PCMBitDepth[CHANNEL_TYPE_LUMA]=8;
+     m_PCMBitDepth[CHANNEL_TYPE_CHROMA]=8;
++    // Zero-initialize all Bool/flag fields that are new in HM-18.0 and are
++    // never set by the PCC wrapper (written for HM-16.20).  Without this,
++    // uninitialized stack garbage causes HM to enter SEI / XPSNR / temporal-
++    // filter code paths that crash at runtime.
++
++    // Logging / PSNR variant flags (xInitLibCfg #if guards fail for HM-18.0)
++    m_printMSEBasedSequencePSNR  = false;
++    m_printHexPsnr               = false;
++    m_printFrameMSE              = false;
++    m_printSequenceMSE           = false;
++    m_printMSSSIM                = false;
++    m_bXPSNREnableFlag           = false;
++    for (Int i = 0; i < MAX_NUM_COMPONENT; i++) { m_dXPSNRWeight[i] = 0.0; }
++
++    // Source padding (used inside the XPSNR width/height calculation)
++    m_sourcePadding[0] = 0;
++    m_sourcePadding[1] = 0;
++
++    // Intra QP offset and lambda-from-QP flag: these are set by xInitLibCfg
++    // only under #if X0038_LAMBDA_FROM_QP_CAPABILITY which is undefined in
++    // HM-18.0.  Without this, m_intraQPOffset stays as garbage and gets added
++    // to the base QP, producing absurd slice QPs (e.g. 5 + 46 garbage = 51).
++    m_intraQPOffset    = 0;
++    m_lambdaFromQPEnable = 0;
++
++    // GOP-based temporal filter (new in HM-18.0)
++    m_gopBasedTemporalFilterEnabled = false;
++
++    // Smooth QP reduction for very smooth blocks (JVET_V0078).
++    // The PCC wrapper does not call setSmoothQPReduction*(), so these stay at
++    // whatever is on the stack unless we zero them here.  If
++    // m_bSmoothQPReductionEnable is garbage-true, HM enables per-CTU delta-QP
++    // using the also-uninitialized model scale / offset / limit, producing
++    // wildly wrong CTU QPs (e.g. +46) → low PSNR and low bitrate.  Lossless
++    // encoding is immune because COST_LOSSLESS_CODING forces bUseDQP=false.
++    m_bSmoothQPReductionEnable      = false;
++    m_dSmoothQPReductionThreshold   = 0.0;
++    m_dSmoothQPReductionModelScale  = 0.0;
++    m_dSmoothQPReductionModelOffset = 0.0;
++    m_iSmoothQPReductionLimit       = 0;
++    m_iSmoothQPReductionPeriodicity = 0;
++
++    // Block Importance Mapping (JVET_Y0077_BIM) – same risk as smoothQP above.
++    m_bimEnabled = false;
++
++    // Content Colour Volume SEI (CCV_SEI_MESSAGE not defined => never set by xInitLibCfg)
++    m_ccvSEIEnabled               = false;
++    m_ccvSEICancelFlag            = true;
++    m_ccvSEIPersistenceFlag       = false;
++    m_ccvSEIPrimariesPresentFlag  = false;
++    m_ccvSEIMinLuminanceValuePresentFlag = false;
++    m_ccvSEIMaxLuminanceValuePresentFlag = false;
++    m_ccvSEIAvgLuminanceValuePresentFlag = false;
++
++    // Film Grain Characteristics SEI (JVET_X0048_X0103_FILM_GRAIN defined but
++    // xInitLibCfg has no corresponding block for it)
++    m_fgcSEIEnabled              = false;
++    m_fgcSEICancelFlag           = true;
++    m_fgcSEIPersistenceFlag      = false;
++    m_fgcSEISepColourDescPresentFlag = false;
++#if JVET_X0048_X0103_FILM_GRAIN
++    m_fgcSEIAnalysisEnabled      = false;  // prevents nullptr deref in TEncTop::encode
++    m_fgcSEIPerPictureSEI        = false;
++#endif
++
++    // Shutter Interval Info SEI
++    m_siiSEIEnabled = false;
++
++    // SEI Manifest / SEI Prefix Indication (JCTVC_AD0021 — new in HM-18.0,
++    // never set by the PCC xInitLibCfg which was written for HM-16.20)
++#if JCTVC_AD0021_SEI_MANIFEST
++    m_SEIManifestSEIEnabled       = false;
++#endif
++#if JCTVC_AD0021_SEI_PREFIX_INDICATION
++    m_SEIPrefixIndicationSEIEnabled = false;
++#endif
++
++    // ERP / Sphere-rotation / Omni-viewport / CMP / RWP / FVI SEI
++    // (ERP_SR_OV_SEI_MESSAGE / CMP_SEI_MESSAGE / RWP_SEI_MESSAGE not defined)
++    m_erpSEIEnabled            = false;
++    m_sphereRotationSEIEnabled = false;
++    m_omniViewportSEIEnabled   = false;
++    m_cmpSEIEnabled            = false;
++    m_rwpSEIEnabled            = false;
++    m_fviSEIEnabled            = false;
+   }
+ 
+   virtual ~TEncCfg()
+diff --git a/source/Lib/TLibEncoder/TEncSlice.cpp b/source/Lib/TLibEncoder/TEncSlice.cpp
+index 6f83680..0f8658c 100644
+--- a/source/Lib/TLibEncoder/TEncSlice.cpp
++++ b/source/Lib/TLibEncoder/TEncSlice.cpp
+@@ -176,7 +176,8 @@ Void TEncSlice::initEncSlice( TComPic* pcPic, const Int pocLast, const Int pocCu
+     Int poc = rpcSlice->getPOC();
+     if(isField)
+     {
+-      poc = (poc/2) % (m_pcCfg->getGOPSize()/2);
++      Int fieldGopSize = m_pcCfg->getGOPSize() / 2;
++      poc = (fieldGopSize > 0) ? ((poc/2) % fieldGopSize) : 0;
+     }
+     else
+     {

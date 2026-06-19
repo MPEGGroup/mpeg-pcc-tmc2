@@ -37,6 +37,10 @@
 #include "PCCCommon.h"
 
 #ifdef USE_HMLIB_VIDEO_CODEC
+
+#ifdef PCC_HM_UNPATCHED
+#define pcc_hm
+#endif
 #include "PCCVideo.h"
 #include "PCCVideoBitstream.h"
 
@@ -56,11 +60,17 @@
 #if EXTENSION_360_VIDEO
 #include "TAppEncHelper360/TExt360AppEncTop.h"
 #endif
+#if __has_include( "TAppCommon/program_options_lite.h" )
 #include "TAppCommon/program_options_lite.h"
+#else
+#include "Utilities/program_options_lite.h"
+#endif
 
 namespace pcc {
 
+#ifndef PCC_HM_UNPATCHED
 using namespace pcc_hm;
+#endif
 
 // ====================================================================================================================
 // Class definition
@@ -113,6 +123,10 @@ class PCCHMLibVideoEncoderImpl : public PCCHMLibVideoEncoderCfg {
 
 }  // namespace pcc
 
+#endif
+
+#ifdef PCC_HM_UNPATCHED
+#undef pcc_hm
 #endif
 
 #endif  //~__PCCHMLibVideoEncoderImpl_H__

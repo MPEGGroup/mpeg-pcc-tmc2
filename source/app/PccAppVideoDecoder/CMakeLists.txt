@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.2)
+cmake_minimum_required(VERSION 3.5)
 
 get_filename_component(MYNAME ${CMAKE_CURRENT_LIST_DIR} NAME)
 string(REPLACE " " "_" MYNAME ${MYNAME})

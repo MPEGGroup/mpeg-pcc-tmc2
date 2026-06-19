@@ -45,14 +45,33 @@ The video encoder softwares and libraries can be found in the corresponding repo
   - VTM: https://vcgit.hhi.fraunhofer.de/jvet/VVCSoftware_VTM.git
   - SHM: https://vcgit.hhi.fraunhofer.de/jvet/SHM.git
 
-Some changes have been made on these libraries to allow to use the three libraries at the same time and to increase the codec efficiencies for the V3C contents. the three codecs must be patch with the files:
+Some changes have been made on these libraries to allow to use the three libraries at the same time and to increase the codec efficiencies for the V3C contents. The three codecs must be patched with the files:
 
   - JM: dependencies/jm-modification/PCC_JM.patch
-  - HM: dependencies/hm-modification/pcc_me-ext_and_namespace_for_HM-16.20+SCM-8.8.patch
+	- HM: dependencies/hm-modification/<HM_VERSION>.patch
   - VTM: dependencies/vtm-modification/adaptions_for_vtm_11_2.patch
 
-By default according the the CMake options, the dependencies are cloned and patched by the cmake process. 
- 
+By default according the the CMake options, the dependencies are cloned and patched by the cmake process.
+For HM, CMake uses `HM_VERSION` (default: `HM-16.20+SCM-8.8`) and applies one of:
+
+	- dependencies/hm-modification/<HM_VERSION>.patch
+	- dependencies/hm-modification/<HM_VERSION>_with_RDO.patch (when `USE_HM_PCC_RDO=ON`)
+
+The recommended way to build with a specific HM version is via `build.sh`:
+
+	./build.sh                  # Release build with default HM-16.20+SCM-8.8
+	./build.sh hm=18.0          # Release build with HM-18.0
+	./build.sh debug hm=18.0    # Debug build with HM-18.0
+
+Alternatively, CMake can be invoked directly (build directory must match the mode):
+
+	cmake -S . -B build/Release -DHM_VERSION=HM-18.0
+	cmake --build build/Release --parallel 8
+
+To skip patch application entirely (e.g. to test against a raw, unmodified HM checkout):
+
+	cmake -S . -B build/Release -DHM_VERSION=HM-18.0 -DHM_SKIP_PATCH=ON
+
 The external dependencies could be downloaded, built and linked independenly: 
 
 - JM:
@@ -62,10 +81,11 @@ The external dependencies could be downloaded, built and linked independenly:
    git patch ../jm-modification/PCC_JM.patch
 
 - HM:
-   
-   git clone checkout  https://vcgit.hhi.fraunhofer.de/jvet/HM.git dependencies/HM-16.20+SCM-8.8
-   cd dependencies/HM-16.20+SCM-8.8
-   git patch ../hm-modification/pcc_me-ext_and_namespace_for_HM-16.20+SCM-8.8.patch
+
+	HM_VERSION=HM-16.20+SCM-8.8
+	git clone --depth 1 --branch ${HM_VERSION} https://vcgit.hhi.fraunhofer.de/jvet/HM.git dependencies/${HM_VERSION}
+	cd dependencies/${HM_VERSION}
+	git apply ../hm-modification/${HM_VERSION}.patch --whitespace=nowarn
 
 - VTM:
 
@@ -144,7 +164,7 @@ Further help text describing option usage is available using "./bin/PccAppEncode
 	--config=cfg/rate/ctc-r3.cfg \
 	--uncompressedDataFolder=~/mpeg_datasets/CfP/datasets/Dynamic_Objects/People/ \
 	--frameCount=1 \
-	--videoEncoderPath=../external/HM-16.16/bin/TAppEncoderStatic \
+	--videoEncoderPath=../external/HM-<version>/bin/TAppEncoderStatic \
 	--colorSpaceConversionPath=../external/HDRTools/bin/HDRConvert \
 	--reconstructedDataPath=S26C03R03_rec_%04d.ply \
 	--compressedStreamPath=S26C03R03.bin 
@@ -155,7 +175,7 @@ Further help text describing option usage is available using "./bin/PccAppEncode
 ```
 ./bin/PccAppDecoder \
 	--compressedStreamPath=S26C03R03.bin \
-	--videoDecoderPath=../external/HM-16.16/bin/TAppDecoderStatic \
+	--videoDecoderPath=../external/HM-<version>/bin/TAppDecoderStatic \
 	--colorSpaceConversionPath=../external/HDRTools/bin/HDRConvert \ 
 	--inverseColorSpaceConversionConfig=cfg/hdrconvert/yuv420torgb444.cfg \
 	--reconstructedDataPath=S26C03R03_dec_%04d.ply 
