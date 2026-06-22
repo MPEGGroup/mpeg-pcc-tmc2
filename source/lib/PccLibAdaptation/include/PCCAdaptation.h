@@ -109,6 +109,9 @@ struct PCCAdaptationParameters {
   /// Enable PCA for DC component of SH (m76858)
   bool gsdPcaDcFlag_ = false;
 
+  /// Enable merging of duplicate positions (m76602)
+  bool enableDuplicateMerging_ = false;
+
   /// Column Transform type
   std::vector<int> shTrTypeCol_;
 
@@ -343,6 +346,34 @@ class PCCAdaptation {
                                           uint32_t                 frameNumber ) const;
 
   // ==================== Individual Operations ====================
+
+  bool              mergeDuplicatePoints( PCCPointSet3                  &output,
+                                          PCCPointSetGS                 &mergedPointCloud,
+                                          const PCCAdaptationParameters &params );
+  void              greedyMergeDuplicateSplats( PCCPointSetGS       &mergedCloud,
+                                                std::vector<size_t> &indices,
+                                                std::vector<double> &weights,
+                                                std::vector<size_t> &toDelete );
+  void              averageRotationScale( GSRotation       &rot1,
+                                          GSScale          &scale1,
+                                          const double     &weight1,
+                                          const GSRotation &rot2,
+                                          const GSScale    &scale2,
+                                          const double     &weight2 );
+  bool              findSimilarGaussians( const PCCPointSetGS       &mergedCloud,
+                                          const std::vector<size_t> &indices,
+                                          const std::vector<double> &weights,
+                                          size_t                    &idx1,
+                                          size_t                    &idx2 );
+  double            gaussianSimilarityMetric( const PCCPointSetGS       &input,
+                                              const std::vector<size_t> &indices,
+                                              const std::vector<double> &weights,
+                                              const size_t               i,
+                                              const size_t               j );
+  PCCMatrix3<float> computeCovariance3D( GSRotation quat, GSScale scale );
+  PCCMatrix3<float> quatToRotation( GSRotation q );
+  double            importanceWeight( const float &opacity, const GSScale &scale );
+  double            sigmoid( double x );
 
   /// Quantize positions from float to int
   bool quantizePositions( const PCCPointSetGS &input, PCCPointSet3 &output, PCCAdaptationParameters &params );

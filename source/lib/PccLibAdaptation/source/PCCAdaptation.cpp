@@ -42,6 +42,7 @@
 #include <fstream>
 #include <iomanip>
 #include <limits>
+#include <vector>
 #include <sstream>
 
 namespace pcc {
@@ -587,7 +588,7 @@ size_t getAdaptiveBitDepth( const uint32_t maxBitDepth, const PointSetT &input, 
 bool PCCAdaptation::adapt( const PCCPointSetGS     &inputPointCloud,
                            PCCPointSet3            &outputPointCloud,
                            PCCAdaptationParameters &params ) {
-  const size_t pointCount = inputPointCloud.getPointCount();
+  size_t pointCount = inputPointCloud.getPointCount();
   if ( pointCount == 0 ) {
     std::cerr << "PCCAdaptation::adapt - Empty input point cloud" << std::endl;
     return false;
@@ -611,53 +612,62 @@ bool PCCAdaptation::adapt( const PCCPointSetGS     &inputPointCloud,
     }
   }
 
+  PCCPointSetGS mergedPointCloud = inputPointCloud;
+  if ( params.enableDuplicateMerging_ ) {
+    if ( !mergeDuplicatePoints( outputPointCloud, mergedPointCloud, params ) ) {
+      std::cerr << "PCCAdaptation::adapt - Duplicate merging failed" << std::endl;
+      return false;
+    }
+    pointCount = mergedPointCloud.getPointCount();
+  }
+
   // Apply canonical orientation
-  if ( !applyCanonicalOrientation( const_cast<PCCPointSetGS &>( inputPointCloud ) ) ) {
+  if ( !applyCanonicalOrientation( const_cast<PCCPointSetGS &>( mergedPointCloud ) ) ) {
     std::cerr << "PCCAdaptation::adapt - Canonical orientation optimization failed" << std::endl;
     return false;
   }
 
   // Apply rotation quantization
-  if ( params.enableRotationQuantization_ && inputPointCloud.hasRotations() ) {
-    if ( !quantizeRotations( inputPointCloud, outputPointCloud, params ) ) {
+  if ( params.enableRotationQuantization_ && mergedPointCloud.hasRotations() ) {
+    if ( !quantizeRotations( mergedPointCloud, outputPointCloud, params ) ) {
       std::cerr << "PCCAdaptation::adapt - Rotation quantization failed" << std::endl;
       return false;
     }
   }
 
   // Apply scale quantization
-  if ( params.enableScaleQuantization_ && inputPointCloud.hasScales() ) {
-    extractScaleQuantRegions( inputPointCloud, params );
-    if ( !quantizeScales( inputPointCloud, outputPointCloud, params ) ) {
+  if ( params.enableScaleQuantization_ && mergedPointCloud.hasScales() ) {
+    extractScaleQuantRegions( mergedPointCloud, params );
+    if ( !quantizeScales( mergedPointCloud, outputPointCloud, params ) ) {
       std::cerr << "PCCAdaptation::adapt - Scale quantization failed" << std::endl;
       return false;
     }
   }
 
   // Apply opacity quantization
-  if ( params.enableOpacityQuantization_ && inputPointCloud.hasOpacities() ) {
-    if ( params.encodeLinearOpacity_ ) logitToLinearOpacity( const_cast<PCCPointSetGS &>( inputPointCloud ) );
-    extractOpacityQuantRegions( inputPointCloud, params );  // m76122
-    if ( !quantizeOpacities( inputPointCloud, outputPointCloud, params ) ) {
+  if ( params.enableOpacityQuantization_ && mergedPointCloud.hasOpacities() ) {
+    if ( params.encodeLinearOpacity_ ) logitToLinearOpacity( const_cast<PCCPointSetGS &>( mergedPointCloud ) );
+    extractOpacityQuantRegions( mergedPointCloud, params );  // m76122
+    if ( !quantizeOpacities( mergedPointCloud, outputPointCloud, params ) ) {
       std::cerr << "PCCAdaptation::adapt - Opacity quantization failed" << std::endl;
       return false;
     }
   }
 
   // Apply spherical harmonics quantization
-  if ( params.enableShQuantization_ && inputPointCloud.hasSphericalHarmonics() ) {
+  if ( params.enableShQuantization_ && mergedPointCloud.hasSphericalHarmonics() ) {
     if ( params.shMappingMode_ != 2 )
-      reorderSphericalHarmonicsAC( const_cast<PCCPointSetGS &>( inputPointCloud ), true );
+      reorderSphericalHarmonicsAC( const_cast<PCCPointSetGS &>( mergedPointCloud ), true );
     initializeShTransformParams( params );
     if ( params.shConvertToYUV_ || params.gsdTransform2dPresentFlag_ ) {
-      sphericalHarmonicsTransform( const_cast<PCCPointSetGS &>( inputPointCloud ), params );
+      sphericalHarmonicsTransform( const_cast<PCCPointSetGS &>( mergedPointCloud ), params );
     }
 
     if ( params.shMappingMode_ == 2 ) {
-      const size_t pointCount  = inputPointCloud.getPointCount();
-      const size_t shCoefCount = inputPointCloud.getSphericalHarmonicsCount();
+      const size_t pointCount  = mergedPointCloud.getPointCount();
+      const size_t shCoefCount = mergedPointCloud.getSphericalHarmonicsCount();
       const size_t numACCoeff  = shCoefCount - 1;  // 15
-      const auto  &shData      = inputPointCloud.getSphericalHarmonics();
+      const auto  &shData      = mergedPointCloud.getSphericalHarmonics();
 
       std::array<double, 45> mean;
       mean.fill( 0.0 );
@@ -689,12 +699,12 @@ bool PCCAdaptation::adapt( const PCCPointSetGS     &inputPointCloud,
       for ( int j = 0; j < 45; ++j ) { params.shMappingTable_[j] = indices[j]; }
     }
     if ( params.gsdTransform2dPresentFlag_ && params.enableShDimensionReduction_ ) {
-      computeDimensionReductionParams( inputPointCloud, params );
+      computeDimensionReductionParams( mergedPointCloud, params );
     }
 
-    extractSHQuantRegions( inputPointCloud, params );
+    extractSHQuantRegions( mergedPointCloud, params );
 
-    if ( !quantizeSphericalHarmonics( inputPointCloud, outputPointCloud, params ) ) {
+    if ( !quantizeSphericalHarmonics( mergedPointCloud, outputPointCloud, params ) ) {
       std::cerr << "PCCAdaptation::adapt - SH quantization failed" << std::endl;
       return false;
     }
@@ -711,14 +721,14 @@ bool PCCAdaptation::adapt( const PCCPointSetGS     &inputPointCloud,
     }
 
     if ( params.enableAdaptiveShQuantization_ ) {
-      outputPointCloud.getQuantizationGroupIds()            = inputPointCloud.getQuantizationGroupIds();
-      outputPointCloud.getQuantizationGroupBitDepthDeltas() = inputPointCloud.getQuantizationGroupBitDepthDeltas();
+      outputPointCloud.getQuantizationGroupIds()            = mergedPointCloud.getQuantizationGroupIds();
+      outputPointCloud.getQuantizationGroupBitDepthDeltas() = mergedPointCloud.getQuantizationGroupBitDepthDeltas();
     }
   }
 
   // Copy colors directly (already uint8_t)
-  if ( inputPointCloud.hasColors() ) {
-    for ( size_t i = 0; i < pointCount; ++i ) { outputPointCloud.setColor( i, inputPointCloud.getColors()[i] ); }
+  if ( mergedPointCloud.hasColors() ) {
+    for ( size_t i = 0; i < pointCount; ++i ) { outputPointCloud.setColor( i, mergedPointCloud.getColors()[i] ); }
   }
 
   return true;
@@ -3411,6 +3421,184 @@ bool computeGroupIdsFromImportanceScores( const std::string &importanceScoresPat
     groupIds[i]        = std::max( 0, static_cast<int>( std::round( group ) ) );
   }
 
+  return true;
+}
+
+double PCCAdaptation::sigmoid( double x ) { return 1.0 / ( 1.0 + std::exp( -x ) ); }
+
+double PCCAdaptation::importanceWeight( const float &opacity, const GSScale &scale ) {
+  return sigmoid( opacity ) + 100000 * std::exp( scale.x ) * std::exp( scale.y ) * std::exp( scale.z );
+}
+
+PCCMatrix3<float> PCCAdaptation::quatToRotation( GSRotation q ) {
+  float xx = q.x * q.x, xy = q.x * q.y, xz = q.x * q.z;
+  float yy = q.y * q.y, yz = q.y * q.z, zz = q.z * q.z;
+  float wx = q.w * q.x, wy = q.w * q.y, wz = q.w * q.z;
+
+  PCCMatrix3<float> res = PCCMatrix3<float>();
+  res[0][0]             = 1. - 2. * ( yy + zz );
+  res[0][1]             = 2. * ( xy - wz );
+  res[0][2]             = 2. * ( xz + wy );
+
+  res[1][0] = 2. * ( xy + wz );
+  res[1][1] = 1. - 2. * ( xx + zz );
+  res[1][2] = 2. * ( yz - wx );
+
+  res[2][0] = 2. * ( xz - wy );
+  res[2][1] = 2. * ( yz + wx );
+  res[2][2] = 1. - 2. * ( xx + yy );
+
+  return res.transpose();
+}
+
+PCCMatrix3<float> PCCAdaptation::computeCovariance3D( GSRotation quat, GSScale scale ) {
+  PCCMatrix3<float> M = quatToRotation( quat );
+  for ( size_t i = 0; i < 3; i++ ) {
+    M[0][i] *= scale.x;
+    M[1][i] *= scale.y;
+    M[2][i] *= scale.z;
+  }
+  return M.matrixMult( M.transpose() );
+}
+
+double PCCAdaptation::gaussianSimilarityMetric( const PCCPointSetGS       &input,
+                                                const std::vector<size_t> &indices,
+                                                const std::vector<double> &weights,
+                                                const size_t               i,
+                                                const size_t               j ) {
+  const size_t idx1      = indices[i];
+  const size_t idx2      = indices[j];
+  double       normSH    = std::sqrt( std::inner_product(
+      &input.getSphericalHarmonic( idx1 ).coeffs[0][0], &input.getSphericalHarmonic( idx1 ).coeffs[0][0] + 16 * 3,
+      &input.getSphericalHarmonic( idx2 ).coeffs[0][0], 0.0, std::plus<double>(),
+      []( float a, float b ) { return ( a - b ) * ( a - b ); } ) );
+  double       normOp    = abs( sigmoid( input.getOpacity( idx1 ) ) - sigmoid( input.getOpacity( idx2 ) ) );
+  double       normGeom  = ( computeCovariance3D( input.getRotation( idx1 ), input.getScale( idx1 ) ) -
+                             computeCovariance3D( input.getRotation( idx2 ), input.getScale( idx2 ) ) )
+                               .norm();
+  double       minWeight = std::min( weights[i], weights[j] );
+
+  double shFactor      = 0.5;
+  double geomFactor    = 0.003;
+  double opacityFactor = 1.0;
+  double weightFactor  = 1.0;
+  return shFactor * normSH + geomFactor * normGeom + opacityFactor * normOp + weightFactor * minWeight;
+}
+
+bool PCCAdaptation::findSimilarGaussians( const PCCPointSetGS       &mergedCloud,
+                                          const std::vector<size_t> &indices,
+                                          const std::vector<double> &weights,
+                                          size_t                    &idx1,
+                                          size_t                    &idx2 ) {
+  double minDistance = 0.25;
+
+  bool foundPair = false;
+
+  for ( size_t i = 0; i < indices.size(); ++i ) {
+    for ( size_t j = i + 1; j < indices.size(); ++j ) {
+      double dist = gaussianSimilarityMetric( mergedCloud, indices, weights, i, j );
+      if ( dist < minDistance ) {
+        minDistance = dist;
+        idx1        = i;
+        idx2        = j;
+        foundPair   = true;
+      }
+    }
+  }
+  return foundPair;
+}
+
+void PCCAdaptation::averageRotationScale( GSRotation       &rot1,
+                                          GSScale          &scale1,
+                                          const double     &weight1,
+                                          const GSRotation &rot2,
+                                          const GSScale    &scale2,
+                                          const double     &weight2 ) {
+  // Sum( w @ q @ q^T )
+  std::vector<double> a( 16, 0.0 );
+  double              q1[4] = { rot1.w, rot1.x, rot1.y, rot1.z };
+  double              q2[4] = { rot2.w, rot2.x, rot2.y, rot2.z };
+  for ( int r = 0; r < 4; ++r ) {
+    for ( int c = 0; c < 4; ++c ) {
+      a[r * 4 + c] += q1[r] * q1[c] * weight1;
+      a[r * 4 + c] += q2[r] * q2[c] * weight2;
+    }
+  }
+  SymEigenResult res;
+  symEigenDecomposeJacobi( a, 4, res );
+  if ( res.eigenvectors[12] > 0.0 ) {
+    rot1 = GSRotation( res.eigenvectors[12], res.eigenvectors[13], res.eigenvectors[14], res.eigenvectors[15] );
+  } else {
+    rot1 = GSRotation( -res.eigenvectors[12], -res.eigenvectors[13], -res.eigenvectors[14], -res.eigenvectors[15] );
+  }
+  rot1.normalize();
+  scale1 = GSScale( ( scale1.x + scale2.x ) / 2.0f, ( scale1.y + scale2.y ) / 2.0f, ( scale1.z + scale2.z ) / 2.0f );
+}
+
+void PCCAdaptation::greedyMergeDuplicateSplats( PCCPointSetGS       &mergedCloud,
+                                                std::vector<size_t> &indices,
+                                                std::vector<double> &weights,
+                                                std::vector<size_t> &toDelete ) {
+  size_t i, j;
+  while ( findSimilarGaussians( mergedCloud, indices, weights, i, j ) ) {
+    mergedCloud.setOpacity( indices[i], ( weights[i] * mergedCloud.getOpacity( indices[i] ) +
+                                          weights[j] * mergedCloud.getOpacity( indices[j] ) ) /
+                                            ( weights[i] + weights[j] ) );
+    averageRotationScale( mergedCloud.getRotation( indices[i] ), mergedCloud.getScale( indices[i] ), weights[i],
+                          mergedCloud.getRotation( indices[j] ), mergedCloud.getScale( indices[j] ), weights[j] );
+
+    float *sh1 = (float *)mergedCloud.getSphericalHarmonic( indices[i] ).coeffs;
+    float *sh2 = (float *)mergedCloud.getSphericalHarmonic( indices[j] ).coeffs;
+    for ( int coeff = 0; coeff < 16 * 3; ++coeff ) {
+      sh1[coeff] =
+          static_cast<float>( ( weights[i] * sh1[coeff] + weights[j] * sh2[coeff] ) / ( weights[i] + weights[j] ) );
+    }
+
+    weights[i] += weights[j];
+    toDelete.push_back( indices[j] );
+    indices.erase( indices.begin() + j );
+    weights.erase( weights.begin() + j );
+  }
+}
+
+struct IndexedPoint {
+  PCCPoint3D point;
+  size_t     idx;
+  bool       operator<( const IndexedPoint &other ) const {
+    if ( point[0] != other.point[0] ) return point[0] < other.point[0];
+    if ( point[1] != other.point[1] ) return point[1] < other.point[1];
+    return point[2] < other.point[2];
+  }
+  bool operator==( const IndexedPoint &other ) const {
+    return point[0] == other.point[0] && point[1] == other.point[1] && point[2] == other.point[2];
+  }
+};
+
+bool PCCAdaptation::mergeDuplicatePoints( PCCPointSet3                  &output,
+                                          PCCPointSetGS                 &mergedPointCloud,
+                                          const PCCAdaptationParameters &params ) {
+  std::vector<IndexedPoint> indexedPoints( output.getPointCount() );
+  for ( size_t i = 0; i < output.getPointCount(); ++i ) { indexedPoints[i] = { output[i], i }; }
+  std::sort( indexedPoints.begin(), indexedPoints.end() );
+  std::vector<size_t> toDelete;
+  size_t              i = 0;
+  while ( i < indexedPoints.size() ) {
+    size_t j = i + 1;
+    while ( j < indexedPoints.size() && indexedPoints[i] == indexedPoints[j] ) { j++; }
+    if ( j - i > 1 ) {
+      std::vector<size_t> indices;
+      std::vector<double> weights;
+      for ( size_t k = i; k < j; ++k ) {
+        size_t idx = indexedPoints[k].idx;
+        indices.push_back( idx );
+        weights.push_back( importanceWeight( mergedPointCloud.getOpacity( idx ), mergedPointCloud.getScale( idx ) ) );
+      }
+      greedyMergeDuplicateSplats( mergedPointCloud, indices, weights, toDelete );
+    }
+    i = j;
+  }
+  mergedPointCloud.remove( toDelete.cbegin(), toDelete.cend() );
+  output.remove( toDelete.cbegin(), toDelete.cend() );
   return true;
 }
 

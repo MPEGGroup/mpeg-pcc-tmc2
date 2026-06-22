@@ -149,6 +149,10 @@ bool parseParameters( int                           argc,
       "Number of threads to use (0 = auto)" )
     
     // Adaptation parameters
+    ( "enableDuplicateMerging",
+      adaptationParams.enableDuplicateMerging_,
+      adaptationParams.enableDuplicateMerging_,
+      "Enable merging of duplicate positions (default: 0)" )
     ("shMappingMode",
       adaptationParams.shMappingMode_,
       adaptationParams.shMappingMode_,

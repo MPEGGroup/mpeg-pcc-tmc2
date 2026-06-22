@@ -81,6 +81,8 @@ PATCH_MERGING=0                 # 1: enable m75379, 0: diable(CTC)
 GSD_SCALE_NON_UNIFORM_QUANT=1   # 1: enable m76123, 0: disable m76123
 GSD_SCALE_POWER_TRANSFORM=1     # 1: enable m76151 power transform + 2-seg PLS (requires GSD_SCALE_NON_UNIFORM_QUANT=1), 0: disable
 GSD_OPACITY_NON_UNIFORM_QUANT=1 # 1: enable m76122 opacity non-uniform quantization, 0: disable
+DUPLICATE_MERGING=0             # 1: enable merging of duplicate positions (m76602), 0: disable (CTC)
+
 
 # ==================================================================================================
 # Base directories
@@ -498,6 +500,7 @@ for SEQ in "${SEQUENCES[@]}"; do
                 echo "    --enableScalePowerTransform=$GSD_SCALE_POWER_TRANSFORM \\"
                 echo "    --enableOpacityNonUniformQuantization=$GSD_OPACITY_NON_UNIFORM_QUANT \\"
                 echo "    --enableShDimensionReduction=$GSD_DIMENSION_REDUCTION \\"
+                echo "    --enableDuplicateMerging=$DUPLICATE_MERGING \\"
                 echo "    --compressedStreamPath=$RESULT_DIR/${LENGTH}_${SEQ}_${RATE}.bin"
                 echo ""
                 if [ "$V3C_PARSER_CHECK" -eq 1 ]; then

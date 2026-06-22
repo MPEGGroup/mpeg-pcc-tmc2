@@ -34,6 +34,8 @@
 #ifndef PCCMath_h
 #define PCCMath_h
 
+#include <numeric>
+
 #include "PCCCommon.h"
 
 namespace pcc {
@@ -444,6 +446,32 @@ class PCCMatrix3 {
     mat[2][0] = ax * az * l_c - ay * s;
     mat[2][1] = ay * az * l_c + ax * s;
     mat[2][2] = az * az + ( 1 - az * az ) * c;
+  }
+  PCCMatrix3 matrixMult( const PCCMatrix3 &other ) const {
+    PCCMatrix3<T> res;
+    res[0][0] = this->data_[0][0] * other.data_[0][0] + this->data_[1][0] * other.data_[0][1] +
+                this->data_[2][0] * other.data_[0][2];
+    res[0][1] = this->data_[0][1] * other.data_[0][0] + this->data_[1][1] * other.data_[0][1] +
+                this->data_[2][1] * other.data_[0][2];
+    res[0][2] = this->data_[0][2] * other.data_[0][0] + this->data_[1][2] * other.data_[0][1] +
+                this->data_[2][2] * other.data_[0][2];
+    res[1][0] = this->data_[0][0] * other.data_[1][0] + this->data_[1][0] * other.data_[1][1] +
+                this->data_[2][0] * other.data_[1][2];
+    res[1][1] = this->data_[0][1] * other.data_[1][0] + this->data_[1][1] * other.data_[1][1] +
+                this->data_[2][1] * other.data_[1][2];
+    res[1][2] = this->data_[0][2] * other.data_[1][0] + this->data_[1][2] * other.data_[1][1] +
+                this->data_[2][2] * other.data_[1][2];
+    res[2][0] = this->data_[0][0] * other.data_[2][0] + this->data_[1][0] * other.data_[2][1] +
+                this->data_[2][0] * other.data_[2][2];
+    res[2][1] = this->data_[0][1] * other.data_[2][0] + this->data_[1][1] * other.data_[2][1] +
+                this->data_[2][1] * other.data_[2][2];
+    res[2][2] = this->data_[0][2] * other.data_[2][0] + this->data_[1][2] * other.data_[2][1] +
+                this->data_[2][2] * other.data_[2][2];
+    return res;
+  }
+  double norm() const {
+    return std::sqrt( std::inner_product( std::begin( this->data_[0] ), std::end( this->data_[2] ),
+                                          std::begin( this->data_[0] ), 0.0 ) );
   }
 
  private:

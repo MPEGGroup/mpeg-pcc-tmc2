@@ -37,6 +37,8 @@
 #include "PCCCommon.h"
 #include "PCCMath.h"
 
+#include <unordered_set>
+
 namespace pcc {
 
 /// 3D point with float coordinates for Gaussian Splatting
@@ -292,6 +294,24 @@ class PCCPointSetGS {
     withScales_             = false;
     withOpacities_          = false;
     withSphericalHarmonics_ = false;
+  }
+
+  template <typename It>
+  void remove( It indices_begin, It indices_end ) {
+    std::unordered_set<size_t> toRemove( indices_begin, indices_end );
+    auto                       removeForAttr = [&]( auto &vec ) {
+      size_t idx = 0;
+      vec.erase( std::remove_if( vec.begin(), vec.end(), [&]( const auto & ) { return toRemove.count( idx++ ); } ),
+                 vec.end() );
+    };
+
+    removeForAttr( positions_ );
+    if ( withColors_ ) removeForAttr( colors_ );
+    if ( withRotations_ ) removeForAttr( rotations_ );
+    if ( withScales_ ) removeForAttr( scales_ );
+    if ( withOpacities_ ) removeForAttr( opacities_ );
+    if ( withSphericalHarmonics_ ) removeForAttr( sphericalHarmonics_ );
+    if ( !quantizationGroupIds_.empty() ) removeForAttr( quantizationGroupIds_ );
   }
 
   // ==================== Attribute Flags ====================
