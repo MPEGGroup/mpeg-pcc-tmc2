@@ -39,81 +39,65 @@
 #include <unordered_set>
 #include <cstdint>
 
-enum class CameraModel : uint32_t
-{
-    SIMPLE_PINHOLE = 0,
-    PINHOLE        = 1
-};
+enum class CameraModel : uint32_t { SIMPLE_PINHOLE = 0, PINHOLE = 1 };
 
-CameraModel stringToModel(const std::string&);
-const char* modelToString(CameraModel);
-size_t numParams(CameraModel);
+CameraModel stringToModel( const std::string & );
+const char *modelToString( CameraModel );
+size_t      numParams( CameraModel );
 
+class CameraModelInfo {
+ public:
+  struct CamIntrinsics {
+    uint32_t            camera_id;
+    CameraModel         model;
+    uint64_t            width;
+    uint64_t            height;
+    std::vector<double> params;
+  };
 
-class CameraModelInfo
-{
+  struct CamExtrinsics {
+    uint32_t    image_id;
+    uint32_t    camera_id;
+    std::string image_name;
 
-public:
+    double qw, qx, qy, qz;
+    double tx, ty, tz;
+  };
 
-    struct CamIntrinsics
-    {
-        uint32_t camera_id;
-        CameraModel model;
-        uint64_t width;
-        uint64_t height;
-        std::vector<double> params;
-    };
+  struct PinholeParams {
+    uint64_t width  = 0;
+    uint64_t height = 0;
 
-    struct CamExtrinsics
-    {
-        uint32_t image_id;
-        uint32_t camera_id;
-        std::string image_name;
+    double fx = 0.0;
+    double fy = 0.0;
+    double cx = 0.0;
+    double cy = 0.0;
+  };
 
-        double qw, qx, qy, qz;
-        double tx, ty, tz;
-    };
+  CameraModelInfo() = default;
 
-    struct PinholeParams
-    {
-        uint64_t width = 0;
-        uint64_t height = 0;
+  void readColmapData( const std::string &cameras_file, const std::string &images_file );
 
-        double fx = 0.0;
-        double fy = 0.0;
-        double cx = 0.0;
-        double cy = 0.0;
-    };
-    
-    CameraModelInfo() = default;
+  const std::unordered_map<uint32_t, CamIntrinsics> &getIntrParams() const { return cameras_; }
+  PinholeParams                                      getPinholeParams( uint32_t camera_id ) const;
+  const std::vector<CamExtrinsics>                  &getExtrParams() const { return images_; }
 
-    void readColmapData(const std::string& cameras_file,
-              const std::string& images_file);
+  size_t numImages() const { return images_.size(); }
+  size_t numCameras() const;
+  bool   hasSameIntrinsics() const;
 
-    const std::unordered_map<uint32_t, CamIntrinsics>& getIntrParams() const { return cameras_; }
-    PinholeParams getPinholeParams(uint32_t camera_id) const ;
-    const std::vector<CamExtrinsics>& getExtrParams() const { return images_; }
+ private:
+  std::unordered_map<uint32_t, CamIntrinsics> cameras_;
+  std::vector<CamExtrinsics>                  images_;
 
-    size_t numImages() const { return images_.size(); }
-    size_t numCameras() const;
-    bool   hasSameIntrinsics() const;
+  void readCamerasTxt( const std::string &file, std::unordered_map<uint32_t, CamIntrinsics> &camMap );
 
-private:
-    std::unordered_map<uint32_t, CamIntrinsics> cameras_;
-    std::vector<CamExtrinsics> images_;
+  void readCamerasBin( const std::string &file, std::unordered_map<uint32_t, CamIntrinsics> &camMap );
 
-    void readCamerasTxt(const std::string& file,
-                        std::unordered_map<uint32_t, CamIntrinsics>& camMap);
+  void readImagesTxt( const std::string &file, const std::unordered_map<uint32_t, CamIntrinsics> &camMap );
 
-    void readCamerasBin(const std::string& file,
-                        std::unordered_map<uint32_t, CamIntrinsics>& camMap);
+  void readImagesBin( const std::string &file, const std::unordered_map<uint32_t, CamIntrinsics> &camMap );
 
-    void readImagesTxt(const std::string& file,
-                       const std::unordered_map<uint32_t, CamIntrinsics>& camMap);
-
-    void readImagesBin(const std::string& file,
-                       const std::unordered_map<uint32_t, CamIntrinsics>& camMap);
-
-    static bool isBinary(const std::string& file);
-    static PinholeParams convertToPinhole(const CamIntrinsics&);
+  static bool          isBinary( const std::string &file );
+  static PinholeParams convertToPinhole( const CamIntrinsics & );
 };

@@ -891,72 +891,70 @@ void PCCGSHlsBuilder::createGsCameraModelInfoSei( AtlasTileLayerRbsp &atgl, std:
     }
   }
 
-    CameraModelInfo cam;
-    cam.readColmapData(cameras_file, images_file);
-    size_t numCameras = cam.numCameras();
+  CameraModelInfo cam;
+  cam.readColmapData( cameras_file, images_file );
+  size_t numCameras = cam.numCameras();
 
-    size_t numImages = cam.numImages();
-    bool same = cam.hasSameIntrinsics();
+  size_t numImages = cam.numImages();
+  bool   same      = cam.hasSameIntrinsics();
 
-    const auto& cameras = cam.getIntrParams();
-    const auto& images = cam.getExtrParams();
+  const auto &cameras = cam.getIntrParams();
+  const auto &images  = cam.getExtrParams();
 
-    auto& sei = static_cast<SEIGsCameraModelInfo &>( atgl.getSEI().addSeiPrefix( GS_CAMERA_MODEL_INFO, false ) );
+  auto &sei = static_cast<SEIGsCameraModelInfo &>( atgl.getSEI().addSeiPrefix( GS_CAMERA_MODEL_INFO, false ) );
 
-    sei.allocate( numCameras, numImages );
-                  
-    sei.setSameIntrinsicsFlag(same);
+  sei.allocate( numCameras, numImages );
 
-    size_t i = 0;
-    for ( const auto& kvPair : cameras ) {
-        sei.setCamIdToIdx( kvPair.first, i );
-        const auto &intr = kvPair.second;
-        sei.setCameraId( i, intr.camera_id ); 
-        sei.setModelId( i, static_cast<uint8_t>(intr.model) );
-        sei.setCancelFlag( i, false );
-        if ( !sei.getCancelFlag( i ) ) {
-            sei.setPersistenceFlag( i, false );
-            if ( i == 0 || !sei.getSameIntrinsicsFlag() ) {
-                sei.setImageWidth( i, static_cast<uint16_t>( intr.width ) );
-                sei.setImageHeight( i, static_cast<uint16_t>( intr.height ) );
-                sei.getIntrCamParams( i ).resize( intr.params.size() );
-                for ( size_t j = 0; j < intr.params.size(); j++ ) 
-                    sei.setIntrCamParams( i, j, intr.params[j] );
-            }
-        }
-        i++;
-    }
-    size_t camIdx;
-    for ( size_t i = 0; i < sei.getImageNum(); i++ ) {
-      const auto &img = images[i];
-      sei.setImageId( i, img.image_id );  // AJT: we also include imageId + corresponding cameraId according to new syntax structures!
-      sei.setImageIdToCameraId( i, img.camera_id );
-      auto it = sei.getCamIdToIdx().find( sei.getImageIdToCameraId(i) );
-      if ( it == sei.getCamIdToIdx().end() ) {
-        std::cerr << "Camera Id is not Found" << std::endl;
-        exit( -1 );
-      }
-      camIdx = it->second;
-      if ( !sei.getCancelFlag( camIdx ) ) {
-        sei.setQuaternion( i, 0,  img.qw  );
-        sei.setQuaternion( i, 1,  img.qx  );
-        sei.setQuaternion( i, 2,  img.qy  );
-        sei.setQuaternion( i, 3,  img.qz  );
+  sei.setSameIntrinsicsFlag( same );
 
-        sei.setTranslation( i, 0, img.tx  );
-        sei.setTranslation( i, 1, img.ty  );
-        sei.setTranslation( i, 2, img.tz  );
+  size_t i = 0;
+  for ( const auto &kvPair : cameras ) {
+    sei.setCamIdToIdx( kvPair.first, i );
+    const auto &intr = kvPair.second;
+    sei.setCameraId( i, intr.camera_id );
+    sei.setModelId( i, static_cast<uint8_t>( intr.model ) );
+    sei.setCancelFlag( i, false );
+    if ( !sei.getCancelFlag( i ) ) {
+      sei.setPersistenceFlag( i, false );
+      if ( i == 0 || !sei.getSameIntrinsicsFlag() ) {
+        sei.setImageWidth( i, static_cast<uint16_t>( intr.width ) );
+        sei.setImageHeight( i, static_cast<uint16_t>( intr.height ) );
+        sei.getIntrCamParams( i ).resize( intr.params.size() );
+        for ( size_t j = 0; j < intr.params.size(); j++ ) sei.setIntrCamParams( i, j, intr.params[j] );
       }
     }
-
- #ifdef CONFORMANCE_TRACE
-    auto &temp = sei.getMD5ByteStrData();
-    if ( temp.size() > 0 ) {  // ajt:: creates the string for MD5sum check!
-      TRACE_HLS( "**********GS_CAMERA_MODEL_INFO_ESEI***********\n" );
-      TRACE_HLS( "SEI%02dMD5 = ", sei.getPayloadType() );
-      SEIMd5Checksum( context, temp );
+    i++;
+  }
+  size_t camIdx;
+  for ( size_t i = 0; i < sei.getImageNum(); i++ ) {
+    const auto &img = images[i];
+    sei.setImageId(
+        i, img.image_id );  // AJT: we also include imageId + corresponding cameraId according to new syntax structures!
+    sei.setImageIdToCameraId( i, img.camera_id );
+    auto it = sei.getCamIdToIdx().find( sei.getImageIdToCameraId( i ) );
+    if ( it == sei.getCamIdToIdx().end() ) {
+      std::cerr << "Camera Id is not Found" << std::endl;
+      exit( -1 );
     }
+    camIdx = it->second;
+    if ( !sei.getCancelFlag( camIdx ) ) {
+      sei.setQuaternion( i, 0, img.qw );
+      sei.setQuaternion( i, 1, img.qx );
+      sei.setQuaternion( i, 2, img.qy );
+      sei.setQuaternion( i, 3, img.qz );
+
+      sei.setTranslation( i, 0, img.tx );
+      sei.setTranslation( i, 1, img.ty );
+      sei.setTranslation( i, 2, img.tz );
+    }
+  }
+
+#ifdef CONFORMANCE_TRACE
+  auto &temp = sei.getMD5ByteStrData();
+  if ( temp.size() > 0 ) {  // ajt:: creates the string for MD5sum check!
+    TRACE_HLS( "**********GS_CAMERA_MODEL_INFO_ESEI***********\n" );
+    TRACE_HLS( "SEI%02dMD5 = ", sei.getPayloadType() );
+    SEIMd5Checksum( context, temp );
+  }
 #endif
 }
-
-

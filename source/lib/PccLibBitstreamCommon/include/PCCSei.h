@@ -35,7 +35,7 @@
 
 #include "PCCBitstreamCommon.h"
 #include <array>
-#include<unordered_map>
+#include <unordered_map>
 
 namespace pcc {
 
@@ -1783,64 +1783,58 @@ class SEIVPCCRegistered : public SEI {
 class SEIGsCameraModelInfo : public SEIVPCCRegistered {
  public:
  public:
-  SEIGsCameraModelInfo() :
-      cameraNum_( 0 ),
-      sameIntrinsicsFlag_( false ) {}
+  SEIGsCameraModelInfo() : cameraNum_( 0 ), sameIntrinsicsFlag_( false ) {}
   ~SEIGsCameraModelInfo() = default;
 
-  VpccSeiPayloadType getVpccPayloadType() override {
-        return GS_CAMERA_MODEL_INFO;
-    }
+  VpccSeiPayloadType getVpccPayloadType() override { return GS_CAMERA_MODEL_INFO; }
 
   void allocate( size_t camNum, size_t imgNum ) {
-      cameraNum_ = camNum;
-      imageNum_ = imgNum;
-      cameraId_.assign( camNum, 0 );
-      modelId_.assign( camNum, 0 );
-      camIdToIdx_.clear();
-      camIdToIdx_.reserve( camNum );
-      cancelFlag_.assign( camNum, false );
-      persistenceFlag_.assign( camNum, false );
-      imageWidth_.assign( camNum, 0 );
-      imageHeight_.assign( camNum, 0 );
-      intrCamParams_.resize( camNum);
-      fx_.assign( camNum, 0 );
-      fy_.assign( camNum, 0 );
-      cx_.assign( camNum, 0 );
-      cy_.assign( camNum, 0 );
-      imageId_.assign( imgNum, 0);
-      imageIdToCameraId_.assign( imgNum, 0 );
-      quaternion_.resize( imgNum);
-      translation_.resize( imgNum );
+    cameraNum_ = camNum;
+    imageNum_  = imgNum;
+    cameraId_.assign( camNum, 0 );
+    modelId_.assign( camNum, 0 );
+    camIdToIdx_.clear();
+    camIdToIdx_.reserve( camNum );
+    cancelFlag_.assign( camNum, false );
+    persistenceFlag_.assign( camNum, false );
+    imageWidth_.assign( camNum, 0 );
+    imageHeight_.assign( camNum, 0 );
+    intrCamParams_.resize( camNum );
+    fx_.assign( camNum, 0 );
+    fy_.assign( camNum, 0 );
+    cx_.assign( camNum, 0 );
+    cy_.assign( camNum, 0 );
+    imageId_.assign( imgNum, 0 );
+    imageIdToCameraId_.assign( imgNum, 0 );
+    quaternion_.resize( imgNum );
+    translation_.resize( imgNum );
   }
 
-  std::vector<double>& operator[](size_t i) {
-        return intrCamParams_[i];
-  }
+  std::vector<double> &operator[]( size_t i ) { return intrCamParams_[i]; }
 
-  uint32_t getCameraNum() { return cameraNum_; }
-  uint32_t getModelId( size_t i ) { return modelId_[i]; }
-  uint32_t getImageNum() { return imageNum_; }
-  bool     getSameIntrinsicsFlag() { return sameIntrinsicsFlag_; }
-  uint32_t getCameraId(size_t i) { return cameraId_[i]; }
-  uint32_t getImageId(size_t i) { return imageId_[i]; }
-  uint32_t getImageIdToCameraId( size_t i) { return imageIdToCameraId_[i]; }
-  bool     getCancelFlag(size_t i) { return cancelFlag_[i]; }
-  bool     getPersistenceFlag(size_t i) { return persistenceFlag_[i]; }
-  uint16_t getImageWidth(size_t i) { return imageWidth_[i]; }
-  uint16_t getImageHeight(size_t i) { return imageHeight_[i]; }
-  std::vector<double>& getIntrCamParams(size_t i) { return intrCamParams_[i]; }
-  uint8_t getIntrCamParamsNum(size_t i) { return static_cast<uint8_t>(intrCamParams_[i].size()); }
-  double    getIntrCamParams(size_t i, size_t j) { return static_cast<float> (intrCamParams_[i][j]); }
-  double    getHorFocalLength(size_t i) { return fx_[i]; }
-  double    getVerFocalLength(size_t i) { return fy_[i]; }
-  double    getHorPrincipalPoint(size_t i) { return cx_[i]; }
-  double    getVerPrincipalPoint(size_t i) { return cy_[i]; }
-  double   getQuaternion(size_t i, size_t j) { return quaternion_[i][j]; }
-  double   getTranslation(size_t i, size_t j) { return translation_[i][j]; }
-  size_t   getCamIdToIdx( int32_t k ) { return camIdToIdx_[k]; }
+  uint32_t             getCameraNum() { return cameraNum_; }
+  uint32_t             getModelId( size_t i ) { return modelId_[i]; }
+  uint32_t             getImageNum() { return imageNum_; }
+  bool                 getSameIntrinsicsFlag() { return sameIntrinsicsFlag_; }
+  uint32_t             getCameraId( size_t i ) { return cameraId_[i]; }
+  uint32_t             getImageId( size_t i ) { return imageId_[i]; }
+  uint32_t             getImageIdToCameraId( size_t i ) { return imageIdToCameraId_[i]; }
+  bool                 getCancelFlag( size_t i ) { return cancelFlag_[i]; }
+  bool                 getPersistenceFlag( size_t i ) { return persistenceFlag_[i]; }
+  uint16_t             getImageWidth( size_t i ) { return imageWidth_[i]; }
+  uint16_t             getImageHeight( size_t i ) { return imageHeight_[i]; }
+  std::vector<double> &getIntrCamParams( size_t i ) { return intrCamParams_[i]; }
+  uint8_t              getIntrCamParamsNum( size_t i ) { return static_cast<uint8_t>( intrCamParams_[i].size() ); }
+  double               getIntrCamParams( size_t i, size_t j ) { return static_cast<float>( intrCamParams_[i][j] ); }
+  double               getHorFocalLength( size_t i ) { return fx_[i]; }
+  double               getVerFocalLength( size_t i ) { return fy_[i]; }
+  double               getHorPrincipalPoint( size_t i ) { return cx_[i]; }
+  double               getVerPrincipalPoint( size_t i ) { return cy_[i]; }
+  double               getQuaternion( size_t i, size_t j ) { return quaternion_[i][j]; }
+  double               getTranslation( size_t i, size_t j ) { return translation_[i][j]; }
+  size_t               getCamIdToIdx( int32_t k ) { return camIdToIdx_[k]; }
   std::unordered_map<int32_t, size_t> &getCamIdToIdx() { return camIdToIdx_; }
-  
+
   void setCameraNum( uint32_t value ) { cameraNum_ = value; }
   void setImageNum( uint32_t value ) { imageNum_ = value; }
   void setSameIntrinsicsFlag( bool value ) { sameIntrinsicsFlag_ = value; }
@@ -1849,28 +1843,25 @@ class SEIGsCameraModelInfo : public SEIVPCCRegistered {
   void setImageId( size_t i, uint32_t value ) { imageId_[i] = value; }
   void setImageIdToCameraId( size_t i, uint32_t value ) { imageIdToCameraId_[i] = value; }
   void setCancelFlag( size_t i, uint8_t value ) { cancelFlag_[i] = value ? 1 : 0; }
-  void setPersistenceFlag( size_t i,uint8_t value ) { persistenceFlag_[i] = value ? 1 : 0; }
+  void setPersistenceFlag( size_t i, uint8_t value ) { persistenceFlag_[i] = value ? 1 : 0; }
   void setImageWidth( size_t i, uint16_t value ) { imageWidth_[i] = value; }
   void setImageHeight( size_t i, uint16_t value ) { imageHeight_[i] = value; }
-  void setIntrCamParams(size_t i, size_t j, double value) { intrCamParams_[i][j] = value; }
-  void setIntrCamParamsNum(size_t i, size_t size) { intrCamParams_[i].resize(size); }
+  void setIntrCamParams( size_t i, size_t j, double value ) { intrCamParams_[i][j] = value; }
+  void setIntrCamParamsNum( size_t i, size_t size ) { intrCamParams_[i].resize( size ); }
   void setHorFocalLength( size_t i, double value ) { fx_[i] = value; }
   void setVerFocalLength( size_t i, double value ) { fy_[i] = value; }
   void setHorPrincipalPoint( size_t i, double value ) { cx_[i] = value; }
   void setVerPrincipalPoint( size_t i, double value ) { cy_[i] = value; }
-  void setQuaternion(size_t i, size_t j, double value) { quaternion_[i][j] = value; }
-  void setTranslation(size_t i, size_t j, double value) { translation_[i][j] = value; }
+  void setQuaternion( size_t i, size_t j, double value ) { quaternion_[i][j] = value; }
+  void setTranslation( size_t i, size_t j, double value ) { translation_[i][j] = value; }
   void setCamIdToIdx( int32_t k, size_t v ) { camIdToIdx_[k] = v; }
 
-
   std::vector<uint8_t> &getMD5ByteStrData() {
-    uint8_t val;
-    uint32_t tmp = static_cast<uint32_t>(cameraNum_);
-    for (int k = 0; k < 4; ++k)
-        byteStrData_.push_back(static_cast<uint8_t>((tmp >> (8 * k)) & 0xFF));
-    tmp = static_cast<uint32_t>(imageNum_);
-    for (int k = 0; k < 4; ++k)
-        byteStrData_.push_back(static_cast<uint8_t>((tmp >> (8 * k)) & 0xFF));
+    uint8_t  val;
+    uint32_t tmp = static_cast<uint32_t>( cameraNum_ );
+    for ( int k = 0; k < 4; ++k ) byteStrData_.push_back( static_cast<uint8_t>( ( tmp >> ( 8 * k ) ) & 0xFF ) );
+    tmp = static_cast<uint32_t>( imageNum_ );
+    for ( int k = 0; k < 4; ++k ) byteStrData_.push_back( static_cast<uint8_t>( ( tmp >> ( 8 * k ) ) & 0xFF ) );
     val = (uint8_t)sameIntrinsicsFlag_ & 0xFF;
     byteStrData_.push_back( val );
     for ( size_t i = 0; i < cameraNum_; i++ ) {
@@ -1913,33 +1904,33 @@ class SEIGsCameraModelInfo : public SEIVPCCRegistered {
           for ( int k = 0; k < 7; ++k ) byteStrData_.push_back( ( tmp >> ( 8 * k ) ) & 0xFF );
         }
         for ( int j = 0; j < 3; ++j ) {
-            std::memcpy( &tmp, &translation_[i][j], sizeof( double ) );
-            for ( int k = 0; k < 7; ++k ) byteStrData_.push_back( ( tmp >> ( 8 * k ) ) & 0xFF );
+          std::memcpy( &tmp, &translation_[i][j], sizeof( double ) );
+          for ( int k = 0; k < 7; ++k ) byteStrData_.push_back( ( tmp >> ( 8 * k ) ) & 0xFF );
         }
       }
     }
     return byteStrData_;
   }
-  
+
  private:
-  uint32_t cameraNum_;
-  uint32_t imageNum_;
-  bool     sameIntrinsicsFlag_;
-  std::vector<uint32_t> cameraId_;
-  std::vector<uint32_t> modelId_;
-  std::vector<uint32_t> imageId_;
-  std::vector<uint32_t> imageIdToCameraId_;
-  std::vector<bool>     cancelFlag_;
-  std::vector<bool>     persistenceFlag_;
-  std::vector<uint16_t> imageWidth_;
-  std::vector<uint16_t> imageHeight_;
-  std::vector<std::vector<double>> intrCamParams_;
-  std::vector<double>    fx_;
-  std::vector<double>    fy_;
-  std::vector<double>    cx_;
-  std::vector<double>    cy_;
-  std::vector<std::array<double, 4>> quaternion_;
-  std::vector<std::array<double, 3>> translation_;
+  uint32_t                            cameraNum_;
+  uint32_t                            imageNum_;
+  bool                                sameIntrinsicsFlag_;
+  std::vector<uint32_t>               cameraId_;
+  std::vector<uint32_t>               modelId_;
+  std::vector<uint32_t>               imageId_;
+  std::vector<uint32_t>               imageIdToCameraId_;
+  std::vector<bool>                   cancelFlag_;
+  std::vector<bool>                   persistenceFlag_;
+  std::vector<uint16_t>               imageWidth_;
+  std::vector<uint16_t>               imageHeight_;
+  std::vector<std::vector<double>>    intrCamParams_;
+  std::vector<double>                 fx_;
+  std::vector<double>                 fy_;
+  std::vector<double>                 cx_;
+  std::vector<double>                 cy_;
+  std::vector<std::array<double, 4>>  quaternion_;
+  std::vector<std::array<double, 3>>  translation_;
   std::unordered_map<int32_t, size_t> camIdToIdx_;
 };
 

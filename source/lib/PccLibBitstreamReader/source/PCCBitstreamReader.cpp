@@ -3368,65 +3368,65 @@ void PCCBitstreamReader::vpccRegisteredSeiPayload( PCCBitstream      &bitstream,
 }
 
 // H.20.2.19 GS Camera Model Info SEI message syntax
-void PCCBitstreamReader::gsCameraModelInfo(PCCBitstream& bitstream, SEI& seiAbstract) {
-    TRACE_BITSTREAM_IN("%s", __func__);
-    auto& sei = static_cast<SEIGsCameraModelInfo&>(seiAbstract);
-    uint32_t value;
-    double valueDbl;
-    READ_UVLC_DESC(value, "CameraNum");              // ue(v)
-    size_t camNum = value;
-    READ_UVLC_DESC(value, "ImageNum");              // ue(v)
-    size_t imgNum = value;
-    sei.allocate(camNum, imgNum );
-    READ_CODE_DESC(value, 1, "SameIntrinsicsFlag");  // u(1)
-    sei.setSameIntrinsicsFlag(value == 1);
-    for ( size_t i = 0; i < sei.getCameraNum(); i++ ) {
-        READ_UVLC_DESC( value, "CameraId" );  // ue(v)
-        sei.setCameraId( i, value );
-        sei.setCamIdToIdx( sei.getCameraId(i), i );
-        READ_CODE_DESC( value, 4, "modelId" );      // u(4)
-        sei.setModelId( i, value );
-        READ_CODE_DESC( value, 1, "CancelFlag" );  // u(1)
-        sei.setCancelFlag( i, value );
-        if ( !sei.getCancelFlag( i ) ) {
-          READ_CODE_DESC( value, 1, "PersistenceFlag" );  // u(1)
-          sei.setPersistenceFlag( i, value );
-          if ( i == 0 || ( !sei.getSameIntrinsicsFlag() ) ) {
-              READ_CODE_DESC( value, 16, "ImageWidth" );  // u(16)
-              sei.setImageWidth( i, value );
-              READ_CODE_DESC( value, 16, "ImageHeight" );  // u(16)
-              sei.setImageHeight( i, value );
-              READ_CODE_DESC( value, 8, "ParamsNum" );      // u(8)
-              sei.setIntrCamParamsNum( i, value );
-              for ( size_t j = 0; j < sei.getIntrCamParamsNum( i ); j++ ) {
-                  READ_DOUBLE( valueDbl );  // fl(64)
-                  sei.setIntrCamParams( i, j, valueDbl );
-              }
-          }
-      }
-    }
-    size_t camIdx;
-    for ( size_t i = 0; i < sei.getImageNum(); i++ ) {
-      READ_UVLC_DESC( value, "ImageId" );  // ue(v)
-      sei.setImageId( i, value );
-      READ_UVLC_DESC( value, "ImageId To CameraId" );  // ue(v)
-      sei.setImageIdToCameraId( i, value );
-      auto it = sei.getCamIdToIdx().find( sei.getImageIdToCameraId( i ) );
-      if ( it == sei.getCamIdToIdx().end() ) {
-        std::cerr << "Camera Id is not Found" << std::endl;
-        exit( -1 );
-      }
-      camIdx = it->second;
-      if ( !sei.getCancelFlag( camIdx ) ) {
-        for ( size_t j = 0; j < 4; j++ ) {
+void PCCBitstreamReader::gsCameraModelInfo( PCCBitstream &bitstream, SEI &seiAbstract ) {
+  TRACE_BITSTREAM_IN( "%s", __func__ );
+  auto    &sei = static_cast<SEIGsCameraModelInfo &>( seiAbstract );
+  uint32_t value;
+  double   valueDbl;
+  READ_UVLC_DESC( value, "CameraNum" );  // ue(v)
+  size_t camNum = value;
+  READ_UVLC_DESC( value, "ImageNum" );  // ue(v)
+  size_t imgNum = value;
+  sei.allocate( camNum, imgNum );
+  READ_CODE_DESC( value, 1, "SameIntrinsicsFlag" );  // u(1)
+  sei.setSameIntrinsicsFlag( value == 1 );
+  for ( size_t i = 0; i < sei.getCameraNum(); i++ ) {
+    READ_UVLC_DESC( value, "CameraId" );  // ue(v)
+    sei.setCameraId( i, value );
+    sei.setCamIdToIdx( sei.getCameraId( i ), i );
+    READ_CODE_DESC( value, 4, "modelId" );  // u(4)
+    sei.setModelId( i, value );
+    READ_CODE_DESC( value, 1, "CancelFlag" );  // u(1)
+    sei.setCancelFlag( i, value );
+    if ( !sei.getCancelFlag( i ) ) {
+      READ_CODE_DESC( value, 1, "PersistenceFlag" );  // u(1)
+      sei.setPersistenceFlag( i, value );
+      if ( i == 0 || ( !sei.getSameIntrinsicsFlag() ) ) {
+        READ_CODE_DESC( value, 16, "ImageWidth" );  // u(16)
+        sei.setImageWidth( i, value );
+        READ_CODE_DESC( value, 16, "ImageHeight" );  // u(16)
+        sei.setImageHeight( i, value );
+        READ_CODE_DESC( value, 8, "ParamsNum" );  // u(8)
+        sei.setIntrCamParamsNum( i, value );
+        for ( size_t j = 0; j < sei.getIntrCamParamsNum( i ); j++ ) {
           READ_DOUBLE( valueDbl );  // fl(64)
-          sei.setQuaternion( i, j, valueDbl );
-        }
-        for ( size_t j = 0; j < 3; j++ ) {
-          READ_DOUBLE( valueDbl );  // fl(64)
-          sei.setTranslation( i, j, valueDbl );
+          sei.setIntrCamParams( i, j, valueDbl );
         }
       }
     }
-    TRACE_BITSTREAM_OUT("%s", __func__);
+  }
+  size_t camIdx;
+  for ( size_t i = 0; i < sei.getImageNum(); i++ ) {
+    READ_UVLC_DESC( value, "ImageId" );  // ue(v)
+    sei.setImageId( i, value );
+    READ_UVLC_DESC( value, "ImageId To CameraId" );  // ue(v)
+    sei.setImageIdToCameraId( i, value );
+    auto it = sei.getCamIdToIdx().find( sei.getImageIdToCameraId( i ) );
+    if ( it == sei.getCamIdToIdx().end() ) {
+      std::cerr << "Camera Id is not Found" << std::endl;
+      exit( -1 );
+    }
+    camIdx = it->second;
+    if ( !sei.getCancelFlag( camIdx ) ) {
+      for ( size_t j = 0; j < 4; j++ ) {
+        READ_DOUBLE( valueDbl );  // fl(64)
+        sei.setQuaternion( i, j, valueDbl );
+      }
+      for ( size_t j = 0; j < 3; j++ ) {
+        READ_DOUBLE( valueDbl );  // fl(64)
+        sei.setTranslation( i, j, valueDbl );
+      }
+    }
+  }
+  TRACE_BITSTREAM_OUT( "%s", __func__ );
 }

@@ -3232,39 +3232,37 @@ void PCCBitstreamWriter::vpccRegisteredSeiPayload( PCCBitstream      &bitstream,
 }
 
 // H.20.2.19 GS Camera Model Info SEI message syntax
-void PCCBitstreamWriter::gsCameraModelInfo(PCCBitstream& bitstream, SEI& seiAbstract) {
-    static int cnt = 0;
-    std::cerr << "Number of Entries: " << cnt++ << std::endl;
-    TRACE_BITSTREAM_IN("%s", __func__);
-    auto& sei = static_cast<SEIGsCameraModelInfo&>(seiAbstract);
-    WRITE_UVLC(sei.getCameraNum());                     // ue(v)
-    WRITE_UVLC(sei.getImageNum());                     // ue(v)
-    WRITE_CODE(sei.getSameIntrinsicsFlag(), 1);         // u(1)
-    for ( size_t i = 0; i < sei.getCameraNum(); i++ ) {
-        WRITE_UVLC( sei.getCameraId( i ) );             // ue(v)
-        WRITE_CODE( sei.getModelId( i ), 4 );           // u(4)
-        WRITE_CODE( sei.getCancelFlag( i ), 1 );        // u(1)
-        if ( !sei.getCancelFlag( i ) ) {
-          WRITE_CODE( sei.getPersistenceFlag( i ), 1 );  // u(1)
-          if ( i == 0 || ( !sei.getSameIntrinsicsFlag() ) ) {
-            WRITE_CODE( sei.getImageWidth( i ), 16 );   // u(16)
-            WRITE_CODE( sei.getImageHeight( i ), 16 );  // u(16)
-            WRITE_CODE( sei.getIntrCamParamsNum( i ), 8);  // u(8)
-            for ( size_t j = 0; j < sei.getIntrCamParamsNum( i ); j++ ) 
-                WRITE_DOUBLE( sei.getIntrCamParams( i, j ) ); // fl(64)
-          }
-        }
+void PCCBitstreamWriter::gsCameraModelInfo( PCCBitstream &bitstream, SEI &seiAbstract ) {
+  static int cnt = 0;
+  std::cerr << "Number of Entries: " << cnt++ << std::endl;
+  TRACE_BITSTREAM_IN( "%s", __func__ );
+  auto &sei = static_cast<SEIGsCameraModelInfo &>( seiAbstract );
+  WRITE_UVLC( sei.getCameraNum() );              // ue(v)
+  WRITE_UVLC( sei.getImageNum() );               // ue(v)
+  WRITE_CODE( sei.getSameIntrinsicsFlag(), 1 );  // u(1)
+  for ( size_t i = 0; i < sei.getCameraNum(); i++ ) {
+    WRITE_UVLC( sei.getCameraId( i ) );       // ue(v)
+    WRITE_CODE( sei.getModelId( i ), 4 );     // u(4)
+    WRITE_CODE( sei.getCancelFlag( i ), 1 );  // u(1)
+    if ( !sei.getCancelFlag( i ) ) {
+      WRITE_CODE( sei.getPersistenceFlag( i ), 1 );  // u(1)
+      if ( i == 0 || ( !sei.getSameIntrinsicsFlag() ) ) {
+        WRITE_CODE( sei.getImageWidth( i ), 16 );       // u(16)
+        WRITE_CODE( sei.getImageHeight( i ), 16 );      // u(16)
+        WRITE_CODE( sei.getIntrCamParamsNum( i ), 8 );  // u(8)
+        for ( size_t j = 0; j < sei.getIntrCamParamsNum( i ); j++ )
+          WRITE_DOUBLE( sei.getIntrCamParams( i, j ) );  // fl(64)
+      }
     }
-    for ( size_t i = 0; i < sei.getImageNum(); i++ ) {
-         WRITE_UVLC(sei.getImageId(i));                     // ue(v)
-         WRITE_UVLC(sei.getImageIdToCameraId(i));           // ue(v)
-         size_t idx = sei.getCamIdToIdx( sei.getImageIdToCameraId( i ) );
-         if(!sei.getCancelFlag(idx)) {
-             for ( size_t j = 0; j < 4; j++ ) 
-                WRITE_DOUBLE( sei.getQuaternion( i, j ) )  // fl(64)
-             for ( size_t j = 0; j < 3; j++ ) 
-                WRITE_DOUBLE( sei.getTranslation( i, j ) )  // fl(64)
-         }
+  }
+  for ( size_t i = 0; i < sei.getImageNum(); i++ ) {
+    WRITE_UVLC( sei.getImageId( i ) );            // ue(v)
+    WRITE_UVLC( sei.getImageIdToCameraId( i ) );  // ue(v)
+    size_t idx = sei.getCamIdToIdx( sei.getImageIdToCameraId( i ) );
+    if ( !sei.getCancelFlag( idx ) ) {
+      for ( size_t j = 0; j < 4; j++ ) WRITE_DOUBLE( sei.getQuaternion( i, j ) )   // fl(64)
+      for ( size_t j = 0; j < 3; j++ ) WRITE_DOUBLE( sei.getTranslation( i, j ) )  // fl(64)
     }
-    TRACE_BITSTREAM_OUT("%s", __func__);
+  }
+  TRACE_BITSTREAM_OUT( "%s", __func__ );
 }
