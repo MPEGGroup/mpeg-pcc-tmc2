@@ -212,8 +212,6 @@ PCCEncoderParameters::PCCEncoderParameters() {
   numTilesHor_                  = 2;
   tileHeightToWidthRatio_       = 1;
 
-  // Sort raw points by Morton code
-  mortonOrderSortRawPoints_       = false;
   attributeRawSeparateVideoWidth_ = 128;
 
   // Separate high gradient points
@@ -517,8 +515,6 @@ void PCCEncoderParameters::print() {
   std::cout << "\t   lossyRawPointsPatch                      " << lossyRawPointsPatch_ << std::endl;
   std::cout << "\t   minNormSumOfInvDist4MPSelection          " << minNormSumOfInvDist4MPSelection_ << std::endl;
   std::cout << "\t   lossyRawPointPatchGeoQP                  " << auxGeometryQP_ << std::endl;
-  std::cout << "\t raw points sorting                         " << std::endl;
-  std::cout << "\t   mortonOrderSortRawPoints                 " << mortonOrderSortRawPoints_ << std::endl;
   std::cout << "\t Enhanced projection plane                  " << enhancedPP_ << std::endl;
   std::cout << "\t AdditionalProjectionPlane                  " << std::endl;
   std::cout << "\t   additionalProjectionPlaneMode            " << additionalProjectionPlaneMode_ << std::endl;

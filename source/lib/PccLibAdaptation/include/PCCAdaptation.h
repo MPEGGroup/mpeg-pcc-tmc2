@@ -273,6 +273,9 @@ struct PCCAdaptationParameters {
   std::array<double, 4> computedRotationMin_ = { 0.0, 0.0, 0.0, 0.0 };
   std::array<double, 4> computedRotationMax_ = { 0.0, 0.0, 0.0, 0.0 };
 
+  // ==================== Raw patch data arrangement (m76580) ====================
+  uint32_t rawPatchDataArrangementMethod_ = 0;
+
   // ==================== Enable Flags ====================
   bool enablePositionQuantization_ = true;
   bool enableShQuantization_       = true;

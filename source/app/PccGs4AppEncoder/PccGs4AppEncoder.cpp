@@ -127,6 +127,7 @@ int main( int argc, char *argv[] ) {
   adaptationParams.enableScaleNonUniformQuantization_ = encoderParams.enableScaleNonUniformQuantization_;
   adaptationParams.shPredictionEnabled_               = encoderParams.shPredictionEnabled_;
   adaptationParams.enableScalePowerTransform_         = encoderParams.enableScalePowerTransform_;
+  adaptationParams.rawPatchDataArrangementMethod_     = encoderParams.rawPatchDataArrangementMethod_;
 
 #if defined( ENABLE_TBB )
   if ( applicationParams.nbThread_ > 0 ) {

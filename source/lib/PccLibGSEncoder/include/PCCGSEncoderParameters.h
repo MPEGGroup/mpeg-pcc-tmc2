@@ -101,6 +101,12 @@ struct PCCGSEncoderParameters {
   bool enableScalePowerTransform_ = false;
   bool enableOpacityNonUniformQuantization_;
 
+  // Raw patch data arrangement method (0: sequential, 1: vertical planar)
+  uint32_t rawPatchDataArrangementMethod_ = 0;
+
+  // Block size for rawPatchDataArrangementMethod_=1 (block-based, m76580)
+  size_t blockBasedSortBlockSize_ = 64;
+
   // GS SEI
   std::string gsColmapFolderPath_;
 
@@ -171,6 +177,8 @@ struct PCCGSEncoderParameters {
     binaryFileBase_                      = "data";
     keepIntermediateFiles_               = false;
     gsColmapFolderPath_                  = "";
+    rawPatchDataArrangementMethod_       = 0;   // m76580
+    blockBasedSortBlockSize_             = 64;  // m76580
     gsdTransform2dPresentFlag_           = false;
     dataAdaptiveShTransformEnabled_      = false;
     adaptivePcaEnabled_                  = false;

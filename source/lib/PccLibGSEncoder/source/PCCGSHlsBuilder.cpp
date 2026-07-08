@@ -580,6 +580,10 @@ void PCCGSHlsBuilder::initializeAtlasAapsHls( PCCHighLevelSyntax            &hls
       gsst.setScaleScaling( i, static_cast<float>( adaptationParams.computedScaleScalingFactor_[i] ) );
     }
   }
+  ext.setRawPatchDataArrangementFlag( true );
+  if ( ext.getRawPatchDataArrangementFlag() ) {
+    ext.getGsRawPatchDataArrangement().setDataArrangementMethod( adaptationParams.rawPatchDataArrangementMethod_ );
+  }
 
   ext.setOpacityPropertyPresentFlag( true );
   if ( ext.getOpacityPropertyPresentFlag() ) {

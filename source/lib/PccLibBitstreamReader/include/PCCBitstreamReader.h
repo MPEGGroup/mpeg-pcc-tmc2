@@ -432,6 +432,8 @@ class PCCBitstreamReader {
   static void gsPrediction( PCCBitstream &bitstream, GsPrediction &gsPrediction );
   // H.8.3.6.3.9  Gaussian splat scale transform syntax
   static void gsScaleTransform( PCCBitstream &bitstream, GsScaleTransform &gsst );
+  // H.8.3.6.3.10 Gaussian splat raw patch data arrangement syntax
+  static void gsRawPatchDataArrangement( PCCBitstream &bitstream, GsRawPatchDataArrangement &gsrpda );
   // H.8.3.9	Raw patch data unit V-PCC Gaussian Splat extension syntax
   static void rpduVpccGsExtension( PCCBitstream &bitstream, AapsVpccGsExtension &ext, RawPatchDataUnit &rpdu );
   // H.20.2	SEI payload syntax

@@ -2301,6 +2301,11 @@ int PCCDecoder::ReconstructIdc3( PCCContext &context, PCCGroupOfFrames &reconstr
           adaptationParams.computedScaleScalingFactor_[k] = static_cast<double>( gsst.getScaleScaling( k ) );
         }
       }
+
+      if ( ext.getRawPatchDataArrangementFlag() ) {
+        addAdaptationParameters                         = true;
+        adaptationParams.rawPatchDataArrangementMethod_ = ext.getGsRawPatchDataArrangement().getDataArrangementMethod();
+      }
       if ( addAdaptationParameters ) adaptationParams_.push_back( adaptationParams );
     }
   }  // frameIdx

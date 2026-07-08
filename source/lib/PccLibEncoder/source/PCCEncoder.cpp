@@ -3720,13 +3720,8 @@ bool PCCEncoder::generateSegments( const PCCPointSet3                 &source,
   }
   if ( frame.getRawPatchEnabledFlag() ) {
     generateRawPointsPatch( source, frame, segmenterParams.useEnhancedOccupancyMapCode_ );
-    for ( int i = 0; i < frame.getNumberOfRawPointsPatches(); i++ ) {
-      if ( params_.mortonOrderSortRawPoints_ ) {
-        sortRawPointsPatchMorton( frame, i );
-      } else {
-        sortRawPointsPatch( frame, i );
-      }
-    }
+
+    for ( int i = 0; i < frame.getNumberOfRawPointsPatches(); i++ ) { sortRawPointsPatch( frame, i ); }
   }
   if ( params_.enhancedOccupancyMapCode_ ) { generateEomPatch( source, frame ); }
   if ( params_.pointLocalReconstruction_ ) {
@@ -3967,7 +3962,9 @@ void PCCEncoder::generateIntraImage( PCCAtlasFrameContext &atlasFrame,
             size_t y;
             patch.patch2Canvas( u, v, width, height, x, y );
             assert( x < width && y < height );
-            image.setValue( 0, x + tile.getLeftTopXInFrame(), y + tile.getLeftTopYInFrame(), uint16_t( d ) );
+            size_t px = x + tile.getLeftTopXInFrame();
+            size_t py = y + tile.getLeftTopYInFrame();
+            image.setValue( 0, px, py, uint16_t( d ) );
             maxDepth = (std::max)( maxDepth, (size_t)d );
           }
         }
@@ -8023,13 +8020,14 @@ void PCCEncoder::setGeneratePointCloudParameters( GeneratePointCloudParameters &
   params.geometry3dCoordinatesBitdepth_ = params_.geometry3dCoordinatesBitdepth_ + 1;
   params.useAdditionalPointsPatch_ =
       params_.reconstructRawType_ != 0 && ( params_.rawPointsPatch_ || params_.lossyRawPointsPatch_ );
-  params.plrlNumberOfModes_  = params_.plrlNumberOfModes_;
-  params.geometryBitDepth3D_ = params_.geometry3dCoordinatesBitdepth_ + 1;
-  params.EOMFixBitCount_     = params_.EOMFixBitCount_;
-  params.pbfEnableFlag_      = false;
-  params.pbfPassesCount_     = 0;
-  params.pbfFilterSize_      = 0;
-  params.pbfLog2Threshold_   = 0;
+  params.plrlNumberOfModes_             = params_.plrlNumberOfModes_;
+  params.geometryBitDepth3D_            = params_.geometry3dCoordinatesBitdepth_ + 1;
+  params.EOMFixBitCount_                = params_.EOMFixBitCount_;
+  params.pbfEnableFlag_                 = false;
+  params.pbfPassesCount_                = 0;
+  params.pbfFilterSize_                 = 0;
+  params.pbfLog2Threshold_              = 0;
+  params.rawPatchDataArrangementMethod_ = 0;
 }
 
 void PCCEncoder::createPatchFrameDataStructure( PCCContext &context ) {

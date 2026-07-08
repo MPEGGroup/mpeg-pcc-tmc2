@@ -129,6 +129,16 @@ class PCCGSMapGenerator {
   void generatePackedMaps( PCCHighLevelSyntax              &hls,
                            const PCCGSEncoderParameters    &params,
                            std::vector<PCCVideoAttributes> &packedVideoFrames );
+
+  /**
+   * @brief Fill geometry map with padding (m76580)
+   */
+  void geometryMapPadding( const PCCPointSet3                     &source,
+                           const PCCGSEncoderParameters           &params,
+                           std::vector<GSEncoderPatchInformation> &patches,
+                           PCCVideoFrame                          &image,
+                           size_t                                  topLeftX = 0,
+                           size_t                                  topLeftY = 0 );
 };
 
 }  // namespace pcc

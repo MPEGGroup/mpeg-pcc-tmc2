@@ -1664,6 +1664,16 @@ void PCCCodec::generateRawPointsGeometryfromVideoRecGS( PCCContext      &context
                                                         PCCPointSet3    &pointCloud ) {
   auto &image = context.getVideoGeometryMultiple()[0].getFrame( frameIndex );
 
+  // Get data arrangement method from AAPS
+  auto     athl              = context.getAtlasTileLayer( frameIndex, 0 );
+  auto     aapsId            = athl.getHeader().getAtlasAdaptationParameterSetId();
+  auto    &aaps              = context.getAtlasAdaptationParameterSet( aapsId );
+  auto    &gsExt             = aaps.getAapsVpccGsExtension();
+  uint32_t arrangementMethod = 0;
+  if ( gsExt.getRawPatchDataArrangementFlag() ) {
+    arrangementMethod = gsExt.getGsRawPatchDataArrangement().getDataArrangementMethod();
+  }
+
   size_t numberOfRawPointsPatches = tile.getNumberOfRawPointsPatches();
   for ( int i = 0; i < numberOfRawPointsPatches; i++ ) {
     auto        &rawPointsPatch = tile.getRawPointsPatch( i );
@@ -1679,42 +1689,59 @@ void PCCCodec::generateRawPointsGeometryfromVideoRecGS( PCCContext      &context
 
     size_t numberOfRawPoints = rawPointsPatch.getNumberOfRawPoints();
 
-    for ( size_t p = 0; p < numberOfRawPoints; p++ ) {
-      auto pointX   = p;
-      v             = ( pointX / sizeU ) * rawPointsPatch.occupancyResolution_;
-      u             = ( pointX % sizeU ) * rawPointsPatch.occupancyResolution_;
-      x             = ( u0 + u ) + tile.getLeftTopXInFrame();
-      y             = ( v0 + v ) + tile.getLeftTopYInFrame();
-      size_t valueX = image.getValue( 0, x, y );
-      auto   pointY = p + numberOfRawPoints;
-      v             = ( pointY / sizeU ) * rawPointsPatch.occupancyResolution_;
-      u             = ( pointY % sizeU ) * rawPointsPatch.occupancyResolution_;
-      x             = ( u0 + u ) + tile.getLeftTopXInFrame();
-      y             = ( v0 + v ) + tile.getLeftTopYInFrame();
-      size_t valueY = image.getValue( 0, x, y );
-      auto   pointZ = p + 2 * numberOfRawPoints;
-      v             = ( pointZ / sizeU ) * rawPointsPatch.occupancyResolution_;
-      u             = ( pointZ % sizeU ) * rawPointsPatch.occupancyResolution_;
-      x             = ( u0 + u ) + tile.getLeftTopXInFrame();
-      y             = ( v0 + v ) + tile.getLeftTopYInFrame();
-      size_t valueZ = image.getValue( 0, x, y );
+    if ( rawPointsPatch.occupancyResolution_ != 1 ) {
+      std::cout << "Error: occupancyResolution_ != 1 not supported in raw points geometry generation from video."
+                << std::endl;
+      return;
+    }
 
+    for ( size_t p = 0; p < numberOfRawPoints; p++ ) {
+      size_t valueX, valueY, valueZ;
+      if ( arrangementMethod == 1 ) {
+        // Method 1: vertical planar arrangement - 3 horizontal bands
+        size_t compHeight = sizeV / 3;
+        for ( size_t k = 0; k < 3; k++ ) {
+          u = ( p % sizeU ) * rawPointsPatch.occupancyResolution_;
+          v = ( p / sizeU + k * compHeight ) * rawPointsPatch.occupancyResolution_;
+          x = ( u0 + u ) + tile.getLeftTopXInFrame();
+          y = ( v0 + v ) + tile.getLeftTopYInFrame();
+          if ( k == 0 )
+            valueX = image.getValue( 0, x, y );
+          else if ( k == 1 )
+            valueY = image.getValue( 0, x, y );
+          else
+            valueZ = image.getValue( 0, x, y );
+        }
+      } else {
+        // Method 0: sequential arrangement
+        auto pointX = p;
+        v           = ( pointX / sizeU ) * rawPointsPatch.occupancyResolution_;
+        u           = ( pointX % sizeU ) * rawPointsPatch.occupancyResolution_;
+        x           = ( u0 + u ) + tile.getLeftTopXInFrame();
+        y           = ( v0 + v ) + tile.getLeftTopYInFrame();
+        valueX      = image.getValue( 0, x, y );
+        auto pointY = p + numberOfRawPoints;
+        v           = ( pointY / sizeU ) * rawPointsPatch.occupancyResolution_;
+        u           = ( pointY % sizeU ) * rawPointsPatch.occupancyResolution_;
+        x           = ( u0 + u ) + tile.getLeftTopXInFrame();
+        y           = ( v0 + v ) + tile.getLeftTopYInFrame();
+        valueY      = image.getValue( 0, x, y );
+        auto pointZ = p + 2 * numberOfRawPoints;
+        v           = ( pointZ / sizeU ) * rawPointsPatch.occupancyResolution_;
+        u           = ( pointZ % sizeU ) * rawPointsPatch.occupancyResolution_;
+        x           = ( u0 + u ) + tile.getLeftTopXInFrame();
+        y           = ( v0 + v ) + tile.getLeftTopYInFrame();
+        valueZ      = image.getValue( 0, x, y );
+      }
       // clause 9.2.5.6 shift values
       valueX += rawPointsPatch.u1_;
       valueY += rawPointsPatch.v1_;
       valueZ += rawPointsPatch.d1_;
 
-      if ( rawPointsPatch.occupancyResolution_ != 1 ) {
-        std::cout << "Error: occupancyResolution_ != 1 not supported in raw points geometry generation from video."
-                  << std::endl;
-        return;
-      }
-
       size_t pointIndex = pointCloud.addPoint( PCCPoint3D( valueX, valueY, valueZ ) );
       pointCloud.setPointPatchIndex( pointIndex, tile.getTileIndex(), i );
     }
   }
-
   return;
 }
 
@@ -1757,6 +1784,16 @@ void PCCCodec::generateRawPointsAttributefromVideoRecGS( PCCContext      &contex
   size_t numberOfRawPointsPatches = tile.getNumberOfRawPointsPatches();
   auto   attributeTypeId          = ai.getAttributeTypeId( attributeIdx );
 
+  // Get data arrangement method from AAPS
+  auto     athl              = context.getAtlasTileLayer( frameIndex, 0 );
+  auto     aapsId            = athl.getHeader().getAtlasAdaptationParameterSetId();
+  auto    &aaps              = context.getAtlasAdaptationParameterSet( aapsId );
+  auto    &gsExt             = aaps.getAapsVpccGsExtension();
+  uint32_t arrangementMethod = 0;
+  if ( gsExt.getRawPatchDataArrangementFlag() ) {
+    arrangementMethod = gsExt.getGsRawPatchDataArrangement().getDataArrangementMethod();
+  }
+
   TransferAttributeType attributeType = TransferAttributeType::TRAN_OPACITY;
 
   if ( attributeTypeId == ATTR_TRANSPARENCY ) {
@@ -1778,105 +1815,53 @@ void PCCCodec::generateRawPointsAttributefromVideoRecGS( PCCContext      &contex
   for ( int i = 0; i < numberOfRawPointsPatches; i++ ) {
     auto      &rawPointsPatch = tile.getRawPointsPatch( i );
     PCCColor3B rawPointsColor( 0, 255, 255 );
-    size_t     numRawPoints        = rawPointsPatch.getNumberOfRawPoints();
-    rawPointsPatch.sizeV_          = rawPointsPatch.sizeV0_ * rawPointsPatch.occupancyResolution_;
-    rawPointsPatch.sizeU_          = rawPointsPatch.sizeU0_ * rawPointsPatch.occupancyResolution_;
-    size_t       numRawPointsAdded = 0;
-    const size_t v0                = rawPointsPatch.v0_ * rawPointsPatch.occupancyResolution_;
-    const size_t u0                = rawPointsPatch.u0_ * rawPointsPatch.occupancyResolution_;
-    for ( size_t v = 0; v < rawPointsPatch.sizeV_; ++v ) {
-      for ( size_t u = 0; u < rawPointsPatch.sizeU_; ++u ) {
-        const size_t u1 = tile.getLeftTopXInFrame() + u0 + u;
-        const size_t v1 = tile.getLeftTopYInFrame() + v0 + v;
-        if ( numRawPointsAdded < numRawPoints ) {
-          auto i                                                       = numRawPointsAdded;
-          pointCloud.getAttribute( attributeType, totalPoints + i )[0] = double( image.getValue( 0, u1, v1 ) );
-        } else if ( numRawPoints <= numRawPointsAdded && numRawPointsAdded < 2 * numRawPoints ) {
-          auto i                                                       = numRawPointsAdded - numRawPoints;
-          pointCloud.getAttribute( attributeType, totalPoints + i )[1] = double( image.getValue( 0, u1, v1 ) );
-        } else if ( 2 * numRawPoints <= numRawPointsAdded && numRawPointsAdded < 3 * numRawPoints ) {
-          auto i                                                       = numRawPointsAdded - 2 * numRawPoints;
-          pointCloud.getAttribute( attributeType, totalPoints + i )[2] = double( image.getValue( 0, u1, v1 ) );
-        }
-        numRawPointsAdded++;
-      }  // u
-    }  // v
+    size_t     numRawPoints = rawPointsPatch.getNumberOfRawPoints();
+    rawPointsPatch.sizeV_   = rawPointsPatch.sizeV0_ * rawPointsPatch.occupancyResolution_;
+    rawPointsPatch.sizeU_   = rawPointsPatch.sizeU0_ * rawPointsPatch.occupancyResolution_;
+    const size_t v0         = rawPointsPatch.v0_ * rawPointsPatch.occupancyResolution_;
+    const size_t u0         = rawPointsPatch.u0_ * rawPointsPatch.occupancyResolution_;
+    const size_t sizeU      = rawPointsPatch.sizeU_;
 
+    if ( arrangementMethod == 1 ) {
+      // Method 1: vertical planar arrangement - 3 horizontal bands
+      const size_t bandHeight = rawPointsPatch.sizeV_ / 3;
+      size_t       pu = 0, pv = 0;
+      for ( size_t p = 0; p < numRawPoints; ++p ) {
+        const size_t u1                                              = tile.getLeftTopXInFrame() + u0 + pu;
+        const size_t base_v                                          = tile.getLeftTopYInFrame() + v0 + pv;
+        pointCloud.getAttribute( attributeType, totalPoints + p )[0] = double( image.getValue( 0, u1, base_v ) );
+        pointCloud.getAttribute( attributeType, totalPoints + p )[1] =
+            double( image.getValue( 0, u1, base_v + bandHeight ) );
+        pointCloud.getAttribute( attributeType, totalPoints + p )[2] =
+            double( image.getValue( 0, u1, base_v + 2 * bandHeight ) );
+        if ( ++pu == rawPointsPatch.sizeU_ ) {
+          pu = 0;
+          ++pv;
+        }
+      }
+    } else {
+      // Method 0: sequential arrangement - raster scan
+      size_t numRawPointsAdded = 0;
+      for ( size_t v = 0; v < rawPointsPatch.sizeV_; ++v ) {
+        for ( size_t u = 0; u < rawPointsPatch.sizeU_; ++u ) {
+          const size_t u1 = tile.getLeftTopXInFrame() + u0 + u;
+          const size_t v1 = tile.getLeftTopYInFrame() + v0 + v;
+          if ( numRawPointsAdded < numRawPoints ) {
+            auto i                                                       = numRawPointsAdded;
+            pointCloud.getAttribute( attributeType, totalPoints + i )[0] = double( image.getValue( 0, u1, v1 ) );
+          } else if ( numRawPoints <= numRawPointsAdded && numRawPointsAdded < 2 * numRawPoints ) {
+            auto i                                                       = numRawPointsAdded - numRawPoints;
+            pointCloud.getAttribute( attributeType, totalPoints + i )[1] = double( image.getValue( 0, u1, v1 ) );
+          } else if ( 2 * numRawPoints <= numRawPointsAdded && numRawPointsAdded < 3 * numRawPoints ) {
+            auto i                                                       = numRawPointsAdded - 2 * numRawPoints;
+            pointCloud.getAttribute( attributeType, totalPoints + i )[2] = double( image.getValue( 0, u1, v1 ) );
+          }
+          numRawPointsAdded++;
+        }  // u
+      }  // v
+    }
     totalPoints += numRawPoints;
   }
-
-  // size_t numberOfRawPointsPatches = tile.getNumberOfRawPointsPatches();
-  // for ( int i = 0; i < numberOfRawPointsPatches; i++ ) {
-  //   auto&        rawPointsPatch = tile.getRawPointsPatch( i );
-  //   const size_t v0             = rawPointsPatch.v0_ * rawPointsPatch.occupancyResolution_;
-  //   const size_t u0             = rawPointsPatch.u0_ * rawPointsPatch.occupancyResolution_;
-  //   const size_t sizeV          = rawPointsPatch.sizeV0_;
-  //   const size_t sizeU          = rawPointsPatch.sizeU0_;
-
-  //   size_t v = 0;
-  //   size_t u = 0;
-  //   size_t x = 0;
-  //   size_t y = 0;
-
-  //   size_t numberOfRawPoints    = rawPointsPatch.getNumberOfRawPoints();
-  //   auto attributeTypeId = ai.getAttributeTypeId(attributeIdx);
-
-  //   for ( size_t p = 0; p < numberOfRawPoints ; p++ ) {
-  //         auto pointX = p;
-  //         v = ( pointX / sizeU ) * rawPointsPatch.occupancyResolution_;
-  //         u = ( pointX % sizeU ) * rawPointsPatch.occupancyResolution_;
-  //         x       = ( u0 + u ) + tile.getLeftTopXInFrame();
-  //         y       = ( v0 + v ) + tile.getLeftTopYInFrame();
-  //         auto valueX  = image.getValue( 0, x, y );
-  //         auto pointY = p + numberOfRawPoints;
-  //         v = ( pointY / sizeU ) * rawPointsPatch.occupancyResolution_;
-  //         u = ( pointY % sizeU ) * rawPointsPatch.occupancyResolution_;
-  //         x       = ( u0 + u ) + tile.getLeftTopXInFrame();
-  //         y       = ( v0 + v ) + tile.getLeftTopYInFrame();
-  //         auto valueY  = image.getValue( 0, x, y ) ;
-  //         auto pointZ = p + 2*numberOfRawPoints;
-  //         v       = ( pointZ / sizeU ) * rawPointsPatch.occupancyResolution_;
-  //         u       = ( pointZ % sizeU ) * rawPointsPatch.occupancyResolution_;
-  //         x       = ( u0 + u ) + tile.getLeftTopXInFrame();
-  //         y       = ( v0 + v ) + tile.getLeftTopYInFrame();
-  //         auto valueZ  = image.getValue( 0, x, y );
-
-  //         if (attributeTypeId == 2 ) { // oppacity
-  //           PCCAttribute16bit attributeValue;
-  //           attributeValue[0] = valueX;
-  //           attributeValue[1] = 0;
-  //           attributeValue[2] = 0;
-  //           pointCloud.setOpacity( p,  attributeValue);
-  //         } else if (attributeTypeId == 5 ) { // spherical harmonics
-  //           PCCAttribute16bit attributeValue;
-  //           attributeValue[0] = valueX;
-  //           attributeValue[1] = valueY;
-  //           attributeValue[2] = valueZ;
-  //           pointCloud.setSphericalHarmonic( p,  partitionIndex, attributeValue);
-  //         } else if (attributeTypeId == 6 ) { // scale
-  //           PCCAttribute16bit attributeValue;
-  //           attributeValue[0] = valueX;
-  //           attributeValue[1] = valueY;
-  //           attributeValue[2] = valueZ;
-  //           pointCloud.setScale( p,  attributeValue);
-  //         } else if (attributeTypeId == 7 ) { // rotation
-  //           if (partitionIndex == 0 ) {
-  //             PCCAttribute16bit attributeValue;
-  //             attributeValue[0] = valueX;
-  //             attributeValue[1] = valueY;
-  //             attributeValue[2] = valueZ;
-  //             pointCloud.setRotation( p,  partitionIndex, attributeValue);
-  //           } else {
-  //             PCCAttribute16bit attributeValue;
-  //             attributeValue[0] = valueX;
-  //             attributeValue[1] = 0;
-  //             attributeValue[2] = 0;
-  //             pointCloud.setRotation( p,  partitionIndex, attributeValue);
-  //           }
-  //         }
-  //  }
-  //}
-
   return;
 }
 

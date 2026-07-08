@@ -2853,12 +2853,8 @@ void PCCBitstreamReader::aapsVpccGsExtension( PCCBitstream &bitstream, AapsVpccG
   ext.setTransform2DPresentFlag( value );  // u(1)
   READ_CODE_DESC( value, 1, "aaps_vpcc_gs_scale_transform_present_flag" );
   ext.setScaleTransformPresentFlag( value );  // u(1)
-  READ_CODE_DESC( value, 1, "placeholder_for_aaps_vpcc_gs_raw_patch_data_arrangement_flag" );
-  if ( value != 0 ) {
-    TRACE_BITSTREAM(
-        "Error: placeholder_for_aaps_vpcc_gs_raw_patch_data_arrangement_flag is set to 1, but should be 0\n" );
-    exit( EXIT_FAILURE );
-  }
+  READ_CODE_DESC( value, 1, "aaps_vpcc_gs_raw_patch_data_arrangement_flag" );
+  ext.setRawPatchDataArrangementFlag( value );  // u(1)
   READ_CODE_DESC( value, 1, "aaps_vpcc_gs_opacity_property_present_flag" );
   ext.setOpacityPropertyPresentFlag( value );  // u(1)
   READ_CODE_DESC( value, 8, "aaps_vpcc_gs_reserved_zero_8bits" );
@@ -2869,6 +2865,9 @@ void PCCBitstreamReader::aapsVpccGsExtension( PCCBitstream &bitstream, AapsVpccG
   if ( ext.getPredEnableFlag() ) { gsPrediction( bitstream, ext.getGsPrediction() ); }
   if ( ext.getTransform2DPresentFlag() ) { gs2DTransform( bitstream, ext.getGs2DTransform() ); }
   if ( ext.getScaleTransformPresentFlag() ) { gsScaleTransform( bitstream, ext.getGsScaleTransform() ); }
+  if ( ext.getRawPatchDataArrangementFlag() ) {
+    gsRawPatchDataArrangement( bitstream, ext.getGsRawPatchDataArrangement() );
+  }
   if ( ext.getOpacityPropertyPresentFlag() ) { gsOpacityProperty( bitstream, ext.getGsOpacityProperty() ); }
 
   if ( ext.getReservedZero8bits() != 0 ) {
@@ -3165,6 +3164,15 @@ void PCCBitstreamReader::gs2DTransform( PCCBitstream &bitstream, Gs2DTransform &
       gs2DTransform.setTrColType( i, value );
     }
   }
+  TRACE_BITSTREAM_OUT( "%s", __func__ );
+}
+
+// H.8.3.6.3.10 Gaussian splat raw patch data arrangement syntax
+void PCCBitstreamReader::gsRawPatchDataArrangement( PCCBitstream &bitstream, GsRawPatchDataArrangement &gsrpda ) {
+  TRACE_BITSTREAM_IN( "%s", __func__ );
+  int value;
+  READ_UVLC_DESC( value, "gsrpda_data_arrangement_method" );
+  gsrpda.setDataArrangementMethod( value );
   TRACE_BITSTREAM_OUT( "%s", __func__ );
 }
 

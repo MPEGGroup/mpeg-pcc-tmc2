@@ -46,8 +46,8 @@ declare -A AVAILABLE_FRAMES
 # Experiment settings
 # ==================================================================================================
 
-JOBNAME="V-PCC-GS"
-AUTO_RUN=0                  # 0:off, 1:run_local, 2:run_slurm 
+JOBNAME="V-PCC-GS_m76580_v3_morton"
+AUTO_RUN=0                  # 0:off, 1:run_local, 2:run_slurm
 LENGTHS=(1F)                # Valid values for LENGTHS are (1F), (NF), or (1F NF)
 CODINGS=(C1 CW)             # Valid values for CODINGS are (C1), (CW), or (C1 CW)
 KEEP_INTERMEDIATE_FILES=0   # 0: reduce diskspace, or 1: keep intermediate files
@@ -82,6 +82,8 @@ GSD_SCALE_NON_UNIFORM_QUANT=1   # 1: enable m76123, 0: disable m76123
 GSD_SCALE_POWER_TRANSFORM=1     # 1: enable m76151 power transform + 2-seg PLS (requires GSD_SCALE_NON_UNIFORM_QUANT=1), 0: disable
 GSD_OPACITY_NON_UNIFORM_QUANT=1 # 1: enable m76122 opacity non-uniform quantization, 0: disable
 DUPLICATE_MERGING=0             # 1: enable merging of duplicate positions (m76602), 0: disable (CTC)
+RAW_PATCH_DATA_ARRANGEMENT_METHOD=0 # 1: enable raw patch data arrangement method (m76580) Band-based raw patch layout (method=1): X/Y/Z components packed in 3 horizontal bands, 0: V-PCC arangment
+BLOCK_BASED_SORT_BLOCK_SIZE=64      # when RAW_PATCH_DATA_ARRANGEMENT_METHOD=1
 
 
 # ==================================================================================================
@@ -501,7 +503,9 @@ for SEQ in "${SEQUENCES[@]}"; do
                 echo "    --enableOpacityNonUniformQuantization=$GSD_OPACITY_NON_UNIFORM_QUANT \\"
                 echo "    --enableShDimensionReduction=$GSD_DIMENSION_REDUCTION \\"
                 echo "    --enableDuplicateMerging=$DUPLICATE_MERGING \\"
-                echo "    --compressedStreamPath=$RESULT_DIR/${LENGTH}_${SEQ}_${RATE}.bin"
+                echo "    --rawPatchDataArrangementMethod=$RAW_PATCH_DATA_ARRANGEMENT_METHOD \\"
+                echo "    --blockBasedSortBlockSize=$BLOCK_BASED_SORT_BLOCK_SIZE \\"
+				echo "    --compressedStreamPath=$RESULT_DIR/${LENGTH}_${SEQ}_${RATE}.bin"
                 echo ""
                 if [ "$V3C_PARSER_CHECK" -eq 1 ]; then
                     echo "# Try to parse the bitstream with the V3C parser"

@@ -321,6 +321,15 @@ bool parseParameters( int                           argc,
       adaptationParams.enableShDimensionReduction_,
       adaptationParams.enableShDimensionReduction_,
       "Enable SH dimension reduction after 2D transform (m76859)" )
+    ( "rawPatchDataArrangementMethod",
+      encoderParams.rawPatchDataArrangementMethod_,
+      encoderParams.rawPatchDataArrangementMethod_,
+      "Raw patch data arrangement method: 0=sequential, 1=vertical planar (m76580)" )
+    ( "blockBasedSortBlockSize",                 
+      encoderParams.blockBasedSortBlockSize_,
+      encoderParams.blockBasedSortBlockSize_,
+      "Block size for raw_patch_data_arrangement_method=1 (must be power of 2, >=8, default = 64)" )
+
 
     // VUI parameters (Annex G – ISO/IEC 23090-5)
     ( "aspsVuiParametersPresentFlag",
@@ -403,7 +412,7 @@ bool parseParameters( int                           argc,
     ( "keepIntermediateFiles",
       encoderParams.keepIntermediateFiles_,
       encoderParams.keepIntermediateFiles_,
-      "Keep intermediate files: RGB, YUV and bin" )
+      "Keep intermediate files: RGB, YUV and bin" )      
     ( "attributeOrder",
       encoderParams.attributeOrder_,
       encoderParams.attributeOrder_,
