@@ -35,6 +35,7 @@
 #define PCCPatchSegmenter_h
 
 #include "PCCCommon.h"
+#include "PCCPatch.h"
 #include <set>
 
 namespace pcc {
@@ -43,7 +44,6 @@ typedef std::unordered_map<uint64_t, std::vector<size_t>> Voxels;
 
 class PCCNormalsGenerator3;
 class PCCKdTree;
-class PCCPatch;
 
 struct PCCPatchSegmenter3Parameters {
   bool             gridBasedSegmentation_;

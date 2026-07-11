@@ -2750,11 +2750,11 @@ bool PCCAdaptation::extractSHQuantRegions( const PCCPointSetGS &input, PCCAdapta
   params.shStepSizes_.assign( size_t{ 16 } * 9, 0.0 );
   for ( size_t i = 0; i < 16; ++i ) {
     for ( int ch = 0; ch < 3; ++ch ) {
-      const double channelRange               = params.shLimitMax_[i][ch] - params.shLimitMin_[i][ch];
-      const double baseStep                   = std::max( 1e-9, channelRange / static_cast<double>( max_quant_val ) );
-      params.shStepSizes_[i * 9 + ch * 3 + 0] = 2.0 * baseStep;
-      params.shStepSizes_[i * 9 + ch * 3 + 1] = 1.0 * baseStep;
-      params.shStepSizes_[i * 9 + ch * 3 + 2] = 2.0 * baseStep;
+      const double channelRange = params.shLimitMax_[i][ch] - params.shLimitMin_[i][ch];
+      const double baseStep     = std::max( 1e-9, channelRange / static_cast<double>( max_quant_val ) );
+      params.shStepSizes_[i * 9 + static_cast<size_t>( ch ) * 3 + 0] = 2.0 * baseStep;
+      params.shStepSizes_[i * 9 + static_cast<size_t>( ch ) * 3 + 1] = 1.0 * baseStep;
+      params.shStepSizes_[i * 9 + static_cast<size_t>( ch ) * 3 + 2] = 2.0 * baseStep;
     }
   }
   params.shNumBitsForTransitionPoint_.assign( size_t{ 16 } * 3, static_cast<int>( bitDepth ) );
@@ -3466,17 +3466,18 @@ double PCCAdaptation::gaussianSimilarityMetric( const PCCPointSetGS       &input
                                                 const std::vector<double> &weights,
                                                 const size_t               i,
                                                 const size_t               j ) {
-  const size_t idx1      = indices[i];
-  const size_t idx2      = indices[j];
-  double       normSH    = std::sqrt( std::inner_product(
-      &input.getSphericalHarmonic( idx1 ).coeffs[0][0], &input.getSphericalHarmonic( idx1 ).coeffs[0][0] + 16 * 3,
-      &input.getSphericalHarmonic( idx2 ).coeffs[0][0], 0.0, std::plus<double>(),
-      []( float a, float b ) { return ( a - b ) * ( a - b ); } ) );
-  double       normOp    = abs( sigmoid( input.getOpacity( idx1 ) ) - sigmoid( input.getOpacity( idx2 ) ) );
-  double       normGeom  = ( computeCovariance3D( input.getRotation( idx1 ), input.getScale( idx1 ) ) -
-                             computeCovariance3D( input.getRotation( idx2 ), input.getScale( idx2 ) ) )
-                               .norm();
-  double       minWeight = std::min( weights[i], weights[j] );
+  const size_t idx1   = indices[i];
+  const size_t idx2   = indices[j];
+  double       normSH = std::sqrt(
+      std::inner_product( &input.getSphericalHarmonic( idx1 ).coeffs[0][0],
+                          &input.getSphericalHarmonic( idx1 ).coeffs[0][0] + static_cast<ptrdiff_t>( 16 * 3 ),
+                          &input.getSphericalHarmonic( idx2 ).coeffs[0][0], 0.0, std::plus<double>(),
+                          []( float a, float b ) { return ( a - b ) * ( a - b ); } ) );
+  double normOp    = abs( sigmoid( input.getOpacity( idx1 ) ) - sigmoid( input.getOpacity( idx2 ) ) );
+  double normGeom  = ( computeCovariance3D( input.getRotation( idx1 ), input.getScale( idx1 ) ) -
+                       computeCovariance3D( input.getRotation( idx2 ), input.getScale( idx2 ) ) )
+                         .norm();
+  double minWeight = std::min( weights[i], weights[j] );
 
   double shFactor      = 0.5;
   double geomFactor    = 0.003;

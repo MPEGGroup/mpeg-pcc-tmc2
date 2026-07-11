@@ -35,9 +35,10 @@
 #define PCCGroupOfFrames_h
 
 #include "PCCCommon.h"
+#include "PCCPointSet.h"
 
 namespace pcc {
-class PCCPointSet3;
+
 class PCCGroupOfFrames {
  public:
   PCCGroupOfFrames();

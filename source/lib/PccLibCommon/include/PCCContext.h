@@ -38,13 +38,14 @@
 #include "PCCVideo.h"
 #include "PCCBitstreamCommon.h"
 #include "PCCHighLevelSyntax.h"
+#include "PCCFrameContext.h"
 #include <map>
 
 namespace pcc {
 
 class PCCGroupOfFrames;
 class PCCFrameContext;
-class PCCAtlasFrameContext;
+
 typedef PCCVideo<uint8_t, 3>  PCCVideoOccupancyMap;
 typedef PCCVideo<uint16_t, 3> PCCVideoGeometry;
 typedef PCCVideo<uint16_t, 3> PCCVideoAttribute;

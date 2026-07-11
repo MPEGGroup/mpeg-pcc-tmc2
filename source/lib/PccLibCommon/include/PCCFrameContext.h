@@ -37,9 +37,12 @@
 
 #include "PCCPointSet.h"
 #include "PCCPatch.h"
-#include "PCCContext.h"
+#include "PCCHighLevelSyntax.h"
 
 namespace pcc {
+
+class PCCContext;
+
 struct PCCGPAFrameSize {
   size_t widthGPA_;
   size_t heightGPA_;
@@ -493,8 +496,6 @@ class PCCAtlasFrameContext {
               (size_t)std::ceil( static_cast<double>( atlasFrameHeight_ ) / static_cast<double>( partitionHeightIn ) );
           for ( size_t i = 0; i < numPartHeight; i++ ) partitionHeightListIn64.push_back( partitionHeightIn );
         }
-        //        assert(partitionWidthListIn64.size()>0);
-        //        assert(partitionHeightListIn64.size()>0);
         numPartitionCols_ = partitionWidthListIn64.size();
         numPartitionRows_ = partitionHeightListIn64.size();
       }

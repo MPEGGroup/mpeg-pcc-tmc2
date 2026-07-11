@@ -33,6 +33,7 @@
 #include "PCCCommon.h"
 #include "PCCPatch.h"
 #include "PCCFrameContext.h"
+#include "PCCContext.h"
 
 using namespace pcc;
 
