@@ -75,7 +75,10 @@ class PCCGSEncoder {
               const PCCGSEncoderParameters  &params,
               const PCCAdaptationParameters &adaptationParams,
               SampleStreamV3CUnit           &ssvu,
+              std::vector<uint8_t>          &lodAssignment,
               PCCLogger                     &logger );
+
+  void fillPackingInfoForLoD( PCCHighLevelSyntax &hls, const PCCGSEncoderParameters &params );
 
  private:
   // Component classes

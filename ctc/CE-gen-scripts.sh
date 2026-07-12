@@ -46,13 +46,13 @@ declare -A AVAILABLE_FRAMES
 # Experiment settings
 # ==================================================================================================
 
-JOBNAME="V-PCC-GS_m76580_v3_morton"
+JOBNAME="V-PCC-GS"
 AUTO_RUN=0                  # 0:off, 1:run_local, 2:run_slurm
 LENGTHS=(1F)                # Valid values for LENGTHS are (1F), (NF), or (1F NF)
 CODINGS=(C1 CW)             # Valid values for CODINGS are (C1), (CW), or (C1 CW)
 KEEP_INTERMEDIATE_FILES=0   # 0: reduce diskspace, or 1: keep intermediate files
 GENERATE_PNGs=0             # 0 or 1
-: "${EXPERIMENT_MODE:=2}"   # 0: mandatory, 1: all, 2: man_with_fruit_tracked only, 3: subset
+: "${EXPERIMENT_MODE:=2}"   # 0: mandatory, 1: all, 2: man_with_fruit_tracked only, 3: subset, 4: plant only
 : "${METRICS_THREADS:=1}"   # Number of threads for mpeg-gsc-metrics (optimize for your system resources)
 V3C_PARSER_CHECK=1          # 0: disable , 1: enable - check HLS of encoded bitstreams
 # Custom time format to improve platform independence of parsing time results
@@ -83,8 +83,15 @@ GSD_SCALE_POWER_TRANSFORM=1     # 1: enable m76151 power transform + 2-seg PLS (
 GSD_OPACITY_NON_UNIFORM_QUANT=1 # 1: enable m76122 opacity non-uniform quantization, 0: disable
 DUPLICATE_MERGING=0             # 1: enable merging of duplicate positions (m76602), 0: disable (CTC)
 RAW_PATCH_DATA_ARRANGEMENT_METHOD=0 # 1: enable raw patch data arrangement method (m76580) Band-based raw patch layout (method=1): X/Y/Z components packed in 3 horizontal bands, 0: V-PCC arangment
-BLOCK_BASED_SORT_BLOCK_SIZE=64      # when RAW_PATCH_DATA_ARRANGEMENT_METHOD=1
+BLOCK_BASED_SORT_BLOCK_SIZE=64  # when RAW_PATCH_DATA_ARRANGEMENT_METHOD=1
+LOD_ENABLE_ENCODER=0            # 0: OFF(CTC), 1:ON, m76746
+LOD_SPLIT_RATIOS="30,70"        # e.g. 20% L0, 30% L1, 50% L2
 
+# ==================================================================================================
+# Decoder settings
+# ==================================================================================================
+
+LOD_TARGET_DECODER=0            # 0: disable LoD, Binary LoD mask: 1: only L0, 2: only L1, 3: L0 + L1, 4: only L2, etc. Use 255 to select all levels.
 
 # ==================================================================================================
 # Base directories
@@ -172,6 +179,12 @@ elif [ $EXPERIMENT_MODE -eq 2 ]; then
     done
     ENABLE_SEQs[manwithfruit_tracked]=1
     JOBNAME="$JOBNAME-manwithfruit"
+elif [ $EXPERIMENT_MODE -eq 4 ]; then
+    for SEQ in "${!ENABLE_SEQs[@]}"; do
+        ENABLE_SEQs[$SEQ]=0
+    done
+    ENABLE_SEQs[plant]=1
+    JOBNAME="$JOBNAME-plant"
 elif [ $EXPERIMENT_MODE -eq 3 ]; then
     ENABLE_SEQs[musical]=0
     ENABLE_SEQs[library]=0
@@ -292,6 +305,16 @@ for SEQ in "${SEQUENCES[@]}"; do
 done
 
 # ==================================================================================================
+# check LoD demo running condition
+# ==================================================================================================
+
+if [ $LOD_ENABLE_ENCODER == 1 ] && { [ $ADAPTIVE_QUANTIZATION == 1 ] || [ $IMPLICIT_PACKING == 1 ] || [ $TEMPORAL_PACKING == 1 ] ; }; then
+    echo "❌ LoD current demo does not support with ADAPTIVE_QUANTIZATION=1 or IMPLICIT_PACKING=1 or TEMPORAL_PACKING=1"
+    echo "current configuration: ADAPTIVE_QUANTIZATION=$ADAPTIVE_QUANTIZATION, IMPLICIT_PACKING=$IMPLICIT_PACKING, TEMPORAL_PACKING=$TEMPORAL_PACKING"
+    exit 1
+fi
+
+# ==================================================================================================
 # Create output directories and copy binaries
 # ==================================================================================================
 
@@ -313,7 +336,13 @@ MKDIRCK "$OUT/jobs/done/decoder"
 MKDIRCK "$OUT/jobs/done/metric"
 MKDIRCK "$OUT/metrics"
 
-if [ -z "$IMPORTANCE_SCORES_DIR" ] && [ $ADAPTIVE_QUANTIZATION == 1 ]; then
+if [ -z $IMPORTANCE_SCORES_DIR ] && { [ $ADAPTIVE_QUANTIZATION == 1 ] || [ $LOD_ENABLE_ENCODER == 1 ]; }; then
+    CALCULATE_IMPORTANCE_SCORES=1
+else
+    CALCULATE_IMPORTANCE_SCORES=0
+fi
+
+if [ $CALCULATE_IMPORTANCE_SCORES == 1 ]; then
     MKDIRCK "$BATCH_IMPORTANCE"
     MKDIRCK "$OUT/jobs/done/importance"
 fi
@@ -379,7 +408,7 @@ for SEQ in "${SEQUENCES[@]}"; do
         echo "Printing the md5sum of the first input file:"
         md5sum $(printf ${UNCOMPRESSED_DATA_PATHs[$SEQ]} ${START_FRAME_NR[$SEQ]})
         
-        if [ -z "$IMPORTANCE_SCORES_DIR" ] && [ $ADAPTIVE_QUANTIZATION == 1 ]; then
+        if [ $CALCULATE_IMPORTANCE_SCORES == 1 ]; then
             SEQ_GROUP_DIR="$OUT/results/$LENGTH/$SEQ/importance_scores"
             MKDIRCK "$SEQ_GROUP_DIR"
             
@@ -492,6 +521,10 @@ for SEQ in "${SEQUENCES[@]}"; do
                     echo "    --implicitPacking=$IMPLICIT_PACKING \\"
                     echo "    --temporalPacking=$TEMPORAL_PACKING \\"
                 fi
+                if [ $LOD_ENABLE_ENCODER == "1" ]; then
+                    echo "    --lodSplitRatios=$LOD_SPLIT_RATIOS \\"
+                    echo "    --importanceScoresPath=\"$SEQ_GROUP_DIR/frame_%04i.impScores.txt\" \\"
+                fi
                 echo "    --gsdTransform2dPresentFlag=$GSD_TRANSFORM_2D \\"
                 echo "    --dataAdaptiveShTransformEnabled=$GSD_ADAPTIVE_SH \\"
                 echo "    --adaptivePcaEnabled=$ADAPTIVE_PCA \\"
@@ -538,7 +571,10 @@ for SEQ in "${SEQUENCES[@]}"; do
                     MKDIRCK "$RESULT_DIR/debug"
                     echo "    --keepIntermediateFiles=1 --debugPath=$RESULT_DIR/debug \\"                    
                 fi
-                echo "    --startFrameNumber=${START_FRAME_NR[$SEQ]}"
+                echo "    --startFrameNumber=${START_FRAME_NR[$SEQ]} \\"
+                if [ $LOD_TARGET_DECODER != "0" ]; then
+                    echo "    --lodTargetLodMask=$LOD_TARGET_DECODER \\"
+                fi
                 echo ""
                 echo "touch $OUT/jobs/done/decoder/\$SLURM_JOB_ID"
             } > "$JOBFILE"
@@ -694,7 +730,7 @@ declare -f run_with_progress_sbatch_wait >> "$MASTER_RUN_SLURM"
     echo
     echo "echo '🔧 Detected nproc = $(nproc)'"
     echo
-    if [ -z $IMPORTANCE_SCORES_DIR ] && [ $ADAPTIVE_QUANTIZATION == 1 ]; then
+    if [ $CALCULATE_IMPORTANCE_SCORES == 1 ]; then
         echo "echo '▶ Step 1: IMPORTANCE_SCORES_DIR not set -> Run importance score computation in parallel'"
         echo "run_with_progress_sbatch_wait \"$RUN_IMPORTANCE\" \"$OUT/jobs/done/importance/\""
         echo
@@ -727,7 +763,7 @@ declare -f run_with_progress >> "$MASTER_RUN"
     echo
     echo "echo '🔧 Detected nproc = $(nproc)'"
     echo
-    if [ -z $IMPORTANCE_SCORES_DIR ] && [ $ADAPTIVE_QUANTIZATION == 1 ]; then
+    if [ $CALCULATE_IMPORTANCE_SCORES == 1 ]; then
         echo "echo '▶ Step 1: IMPORTANCE_SCORES_DIR not set -> importance score calculation in parallel'"
         echo "run_with_progress \"$RUN_IMPORTANCE\"" 1
         echo
@@ -753,7 +789,7 @@ chmod +x "$MASTER_RUN"
 
 echo
 echo "[Generated scripts]"
-if [ -z $IMPORTANCE_SCORES_DIR ] && [ $ADAPTIVE_QUANTIZATION == 1 ]; then
+if [ $CALCULATE_IMPORTANCE_SCORES == 1 ]; then
     echo "$RUN_IMPORTANCE"
 fi
 echo "$RUN_ENCODER"

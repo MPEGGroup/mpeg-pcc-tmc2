@@ -130,6 +130,8 @@ class PCCGSMapGenerator {
                            const PCCGSEncoderParameters    &params,
                            std::vector<PCCVideoAttributes> &packedVideoFrames );
 
+  void copyMapWithBBoxForLoD( PackedRegion &region, PCCImage<uint16_t, 3> &srcFrame, PCCImage<uint16_t, 3> &dstFrame );
+
   /**
    * @brief Fill geometry map with padding (m76580)
    */

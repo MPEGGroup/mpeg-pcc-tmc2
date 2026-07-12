@@ -178,7 +178,12 @@ bool parseParameters( int                       argc,
     ( "patchColorSubsampling",
       decoderParams.patchColorSubsampling_, 
       decoderParams.patchColorSubsampling_, 
-    "Enable per-patch color up-sampling");
+    "Enable per-patch color up-sampling")
+    ( "lodTargetLodMask",
+      decoderParams.lodTargetLodMask_,
+      decoderParams.lodTargetLodMask_,
+      "Bitmask of LoD levels to decode: bit 0 = LoD0, bit 1 = LoD1, etc. "
+      "0xFF = all levels (default), 1 = LoD0 only, 2 = LoD1 only, 3 = both");
 
     opts.addOptions()
     ( "computeChecksum", 

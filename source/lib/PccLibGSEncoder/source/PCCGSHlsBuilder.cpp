@@ -722,19 +722,32 @@ void PCCGSHlsBuilder::updateVps( PCCHighLevelSyntax           &hls,
     vps.setExtensionType( 0, VPS_EXT_PACKED_2 );
     auto &ai = vps.getAttributeInformation( ATLAS_INDEX );
 
-    // Calculate the number of packed regions per packed map
+    const bool   lodSplitActive = params.lodSplitRatios_.size() >= 2;
+    const size_t lodCount       = params.lodSplitRatios_.empty() ? 1 : params.lodSplitRatios_.size();
+
+    if ( lodSplitActive && params.implicitPacking_ ) {
+      std::cerr << "The combination of LoD and implicit packing is not supported because in general packed regions do "
+                   "not have to be of equal size.\n";
+      std::exit( -1 );
+    }
     auto       packedRegionsPerMap = std::vector<uint8_t>{};
     const auto countRegion = [&packedRegionsPerMap]( uint8_t packedMapIndex, uint8_t dimensionPartitionsCount ) {
       while ( packedMapIndex >= packedRegionsPerMap.size() ) { packedRegionsPerMap.push_back( 0 ); }
       packedRegionsPerMap[packedMapIndex] += dimensionPartitionsCount;
     };
-    if ( params.packGeometry_ ) { countRegion( params.geometryPackedMapIndex_, 1 ); }
+
+    if ( params.packGeometry_ ) {
+      for ( size_t lodLevel = 0; lodLevel < lodCount; ++lodLevel ) countRegion( params.geometryPackedMapIndex_, 1 );
+    }
     if ( params.packAttributes_ ) {
       for ( uint8_t attrIdx = 0; attrIdx < ai.getAttributeCount(); ++attrIdx ) {
-        countRegion( params.getPackedMapIndexByAttributeTypeId( ai.getAttributeTypeId( attrIdx ) ),
-                     ai.getAttributeDimensionPartitionsMinus1( attrIdx ) + 1 );
+        uint8_t mapIdx =
+            static_cast<uint8_t>( params.getPackedMapIndexByAttributeTypeId( ai.getAttributeTypeId( attrIdx ) ) );
+        for ( size_t lodLevel = 0; lodLevel < lodCount; ++lodLevel )
+          countRegion( mapIdx, ai.getAttributeDimensionPartitionsMinus1( attrIdx ) + 1 );
       }
     }
+
     if ( packedRegionsPerMap.empty() ) {
       std::cerr << "Video packing is enabled, but there are no packed regions.\n";
       exit( -1 );
@@ -749,40 +762,61 @@ void PCCGSHlsBuilder::updateVps( PCCHighLevelSyntax           &hls,
 
     auto nextConstituentFrameIndex = std::vector<uint8_t>( packedRegionsPerMap.size(), 0 );
 
-    if ( params.packGeometry_ ) {
-      pin.setGeometryPresentFlag( true );
-      auto &region = pin.addRegion();
-      region.setTypeIdMinus2( V3C_GVD - 2 );
-      region.setPackedMapIndex( params.geometryPackedMapIndex_ );
+    for ( size_t lodLevel = 0; lodLevel < lodCount; ++lodLevel ) {
+      if ( params.packGeometry_ ) {
+        pin.setGeometryPresentFlag( true );
+        auto &region = pin.addRegion();
+        region.setTypeIdMinus2( V3C_GVD - 2 );
+        region.setPackedMapIndex( params.geometryPackedMapIndex_ );
+        if ( lodSplitActive ) { region.setRegionLodMask( static_cast<uint8_t>( 1U << lodLevel ) ); }
 
-      if ( params.temporalPacking_ )
-        region.setConstituentFrameIndex( nextConstituentFrameIndex[region.getPackedMapIndex()]++ );
+        if ( params.temporalPacking_ )
+          region.setConstituentFrameIndex( nextConstituentFrameIndex[region.getPackedMapIndex()]++ );
 
-      std::cout << "region: typeIdMinus2=V3C_GVD - 2, packedMapIndex=" << int( region.getPackedMapIndex() )
-                << ", constituentFrameIndex=" << int( region.getConstituentFrameIndex() ) << std::endl;
-    }
+        std::cout << "region: typeIdMinus2=V3C_GVD - 2, packedMapIndex=" << int( region.getPackedMapIndex() )
+                  << ", constituentFrameIndex=" << int( region.getConstituentFrameIndex() ) << ", lodLevel=" << lodLevel
+                  << std::endl;
+      }
 
-    if ( params.packAttributes_ ) {
-      pin.setAttributePresentFlag( true );
+      if ( params.packAttributes_ ) {
+        pin.setAttributePresentFlag( true );
 
-      for ( uint8_t attrIdx = 0; attrIdx < ai.getAttributeCount(); ++attrIdx ) {
-        for ( uint8_t partIdx = 0; partIdx <= ai.getAttributeDimensionPartitionsMinus1( attrIdx ); ++partIdx ) {
-          auto &region = pin.addRegion();
-          region.setTypeIdMinus2( V3C_AVD - 2 );
-          region.setPackedMapIndex( params.getPackedMapIndexByAttributeTypeId( ai.getAttributeTypeId( attrIdx ) ) );
-          region.setAttrIndex( attrIdx );
-          region.setAttrPartitionIndex( partIdx );
+        for ( uint8_t attrIdx = 0; attrIdx < ai.getAttributeCount(); ++attrIdx ) {
+          for ( uint8_t partIdx = 0; partIdx <= ai.getAttributeDimensionPartitionsMinus1( attrIdx ); ++partIdx ) {
+            auto &region = pin.addRegion();
+            region.setTypeIdMinus2( V3C_AVD - 2 );
+            region.setPackedMapIndex(
+                static_cast<uint8_t>( params.getPackedMapIndexByAttributeTypeId( ai.getAttributeTypeId( attrIdx ) ) ) );
+            region.setAttrIndex( attrIdx );
+            region.setAttrPartitionIndex( partIdx );
+            if ( lodSplitActive ) { region.setRegionLodMask( static_cast<uint8_t>( 1U << lodLevel ) ); }
 
-          if ( params.temporalPacking_ )
-            region.setConstituentFrameIndex( nextConstituentFrameIndex[region.getPackedMapIndex()]++ );
+            if ( params.temporalPacking_ )
+              region.setConstituentFrameIndex( nextConstituentFrameIndex[region.getPackedMapIndex()]++ );
 
-          std::cout << "region: typeIdMinus2=V3C_AVD - 2, packedMapIndex=" << int( region.getPackedMapIndex() )
-                    << ", constituentFrameIndex=" << int( region.getConstituentFrameIndex() )
-                    << ", attrIndex= " << int( region.getAttrIndex() )
-                    << ", attrPartitionIndex=" << int( region.getAttrPartitionIndex() ) << std::endl;
+            std::cout << "region: typeIdMinus2=V3C_AVD - 2, packedMapIndex=" << int( region.getPackedMapIndex() )
+                      << ", constituentFrameIndex=" << int( region.getConstituentFrameIndex() )
+                      << ", attrIndex= " << int( region.getAttrIndex() )
+                      << ", attrPartitionIndex=" << int( region.getAttrPartitionIndex() ) << ", lodLevel=" << lodLevel
+                      << std::endl;
+          }
         }
       }
     }
+
+    // Ensure packedMapColumnsCount_ has an entry for every packed map (column tiling not used for per-LoD videos).
+    std::vector<int> packedMapsColumnsCount = params.packedMapColumnsCount_;
+    while ( packedMapsColumnsCount.size() <= pin.getPackedMapCountMinus1() ) { packedMapsColumnsCount.push_back( 1 ); }
+
+    // LoD: populate packing_information LoD fields only when LoD regions were actually created
+    // (i.e. explicit packing mode; implicit mode uses a single non-LoD region set).
+    if ( lodSplitActive ) {
+      pin.setLodEnabledFlag( true );
+      pin.setLodLevelCountMinus2( params.lodSplitRatios_.size() - 2 );
+    }
+
+    std::cout << "packedMapColumnsCount size:" << packedMapsColumnsCount.size()
+              << " pin.getPackedMapCountMinus1(): " << pin.getPackedMapCountMinus1() + 1 << std::endl;
 
     if ( params.temporalPacking_ )
       for ( size_t i = 0; i < nextConstituentFrameIndex.size(); ++i )
@@ -798,7 +832,7 @@ void PCCGSHlsBuilder::updateVps( PCCHighLevelSyntax           &hls,
           pin.setPackedMapGridRowsMinus1( k, 0 );
         }
       } else {
-        if ( params.packedMapColumnsCount_.size() != pin.getPackedMapCountMinus1() + 1 ) {
+        if ( packedMapsColumnsCount.size() != pin.getPackedMapCountMinus1() + 1 ) {
           std::cerr << "Expected packedMapColumnsCount with " << pin.getPackedMapCountMinus1() + 1 << " values\n";
           exit( -1 );
         }
@@ -810,7 +844,7 @@ void PCCGSHlsBuilder::updateVps( PCCHighLevelSyntax           &hls,
               const auto &region = pin.getRegion( i );
               if ( region.getPackedMapIndex() == k && region.getConstituentFrameIndex() == j ) { ++count; }
             }
-            const auto columnsCount = params.packedMapColumnsCount_[k];
+            const auto columnsCount = packedMapsColumnsCount[k];
             const auto rowsCount    = ( count + columnsCount - 1 ) / columnsCount;
             pin.setPackedMapGridColumnsMinus1( k, columnsCount - 1 );
             pin.setPackedMapGridRowsMinus1( k, rowsCount - 1 );
@@ -819,7 +853,12 @@ void PCCGSHlsBuilder::updateVps( PCCHighLevelSyntax           &hls,
       }
     }
 
-    if ( params.packGeometry_ || params.packAttributes_ ) { layoutPackedMapsHls( hls, params ); }
+    if ( !params.lodEnabled_ ) {
+      if ( params.packGeometry_ || params.packAttributes_ ) layoutPackedMapsHls( hls, params );
+    } else {
+      // layoutPackedMapsHls() is called from PCCGSEncoder::encode() after fillPackingInfoForLoD()
+      // so that LoD region sizes (widthMinus1/heightMinus1) are known before layout.
+    }
   }
 }
 
@@ -836,33 +875,47 @@ void PCCGSHlsBuilder::updateAsps( PCCHighLevelSyntax           &hls,
 }
 
 void PCCGSHlsBuilder::layoutPackedMapsHls( PCCHighLevelSyntax &hls, const PCCGSEncoderParameters &params ) {
-  auto                   &vps                    = hls.getVps();
-  const auto              width                  = vps.getFrameWidth( ATLAS_INDEX );
-  const auto              height                 = vps.getFrameHeight( ATLAS_INDEX );
-  auto                   &pve                    = vps.getVpsPackedVideoExtension();
-  auto                   &pin                    = pve.getPackingInformation( ATLAS_INDEX );
-  const std::vector<int> &packedMapsColumnsCount = params.packedMapColumnsCount_;
+  auto      &vps    = hls.getVps();
+  const auto width  = vps.getFrameWidth( ATLAS_INDEX );
+  const auto height = vps.getFrameHeight( ATLAS_INDEX );
+  auto      &pve    = vps.getVpsPackedVideoExtension();
+  auto      &pin    = pve.getPackingInformation( ATLAS_INDEX );
+
+  // Pad packedMapColumnsCount to cover all packed maps, defaulting to 1 column.
+  std::vector<int> packedMapsColumnsCount = params.packedMapColumnsCount_;
+  while ( static_cast<int>( packedMapsColumnsCount.size() ) <= pin.getPackedMapCountMinus1() )
+    packedMapsColumnsCount.push_back( 1 );
 
   if ( pve.getImplicitPackingMode() == ImplicitPackingMode::explicit_mode ) {
-    if ( packedMapsColumnsCount.size() <= pin.getPackedMapCountMinus1() ) {
-      std::cerr << "Error: not enough values in packedMapsColumnsCount parameters\n";
-      exit( 1 );
-    }
-    for ( size_t packedMapIndex = 0; packedMapIndex <= pin.getPackedMapCountMinus1(); ++packedMapIndex ) {
-      const auto columnsCount = packedMapsColumnsCount[packedMapIndex];
-      auto       nextIndex    = 0;
+    // Per packed map: track the next grid cell and the variable height of the current grid row.
+    std::vector<int>      nextIndex( pin.getPackedMapCountMinus1() + 1, 0 );
+    std::vector<uint16_t> nextLodY( pin.getPackedMapCountMinus1() + 1, 0 );
+    std::vector<uint16_t> lodRowHeight( pin.getPackedMapCountMinus1() + 1, 0 );
 
-      for ( size_t regionIdx = 0; regionIdx <= pin.getRegionsCountMinus1(); ++regionIdx ) {
-        auto &region = pin.getRegion( regionIdx );
+    for ( size_t regionIdx = 0; regionIdx <= pin.getRegionsCountMinus1(); ++regionIdx ) {
+      auto      &region       = pin.getRegion( regionIdx );
+      const auto k            = region.getPackedMapIndex();
+      const auto columnsCount = packedMapsColumnsCount[k];
 
-        if ( region.getPackedMapIndex() == packedMapIndex ) {
-          auto index = nextIndex++;
-
-          region.setWidthMinus1( width - 1 );
-          region.setHeightMinus1( height - 1 );
-          region.setTopLeftY( ( index / columnsCount ) * height );
-          region.setTopLeftX( ( index % columnsCount ) * width );
+      if ( region.getRegionLodMask() == 0 ) {
+        // Non-LoD region: full atlas size, column-tiled layout.
+        const auto index = nextIndex[k]++;
+        region.setWidthMinus1( static_cast<uint16_t>( width - 1 ) );
+        region.setHeightMinus1( static_cast<uint16_t>( height - 1 ) );
+        region.setTopLeftX( static_cast<uint16_t>( ( index % columnsCount ) * width ) );
+        region.setTopLeftY( static_cast<uint16_t>( ( index / columnsCount ) * height ) );
+      } else {
+        // LoD region: sizes already set by fillPackingInfoForLoD(); place in the next grid cell.
+        const auto index  = nextIndex[k]++;
+        const auto column = index % columnsCount;
+        if ( column == 0 && index != 0 ) {
+          nextLodY[k] = static_cast<uint16_t>( nextLodY[k] + lodRowHeight[k] );
+          if ( nextLodY[k] % 2 == 1 ) { ++nextLodY[k]; }
+          lodRowHeight[k] = 0;
         }
+        region.setTopLeftX( static_cast<uint16_t>( column * width ) );
+        region.setTopLeftY( nextLodY[k] );
+        lodRowHeight[k] = std::max<uint16_t>( lodRowHeight[k], region.getHeightMinus1() + 1 );
       }
     }
   } else if ( pve.getImplicitPackingMode() == ImplicitPackingMode::implicit_mode ) {

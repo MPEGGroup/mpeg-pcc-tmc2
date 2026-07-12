@@ -44,6 +44,12 @@
 #include "PCCGSEncoder.h"
 #include <program_options_lite.h>
 #include <fstream>
+#include <algorithm>
+#include <cmath>
+#include <numeric>
+#include <random>
+#include <vector>
+#include <iostream>
 #if defined( ENABLE_TBB )
 #include <tbb/tbb.h>
 #endif
@@ -77,6 +83,100 @@ void saveSampleStreamV3CUnit( const std::string &path, SampleStreamV3CUnit &ssvu
   bitstream.write( path );
   bitstreamStat.trace();
 }
+
+namespace {
+std::vector<uint8_t> splitSplatsByImportanceScore( PCCPointSet3            &src,
+                                                   const std::vector<int>  &splitRatios,
+                                                   PCCAdaptationParameters &params,
+                                                   uint32_t                 frameNumber ) {
+  const size_t pointCount = src.getPointCount();
+  if ( pointCount == 0 || splitRatios.empty() ) { return {}; }
+
+  // 1. Read importance scores from the external file.
+  std::vector<float> scores;
+  scores.reserve( pointCount );
+  {
+    int         len = snprintf( nullptr, 0, params.importanceScoresPath_.c_str(), frameNumber );
+    std::string scoreFilePath( len, '\0' );
+    snprintf( &scoreFilePath[0], len + 1, params.importanceScoresPath_.c_str(), frameNumber );
+
+    std::cout << "scoreFilePath: " << scoreFilePath << std::endl;
+
+    std::ifstream file( scoreFilePath );
+    if ( !file.is_open() ) {
+      std::cerr << "Error: Failed to open score file: " << scoreFilePath << "\n";
+      return {};
+    }
+    float scoreValue;
+    while ( file >> scoreValue ) { scores.push_back( scoreValue ); }
+
+    // Safety check: Ensure the number of read scores matches the total point count.
+    if ( scores.size() != pointCount ) {
+      std::cerr << "Warning: Score count (" << scores.size() << ") does not match point count (" << pointCount
+                << "). Splitting aborted.\n";
+      return {};
+    }
+  }
+
+  // 2. Compute cumulative cut points (boundaries) for each LoD level.
+  const int           totalWeight = std::accumulate( splitRatios.begin(), splitRatios.end(), 0 );
+  std::vector<size_t> cuts;
+  cuts.reserve( splitRatios.size() - 1 );
+  {
+    int cumulative = 0;
+    for ( size_t k = 0; k + 1 < splitRatios.size(); ++k ) {
+      cumulative += splitRatios[k];
+      cuts.push_back(
+          static_cast<size_t>( std::llround( static_cast<double>( pointCount ) * cumulative / totalWeight ) ) );
+    }
+  }
+
+  // 3. Construct the index array and sort it based on importance scores in descending order.
+  // Using std::sort with a lambda expression typically takes only tens of milliseconds for millions of elements.
+  std::vector<size_t> permutation( pointCount );
+  std::iota( permutation.begin(), permutation.end(), size_t( 0 ) );
+
+  std::sort( permutation.begin(), permutation.end(), [&]( size_t a, size_t b ) {
+    return scores[a] > scores[b];  // Descending order: higher scores first.
+  } );
+
+  // 4. Assign bitmasks sequentially based on sorted intervals, eliminating nested lookup loops and redundant counting
+  // sweeps.
+  std::vector<uint8_t> lodMasks( pointCount );
+  std::vector<size_t>  counts( splitRatios.size(), 0 );
+
+  size_t lastCut = 0;
+  for ( size_t k = 0; k < splitRatios.size(); ++k ) {
+    size_t currentCut = ( k < cuts.size() ) ? cuts[k] : pointCount;
+    // k=0 is the highest-importance group (LoD0), so it maps to bit 0.
+    uint8_t mask = static_cast<uint8_t>( 1u << k );
+
+    for ( size_t idx = lastCut; idx < currentCut; ++idx ) { lodMasks[permutation[idx]] = mask; }
+    counts[k] = currentCut - lastCut;  // Directly capture the count per level.
+    lastCut   = currentCut;
+  }
+
+  // Print the boundary score thresholds between adjacent LoD levels.
+  std::cout << "LoD boundary score thresholds:";
+  for ( size_t k = 0; k < cuts.size(); ++k ) {
+    size_t cutIdx = cuts[k];
+    if ( cutIdx > 0 && cutIdx <= pointCount ) {
+      // Because permutation is sorted descending, the last element belonging
+      // to the current LoD defines the score threshold boundary.
+      float thresholdScore = scores[permutation[cutIdx - 1]];
+      std::cout << " Cut" << k << "(LoD" << k << "->LoD" << ( k + 1 ) << ")=" << thresholdScore;
+    }
+  }
+  std::cout << "\n";
+
+  // 5. Print per-level statistics for verification.
+  std::cout << "LoD importance split:";
+  for ( size_t k = 0; k < counts.size(); ++k ) { std::cout << " LoD" << k << "=" << counts[k]; }
+  std::cout << " total=" << pointCount << "\n";
+
+  return lodMasks;
+}
+}  // namespace
 
 int main( int argc, char *argv[] ) {
   std::cout << "PccGs4AppEncoder v" << TMC2_VERSION_MAJOR << "." << TMC2_VERSION_MINOR << std::endl << std::endl;
@@ -222,8 +322,20 @@ int main( int argc, char *argv[] ) {
       adaptationParams.writeConfig( configPath );
     }
 
+    // LoD loading (assign lod for each splats)
+    std::vector<uint8_t> lodAssignment{};
+    if ( encoderParams.lodSplitRatios_.size() >= 2 ) {
+      lodAssignment = splitSplatsByImportanceScore( adaptedPointCloud, encoderParams.lodSplitRatios_, adaptationParams,
+                                                    frameNumber );
+      if ( lodAssignment.empty() ) {
+        std::cerr << "Error: importance score loaded failed for frame " << frameNumber << std::endl;
+        continue;
+      }
+    }
+
     // Encode adapted (quantized int) point cloud
-    encoderModule.encode( adaptedPointCloud, encoderParams, adaptationParams, ssvu, logger );
+    encoderModule.encode( adaptedPointCloud, encoderParams, adaptationParams, ssvu, lodAssignment, logger );
+
     // write encoded bitstream to file
     saveSampleStreamV3CUnit( applicationParams.compressedStreamPath_, ssvu, logger );
   }

@@ -89,6 +89,11 @@ class PCCDecoderParameters {
   int applyOccupanySynthesisType_;
 
   size_t shvcLayerIndex_;
+
+  // LoD request: bitmask of LoD levels to decode (bit 0 = LoD0, bit 1 = LoD1, ...).
+  // 0xFF means decode all levels (default).
+  // Stored as uint32_t (not uint8_t) to avoid program-options treating it as char.
+  uint32_t lodTargetLodMask_{ 0xFF };
 };
 
 };  // namespace pcc

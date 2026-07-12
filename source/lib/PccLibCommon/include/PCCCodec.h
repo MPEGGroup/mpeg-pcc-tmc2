@@ -99,6 +99,19 @@ struct GeneratePointCloudParameters {
   int16_t     rawPatchDataArrangementMethod_;
 };
 
+struct PCCAtlasBbox {
+  size_t x_;
+  size_t y_;
+  size_t width_;
+  size_t height_;
+
+  bool contains( size_t x, size_t y ) const { return x >= x_ && y >= y_ && x < x_ + width_ && y < y_ + height_; }
+
+  bool operator==( const PCCAtlasBbox &other ) const {
+    return x_ == other.x_ && y_ == other.y_ && width_ == other.width_ && height_ == other.height_;
+  }
+};
+
 struct PatchParams {
   PatchParams( uint8_t mapCntMinus1 = 0 ) :
       patchType_( PROJECTED ),
@@ -183,28 +196,34 @@ class PCCCodec {
                        const GeneratePointCloudParameters &params );
 
   void generateRawPointsGeometryfromVideo( PCCContext &context, PCCFrameContext &tile, size_t frameIndex );
-  void generateRawPointsGeometryfromVideoRecGS( PCCContext      &context,
-                                                PCCFrameContext &tile,
-                                                size_t           frameIndex,
-                                                PCCPointSet3    &pointCloud );
+  void generateRawPointsGeometryfromVideoRecGS( PCCContext                      &context,
+                                                PCCFrameContext                 &tile,
+                                                size_t                           frameIndex,
+                                                PCCPointSet3                    &pointCloud,
+                                                const std::vector<PCCAtlasBbox> *atlasBboxes = nullptr );
 
   void generateRawPointsAttributefromVideo( PCCContext &context, PCCFrameContext &tile, size_t frameIndex );
-  void generateRawPointsAttributefromVideoRecGS( PCCContext      &context,
-                                                 PCCFrameContext &tile,
-                                                 size_t           frameIndex,
-                                                 size_t           attributeIdx,
-                                                 size_t           partitionIndex,
-                                                 PCCPointSet3    &pointCloud );
+  void generateRawPointsAttributefromVideoRecGS( PCCContext                      &context,
+                                                 PCCFrameContext                 &tile,
+                                                 size_t                           frameIndex,
+                                                 size_t                           attributeIdx,
+                                                 size_t                           partitionIndex,
+                                                 PCCPointSet3                    &pointCloud,
+                                                 const std::vector<PCCAtlasBbox> *atlasBboxes = nullptr );
 
   void generateRawPointsGeometryfromVideo( PCCContext &context, size_t frameIndex );
-  void generateRawPointsGeometryfromVideoRecGS( PCCContext &context, size_t frameIndex, PCCPointSet3 &pointCloud );
+  void generateRawPointsGeometryfromVideoRecGS( PCCContext                      &context,
+                                                size_t                           frameIndex,
+                                                PCCPointSet3                    &pointCloud,
+                                                const std::vector<PCCAtlasBbox> *atlasBboxes = nullptr );
 
   void generateRawPointsAttributefromVideo( PCCContext &context, size_t frameIndex );
-  void generateRawPointsAttributefromVideoRecGS( PCCContext   &context,
-                                                 size_t        frameIndex,
-                                                 size_t        attributeIdx,
-                                                 size_t        partitionIndex,
-                                                 PCCPointSet3 &pointCloud );
+  void generateRawPointsAttributefromVideoRecGS( PCCContext                      &context,
+                                                 size_t                           frameIndex,
+                                                 size_t                           attributeIdx,
+                                                 size_t                           partitionIndex,
+                                                 PCCPointSet3                    &pointCloud,
+                                                 const std::vector<PCCAtlasBbox> *atlasBboxes = nullptr );
   void generateAdaptiveQuantizationInfofromRawPatchRecGS( PCCContext   &context,
                                                           size_t        frameIndex,
                                                           PCCPointSet3 &pointCloud );

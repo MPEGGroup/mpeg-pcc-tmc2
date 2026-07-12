@@ -81,14 +81,18 @@ class PCCGSPatchGenerator {
    * @return Patch generation result containing patches and map dimensions
    */
   PCCGSPatchResult generate( const PCCPointSet3            &source,
+                             std::vector<uint8_t>          &lodAssignment,
                              const PCCGSEncoderParameters  &params,
                              const PCCAdaptationParameters &adaptationParams );
+
+  std::map<uint8_t, std::array<size_t, 4>> &getLodRegionBBoxes() { return lodRegionBBoxes_; }
 
  private:
   /**
    * @brief Generate raw patches in 3D space by grouping points into bounding boxes
    */
   void generate3DPatches( const PCCPointSet3            &source,
+                          std::vector<uint8_t>          &lodAssignment,
                           const PCCGSEncoderParameters  &params,
                           const PCCAdaptationParameters &adaptationParams );
 
@@ -141,7 +145,9 @@ class PCCGSPatchGenerator {
   /**
    * @brief Create patch information from bounding box and point indices
    */
-  GSEncoderPatchInformation createPatchInfo( const PCCBox3D &bbox, const std::vector<size_t> &pointIndices );
+  GSEncoderPatchInformation createPatchInfo( const PCCBox3D            &bbox,
+                                             const uint8_t              lodMask,
+                                             const std::vector<size_t> &pointIndices );
 
   /**
    * @brief Computes new patch list from input patches by splitting patches by quantization group
@@ -158,6 +164,8 @@ class PCCGSPatchGenerator {
   std::vector<GSEncoderPatchInformation> patches_;
   size_t                                 mapWidth_{ 0 };
   size_t                                 mapHeight_{ 0 };
+
+  std::map<uint8_t, std::array<size_t, 4>> lodRegionBBoxes_;  // key=lodMask, value={minU0,minV0,maxU0,maxV0}
 };
 
 }  // namespace pcc

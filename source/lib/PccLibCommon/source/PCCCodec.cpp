@@ -48,6 +48,39 @@
 
 using namespace pcc;
 
+namespace {
+bool isAtlasPixelSelected( const std::vector<PCCAtlasBbox> *atlasBboxes, size_t x, size_t y ) {
+  if ( atlasBboxes == nullptr ) { return true; }
+  for ( const auto &bbox : *atlasBboxes ) {
+    if ( bbox.contains( x, y ) ) { return true; }
+  }
+  return false;
+}
+
+bool isRawGsPointSelected( PCCFrameContext                 &tile,
+                           const PCCRawPointsPatch         &rawPointsPatch,
+                           size_t                           rawPointIndex,
+                           const std::vector<PCCAtlasBbox> *atlasBboxes ) {
+  if ( atlasBboxes == nullptr ) { return true; }
+  if ( rawPointsPatch.sizeU0_ == 0 ) { return false; }
+
+  const size_t numberOfRawPoints   = rawPointsPatch.getNumberOfRawPoints();
+  const size_t occupancyResolution = rawPointsPatch.occupancyResolution_;
+  const size_t patchOriginX        = rawPointsPatch.u0_ * occupancyResolution;
+  const size_t patchOriginY        = rawPointsPatch.v0_ * occupancyResolution;
+
+  for ( size_t componentIndex = 0; componentIndex < 3; ++componentIndex ) {
+    const size_t componentPointIndex = rawPointIndex + componentIndex * numberOfRawPoints;
+    const size_t u                   = ( componentPointIndex % rawPointsPatch.sizeU0_ ) * occupancyResolution;
+    const size_t v                   = ( componentPointIndex / rawPointsPatch.sizeU0_ ) * occupancyResolution;
+    const size_t x                   = tile.getLeftTopXInFrame() + patchOriginX + u;
+    const size_t y                   = tile.getLeftTopYInFrame() + patchOriginY + v;
+    if ( !isAtlasPixelSelected( atlasBboxes, x, y ) ) { return false; }
+  }
+  return true;
+}
+}  // namespace
+
 PCCCodec::PCCCodec() {}
 PCCCodec::~PCCCodec() = default;
 
@@ -1636,16 +1669,17 @@ void PCCCodec::generateRawPointsGeometryfromVideo( PCCContext &context, PCCFrame
   }
 }
 
-void PCCCodec::generateRawPointsGeometryfromVideoRecGS( PCCContext   &context,
-                                                        size_t        frameIndex,
-                                                        PCCPointSet3 &pointCloud ) {
+void PCCCodec::generateRawPointsGeometryfromVideoRecGS( PCCContext                      &context,
+                                                        size_t                           frameIndex,
+                                                        PCCPointSet3                    &pointCloud,
+                                                        const std::vector<PCCAtlasBbox> *atlasBboxes ) {
   TRACE_CODEC( "%s \n", "generateRawPointsGeometryfromVideo start" );
   auto &videoRawPointsGeometry = context.getVideoRawPointsGeometry();
   videoRawPointsGeometry.resize( context.size() );
 
   for ( size_t tileIdx = 0; tileIdx < context.getFrame( frameIndex ).getNumTilesInAtlasFrame(); tileIdx++ ) {
     auto &tile = context.getFrame( frameIndex ).getTile( tileIdx );
-    generateRawPointsGeometryfromVideoRecGS( context, tile, frameIndex, pointCloud );
+    generateRawPointsGeometryfromVideoRecGS( context, tile, frameIndex, pointCloud, atlasBboxes );
     size_t totalNumRawPoints = 0;
     for ( size_t i = 0; i < tile.getNumberOfRawPointsPatches(); i++ ) {
       totalNumRawPoints += tile.getRawPointsPatch( i ).getNumberOfRawPoints() * 3;
@@ -1658,10 +1692,11 @@ void PCCCodec::generateRawPointsGeometryfromVideoRecGS( PCCContext   &context,
   TRACE_CODEC( "%s \n", "generateRawPointsGeometryfromVideo done" );
 }
 
-void PCCCodec::generateRawPointsGeometryfromVideoRecGS( PCCContext      &context,
-                                                        PCCFrameContext &tile,
-                                                        size_t           frameIndex,
-                                                        PCCPointSet3    &pointCloud ) {
+void PCCCodec::generateRawPointsGeometryfromVideoRecGS( PCCContext                      &context,
+                                                        PCCFrameContext                 &tile,
+                                                        size_t                           frameIndex,
+                                                        PCCPointSet3                    &pointCloud,
+                                                        const std::vector<PCCAtlasBbox> *atlasBboxes ) {
   auto &image = context.getVideoGeometryMultiple()[0].getFrame( frameIndex );
 
   // Get data arrangement method from AAPS
@@ -1714,6 +1749,7 @@ void PCCCodec::generateRawPointsGeometryfromVideoRecGS( PCCContext      &context
         }
       } else {
         // Method 0: sequential arrangement
+        if ( !isRawGsPointSelected( tile, rawPointsPatch, p, atlasBboxes ) ) { continue; }
         auto pointX = p;
         v           = ( pointX / sizeU ) * rawPointsPatch.occupancyResolution_;
         u           = ( pointX % sizeU ) * rawPointsPatch.occupancyResolution_;
@@ -1745,18 +1781,20 @@ void PCCCodec::generateRawPointsGeometryfromVideoRecGS( PCCContext      &context
   return;
 }
 
-void PCCCodec::generateRawPointsAttributefromVideoRecGS( PCCContext   &context,
-                                                         size_t        frameIndex,
-                                                         size_t        attributeIdx,
-                                                         size_t        partitionIndex,
-                                                         PCCPointSet3 &pointCloud ) {
+void PCCCodec::generateRawPointsAttributefromVideoRecGS( PCCContext                      &context,
+                                                         size_t                           frameIndex,
+                                                         size_t                           attributeIdx,
+                                                         size_t                           partitionIndex,
+                                                         PCCPointSet3                    &pointCloud,
+                                                         const std::vector<PCCAtlasBbox> *atlasBboxes ) {
   TRACE_CODEC( "%s \n", "generateRawPointsGeometryfromVideo start" );
   auto &videoRawPointsGeometry = context.getVideoRawPointsGeometry();
   videoRawPointsGeometry.resize( context.size() );
 
   for ( size_t tileIdx = 0; tileIdx < context.getFrame( frameIndex ).getNumTilesInAtlasFrame(); tileIdx++ ) {
     auto &tile = context.getFrame( frameIndex ).getTile( tileIdx );
-    generateRawPointsAttributefromVideoRecGS( context, tile, frameIndex, attributeIdx, partitionIndex, pointCloud );
+    generateRawPointsAttributefromVideoRecGS( context, tile, frameIndex, attributeIdx, partitionIndex, pointCloud,
+                                              atlasBboxes );
 
     size_t totalNumRawPoints = 0;
     for ( size_t i = 0; i < tile.getNumberOfRawPointsPatches(); i++ ) {
@@ -1770,17 +1808,18 @@ void PCCCodec::generateRawPointsAttributefromVideoRecGS( PCCContext   &context,
   TRACE_CODEC( "%s \n", "generateRawPointsAttributefromVideo done" );
 }
 
-void PCCCodec::generateRawPointsAttributefromVideoRecGS( PCCContext      &context,
-                                                         PCCFrameContext &tile,
-                                                         size_t           frameIndex,
-                                                         size_t           attributeIdx,
-                                                         size_t           partitionIndex,
-                                                         PCCPointSet3    &pointCloud ) {
+void PCCCodec::generateRawPointsAttributefromVideoRecGS( PCCContext                      &context,
+                                                         PCCFrameContext                 &tile,
+                                                         size_t                           frameIndex,
+                                                         size_t                           attributeIdx,
+                                                         size_t                           partitionIndex,
+                                                         PCCPointSet3                    &pointCloud,
+                                                         const std::vector<PCCAtlasBbox> *atlasBboxes ) {
   size_t atlId = tile.getAtlIndex();
   auto  &vps   = context.getVps();
   auto   ai    = vps.getAttributeInformation( atlId );
   auto  &image = context.getVideoAttributesMultiple( atlId, attributeIdx, partitionIndex )[0].getFrame( frameIndex );
-  auto   totalPoints              = 0;
+  size_t totalPoints              = 0;
   size_t numberOfRawPointsPatches = tile.getNumberOfRawPointsPatches();
   auto   attributeTypeId          = ai.getAttributeTypeId( attributeIdx );
 
@@ -1822,6 +1861,8 @@ void PCCCodec::generateRawPointsAttributefromVideoRecGS( PCCContext      &contex
     const size_t u0         = rawPointsPatch.u0_ * rawPointsPatch.occupancyResolution_;
     const size_t sizeU      = rawPointsPatch.sizeU_;
 
+    std::vector<size_t> pointIndexes( numRawPoints, size_t( -1 ) );
+
     if ( arrangementMethod == 1 ) {
       // Method 1: vertical planar arrangement - 3 horizontal bands
       const size_t bandHeight = rawPointsPatch.sizeV_ / 3;
@@ -1839,28 +1880,42 @@ void PCCCodec::generateRawPointsAttributefromVideoRecGS( PCCContext      &contex
           ++pv;
         }
       }
+      totalPoints += numRawPoints;
     } else {
       // Method 0: sequential arrangement - raster scan
       size_t numRawPointsAdded = 0;
+      size_t selectedRawPoints = 0;
+      for ( size_t p = 0; p < numRawPoints; ++p ) {
+        if ( isRawGsPointSelected( tile, rawPointsPatch, p, atlasBboxes ) ) {
+          pointIndexes[p] = totalPoints + selectedRawPoints++;
+        }
+      }
+
       for ( size_t v = 0; v < rawPointsPatch.sizeV_; ++v ) {
         for ( size_t u = 0; u < rawPointsPatch.sizeU_; ++u ) {
           const size_t u1 = tile.getLeftTopXInFrame() + u0 + u;
           const size_t v1 = tile.getLeftTopYInFrame() + v0 + v;
           if ( numRawPointsAdded < numRawPoints ) {
-            auto i                                                       = numRawPointsAdded;
-            pointCloud.getAttribute( attributeType, totalPoints + i )[0] = double( image.getValue( 0, u1, v1 ) );
+            auto i = numRawPointsAdded;
+            if ( pointIndexes[i] != size_t( -1 ) ) {
+              pointCloud.getAttribute( attributeType, totalPoints + i )[0] = double( image.getValue( 0, u1, v1 ) );
+            }
           } else if ( numRawPoints <= numRawPointsAdded && numRawPointsAdded < 2 * numRawPoints ) {
-            auto i                                                       = numRawPointsAdded - numRawPoints;
-            pointCloud.getAttribute( attributeType, totalPoints + i )[1] = double( image.getValue( 0, u1, v1 ) );
+            auto i = numRawPointsAdded - numRawPoints;
+            if ( pointIndexes[i] != size_t( -1 ) ) {
+              pointCloud.getAttribute( attributeType, totalPoints + i )[1] = double( image.getValue( 0, u1, v1 ) );
+            }
           } else if ( 2 * numRawPoints <= numRawPointsAdded && numRawPointsAdded < 3 * numRawPoints ) {
-            auto i                                                       = numRawPointsAdded - 2 * numRawPoints;
-            pointCloud.getAttribute( attributeType, totalPoints + i )[2] = double( image.getValue( 0, u1, v1 ) );
+            auto i = numRawPointsAdded - 2 * numRawPoints;
+            if ( pointIndexes[i] != size_t( -1 ) ) {
+              pointCloud.getAttribute( attributeType, totalPoints + i )[2] = double( image.getValue( 0, u1, v1 ) );
+            }
           }
           numRawPointsAdded++;
         }  // u
       }  // v
+      totalPoints += selectedRawPoints;
     }
-    totalPoints += numRawPoints;
   }
   return;
 }

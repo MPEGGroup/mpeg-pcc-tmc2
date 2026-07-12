@@ -107,6 +107,10 @@ struct PCCGSEncoderParameters {
   // Block size for rawPatchDataArrangementMethod_=1 (block-based, m76580)
   size_t blockBasedSortBlockSize_ = 64;
 
+  // LoD signaling, m76746
+  std::vector<int> lodSplitRatios_{};  // empty = use default {1} (single LoD, no splitting)
+  bool             lodEnabled_ = false;
+
   // GS SEI
   std::string gsColmapFolderPath_;
 

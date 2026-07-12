@@ -477,6 +477,11 @@ struct PCCRawPointsPatch {
   size_t                tempV0_;  // GPA.
   uint8_t               shBitdepthDelta_;
 
+  uint8_t lodMask_ = 0;  // LoD bitmask: bit k set means this patch belongs to LoD level k
+
+  uint8_t getLodMask() const { return lodMask_; }
+  void    setLodMask( uint8_t m ) { lodMask_ = m; }
+
   void resize( const size_t size ) {
     x_.resize( size );
     y_.resize( size );
@@ -512,6 +517,7 @@ struct PCCRawPointsPatch {
     preV0_               = 0;
     tempV0_              = 0;
     shBitdepthDelta_     = 0;
+    lodMask_             = 0;
     occupancy_.resize( 0 );
     x_.resize( 0 );
     y_.resize( 0 );

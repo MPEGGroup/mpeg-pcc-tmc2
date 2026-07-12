@@ -172,14 +172,16 @@ std::vector<int> greedyOrder( const std::vector<uint16_t> &Xs,
 }  // namespace
 
 PCCGSPatchResult PCCGSPatchGenerator::generate( const PCCPointSet3            &source,
+                                                std::vector<uint8_t>          &lodAssignment,
                                                 const PCCGSEncoderParameters  &params,
                                                 const PCCAdaptationParameters &adaptationParams ) {
   patches_.clear();
+  lodRegionBBoxes_.clear();
   mapWidth_  = 0;
   mapHeight_ = 0;
 
   // Generate patches in 3D space
-  generate3DPatches( source, params, adaptationParams );
+  generate3DPatches( source, lodAssignment, params, adaptationParams );
 
   // Generate 2D positions using CTC algorithm
   if ( params.rawPatchDataArrangementMethod_ == 1 ) {
@@ -200,10 +202,13 @@ PCCGSPatchResult PCCGSPatchGenerator::generate( const PCCPointSet3            &s
 }
 
 void PCCGSPatchGenerator::generate3DPatches( const PCCPointSet3            &source,
+                                             std::vector<uint8_t>          &lodAssignment,
                                              const PCCGSEncoderParameters  &params,
                                              const PCCAdaptationParameters &adaptationParams ) {
-  std::map<PCCBox3D, std::vector<size_t>> bbox2rawPoints;
-  auto                                    mpsBoxSize = double( 1 << params.geometryBitDepth2D_ );
+  // 1) raw point segmentation by AABB grid, keyed by (lodMask, AABB) so that
+  //    std::map iteration order naturally groups patches by LoD mask first.
+  std::map<std::pair<uint8_t, PCCBox3D>, std::vector<size_t>> bbox2rawPoints;
+  auto                                                        mpsBoxSize = double( 1 << params.geometryBitDepth2D_ );
 
   PCCBox3D inputBbox = source.computeBoundingBox();
   inputBbox.min_     = { 0, 0, 0 };
@@ -220,18 +225,24 @@ void PCCGSPatchGenerator::generate3DPatches( const PCCPointSet3            &sour
       bboxRawPoints.min_[j] = std::floor( ( pt[j] - inputBbox.min_[j] ) / mpsBoxSize ) * mpsBoxSize;
       bboxRawPoints.max_[j] = bboxRawPoints.min_[j] + ( mpsBoxSize - 1 );
     }
-    bbox2rawPoints[bboxRawPoints].push_back( i );
+    // Look up the LoD mask for this source point (0 when LoD splitting is not active).
+    const uint8_t lodMask = ( !lodAssignment.empty() ) ? lodAssignment[i] : uint8_t( 0 );
+    bbox2rawPoints[{ lodMask, bboxRawPoints }].push_back( i );
   }
 
   // Initiate the raw patches from the 3D bounding boxes
+  // 2) create raw patches — one per (lodMask, AABB) bucket.
+  //    Because std::map orders by key, all patches for lodMask=0x01 come first,
+  //    then 0x02, then 0x04, etc., giving naturally ordered LoD groups.
   for ( auto &ele : bbox2rawPoints ) {
-    const PCCBox3D      &bboxRawPoints = ele.first;
+    const uint8_t        patchLodMask  = ele.first.first;
+    const PCCBox3D      &bboxRawPoints = ele.first.second;
     std::vector<size_t> &rawPointsBBox = ele.second;
     std::cout << "Box = ( " << bboxRawPoints.min_.x() << ", " << bboxRawPoints.min_.y() << ", "
               << bboxRawPoints.min_.z() << ") ~ (" << bboxRawPoints.max_.x() << ", " << bboxRawPoints.max_.y() << ", "
-              << bboxRawPoints.max_.z() << ") " << std::endl;
+              << bboxRawPoints.max_.z() << ") " << "lodMask=" << static_cast<int>( patchLodMask ) << std::endl;
 
-    patches_.push_back( createPatchInfo( bboxRawPoints, rawPointsBBox ) );
+    patches_.push_back( createPatchInfo( bboxRawPoints, patchLodMask, rawPointsBBox ) );
   }
 
   // merge patch
@@ -333,6 +344,11 @@ void PCCGSPatchGenerator::packRawPatches2DMorton( const PCCGSEncoderParameters &
     uStart.resize( occupancySizeV, 0 );
   }
 
+  // LoD: LoD row-break tracking: ensures each distinct LoD mask group starts on a
+  //  fresh block row, so their atlas bounding boxes are non-overlapping bands.
+  uint8_t prevLodMask = std::numeric_limits<uint8_t>::max();  // sentinel — no previous patch yet
+  int     currentRow  = static_cast<int>( maxOccupancyRow );  // highest occupied block row so far
+
   for ( auto &patchInfo : patches_ ) {
     auto &rawPointsPatch = patchInfo.patch;
 
@@ -361,6 +377,13 @@ void PCCGSPatchGenerator::packRawPatches2DMorton( const PCCGSEncoderParameters &
       rawPointsPatch.sizeV0_ = rawBlocksV0;
       rawPointsPatch.sizeU_  = rawBlocksU0 * oR;
       rawPointsPatch.sizeV_  = rawBlocksV0 * oR;
+
+      // LoD:When the LoD mask changes between consecutive patches, force the packer
+      // to start searching below the current bottom edge of the previous group.
+      if ( rawPointsPatch.getLodMask() != prevLodMask && prevLodMask != std::numeric_limits<uint8_t>::max() ) {
+        maxOccupancyRow = currentRow;  // new search floor = bottom of previous group
+      }
+      prevLodMask = rawPointsPatch.getLodMask();
     }
 
     PCCPatch patch;
@@ -436,6 +459,22 @@ void PCCGSPatchGenerator::packRawPatches2DMorton( const PCCGSEncoderParameters &
         }
       }
       height = std::max( height, ( patch.getV0() + patch.getSizeV0() ) * params.occupancyResolution_ );
+    }
+
+    // LoD: Track the highest occupied block row across all patches in this LoD group.
+    currentRow = static_cast<int>( std::max( static_cast<size_t>( currentRow ), patch.getV0() + patch.getSizeV0() ) );
+    // Accumulate/expand the atlas bounding box for this LoD mask (used later to fill region coords).
+    if ( rawPointsPatch.getLodMask() != 0 ) {
+      auto &bb = lodRegionBBoxes_[rawPointsPatch.getLodMask()];
+      if ( bb[2] == 0 && bb[3] == 0 ) {  // first insert: initialise
+        bb = { rawPointsPatch.u0_, rawPointsPatch.v0_, rawPointsPatch.u0_ + rawPointsPatch.sizeU0_,
+               rawPointsPatch.v0_ + rawPointsPatch.sizeV0_ };
+      } else {
+        bb[0] = std::min( bb[0], rawPointsPatch.u0_ );
+        bb[1] = std::min( bb[1], rawPointsPatch.v0_ );
+        bb[2] = std::max( bb[2], rawPointsPatch.u0_ + rawPointsPatch.sizeU0_ );
+        bb[3] = std::max( bb[3], rawPointsPatch.v0_ + rawPointsPatch.sizeV0_ );
+      }
     }
 
     // Update uStart
@@ -870,6 +909,7 @@ void PCCGSPatchGenerator::sortPointsInPatchBlockBased( const PCCPointSet3       
 }
 
 GSEncoderPatchInformation PCCGSPatchGenerator::createPatchInfo( const PCCBox3D            &bbox,
+                                                                const uint8_t              lodMask,
                                                                 const std::vector<size_t> &pointIndices ) {
   GSEncoderPatchInformation patchInfo;
   patchInfo.patch.frameIndex_          = 0;
@@ -887,6 +927,7 @@ GSEncoderPatchInformation PCCGSPatchGenerator::createPatchInfo( const PCCBox3D  
   patchInfo.patch.d1_                  = size_t( bbox.min_.z() );
   patchInfo.patch.occupancy_.resize( 0 );
   patchInfo.patch.setNumberOfRawPoints( pointIndices.size() );
+  patchInfo.patch.setLodMask( lodMask );
   patchInfo.pointsIndicesInPatch = pointIndices;
   return patchInfo;
 }
@@ -968,7 +1009,8 @@ static bool isMergeFeasible( const GSEncoderPatchInformation &rawPatch1,
   size_t depth  = (size_t)max_z - (size_t)min_z;
 
   // All dimensions of the AABB must be less than or equal to L(boxSize).
-  return ( width < boxSize ) && ( height < boxSize ) && ( depth < boxSize );
+  return ( width < boxSize ) && ( height < boxSize ) && ( depth < boxSize ) &&
+         rawPatch1.patch.getLodMask() == rawPatch2.patch.getLodMask();
 }
 
 static void mergeTwoPatches( const GSEncoderPatchInformation &p1,
@@ -1000,6 +1042,8 @@ static void mergeTwoPatches( const GSEncoderPatchInformation &p1,
   mergedPatch.patch.d1_ = size_t( newBoxCoord.z() );
   mergedPatch.patch.occupancy_.resize( 0 );
   mergedPatch.patch.setNumberOfRawPoints( mergedPatch.pointsIndicesInPatch.size() );
+
+  mergedPatch.patch.setLodMask( p1.patch.getLodMask() );
 
   // 3) find new min/max
   findMinMaxIn2Patches( mergedPatch, p1, p2 );
@@ -1126,7 +1170,7 @@ std::vector<GSEncoderPatchInformation> PCCGSPatchGenerator::splitPatchesAdaptive
         bbox.min_[j] = rawPatchUVD[j];  // NOTE: bbox.max is unused
       }
       const auto               &rawPointsBBox = perPatchSrcIdx[p];
-      GSEncoderPatchInformation patchInfo     = createPatchInfo( bbox, rawPointsBBox );
+      GSEncoderPatchInformation patchInfo     = createPatchInfo( bbox, 0, rawPointsBBox );
       patchInfo.patch.shBitdepthDelta_        = source.getQuantizationGroupBitDepthDelta( g );
       splitPatches.push_back( patchInfo );
     }

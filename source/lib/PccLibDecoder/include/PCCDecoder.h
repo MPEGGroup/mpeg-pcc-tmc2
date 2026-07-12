@@ -100,6 +100,9 @@ class PCCDecoder : public PCCCodec {
                      size_t                frameCount,
                      size_t                constituentFrameCount );
 
+  // Returns true if the packed region should be unpacked given the current lodTargetLodMask_.
+  bool isPackedRegionSelected( const PackingInformation &packingInfo, const PackedRegion &region ) const;
+
   int ReconstructIdc0Idc1Idc2Idc255( PCCContext &context, PCCGroupOfFrames &reconstructs, int32_t atlasIndex = 0 );
   int ReconstructIdc3( PCCContext &context, PCCGroupOfFrames &reconstructs, int32_t atlasIndex = 0 );
 

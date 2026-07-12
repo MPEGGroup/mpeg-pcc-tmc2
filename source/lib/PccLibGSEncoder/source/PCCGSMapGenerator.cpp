@@ -34,6 +34,7 @@
 #include "PCCGSMapGenerator.h"
 #include "PCCGSEncoderConstant.h"
 #include <iostream>
+#include <map>
 
 using namespace pcc;
 
@@ -93,37 +94,95 @@ PCCGSVideoFrames PCCGSMapGenerator::generate( const PCCPointSet3                
     auto &pin       = vps.getVpsPackedVideoExtension().getPackingInformation( ATLAS_INDEX );
     auto  mapsCount = pin.getPackedMapCountMinus1() + 1;
 
+    // Check if any LoD regions are present; if so pre-generate full atlas frames
+    // to use as blit sources (one geometry frame + one per attribute/partition pair).
+    bool hasLodRegions = false;
+    for ( size_t ri = 0; ri <= pin.getRegionsCountMinus1(); ++ri ) {
+      if ( pin.getRegion( ri ).getRegionLodMask() != 0 ) {
+        hasLodRegions = true;
+        break;
+      }
+    }
+
+    PCCVideoFrame                                      atlasGeoFrame;
+    std::map<std::pair<size_t, size_t>, PCCVideoFrame> atlasAttrFrames;  // key: (attributeIdx, partitionIdx)
+
+    if ( hasLodRegions ) {
+      atlasGeoFrame.resize( mapWidth, mapHeight, PCCCOLORFORMAT::YUV420 );
+      atlasGeoFrame.set( 0 );
+      generateGeometryMap( source, patches, atlasGeoFrame );
+
+      auto &ai = vps.getAttributeInformation( ATLAS_INDEX );
+      for ( size_t attributeIdx = 0; attributeIdx < ai.getAttributeCount(); attributeIdx++ ) {
+        size_t partitionCount = ai.getAttributeDimensionPartitionsMinus1( attributeIdx );
+        auto   attributeType  = ai.getAttributeTypeId( attributeIdx );
+        for ( size_t partitionIdx = 0; partitionIdx <= partitionCount; partitionIdx++ ) {
+          auto &f = atlasAttrFrames[{ attributeIdx, partitionIdx }];
+          f.resize( mapWidth, mapHeight, PCCCOLORFORMAT::YUV420 );
+          f.set( 0 );
+          size_t channelCount = ai.getAttributePartitionChannelsMinus1( attributeIdx, partitionIdx ) + 1;
+          generateAttributeMapsForRegion( source, patches, f, attributeType, channelCount, partitionIdx, 0, 0 );
+        }
+      }
+    }
+
     for ( size_t packedMapIndex = 0; packedMapIndex < mapsCount; packedMapIndex++ ) {
       for ( size_t regionIndex = 0; regionIndex <= pin.getRegionsCountMinus1(); ++regionIndex ) {
         auto &region = pin.getRegion( regionIndex );
-
         if ( region.getPackedMapIndex() != packedMapIndex ) { continue; }
 
-        size_t topLeftX = region.getTopLeftX();
-        size_t topLeftY = region.getTopLeftY();
-        auto  &frame    = frames.packed[packedMapIndex].getFrame( region.getConstituentFrameIndex() );
+        auto &frame = frames.packed[packedMapIndex].getFrame( region.getConstituentFrameIndex() );
 
-        if ( region.getTypeIdMinus2() == V3C_GVD - 2 ) {
-          generateGeometryMap( source, patches, frame, topLeftX, topLeftY );
-          if ( params.rawPatchDataArrangementMethod_ == 1 && BBSORT_GEO_PADDING ) {
-            geometryMapPadding( source, params, patches, frame, topLeftX, topLeftY );
+        if ( region.getRegionLodMask() != 0 ) {
+          // LoD region: copy a bbox of the atlas frame into the packed frame.
+          if ( region.getTypeIdMinus2() == V3C_GVD - 2 ) {
+            copyMapWithBBoxForLoD( region, atlasGeoFrame, frame );
+          } else if ( region.getTypeIdMinus2() == V3C_AVD - 2 ) {
+            size_t attributeIdx = region.getAttrIndex();
+            size_t partitionIdx = region.getAttrPartitionIndex();
+            copyMapWithBBoxForLoD( region, atlasAttrFrames.at( { attributeIdx, partitionIdx } ), frame );
           }
-        } else if ( region.getTypeIdMinus2() == V3C_AVD - 2 ) {
-          size_t attributeIdx  = region.getAttrIndex();
-          size_t partitionIdx  = region.getAttrPartitionIndex();
-          auto   attributeType = vps.getAttributeInformation( ATLAS_INDEX ).getAttributeTypeId( attributeIdx );
-          size_t channelCount  = vps.getAttributeInformation( ATLAS_INDEX )
-                                     .getAttributePartitionChannelsMinus1( attributeIdx, partitionIdx ) +
-                                 1;
+        } else {
+          // Non-LoD region: generate directly into the packed frame using atlas-layout offsets.
+          size_t topLeftX = region.getTopLeftX();
+          size_t topLeftY = region.getTopLeftY();
 
-          generateAttributeMapsForRegion( source, patches, frame, attributeType, channelCount, partitionIdx, topLeftX,
-                                          topLeftY );
+          if ( region.getTypeIdMinus2() == V3C_GVD - 2 ) {
+            generateGeometryMap( source, patches, frame, topLeftX, topLeftY );
+            if ( params.rawPatchDataArrangementMethod_ == 1 && BBSORT_GEO_PADDING ) {
+              geometryMapPadding( source, params, patches, frame, topLeftX, topLeftY );
+            }
+          } else if ( region.getTypeIdMinus2() == V3C_AVD - 2 ) {
+            size_t attributeIdx  = region.getAttrIndex();
+            size_t partitionIdx  = region.getAttrPartitionIndex();
+            auto   attributeType = vps.getAttributeInformation( ATLAS_INDEX ).getAttributeTypeId( attributeIdx );
+            size_t channelCount  = vps.getAttributeInformation( ATLAS_INDEX )
+                                       .getAttributePartitionChannelsMinus1( attributeIdx, partitionIdx ) +
+                                   1;
+            generateAttributeMapsForRegion( source, patches, frame, attributeType, channelCount, partitionIdx, topLeftX,
+                                            topLeftY );
+          }
         }
       }
     }
   }
 
   return frames;
+}
+
+void PCCGSMapGenerator::copyMapWithBBoxForLoD( PackedRegion          &region,
+                                               PCCImage<uint16_t, 3> &srcFrame,
+                                               PCCImage<uint16_t, 3> &dstFrame ) {
+  size_t bboxLeft = region.getUnpackTopLeftX();
+  size_t bboxTop  = region.getUnpackTopLeftY();
+  size_t bboxW    = region.getWidthMinus1() + 1;
+  size_t bboxH    = region.getHeightMinus1() + 1;
+  size_t topLeftX = region.getTopLeftX();
+  size_t topLeftY = region.getTopLeftY();
+
+  for ( size_t y = 0; y < bboxH; ++y )
+    for ( size_t x = 0; x < bboxW; ++x )
+      dstFrame.setValue( 0, topLeftX + x, topLeftY + y, srcFrame.getValue( 0, bboxLeft + x, bboxTop + y ) );
 }
 
 void PCCGSMapGenerator::generateGeometryMap( const PCCPointSet3                     &source,
@@ -225,23 +284,34 @@ void PCCGSMapGenerator::generatePackedMaps( PCCHighLevelSyntax              &hls
   else
     std::cout << "Generate spatially-packed maps" << std::endl;
 
-  auto &pin = hls.getVps().getVpsPackedVideoExtension().getPackingInformation( ATLAS_INDEX );
+  auto &vps = hls.getVps();
+  auto &pin = vps.getVpsPackedVideoExtension().getPackingInformation( ATLAS_INDEX );
 
   if ( !params.temporalPacking_ ) {
     packedVideoFrames.resize( pin.getPackedMapCountMinus1() + 1 );
 
     for ( uint8_t packedMapIndex = 0; packedMapIndex <= pin.getPackedMapCountMinus1(); ++packedMapIndex ) {
-      auto width  = int{};
-      auto height = int{};
+      size_t width  = pin.getLodEnabledFlag()
+                          ? static_cast<size_t>( packedMapIndex < params.packedMapColumnsCount_.size()
+                                                     ? params.packedMapColumnsCount_[packedMapIndex]
+                                                     : 1 ) *
+                                vps.getFrameWidth( ATLAS_INDEX )
+                          : 0;
+      size_t height = 0;
 
       for ( size_t regionIndex = 0; regionIndex <= pin.getRegionsCountMinus1(); ++regionIndex ) {
         auto &region = pin.getRegion( regionIndex );
 
         if ( region.getPackedMapIndex() != packedMapIndex ) { continue; }
 
-        width  = std::max( width, region.getTopLeftX() + region.getWidthMinus1() + 1 );
-        height = std::max( height, region.getTopLeftY() + region.getHeightMinus1() + 1 );
+        // All regions (LoD and non-LoD) are sized by their packed position + extent.
+        // topLeftX/Y is set by layoutPackedMapsHls(); widthMinus1/heightMinus1 are the region
+        // semantic size (atlas-wide for non-LoD, bbox-wide for LoD).
+        width  = std::max( width, static_cast<size_t>( region.getTopLeftX() ) + region.getWidthMinus1() + 1 );
+        height = std::max( height, static_cast<size_t>( region.getTopLeftY() ) + region.getHeightMinus1() + 1 );
       }
+      if ( width % 2 == 1 ) { ++width; }
+      if ( height % 2 == 1 ) { ++height; }
 
       auto &video = packedVideoFrames[packedMapIndex];
       video.resize( 1 );

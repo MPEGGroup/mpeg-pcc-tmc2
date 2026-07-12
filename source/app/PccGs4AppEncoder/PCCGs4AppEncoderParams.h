@@ -243,6 +243,10 @@ bool parseParameters( int                           argc,
       encoderParams.temporalPacking_,
       encoderParams.temporalPacking_,
       "Temporal packing (0(default): disabled, 1: enabled)")
+    ( "lodSplitRatios", //m76746
+      encoderParams.lodSplitRatios_,
+      encoderParams.lodSplitRatios_,
+      "LoD split ratios (vector of positive integers), the length of the vector indicating the number of LoD levels; defaults to { 1 } for no splitting." )
     ( "geometryPackedMapIndex",
       encoderParams.geometryPackedMapIndex_,
       encoderParams.geometryPackedMapIndex_,
@@ -455,6 +459,9 @@ bool parseParameters( int                           argc,
       }
     }
   }
+
+  // LoD is enabled if lodSplitRatios has 2 or more entries
+  if ( encoderParams.lodSplitRatios_.size() >= 2 ) { encoderParams.lodEnabled_ = true; }
 
   // report the current configuration (only in the absence of errors so
   // that errors/warnings are more obvious and in the same place).

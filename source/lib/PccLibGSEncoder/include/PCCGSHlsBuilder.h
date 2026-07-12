@@ -101,6 +101,8 @@ class PCCGSHlsBuilder {
   void replaceAtlasAapsHls( PCCHighLevelSyntax &hls, const PCCAdaptationParameters &adaptationParams );
   void removeAtlasFrames( PCCHighLevelSyntax &hls );
 
+  void layoutPackedMapsHls( PCCHighLevelSyntax &hls, const PCCGSEncoderParameters &params );
+
  private:
   void initializeV3CHls( PCCHighLevelSyntax &hls, const PCCGSEncoderParameters &params );
   void initializeAtlasHls( PCCHighLevelSyntax            &hls,
@@ -109,7 +111,6 @@ class PCCGSHlsBuilder {
   void initializeAtlasAspsHls( PCCHighLevelSyntax &hls, const PCCGSEncoderParameters &params );
   void initializeAtlasAfpsHls( PCCHighLevelSyntax &hls, const PCCGSEncoderParameters &params );
   void initializeAtlasAapsHls( PCCHighLevelSyntax &hls, const PCCAdaptationParameters &adaptationParams );
-  void layoutPackedMapsHls( PCCHighLevelSyntax &hls, const PCCGSEncoderParameters &params );
   void createGsCameraModelInfoSei( AtlasTileLayerRbsp &atgl, std::string path );
 
   uint8_t vpsParameterSetId_  = 0;

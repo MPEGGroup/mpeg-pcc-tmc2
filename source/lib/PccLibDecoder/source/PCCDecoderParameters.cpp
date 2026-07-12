@@ -82,6 +82,7 @@ void PCCDecoderParameters::print() {
   std::cout << "\t   inverseColorSpaceConversionConfig " << inverseColorSpaceConversionConfig_ << std::endl;
   std::cout << "\t   patchColorSubsampling             " << patchColorSubsampling_ << std::endl;
   std::cout << "\t   shvcLayerIndex                    " << shvcLayerIndex_ << std::endl;
+  std::cout << "\t   lodTargetLodMask                  " << static_cast<int>( lodTargetLodMask_ ) << std::endl;
 }
 
 void PCCDecoderParameters::completePath() {}

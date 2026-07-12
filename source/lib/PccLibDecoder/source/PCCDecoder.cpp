@@ -49,6 +49,39 @@ using namespace pcc;
 using namespace std;
 using namespace std::chrono;
 
+namespace {
+bool hasAtlasBbox( const std::vector<PCCAtlasBbox> &bboxes, const PCCAtlasBbox &bbox ) {
+  for ( const auto &existing : bboxes ) {
+    if ( existing == bbox ) { return true; }
+  }
+  return false;
+}
+
+bool collectSelectedLodAtlasBboxes( PCCContext                &context,
+                                    int32_t                    atlasIndex,
+                                    uint32_t                   targetLodMask,
+                                    std::vector<PCCAtlasBbox> &bboxes ) {
+  auto &pve = context.getVps().getVpsPackedVideoExtension();
+  if ( !pve.isPresent() || !pve.getPackedVideoPresentFlag( atlasIndex ) ) { return false; }
+
+  auto &packingInfo = pve.getPackingInformation( atlasIndex );
+  if ( !packingInfo.getLodEnabledFlag() ) { return false; }
+
+  bboxes.clear();
+  for ( size_t regionIndex = 0; regionIndex <= packingInfo.getRegionsCountMinus1(); ++regionIndex ) {
+    auto         &region  = packingInfo.getRegion( regionIndex );
+    const uint8_t lodMask = region.getRegionLodMask();
+    if ( ( lodMask & targetLodMask ) == 0 ) { continue; }
+
+    PCCAtlasBbox bbox{ region.getUnpackTopLeftX(), region.getUnpackTopLeftY(),
+                       static_cast<size_t>( region.getWidthMinus1() ) + 1,
+                       static_cast<size_t>( region.getHeightMinus1() ) + 1 };
+    if ( !hasAtlasBbox( bboxes, bbox ) ) { bboxes.push_back( bbox ); }
+  }
+  return true;
+}
+}  // namespace
+
 PCCDecoder::PCCDecoder() {
 #ifdef ENABLE_PAPI_PROFILING
   initPapiProfiler();
@@ -241,6 +274,7 @@ int PCCDecoder::decode( PCCContext &context, PCCGroupOfFrames &reconstructs, int
             auto &region = packingInfo.getRegion( regionIndex );
             if ( region.getRegionTypeId() == V3C_GVD && !region.getAuxiliaryDataFlag() &&
                  region.getMapIndex() == mapIndex ) {
+              if ( !isPackedRegionSelected( packingInfo, region ) ) { continue; }
               // Unpack geometry from packed video
               std::cout << "*******Video Unpacking: Geometry[" << mapIndex << "] from Packed Video ["
                         << static_cast<int>( region.getPackedMapIndex() ) << "] ********" << std::endl;
@@ -264,7 +298,7 @@ int PCCDecoder::decode( PCCContext &context, PCCGroupOfFrames &reconstructs, int
               }
 
               geometryPacked = true;
-              break;
+              if ( !packingInfo.getLodEnabledFlag() ) { break; }
             }
           }
         }
@@ -310,6 +344,7 @@ int PCCDecoder::decode( PCCContext &context, PCCGroupOfFrames &reconstructs, int
         for ( size_t regionIndex = 0; regionIndex <= packingInfo.getRegionsCountMinus1(); ++regionIndex ) {
           auto &region = packingInfo.getRegion( regionIndex );
           if ( region.getRegionTypeId() == V3C_GVD && !region.getAuxiliaryDataFlag() && region.getMapIndex() == 0 ) {
+            if ( !isPackedRegionSelected( packingInfo, region ) ) { continue; }
             // Unpack geometry from packed video
             std::cout << "*******Video Unpacking: Geometry from Packed Video ["
                       << static_cast<int>( region.getPackedMapIndex() ) << "] ********" << std::endl;
@@ -330,7 +365,7 @@ int PCCDecoder::decode( PCCContext &context, PCCGroupOfFrames &reconstructs, int
             }
 
             geometryPacked = true;
-            break;
+            if ( !packingInfo.getLodEnabledFlag() ) { break; }
           }
         }
       }
@@ -421,6 +456,7 @@ int PCCDecoder::decode( PCCContext &context, PCCGroupOfFrames &reconstructs, int
                   if ( region.getRegionTypeId() == V3C_AVD && !region.getAuxiliaryDataFlag() &&
                        region.getMapIndex() == mapIndex && region.getAttrIndex() == attrIndex &&
                        region.getAttrPartitionIndex() == attrPartitionIndex ) {
+                    if ( !isPackedRegionSelected( packingInfo, region ) ) { continue; }
                     // Unpack attribute from packed video
                     std::cout << "*******Video Unpacking: Attribute [" << mapIndex << "] from Packed Video ["
                               << static_cast<int>( region.getPackedMapIndex() ) << "] ********" << std::endl;
@@ -447,7 +483,7 @@ int PCCDecoder::decode( PCCContext &context, PCCGroupOfFrames &reconstructs, int
                     }
 
                     attributePacked = true;
-                    break;
+                    if ( !packingInfo.getLodEnabledFlag() ) { break; }
                   }
                 }
               }
@@ -500,6 +536,7 @@ int PCCDecoder::decode( PCCContext &context, PCCGroupOfFrames &reconstructs, int
                 if ( region.getRegionTypeId() == V3C_AVD && !region.getAuxiliaryDataFlag() &&
                      region.getMapIndex() == 0 && region.getAttrIndex() == attrIndex &&
                      region.getAttrPartitionIndex() == attrPartitionIndex ) {
+                  if ( !isPackedRegionSelected( packingInfo, region ) ) { continue; }
                   // Unpack attribute from packed video
                   std::cout << "*******Video Unpacking: Attribute from Packed Video ["
                             << static_cast<int>( region.getPackedMapIndex() ) << "] ********" << std::endl;
@@ -524,7 +561,7 @@ int PCCDecoder::decode( PCCContext &context, PCCGroupOfFrames &reconstructs, int
                   }
 
                   attributePacked = true;
-                  break;
+                  if ( !packingInfo.getLodEnabledFlag() ) { break; }
                 }
               }
             }
@@ -2004,6 +2041,12 @@ PCCCodecId PCCDecoder::getCodedCodecId( PCCContext        &context,
   return PCCCodecId::UNKNOWN_CODEC;
 }
 
+bool PCCDecoder::isPackedRegionSelected( const PackingInformation &packingInfo, const PackedRegion &region ) const {
+  if ( !packingInfo.getLodEnabledFlag() ) { return true; }
+  if ( region.getRegionLodMask() == 0 ) { return true; }
+  return ( region.getRegionLodMask() & params_.lodTargetLodMask_ ) != 0;
+}
+
 template <typename T, size_t N>
 void PCCDecoder::unpackRegion( const PCCVideoPacked &packedVideo,
                                PCCVideo<T, N>       &outputVideo,
@@ -2016,26 +2059,33 @@ void PCCDecoder::unpackRegion( const PCCVideoPacked &packedVideo,
   size_t dstHeight = region.getPackedRegionHeight();
   size_t srcTop    = region.getPackedRegionTop();
   size_t srcLeft   = region.getPackedRegionLeft();
+  size_t dstLeft   = region.getUnpackTopLeftX();
+  size_t dstTop    = region.getUnpackTopLeftY();
 
   outputVideo.resize( frameCount );
 
   for ( size_t frameIndex = 0; frameIndex < frameCount; ++frameIndex ) {
     auto &srcFrame = packedVideo.getFrame( frameIndex * constituentFrameCount + region.getConstituentFrameIndex() );
-    outputVideo.getFrame( frameIndex ).resize( dstWidth, dstHeight, PCCCOLORFORMAT::YUV420 );
     auto &dstFrame = outputVideo.getFrame( frameIndex );
+    // Size to the full source dimensions so that patch coordinates from non-selected
+    // LoD regions remain in-bounds until atlas-bbox filtering during splat generation.
+    if ( dstFrame.getWidth() == 0 ) { dstFrame.resize( srcWidth, srcHeight, PCCCOLORFORMAT::YUV420 ); }
 
     // Copy the region from packed video to output video
     for ( size_t plane = 0; plane < 3; ++plane ) {
-      size_t planeScaleY = ( plane == 0 ) ? 1 : 2;
-      size_t planeScaleX = ( plane == 0 ) ? 1 : 2;
-      size_t planeTop    = srcTop / planeScaleY;
-      size_t planeLeft   = srcLeft / planeScaleX;
-      size_t planeWidth  = dstWidth / planeScaleX;
-      size_t planeHeight = dstHeight / planeScaleY;
+      size_t planeScaleY  = ( plane == 0 ) ? 1 : 2;
+      size_t planeScaleX  = ( plane == 0 ) ? 1 : 2;
+      size_t planeTop     = srcTop / planeScaleY;
+      size_t planeLeft    = srcLeft / planeScaleX;
+      size_t planeDstTop  = dstTop / planeScaleY;
+      size_t planeDstLeft = dstLeft / planeScaleX;
+      size_t planeWidth   = dstWidth / planeScaleX;
+      size_t planeHeight  = dstHeight / planeScaleY;
 
       for ( size_t v = 0; v < planeHeight; ++v ) {
         for ( size_t u = 0; u < planeWidth; ++u ) {
-          dstFrame.getValue( plane, u, v ) = static_cast<T>( srcFrame.getValue( plane, u + planeLeft, v + planeTop ) );
+          dstFrame.getValue( plane, planeDstLeft + u, planeDstTop + v ) =
+              static_cast<T>( srcFrame.getValue( plane, planeLeft + u, planeTop + v ) );
         }
       }
     }
@@ -2060,6 +2110,11 @@ int PCCDecoder::ReconstructIdc3( PCCContext &context, PCCGroupOfFrames &reconstr
   auto &vps = context.getVps();
   auto &ai  = vps.getAttributeInformation( atlasIndex );
 
+  std::vector<PCCAtlasBbox> selectedLodAtlasBboxes;
+  const bool                useLodAtlasBboxFilter =
+      collectSelectedLodAtlasBboxes( context, atlasIndex, params_.lodTargetLodMask_, selectedLodAtlasBboxes );
+  const auto *selectedLodAtlasBboxFilter = useLodAtlasBboxFilter ? &selectedLodAtlasBboxes : nullptr;
+
   std::cout << "generate point cloud of " << frameCount << " frames" << std::endl << std::flush;
 
   for ( size_t frameIdx = 0; frameIdx < frameCount; frameIdx++ ) {
@@ -2073,7 +2128,7 @@ int PCCDecoder::ReconstructIdc3( PCCContext &context, PCCGroupOfFrames &reconstr
     if ( asps.getRawPatchEnabledFlag() ) {
       auto &pointCloud = reconstructs[frameIdx];
       // geometry from video
-      generateRawPointsGeometryfromVideoRecGS( context, frameIdx, pointCloud );
+      generateRawPointsGeometryfromVideoRecGS( context, frameIdx, pointCloud, selectedLodAtlasBboxFilter );
 
       // TODO: do that based on attribute information
       pointCloud.addOpacities();
@@ -2088,7 +2143,8 @@ int PCCDecoder::ReconstructIdc3( PCCContext &context, PCCGroupOfFrames &reconstr
                     << " attrPartitionIndex = " << attrPartitionIndex << "\n"
                     << std::endl
                     << std::flush;
-          generateRawPointsAttributefromVideoRecGS( context, frameIdx, attrIndex, attrPartitionIndex, pointCloud );
+          generateRawPointsAttributefromVideoRecGS( context, frameIdx, attrIndex, attrPartitionIndex, pointCloud,
+                                                    selectedLodAtlasBboxFilter );
         }
       }
 
