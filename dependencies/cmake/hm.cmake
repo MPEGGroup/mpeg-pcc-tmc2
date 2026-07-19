@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.17 FATAL_ERROR)
 
-set(HM_VERSION "HM-16.20+SCM-8.8" CACHE STRING "HM git branch/tag to use")
+set(HM_VERSION "HM-18.0" CACHE STRING "HM git branch/tag to use")
 set(HM_REPO_URL "https://vcgit.hhi.fraunhofer.de/jvet/HM.git" CACHE STRING "HM repository URL")
 option(HM_SKIP_PATCH "Skip HM patch application (migration/bootstrap only)" OFF)
 set(HM_DIR ${CMAKE_SOURCE_DIR}/dependencies/${HM_VERSION}/)
