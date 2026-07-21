@@ -138,11 +138,6 @@ bool PCCAdaptationParameters::writeConfig( const std::string &filename ) const {
     for ( size_t i = 0; i < scaleStepSizes_.size(); ++i ) {
       ofs << scaleStepSizes_[i] << ( i < scaleStepSizes_.size() - 1 ? ", " : "" );
     }
-    ofs << "],\n";
-    ofs << "      \"num_bits_for_transition_point\": [";
-    for ( size_t i = 0; i < scaleNumBitsForTransitionPoint_.size(); ++i ) {
-      ofs << scaleNumBitsForTransitionPoint_[i] << ( i < scaleNumBitsForTransitionPoint_.size() - 1 ? ", " : "" );
-    }
     ofs << "]\n";
     ofs << "    }";
   }
@@ -422,8 +417,6 @@ bool PCCAdaptationParameters::readConfig( const std::string &filename ) {
       parseIntVector( findValue( "num_regions_minus_1", scaleQuantRegionsPos ), scaleNumRegionsMinus1_ );
       parseIntVector( findValue( "transition_points", scaleQuantRegionsPos ), scaleTransitionPoints_ );
       parseFloatVector( findValue( "step_sizes", scaleQuantRegionsPos ), scaleStepSizes_ );
-      parseIntVector( findValue( "num_bits_for_transition_point", scaleQuantRegionsPos ),
-                      scaleNumBitsForTransitionPoint_ );
     }
 
     // SH non-uniform quantization
@@ -2883,7 +2876,6 @@ bool PCCAdaptation::extractOpacityQuantRegions( const PCCPointSetGS &input, PCCA
     params.opacityNumRegionsMinus1_ = 0;
     params.opacityTransitionPoints_.clear();
     params.opacityStepSizes_.clear();
-    params.opacityNumBitsForTransitionPoint_ = 0;
     return true;
   }
 
@@ -2909,7 +2901,6 @@ bool PCCAdaptation::extractOpacityQuantRegions( const PCCPointSetGS &input, PCCA
   params.opacityNumRegionsMinus1_ = 2;
   params.opacityTransitionPoints_.clear();
   params.opacityStepSizes_.assign( 3, 0.0 );
-  params.opacityNumBitsForTransitionPoint_ = params.opacityBitDepth_;
 
   double t1       = 0.45;
   double t2       = 0.55;
@@ -2939,7 +2930,6 @@ bool PCCAdaptation::extractScaleQuantRegions( const PCCPointSetGS &input, PCCAda
     params.scaleNumRegionsMinus1_.assign( 3, 0 );
     params.scaleTransitionPoints_.clear();
     params.scaleStepSizes_.clear();
-    params.scaleNumBitsForTransitionPoint_.assign( 3, static_cast<int>( params.scaleBitDepth_ ) );
     return true;
   }
 
@@ -2958,7 +2948,6 @@ bool PCCAdaptation::extractScaleQuantRegions( const PCCPointSetGS &input, PCCAda
     params.scaleStepSizes_[ch * 3 + 1] = step_size_base * 2;
     params.scaleStepSizes_[ch * 3 + 2] = step_size_base;
   }
-  params.scaleNumBitsForTransitionPoint_.assign( 3, static_cast<int>( bitDepth ) );
 
   for ( size_t ch = 0; ch < 3; ++ch ) {
     std::vector<double> ranges            = { params.scaleLimitMin_[ch], -10, -7, params.scaleLimitMax_[ch] };

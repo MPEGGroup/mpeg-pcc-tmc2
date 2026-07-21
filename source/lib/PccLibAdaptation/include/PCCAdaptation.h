@@ -212,8 +212,6 @@ struct PCCAdaptationParameters {
   std::vector<int> opacityTransitionPoints_;
   /// Step sizes for each region
   std::vector<double> opacityStepSizes_;
-  /// Number of bits used for transition points
-  uint32_t opacityNumBitsForTransitionPoint_;
 
   // ==================== Scale Parameters ====================
   /// Bit depth for scale quantization (default: 10)
@@ -253,9 +251,6 @@ struct PCCAdaptationParameters {
 
   /// Step sizes for each region
   std::vector<double> scaleStepSizes_;
-
-  /// Number of bits used for transition points
-  std::vector<int> scaleNumBitsForTransitionPoint_;
 
   // ==================== Rotation Parameters ====================
   /// Bit depth for rotation quantization (default: 10)

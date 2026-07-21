@@ -266,9 +266,15 @@ void PCCGSHlsBuilder::initializeAtlasAapsHls( PCCHighLevelSyntax            &hls
     if ( adaptationParams.enableOpacityNonUniformQuantization_ ) {
       uint32_t M = adaptationParams.opacityNumRegionsMinus1_;
       dequant.setOpacityNumQuantRegionsMinus1( M );
-      dequant.setOpacityNumBitsForTransitionPoint( adaptationParams.opacityNumBitsForTransitionPoint_ );
       for ( uint32_t m = 0; m < M; m++ ) {
         dequant.setOpacityQuantRegionTransitionPoint( m, adaptationParams.opacityTransitionPoints_[m] );
+        uint32_t curr = adaptationParams.opacityTransitionPoints_[m];
+        if ( m == 0 )
+          dequant.setOpacityQuantRegionTransitionPointDelta( m, curr );
+        else {
+          uint32_t prev = adaptationParams.opacityTransitionPoints_[m - 1];
+          dequant.setOpacityQuantRegionTransitionPointDelta( m, curr - prev );
+        }
       }
       for ( uint32_t m = 0; m < M + 1; m++ ) {
         dequant.setOpacityRegionStepSize( m, adaptationParams.opacityStepSizes_[m] );
@@ -415,17 +421,15 @@ void PCCGSHlsBuilder::initializeAtlasAapsHls( PCCHighLevelSyntax            &hls
       double           step1 = dx1 / n1;
       double           step2 = dx2 / std::max( 1, n2 );
       dequant.setScaleSameNumQuantRegionMinus1_( true );
-      dequant.setScaleSameNumBitsForTransitionPoint_( true );
       dequant.setScaleSameQuantRegionTransitionPoint_( true );
       dequant.setScaleSameRegionStepSize_( true );
       dequant.setScaleNumQuantRegionsMinus1( 0, 1 );
-      dequant.setScaleNumBitsForTransitionPoint( 0, adaptationParams.scaleBitDepth_ );
       dequant.setScaleQuantRegionTransitionPoint( 0, 0, static_cast<uint16_t>( n1 ) );
+      dequant.setScaleQuantRegionTransitionPointDelta( 0, 0, static_cast<uint16_t>( n1 ) );
       dequant.setScaleRegionStepSize( 0, 0, static_cast<float>( step1 ) );
       dequant.setScaleRegionStepSize( 0, 1, static_cast<float>( step2 ) );
     } else if ( adaptationParams.enableScalePowerTransform_ && !adaptationParams.enableScaleNonUniformQuantization_ ) {
       dequant.setScaleSameNumQuantRegionMinus1_( false );
-      dequant.setScaleSameNumBitsForTransitionPoint_( false );
       dequant.setScaleSameQuantRegionTransitionPoint_( false );
       dequant.setScaleSameRegionStepSize_( false );
       for ( int i = 0; i < 3; i++ ) { dequant.setScaleNumQuantRegionsMinus1( i, 0 ); }
@@ -439,32 +443,18 @@ void PCCGSHlsBuilder::initializeAtlasAapsHls( PCCHighLevelSyntax            &hls
       }
       dequant.setScaleSameNumQuantRegionMinus1_( sameScaleNumQuantRegionsMinus1 );
 
-      bool sameScaleNumBitsForTransitionPoint_ = true;
-      for ( int i = 1; i < 3; i++ ) {
-        if ( adaptationParams.scaleNumBitsForTransitionPoint_[i] !=
-             adaptationParams.scaleNumBitsForTransitionPoint_[0] ) {
-          sameScaleNumBitsForTransitionPoint_ = false;
-          break;
-        }
-      }
-      dequant.setScaleSameNumBitsForTransitionPoint_( sameScaleNumBitsForTransitionPoint_ );
-
       if ( sameScaleNumQuantRegionsMinus1 ) {
-        int M = adaptationParams.scaleNumRegionsMinus1_[0];
-        if ( sameScaleNumBitsForTransitionPoint_ ) {
-          bool sameScaleQuantRegionTransitionPoint = true;
-          for ( int i = 1; i < 3 && sameScaleQuantRegionTransitionPoint; i++ ) {
-            for ( int j = 0; j < M; j++ ) {
-              if ( adaptationParams.scaleTransitionPoints_[i * M + j] != adaptationParams.scaleTransitionPoints_[j] ) {
-                sameScaleQuantRegionTransitionPoint = false;
-                break;
-              }
+        int  M                                   = adaptationParams.scaleNumRegionsMinus1_[0];
+        bool sameScaleQuantRegionTransitionPoint = true;
+        for ( int i = 1; i < 3 && sameScaleQuantRegionTransitionPoint; i++ ) {
+          for ( int j = 0; j < M; j++ ) {
+            if ( adaptationParams.scaleTransitionPoints_[i * M + j] != adaptationParams.scaleTransitionPoints_[j] ) {
+              sameScaleQuantRegionTransitionPoint = false;
+              break;
             }
           }
-          dequant.setScaleSameQuantRegionTransitionPoint_( sameScaleQuantRegionTransitionPoint );
-        } else {
-          dequant.setScaleSameQuantRegionTransitionPoint_( false );
         }
+        dequant.setScaleSameQuantRegionTransitionPoint_( sameScaleQuantRegionTransitionPoint );
 
         bool sameScaleRegionStepSize = true;
         for ( int i = 1; i < 3 && sameScaleRegionStepSize; i++ ) {
@@ -484,9 +474,16 @@ void PCCGSHlsBuilder::initializeAtlasAapsHls( PCCHighLevelSyntax            &hls
       for ( int i = 0; i < 3; i++ ) {
         int M = adaptationParams.scaleNumRegionsMinus1_[i];
         dequant.setScaleNumQuantRegionsMinus1( i, M );
-        dequant.setScaleNumBitsForTransitionPoint( i, adaptationParams.scaleNumBitsForTransitionPoint_[i] );
         for ( int j = 0; j < M; j++ ) {
           dequant.setScaleQuantRegionTransitionPoint( i, j, adaptationParams.scaleTransitionPoints_[i * M + j] );
+          uint32_t curr = adaptationParams.scaleTransitionPoints_[i * M + j];
+
+          if ( j == 0 ) {
+            dequant.setScaleQuantRegionTransitionPointDelta( i, j, curr );
+          } else {
+            uint32_t prev = adaptationParams.scaleTransitionPoints_[i * M + j - 1];
+            dequant.setScaleQuantRegionTransitionPointDelta( i, j, curr - prev );
+          }
         }
         for ( int j = 0; j < M + 1; j++ ) {
           dequant.setScaleRegionStepSize( i, j, adaptationParams.scaleStepSizes_[i * ( M + 1 ) + j] );
@@ -494,7 +491,6 @@ void PCCGSHlsBuilder::initializeAtlasAapsHls( PCCHighLevelSyntax            &hls
       }
     } else {
       dequant.setScaleSameNumQuantRegionMinus1_( false );
-      dequant.setScaleSameNumBitsForTransitionPoint_( false );
       dequant.setScaleSameQuantRegionTransitionPoint_( false );
       dequant.setScaleSameRegionStepSize_( false );
       for ( int i = 0; i < 3; i++ ) { dequant.setScaleNumQuantRegionsMinus1( i, 0 ); }

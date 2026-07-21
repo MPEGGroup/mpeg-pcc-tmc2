@@ -2178,7 +2178,6 @@ int PCCDecoder::ReconstructIdc3( PCCContext &context, PCCGroupOfFrames &reconstr
             adaptationParams.opacityNumRegionsMinus1_ = M;
             if ( M > 0 ) {
               adaptationParams.enableOpacityNonUniformQuantization_ = true;
-              adaptationParams.opacityNumBitsForTransitionPoint_    = dequant.getOpacityNumBitsForTransitionPoint();
               for ( uint32_t m = 0; m < M; m++ ) {
                 adaptationParams.opacityTransitionPoints_.push_back(
                     dequant.getOpacityQuantRegionTransitionPoint( m ) );
@@ -2219,8 +2218,6 @@ int PCCDecoder::ReconstructIdc3( PCCContext &context, PCCGroupOfFrames &reconstr
               adaptationParams.computedScaleMax_[i] = dequant.getMaxScale( i );
               uint32_t M                            = dequant.getScaleNumQuantRegionsMinus1( i );
               adaptationParams.scaleNumRegionsMinus1_.push_back( M );
-              adaptationParams.scaleNumBitsForTransitionPoint_.push_back(
-                  dequant.getScaleNumBitsForTransitionPoint( i ) );
               if ( M > 0 ) {
                 adaptationParams.enableScaleNonUniformQuantization_ = true;
                 for ( size_t m = 0; m < M; m++ ) {

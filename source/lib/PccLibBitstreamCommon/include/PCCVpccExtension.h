@@ -177,13 +177,13 @@ class GsDequantization {
           if ( other.minScale_[i] != minScale_[i] ) retVal = false;
           if ( other.maxScale_[i] != maxScale_[i] ) retVal = false;
           if ( other.scaleSameNumQuantRegionMinus1_ != scaleSameNumQuantRegionMinus1_ ) retVal = false;
-          if ( other.scaleSameNumBitsForTransitionPoint_ != scaleSameNumBitsForTransitionPoint_ ) retVal = false;
           if ( other.scaleSameQuantRegionTransitionPoint_ != scaleSameQuantRegionTransitionPoint_ ) retVal = false;
           if ( other.scaleSameRegionStepSize_ != scaleSameRegionStepSize_ ) retVal = false;
           if ( other.scaleNumQuantRegionMinus1_[i] != scaleNumQuantRegionMinus1_[i] ) retVal = false;
-          if ( other.scaleNumBitsForTransitionPoint_[i] != scaleNumBitsForTransitionPoint_[i] ) retVal = false;
           for ( int m = 0; m < scaleNumQuantRegionMinus1_[i]; m++ ) {
             if ( other.scaleQuantRegionTransitionPoint_[i][m] != scaleQuantRegionTransitionPoint_[i][m] )
+              retVal = false;
+            if ( other.scaleQuantRegionTransitionPointDelta_[i][m] != scaleQuantRegionTransitionPointDelta_[i][m] )
               retVal = false;
           }
           for ( int m = 0; m < scaleNumQuantRegionMinus1_[i] + 1; m++ ) {
@@ -203,6 +203,8 @@ class GsDequantization {
         if ( opacityNumQuantRegionsMinus1_ > 0 ) {
           for ( int m = 0; m < opacityNumQuantRegionsMinus1_; m++ ) {
             if ( other.opacityQuantRegionTransitionPoint_[m] != opacityQuantRegionTransitionPoint_[m] ) retVal = false;
+            if ( other.opacityQuantRegionTransitionPointDelta_[m] != opacityQuantRegionTransitionPointDelta_[m] )
+              retVal = false;
           }
           for ( int m = 0; m < opacityNumQuantRegionsMinus1_ + 1; m++ ) {
             if ( other.opacityRegionStepSize_[m] != opacityRegionStepSize_[m] ) retVal = false;
@@ -256,17 +258,18 @@ class GsDequantization {
   bool     getScaleSameNumQuantRegionMinus1_() { return scaleSameNumQuantRegionMinus1_; }
   bool     getScaleSameQuantRegionTransitionPoint_() { return scaleSameQuantRegionTransitionPoint_; }
   bool     getScaleSameRegionStepSize_() { return scaleSameRegionStepSize_; }
-  bool     getScaleSameNumBitsForTransitionPoint_() { return scaleSameNumBitsForTransitionPoint_; }
   uint32_t getScaleNumQuantRegionsMinus1( int i ) { return scaleNumQuantRegionMinus1_[i]; }
-  uint32_t getScaleNumBitsForTransitionPoint( int i ) { return scaleNumBitsForTransitionPoint_[i]; }
   uint16_t getScaleQuantRegionTransitionPoint( int i, int j ) { return scaleQuantRegionTransitionPoint_[i][j]; }
+  uint16_t getScaleQuantRegionTransitionPointDelta( int i, int j ) {
+    return scaleQuantRegionTransitionPointDelta_[i][j];
+  }
   float    getScaleRegionStepSize( int i, int j ) { return scaleRegionStepSize_[i][j]; }
   bool     getOpacityPresentFlag() { return opacityPresentFlag_; }
   float    getMinOpacity() { return minOpacity_; }
   float    getMaxOpacity() { return maxOpacity_; }
   uint32_t getOpacityNumQuantRegionsMinus1() { return opacityNumQuantRegionsMinus1_; }
-  uint32_t getOpacityNumBitsForTransitionPoint() { return opacityNumBitsForTransitionPoint_; }
   uint16_t getOpacityQuantRegionTransitionPoint( int m ) { return opacityQuantRegionTransitionPoint_[m]; }
+  uint16_t getOpacityQuantRegionTransitionPointDelta( int m ) { return opacityQuantRegionTransitionPointDelta_[m]; }
   float    getOpacityRegionStepSize( int m ) { return opacityRegionStepSize_[m]; }
   bool     getShPresentFlag() { return shPresentFlag_; }
   bool     getScaleSameMinMaxFlag() { return scaleSameMinMaxFlag_; }
@@ -299,17 +302,21 @@ class GsDequantization {
   void setScaleSameNumQuantRegionMinus1_( bool value ) { scaleSameNumQuantRegionMinus1_ = value; }
   void setScaleSameQuantRegionTransitionPoint_( bool value ) { scaleSameQuantRegionTransitionPoint_ = value; }
   void setScaleSameRegionStepSize_( bool value ) { scaleSameRegionStepSize_ = value; }
-  void setScaleSameNumBitsForTransitionPoint_( bool value ) { scaleSameNumBitsForTransitionPoint_ = value; }
   void setScaleNumQuantRegionsMinus1( int i, uint32_t value ) {
     scaleNumQuantRegionMinus1_[i] = value;
     scaleQuantRegionTransitionPoint_[i].resize( value, 0 );
+    scaleQuantRegionTransitionPointDelta_[i].resize( value, 0 );
     scaleRegionStepSize_[i].resize( value + 1, 0 );
   }
   void setScaleQuantRegionTransitionPoint( int i, int j, uint16_t value ) {
     scaleQuantRegionTransitionPoint_[i][j] = value;
   }
+
+  void setScaleQuantRegionTransitionPointDelta( int i, int j, uint16_t value ) {
+    scaleQuantRegionTransitionPointDelta_[i][j] = value;
+  }
+
   void setScaleRegionStepSize( int i, int j, float value ) { scaleRegionStepSize_[i][j] = value; }
-  void setScaleNumBitsForTransitionPoint( int i, uint32_t value ) { scaleNumBitsForTransitionPoint_[i] = value; }
   void setOpacityPresentFlag( bool value ) { opacityPresentFlag_ = value; }
   void setMinOpacity( float value ) { minOpacity_ = value; }
   void setMaxOpacity( float value ) { maxOpacity_ = value; }
@@ -317,11 +324,14 @@ class GsDequantization {
     opacityNumQuantRegionsMinus1_ = value;
     if ( value > 0 ) {
       opacityQuantRegionTransitionPoint_.resize( value, 0 );
+      opacityQuantRegionTransitionPointDelta_.resize( value, 0 );
       opacityRegionStepSize_.resize( value + 1, 0.0f );
     }
   }
-  void setOpacityNumBitsForTransitionPoint( int value ) { opacityNumBitsForTransitionPoint_ = value; }
   void setOpacityQuantRegionTransitionPoint( int m, int value ) { opacityQuantRegionTransitionPoint_[m] = value; }
+  void setOpacityQuantRegionTransitionPointDelta( int m, int value ) {
+    opacityQuantRegionTransitionPointDelta_[m] = value;
+  }
   void setOpacityRegionStepSize( int m, float value ) { opacityRegionStepSize_[m] = value; }
   void setShPresentFlag( bool value ) { shPresentFlag_ = value; }
   void setScaleSameMinMaxFlag( bool value ) { scaleSameMinMaxFlag_ = value; }
@@ -382,18 +392,17 @@ class GsDequantization {
   bool                                            scaleSameNumQuantRegionMinus1_;
   bool                                            scaleSameQuantRegionTransitionPoint_;
   bool                                            scaleSameRegionStepSize_;
-  bool                                            scaleSameNumBitsForTransitionPoint_;
   uint32_t                                        scaleNumQuantRegionMinus1_[3];
   std::vector<uint16_t>                           scaleQuantRegionTransitionPoint_[3];
+  std::vector<uint16_t>                           scaleQuantRegionTransitionPointDelta_[3];
   std::vector<float>                              scaleRegionStepSize_[3];
-  uint32_t                                        scaleNumBitsForTransitionPoint_[3];
   bool                                            opacityPresentFlag_;
   float                                           minOpacity_;
   float                                           maxOpacity_;
   uint32_t                                        opacityNumQuantRegionsMinus1_;
   std::vector<int>                                opacityQuantRegionTransitionPoint_;
+  std::vector<int>                                opacityQuantRegionTransitionPointDelta_;
   std::vector<float>                              opacityRegionStepSize_;
-  int                                             opacityNumBitsForTransitionPoint_;
   bool                                            shPresentFlag_;
   bool                                            scaleSameMinMaxFlag_;
   bool                                            rotSameMinMaxFlag_;
