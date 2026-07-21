@@ -2968,7 +2968,6 @@ void PCCBitstreamWriter::gsDequantization( PCCBitstream &bitstream, GsDequantiza
       WRITE_CODE( gsd.getShMultipleRegionsEnableFlag(), 1 );
       if ( gsd.getShMultipleRegionsEnableFlag() ) {
         WRITE_CODE( gsd.getShSameNumRegionMius1Flag(), 1 );
-        WRITE_CODE( 0, 1 );  // u(1) placeholder for gsd_sh_same_num_bits_for_transition_point_flag
         if ( gsd.getShSameNumRegionMius1Flag() ) {
           WRITE_CODE( gsd.getShSameQuantRegionTransitionPointFlag(), 1 );
           WRITE_CODE( gsd.getShSameRegionStepSizeFlag(), 1 );

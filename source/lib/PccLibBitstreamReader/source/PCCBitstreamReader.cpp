@@ -3014,12 +3014,6 @@ void PCCBitstreamReader::gsDequantization( PCCBitstream &bitstream, GsDequantiza
       if ( gsd.getShMultipleRegionsEnableFlag() ) {
         READ_CODE_DESC( value, 1, "ShSameNumQuantRegionsMinus1Flag" );
         gsd.setShSameNumRegionMius1Flag( value );
-        READ_CODE_DESC( value, 1, "placeholder_for_gsd_sh_same_num_bits_for_transition_point_flag" );
-        if ( value != 0 ) {
-          TRACE_BITSTREAM(
-              "Error: placeholder_for_gsd_sh_same_num_bits_for_transition_point_flag is set to 1, but should be 0\n" );
-          exit( EXIT_FAILURE );
-        }
         if ( gsd.getShSameNumRegionMius1Flag() ) {
           READ_CODE_DESC( value, 1, "ShSameQuantRegionTransitionPointFlag" );
           gsd.setShSameQuantRegionTransitionPointFlag( value );
