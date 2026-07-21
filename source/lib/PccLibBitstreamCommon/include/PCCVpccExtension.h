@@ -126,6 +126,8 @@ class GsDequantization {
   GsDequantization() :
       dequantizationType_( 0 ),
       shMultipleRegionsEnableFlag_( false ),
+      scaleMultipleRegionsEnableFlag_( false ),
+      opacityMultipleRegionsEnableFlag_( false ),
       shSameMinMaxFlag_( false ),
       shSameNumRegionMius1Flag_( false ),
       shSameQuantRegionTransitionPointFlag_( false ),
@@ -275,6 +277,8 @@ class GsDequantization {
   bool     getScaleSameMinMaxFlag() { return scaleSameMinMaxFlag_; }
   bool     getRotSameMinMaxFlag() { return rotSameMinMaxFlag_; }
   bool     getShMultipleRegionsEnableFlag() const { return shMultipleRegionsEnableFlag_; }
+  bool     getOpacityMultipleRegionsEnableFlag() const { return opacityMultipleRegionsEnableFlag_; }
+  bool     getScaleMultipleRegionsEnableFlag() const { return scaleMultipleRegionsEnableFlag_; }
   bool     getShSameMinMaxFlag() const { return shSameMinMaxFlag_; }
   bool     getShSameNumRegionMius1Flag() const { return shSameNumRegionMius1Flag_; }
   bool     getShSameQuantRegionTransitionPointFlag() const { return shSameQuantRegionTransitionPointFlag_; }
@@ -337,6 +341,8 @@ class GsDequantization {
   void setScaleSameMinMaxFlag( bool value ) { scaleSameMinMaxFlag_ = value; }
   void setRotSameMinMaxFlag( bool value ) { rotSameMinMaxFlag_ = value; }
   void setShMultipleRegionsEnableFlag( bool value ) { shMultipleRegionsEnableFlag_ = value; }
+  void setOpacityMultipleRegionsEnableFlag( bool value ) { opacityMultipleRegionsEnableFlag_ = value; }
+  void setScaleMultipleRegionsEnableFlag( bool value ) { scaleMultipleRegionsEnableFlag_ = value; }
   void setShSameMinMaxFlag( bool value ) { shSameMinMaxFlag_ = value; }
   void setShSameNumRegionMius1Flag( bool value ) { shSameNumRegionMius1Flag_ = value; }
   void setShSameQuantRegionTransitionPointFlag( bool value ) { shSameQuantRegionTransitionPointFlag_ = value; }
@@ -407,6 +413,8 @@ class GsDequantization {
   bool                                            scaleSameMinMaxFlag_;
   bool                                            rotSameMinMaxFlag_;
   bool                                            shMultipleRegionsEnableFlag_;
+  bool                                            opacityMultipleRegionsEnableFlag_;
+  bool                                            scaleMultipleRegionsEnableFlag_;
   bool                                            shSameMinMaxFlag_;
   bool                                            shSameNumRegionMius1Flag_;
   bool                                            shSameQuantRegionTransitionPointFlag_;

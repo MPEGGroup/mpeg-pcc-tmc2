@@ -261,6 +261,7 @@ void PCCGSHlsBuilder::initializeAtlasAapsHls( PCCHighLevelSyntax            &hls
 
   if ( adaptationParams.enableOpacityQuantization_ ) {
     dequant.setOpacityPresentFlag( true );
+    dequant.setOpacityMultipleRegionsEnableFlag( adaptationParams.enableOpacityNonUniformQuantization_ );
     dequant.setMinOpacity( adaptationParams.computedOpacityMin_ );
     dequant.setMaxOpacity( adaptationParams.computedOpacityMax_ );
     if ( adaptationParams.enableOpacityNonUniformQuantization_ ) {
@@ -393,6 +394,7 @@ void PCCGSHlsBuilder::initializeAtlasAapsHls( PCCHighLevelSyntax            &hls
 
   if ( adaptationParams.enableScaleQuantization_ ) {
     dequant.setScalePresentFlag( true );
+    dequant.setScaleMultipleRegionsEnableFlag( adaptationParams.enableScaleNonUniformQuantization_ );
     bool   scaleSameMinMax = true;
     double minVal          = adaptationParams.computedScaleMin_[0];
     double maxVal          = adaptationParams.computedScaleMax_[0];

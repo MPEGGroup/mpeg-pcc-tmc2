@@ -2919,16 +2919,20 @@ void PCCBitstreamReader::gsDequantization( PCCBitstream &bitstream, GsDequantiza
     READ_CODE_DESC( value, 1, "ScalePresentFlag" );
     gsd.setScalePresentFlag( value );
     if ( gsd.getScalePresentFlag() ) {
-      READ_CODE( value, 1 );
-      gsd.setScaleSameNumQuantRegionMinus1_( value );
-      if ( gsd.getScaleSameNumQuantRegionMinus1_() ) {
+      READ_CODE_DESC( value, 1, "ScaleMultipleRegionsEnableFlag" );
+      gsd.setScaleMultipleRegionsEnableFlag( value );
+      if ( gsd.getScaleMultipleRegionsEnableFlag() ) {
         READ_CODE( value, 1 );
-        gsd.setScaleSameQuantRegionTransitionPoint_( value );
-        READ_CODE( value, 1 );
-        gsd.setScaleSameRegionStepSize_( value );
-      } else {
-        gsd.setScaleSameQuantRegionTransitionPoint_( false );
-        gsd.setScaleSameRegionStepSize_( false );
+        gsd.setScaleSameNumQuantRegionMinus1_( value );
+        if ( gsd.getScaleSameNumQuantRegionMinus1_() ) {
+          READ_CODE( value, 1 );
+          gsd.setScaleSameQuantRegionTransitionPoint_( value );
+          READ_CODE( value, 1 );
+          gsd.setScaleSameRegionStepSize_( value );
+        } else {
+          gsd.setScaleSameQuantRegionTransitionPoint_( false );
+          gsd.setScaleSameRegionStepSize_( false );
+        }
       }
       READ_CODE_DESC( value, 1, "ScaleSameMinMaxFlag" );
       gsd.setScaleSameMinMaxFlag( value );
@@ -2943,35 +2947,32 @@ void PCCBitstreamReader::gsDequantization( PCCBitstream &bitstream, GsDequantiza
           gsd.setMinScale( i, gsd.getMinScale( 0 ) );
           gsd.setMaxScale( i, gsd.getMaxScale( 0 ) );
         }
-        if ( ( i == 0 ) || !gsd.getScaleSameNumQuantRegionMinus1_() ) READ_UVLC( numRegion );
-        gsd.setScaleNumQuantRegionsMinus1( i, numRegion );
-        if ( gsd.getScaleNumQuantRegionsMinus1( i ) ) {
-          if ( ( i == 0 ) || !gsd.getScaleSameQuantRegionTransitionPoint_() ) {
-            for ( int j = 0; j < gsd.getScaleNumQuantRegionsMinus1( i ); j++ ) {
-              READ_UVLC_DESC( value, "TransitionPointDelta" );
-              gsd.setScaleQuantRegionTransitionPointDelta( i, j, value );
-              if ( j == 0 )
-                gsd.setScaleQuantRegionTransitionPoint( i, j, value );
-              else
-                gsd.setScaleQuantRegionTransitionPoint( i, j,
-                                                        gsd.getScaleQuantRegionTransitionPoint( i, j - 1 ) + value );
-            }
-          } else {
-            for ( int j = 0; j < gsd.getScaleNumQuantRegionsMinus1( i ); j++ ) {
-              uint16_t transitionPoints = gsd.getScaleQuantRegionTransitionPoint( 0, j );
-              gsd.setScaleQuantRegionTransitionPoint( i, j, transitionPoints );
-            }
-          }
-          if ( ( i == 0 ) || !gsd.getScaleSameRegionStepSize_() ) {
-            for ( int j = 0; j < gsd.getScaleNumQuantRegionsMinus1( i ) + 1; j++ ) {
-              float stepSize;
-              READ_FLOAT( stepSize );
-              gsd.setScaleRegionStepSize( i, j, stepSize );
-            }
-          } else {
-            for ( int j = 0; j < gsd.getScaleNumQuantRegionsMinus1( i ) + 1; j++ ) {
-              float stepSize = gsd.getScaleRegionStepSize( 0, j );
-              gsd.setScaleRegionStepSize( i, j, stepSize );
+        if ( gsd.getScaleMultipleRegionsEnableFlag() ) {
+          if ( ( i == 0 ) || !gsd.getScaleSameNumQuantRegionMinus1_() ) READ_UVLC( numRegion );
+          gsd.setScaleNumQuantRegionsMinus1( i, numRegion );
+          if ( gsd.getScaleNumQuantRegionsMinus1( i ) ) {
+            if ( ( i == 0 ) || !gsd.getScaleSameQuantRegionTransitionPoint_() ) {
+              for ( int j = 0; j < gsd.getScaleNumQuantRegionsMinus1( i ); j++ ) {
+                READ_UVLC_DESC( value, "TransitionPointDelta" );
+                gsd.setScaleQuantRegionTransitionPointDelta( i, j, value );
+                if ( j == 0 )
+                  gsd.setScaleQuantRegionTransitionPoint( i, j, value );
+                else
+                  gsd.setScaleQuantRegionTransitionPoint( i, j,
+                                                          gsd.getScaleQuantRegionTransitionPoint( i, j - 1 ) + value );
+              }
+              if ( ( i == 0 ) || !gsd.getScaleSameRegionStepSize_() ) {
+                for ( int j = 0; j < gsd.getScaleNumQuantRegionsMinus1( i ) + 1; j++ ) {
+                  float stepSize;
+                  READ_FLOAT( stepSize );
+                  gsd.setScaleRegionStepSize( i, j, stepSize );
+                }
+              } else {
+                for ( int j = 0; j < gsd.getScaleNumQuantRegionsMinus1( i ) + 1; j++ ) {
+                  float stepSize = gsd.getScaleRegionStepSize( 0, j );
+                  gsd.setScaleRegionStepSize( i, j, stepSize );
+                }
+              }
             }
           }
         }
@@ -2984,20 +2985,24 @@ void PCCBitstreamReader::gsDequantization( PCCBitstream &bitstream, GsDequantiza
       gsd.setMinOpacity( valueFlt );
       READ_FLOAT_DESC( valueFlt, "MaxOpacity" );
       gsd.setMaxOpacity( valueFlt );
-      READ_UVLC_DESC( value, "OpacityNumQuantRegionsMinus1" );
-      gsd.setOpacityNumQuantRegionsMinus1( value );
-      if ( gsd.getOpacityNumQuantRegionsMinus1() > 0 ) {
-        for ( int m = 0; m < gsd.getOpacityNumQuantRegionsMinus1(); m++ ) {
-          READ_UVLC_DESC( value, "OpacityQuantRegionTransitionPointDelta" );
-          gsd.setOpacityQuantRegionTransitionPointDelta( m, value );
-          if ( m == 0 )
-            gsd.setOpacityQuantRegionTransitionPoint( m, value );
-          else
-            gsd.setOpacityQuantRegionTransitionPoint( m, gsd.getOpacityQuantRegionTransitionPoint( m - 1 ) + value );
-        }
-        for ( int m = 0; m < gsd.getOpacityNumQuantRegionsMinus1() + 1; m++ ) {
-          READ_FLOAT_DESC( valueFlt, "OpacityRegionStepSize" );
-          gsd.setOpacityRegionStepSize( m, valueFlt );
+      READ_CODE_DESC( value, 1, "OpacityMultipleRegionsEnableFlag" );
+      gsd.setOpacityMultipleRegionsEnableFlag( value );
+      if ( gsd.getOpacityMultipleRegionsEnableFlag() ) {
+        READ_UVLC_DESC( value, "OpacityNumQuantRegionsMinus1" );
+        gsd.setOpacityNumQuantRegionsMinus1( value );
+        if ( gsd.getOpacityNumQuantRegionsMinus1() > 0 ) {
+          for ( int m = 0; m < gsd.getOpacityNumQuantRegionsMinus1(); m++ ) {
+            READ_UVLC_DESC( value, "OpacityQuantRegionTransitionPointDelta" );
+            gsd.setOpacityQuantRegionTransitionPointDelta( m, value );
+            if ( m == 0 )
+              gsd.setOpacityQuantRegionTransitionPoint( m, value );
+            else
+              gsd.setOpacityQuantRegionTransitionPoint( m, gsd.getOpacityQuantRegionTransitionPoint( m - 1 ) + value );
+          }
+          for ( int m = 0; m < gsd.getOpacityNumQuantRegionsMinus1() + 1; m++ ) {
+            READ_FLOAT_DESC( valueFlt, "OpacityRegionStepSize" );
+            gsd.setOpacityRegionStepSize( m, valueFlt );
+          }
         }
       }
     }
@@ -3015,10 +3020,12 @@ void PCCBitstreamReader::gsDequantization( PCCBitstream &bitstream, GsDequantiza
               "Error: placeholder_for_gsd_sh_same_num_bits_for_transition_point_flag is set to 1, but should be 0\n" );
           exit( EXIT_FAILURE );
         }
-        READ_CODE_DESC( value, 1, "ShSameQuantRegionTransitionPointFlag" );
-        gsd.setShSameQuantRegionTransitionPointFlag( value );
-        READ_CODE_DESC( value, 1, "ShSameRegionStepSizeFlag" );
-        gsd.setShSameRegionStepSizeFlag( value );
+        if ( gsd.getShSameNumRegionMius1Flag() ) {
+          READ_CODE_DESC( value, 1, "ShSameQuantRegionTransitionPointFlag" );
+          gsd.setShSameQuantRegionTransitionPointFlag( value );
+          READ_CODE_DESC( value, 1, "ShSameRegionStepSizeFlag" );
+          gsd.setShSameRegionStepSizeFlag( value );
+        }
       }
       READ_CODE_DESC( value, 1, "ShSameMinMaxFlag" );
       gsd.setShSameMinMaxFlag( value );

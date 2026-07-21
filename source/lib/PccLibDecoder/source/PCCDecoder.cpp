@@ -2172,8 +2172,10 @@ int PCCDecoder::ReconstructIdc3( PCCContext &context, PCCGroupOfFrames &reconstr
           }
 
           if ( adaptationParams.enableOpacityQuantization_ ) {
-            adaptationParams.computedOpacityMin_      = dequant.getMinOpacity();
-            adaptationParams.computedOpacityMax_      = dequant.getMaxOpacity();
+            adaptationParams.computedOpacityMin_                  = dequant.getMinOpacity();
+            adaptationParams.computedOpacityMax_                  = dequant.getMaxOpacity();
+            adaptationParams.enableOpacityNonUniformQuantization_ = dequant.getOpacityMultipleRegionsEnableFlag();
+            if ( !dequant.getOpacityMultipleRegionsEnableFlag() ) dequant.setOpacityNumQuantRegionsMinus1( 0 );
             uint32_t M                                = dequant.getOpacityNumQuantRegionsMinus1();
             adaptationParams.opacityNumRegionsMinus1_ = M;
             if ( M > 0 ) {
@@ -2213,13 +2215,14 @@ int PCCDecoder::ReconstructIdc3( PCCContext &context, PCCGroupOfFrames &reconstr
           }
 
           if ( adaptationParams.enableScaleQuantization_ ) {
+            const bool enableMultipleRegions                    = dequant.getScaleMultipleRegionsEnableFlag();
+            adaptationParams.enableScaleNonUniformQuantization_ = enableMultipleRegions;
             for ( size_t i = 0; i < 3; i++ ) {
               adaptationParams.computedScaleMin_[i] = dequant.getMinScale( i );
               adaptationParams.computedScaleMax_[i] = dequant.getMaxScale( i );
-              uint32_t M                            = dequant.getScaleNumQuantRegionsMinus1( i );
+              uint32_t M = enableMultipleRegions ? dequant.getScaleNumQuantRegionsMinus1( i ) : 0;
               adaptationParams.scaleNumRegionsMinus1_.push_back( M );
               if ( M > 0 ) {
-                adaptationParams.enableScaleNonUniformQuantization_ = true;
                 for ( size_t m = 0; m < M; m++ ) {
                   adaptationParams.scaleTransitionPoints_.push_back(
                       dequant.getScaleQuantRegionTransitionPoint( i, m ) );

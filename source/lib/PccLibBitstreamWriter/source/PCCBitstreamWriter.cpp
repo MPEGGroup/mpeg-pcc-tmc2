@@ -2916,10 +2916,13 @@ void PCCBitstreamWriter::gsDequantization( PCCBitstream &bitstream, GsDequantiza
     }
     WRITE_CODE( gsd.getScalePresentFlag(), 1 );
     if ( gsd.getScalePresentFlag() ) {
-      WRITE_CODE( gsd.getScaleSameNumQuantRegionMinus1_(), 1 );
-      if ( gsd.getScaleSameNumQuantRegionMinus1_() ) {
-        WRITE_CODE( gsd.getScaleSameQuantRegionTransitionPoint_(), 1 );
-        WRITE_CODE( gsd.getScaleSameRegionStepSize_(), 1 );
+      WRITE_CODE( gsd.getScaleMultipleRegionsEnableFlag(), 1 );
+      if ( gsd.getScaleMultipleRegionsEnableFlag() ) {
+        WRITE_CODE( gsd.getScaleSameNumQuantRegionMinus1_(), 1 );
+        if ( gsd.getScaleSameNumQuantRegionMinus1_() ) {
+          WRITE_CODE( gsd.getScaleSameQuantRegionTransitionPoint_(), 1 );
+          WRITE_CODE( gsd.getScaleSameRegionStepSize_(), 1 );
+        }
       }
       WRITE_CODE( gsd.getScaleSameMinMaxFlag(), 1 );
       for ( int i = 0; i < 3; i++ ) {
@@ -2927,17 +2930,19 @@ void PCCBitstreamWriter::gsDequantization( PCCBitstream &bitstream, GsDequantiza
           WRITE_FLOAT( gsd.getMinScale( i ) );
           WRITE_FLOAT( gsd.getMaxScale( i ) );
         }
-        if ( ( i == 0 ) || !gsd.getScaleSameNumQuantRegionMinus1_() )
-          WRITE_UVLC( gsd.getScaleNumQuantRegionsMinus1( i ) );
-        if ( gsd.getScaleNumQuantRegionsMinus1( i ) ) {
-          if ( ( i == 0 ) || !gsd.getScaleSameQuantRegionTransitionPoint_() )
-            for ( int j = 0; j < gsd.getScaleNumQuantRegionsMinus1( i ); j++ ) {
-              WRITE_UVLC( gsd.getScaleQuantRegionTransitionPointDelta( i, j ) );
-            }
-          if ( ( i == 0 ) || !gsd.getScaleSameRegionStepSize_() )
-            for ( int j = 0; j < gsd.getScaleNumQuantRegionsMinus1( i ) + 1; j++ ) {
-              WRITE_FLOAT( gsd.getScaleRegionStepSize( i, j ) );
-            }
+        if ( gsd.getScaleMultipleRegionsEnableFlag() ) {
+          if ( ( i == 0 ) || !gsd.getScaleSameNumQuantRegionMinus1_() )
+            WRITE_UVLC( gsd.getScaleNumQuantRegionsMinus1( i ) );
+          if ( gsd.getScaleNumQuantRegionsMinus1( i ) ) {
+            if ( ( i == 0 ) || !gsd.getScaleSameQuantRegionTransitionPoint_() )
+              for ( int j = 0; j < gsd.getScaleNumQuantRegionsMinus1( i ); j++ ) {
+                WRITE_UVLC( gsd.getScaleQuantRegionTransitionPointDelta( i, j ) );
+              }
+            if ( ( i == 0 ) || !gsd.getScaleSameRegionStepSize_() )
+              for ( int j = 0; j < gsd.getScaleNumQuantRegionsMinus1( i ) + 1; j++ ) {
+                WRITE_FLOAT( gsd.getScaleRegionStepSize( i, j ) );
+              }
+          }
         }
       }
     }
@@ -2945,13 +2950,16 @@ void PCCBitstreamWriter::gsDequantization( PCCBitstream &bitstream, GsDequantiza
     if ( gsd.getOpacityPresentFlag() ) {
       WRITE_FLOAT( gsd.getMinOpacity() );
       WRITE_FLOAT( gsd.getMaxOpacity() );
-      WRITE_UVLC( static_cast<uint32_t>( gsd.getOpacityNumQuantRegionsMinus1() ) );
-      if ( gsd.getOpacityNumQuantRegionsMinus1() > 0 ) {
-        for ( int m = 0; m < gsd.getOpacityNumQuantRegionsMinus1(); m++ ) {
-          WRITE_UVLC( gsd.getOpacityQuantRegionTransitionPointDelta( m ) );
-        }
-        for ( int m = 0; m < gsd.getOpacityNumQuantRegionsMinus1() + 1; m++ ) {
-          WRITE_FLOAT( gsd.getOpacityRegionStepSize( m ) );
+      WRITE_CODE( gsd.getOpacityMultipleRegionsEnableFlag(), 1 );
+      if ( gsd.getOpacityMultipleRegionsEnableFlag() ) {
+        WRITE_UVLC( static_cast<uint32_t>( gsd.getOpacityNumQuantRegionsMinus1() ) );
+        if ( gsd.getOpacityNumQuantRegionsMinus1() > 0 ) {
+          for ( int m = 0; m < gsd.getOpacityNumQuantRegionsMinus1(); m++ ) {
+            WRITE_UVLC( gsd.getOpacityQuantRegionTransitionPointDelta( m ) );
+          }
+          for ( int m = 0; m < gsd.getOpacityNumQuantRegionsMinus1() + 1; m++ ) {
+            WRITE_FLOAT( gsd.getOpacityRegionStepSize( m ) );
+          }
         }
       }
     }
@@ -2961,8 +2969,10 @@ void PCCBitstreamWriter::gsDequantization( PCCBitstream &bitstream, GsDequantiza
       if ( gsd.getShMultipleRegionsEnableFlag() ) {
         WRITE_CODE( gsd.getShSameNumRegionMius1Flag(), 1 );
         WRITE_CODE( 0, 1 );  // u(1) placeholder for gsd_sh_same_num_bits_for_transition_point_flag
-        WRITE_CODE( gsd.getShSameQuantRegionTransitionPointFlag(), 1 );
-        WRITE_CODE( gsd.getShSameRegionStepSizeFlag(), 1 );
+        if ( gsd.getShSameNumRegionMius1Flag() ) {
+          WRITE_CODE( gsd.getShSameQuantRegionTransitionPointFlag(), 1 );
+          WRITE_CODE( gsd.getShSameRegionStepSizeFlag(), 1 );
+        }
       }
       WRITE_CODE( gsd.getShSameMinMaxFlag(), 1 );
       WRITE_UVLC( gsd.getShNumLvl() );
