@@ -958,6 +958,7 @@ void PCCGSHlsBuilder::createGsCameraModelInfoSei( AtlasTileLayerRbsp &atgl, std:
 
   auto &sei = static_cast<SEIGsCameraModelInfo &>( atgl.getSEI().addSeiPrefix( GS_CAMERA_MODEL_INFO, false ) );
 
+  sei.setCameraModelInfoId( 0 );
   sei.allocate( numCameras, numImages );
 
   sei.setSameIntrinsicsFlag( same );

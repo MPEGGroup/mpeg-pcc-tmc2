@@ -1783,7 +1783,7 @@ class SEIVPCCRegistered : public SEI {
 class SEIGsCameraModelInfo : public SEIVPCCRegistered {
  public:
  public:
-  SEIGsCameraModelInfo() : cameraNum_( 0 ), sameIntrinsicsFlag_( false ) {}
+  SEIGsCameraModelInfo() : cameraModelInfoId_( 0 ), cameraNum_( 0 ), sameIntrinsicsFlag_( false ) {}
   ~SEIGsCameraModelInfo() = default;
 
   VpccSeiPayloadType getVpccPayloadType() override { return GS_CAMERA_MODEL_INFO; }
@@ -1812,6 +1812,7 @@ class SEIGsCameraModelInfo : public SEIVPCCRegistered {
 
   std::vector<double> &operator[]( size_t i ) { return intrCamParams_[i]; }
 
+  uint32_t             getCameraModelInfoId() { return cameraModelInfoId_; }
   uint32_t             getCameraNum() { return cameraNum_; }
   uint32_t             getModelId( size_t i ) { return modelId_[i]; }
   uint32_t             getImageNum() { return imageNum_; }
@@ -1835,6 +1836,7 @@ class SEIGsCameraModelInfo : public SEIVPCCRegistered {
   size_t               getCamIdToIdx( int32_t k ) { return camIdToIdx_[k]; }
   std::unordered_map<int32_t, size_t> &getCamIdToIdx() { return camIdToIdx_; }
 
+  void setCameraModelInfoId( uint32_t value ) { cameraModelInfoId_ = value; }
   void setCameraNum( uint32_t value ) { cameraNum_ = value; }
   void setImageNum( uint32_t value ) { imageNum_ = value; }
   void setSameIntrinsicsFlag( bool value ) { sameIntrinsicsFlag_ = value; }
@@ -1858,7 +1860,10 @@ class SEIGsCameraModelInfo : public SEIVPCCRegistered {
 
   std::vector<uint8_t> &getMD5ByteStrData() {
     uint8_t  val;
-    uint32_t tmp = static_cast<uint32_t>( cameraNum_ );
+    uint32_t tmp;
+    tmp = static_cast<uint32_t>( cameraModelInfoId_ );
+    for ( int k = 0; k < 4; ++k ) byteStrData_.push_back( static_cast<uint8_t>( ( tmp >> ( 8 * k ) ) & 0xFF ) );
+    tmp = static_cast<uint32_t>( cameraNum_ );
     for ( int k = 0; k < 4; ++k ) byteStrData_.push_back( static_cast<uint8_t>( ( tmp >> ( 8 * k ) ) & 0xFF ) );
     tmp = static_cast<uint32_t>( imageNum_ );
     for ( int k = 0; k < 4; ++k ) byteStrData_.push_back( static_cast<uint8_t>( ( tmp >> ( 8 * k ) ) & 0xFF ) );
@@ -1913,6 +1918,7 @@ class SEIGsCameraModelInfo : public SEIVPCCRegistered {
   }
 
  private:
+  uint32_t                            cameraModelInfoId_;
   uint32_t                            cameraNum_;
   uint32_t                            imageNum_;
   bool                                sameIntrinsicsFlag_;

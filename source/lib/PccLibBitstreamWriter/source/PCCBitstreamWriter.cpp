@@ -3250,6 +3250,7 @@ void PCCBitstreamWriter::gsCameraModelInfo( PCCBitstream &bitstream, SEI &seiAbs
   std::cerr << "Number of Entries: " << cnt++ << std::endl;
   TRACE_BITSTREAM_IN( "%s", __func__ );
   auto &sei = static_cast<SEIGsCameraModelInfo &>( seiAbstract );
+  WRITE_UVLC( sei.getCameraModelInfoId() );      // ue(v)
   WRITE_UVLC( sei.getCameraNum() );              // ue(v)
   WRITE_UVLC( sei.getImageNum() );               // ue(v)
   WRITE_CODE( sei.getSameIntrinsicsFlag(), 1 );  // u(1)

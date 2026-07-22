@@ -3379,6 +3379,8 @@ void PCCBitstreamReader::gsCameraModelInfo( PCCBitstream &bitstream, SEI &seiAbs
   auto    &sei = static_cast<SEIGsCameraModelInfo &>( seiAbstract );
   uint32_t value;
   double   valueDbl;
+  READ_UVLC_DESC( value, "CameraModelInfoId" );  // ue(v)
+  sei.setCameraModelInfoId( value );
   READ_UVLC_DESC( value, "CameraNum" );  // ue(v)
   size_t camNum = value;
   READ_UVLC_DESC( value, "ImageNum" );  // ue(v)
