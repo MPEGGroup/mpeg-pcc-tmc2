@@ -1,6 +1,3 @@
-[submodule "mpeg-gsc-metrics"]
-	path = mpeg-gsc-metrics
-	url = https://git.mpeg.expert/MPEG/Explorations/GSC/gsc-software/mpeg-gsc-metrics.git
 [submodule "v3c-cpp-coder"]
 	path = v3c-cpp-coder
 	url = https://git.mpeg.expert/MPEG/3dgh/v3c/v3c-cpp-coder.git

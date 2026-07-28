@@ -40,6 +40,9 @@ option(CODEC_TRACE "Enable encoder and decoder process traces" FALSE)
 option(SEI_TRACE "Enable SEI bitstream traces" FALSE)
 option(CONFORMANCE_TRACE "Enable conformance traces" FALSE)
 
+# include the v3c parser for conformance check 
+option(USE_V3C_CPP_CODER "Include v3c-cpp-coder subdirectory" FALSE)
+
 if(NOT DEFINED CMAKE_CXX_EXTENSIONS)
   set(CMAKE_CXX_EXTENSIONS OFF)
 endif()
@@ -135,7 +138,7 @@ add_subdirectory(source/app/PccAppColorConverter)
 add_subdirectory(source/app/PccAppNormalGenerator)
 add_subdirectory(source/app/PccGs4AppEncoder)
 
-add_subdirectory(mpeg-gsc-metrics)
-
-set(v3c_coder_BUILD_TESTING OFF)
-add_subdirectory(v3c-cpp-coder)
+if(USE_V3C_CPP_CODER)
+  set(v3c_coder_BUILD_TESTING OFF)
+  add_subdirectory(v3c-cpp-coder)
+endif()

@@ -77,6 +77,8 @@ ADAPTIVE_QUANTIZATION=1         # 1: enable m75039, 0: disable
 SH_PREDICTION=0                 # 1: enable m76155 SH linear prediction, 0: disable
 GSD_DIMENSION_REDUCTION=0       # 1: enable m76859 SH dimension reduction, 0: disable
 IMPORTANCE_SCORES_DIR=""        # m75039: path to directory of importance score files for each sequence. If string is empty, files are recomputed
+IMPORTANCE_DS_FACTOR=2.0        # m77910: resolution downscaling factor for importance score calculation. Set to 1.0 to disable
+IMPORTANCE_MIN_WIDTH=1920       # m77910: guaranteed minimum image width if resolution is downscaled.
 PATCH_MERGING=0                 # 1: enable m75379, 0: diable(CTC)
 GSD_SCALE_NON_UNIFORM_QUANT=1   # 1: enable m76123, 0: disable m76123
 GSD_SCALE_POWER_TRANSFORM=1     # 1: enable m76151 power transform + 2-seg PLS (requires GSD_SCALE_NON_UNIFORM_QUANT=1), 0: disable
@@ -103,6 +105,7 @@ LOD_TARGET_DECODER=0            # 0: disable LoD, Binary LoD mask: 1: only L0, 2
 : "${METRIC_DIR:=/path/to/mpeg-gsc-metrics/build/Release/bin}"
 : "${GSCTOOL_DIR:=/path/to/mpeg-gsc-tools}"
 : "${CAMERAPOS_DIR:=$GSCTOOL_DIR/gsTools/build}"
+: "${IMP_DIR:=/path/to/mpeg-gsc-importance/build/Release/bin}"
 : "${TMC_DIR:=/path/to/mpeg-pcc-tmc2}"
 : "${BASE_OUTPUT:=/path/to/CE}"
 : "${PYTHON:=python3}"
@@ -257,7 +260,7 @@ RESOLUTIONS[gymnast]="2456x2054"
 METRIC="$METRIC_DIR/mpeg-gsc-metrics"
 CAMERAPOS_BIN="$CAMERAPOS_DIR/cameraPosition"
 CFG_PATH="$TMC_DIR/cfg/gs4"
-IMP_BIN="$TMC_DIR/build/bin/importance-scores"
+IMP_BIN="$IMP_DIR/importance-scores"
 TMC_ENC_BIN="$TMC_DIR/bin/PccGs4AppEncoder"
 TMC_DEC_BIN="$TMC_DIR/bin/PccAppDecoder"
 V3C_PARSER_BIN="$TMC_DIR/bin/parse_v3c_sample_stream"
@@ -445,7 +448,8 @@ for SEQ in "${SEQUENCES[@]}"; do
                     echo "$TIME $IMP_BIN --threads=$METRICS_THREADS \\"
                     echo "    -a \"$SEQ_GROUP_DIR/$FRAME.camerpos.ply\" \\"
                     echo "    \"--impScore=$SEQ_GROUP_DIR/$FRAME.impScores.txt\" \\"
-                    echo "    \"--width=$REN_W\" \"--height=$REN_H\" "
+                    echo "    \"--downscaleFactor=$IMPORTANCE_DS_FACTOR\" \\"
+                    echo "    \"--downscaleMinWidth=$IMPORTANCE_MIN_WIDTH\" "
                     echo "touch $OUT/jobs/done/importance/\$SLURM_JOB_ID"
                 } > "$JOBFILE"
                 chmod +x "$JOBFILE"
