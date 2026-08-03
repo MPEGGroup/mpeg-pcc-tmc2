@@ -90,10 +90,10 @@ struct PCCAdaptationParameters {
   std::array<std::array<double, 3>, 16> computedShMax_;
 
   //===============SH property syntax ======================
-  // current CTC sets internal data arrangement to planar
-  size_t              shMappingMode_              = 1;
-  int                 shNumBitsMappingTableEntry_ = 6;
-  std::array<int, 45> shMappingTable_;
+  size_t              shMappingMode_ = 1;
+  std::array<int, 48> shMappingTable_;
+  /// Total retained components across all groups (K for M4)
+  int shTotalRetainedComponents_ = 48;
   //========================================
 
   // ==================== SH 2D Transform Parameters ====================

@@ -649,51 +649,80 @@ bool PCCAdaptation::adapt( const PCCPointSetGS     &inputPointCloud,
 
   // Apply spherical harmonics quantization
   if ( params.enableShQuantization_ && mergedPointCloud.hasSphericalHarmonics() ) {
-    reorderSphericalHarmonicsAC( const_cast<PCCPointSetGS &>( inputPointCloud ), true );
+    bool isDimRed = params.gsdTransform2dPresentFlag_ && params.enableShDimensionReduction_;
+
+    // Reorder planar->interleaved before transform (all modes, matches reference order)
     reorderSphericalHarmonicsAC( const_cast<PCCPointSetGS &>( mergedPointCloud ), true );
     initializeShTransformParams( params );
     if ( params.shConvertToYUV_ || params.gsdTransform2dPresentFlag_ ) {
       sphericalHarmonicsTransform( const_cast<PCCPointSetGS &>( mergedPointCloud ), params );
     }
 
+    // Build remapping table
     if ( params.shMappingMode_ == 2 ) {
+      if ( isDimRed ) {
+        computeDimensionReductionParams( mergedPointCloud, params );
+        int totalRetained = 0;
+        for ( size_t gi = 0; gi < params.shNumRetainComponents_.size(); ++gi ) {
+          int retain = params.shNumRetainComponents_[gi];
+          totalRetained += retain;
+        }
+        params.shTotalRetainedComponents_ = std::max( 1, std::min( 48, totalRetained ) );
+      } else {
+        params.shTotalRetainedComponents_ = 48;
+      }
+
+      int tableSize = params.shTotalRetainedComponents_;
+      if ( tableSize < 1 ) tableSize = 1;
+      if ( tableSize > 48 ) tableSize = 48;
+
       const size_t pointCount  = mergedPointCloud.getPointCount();
       const size_t shCoefCount = mergedPointCloud.getSphericalHarmonicsCount();
-      const size_t numACCoeff  = shCoefCount - 1;
       const auto  &shData      = mergedPointCloud.getSphericalHarmonics();
 
-      // Data is now in interleaved layout; linear index = (l-1)*3 + ch
-      std::array<double, 45> mean;
+      // Interleaved layout index: l * 3 + ch, where l = band (0..15), ch = channel (0..2)
+      std::array<double, 48> mean;
       mean.fill( 0.0 );
       for ( size_t p = 0; p < pointCount; ++p ) {
-        for ( size_t l = 1; l < shCoefCount; ++l ) {
-          for ( int ch = 0; ch < 3; ++ch ) { mean[( l - 1 ) * 3 + ch] += shData[p][l][ch]; }
+        for ( size_t l = 0; l < shCoefCount; ++l ) {
+          for ( int ch = 0; ch < 3; ++ch ) { mean[l * 3 + ch] += shData[p][l][ch]; }
         }
       }
-      for ( int i = 0; i < 45; ++i ) { mean[i] /= pointCount; }
+      for ( int i = 0; i < 48; ++i ) { mean[i] /= pointCount; }
 
-      std::array<double, 45> stddev;
+      std::array<double, 48> stddev;
       stddev.fill( 0.0 );
       for ( size_t p = 0; p < pointCount; ++p ) {
-        for ( size_t l = 1; l < shCoefCount; ++l ) {
+        for ( size_t l = 0; l < shCoefCount; ++l ) {
           for ( int ch = 0; ch < 3; ++ch ) {
-            int    idx = ( l - 1 ) * 3 + ch;
+            int    idx = l * 3 + ch;
             double d   = shData[p][l][ch] - mean[idx];
             stddev[idx] += d * d;
           }
         }
       }
-      for ( int i = 0; i < 45; ++i ) { stddev[i] = std::sqrt( stddev[i] / pointCount ); }
+      for ( int i = 0; i < 48; ++i ) { stddev[i] = std::sqrt( stddev[i] / pointCount ); }
 
-      std::array<int, 45> indices;
-      for ( int i = 0; i < 45; ++i ) { indices[i] = i; }
-      std::sort( indices.begin(), indices.end(), [&stddev]( int a, int b ) { return stddev[a] > stddev[b]; } );
+      std::array<int, 45> acIndices;
+      for ( int i = 0; i < 45; ++i ) { acIndices[i] = i + 3; }
+      std::sort( acIndices.begin(), acIndices.end(), [&stddev]( int a, int b ) { return stddev[a] > stddev[b]; } );
 
       params.shMappingTable_.fill( 0 );
-      for ( int j = 0; j < 45; ++j ) { params.shMappingTable_[j] = indices[j]; }
+      params.shMappingTable_[0] = 0;  // DC: SH level 0, channel 0
+      params.shMappingTable_[1] = 1;  // DC: SH level 0, channel 1
+      params.shMappingTable_[2] = 2;  // DC: SH level 0, channel 2
+      for ( int j = 3; j < tableSize; ++j ) { params.shMappingTable_[j] = acIndices[j - 3]; }
     }
-    if ( params.gsdTransform2dPresentFlag_ && params.enableShDimensionReduction_ ) {
+
+    // M3: compute dim_red params (per-group retain counts) on interleaved layout
+    if ( isDimRed && params.shMappingMode_ != 2 ) {
       computeDimensionReductionParams( mergedPointCloud, params );
+      int totalRetained = 0;
+      for ( size_t gi = 0; gi < params.shNumRetainComponents_.size(); ++gi ) {
+        int retain = params.shNumRetainComponents_[gi];
+        totalRetained += retain;
+      }
+      params.shTotalRetainedComponents_ = std::max( 1, std::min( 48, totalRetained ) );
     }
 
     extractSHQuantRegions( mergedPointCloud, params );
@@ -703,16 +732,15 @@ bool PCCAdaptation::adapt( const PCCPointSetGS     &inputPointCloud,
       return false;
     }
 
-    // Apply dimension reduction after quantization
-    if ( params.gsdTransform2dPresentFlag_ && params.enableShDimensionReduction_ ) {
-      applyDimensionReductionQuantized( outputPointCloud, params );
-    }
-
-    // When dimension reduction is enabled, skip the inverse AC reorder here.
-    if ( params.shMappingMode_ == 1 && !( params.gsdTransform2dPresentFlag_ && params.enableShDimensionReduction_ ) )
+    // Post-quantization reorder based on mode
+    if ( params.shMappingMode_ == 1 ) {
+      // M1: reorder interleaved->planar
       reorderSphericalHarmonicsAC( const_cast<PCCPointSet3 &>( outputPointCloud ), false );
-    else if ( params.shMappingMode_ == 2 )
+    } else if ( params.shMappingMode_ == 2 ) {
+      // M2 (48-entry) or M4 (K-entry): adaptive reorder to video packing
       reorderSphericalHarmonicsAdaptive( const_cast<PCCPointSet3 &>( outputPointCloud ), params, true );
+    }
+    if ( isDimRed && params.shMappingMode_ != 2 ) { applyDimensionReductionQuantized( outputPointCloud, params ); }
 
     if ( params.enableAdaptiveShQuantization_ ) {
       outputPointCloud.getQuantizationGroupIds()            = mergedPointCloud.getQuantizationGroupIds();
@@ -770,26 +798,53 @@ bool PCCAdaptation::inverseAdapt( const PCCPointSet3            &inputPointCloud
 
   // Apply spherical harmonics dequantization
   if ( params.enableShQuantization_ && inputPointCloud.hasSphericalHarmonics() ) {
-    // When dimension reduction is enabled, skip the forward AC reorder.
-    if ( params.shMappingMode_ == 1 && !( params.gsdTransform2dPresentFlag_ && params.enableShDimensionReduction_ ) )
-      reorderSphericalHarmonicsAC( const_cast<PCCPointSet3 &>( inputPointCloud ), true );
-    else if ( params.shMappingMode_ == 2 )
-      reorderSphericalHarmonicsAdaptive( const_cast<PCCPointSet3 &>( inputPointCloud ), params, false );
-    if ( params.gsdTransform2dPresentFlag_ && params.enableShDimensionReduction_ ) {
+    bool isDimRed = params.gsdTransform2dPresentFlag_ && params.enableShDimensionReduction_;
+
+    // Remove dimension reduction first
+    if ( isDimRed && params.shMappingMode_ != 2 ) {
       removeDimensionReductionQuantized( const_cast<PCCPointSet3 &>( inputPointCloud ), params );
     }
+    // Reorder from video packing order back to transform-domain layout
+    if ( params.shMappingMode_ == 1 ) {
+      reorderSphericalHarmonicsAC( const_cast<PCCPointSet3 &>( inputPointCloud ), true );
+    } else if ( params.shMappingMode_ == 2 ) {
+      reorderSphericalHarmonicsAdaptive( const_cast<PCCPointSet3 &>( inputPointCloud ), params, false );
+    }
+
     if ( !dequantizeSphericalHarmonics( inputPointCloud, outputPointCloud, params ) ) { return false; }
-    // After dequantization, zero out non-retained KLT positions so the
-    if ( params.gsdTransform2dPresentFlag_ && params.enableShDimensionReduction_ ) {
-      auto                          retainedMap = buildRetainedMap( params );
-      std::set<std::pair<int, int>> retainedSet( retainedMap.begin(), retainedMap.end() );
-      auto                         &shData = outputPointCloud.getSphericalHarmonics();
-      const size_t                  pc     = outputPointCloud.getPointCount();
-      for ( size_t p = 0; p < pc; ++p ) {
-        auto &sh = shData[p];
-        for ( int l = 1; l < 16; ++l ) {
-          for ( int ch = 0; ch < 3; ++ch ) {
-            if ( !retainedSet.count( { l, ch } ) ) { sh[l][ch] = 0.0f; }
+    // After dequantization, zero out non-retained positions in float domain
+    if ( isDimRed ) {
+      if ( params.shMappingMode_ == 2 ) {
+        // M4: use remapping table entries (K most important) as the retained set.
+        std::set<std::pair<int, int>> retainedSet;
+        int                           tableSize = params.shTotalRetainedComponents_;
+        for ( int i = 0; i < tableSize; ++i ) {
+          int interleavedPos = params.shMappingTable_[i];
+          int level          = interleavedPos / 3;
+          int channel        = interleavedPos % 3;
+          retainedSet.insert( { level, channel } );
+        }
+        auto        &shData = outputPointCloud.getSphericalHarmonics();
+        const size_t pc     = outputPointCloud.getPointCount();
+        for ( size_t p = 0; p < pc; ++p ) {
+          auto &sh = shData[p];
+          for ( int l = 0; l < 16; ++l ) {
+            for ( int ch = 0; ch < 3; ++ch ) {
+              if ( !retainedSet.count( { l, ch } ) ) { sh[l][ch] = 0.0f; }
+            }
+          }
+        }
+      } else {
+        auto                          retainedMap = buildRetainedMap( params );
+        std::set<std::pair<int, int>> retainedSet( retainedMap.begin(), retainedMap.end() );
+        auto                         &shData = outputPointCloud.getSphericalHarmonics();
+        const size_t                  pc     = outputPointCloud.getPointCount();
+        for ( size_t p = 0; p < pc; ++p ) {
+          auto &sh = shData[p];
+          for ( int l = 0; l < 16; ++l ) {
+            for ( int ch = 0; ch < 3; ++ch ) {
+              if ( !retainedSet.count( { l, ch } ) ) { sh[l][ch] = 0.0f; }
+            }
           }
         }
       }
@@ -797,6 +852,7 @@ bool PCCAdaptation::inverseAdapt( const PCCPointSet3            &inputPointCloud
     if ( params.shConvertToYUV_ || params.gsdTransform2dPresentFlag_ ) {
       sphericalHarmonicsInvTransform( outputPointCloud, params );
     }
+    // Reorder interleaved->planar
     reorderSphericalHarmonicsAC( outputPointCloud, false );
 
     if ( params.enableAdaptiveShQuantization_ ) {
@@ -1832,6 +1888,7 @@ void PCCAdaptation::initializeShTransformParams( PCCAdaptationParameters &params
     // m76858: add DC PCA group
     if ( params.gsdPcaDcFlag_ ) {
       params.shTrGrpRow_.push_back( { 0 } );
+      // params.shTrGrpRow_ = { {0},{ 1, 5, 11 }, { 3, 7, 13 }, { 4, 10 }, { 8, 14 }, { 2, 6, 12 }, { 9, 15 } };
       params.shTrTypeRow_.push_back( 0 );
       params.shKltFlag_.push_back( 1 );
     }
@@ -2626,6 +2683,7 @@ void PCCAdaptation::computeDimensionReductionParams( const PCCPointSetGS     &po
   params.shNumRetainComponents_.clear();
   const double varianceThreshold = 0.995;
 
+  std::cout << "computeDimensionReductionParams: " << params.shTrGrpRow_.size() << " groups" << std::endl;
   int ki = 0;
   for ( size_t gi = 0; gi < params.shTrGrpRow_.size(); ++gi ) {
     if ( params.shKltFlag_[gi] == 1 && ki < (int)params.shKltParams_.size() ) {
@@ -2633,6 +2691,7 @@ void PCCAdaptation::computeDimensionReductionParams( const PCCPointSetGS     &po
       int         n   = (int)klt.eigvals.size();
       if ( n == 0 ) {
         params.shNumRetainComponents_.push_back( 0 );
+        std::cout << "  group " << gi << " (size=0): retain=0" << std::endl;
         continue;
       }
 
@@ -2642,6 +2701,12 @@ void PCCAdaptation::computeDimensionReductionParams( const PCCPointSetGS     &po
       int k = n;
       if ( totalVar > 0 ) {
         double cumVar = 0.0;
+        std::cout << "  group " << gi << " (n=" << n << "): eigvals=[";
+        for ( int i = 0; i < n; ++i ) {
+          if ( i > 0 ) std::cout << ",";
+          std::cout << klt.eigvals[i];
+        }
+        std::cout << "]";
         for ( int i = 0; i < n; ++i ) {
           cumVar += klt.eigvals[i];
           if ( cumVar / totalVar >= varianceThreshold ) {
@@ -2649,10 +2714,12 @@ void PCCAdaptation::computeDimensionReductionParams( const PCCPointSetGS     &po
             break;
           }
         }
+        std::cout << " retain=" << k << std::endl;
       }
       params.shNumRetainComponents_.push_back( k );
     } else {
       params.shNumRetainComponents_.push_back( 0 );
+      std::cout << "  group " << gi << ": kltFlag=" << params.shKltFlag_[gi] << " retain=0" << std::endl;
     }
   }
 }
@@ -2664,9 +2731,6 @@ std::vector<std::pair<int, int>> PCCAdaptation::buildRetainedMap( const PCCAdapt
     const auto &groupidx = params.shTrGrpRow_[gi];
     int         fullSize = groupidx.size() * 3;
 
-    // Skip DC band (band 0). DC sits in qSh[0], never packed in the AC-only
-    if ( !groupidx.empty() && groupidx[0] == 0 ) continue;
-
     if ( params.shKltFlag_[gi] == 1 ) {
       int retain      = params.shNumRetainComponents_[gi];
       int numRetained = std::max( 0, std::min( retain, fullSize ) );
@@ -2677,6 +2741,17 @@ std::vector<std::pair<int, int>> PCCAdaptation::buildRetainedMap( const PCCAdapt
   }
 
   return retainedMap;
+}
+
+static int interleavedToPlanarFlat( int band, int ch ) {
+  // Map interleaved (band, ch) to planar flat position (0..47).
+  // DC (band 0): stays at partition 0, same channel.
+  // AC (band >=1): planar partition = (band-1)/3 + 1 + ch*5, within-partition channel = (band-1)%3
+  if ( band == 0 ) return ch;
+  int j  = band - 1;
+  int pb = j / 3 + 1 + ch * 5;
+  int pc = j % 3;
+  return pb * 3 + pc;
 }
 
 void PCCAdaptation::applyDimensionReductionQuantized( PCCPointSet3                  &pointCloud,
@@ -2692,15 +2767,30 @@ void PCCAdaptation::applyDimensionReductionQuantized( PCCPointSet3              
 
   const size_t totalRetained = retainedMap.size();
 
+  // Compute planar flat positions for each retained entry
+  bool             isPlanar = ( params.shMappingMode_ == 1 );
+  std::vector<int> planarPos( totalRetained );
+  if ( isPlanar ) {
+    for ( size_t i = 0; i < totalRetained; ++i ) {
+      planarPos[i] = interleavedToPlanarFlat( retainedMap[i].first, retainedMap[i].second );
+    }
+  }
+
   for ( size_t p = 0; p < pointCount; ++p ) {
     auto &qSh = shData[p];
-
+    // Read retained values from their current positions
     std::vector<uint16_t> values( totalRetained );
-    for ( size_t i = 0; i < totalRetained; ++i ) { values[i] = qSh[retainedMap[i].first][retainedMap[i].second]; }
-
-    for ( size_t i = 0; i < totalRetained; ++i ) { qSh[1 + (int)( i / 3 )][(int)( i % 3 )] = values[i]; }
-
-    for ( int flat = (int)totalRetained; flat < 15 * 3; ++flat ) { qSh[1 + flat / 3][flat % 3] = 0; }
+    if ( isPlanar ) {
+      // qSh is in planar layout; read from planar coordinates
+      for ( size_t i = 0; i < totalRetained; ++i ) { values[i] = qSh[planarPos[i] / 3][planarPos[i] % 3]; }
+    } else {
+      // qSh is in interleaved layout; read from interleaved (band, ch) coordinates
+      for ( size_t i = 0; i < totalRetained; ++i ) { values[i] = qSh[retainedMap[i].first][retainedMap[i].second]; }
+    }
+    // Write compactly to qSh[i/3][i%3] (first K positions in the current layout)
+    for ( size_t i = 0; i < totalRetained; ++i ) { qSh[(int)( i / 3 )][(int)( i % 3 )] = values[i]; }
+    // Zero the remaining positions
+    for ( int flat = (int)totalRetained; flat < 48; ++flat ) { qSh[flat / 3][flat % 3] = 0; }
   }
 }
 
@@ -2719,18 +2809,32 @@ void PCCAdaptation::removeDimensionReductionQuantized( PCCPointSet3             
 
   std::set<std::pair<int, int>> retainedSet( retainedMap.begin(), retainedMap.end() );
 
+  // Compute planar flat positions for each retained entry (if planar mode)
+  bool             isPlanar = ( params.shMappingMode_ == 1 );
+  std::vector<int> planarPos( totalRetained );
+  if ( isPlanar ) {
+    for ( size_t i = 0; i < totalRetained; ++i ) {
+      planarPos[i] = interleavedToPlanarFlat( retainedMap[i].first, retainedMap[i].second );
+    }
+  }
+
   for ( size_t p = 0; p < pointCount; ++p ) {
     auto &qSh = shData[p];
 
+    // Read retained values from compact positions qSh[i/3][i%3]
     std::vector<uint16_t> values( totalRetained );
-    for ( size_t i = 0; i < totalRetained; ++i ) { values[i] = qSh[1 + (int)( i / 3 )][(int)( i % 3 )]; }
+    for ( size_t i = 0; i < totalRetained; ++i ) { values[i] = qSh[(int)( i / 3 )][(int)( i % 3 )]; }
 
-    // non-retained positions will be forced to 0.0f after dequantization to handle adaptive bit depth correctly
-    for ( int l = 1; l < 16; ++l ) {
+    for ( int l = 0; l < 16; ++l ) {
       for ( int ch = 0; ch < 3; ++ch ) { qSh[l][ch] = 0; }
     }
 
-    for ( size_t i = 0; i < totalRetained; ++i ) { qSh[retainedMap[i].first][retainedMap[i].second] = values[i]; }
+    // Write retained values back to their original positions
+    if ( isPlanar ) {
+      for ( size_t i = 0; i < totalRetained; ++i ) { qSh[planarPos[i] / 3][planarPos[i] % 3] = values[i]; }
+    } else {
+      for ( size_t i = 0; i < totalRetained; ++i ) { qSh[retainedMap[i].first][retainedMap[i].second] = values[i]; }
+    }
   }
 }
 
@@ -3262,14 +3366,19 @@ bool PCCAdaptation::reorderSphericalHarmonicsAdaptive( PCCPointSet3             
 
   const size_t pointCount  = pointCloud.getPointCount();
   const size_t shCoefCount = 16;
-  const size_t numACCoeff  = 15;
+  const size_t numACCoeff  = 16;  // bands 0..15
 
   auto                &sphericalHarmonics = pointCloud.getSphericalHarmonics();
   GSSphericalHarmonics temp;
 
-  std::array<int, 45> invMappingTable;
-  invMappingTable.fill( 0 );
-  for ( int i = 0; i < 45; ++i ) { invMappingTable[params.shMappingTable_[i]] = i; }
+  int tableSize = ( params.gsdTransform2dPresentFlag_ && params.enableShDimensionReduction_ )
+                      ? params.shTotalRetainedComponents_
+                      : 48;
+
+  // Inverse mapping table: mapping_table[bitstreamPos] = interleavedPos (l*3+ch).
+  std::array<int, 48> invMappingTable;
+  invMappingTable.fill( -1 );
+  for ( int i = 0; i < tableSize; ++i ) { invMappingTable[params.shMappingTable_[i]] = i; }
 
   for ( size_t p = 0; p < pointCount; ++p ) {
     auto &sh = sphericalHarmonics[p];
@@ -3280,32 +3389,32 @@ bool PCCAdaptation::reorderSphericalHarmonicsAdaptive( PCCPointSet3             
       temp[i][2] = 0.0f;
     }
 
-    temp[0][0] = sh[0][0];
-    temp[0][1] = sh[0][1];
-    temp[0][2] = sh[0][2];
-
     if ( toInterleaved ) {
-      // Encoder: interleaved -> adaptive (video packing order)
-      // shMappingTable_[bitstreamPos] stores interleaved linear index = (level-1)*3 + ch
-      for ( int p = 1; p < 16; ++p ) {
-        for ( int c = 0; c < 3; ++c ) {
-          int bitstreamPos   = ( p - 1 ) * 3 + c;
-          int interleavedPos = params.shMappingTable_[bitstreamPos];
-          int level          = 1 + ( interleavedPos / 3 );
-          int channel        = interleavedPos % 3;
-          temp[p][c]         = sh[level][channel];
-        }
+      // Encoder: planar -> adaptive (video packing order).
+      for ( int bitstreamPos = 0; bitstreamPos < tableSize; ++bitstreamPos ) {
+        int interleavedPos = params.shMappingTable_[bitstreamPos];
+        int level          = interleavedPos / 3;
+        int channel        = interleavedPos % 3;
+        int pIdx           = bitstreamPos / 3;
+        int c              = bitstreamPos % 3;
+        temp[pIdx][c]      = sh[level][channel];
       }
     } else {
-      // Decoder: adaptive (video packing order) -> interleaved
-      // For each interleaved position, find where it maps in the adaptive layout
+      // Decoder: adaptive (video packing order) -> planar.
+      temp[0][0] = sh[0][0];
+      temp[0][1] = sh[0][1];
+      temp[0][2] = sh[0][2];
       for ( int l = 1; l < 16; ++l ) {
         for ( int ch = 0; ch < 3; ++ch ) {
-          int interleavedPos = ( l - 1 ) * 3 + ch;
+          int interleavedPos = l * 3 + ch;
           int bitstreamPos   = invMappingTable[interleavedPos];
-          int partition      = bitstreamPos / 3 + 1;
-          int channelInPart  = bitstreamPos % 3;
-          temp[l][ch]        = sh[partition][channelInPart];
+          if ( bitstreamPos < 0 ) {
+            temp[l][ch] = 0;
+          } else {
+            int partition     = bitstreamPos / 3;
+            int channelInPart = bitstreamPos % 3;
+            temp[l][ch]       = sh[partition][channelInPart];
+          }
         }
       }
     }
@@ -3327,15 +3436,17 @@ bool PCCAdaptation::reorderSphericalHarmonicsAdaptive( PCCPointSetGS            
 
   const size_t pointCount  = pointCloud.getPointCount();
   const size_t shCoefCount = pointCloud.getSphericalHarmonicsCount();
-  const size_t numACCoeff  = shCoefCount > 0 ? shCoefCount - 1 : 15;
-  const int    numAC       = static_cast<int>( numACCoeff );
 
   auto                &sphericalHarmonics = pointCloud.getSphericalHarmonics();
   GSSphericalHarmonics temp;
 
-  std::array<int, 45> invMappingTable;
-  invMappingTable.fill( 0 );
-  for ( int i = 0; i < 45; ++i ) { invMappingTable[params.shMappingTable_[i]] = i; }
+  int tableSize = ( params.gsdTransform2dPresentFlag_ && params.enableShDimensionReduction_ )
+                      ? params.shTotalRetainedComponents_
+                      : 48;
+
+  std::array<int, 48> invMappingTable;
+  invMappingTable.fill( -1 );
+  for ( int i = 0; i < tableSize; ++i ) { invMappingTable[params.shMappingTable_[i]] = i; }
 
   for ( size_t p = 0; p < pointCount; ++p ) {
     auto &sh = sphericalHarmonics[p];
@@ -3346,30 +3457,32 @@ bool PCCAdaptation::reorderSphericalHarmonicsAdaptive( PCCPointSetGS            
       temp[i][2] = 0.0f;
     }
 
-    temp[0][0] = sh[0][0];
-    temp[0][1] = sh[0][1];
-    temp[0][2] = sh[0][2];
-
     if ( toInterleaved ) {
-      // Encoder: interleaved -> adaptive (video packing order)
-      for ( int pIdx = 1; pIdx < static_cast<int>( shCoefCount ); ++pIdx ) {
-        for ( int c = 0; c < 3; ++c ) {
-          int bitstreamPos   = ( pIdx - 1 ) * 3 + c;
-          int interleavedPos = params.shMappingTable_[bitstreamPos];
-          int level          = 1 + ( interleavedPos / 3 );
-          int channel        = interleavedPos % 3;
-          temp[pIdx][c]      = sh[level][channel];
-        }
+      // Encoder: planar -> adaptive (video packing order).
+      for ( int bitstreamPos = 0; bitstreamPos < tableSize; ++bitstreamPos ) {
+        int interleavedPos = params.shMappingTable_[bitstreamPos];
+        int level          = interleavedPos / 3;
+        int channel        = interleavedPos % 3;
+        int pIdx           = bitstreamPos / 3;
+        int c              = bitstreamPos % 3;
+        temp[pIdx][c]      = sh[level][channel];
       }
     } else {
-      // Decoder: adaptive (video packing order) -> interleaved
+      // Decoder: adaptive (video packing order) -> planar
+      temp[0][0] = sh[0][0];
+      temp[0][1] = sh[0][1];
+      temp[0][2] = sh[0][2];
       for ( int l = 1; l < static_cast<int>( shCoefCount ); ++l ) {
         for ( int ch = 0; ch < 3; ++ch ) {
-          int interleavedPos = ( l - 1 ) * 3 + ch;
+          int interleavedPos = l * 3 + ch;
           int bitstreamPos   = invMappingTable[interleavedPos];
-          int partition      = bitstreamPos / 3 + 1;
-          int channelInPart  = bitstreamPos % 3;
-          temp[l][ch]        = sh[partition][channelInPart];
+          if ( bitstreamPos < 0 ) {
+            temp[l][ch] = 0;
+          } else {
+            int partition     = bitstreamPos / 3;
+            int channelInPart = bitstreamPos % 3;
+            temp[l][ch]       = sh[partition][channelInPart];
+          }
         }
       }
     }

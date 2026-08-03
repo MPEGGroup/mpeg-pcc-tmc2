@@ -2263,8 +2263,14 @@ int PCCDecoder::ReconstructIdc3( PCCContext &context, PCCGroupOfFrames &reconstr
         auto &shProp                    = ext.getGsShProperty();
         adaptationParams.shMappingMode_ = shProp.getShMappingMethod();
         if ( shProp.getShMappingMethod() == 2 ) {
-          adaptationParams.shNumBitsMappingTableEntry_ = shProp.getShNumBitsMappingTableEntry();
-          for ( int m = 0; m < 45; ++m ) { adaptationParams.shMappingTable_[m] = shProp.getShMappingTable( m ); }
+          uint32_t tableSize = (uint32_t)shProp.getShMappingTable().size();
+          if ( tableSize > 48 ) tableSize = 48;
+          adaptationParams.shMappingTable_.fill( 0 );
+          for ( uint32_t m = 0; m < tableSize; ++m ) {
+            adaptationParams.shMappingTable_[m] = shProp.getShMappingTable( m );
+          }
+          uint32_t totalCoded = shProp.getTotalCodedComponentsMinus1() + 1;
+          if ( totalCoded < 48 ) { adaptationParams.shTotalRetainedComponents_ = totalCoded; }
         }
 
         if ( ext.getPredEnableFlag() ) {
@@ -2288,10 +2294,11 @@ int PCCDecoder::ReconstructIdc3( PCCContext &context, PCCGroupOfFrames &reconstr
         }
 
         if ( ext.getTransform2DPresentFlag() ) {
-          addAdaptationParameters                     = true;
-          adaptationParams.gsdTransform2dPresentFlag_ = true;
-          auto &tr2d                                  = ext.getGs2DTransform();
-          int   numGroups                             = tr2d.getTrRowNumGroups();
+          addAdaptationParameters                      = true;
+          adaptationParams.gsdTransform2dPresentFlag_  = true;
+          auto &tr2d                                   = ext.getGs2DTransform();
+          adaptationParams.enableShDimensionReduction_ = tr2d.getDimensionReductionEnableFlag();
+          int numGroups                                = tr2d.getTrRowNumGroups();
           for ( int i = 0; i < numGroups; ++i ) {
             int              size = tr2d.getRowTrSizeMinus1( i ) + 1;
             std::vector<int> group( size );
@@ -2315,12 +2322,16 @@ int PCCDecoder::ReconstructIdc3( PCCContext &context, PCCGroupOfFrames &reconstr
           }
           for ( int i = 0; i < 16; ++i ) { adaptationParams.shTrTypeCol_.push_back( tr2d.getTrColType( i ) ); }
 
-          // Load dimension reduction parameters
-          if ( tr2d.getDimensionReductionEnableFlag() ) {
-            adaptationParams.enableShDimensionReduction_ = true;
+          // Load dimension reduction parameters (Mode 3 only; Mode 4 uses remapping table)
+          if ( adaptationParams.enableShDimensionReduction_ && adaptationParams.shMappingMode_ != 2 ) {
+            int totalRetained = 0;
             for ( int i = 0; i < numGroups; ++i ) {
-              adaptationParams.shNumRetainComponents_.push_back( tr2d.getNumOfRetainComponents( i ) );
+              int signaled = tr2d.getNumOfRetainComponentsMinus1( i );
+              int retain   = signaled + 1;
+              adaptationParams.shNumRetainComponents_.push_back( retain );
+              totalRetained += retain;
             }
+            adaptationParams.shTotalRetainedComponents_ = std::max( 1, totalRetained );
           }
         }
       }

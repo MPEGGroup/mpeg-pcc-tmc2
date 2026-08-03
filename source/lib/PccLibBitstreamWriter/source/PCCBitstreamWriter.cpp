@@ -37,6 +37,7 @@
 #include "PCCAccessUnitDelimiterRbsp.h"
 
 #include "PCCBitstreamWriter.h"
+#include <cmath>
 
 #if defined( BITSTREAM_TRACE )
 static std::string format( const std::string &var ) {
@@ -2883,7 +2884,7 @@ void PCCBitstreamWriter::aapsVpccGsExtension( PCCBitstream &bitstream, AapsVpccG
   if ( ext.getDequantizationPresentFlag() ) { gsDequantization( bitstream, ext.getGsDequantization() ); }
   if ( ext.getShPropertyPresentFlag() ) { gsShProperty( bitstream, ext.getGsShProperty() ); }
   if ( ext.getPredEnableFlag() ) { gsPrediction( bitstream, ext.getGsPrediction() ); }
-  if ( ext.getTransform2DPresentFlag() ) { gs2DTransform( bitstream, ext.getGs2DTransform() ); }
+  if ( ext.getTransform2DPresentFlag() ) { gs2DTransform( bitstream, ext.getGs2DTransform(), ext.getGsShProperty() ); }
   if ( ext.getScaleTransformPresentFlag() ) { gsScaleTransform( bitstream, ext.getGsScaleTransform() ); }
   if ( ext.getRawPatchDataArrangementFlag() ) {
     gsRawPatchDataArrangement( bitstream, ext.getGsRawPatchDataArrangement() );
@@ -3011,25 +3012,29 @@ void PCCBitstreamWriter::gsShProperty( PCCBitstream &bitstream, GsSphericalHarmo
   TRACE_BITSTREAM_IN( "%s", __func__ );
   WRITE_UVLC( gshp.getShMappingMethod() );
   if ( gshp.getShMappingMethod() == 2 ) {
-    WRITE_CODE( gshp.getShNumBitsMappingTableEntry(), 6 );
-    uint32_t shNumACCoeff = 45;
-    for ( int m = 0; m < shNumACCoeff; m++ ) {
-      WRITE_CODE( gshp.getShMappingTable( m ), gshp.getShNumBitsMappingTableEntry() );
+    uint32_t numShComps = GsSphericalHarmonicsProperty::NUM_SH_COMPONENTS;
+    {
+      uint32_t bitWidth = (uint32_t)std::ceil( std::log2( (double)numShComps ) );
+      if ( bitWidth < 1 ) bitWidth = 1;
+      WRITE_CODE( gshp.getTotalCodedComponentsMinus1(), bitWidth );
     }
+    uint32_t       tableSize = gshp.getTotalCodedComponentsMinus1() + 1;
+    const uint32_t kBitWidth =
+        (uint32_t)std::ceil( std::log2( (double)GsSphericalHarmonicsProperty::NUM_SH_COMPONENTS ) );
+    for ( uint32_t m = 0; m < tableSize; m++ ) { WRITE_CODE( gshp.getShMappingTable( m ), kBitWidth ); }
   }
   TRACE_BITSTREAM_OUT( "%s", __func__ );
 }
 
 // H.8.3.6.3.7	Gaussian splat spherical harmonics transform syntax
-void PCCBitstreamWriter::gs2DTransform( PCCBitstream &bitstream, Gs2DTransform &gs2DTransform ) {
+void PCCBitstreamWriter::gs2DTransform( PCCBitstream                       &bitstream,
+                                        Gs2DTransform                      &gs2DTransform,
+                                        const GsSphericalHarmonicsProperty &gshp ) {
   TRACE_BITSTREAM_IN( "%s", __func__ );
-  WRITE_CODE( 15, 4 );  // u(4) placeholder for gsht_num_sh_minus1, it is hardcoded on line 3038
+  WRITE_CODE( 15, 4 );  // u(4) placeholder for gsht_num_sh_minus1
   WRITE_CODE( gs2DTransform.getTrRowNumGroups(), 4 );
-  WRITE_CODE( gs2DTransform.getDimensionReductionEnableFlag(), 1 );
+  WRITE_CODE( gs2DTransform.getDimensionReductionEnableFlag() ? 1 : 0, 1 );
   for ( int i = 0; i < gs2DTransform.getTrRowNumGroups(); i++ ) {
-    if ( gs2DTransform.getDimensionReductionEnableFlag() ) {
-      WRITE_CODE( gs2DTransform.getNumOfRetainComponentsMinus1( i ), 4 );
-    }
     WRITE_CODE( gs2DTransform.getRowTrSizeMinus1( i ), 4 );
     for ( int j = 0; j < ( gs2DTransform.getRowTrSizeMinus1( i ) + 1 ); j++ ) {
       WRITE_CODE( gs2DTransform.getTrRowGroupIdx( i, j ), 4 );
@@ -3045,6 +3050,12 @@ void PCCBitstreamWriter::gs2DTransform( PCCBitstream &bitstream, Gs2DTransform &
       for ( int m = 0; m < 3 * ( gs2DTransform.getRowTrSizeMinus1( i ) + 1 ); m++ ) {
         if ( !isDcGroup ) { WRITE_FLOAT( gs2DTransform.getKltStdDev( i, m ) ); }
         WRITE_FLOAT( gs2DTransform.getKltMean( i, m ) );
+      }
+      if ( gs2DTransform.getDimensionReductionEnableFlag() && gshp.getShMappingMethod() != 2 ) {
+        uint32_t groupSize = gs2DTransform.getRowTrSizeMinus1( i ) + 1;
+        uint32_t bitWidth  = (uint32_t)std::ceil( std::log2( (double)( groupSize * 3 ) ) );
+        if ( bitWidth < 1 ) bitWidth = 1;
+        WRITE_CODE( gs2DTransform.getNumOfRetainComponentsMinus1( i ), bitWidth );
       }
     } else {
       WRITE_CODE( gs2DTransform.getTrRowType( i ), 3 );

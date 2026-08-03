@@ -35,6 +35,7 @@
 #include "PCCBitstream.h"
 #include "PCCHighLevelSyntax.h"
 #include "PCCAtlasAdaptationParameterSetRbsp.h"
+#include <cmath>
 #include "PCCAccessUnitDelimiterRbsp.h"
 
 #include "PCCBitstreamReader.h"
@@ -2863,7 +2864,7 @@ void PCCBitstreamReader::aapsVpccGsExtension( PCCBitstream &bitstream, AapsVpccG
   if ( ext.getDequantizationPresentFlag() ) { gsDequantization( bitstream, ext.getGsDequantization() ); }
   if ( ext.getShPropertyPresentFlag() ) { gsShProperty( bitstream, ext.getGsShProperty() ); }
   if ( ext.getPredEnableFlag() ) { gsPrediction( bitstream, ext.getGsPrediction() ); }
-  if ( ext.getTransform2DPresentFlag() ) { gs2DTransform( bitstream, ext.getGs2DTransform() ); }
+  if ( ext.getTransform2DPresentFlag() ) { gs2DTransform( bitstream, ext.getGs2DTransform(), ext.getGsShProperty() ); }
   if ( ext.getScaleTransformPresentFlag() ) { gsScaleTransform( bitstream, ext.getGsScaleTransform() ); }
   if ( ext.getRawPatchDataArrangementFlag() ) {
     gsRawPatchDataArrangement( bitstream, ext.getGsRawPatchDataArrangement() );
@@ -3085,12 +3086,19 @@ void PCCBitstreamReader::gsShProperty( PCCBitstream &bitstream, GsSphericalHarmo
   READ_UVLC_DESC( value, "ShMappingMethod" );
   gshp.setShMappingMethod( value );
   if ( gshp.getShMappingMethod() == 2 ) {
-    READ_CODE_DESC( value, 6, "ShNumBitsMappingTableEntry" );
-    gshp.setShNumBitsMappingTableEntry( value );
-    uint32_t shNumACCoeff = 45;
-    gshp.resizeShMappingTable( shNumACCoeff );
-    for ( int m = 0; m < shNumACCoeff; m++ ) {
-      READ_CODE_DESC( value, gshp.getShNumBitsMappingTableEntry(), "ShMappingTable" );
+    uint32_t numShComps = GsSphericalHarmonicsProperty::NUM_SH_COMPONENTS;
+    {
+      uint32_t bitWidth = (uint32_t)std::ceil( std::log2( (double)numShComps ) );
+      if ( bitWidth < 1 ) bitWidth = 1;
+      READ_CODE_DESC( value, bitWidth, "TotalCodedComponentsMinus1" );
+    }
+    gshp.setTotalCodedComponentsMinus1( value );
+    uint32_t       tableSize = value + 1;
+    const uint32_t kBitWidth =
+        (uint32_t)std::ceil( std::log2( (double)GsSphericalHarmonicsProperty::NUM_SH_COMPONENTS ) );
+    gshp.resizeShMappingTable( tableSize );
+    for ( uint32_t m = 0; m < tableSize; m++ ) {
+      READ_CODE_DESC( value, kBitWidth, "ShMappingTable" );
       gshp.setShMappingTable( m, value );
     }
   }
@@ -3098,7 +3106,9 @@ void PCCBitstreamReader::gsShProperty( PCCBitstream &bitstream, GsSphericalHarmo
 }
 
 // H.8.3.6.3.7	Gaussian splat spherical harmonics transform syntax
-void PCCBitstreamReader::gs2DTransform( PCCBitstream &bitstream, Gs2DTransform &gs2DTransform ) {
+void PCCBitstreamReader::gs2DTransform( PCCBitstream                       &bitstream,
+                                        Gs2DTransform                      &gs2DTransform,
+                                        const GsSphericalHarmonicsProperty &gshp ) {
   int   value;
   float valueFlt;
   TRACE_BITSTREAM_IN( "%s", __func__ );
@@ -3112,10 +3122,6 @@ void PCCBitstreamReader::gs2DTransform( PCCBitstream &bitstream, Gs2DTransform &
   READ_CODE_DESC( value, 1, "DimensionReductionEnableFlag" );
   gs2DTransform.setDimensionReductionEnableFlag( value != 0 );
   for ( int i = 0; i < gs2DTransform.getTrRowNumGroups(); i++ ) {
-    if ( gs2DTransform.getDimensionReductionEnableFlag() ) {
-      READ_CODE_DESC( value, 4, "NumOfRetainComponentsMinus1" );
-      gs2DTransform.setNumOfRetainComponentsMinus1( i, value );
-    }
     READ_CODE_DESC( value, 4, "RowTrSizeMinus1" );
     gs2DTransform.setRowTrSizeMinus1( i, value );
     for ( int j = 0; j < ( gs2DTransform.getRowTrSizeMinus1( i ) + 1 ); j++ ) {
@@ -3141,6 +3147,13 @@ void PCCBitstreamReader::gs2DTransform( PCCBitstream &bitstream, Gs2DTransform &
         }
         READ_FLOAT_DESC( valueFlt, "KltMean" );
         gs2DTransform.setKltMean( i, m, valueFlt );
+      }
+      if ( gs2DTransform.getDimensionReductionEnableFlag() && gshp.getShMappingMethod() != 2 ) {
+        uint32_t groupSize = gs2DTransform.getRowTrSizeMinus1( i ) + 1;
+        uint32_t bitWidth  = (uint32_t)std::ceil( std::log2( (double)( groupSize * 3 ) ) );
+        if ( bitWidth < 1 ) bitWidth = 1;
+        READ_CODE_DESC( value, bitWidth, "NumOfRetainComponentsMinus1" );
+        gs2DTransform.setNumOfRetainComponentsMinus1( i, value );
       }
     } else {
       READ_CODE_DESC( value, 3, "TrRowType" );

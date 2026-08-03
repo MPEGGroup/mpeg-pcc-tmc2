@@ -521,26 +521,26 @@ void PCCGSHlsBuilder::initializeAtlasAapsHls( PCCHighLevelSyntax            &hls
   auto &shProp = ext.getGsShProperty();
   shProp.setShMappingMethod( adaptationParams.shMappingMode_ );
   if ( adaptationParams.shMappingMode_ == 2 ) {
-    shProp.setShNumBitsMappingTableEntry( adaptationParams.shNumBitsMappingTableEntry_ );
-    shProp.resizeShMappingTable( 45 );
-    for ( int m = 0; m < 45; ++m ) { shProp.setShMappingTable( m, adaptationParams.shMappingTable_[m] ); }
+    int tableSize;
+    if ( adaptationParams.enableShDimensionReduction_ ) {
+      int totalRetained = adaptationParams.shTotalRetainedComponents_;
+      if ( totalRetained < 1 ) totalRetained = 1;
+      if ( totalRetained > 48 ) totalRetained = 48;
+      shProp.setTotalCodedComponentsMinus1( totalRetained - 1 );
+      tableSize = totalRetained;
+    } else {
+      shProp.setTotalCodedComponentsMinus1( 48 - 1 );  // NumShComps - 1 = 47
+      tableSize = 48;
+    }
+    shProp.resizeShMappingTable( tableSize );
+    for ( int m = 0; m < tableSize; ++m ) { shProp.setShMappingTable( m, adaptationParams.shMappingTable_[m] ); }
   }
 
   if ( adaptationParams.gsdTransform2dPresentFlag_ ) {
     ext.setTransform2DPresentFlag( true );
     auto &tr2d = ext.getGs2DTransform();
     tr2d.setTrRowNumGroups( adaptationParams.shTrGrpRow_.size() );
-    bool hasDimReduction =
-        adaptationParams.enableShDimensionReduction_ && !adaptationParams.shNumRetainComponents_.empty();
-    tr2d.setDimensionReductionEnableFlag( hasDimReduction );
-    for ( size_t i = 0; i < adaptationParams.shTrGrpRow_.size(); ++i ) {
-      if ( hasDimReduction && i < adaptationParams.shNumRetainComponents_.size() ) {
-        int fullSize = adaptationParams.shTrGrpRow_[i].size() * 3;
-        int retain   = adaptationParams.shNumRetainComponents_[i];
-        int minus1   = ( retain > 0 && retain <= fullSize ) ? ( retain - 1 ) : ( fullSize - 1 );
-        tr2d.setNumOfRetainComponentsMinus1( i, minus1 );
-      }
-    }
+    tr2d.setDimensionReductionEnableFlag( adaptationParams.enableShDimensionReduction_ );
     int ki = 0;
     for ( size_t i = 0; i < adaptationParams.shTrGrpRow_.size(); ++i ) {
       tr2d.setRowTrSizeMinus1( i, adaptationParams.shTrGrpRow_[i].size() - 1 );
@@ -555,6 +555,13 @@ void PCCGSHlsBuilder::initializeAtlasAapsHls( PCCHighLevelSyntax            &hls
           for ( int n = 0; n < 3 * size; n++ ) { tr2d.setKltCoeff( i, m, n, klt.eigvec[m][n] ); }
           tr2d.setKltStdDev( i, m, klt.sigma[m] );
           tr2d.setKltMean( i, m, klt.mean[m] );
+        }
+        if ( adaptationParams.enableShDimensionReduction_ && adaptationParams.shMappingMode_ != 2 &&
+             i < adaptationParams.shNumRetainComponents_.size() ) {
+          int fullSize = adaptationParams.shTrGrpRow_[i].size() * 3;
+          int retain   = adaptationParams.shNumRetainComponents_[i];
+          int minus1   = ( retain > 0 && retain <= fullSize ) ? ( retain - 1 ) : ( fullSize - 1 );
+          tr2d.setNumOfRetainComponentsMinus1( i, minus1 );
         }
       } else {
         tr2d.setTrRowType( i, adaptationParams.shTrTypeRow_[i] );

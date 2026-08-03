@@ -40,7 +40,7 @@ option(CODEC_TRACE "Enable encoder and decoder process traces" FALSE)
 option(SEI_TRACE "Enable SEI bitstream traces" FALSE)
 option(CONFORMANCE_TRACE "Enable conformance traces" FALSE)
 
-# include the v3c parser for conformance check 
+# include the v3c parser for conformance check
 option(USE_V3C_CPP_CODER "Include v3c-cpp-coder subdirectory" FALSE)
 
 if(NOT DEFINED CMAKE_CXX_EXTENSIONS)

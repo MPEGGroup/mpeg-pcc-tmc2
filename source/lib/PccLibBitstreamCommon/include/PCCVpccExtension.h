@@ -432,7 +432,8 @@ class GsDequantization {
 // H.8.3.6.3.6	GS Spherical Harmonics Property syntax
 class GsSphericalHarmonicsProperty {
  public:
-  GsSphericalHarmonicsProperty() : shMappingMethod_( 0 ), shNumBitsMappingTableEntry_( 0 ) { shMappingTable_.clear(); }
+  static constexpr uint32_t NUM_SH_COMPONENTS = 48;
+  GsSphericalHarmonicsProperty() : shMappingMethod_( 0 ), totalCodedComponentsMinus1_( 0 ) { shMappingTable_.clear(); }
   ~GsSphericalHarmonicsProperty() { shMappingTable_.clear(); }
   GsSphericalHarmonicsProperty &operator=( const GsSphericalHarmonicsProperty & ) = default;
 
@@ -440,7 +441,7 @@ class GsSphericalHarmonicsProperty {
     bool retVal = true;
     if ( other.shMappingMethod_ != shMappingMethod_ ) retVal = false;
     if ( shMappingMethod_ == 2 ) {
-      if ( other.shNumBitsMappingTableEntry_ != shNumBitsMappingTableEntry_ ) retVal = false;
+      if ( other.totalCodedComponentsMinus1_ != totalCodedComponentsMinus1_ ) { retVal = false; }
       if ( other.shMappingTable_ != shMappingTable_ ) retVal = false;
     }
     return retVal;
@@ -448,20 +449,20 @@ class GsSphericalHarmonicsProperty {
 
   bool operator!=( const GsSphericalHarmonicsProperty &other ) const { return !( *this == other ); }
 
-  uint32_t getShMappingMethod() { return shMappingMethod_; }
+  uint32_t getShMappingMethod() const { return shMappingMethod_; }
   void     setShMappingMethod( uint32_t value ) { shMappingMethod_ = value; }
 
-  uint32_t getShNumBitsMappingTableEntry() { return shNumBitsMappingTableEntry_; }
-  void     setShNumBitsMappingTableEntry( uint32_t value ) { shNumBitsMappingTableEntry_ = value; }
+  uint32_t getTotalCodedComponentsMinus1() const { return totalCodedComponentsMinus1_; }
+  void     setTotalCodedComponentsMinus1( uint32_t value ) { totalCodedComponentsMinus1_ = value; }
 
   std::vector<uint32_t> &getShMappingTable() { return shMappingTable_; }
-  uint32_t               getShMappingTable( size_t index ) { return shMappingTable_[index]; }
+  uint32_t               getShMappingTable( size_t index ) const { return shMappingTable_[index]; }
   void                   setShMappingTable( size_t index, uint32_t value ) { shMappingTable_[index] = value; }
   void                   resizeShMappingTable( size_t size ) { shMappingTable_.resize( size ); }
 
  private:
   uint32_t              shMappingMethod_;
-  uint32_t              shNumBitsMappingTableEntry_;
+  uint32_t              totalCodedComponentsMinus1_;
   std::vector<uint32_t> shMappingTable_;
 };
 
@@ -488,8 +489,8 @@ class Gs2DTransform {
          rowTrSizeMinus1_ != other.rowTrSizeMinus1_ || trRowGroupIdx_ != other.trRowGroupIdx_ ||
          kltFlag_ != other.kltFlag_ || kltCoeffs_ != other.kltCoeffs_ || kltMean_ != other.kltMean_ ||
          kltStdDev_ != other.kltStdDev_ || trRowType_ != other.trRowType_ ||
-         dimensionReductionEnableFlag_ != other.dimensionReductionEnableFlag_ ||
-         numOfRetainComponentsMinus1_ != other.numOfRetainComponentsMinus1_ ) {
+         numOfRetainComponentsMinus1_ != other.numOfRetainComponentsMinus1_ ||
+         dimensionReductionEnableFlag_ != other.dimensionReductionEnableFlag_ ) {
       retVal = false;
     }
     return retVal;
@@ -512,9 +513,6 @@ class Gs2DTransform {
     kltStdDev_.resize( value );
     numOfRetainComponentsMinus1_.resize( value, 0 );
   }
-
-  bool getDimensionReductionEnableFlag() { return dimensionReductionEnableFlag_; }
-  void setDimensionReductionEnableFlag( bool value ) { dimensionReductionEnableFlag_ = value; }
 
   uint8_t getNumOfRetainComponentsMinus1( size_t i ) { return numOfRetainComponentsMinus1_[i]; }
   uint8_t getNumOfRetainComponents( size_t i ) { return numOfRetainComponentsMinus1_[i] + 1; }
@@ -574,6 +572,9 @@ class Gs2DTransform {
   uint8_t getTrRowType( size_t i ) { return trRowType_[i]; }
   void    setTrRowType( size_t i, uint8_t value ) { trRowType_[i] = value; }
 
+  bool getDimensionReductionEnableFlag() const { return dimensionReductionEnableFlag_; }
+  void setDimensionReductionEnableFlag( bool value ) { dimensionReductionEnableFlag_ = value; }
+
  private:
   std::vector<uint8_t>                         trColType_;
   uint8_t                                      trRowNumGroups_;
@@ -584,8 +585,8 @@ class Gs2DTransform {
   std::vector<std::vector<float>>              kltMean_;
   std::vector<std::vector<float>>              kltStdDev_;
   std::vector<uint8_t>                         trRowType_;
-  bool                                         dimensionReductionEnableFlag_;
   std::vector<uint8_t>                         numOfRetainComponentsMinus1_;
+  bool                                         dimensionReductionEnableFlag_;
 };
 
 // H.8.3.6.3.10	Gaussian splat raw patch data arrangement syntax
