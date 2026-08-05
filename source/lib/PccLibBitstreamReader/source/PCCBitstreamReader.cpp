@@ -2841,7 +2841,24 @@ void PCCBitstreamReader::atlasCameraParameters( PCCBitstream &bitstream, AtlasCa
 // H.8.3.6.3.4	AAPS V-PCC GS extension syntax
 void PCCBitstreamReader::aapsVpccGsExtension( PCCBitstream &bitstream, AapsVpccGsExtension &ext ) {
   TRACE_BITSTREAM_IN( "%s \n", __func__ );
-  int value;
+  int      value;
+  uint32_t numShCoeffs( 0 ), numShComps( 0 );
+  auto    &dequant = ext.getGsDequantization();
+  READ_UVLC_DESC( value, "ShNumLvl" );
+  dequant.setShNumLvl( value );
+  for ( int i = 0; i < dequant.getShNumLvl(); i++ ) {
+    READ_UVLC_DESC( value, "ShNumChan" );
+    dequant.setShNumChan( i, value );
+    numShComps += dequant.getShNumChan( i );
+  }
+  numShCoeffs = numShComps / 3;
+
+  if ( numShCoeffs != 16 ) {
+    TRACE_BITSTREAM(
+        "Error: Currently the value of numShCoeffs has to be 16, since it is hard-coded in a lot of places\n" );
+    exit( EXIT_FAILURE );
+  }
+
   READ_CODE_DESC( value, 1, "aaps_vpcc_gs_dequantization_present_flag" );
   ext.setDequantizationPresentFlag( value );  // u(1)
   READ_CODE_DESC( value, 1, "aaps_vpcc_gs_adaptive_quantization_enable_flag" );
@@ -2854,22 +2871,20 @@ void PCCBitstreamReader::aapsVpccGsExtension( PCCBitstream &bitstream, AapsVpccG
   ext.setTransform2DPresentFlag( value );  // u(1)
   READ_CODE_DESC( value, 1, "aaps_vpcc_gs_scale_transform_present_flag" );
   ext.setScaleTransformPresentFlag( value );  // u(1)
-  READ_CODE_DESC( value, 1, "aaps_vpcc_gs_raw_patch_data_arrangement_flag" );
-  ext.setRawPatchDataArrangementFlag( value );  // u(1)
-  READ_CODE_DESC( value, 1, "aaps_vpcc_gs_opacity_property_present_flag" );
-  ext.setOpacityPropertyPresentFlag( value );  // u(1)
+  READ_UVLC_DESC( value, "aaps_vpcc_gs_data_arrangement_method" );
+  ext.setRawPatchDataArrangementMethod( value );  // uvlc
+  READ_CODE_DESC( value, 1, "aaps_vpcc_gs_linear_opacity_flag" );
+  ext.setLinearOpacityFlag( value );
   READ_CODE_DESC( value, 8, "aaps_vpcc_gs_reserved_zero_8bits" );
   ext.setReservedZero8bits( value );  // u(8);
 
   if ( ext.getDequantizationPresentFlag() ) { gsDequantization( bitstream, ext.getGsDequantization() ); }
-  if ( ext.getShPropertyPresentFlag() ) { gsShProperty( bitstream, ext.getGsShProperty() ); }
-  if ( ext.getPredEnableFlag() ) { gsPrediction( bitstream, ext.getGsPrediction() ); }
-  if ( ext.getTransform2DPresentFlag() ) { gs2DTransform( bitstream, ext.getGs2DTransform(), ext.getGsShProperty() ); }
-  if ( ext.getScaleTransformPresentFlag() ) { gsScaleTransform( bitstream, ext.getGsScaleTransform() ); }
-  if ( ext.getRawPatchDataArrangementFlag() ) {
-    gsRawPatchDataArrangement( bitstream, ext.getGsRawPatchDataArrangement() );
+  if ( ext.getShPropertyPresentFlag() ) { gsShProperty( bitstream, ext.getGsShProperty(), numShComps ); }
+  if ( ext.getPredEnableFlag() ) { gsPrediction( bitstream, ext.getGsPrediction(), numShComps ); }
+  if ( ext.getTransform2DPresentFlag() ) {
+    gs2DTransform( bitstream, ext.getGs2DTransform(), ext.getGsShProperty(), numShCoeffs );
   }
-  if ( ext.getOpacityPropertyPresentFlag() ) { gsOpacityProperty( bitstream, ext.getGsOpacityProperty() ); }
+  if ( ext.getScaleTransformPresentFlag() ) { gsScaleTransform( bitstream, ext.getGsScaleTransform() ); }
 
   if ( ext.getReservedZero8bits() != 0 ) {
     while ( moreRbspData( bitstream ) ) {
@@ -2887,7 +2902,7 @@ void PCCBitstreamReader::gsDequantization( PCCBitstream &bitstream, GsDequantiza
   float valueFlt;
   READ_UVLC_DESC( value, "DequantizationType" );
   gsd.setDequantizationType( value );
-  if ( gsd.getDequantizationType() == 1 ) {
+  if ( gsd.getDequantizationType() == 0 ) {
     for ( int i = 0; i < 3; i++ ) {
       READ_FLOAT_DESC( valueFlt, "MinPosition" );
       gsd.setMinPosition( i, valueFlt );
@@ -3024,11 +3039,7 @@ void PCCBitstreamReader::gsDequantization( PCCBitstream &bitstream, GsDequantiza
       }
       READ_CODE_DESC( value, 1, "ShSameMinMaxFlag" );
       gsd.setShSameMinMaxFlag( value );
-      READ_UVLC_DESC( value, "ShNumLvl" );
-      gsd.setShNumLvl( value );
       for ( int i = 0; i < gsd.getShNumLvl(); i++ ) {
-        READ_UVLC_DESC( value, "ShNumChan" );
-        gsd.setShNumChan( i, value );
         for ( int c = 0; c < gsd.getShNumChan( i ); c++ ) {
           if ( !gsd.getShSameMinMaxFlag() || ( ( i == 0 ) && ( c == 0 ) ) ) {
             READ_FLOAT_DESC( valueFlt, "MinSh" );
@@ -3075,12 +3086,17 @@ void PCCBitstreamReader::gsDequantization( PCCBitstream &bitstream, GsDequantiza
         }
       }
     }
+  } else {  // TOCHECK
+    TRACE_BITSTREAM( "Error: Values of DequantizationType greater than 0 are reserved.\n" );
+    exit( EXIT_FAILURE );
   }
   TRACE_BITSTREAM_OUT( "%s", __func__ );
 }
 
 // H.8.3.6.3.6	Gaussian splat spherical harmonics property syntax
-void PCCBitstreamReader::gsShProperty( PCCBitstream &bitstream, GsSphericalHarmonicsProperty &gshp ) {
+void PCCBitstreamReader::gsShProperty( PCCBitstream                 &bitstream,
+                                       GsSphericalHarmonicsProperty &gshp,
+                                       uint32_t                      numShComps ) {
   TRACE_BITSTREAM_IN( "%s", __func__ );
   uint32_t value;
   READ_UVLC_DESC( value, "ShMappingMethod" );
@@ -3108,16 +3124,13 @@ void PCCBitstreamReader::gsShProperty( PCCBitstream &bitstream, GsSphericalHarmo
 // H.8.3.6.3.7	Gaussian splat spherical harmonics transform syntax
 void PCCBitstreamReader::gs2DTransform( PCCBitstream                       &bitstream,
                                         Gs2DTransform                      &gs2DTransform,
-                                        const GsSphericalHarmonicsProperty &gshp ) {
+                                        const GsSphericalHarmonicsProperty &gshp,
+                                        uint32_t                            numShCoeffs ) {
   int   value;
   float valueFlt;
   TRACE_BITSTREAM_IN( "%s", __func__ );
-  READ_CODE_DESC( value, 4, "placeholder_for_gsht_num_sh_minus1" );
-  if ( value != 15 ) {
-    TRACE_BITSTREAM( "Error: placeholder_for_gsht_num_sh_minus1 should be 15 \n" );
-    exit( EXIT_FAILURE );
-  }
-  READ_CODE_DESC( value, 4, "TrRowNumGroups" );
+  uint32_t numBits = static_cast<uint32_t>( ceilLog2( numShCoeffs + 1 ) );
+  READ_CODE_DESC( value, numBits, "TrRowNumGroups" );
   gs2DTransform.setTrRowNumGroups( value );
   READ_CODE_DESC( value, 1, "DimensionReductionEnableFlag" );
   gs2DTransform.setDimensionReductionEnableFlag( value != 0 );
@@ -3161,7 +3174,7 @@ void PCCBitstreamReader::gs2DTransform( PCCBitstream                       &bits
     }
   }
   std::vector<uint8_t> colTr;
-  colTr.resize( 16, 1 );
+  colTr.resize( numShCoeffs, 1 );
   for ( int i = 0; i < gs2DTransform.getTrRowNumGroups(); i++ ) {
     if ( gs2DTransform.getKltFlag( i ) ) {
       for ( int j = 0; j < ( gs2DTransform.getRowTrSizeMinus1( i ) + 1 ); j++ ) {
@@ -3169,7 +3182,7 @@ void PCCBitstreamReader::gs2DTransform( PCCBitstream                       &bits
       }
     }
   }
-  for ( int i = 0; i < 16; i++ ) {
+  for ( int i = 0; i < numShCoeffs; i++ ) {
     if ( colTr[i] == 1 ) {
       READ_CODE_DESC( value, 3, "TrColType" );
       gs2DTransform.setTrColType( i, value );
@@ -3178,29 +3191,12 @@ void PCCBitstreamReader::gs2DTransform( PCCBitstream                       &bits
   TRACE_BITSTREAM_OUT( "%s", __func__ );
 }
 
-// H.8.3.6.3.10 Gaussian splat raw patch data arrangement syntax
-void PCCBitstreamReader::gsRawPatchDataArrangement( PCCBitstream &bitstream, GsRawPatchDataArrangement &gsrpda ) {
-  TRACE_BITSTREAM_IN( "%s", __func__ );
-  int value;
-  READ_UVLC_DESC( value, "gsrpda_data_arrangement_method" );
-  gsrpda.setDataArrangementMethod( value );
-  TRACE_BITSTREAM_OUT( "%s", __func__ );
-}
-
-// H.8.3.6.3.11 Gaussian splat opacity property syntax
-void PCCBitstreamReader::gsOpacityProperty( PCCBitstream &bitstream, GsOpacityProperty &gsOpacityProperty ) {
-  TRACE_BITSTREAM_IN( "%s", __func__ );
-  int value;
-  READ_CODE_DESC( value, 1, "LinearOpacityFlag" );
-  gsOpacityProperty.setLinearOpacityFlag( value );
-}
 // H.8.3.6.3.7  Gaussian splat spherical harmonics prediction syntax
-void PCCBitstreamReader::gsPrediction( PCCBitstream &bitstream, GsPrediction &pred ) {
+void PCCBitstreamReader::gsPrediction( PCCBitstream &bitstream, GsPrediction &pred, uint32_t numShComps ) {
   int   value;
   float valueFlt;
   TRACE_BITSTREAM_IN( "%s", __func__ );
-  READ_UVLC_DESC( value, "gsp_sh_num_components" );
-  pred.setShNumComponents( value );
+  pred.setShNumComponents( numShComps );
   for ( int i = 0; i < pred.getShNumComponents(); i++ ) {
     READ_CODE_DESC( value, 1, "gsp_use_prediction_flag" );
     pred.setUsePredictionFlag( i, value != 0 );

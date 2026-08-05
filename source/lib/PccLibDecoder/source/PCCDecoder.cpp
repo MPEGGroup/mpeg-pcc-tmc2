@@ -2156,7 +2156,7 @@ int PCCDecoder::ReconstructIdc3( PCCContext &context, PCCGroupOfFrames &reconstr
         addAdaptationParameters = true;
         auto &dequant           = ext.getGsDequantization();
 
-        if ( dequant.getDequantizationType() == 1 ) {
+        if ( dequant.getDequantizationType() == 0 ) {
           adaptationParams.enablePositionQuantization_ = true;
           adaptationParams.enableOpacityQuantization_  = dequant.getOpacityPresentFlag();
           adaptationParams.enableShQuantization_       = dequant.getShPresentFlag();
@@ -2369,10 +2369,11 @@ int PCCDecoder::ReconstructIdc3( PCCContext &context, PCCGroupOfFrames &reconstr
         }
       }
 
-      if ( ext.getRawPatchDataArrangementFlag() ) {
-        addAdaptationParameters                         = true;
-        adaptationParams.rawPatchDataArrangementMethod_ = ext.getGsRawPatchDataArrangement().getDataArrangementMethod();
-      }
+      // TOFIX: Here there is no explicit flag. So addAdaptationParameters will always be true.
+      // So this whole constuct does not make a lot of sense anymore.
+      addAdaptationParameters                         = true;
+      adaptationParams.rawPatchDataArrangementMethod_ = ext.getRawPatchDataArrangementMethod();
+
       if ( addAdaptationParameters ) adaptationParams_.push_back( adaptationParams );
     }
   }  // frameIdx

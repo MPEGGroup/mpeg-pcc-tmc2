@@ -2871,25 +2871,37 @@ void PCCBitstreamWriter::atlasCameraParameters( PCCBitstream &bitstream, AtlasCa
 // H.8.3.6.3.4	AAPS V-PCC GS extension syntax
 void PCCBitstreamWriter::aapsVpccGsExtension( PCCBitstream &bitstream, AapsVpccGsExtension &ext ) {
   TRACE_BITSTREAM_IN( "%s", __func__ );
+  uint32_t numShCoeffs( 0 ), numShComps( 0 );
+  if ( ext.getDequantizationPresentFlag() ) {
+    auto &dequant   = ext.getGsDequantization();
+    int   numLevels = dequant.getShNumLvl();
+    WRITE_UVLC( numLevels );
+    for ( int i = 0; i < numLevels; i++ ) {
+      WRITE_UVLC( dequant.getShNumChan( i ) );
+      numShComps += dequant.getShNumChan( i );
+    }
+  } else {
+    WRITE_UVLC( 0 );
+  }
+  numShCoeffs = numShComps / 3;
+
   WRITE_CODE( ext.getDequantizationPresentFlag(), 1 );       // u(1)
   WRITE_CODE( ext.getAdaptiveQuantizationEnableFlag(), 1 );  // u(1)
   WRITE_CODE( ext.getShPropertyPresentFlag(), 1 );           // u(1)
   WRITE_CODE( ext.getPredEnableFlag() ? 1 : 0, 1 );          // u(1)
   WRITE_CODE( ext.getTransform2DPresentFlag(), 1 );          // u(1)
   WRITE_CODE( ext.getScaleTransformPresentFlag(), 1 );       // u(1)
-  WRITE_CODE( ext.getRawPatchDataArrangementFlag(), 1 );     // u(1)
-  WRITE_CODE( ext.getOpacityPropertyPresentFlag(), 1 );      // u(1)
+  WRITE_UVLC( ext.getRawPatchDataArrangementMethod() );      // uvlc
+  WRITE_CODE( ext.getLinearOpacityFlag(), 1 );               // u(1)
   WRITE_CODE( ext.getReservedZero8bits(), 8 );               // u(8)
 
   if ( ext.getDequantizationPresentFlag() ) { gsDequantization( bitstream, ext.getGsDequantization() ); }
-  if ( ext.getShPropertyPresentFlag() ) { gsShProperty( bitstream, ext.getGsShProperty() ); }
-  if ( ext.getPredEnableFlag() ) { gsPrediction( bitstream, ext.getGsPrediction() ); }
-  if ( ext.getTransform2DPresentFlag() ) { gs2DTransform( bitstream, ext.getGs2DTransform(), ext.getGsShProperty() ); }
-  if ( ext.getScaleTransformPresentFlag() ) { gsScaleTransform( bitstream, ext.getGsScaleTransform() ); }
-  if ( ext.getRawPatchDataArrangementFlag() ) {
-    gsRawPatchDataArrangement( bitstream, ext.getGsRawPatchDataArrangement() );
+  if ( ext.getShPropertyPresentFlag() ) { gsShProperty( bitstream, ext.getGsShProperty(), numShComps ); }
+  if ( ext.getPredEnableFlag() ) { gsPrediction( bitstream, ext.getGsPrediction(), numShComps ); }
+  if ( ext.getTransform2DPresentFlag() ) {
+    gs2DTransform( bitstream, ext.getGs2DTransform(), ext.getGsShProperty(), numShCoeffs );
   }
-  if ( ext.getOpacityPropertyPresentFlag() ) { gsOpacityProperty( bitstream, ext.getGsOpacityProperty() ); }
+  if ( ext.getScaleTransformPresentFlag() ) { gsScaleTransform( bitstream, ext.getGsScaleTransform() ); }
 
   byteAlignment( bitstream );
   TRACE_BITSTREAM_OUT( "%s", __func__ );
@@ -2899,7 +2911,7 @@ void PCCBitstreamWriter::aapsVpccGsExtension( PCCBitstream &bitstream, AapsVpccG
 void PCCBitstreamWriter::gsDequantization( PCCBitstream &bitstream, GsDequantization &gsd ) {
   TRACE_BITSTREAM_IN( "%s", __func__ );
   WRITE_UVLC( gsd.getDequantizationType() );
-  if ( gsd.getDequantizationType() == 1 ) {
+  if ( gsd.getDequantizationType() == 0 ) {
     for ( int i = 0; i < 3; i++ ) {
       WRITE_FLOAT( gsd.getMinPosition( i ) );
       WRITE_FLOAT( gsd.getMaxPosition( i ) );
@@ -2975,9 +2987,7 @@ void PCCBitstreamWriter::gsDequantization( PCCBitstream &bitstream, GsDequantiza
         }
       }
       WRITE_CODE( gsd.getShSameMinMaxFlag(), 1 );
-      WRITE_UVLC( gsd.getShNumLvl() );
       for ( int i = 0; i < gsd.getShNumLvl(); i++ ) {
-        WRITE_UVLC( gsd.getShNumChan( i ) );
         for ( int c = 0; c < gsd.getShNumChan( i ); c++ ) {
           if ( !gsd.getShSameMinMaxFlag() || ( ( i == 0 ) && ( c == 0 ) ) ) {
             WRITE_FLOAT( gsd.getMinSh( i, c ) );
@@ -3003,12 +3013,17 @@ void PCCBitstreamWriter::gsDequantization( PCCBitstream &bitstream, GsDequantiza
         }
       }
     }
+  } else {
+    TRACE_BITSTREAM( "Error: Values of DequantizationType greater than 0 are reserved.\n" );
+    exit( EXIT_FAILURE );
   }
   TRACE_BITSTREAM_OUT( "%s", __func__ );
 }
 
 // H.8.3.6.3.6	Gaussian splat spherical harmonics property syntax
-void PCCBitstreamWriter::gsShProperty( PCCBitstream &bitstream, GsSphericalHarmonicsProperty &gshp ) {
+void PCCBitstreamWriter::gsShProperty( PCCBitstream                 &bitstream,
+                                       GsSphericalHarmonicsProperty &gshp,
+                                       uint32_t                      numShComps ) {
   TRACE_BITSTREAM_IN( "%s", __func__ );
   WRITE_UVLC( gshp.getShMappingMethod() );
   if ( gshp.getShMappingMethod() == 2 ) {
@@ -3029,11 +3044,12 @@ void PCCBitstreamWriter::gsShProperty( PCCBitstream &bitstream, GsSphericalHarmo
 // H.8.3.6.3.7	Gaussian splat spherical harmonics transform syntax
 void PCCBitstreamWriter::gs2DTransform( PCCBitstream                       &bitstream,
                                         Gs2DTransform                      &gs2DTransform,
-                                        const GsSphericalHarmonicsProperty &gshp ) {
+                                        const GsSphericalHarmonicsProperty &gshp,
+                                        uint32_t                            numShCoeffs ) {
   TRACE_BITSTREAM_IN( "%s", __func__ );
-  WRITE_CODE( 15, 4 );  // u(4) placeholder for gsht_num_sh_minus1
-  WRITE_CODE( gs2DTransform.getTrRowNumGroups(), 4 );
-  WRITE_CODE( gs2DTransform.getDimensionReductionEnableFlag() ? 1 : 0, 1 );
+  uint32_t numBits = static_cast<uint32_t>( ceilLog2( numShCoeffs + 1 ) );
+  WRITE_CODE( gs2DTransform.getTrRowNumGroups(), numBits );
+  WRITE_CODE( gs2DTransform.getDimensionReductionEnableFlag(), 1 );
   for ( int i = 0; i < gs2DTransform.getTrRowNumGroups(); i++ ) {
     WRITE_CODE( gs2DTransform.getRowTrSizeMinus1( i ), 4 );
     for ( int j = 0; j < ( gs2DTransform.getRowTrSizeMinus1( i ) + 1 ); j++ ) {
@@ -3062,7 +3078,7 @@ void PCCBitstreamWriter::gs2DTransform( PCCBitstream                       &bits
     }
   }
   std::vector<uint8_t> colTr;
-  colTr.resize( 16, 1 );
+  colTr.resize( numShCoeffs, 1 );
   for ( int i = 0; i < gs2DTransform.getTrRowNumGroups(); i++ ) {
     if ( gs2DTransform.getKltFlag( i ) ) {
       for ( int j = 0; j < ( gs2DTransform.getRowTrSizeMinus1( i ) + 1 ); j++ ) {
@@ -3070,28 +3086,22 @@ void PCCBitstreamWriter::gs2DTransform( PCCBitstream                       &bits
       }
     }
   }
-  for ( int i = 0; i < 16; i++ ) {
+  for ( int i = 0; i < numShCoeffs; i++ ) {
     if ( colTr[i] == 1 ) { WRITE_CODE( gs2DTransform.getTrColType( i ), 3 ); }
   }
   TRACE_BITSTREAM_OUT( "%s", __func__ );
 }
-// H.8.3.6.3.11 Gaussian splat opacity property syntax
-void PCCBitstreamWriter::gsOpacityProperty( PCCBitstream &bitstream, GsOpacityProperty &gsop ) {
-  TRACE_BITSTREAM_IN( "%s", __func__ );
-  WRITE_CODE( gsop.getLinearOpacityFlag(), 1 );
-  TRACE_BITSTREAM_OUT( "%s", __func__ );
-}
 
 // H.8.3.6.3.7  Gaussian splat spherical harmonics prediction syntax
-void PCCBitstreamWriter::gsPrediction( PCCBitstream &bitstream, GsPrediction &pred ) {
+void PCCBitstreamWriter::gsPrediction( PCCBitstream &bitstream, GsPrediction &pred, uint32_t numShComps ) {
   TRACE_BITSTREAM_IN( "%s", __func__ );
-  WRITE_UVLC( pred.getShNumComponents() );
+  uint32_t numBits = static_cast<uint32_t>( ceilLog2( numShComps ) );
   for ( int i = 0; i < pred.getShNumComponents(); i++ ) {
     WRITE_CODE( pred.getUsePredictionFlag( i ) ? 1 : 0, 1 );
     if ( pred.getUsePredictionFlag( i ) ) {
       WRITE_CODE( pred.getNumPredSrcMinus1( i ), 4 );
       for ( int j = 0; j <= pred.getNumPredSrcMinus1( i ); j++ ) {
-        WRITE_CODE( pred.getPredSrcIdx( i, j ), 6 );
+        WRITE_CODE( pred.getPredSrcIdx( i, j ), numBits );
         WRITE_FLOAT( pred.getPredCoeff( i, j ) );
       }
     }
@@ -3108,13 +3118,6 @@ void PCCBitstreamWriter::gsScaleTransform( PCCBitstream &bitstream, GsScaleTrans
     if ( i == 0 || !gsst.getSameScalingFlag() ) { WRITE_FLOAT( gsst.getScaleScaling( i ) ); }
     if ( i == 0 || !gsst.getSamePowerTransformFlag() ) { WRITE_FLOAT( gsst.getScalePower( i ) ); }
   }
-  TRACE_BITSTREAM_OUT( "%s", __func__ );
-}
-
-// H.8.3.6.3.10 Gaussian splat raw patch data arrangement syntax
-void PCCBitstreamWriter::gsRawPatchDataArrangement( PCCBitstream &bitstream, GsRawPatchDataArrangement &gsrpda ) {
-  TRACE_BITSTREAM_IN( "%s", __func__ );
-  WRITE_UVLC( gsrpda.getDataArrangementMethod() );
   TRACE_BITSTREAM_OUT( "%s", __func__ );
 }
 

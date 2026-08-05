@@ -251,7 +251,7 @@ void PCCGSHlsBuilder::initializeAtlasAapsHls( PCCHighLevelSyntax            &hls
   ext.setShPropertyPresentFlag( true );
   auto &dequant = ext.getGsDequantization();
   // Position dequantization parameters
-  dequant.setDequantizationType( 1 );
+  dequant.setDequantizationType( 0 );  // All other values are reserved.
   if ( adaptationParams.enablePositionQuantization_ ) {
     for ( size_t i = 0; i < 3; i++ ) {
       dequant.setMinPosition( i, adaptationParams.computedPositionMin_[i] );
@@ -585,16 +585,9 @@ void PCCGSHlsBuilder::initializeAtlasAapsHls( PCCHighLevelSyntax            &hls
       gsst.setScaleScaling( i, static_cast<float>( adaptationParams.computedScaleScalingFactor_[i] ) );
     }
   }
-  ext.setRawPatchDataArrangementFlag( true );
-  if ( ext.getRawPatchDataArrangementFlag() ) {
-    ext.getGsRawPatchDataArrangement().setDataArrangementMethod( adaptationParams.rawPatchDataArrangementMethod_ );
-  }
 
-  ext.setOpacityPropertyPresentFlag( true );
-  if ( ext.getOpacityPropertyPresentFlag() ) {
-    auto &opacityProp = ext.getGsOpacityProperty();
-    opacityProp.setLinearOpacityFlag( adaptationParams.encodeLinearOpacity_ );
-  }
+  ext.setRawPatchDataArrangementMethod( adaptationParams.rawPatchDataArrangementMethod_ );
+  ext.setLinearOpacityFlag( true );
 
   ext.setPredEnableFlag( adaptationParams.shPredictionEnabled_ );
   if ( adaptationParams.shPredictionEnabled_ && !adaptationParams.shPredictionEntries_.empty() ) {

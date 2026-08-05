@@ -1704,10 +1704,7 @@ void PCCCodec::generateRawPointsGeometryfromVideoRecGS( PCCContext              
   auto     aapsId            = athl.getHeader().getAtlasAdaptationParameterSetId();
   auto    &aaps              = context.getAtlasAdaptationParameterSet( aapsId );
   auto    &gsExt             = aaps.getAapsVpccGsExtension();
-  uint32_t arrangementMethod = 0;
-  if ( gsExt.getRawPatchDataArrangementFlag() ) {
-    arrangementMethod = gsExt.getGsRawPatchDataArrangement().getDataArrangementMethod();
-  }
+  uint32_t arrangementMethod = gsExt.getRawPatchDataArrangementMethod();
 
   size_t numberOfRawPointsPatches = tile.getNumberOfRawPointsPatches();
   for ( int i = 0; i < numberOfRawPointsPatches; i++ ) {
@@ -1828,10 +1825,7 @@ void PCCCodec::generateRawPointsAttributefromVideoRecGS( PCCContext             
   auto     aapsId            = athl.getHeader().getAtlasAdaptationParameterSetId();
   auto    &aaps              = context.getAtlasAdaptationParameterSet( aapsId );
   auto    &gsExt             = aaps.getAapsVpccGsExtension();
-  uint32_t arrangementMethod = 0;
-  if ( gsExt.getRawPatchDataArrangementFlag() ) {
-    arrangementMethod = gsExt.getGsRawPatchDataArrangement().getDataArrangementMethod();
-  }
+  uint32_t arrangementMethod = gsExt.getRawPatchDataArrangementMethod();
 
   TransferAttributeType attributeType = TransferAttributeType::TRAN_OPACITY;
 

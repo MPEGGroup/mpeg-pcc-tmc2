@@ -589,38 +589,6 @@ class Gs2DTransform {
   bool                                         dimensionReductionEnableFlag_;
 };
 
-// H.8.3.6.3.10	Gaussian splat raw patch data arrangement syntax
-class GsRawPatchDataArrangement {
- public:
-  GsRawPatchDataArrangement()                                               = default;
-  ~GsRawPatchDataArrangement()                                              = default;
-  GsRawPatchDataArrangement &operator=( const GsRawPatchDataArrangement & ) = default;
-
-  uint32_t getDataArrangementMethod() const { return dataArrangementMethod_; }
-  void     setDataArrangementMethod( uint32_t value ) { dataArrangementMethod_ = value; }
-
- private:
-  uint32_t dataArrangementMethod_{};
-};
-
-// H.8.3.6.3.11	GS Opacity Property syntax
-class GsOpacityProperty {
- public:
-  GsOpacityProperty() : linearOpacityFlag_( 0 ) {}
-  ~GsOpacityProperty() {}
-  GsOpacityProperty &operator=( const GsOpacityProperty & ) = default;
-
-  bool operator==( const GsOpacityProperty &other ) const { return linearOpacityFlag_ == other.linearOpacityFlag_; }
-
-  bool operator!=( const GsOpacityProperty &other ) const { return !( *this == other ); }
-
-  uint8_t getLinearOpacityFlag() const { return linearOpacityFlag_; }
-  void    setLinearOpacityFlag( uint8_t value ) { linearOpacityFlag_ = value; }
-
- private:
-  uint8_t linearOpacityFlag_;
-};
-
 // H.8.3.6.3.7  Gaussian splat spherical harmonics prediction syntax
 class GsPrediction {
  public:
@@ -719,7 +687,8 @@ class AapsVpccGsExtension {
       shPropertyPresentFlag_( false ),
       transform2DPresentFlag_( false ),
       scaleTransformPresentFlag_( false ),
-      opacityPropertyPresentFlag_( false ) {}
+      rawPatchDataArrangementMethod_( 0 ),
+      linearOpacityFlag_( false ) {}
   ~AapsVpccGsExtension() {}
   AapsVpccGsExtension &operator=( const AapsVpccGsExtension & ) = default;
 
@@ -742,16 +711,15 @@ class AapsVpccGsExtension {
   GsScaleTransform &getGsScaleTransform() { return gsScaleTransform_; }
   void              setScaleTransformPresentFlag( bool value ) { scaleTransformPresentFlag_ = value; }
 
-  bool                       getRawPatchDataArrangementFlag() { return rawPatchDataArrangementFlag_; }
-  GsRawPatchDataArrangement &getGsRawPatchDataArrangement() { return gsRawPatchDataArrangement_; }
-  void                       setRawPatchDataArrangementFlag( bool value ) { rawPatchDataArrangementFlag_ = value; }
+  int  getRawPatchDataArrangementMethod() { return rawPatchDataArrangementMethod_; }
+  void setRawPatchDataArrangementMethod( int value ) { rawPatchDataArrangementMethod_ = value; }
 
-  bool               getOpacityPropertyPresentFlag() { return opacityPropertyPresentFlag_; }
-  GsOpacityProperty &getGsOpacityProperty() { return gsOpacityProperty_; }
-  void               setOpacityPropertyPresentFlag( bool value ) { opacityPropertyPresentFlag_ = value; }
-  bool               getPredEnableFlag() { return predEnableFlag_; }
-  GsPrediction      &getGsPrediction() { return gsPrediction_; }
-  void               setPredEnableFlag( bool value ) { predEnableFlag_ = value; }
+  bool getLinearOpacityFlag() { return linearOpacityFlag_; }
+  void setLinearOpacityFlag( bool value ) { linearOpacityFlag_ = value; }
+
+  bool          getPredEnableFlag() { return predEnableFlag_; }
+  GsPrediction &getGsPrediction() { return gsPrediction_; }
+  void          setPredEnableFlag( bool value ) { predEnableFlag_ = value; }
 
   uint8_t getReservedZero8bits() const { return reservedZero8bits_; }
   void    setReservedZero8bits( uint8_t value ) { reservedZero8bits_ = value; }
@@ -763,15 +731,14 @@ class AapsVpccGsExtension {
   bool                         transform2DPresentFlag_{};
   bool                         scaleTransformPresentFlag_{};
   bool                         rawPatchDataArrangementFlag_{};
-  bool                         opacityPropertyPresentFlag_{};
+  bool                         linearOpacityFlag_{};
   bool                         predEnableFlag_{};
+  int                          rawPatchDataArrangementMethod_{};
   GsPrediction                 gsPrediction_{};
   GsDequantization             gsDequantization_{};
   GsSphericalHarmonicsProperty shSphericalHarmonicsProperty_{};
   Gs2DTransform                gs2DTransform_{};
   GsScaleTransform             gsScaleTransform_{};
-  GsRawPatchDataArrangement    gsRawPatchDataArrangement_;
-  GsOpacityProperty            gsOpacityProperty_;
   uint8_t                      reservedZero8bits_{};
 };
 };  // namespace pcc
