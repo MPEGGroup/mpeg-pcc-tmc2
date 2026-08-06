@@ -197,6 +197,7 @@ PCCGSPatchResult PCCGSPatchGenerator::generate( const PCCPointSet3            &s
   PCCGSPatchResult result;
   result.patches   = std::move( patches_ );
   result.mapWidth  = mapWidth_;
+  mapHeight_       = std::max( mapHeight_, params.minimumImageHeight_ );
   result.mapHeight = mapHeight_;
   return result;
 }

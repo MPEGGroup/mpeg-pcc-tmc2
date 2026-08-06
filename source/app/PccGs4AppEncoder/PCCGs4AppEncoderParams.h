@@ -219,6 +219,10 @@ bool parseParameters( int                           argc,
       encoderParams.minimumImageWidth_,
       encoderParams.minimumImageWidth_, 
       "Minimum width of packed patch frame" )
+    ( "minimumImageHeight",
+      encoderParams.minimumImageHeight_,
+      encoderParams.minimumImageHeight_,
+      "Minimum height of packed patch frame" )
     ( "raw3dOffsetBitCountExplicitModeFlag",
       encoderParams.raw3dOffsetBitCountExplicitModeFlag_,
       encoderParams.raw3dOffsetBitCountExplicitModeFlag_,

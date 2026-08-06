@@ -65,6 +65,8 @@ struct PCCGSEncoderParameters {
 
   // Minimum image width
   size_t minimumImageWidth_;
+  // Minimum image height
+  size_t minimumImageHeight_;
 
   // Raw 3D offset settings
   bool   raw3dOffsetBitCountExplicitModeFlag_;
@@ -169,6 +171,7 @@ struct PCCGSEncoderParameters {
     raw3dOffsetBitCountExplicitModeFlag_ = false;
     raw3dOffsetAxisBitCountMinus1_       = 0;
     minimumImageWidth_                   = 1024;
+    minimumImageHeight_                  = 0;
     packGeometry_                        = false;
     packAttributes_                      = false;
     geometryPackedMapIndex_              = 0;
