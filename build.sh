@@ -37,7 +37,7 @@ MODE=Release;
 FORMAT=0;
 TIDY=0;
 CPU_ONLY=ON;
-HM_VERSION=16.20;
+HM_VERSION=18.0;
 CMAKE_FLAGS=();
 if [ "$MACHINE" == "Linux" ] ; then NUMBER_OF_PROCESSORS=$( grep -c ^processor /proc/cpuinfo ); fi
 
