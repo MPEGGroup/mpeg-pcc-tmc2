@@ -52,7 +52,7 @@ LENGTHS=(1F)                # Valid values for LENGTHS are (1F), (NF), or (1F NF
 CODINGS=(C1 CW)             # Valid values for CODINGS are (C1), (CW), or (C1 CW)
 KEEP_INTERMEDIATE_FILES=0   # 0: reduce diskspace, or 1: keep intermediate files
 GENERATE_PNGs=0             # 0 or 1
-: "${EXPERIMENT_MODE:=2}"   # 0: mandatory, 1: all, 2: man_with_fruit_tracked only, 3: subset, 4: plant only
+: "${EXPERIMENT_MODE:=2}"   # 0: mandatory, 1: all, 2: man_with_fruit_tracked only, 3: subset, 4: plant only, 5: CTC changes
 : "${METRICS_THREADS:=1}"   # Number of threads for mpeg-gsc-metrics (optimize for your system resources)
 V3C_PARSER_CHECK=1          # 0: disable , 1: enable - check HLS of encoded bitstreams
 # Custom time format to improve platform independence of parsing time results
@@ -140,6 +140,7 @@ SEQUENCES=(
  "library"
  "flowerdance"
  "gymnast"
+ "corsair"
 )
 
 # ==================================================================================================
@@ -170,6 +171,7 @@ ENABLE_SEQs[tennis_player]=1
 ENABLE_SEQs[library]=1
 ENABLE_SEQs[flowerdance]=1
 ENABLE_SEQs[gymnast]=1
+ENABLE_SEQs[corsair]=1
 
 if [ $EXPERIMENT_MODE -eq 1 ]; then
     for SEQ in "${!ENABLE_SEQs[@]}"; do
@@ -182,18 +184,29 @@ elif [ $EXPERIMENT_MODE -eq 2 ]; then
     done
     ENABLE_SEQs[manwithfruit_tracked]=1
     JOBNAME="$JOBNAME-manwithfruit"
-elif [ $EXPERIMENT_MODE -eq 4 ]; then
-    for SEQ in "${!ENABLE_SEQs[@]}"; do
-        ENABLE_SEQs[$SEQ]=0
-    done
-    ENABLE_SEQs[plant]=1
-    JOBNAME="$JOBNAME-plant"
 elif [ $EXPERIMENT_MODE -eq 3 ]; then
     ENABLE_SEQs[musical]=0
     ENABLE_SEQs[library]=0
     ENABLE_SEQs[flowerdance]=0
     ENABLE_SEQs[gymnast]=0
     JOBNAME="$JOBNAME-subset"
+elif [ $EXPERIMENT_MODE -eq 4 ]; then
+    for SEQ in "${!ENABLE_SEQs[@]}"; do
+        ENABLE_SEQs[$SEQ]=0
+    done
+    ENABLE_SEQs[plant]=1
+    JOBNAME="$JOBNAME-plant"
+elif [ $EXPERIMENT_MODE -eq 5 ]; then
+    for SEQ in "${!ENABLE_SEQs[@]}"; do
+        ENABLE_SEQs[$SEQ]=0
+    done
+    ENABLE_SEQs[makeup]=1
+    ENABLE_SEQs[musical]=1
+    ENABLE_SEQs[trio]=1
+    ENABLE_SEQs[flowerdance]=1
+    ENABLE_SEQs[gymnast]=1
+    ENABLE_SEQs[corsair]=1
+    JOBNAME="$JOBNAME-changes"
 fi
 
 # ==================================================================================================
@@ -224,6 +237,9 @@ AVAILABLE_FRAMES[cinema_semitracked]=32
 AVAILABLE_FRAMES[breakfast_tracked]=32
 AVAILABLE_FRAMES[breakfast_semitracked]=32
 AVAILABLE_FRAMES[breakfast_untracked]=32
+AVAILABLE_FRAMES[makeup]=32
+AVAILABLE_FRAMES[musical]=32
+AVAILABLE_FRAMES[trio]=32
 AVAILABLE_FRAMES[manwithfruit_tracked]=32
 
 # ==================================================================================================
@@ -252,6 +268,7 @@ RESOLUTIONS[tennis_player]="4518x2540"
 RESOLUTIONS[library]="3793x2131"
 RESOLUTIONS[flowerdance]="2456x2054"
 RESOLUTIONS[gymnast]="2456x2054"
+RESOLUTIONS[corsair]="2000x1294" # TODO(BK): Not all images have exactly the same resolution
 
 # ==================================================================================================
 # Calculate derived values
@@ -651,7 +668,7 @@ for SEQ in "${SEQUENCES[@]}"; do
     done
 done
 
-echo "$PYTHON $SCRIPT_DIR/gsc_csv2excel.py -t \"$SCRIPT_DIR/templates/WG04N0826_template.xlsm\" -a \"$SCRIPT_DIR/anchor_results/VPCC-GS.csv\" -p \"$csv_file\" -x \"$OUT/metrics/VPCC-GS-Anchor__vs__proposed.xlsm\"" >> "$RUN_SUMMARY"
+echo "$PYTHON $SCRIPT_DIR/gsc_csv2excel.py -t \"$SCRIPT_DIR/templates/WG5N420_template.xlsm\" -a \"$SCRIPT_DIR/anchor_results/VPCC-GS.csv\" -p \"$csv_file\" -x \"$OUT/metrics/VPCC-GS-Anchor__vs__proposed.xlsm\"" >> "$RUN_SUMMARY"
 
 # ==================================================================================================
 # Functions for parallel jobs
