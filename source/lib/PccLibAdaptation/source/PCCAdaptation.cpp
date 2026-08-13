@@ -36,8 +36,10 @@
 #include "PCCSymEigen.h"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <map>
+#include <numeric>
 #include <set>
 #include <fstream>
 #include <iomanip>
@@ -546,7 +548,7 @@ bool PCCAdaptationParameters::readConfig( const std::string &filename ) {
   }
 
   // Parse adaptive quantization bitshifts
-  size_t adaptiveQuantizationPos = content.find( "\"adaptive_bitshifts\"" );
+  size_t adaptiveQuantizationPos = content.find( "\"adaptiveBitshifts\"" );
   if ( adaptiveQuantizationPos != std::string::npos ) {
     enableAdaptiveShQuantization_ = true;
     parseIntVector( findValue( "sh", adaptiveQuantizationPos ), adaptiveShBitshifts_ );
@@ -2147,7 +2149,7 @@ bool PCCAdaptation::computeShKlt( const PCCPointSetGS                       &poi
   return true;
 }
 
-double PCCAdaptation::computeShAcTop10Correlation( const PCCPointSetGS &pointCloud ) {
+double PCCAdaptation::computeShAcTop10Correlation( const PCCPointSetGS &pointCloud ) const {
   const size_t pointCount  = pointCloud.getPointCount();
   const size_t shCoefCount = pointCloud.getSphericalHarmonicsCount();
   if ( pointCount == 0 || shCoefCount <= 1 ) return 0.0;
@@ -3501,16 +3503,16 @@ bool PCCAdaptation::reorderSphericalHarmonicsAdaptive( PCCPointSetGS            
 // Adaptive SH Quantization
 //============================================================================
 
-bool computeGroupIdsFromImportanceScores( const std::string &importanceScoresPath,
-                                          const size_t       pointCount,
-                                          std::vector<int>  &groupIds,
-                                          uint32_t           frameNumber ) {
+bool readImportanceScores( const std::string   &importanceScoresPath,
+                           const size_t         pointCount,
+                           std::vector<double> &scores,
+                           uint32_t             frameNumber ) {
   char fileName[512];
   snprintf( fileName, sizeof( fileName ), importanceScoresPath.c_str(), frameNumber );
   std::cout << "Computing quantization groups from importance score file: " << fileName << std::endl;
   std::ifstream ifs( fileName );
   if ( !ifs.is_open() ) {
-    std::cerr << "PCCAdaptation::computeGroupIdsFromImportanceScores - Cannot open file: " << fileName << std::endl;
+    std::cerr << "PCCAdaptation::readImportanceScores - Cannot open file: " << fileName << std::endl;
     return false;
   }
   std::vector<double> impScores;
@@ -3523,23 +3525,152 @@ bool computeGroupIdsFromImportanceScores( const std::string &importanceScoresPat
   }
 
   if ( impScores.size() != pointCount ) {
-    std::cerr << "PCCAdaptation::computeGroupIdsFromImportanceScores - Score count mismatch. " << pointCount
+    std::cerr << "PCCAdaptation::readImportanceScores - Score count mismatch. " << pointCount
               << " != " << impScores.size() << std::endl;
     return false;
   }
 
-  const double eps = 1e-18;
-  for ( auto &score : impScores ) {
-    if ( score < eps ) { score = eps; }
-  }
-  const double maxScore = *std::max_element( impScores.begin(), impScores.end() );
-  const double c        = 0.5 * std::log( maxScore );
+  scores = std::move( impScores );
+  return true;
+}
 
-  groupIds.resize( impScores.size() );
-  for ( size_t i = 0; i < impScores.size(); ++i ) {
-    const double group = c - 0.5 * std::log( impScores[i] );
+static void computeImportanceStats( const std::vector<double>                &importanceScores,
+                                    PCCAdaptationParameters::ImportanceStats &out ) {
+  out.n = importanceScores.size();
+  std::vector<double> nz;
+  nz.reserve( importanceScores.size() / 2 );
+  for ( double s : importanceScores ) {
+    if ( s > 0.0 ) { nz.push_back( s ); }
+  }
+  if ( nz.size() < 2 ) {
+    out.cv         = 0.0;
+    out.p80OverP20 = 0.0;
+    out.computed   = true;
+    return;
+  }
+  double sum = 0.0;
+  for ( double s : nz ) { sum += s; }
+  double mean = sum / nz.size();
+  double var  = 0.0;
+  for ( double s : nz ) { var += ( s - mean ) * ( s - mean ); }
+  var /= nz.size();
+  out.cv = mean > 0.0 ? std::sqrt( var ) / mean : 0.0;
+
+  std::sort( nz.begin(), nz.end() );
+  auto pct = [&]( double p ) -> double {
+    size_t m   = nz.size();
+    double idx = ( p / 100.0 ) * ( m - 1 );
+    size_t lo  = static_cast<size_t>( std::floor( idx ) );
+    size_t hi  = static_cast<size_t>( std::ceil( idx ) );
+    if ( lo == hi ) { return nz[lo]; }
+    double frac = idx - lo;
+    return nz[lo] * ( 1.0 - frac ) + nz[hi] * frac;
+  };
+  double p20     = pct( 20.0 );
+  double p80     = pct( 80.0 );
+  out.p80OverP20 = p20 > 0.0 ? p80 / p20 : 0.0;
+  out.computed   = true;
+}
+
+static void deriveParamsFromImportanceStats( const PCCAdaptationParameters::ImportanceStats &stats,
+                                             std::vector<int>                               &bitshifts,
+                                             std::vector<int>                               &thresholds ) {
+  const double cvConcThreshold  = PCCAdaptationParameters::kStatsCvConcentratedThreshold;
+  const double cvHeavyThreshold = PCCAdaptationParameters::kStatsCvHeavyTailThreshold;
+
+  if ( stats.cv < cvConcThreshold ) {
+    // Very low CV: nearly uniform importance.
+    bitshifts  = { 0, 0, 2, 3 };
+    thresholds = { 50, 75, 90 };
+    return;
+  } else if ( stats.cv > cvHeavyThreshold && stats.p80OverP20 > PCCAdaptationParameters::kStatsPRatioSpreadThreshold ) {
+    if ( stats.p80OverP20 > 500 ) {
+      bitshifts = { 0, 2, 3, 5 };
+    } else {
+      bitshifts = { 0, 1, 3, 5 };
+    }
+  } else if ( stats.cv >= cvConcThreshold && stats.p80OverP20 > 160.0 ) {
+    // Moderate CV with elevated spread
+    bitshifts = { 0, 1, 2, 4 };
+  } else {
+    if ( stats.cv > 4.0 && stats.p80OverP20 > PCCAdaptationParameters::kStatsPRatioFlatThreshold ) {
+      bitshifts = { 0, 1, 2, 4 };
+    } else {
+      bitshifts = { 0, 0, 2, 3 };
+    }
+  }
+  // Thresholds from p80/p20 (not topK-dependent; shape preserved)
+  if ( stats.p80OverP20 > 0.0 && stats.p80OverP20 < PCCAdaptationParameters::kStatsPRatioFlatThreshold ) {
+    thresholds = { 65, 80, 95 };
+  } else {
+    thresholds = { 20, 50, 80 };
+  }
+}
+
+bool computeGroupIdsLog( const std::vector<double> &importanceScores, std::vector<int> &groupIds ) {
+  const size_t pointCount = importanceScores.size();
+  if ( pointCount == 0 ) return false;
+
+  const double maxScore = *std::max_element( importanceScores.begin(), importanceScores.end() );
+  const double c        = 0.5 * std::log( maxScore );
+  const double eps      = 1e-18;
+
+  groupIds.resize( pointCount );
+  for ( size_t i = 0; i < pointCount; ++i ) {
+    const double score = ( importanceScores[i] < eps ) ? eps : importanceScores[i];
+    const double group = c - 0.5 * std::log( score );
     groupIds[i]        = std::max( 0, static_cast<int>( std::round( group ) ) );
   }
+  return true;
+}
+
+bool computeGroupIdsPercentile( const std::vector<double> &importanceScores,
+                                const std::vector<int>    &percentileThresholds,
+                                const std::vector<int>    &bitshifts,
+                                int                        shBitDepth,
+                                std::vector<int>          &groupIds,
+                                std::vector<int>          &outBitshifts ) {
+  const size_t pointCount = importanceScores.size();
+  if ( pointCount == 0 ) return false;
+  if ( percentileThresholds.empty() ) {
+    std::cerr << "computeGroupIdsPercentile - percentileThresholds is empty" << std::endl;
+    return false;
+  }
+
+  std::vector<size_t> nonzeroIndices;
+  nonzeroIndices.reserve( pointCount );
+  for ( size_t i = 0; i < pointCount; ++i ) {
+    if ( importanceScores[i] > 0 ) { nonzeroIndices.push_back( i ); }
+  }
+  const size_t nonzeroCount = nonzeroIndices.size();
+
+  // Percentile groups for non-zero Gaussians + one extra group for zero-importance
+  const int numPercentileGroups = static_cast<int>( percentileThresholds.size() ) + 1;
+  const int zeroGroup           = numPercentileGroups;
+
+  groupIds.assign( pointCount, zeroGroup );
+
+  if ( nonzeroCount > 0 ) {
+    std::sort( nonzeroIndices.begin(), nonzeroIndices.end(),
+               [&importanceScores]( size_t a, size_t b ) { return importanceScores[a] > importanceScores[b]; } );
+
+    // Assign group IDs
+    size_t prevIdx = 0;
+    for ( size_t g = 0; g < percentileThresholds.size(); ++g ) {
+      size_t thresholdIdx = static_cast<size_t>( std::round( percentileThresholds[g] / 100.0 * nonzeroCount ) );
+      thresholdIdx        = std::max( prevIdx, std::min( thresholdIdx, nonzeroCount ) );
+      for ( size_t j = prevIdx; j < thresholdIdx; ++j ) { groupIds[nonzeroIndices[j]] = static_cast<int>( g ); }
+      prevIdx = thresholdIdx;
+    }
+    for ( size_t j = prevIdx; j < nonzeroCount; ++j ) { groupIds[nonzeroIndices[j]] = numPercentileGroups - 1; }
+  }
+
+  outBitshifts.assign( bitshifts.begin(),
+                       bitshifts.begin() + std::min( numPercentileGroups, static_cast<int>( bitshifts.size() ) ) );
+  while ( static_cast<int>( outBitshifts.size() ) < numPercentileGroups ) {
+    outBitshifts.push_back( bitshifts.empty() ? shBitDepth : bitshifts.back() );
+  }
+  outBitshifts.push_back( shBitDepth );
 
   return true;
 }
@@ -3723,6 +3854,36 @@ bool PCCAdaptation::mergeDuplicatePoints( PCCPointSet3                  &output,
   return true;
 }
 
+bool computeGroupIdsFromImportanceScores( const std::string       &importanceScoresPath,
+                                          const size_t             pointCount,
+                                          PCCAdaptationParameters &params,
+                                          std::vector<int>        &groupIds,
+                                          std::vector<int>        &computedBitshifts,
+                                          uint32_t                 frameNumber ) {
+  std::vector<double> importanceScores;
+  if ( !readImportanceScores( importanceScoresPath, pointCount, importanceScores, frameNumber ) ) { return false; }
+
+  computedBitshifts.clear();
+  switch ( params.adaptiveQuantizationMode_ ) {
+    case 0: return computeGroupIdsLog( importanceScores, groupIds );
+    case 1: {
+      if ( !params.cachedImportanceStats_.computed ) {
+        computeImportanceStats( importanceScores, params.cachedImportanceStats_ );
+      }
+      std::vector<int> derivedBitshifts;
+      std::vector<int> derivedThresholds;
+      deriveParamsFromImportanceStats( params.cachedImportanceStats_, derivedBitshifts, derivedThresholds );
+      params.adaptiveShBitshifts_ = derivedBitshifts;
+      return computeGroupIdsPercentile( importanceScores, derivedThresholds, params.adaptiveShBitshifts_,
+                                        params.shBitDepth_, groupIds, computedBitshifts );
+    }
+    default:
+      std::cerr << "computeGroupIdsFromImportanceScores - Unknown mode: " << params.adaptiveQuantizationMode_
+                << std::endl;
+      return false;
+  }
+}
+
 bool PCCAdaptation::pruneAndGroupAdaptiveQuantization( const PCCPointSetGS     &inputPointCloud,
                                                        PCCPointSetGS           &outputPointCloud,
                                                        PCCAdaptationParameters &params,
@@ -3738,20 +3899,26 @@ bool PCCAdaptation::pruneAndGroupAdaptiveQuantization( const PCCPointSetGS     &
     std::cerr << "Error - Missing importanceScoresPath for adaptive SH quantization" << std::endl;
     return false;
   }
-  if ( params.adaptiveShBitshifts_.empty() ) {
+  if ( params.adaptiveQuantizationMode_ != 1 && params.adaptiveShBitshifts_.empty() ) {
     std::cerr << "Error - Empty adaptiveShBitshifts mapping" << std::endl;
     return false;
   }
 
   std::vector<int> groupIds;
-  if ( !computeGroupIdsFromImportanceScores( params.importanceScoresPath_, inputPointCount, groupIds, frameNumber ) ) {
+  std::vector<int> computedBitshifts;
+  if ( !computeGroupIdsFromImportanceScores( params.importanceScoresPath_, inputPointCount, params, groupIds,
+                                             computedBitshifts, frameNumber ) ) {
     std::cerr << "Error - Failed to compute quantization groups from importance score file: "
               << params.importanceScoresPath_ << std::endl;
     return false;
   }
 
-  // Remove empty groups and re-index
-  std::vector<int> shBitshifts( params.adaptiveShBitshifts_.begin(), params.adaptiveShBitshifts_.end() );
+  std::vector<int> shBitshifts;
+  if ( !computedBitshifts.empty() ) {
+    shBitshifts = computedBitshifts;
+  } else {
+    shBitshifts.assign( params.adaptiveShBitshifts_.begin(), params.adaptiveShBitshifts_.end() );
+  }
 
   const int     maxGrp = *std::max_element( groupIds.begin(), groupIds.end() );
   std::set<int> usedGrps( groupIds.begin(), groupIds.end() );

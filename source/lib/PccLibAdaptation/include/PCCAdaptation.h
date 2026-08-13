@@ -175,6 +175,9 @@ struct PCCAdaptationParameters {
   /// Enable adaptive quantization for SH (m75039)
   bool enableAdaptiveShQuantization_ = false;
 
+  /// Adaptive quantization mode: 0=log, 1=percentile
+  uint32_t adaptiveQuantizationMode_ = 0;
+
   /// Whether to avoid pruning Gaussians for which the adaptive SH bits are set to 0
   bool keepZeroShBitGaussians_ = false;
 
@@ -183,6 +186,21 @@ struct PCCAdaptationParameters {
 
   /// Path to file containing per-gaussian importance scores
   std::string importanceScoresPath_;
+
+  /// Used by mode 1
+  struct ImportanceStats {
+    double cv         = 0.0;  // σ/μ of non-zero scores
+    double p80OverP20 = 0.0;  // ratio of p80 to p20 of non-zero scores
+    size_t n          = 0;    // total gaussian count (logged only; not used in derivation)
+    bool   computed   = false;
+  };
+  ImportanceStats cachedImportanceStats_;
+
+  /// Bitshifts come from CV alone; thresholds come from p80/p20 alone.
+  static constexpr double kStatsCvConcentratedThreshold = 2.5;
+  static constexpr double kStatsCvHeavyTailThreshold    = 5.0;
+  static constexpr double kStatsPRatioFlatThreshold     = 30.0;
+  static constexpr double kStatsPRatioSpreadThreshold   = 300.0;
 
   // ==================== Opacity Parameters ====================
   /// Bit depth for opacity quantization (default: 10)
@@ -419,7 +437,7 @@ class PCCAdaptation {
                        PCCAdaptationParameters::PCCKltParameters &klt );
 
   /// Compute top-10 absolute correlation metric from AC SH coefficients
-  double computeShAcTop10Correlation( const PCCPointSetGS &pointCloud );
+  double computeShAcTop10Correlation( const PCCPointSetGS &pointCloud ) const;
 
   // ==================== SH Dimensional Reduction ====================
 

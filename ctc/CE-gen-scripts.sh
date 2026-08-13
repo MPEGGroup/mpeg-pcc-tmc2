@@ -517,7 +517,7 @@ for SEQ in "${SEQUENCES[@]}"; do
                 echo "    --config=$CFG_PATH/gs-main10-common.cfg \\"
                 echo "    --config=$PACK_CONFIG \\"
                 if (( $ADAPTIVE_QUANTIZATION == 1 )); then
-                    echo "    --config=$CFG_PATH/gs-adaptive-quantization.cfg \\"
+                    echo "    --config=$CFG_PATH/gs-adaptive-quantization-stats-derived.cfg \\"
                     echo "    --importanceScoresPath=\"$SEQ_GROUP_DIR/frame_%04i.impScores.txt\" \\"
                 fi
                 echo "    --config=$CFG_RATE_DIR/encoder.cfg \\"

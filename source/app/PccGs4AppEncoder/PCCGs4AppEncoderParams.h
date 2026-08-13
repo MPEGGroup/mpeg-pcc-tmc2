@@ -157,6 +157,10 @@ bool parseParameters( int                           argc,
       adaptationParams.shMappingMode_,
       adaptationParams.shMappingMode_,
       "Mapping spherical harmonics AC coefficients to video using planar mode")
+    ( "adaptiveQuantizationMode",
+      adaptationParams.adaptiveQuantizationMode_,
+      adaptationParams.adaptiveQuantizationMode_,
+      "Adaptive SH quantization mode: 0=log, 1=percentile" )
     ( "enableAdaptiveShQuantization",
       adaptationParams.enableAdaptiveShQuantization_,
       adaptationParams.enableAdaptiveShQuantization_,
@@ -173,7 +177,6 @@ bool parseParameters( int                           argc,
       adaptationParams.importanceScoresPath_,
       adaptationParams.importanceScoresPath_,
       "Path to text file containing gaussian importance scores" )
-    
     // Encoder parameters
     ( "geometryQP",
       encoderParams.geometryQP_,
