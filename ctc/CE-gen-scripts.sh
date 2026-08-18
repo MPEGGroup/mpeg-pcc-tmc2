@@ -468,7 +468,9 @@ for SEQ in "${SEQUENCES[@]}"; do
                     echo "    \"--impScore=$SEQ_GROUP_DIR/$FRAME.impScores.txt\" \\"
                     echo "    \"--downscaleFactor=$IMPORTANCE_DS_FACTOR\" \\"
                     echo "    \"--downscaleMinWidth=$IMPORTANCE_MIN_WIDTH\" "
-                    echo "touch $OUT/jobs/done/importance/\$SLURM_JOB_ID"
+                    echo "if [ -n \"\${SLURM_JOB_ID:-}\" ]; then"
+                    echo "    touch $OUT/jobs/done/importance/\$SLURM_JOB_ID"
+                    echo "fi"
                 } > "$JOBFILE"
                 chmod +x "$JOBFILE"
                 echo "$JOBFILE > $LOGFILE 2> $ERRFILE" >> "$RUN_IMPORTANCE"
@@ -568,7 +570,9 @@ for SEQ in "${SEQUENCES[@]}"; do
                     echo "$V3C_PARSER_BIN $RESULT_DIR/${LENGTH}_${SEQ}_${RATE}.bin > $RESULT_DIR/${LENGTH}_${SEQ}_${RATE}.hls || true"
                 fi 
                 echo ""
-                echo "touch $OUT/jobs/done/encoder/\$SLURM_JOB_ID"
+                echo "if [ -n \"\${SLURM_JOB_ID:-}\" ]; then"
+                echo "    touch $OUT/jobs/done/encoder/\$SLURM_JOB_ID"
+                echo "fi"
             } > "$JOBFILE"
             chmod +x "$JOBFILE"
             echo "$JOBFILE > $LOGFILE 2> $ERRFILE" >> "$RUN_ENCODER"
@@ -599,7 +603,9 @@ for SEQ in "${SEQUENCES[@]}"; do
                     echo "    --lodTargetLodMask=$LOD_TARGET_DECODER \\"
                 fi
                 echo ""
-                echo "touch $OUT/jobs/done/decoder/\$SLURM_JOB_ID"
+                echo "if [ -n \"\${SLURM_JOB_ID:-}\" ]; then"
+                echo "    touch $OUT/jobs/done/decoder/\$SLURM_JOB_ID"
+                echo "fi"
             } > "$JOBFILE"
             chmod +x "$JOBFILE"
             echo "$JOBFILE > $LOGFILE 2> $ERRFILE" >> "$RUN_DECODER"
@@ -658,7 +664,9 @@ for SEQ in "${SEQUENCES[@]}"; do
                         echo "    $PYTHON $EXTRACT_IMAGES_SCRIPT --input=\"\$RGB_PATH\" --output="$RESULT_DIR" --width=$REN_W  --height=$REN_H --planar=\$PLANAR"
                         echo 'fi'
                     fi
-                    echo "touch $OUT/jobs/done/metric/\$SLURM_JOB_ID"
+                    echo "if [ -n \"\${SLURM_JOB_ID:-}\" ]; then"
+                    echo "    touch $OUT/jobs/done/metric/\$SLURM_JOB_ID"
+                    echo "fi"
                 } > "$JOBFILE"
                 chmod +x "$JOBFILE"
                 echo "$JOBFILE > $LOGFILE 2> $ERRFILE" >> "$RUN_METRIC"
