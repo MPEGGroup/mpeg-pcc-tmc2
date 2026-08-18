@@ -95,7 +95,9 @@ class PCCGSHlsBuilder {
    */
   void updateAsps( PCCHighLevelSyntax &hls, size_t mapWidth, size_t mapHeight, const PCCGSEncoderParameters &params );
 
-  void replaceVpsHls( PCCHighLevelSyntax &hls, const PCCGSEncoderParameters &params );
+  void replaceVpsHls( PCCHighLevelSyntax            &hls,
+                      const PCCGSEncoderParameters  &params,
+                      const PCCAdaptationParameters &adaptationParams );
   void replaceAtlasAspsHls( PCCHighLevelSyntax &hls, const PCCGSEncoderParameters &params );
   void replaceAtlasAfpsHls( PCCHighLevelSyntax &hls, const PCCGSEncoderParameters &params );
   void replaceAtlasAapsHls( PCCHighLevelSyntax &hls, const PCCAdaptationParameters &adaptationParams );
@@ -104,7 +106,9 @@ class PCCGSHlsBuilder {
   void layoutPackedMapsHls( PCCHighLevelSyntax &hls, const PCCGSEncoderParameters &params );
 
  private:
-  void initializeV3CHls( PCCHighLevelSyntax &hls, const PCCGSEncoderParameters &params );
+  void initializeV3CHls( PCCHighLevelSyntax            &hls,
+                         const PCCGSEncoderParameters  &params,
+                         const PCCAdaptationParameters &adaptationParams );
   void initializeAtlasHls( PCCHighLevelSyntax            &hls,
                            const PCCGSEncoderParameters  &params,
                            const PCCAdaptationParameters &adaptationParams );

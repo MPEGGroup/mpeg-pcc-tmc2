@@ -2914,13 +2914,11 @@ void PCCBitstreamReader::gsDequantization( PCCBitstream &bitstream, GsDequantiza
     if ( gsd.getRotationPresentFlag() ) {
       READ_CODE_DESC( value, 1, "RotationSameMinMaxFlag" );
       gsd.setRotSameMinMaxFlag( value );
-      READ_CODE_DESC( value, 1, "placeholder_for_gsd_rot_quaternion_representation_type_flag" );
-      if ( value != 0 ) {
-        TRACE_BITSTREAM(
-            "Error: placeholder_for_gsd_rot_quaternion_representation_type_flag is set to 1, but should be 0\n" );
-        exit( EXIT_FAILURE );
-      }
-      for ( int i = 0; i < 4; i++ ) {
+      READ_CODE_DESC( value, 1, "gsd_rot_quaternion_representation_type_flag" );
+      gsd.setRotQuaternionRepresentationTypeFlag( value != 0 );
+      auto GsdRotationDim = ( value ) ? 4 : 3;
+
+      for ( int i = 0; i < GsdRotationDim; i++ ) {
         if ( !gsd.getRotSameMinMaxFlag() || i == 0 ) {
           READ_FLOAT_DESC( valueFlt, "MinRotation" );
           gsd.setMinRotation( i, valueFlt );

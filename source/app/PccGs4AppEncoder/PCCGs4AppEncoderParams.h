@@ -153,6 +153,10 @@ bool parseParameters( int                           argc,
       adaptationParams.enableDuplicateMerging_,
       adaptationParams.enableDuplicateMerging_,
       "Enable merging of duplicate positions (default: 0)" )
+    ( "rotQuaternionRepresentationType",
+      adaptationParams.rotQuaternionRepresentationType_,
+      adaptationParams.rotQuaternionRepresentationType_,
+      "Rotation representation: 0=3-component tangent-space x/w,y/w,z/w (default), 1=4-component w,x,y,z" )
     ("shMappingMode",
       adaptationParams.shMappingMode_,
       adaptationParams.shMappingMode_,

@@ -133,6 +133,7 @@ class GsDequantization {
       shSameQuantRegionTransitionPointFlag_( false ),
       shSameRegionStepSizeFlag_( false ),
       rotationPresentFlag_( false ),
+      rotQuaternionRepresentationTypeFlag_( false ),
       rotSameMinMaxFlag_( false ),
       scalePresentFlag_( false ),
       scaleSameMinMaxFlag_( false ),
@@ -165,6 +166,7 @@ class GsDequantization {
       retVal = false;
     } else {
       if ( rotationPresentFlag_ ) {
+        if ( other.rotQuaternionRepresentationTypeFlag_ != rotQuaternionRepresentationTypeFlag_ ) retVal = false;
         for ( int i = 0; i < 4; i++ ) {
           if ( other.minRotation_[i] != minRotation_[i] ) retVal = false;
           if ( other.maxRotation_[i] != maxRotation_[i] ) retVal = false;
@@ -252,6 +254,7 @@ class GsDequantization {
   float    getMinPosition( int i ) { return minPosition_[i]; }
   float    getMaxPosition( int i ) { return maxPosition_[i]; }
   bool     getRotationPresentFlag() { return rotationPresentFlag_; }
+  bool     getRotQuaternionRepresentationTypeFlag() { return rotQuaternionRepresentationTypeFlag_; }
   float    getMinRotation( int i ) { return minRotation_[i]; }
   float    getMaxRotation( int i ) { return maxRotation_[i]; }
   bool     getScalePresentFlag() { return scalePresentFlag_; }
@@ -298,6 +301,7 @@ class GsDequantization {
   void setMinPosition( int i, float value ) { minPosition_[i] = value; }
   void setMaxPosition( int i, float value ) { maxPosition_[i] = value; }
   void setRotationPresentFlag( bool value ) { rotationPresentFlag_ = value; }
+  void setRotQuaternionRepresentationTypeFlag( bool value ) { rotQuaternionRepresentationTypeFlag_ = value; }
   void setMinRotation( int i, float value ) { minRotation_[i] = value; }
   void setMaxRotation( int i, float value ) { maxRotation_[i] = value; }
   void setScalePresentFlag( bool value ) { scalePresentFlag_ = value; }
@@ -412,6 +416,7 @@ class GsDequantization {
   bool                                            shPresentFlag_;
   bool                                            scaleSameMinMaxFlag_;
   bool                                            rotSameMinMaxFlag_;
+  bool                                            rotQuaternionRepresentationTypeFlag_;
   bool                                            shMultipleRegionsEnableFlag_;
   bool                                            opacityMultipleRegionsEnableFlag_;
   bool                                            scaleMultipleRegionsEnableFlag_;

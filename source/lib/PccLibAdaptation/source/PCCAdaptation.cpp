@@ -960,22 +960,29 @@ bool PCCAdaptation::quantizeRotations( const PCCPointSetGS     &input,
   const uint32_t bitDepth = params.rotationBitDepth_;
   for ( size_t i = 0; i < pointCount; ++i ) {
     const GSRotation &rot = input.getRotations()[i];
+    float             w = rot.w, x = rot.x, y = rot.y, z = rot.z;
 
-    // 3-component tangent space representation [x/w, y/w, z/w]
-    float w = rot.w, x = rot.x, y = rot.y, z = rot.z;
-    if ( w < 1e-6f ) w = 1e-6f;
+    std::vector<PCCAttribute16bit> qRot( params.rotQuaternionRepresentationType_ ? 2 : 1 );
 
-    std::vector<PCCAttribute16bit> qRot( 2 );
-    double                         v[3] = { (double)x / w, (double)y / w, (double)z / w };
-
-    for ( int k = 0; k < 3; ++k ) {
-      double normalized =
-          normalizeToUnit( v[k], params.computedRotationMin_[k + 1], params.computedRotationMax_[k + 1] );
-      qRot[0][k] = static_cast<uint16_t>( quantizeValue( normalized, bitDepth ) );
-      qRot[1][k] = 0;
+    if ( params.rotQuaternionRepresentationType_ ) {
+      // 4-component full quaternion: partition 0 = (x,y,z), partition 1 = (w)
+      double vxyz[3] = { (double)x, (double)y, (double)z };
+      for ( int k = 0; k < 3; ++k ) {
+        double normalized =
+            normalizeToUnit( vxyz[k], params.computedRotationMin_[k + 1], params.computedRotationMax_[k + 1] );
+        qRot[0][k] = static_cast<uint16_t>( quantizeValue( normalized, bitDepth ) );
+      }
+      double normalizedW = normalizeToUnit( (double)w, params.computedRotationMin_[0], params.computedRotationMax_[0] );
+      qRot[1][0]         = static_cast<uint16_t>( quantizeValue( normalizedW, bitDepth ) );
+    } else {
+      // 3-component tangent-space (x/w, y/w, z/w)
+      if ( w < 1e-6f ) w = 1e-6f;
+      double v[3] = { (double)x / w, (double)y / w, (double)z / w };
+      for ( int k = 0; k < 3; ++k ) {
+        double normalized = normalizeToUnit( v[k], params.computedRotationMin_[k], params.computedRotationMax_[k] );
+        qRot[0][k]        = static_cast<uint16_t>( quantizeValue( normalized, bitDepth ) );
+      }
     }
-    qRot[1][0] = static_cast<uint16_t>( quantizeValue(
-        normalizeToUnit( 0, params.computedRotationMin_[0], params.computedRotationMax_[0] ), bitDepth ) );
     output.setRotation( i, qRot );
   }
 
@@ -990,18 +997,32 @@ bool PCCAdaptation::dequantizeRotations( const PCCPointSet3            &input,
   for ( size_t i = 0; i < pointCount; ++i ) {
     const auto &qRot = input.getRotations()[i];
 
-    // 3-component tangent space representation [x/w, y/w, z/w]
-    double rx = denormalizeFromUnit( dequantizeValue( qRot[0][0], bitDepth ), params.computedRotationMin_[0],
-                                     params.computedRotationMax_[0] );
-    double ry = denormalizeFromUnit( dequantizeValue( qRot[0][1], bitDepth ), params.computedRotationMin_[1],
-                                     params.computedRotationMax_[1] );
-    double rz = denormalizeFromUnit( dequantizeValue( qRot[0][2], bitDepth ), params.computedRotationMin_[2],
-                                     params.computedRotationMax_[2] );
-
-    GSRotation rot( 1.0f, static_cast<float>( rx ), static_cast<float>( ry ), static_cast<float>( rz ) );
-    // Re-canonicalize after dequantization
-    if ( params.enableRotationCanonicalization_ ) { canonicalizeQuaternion( rot.w, rot.x, rot.y, rot.z ); }
-    output.getRotations()[i] = rot;
+    if ( params.rotQuaternionRepresentationType_ ) {
+      // 4-component full quaternion (w, x, y, z)
+      double     w  = denormalizeFromUnit( dequantizeValue( qRot[1][0], bitDepth ), params.computedRotationMin_[0],
+                                           params.computedRotationMax_[0] );
+      double     rx = denormalizeFromUnit( dequantizeValue( qRot[0][0], bitDepth ), params.computedRotationMin_[1],
+                                           params.computedRotationMax_[1] );
+      double     ry = denormalizeFromUnit( dequantizeValue( qRot[0][1], bitDepth ), params.computedRotationMin_[2],
+                                           params.computedRotationMax_[2] );
+      double     rz = denormalizeFromUnit( dequantizeValue( qRot[0][2], bitDepth ), params.computedRotationMin_[3],
+                                           params.computedRotationMax_[3] );
+      GSRotation rot( static_cast<float>( w ), static_cast<float>( rx ), static_cast<float>( ry ),
+                      static_cast<float>( rz ) );
+      if ( params.enableRotationCanonicalization_ ) { canonicalizeQuaternion( rot.w, rot.x, rot.y, rot.z ); }
+      output.getRotations()[i] = rot;
+    } else {
+      // 3-component tangent-space (x/w, y/w, z/w); reconstruct w by setting it to 1 and normalizing
+      double     rx = denormalizeFromUnit( dequantizeValue( qRot[0][0], bitDepth ), params.computedRotationMin_[0],
+                                           params.computedRotationMax_[0] );
+      double     ry = denormalizeFromUnit( dequantizeValue( qRot[0][1], bitDepth ), params.computedRotationMin_[1],
+                                           params.computedRotationMax_[1] );
+      double     rz = denormalizeFromUnit( dequantizeValue( qRot[0][2], bitDepth ), params.computedRotationMin_[2],
+                                           params.computedRotationMax_[2] );
+      GSRotation rot( 1.0f, static_cast<float>( rx ), static_cast<float>( ry ), static_cast<float>( rz ) );
+      canonicalizeQuaternion( rot.w, rot.x, rot.y, rot.z );  // normalizing (1, x/w, y/w, z/w) reconstructs w
+      output.getRotations()[i] = rot;
+    }
   }
   return true;
 }

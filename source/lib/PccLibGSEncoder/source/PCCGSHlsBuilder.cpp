@@ -56,12 +56,14 @@ void PCCGSHlsBuilder::initialize( PCCHighLevelSyntax            &hls,
                                   const PCCAdaptationParameters &adaptationParams ) {
   hls.setBitstreamStat( bitstreamStat );
   hls.setActiveVpsId( vpsParameterSetId_ );
-  initializeV3CHls( hls, params );
+  initializeV3CHls( hls, params, adaptationParams );
   initializeAtlasHls( hls, params, adaptationParams );
   initialized_ = true;
 }
 
-void PCCGSHlsBuilder::initializeV3CHls( PCCHighLevelSyntax &hls, const PCCGSEncoderParameters &params ) {
+void PCCGSHlsBuilder::initializeV3CHls( PCCHighLevelSyntax            &hls,
+                                        const PCCGSEncoderParameters  &params,
+                                        const PCCAdaptationParameters &adaptationParams ) {
   hls.addV3CParameterSet();
   auto &vps = hls.getVpsList().back();
   vps.setV3CParameterSetId( vpsParameterSetId_ );
@@ -128,10 +130,18 @@ void PCCGSHlsBuilder::initializeV3CHls( PCCHighLevelSyntax &hls, const PCCGSEnco
       ai.setAttributeDimensionPartitionsMinus1( i, 0 );
       ai.setAttributePartitionChannelsMinus1( i, 0, 2 );
     } else if ( attributeTypeIds[i] == ATTR_ROTATION ) {
-      ai.setAttributeDimensionMinus1( i, 3 );
-      ai.setAttributeDimensionPartitionsMinus1( i, 1 );
-      ai.setAttributePartitionChannelsMinus1( i, 0, 2 );
-      ai.setAttributePartitionChannelsMinus1( i, 1, 0 );
+      if ( adaptationParams.rotQuaternionRepresentationType_ ) {
+        // 4-component full quaternion (w, x, y, z): partition 0 = xyz, partition 1 = w
+        ai.setAttributeDimensionMinus1( i, 3 );
+        ai.setAttributeDimensionPartitionsMinus1( i, 1 );
+        ai.setAttributePartitionChannelsMinus1( i, 0, 2 );
+        ai.setAttributePartitionChannelsMinus1( i, 1, 0 );
+      } else {
+        // 3-component tangent-space (x/w, y/w, z/w): single partition
+        ai.setAttributeDimensionMinus1( i, 2 );
+        ai.setAttributeDimensionPartitionsMinus1( i, 0 );
+        ai.setAttributePartitionChannelsMinus1( i, 0, 2 );
+      }
     }
 
     ai.setAttribute2dBitdepthMinus1( i, params.attributeBitDepth2D_ - 1 );
@@ -501,17 +511,19 @@ void PCCGSHlsBuilder::initializeAtlasAapsHls( PCCHighLevelSyntax            &hls
 
   if ( adaptationParams.enableRotationQuantization_ ) {
     dequant.setRotationPresentFlag( true );
+    dequant.setRotQuaternionRepresentationTypeFlag( adaptationParams.rotQuaternionRepresentationType_ );
+    int    rotDim        = adaptationParams.rotQuaternionRepresentationType_ ? 4 : 3;
     bool   rotSameMinMax = true;
     double minVal        = adaptationParams.computedRotationMin_[0];
     double maxVal        = adaptationParams.computedRotationMax_[0];
-    for ( size_t i = 0; i < 4; i++ ) {
+    for ( int i = 0; i < rotDim; i++ ) {
       if ( adaptationParams.computedRotationMin_[i] != minVal || adaptationParams.computedRotationMax_[i] != maxVal ) {
         rotSameMinMax = false;
         break;
       }
     }
     dequant.setRotSameMinMaxFlag( rotSameMinMax );
-    for ( size_t i = 0; i < 4; i++ ) {
+    for ( int i = 0; i < rotDim; i++ ) {
       dequant.setMinRotation( i, adaptationParams.computedRotationMin_[i] );
       dequant.setMaxRotation( i, adaptationParams.computedRotationMax_[i] );
     }
@@ -608,11 +620,13 @@ void PCCGSHlsBuilder::initializeAtlasAapsHls( PCCHighLevelSyntax            &hls
   return;
 }
 
-void PCCGSHlsBuilder::replaceVpsHls( PCCHighLevelSyntax &hls, const PCCGSEncoderParameters &params ) {
+void PCCGSHlsBuilder::replaceVpsHls( PCCHighLevelSyntax            &hls,
+                                     const PCCGSEncoderParameters  &params,
+                                     const PCCAdaptationParameters &adaptationParams ) {
   hls.getVpsList().clear();
   vpsParameterSetId_ = ( vpsParameterSetId_ + 1 ) % 16;
   hls.setActiveVpsId( vpsParameterSetId_ );
-  initializeV3CHls( hls, params );
+  initializeV3CHls( hls, params, adaptationParams );
 }
 
 void PCCGSHlsBuilder::replaceAtlasAspsHls( PCCHighLevelSyntax &hls, const PCCGSEncoderParameters &params ) {

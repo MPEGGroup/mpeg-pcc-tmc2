@@ -51,7 +51,7 @@ int PCCGSEncoder::encode( const PCCPointSet3            &inputPointCloud,
     hlsBuilder_.initialize( hls_, bitstreamStat_, params, adaptationParams );
   } else {
     hls_.clearVideoBitstream();
-    hlsBuilder_.replaceVpsHls( hls_, params );
+    hlsBuilder_.replaceVpsHls( hls_, params, adaptationParams );
     hlsBuilder_.replaceAtlasAspsHls( hls_, params );
     hlsBuilder_.replaceAtlasAfpsHls( hls_, params );
     hlsBuilder_.replaceAtlasAapsHls( hls_, adaptationParams );

@@ -2919,8 +2919,10 @@ void PCCBitstreamWriter::gsDequantization( PCCBitstream &bitstream, GsDequantiza
     WRITE_CODE( gsd.getRotationPresentFlag(), 1 );
     if ( gsd.getRotationPresentFlag() ) {
       WRITE_CODE( gsd.getRotSameMinMaxFlag(), 1 );
-      WRITE_CODE( 0, 1 );  // u(1) placeholder for gsd_rot_quaternion_representation_type_flag
-      for ( int i = 0; i < 4; i++ ) {
+      auto gsd_rot_quaternion_representation_type_flag = gsd.getRotQuaternionRepresentationTypeFlag() ? 1 : 0;
+      WRITE_CODE( gsd_rot_quaternion_representation_type_flag, 1 );
+      auto GsdRotationDim = ( gsd_rot_quaternion_representation_type_flag ) ? 4 : 3;
+      for ( int i = 0; i < GsdRotationDim; i++ ) {
         if ( !gsd.getRotSameMinMaxFlag() || i == 0 ) {
           WRITE_FLOAT( gsd.getMinRotation( i ) );
           WRITE_FLOAT( gsd.getMaxRotation( i ) );

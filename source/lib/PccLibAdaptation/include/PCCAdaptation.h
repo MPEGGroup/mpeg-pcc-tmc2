@@ -282,6 +282,9 @@ struct PCCAdaptationParameters {
   /// Enable quaternion canonicalization (ensure w >= 0)
   bool enableRotationCanonicalization_ = true;
 
+  /// false = 3-component tangent-space (x/w, y/w, z/w); true = 4-component (w, x, y, z)
+  bool rotQuaternionRepresentationType_ = false;
+
   /// Computed rotation limits (stored during adaptation)
   std::array<double, 4> computedRotationMin_ = { 0.0, 0.0, 0.0, 0.0 };
   std::array<double, 4> computedRotationMax_ = { 0.0, 0.0, 0.0, 0.0 };

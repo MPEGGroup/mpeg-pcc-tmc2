@@ -2235,7 +2235,9 @@ int PCCDecoder::ReconstructIdc3( PCCContext &context, PCCGroupOfFrames &reconstr
           }
 
           if ( adaptationParams.enableRotationQuantization_ ) {
-            for ( size_t i = 0; i < 4; i++ ) {
+            adaptationParams.rotQuaternionRepresentationType_ = dequant.getRotQuaternionRepresentationTypeFlag();
+            int rotDim = adaptationParams.rotQuaternionRepresentationType_ ? 4 : 3;
+            for ( int i = 0; i < rotDim; i++ ) {
               adaptationParams.computedRotationMin_[i] = dequant.getMinRotation( i );
               adaptationParams.computedRotationMax_[i] = dequant.getMaxRotation( i );
             }

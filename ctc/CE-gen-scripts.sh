@@ -88,6 +88,7 @@ RAW_PATCH_DATA_ARRANGEMENT_METHOD=0 # 1: enable raw patch data arrangement metho
 BLOCK_BASED_SORT_BLOCK_SIZE=64  # when RAW_PATCH_DATA_ARRANGEMENT_METHOD=1
 LOD_ENABLE_ENCODER=0            # 0: OFF(CTC), 1:ON, m76746
 LOD_SPLIT_RATIOS="30,70"        # e.g. 20% L0, 30% L1, 50% L2
+ROT_QUATERNION_REPRESENTATION_TYPE=0 # 0: 3-component tangent-space (x/w, y/w, z/w), 1: 4-component full quaternion (x, y, z, w)
 
 # ==================================================================================================
 # Decoder settings
@@ -558,6 +559,7 @@ for SEQ in "${SEQUENCES[@]}"; do
                 echo "    --enableShDimensionReduction=$GSD_DIMENSION_REDUCTION \\"
                 echo "    --enableDuplicateMerging=$DUPLICATE_MERGING \\"
                 echo "    --rawPatchDataArrangementMethod=$RAW_PATCH_DATA_ARRANGEMENT_METHOD \\"
+                echo "    --rotQuaternionRepresentationType=$ROT_QUATERNION_REPRESENTATION_TYPE \\"
                 echo "    --blockBasedSortBlockSize=$BLOCK_BASED_SORT_BLOCK_SIZE \\"
 				echo "    --compressedStreamPath=$RESULT_DIR/${LENGTH}_${SEQ}_${RATE}.bin"
                 echo ""
