@@ -56,7 +56,7 @@ GENERATE_PNGs=0             # 0 or 1
 : "${METRICS_THREADS:=1}"   # Number of threads for mpeg-gsc-metrics (optimize for your system resources)
 V3C_PARSER_CHECK=1          # 0: disable , 1: enable - check HLS of encoded bitstreams
 # Custom time format to improve platform independence of parsing time results
-TIME="/usr/bin/time -f 'user_time=%U wall_time=%E max_rss_KB=%M'"
+TIME="/usr/bin/time -f 'user_time=%U wall_time=%E max_rss_KB=%M exit_status=%x'"
 
 # ==================================================================================================
 # Coding settings
@@ -352,9 +352,6 @@ MKDIRCK "$BATCH_ENCODER"
 MKDIRCK "$BATCH_DECODER"
 MKDIRCK "$BATCH_METRIC"
 MKDIRCK "$OUT/bin"
-MKDIRCK "$OUT/jobs/done/encoder"
-MKDIRCK "$OUT/jobs/done/decoder"
-MKDIRCK "$OUT/jobs/done/metric"
 MKDIRCK "$OUT/metrics"
 
 if [ -z $IMPORTANCE_SCORES_DIR ] && { [ $ADAPTIVE_QUANTIZATION == 1 ] || [ $LOD_ENABLE_ENCODER == 1 ]; }; then
@@ -365,7 +362,6 @@ fi
 
 if [ $CALCULATE_IMPORTANCE_SCORES == 1 ]; then
     MKDIRCK "$BATCH_IMPORTANCE"
-    MKDIRCK "$OUT/jobs/done/importance"
 fi
 
 cp "$TMC_ENC_BIN" "$OUT/bin/$(basename $TMC_ENC_BIN)"
@@ -467,10 +463,7 @@ for SEQ in "${SEQUENCES[@]}"; do
                     echo "    -a \"$SEQ_GROUP_DIR/$FRAME.camerpos.ply\" \\"
                     echo "    \"--impScore=$SEQ_GROUP_DIR/$FRAME.impScores.txt\" \\"
                     echo "    \"--downscaleFactor=$IMPORTANCE_DS_FACTOR\" \\"
-                    echo "    \"--downscaleMinWidth=$IMPORTANCE_MIN_WIDTH\" "
-                    echo "if [ -n \"\${SLURM_JOB_ID:-}\" ]; then"
-                    echo "    touch $OUT/jobs/done/importance/\$SLURM_JOB_ID"
-                    echo "fi"
+                    echo "    \"--downscaleMinWidth=$IMPORTANCE_MIN_WIDTH\""
                 } > "$JOBFILE"
                 chmod +x "$JOBFILE"
                 echo "$JOBFILE > $LOGFILE 2> $ERRFILE" >> "$RUN_IMPORTANCE"
@@ -569,10 +562,6 @@ for SEQ in "${SEQUENCES[@]}"; do
                     echo "# Try to parse the bitstream with the V3C parser"
                     echo "$V3C_PARSER_BIN $RESULT_DIR/${LENGTH}_${SEQ}_${RATE}.bin > $RESULT_DIR/${LENGTH}_${SEQ}_${RATE}.hls || true"
                 fi 
-                echo ""
-                echo "if [ -n \"\${SLURM_JOB_ID:-}\" ]; then"
-                echo "    touch $OUT/jobs/done/encoder/\$SLURM_JOB_ID"
-                echo "fi"
             } > "$JOBFILE"
             chmod +x "$JOBFILE"
             echo "$JOBFILE > $LOGFILE 2> $ERRFILE" >> "$RUN_ENCODER"
@@ -602,10 +591,6 @@ for SEQ in "${SEQUENCES[@]}"; do
                 if [ $LOD_TARGET_DECODER != "0" ]; then
                     echo "    --lodTargetLodMask=$LOD_TARGET_DECODER \\"
                 fi
-                echo ""
-                echo "if [ -n \"\${SLURM_JOB_ID:-}\" ]; then"
-                echo "    touch $OUT/jobs/done/decoder/\$SLURM_JOB_ID"
-                echo "fi"
             } > "$JOBFILE"
             chmod +x "$JOBFILE"
             echo "$JOBFILE > $LOGFILE 2> $ERRFILE" >> "$RUN_DECODER"
@@ -664,9 +649,6 @@ for SEQ in "${SEQUENCES[@]}"; do
                         echo "    $PYTHON $EXTRACT_IMAGES_SCRIPT --input=\"\$RGB_PATH\" --output="$RESULT_DIR" --width=$REN_W  --height=$REN_H --planar=\$PLANAR"
                         echo 'fi'
                     fi
-                    echo "if [ -n \"\${SLURM_JOB_ID:-}\" ]; then"
-                    echo "    touch $OUT/jobs/done/metric/\$SLURM_JOB_ID"
-                    echo "fi"
                 } > "$JOBFILE"
                 chmod +x "$JOBFILE"
                 echo "$JOBFILE > $LOGFILE 2> $ERRFILE" >> "$RUN_METRIC"
@@ -707,8 +689,8 @@ run_with_progress() {
 
 run_with_progress_sbatch_wait() {
     local jobfile="$1"
-    local done_dir="$2"
-    mkdir -p "$done_dir"
+    local out_dir="$2"
+    local done_pattern="$3"
 
     local total
     total=$(wc -l < "$jobfile")
@@ -719,7 +701,7 @@ run_with_progress_sbatch_wait() {
         while (( $submitted - $done_count > 10000 )); do
             sleep 4
             submit_percent=$((submitted*100/total))
-            done_count=`ls $done_dir | wc -l`
+            done_count=$(find "$out_dir" -name "$done_pattern" -exec grep -l exit_status {} + 2>/dev/null | wc -l) || true
             done_percent=$((done_count*100/total))
             echo -ne "Submited: $submitted/$total (${submit_percent}%). Progress: $done_count/$total (${done_percent}%)\r"
         done
@@ -727,7 +709,7 @@ run_with_progress_sbatch_wait() {
         sbatch $script_path > /dev/null
         submitted=$((submitted+1))
         submit_percent=$((submitted*100/total))
-        done_count=`ls $done_dir | wc -l`
+        done_count=$(find "$out_dir" -name "$done_pattern" -exec grep -l exit_status {} + 2>/dev/null | wc -l) || true
         done_percent=$((done_count*100/total))
         echo -ne "Submited: $submitted/$total (${submit_percent}%). Progress: $done_count/$total (${done_percent}%)\r"
     done < "$jobfile"
@@ -736,12 +718,21 @@ run_with_progress_sbatch_wait() {
     sleep 2
 
     while (( done_count < total )); do
-        done_count=`ls $done_dir | wc -l`
+        done_count=$(find "$out_dir" -name "$done_pattern" -exec grep -l exit_status {} + 2>/dev/null | wc -l) || true
         percent=$((done_count*100/total))
         echo -ne "Progress: $done_count/$total (${percent}%)\r"
-        sleep 1
+        sleep 4
     done
     echo
+
+    echo "All jobs completed. Checking for errors..."
+
+    for error_file in $(find "$out_dir" -name "$done_pattern"); do
+        if ! grep -q "exit_status=0" "$error_file"; then
+            echo "Error in $error_file"
+            return 1
+        fi
+    done
 }
 
 ## Master run scripts
@@ -763,17 +754,17 @@ declare -f run_with_progress_sbatch_wait >> "$MASTER_RUN_SLURM"
     echo
     if [ $CALCULATE_IMPORTANCE_SCORES == 1 ]; then
         echo "echo '▶ Step 1: IMPORTANCE_SCORES_DIR not set -> Run importance score computation in parallel'"
-        echo "run_with_progress_sbatch_wait \"$RUN_IMPORTANCE\" \"$OUT/jobs/done/importance/\""
+        echo "run_with_progress_sbatch_wait \"$RUN_IMPORTANCE\" \"$OUT/results\" \"*.importance.err\""
         echo
     fi
     echo "echo '▶ Step 2: VPCC encode/decode in parallel'"
-    echo "run_with_progress_sbatch_wait \"$RUN_ENCODER\" \"$OUT/jobs/done/encoder/\" "
+    echo "run_with_progress_sbatch_wait \"$RUN_ENCODER\" \"$OUT/results\" \"*.encoder.err\""
     echo
     echo "echo '▶ Step 3: VPCC encode/decode in parallel'"
-    echo "run_with_progress_sbatch_wait \"$RUN_DECODER\" \"$OUT/jobs/done/decoder/\" "
+    echo "run_with_progress_sbatch_wait \"$RUN_DECODER\" \"$OUT/results\" \"*.decoder.err\""
     echo
     echo "echo '▶ Step 4: Metric calculation in parallel'"
-    echo "run_with_progress_sbatch_wait \"$RUN_METRIC\" \"$OUT/jobs/done/metric/\""
+    echo "run_with_progress_sbatch_wait \"$RUN_METRIC\" \"$OUT/results\" \"*.metric.err\""
     echo
     echo "echo '▶ Step 5: Summary generation'"
     echo "bash \"$RUN_SUMMARY\""
