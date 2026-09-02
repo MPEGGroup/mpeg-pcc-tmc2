@@ -365,8 +365,8 @@ void PCCEncoderParameters::print() {
   std::cout << "\t   occupancyResolution                      " << occupancyResolution_ << std::endl;
   std::cout << "\t   enablePatchSplitting                     " << enablePatchSplitting_ << std::endl;
   std::cout << "\t   maxPatchSize                             " << maxPatchSize_ << std::endl;
-  std::cout << "\t   quantization step for patch size         "
-            << "1<<" << log2QuantizerSizeX_ << ", 1<<" << log2QuantizerSizeY_ << std::endl;
+  std::cout << "\t   quantization step for patch size         " << "1<<" << log2QuantizerSizeX_ << ", 1<<"
+            << log2QuantizerSizeY_ << std::endl;
   std::cout << "\t   minPointCountPerCCPatchSegmentation      " << minPointCountPerCCPatchSegmentation_ << std::endl;
   std::cout << "\t   maxNNCountPatchSegmentation              " << maxNNCountPatchSegmentation_ << std::endl;
   std::cout << "\t   surfaceThickness                         " << surfaceThickness_ << std::endl;

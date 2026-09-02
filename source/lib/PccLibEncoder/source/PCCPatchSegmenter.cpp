@@ -353,8 +353,7 @@ void PCCPatchSegmenter3::computeAdjacencyInfoDist( const PCCPointSet3           
 void printChunk( const std::vector<std::pair<int, int>> &chunk ) {
   std::vector<std::string> axisName{ "x -> ", "y -> ", "z -> " };
   for ( size_t axis = 0; axis < 3; ++axis ) {
-    std::cout << axisName[axis] << "(" << chunk[axis].first << ", " << chunk[axis].second << ")"
-              << " ";
+    std::cout << axisName[axis] << "(" << chunk[axis].first << ", " << chunk[axis].second << ")" << " ";
   }
   std::cout << std::endl;
 }

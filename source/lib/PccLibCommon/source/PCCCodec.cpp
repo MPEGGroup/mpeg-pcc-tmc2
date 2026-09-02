@@ -1635,9 +1635,9 @@ void PCCCodec::generateRawPointsGeometryfromVideo( PCCContext &context, size_t f
     for ( size_t i = 0; i < tile.getNumberOfRawPointsPatches(); i++ ) {
       totalNumRawPoints += tile.getRawPointsPatch( i ).getNumberOfRawPoints() * 3;
     }
-    std::cout << "generate raw Points Video (Geometry) frame[" << frameIndex << "] tile[" << tileIdx << "] : "
-              << "#rawPatches: " << tile.getNumberOfRawPointsPatches() << "#rawPoints(pixels): " << totalNumRawPoints
-              << std::endl;
+    std::cout << "generate raw Points Video (Geometry) frame[" << frameIndex << "] tile[" << tileIdx
+              << "] : " << "#rawPatches: " << tile.getNumberOfRawPointsPatches()
+              << "#rawPoints(pixels): " << totalNumRawPoints << std::endl;
   }
   std::cout << "Raw Points Geometry from Video [done]" << std::endl;
   TRACE_CODEC( "%s \n", "generateRawPointsGeometryfromVideo done" );
@@ -1684,9 +1684,9 @@ void PCCCodec::generateRawPointsGeometryfromVideoRecGS( PCCContext              
     for ( size_t i = 0; i < tile.getNumberOfRawPointsPatches(); i++ ) {
       totalNumRawPoints += tile.getRawPointsPatch( i ).getNumberOfRawPoints() * 3;
     }
-    std::cout << "generate raw Points Video (Geometry) frame[" << frameIndex << "] tile[" << tileIdx << "] : "
-              << "#rawPatches: " << tile.getNumberOfRawPointsPatches() << "#rawPoints(pixels): " << totalNumRawPoints
-              << std::endl;
+    std::cout << "generate raw Points Video (Geometry) frame[" << frameIndex << "] tile[" << tileIdx
+              << "] : " << "#rawPatches: " << tile.getNumberOfRawPointsPatches()
+              << "#rawPoints(pixels): " << totalNumRawPoints << std::endl;
   }
   std::cout << "Raw Points Geometry from Video [done]" << std::endl;
   TRACE_CODEC( "%s \n", "generateRawPointsGeometryfromVideo done" );
@@ -1797,9 +1797,9 @@ void PCCCodec::generateRawPointsAttributefromVideoRecGS( PCCContext             
     for ( size_t i = 0; i < tile.getNumberOfRawPointsPatches(); i++ ) {
       totalNumRawPoints += tile.getRawPointsPatch( i ).getNumberOfRawPoints();
     }
-    std::cout << "generate raw Points Video (Attribute) frame[" << frameIndex << "] tile[" << tileIdx << "] : "
-              << " #rawPatches: " << tile.getNumberOfRawPointsPatches() << " #rawPoints: " << totalNumRawPoints
-              << std::endl;
+    std::cout << "generate raw Points Video (Attribute) frame[" << frameIndex << "] tile[" << tileIdx
+              << "] : " << " #rawPatches: " << tile.getNumberOfRawPointsPatches()
+              << " #rawPoints: " << totalNumRawPoints << std::endl;
   }
 
   TRACE_CODEC( "%s \n", "generateRawPointsAttributefromVideo done" );
@@ -1930,9 +1930,9 @@ void PCCCodec::generateAdaptiveQuantizationInfofromRawPatchRecGS( PCCContext   &
       if ( it == shBitdepthDeltas.end() ) { shBitdepthDeltas.push_back( shBitdepthDelta ); }
       totalNumRawPoints += rawPointsPatch.getNumberOfRawPoints();
     }
-    std::cout << "generate adaptive quantization info frame[" << frameIndex << "] tile[" << tileIdx << "] : "
-              << " #rawPatches: " << tile.getNumberOfRawPointsPatches() << " #rawPoints: " << totalNumRawPoints
-              << std::endl;
+    std::cout << "generate adaptive quantization info frame[" << frameIndex << "] tile[" << tileIdx
+              << "] : " << " #rawPatches: " << tile.getNumberOfRawPointsPatches()
+              << " #rawPoints: " << totalNumRawPoints << std::endl;
   }
 
   for ( size_t pointIdx = 0; pointIdx < pointCloud.getPointCount(); ++pointIdx ) {
@@ -1960,8 +1960,8 @@ void PCCCodec::generateRawPointsAttributefromVideo( PCCContext &context, size_t 
   for ( size_t tileIdx = 0; tileIdx < context.getFrame( frameIndex ).getNumTilesInAtlasFrame(); tileIdx++ ) {
     auto &tile = context.getFrame( frameIndex ).getTile( tileIdx );
     generateRawPointsAttributefromVideo( context, tile, frameIndex );
-    std::cout << "generate raw Points Video (Attribute) frame[" << frameIndex << "] tile[" << tileIdx << "] : "
-              << " #rawPatches: " << tile.getNumberOfRawPointsPatches()
+    std::cout << "generate raw Points Video (Attribute) frame[" << frameIndex << "] tile[" << tileIdx
+              << "] : " << " #rawPatches: " << tile.getNumberOfRawPointsPatches()
               << " #rawPoints: " << tile.getTotalNumberOfRawPoints() << " #eomPoints: " << tile.getEomPatches().size()
               << " #eomPoints: " << tile.getTotalNumberOfEOMPoints() << std::endl;
   }

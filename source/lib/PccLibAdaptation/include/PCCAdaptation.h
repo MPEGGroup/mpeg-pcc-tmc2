@@ -520,7 +520,7 @@ class PCCAdaptation {
    *                      If false, converts to non-interleaved (coefficient-per-partition) layout.
    * @return true on success, false if point cloud has no spherical harmonics
    */
-  static bool reorderSphericalHarmonicsAC( PCCPointSet3 &pointCloud, bool toInterleaved );
+  static bool reorderSphericalHarmonicsAC( PCCPointSet3 &pointCloud, bool toInterleaved, size_t shCoeffCount );
 
   static bool reorderSphericalHarmonicsAdaptive( PCCPointSet3                  &pointCloud,
                                                  const PCCAdaptationParameters &params,

@@ -134,7 +134,7 @@ def parse_err_file(path: str, total_time: str, max_rss: str) -> dict[str, float]
 
     with open(path, "rt") as f:
         for line in f:
-            if m := TIME_PATTERN.match(line):
+            if m := TIME_PATTERN.search(line):
                 count += 1
                 metrics[total_time] += float(m.group(1))
                 metrics[max_rss] += float(m.group(2))

@@ -2852,12 +2852,7 @@ void PCCBitstreamReader::aapsVpccGsExtension( PCCBitstream &bitstream, AapsVpccG
     numShComps += dequant.getShNumChan( i );
   }
   numShCoeffs = numShComps / 3;
-
-  if ( numShCoeffs != 16 ) {
-    TRACE_BITSTREAM(
-        "Error: Currently the value of numShCoeffs has to be 16, since it is hard-coded in a lot of places\n" );
-    exit( EXIT_FAILURE );
-  }
+  if ( numShCoeffs == 0 ) { numShCoeffs = 16; }
 
   READ_CODE_DESC( value, 1, "aaps_vpcc_gs_dequantization_present_flag" );
   ext.setDequantizationPresentFlag( value );  // u(1)

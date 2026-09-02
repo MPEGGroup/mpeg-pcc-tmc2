@@ -305,6 +305,14 @@ int main( int argc, char *argv[] ) {
       continue;
     }
 
+    // print once when encoding fewer than the full 16 SH coefficient sets
+    static bool shInfoPrinted = false;
+    if ( !shInfoPrinted && adaptationParams.shCoefficientCount_ < 16 ) {
+      std::cout << "Info: encoding with partial SH (" << adaptationParams.shCoefficientCount_
+                << " coefficient sets out of 16)" << std::endl;
+      shInfoPrinted = true;
+    }
+
     // DEBUG
     std::string fileName( 512, '\0' );
     int         len =

@@ -79,9 +79,9 @@ void PCCHDRToolsAppColorConverter<T>::convert( std::string        configFile,
                                                      outputChromaFormat == 1, outputBitDepth == 8 ? "8" : "16" );
   videoSrc.write( sourceFile, sourceBitDepth == 8 ? 1 : 2 );
   std::stringstream cmd;
-  cmd << externalPath << " -f " << configFile << " -p SourceFile=\"" << sourceFile << "\""
-      << " -p OutputFile=\"" << outputFile << "\""
-      << " -p SourceWidth=" << width << " -p SourceHeight=" << height << " -p NumberOfFrames=" << frameCount;
+  cmd << externalPath << " -f " << configFile << " -p SourceFile=\"" << sourceFile << "\"" << " -p OutputFile=\""
+      << outputFile << "\"" << " -p SourceWidth=" << width << " -p SourceHeight=" << height
+      << " -p NumberOfFrames=" << frameCount;
   std::cout << cmd.str() << '\n';
   if ( pcc::system( cmd.str().c_str() ) ) {
     std::cout << "Error: can't run system command!" << std::endl;
@@ -138,9 +138,8 @@ void PCCHDRToolsAppColorConverter<T>::scale( std::string        configFile,
                                                      outputChromaFormat == 1, outputBitDepth == 8 ? "8" : "16" );
   videoSrc.write( sourceFile, sourceBitDepth == 8 ? 1 : 2 );
   std::stringstream cmd;
-  cmd << externalPath << " -f " << configFile << " -p SourceFile=\"" << sourceFile << "\""
-      << " -p OutputFile=\"" << outputFile << "\""
-      << " -p OutputWidth=" << outputWidth << " -p OutputHeight=" << outputHeight
+  cmd << externalPath << " -f " << configFile << " -p SourceFile=\"" << sourceFile << "\"" << " -p OutputFile=\""
+      << outputFile << "\"" << " -p OutputWidth=" << outputWidth << " -p OutputHeight=" << outputHeight
       << " -p SourceChromaFormat=" << chromaFormat << " -p OutputChromaFormat=" << chromaFormat
       << " -p SourceColorSpace=" << colorSpace << " -p OutputColorSpace=" << colorSpace
       << " -p SourceBitDepthCmp0=" << sourceBitDepth << " -p SourceBitDepthCmp1=" << sourceBitDepth

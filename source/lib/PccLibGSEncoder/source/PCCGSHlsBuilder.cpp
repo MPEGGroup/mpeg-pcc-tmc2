@@ -122,9 +122,11 @@ void PCCGSHlsBuilder::initializeV3CHls( PCCHighLevelSyntax            &hls,
     } else if ( attributeTypeIds[i] == ATTR_TRANSPARENCY ) {
       ai.setAttributeDimensionMinus1( i, 0 );
     } else if ( attributeTypeIds[i] == ATTR_SPHERICAL_HARMONICS ) {
-      ai.setAttributeDimensionMinus1( i, 47 );
-      ai.setAttributeDimensionPartitionsMinus1( i, 15 );
-      for ( int j = 0; j < 16; j++ ) { ai.setAttributePartitionChannelsMinus1( i, j, 2 ); }
+      int shCoeffCount = static_cast<int>( adaptationParams.shCoefficientCount_ );
+      if ( shCoeffCount < 1 ) shCoeffCount = 16;
+      ai.setAttributeDimensionMinus1( i, shCoeffCount * 3 - 1 );
+      ai.setAttributeDimensionPartitionsMinus1( i, shCoeffCount - 1 );
+      for ( int j = 0; j < shCoeffCount; j++ ) { ai.setAttributePartitionChannelsMinus1( i, j, 2 ); }
     } else if ( attributeTypeIds[i] == ATTR_SCALE ) {
       ai.setAttributeDimensionMinus1( i, 2 );
       ai.setAttributeDimensionPartitionsMinus1( i, 0 );
@@ -541,8 +543,11 @@ void PCCGSHlsBuilder::initializeAtlasAapsHls( PCCHighLevelSyntax            &hls
       shProp.setTotalCodedComponentsMinus1( totalRetained - 1 );
       tableSize = totalRetained;
     } else {
-      shProp.setTotalCodedComponentsMinus1( 48 - 1 );  // NumShComps - 1 = 47
-      tableSize = 48;
+      int totalCoded = static_cast<int>( adaptationParams.shCoefficientCount_ ) * 3;
+      if ( totalCoded < 1 ) totalCoded = 1;
+      if ( totalCoded > 48 ) totalCoded = 48;
+      shProp.setTotalCodedComponentsMinus1( totalCoded - 1 );
+      tableSize = totalCoded;
     }
     shProp.resizeShMappingTable( tableSize );
     for ( int m = 0; m < tableSize; ++m ) { shProp.setShMappingTable( m, adaptationParams.shMappingTable_[m] ); }

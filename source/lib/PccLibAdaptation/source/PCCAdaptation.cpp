@@ -653,6 +653,10 @@ bool PCCAdaptation::adapt( const PCCPointSetGS     &inputPointCloud,
   if ( params.enableShQuantization_ && mergedPointCloud.hasSphericalHarmonics() ) {
     bool isDimRed = params.gsdTransform2dPresentFlag_ && params.enableShDimensionReduction_;
 
+    // Needed by initializeShTransformParams to restrict transform groups to present bands
+    params.shCoefficientCount_ = mergedPointCloud.getSphericalHarmonicsCount();
+    if ( params.shCoefficientCount_ == 0 ) params.shCoefficientCount_ = 16;
+
     // Reorder planar->interleaved before transform (all modes, matches reference order)
     reorderSphericalHarmonicsAC( const_cast<PCCPointSetGS &>( mergedPointCloud ), true );
     initializeShTransformParams( params );
@@ -671,7 +675,7 @@ bool PCCAdaptation::adapt( const PCCPointSetGS     &inputPointCloud,
         }
         params.shTotalRetainedComponents_ = std::max( 1, std::min( 48, totalRetained ) );
       } else {
-        params.shTotalRetainedComponents_ = 48;
+        params.shTotalRetainedComponents_ = static_cast<int>( mergedPointCloud.getSphericalHarmonicsCount() ) * 3;
       }
 
       int tableSize = params.shTotalRetainedComponents_;
@@ -690,7 +694,7 @@ bool PCCAdaptation::adapt( const PCCPointSetGS     &inputPointCloud,
           for ( int ch = 0; ch < 3; ++ch ) { mean[l * 3 + ch] += shData[p][l][ch]; }
         }
       }
-      for ( int i = 0; i < 48; ++i ) { mean[i] /= pointCount; }
+      for ( size_t i = 0; i < shCoefCount * 3; ++i ) { mean[i] /= pointCount; }
 
       std::array<double, 48> stddev;
       stddev.fill( 0.0 );
@@ -703,11 +707,13 @@ bool PCCAdaptation::adapt( const PCCPointSetGS     &inputPointCloud,
           }
         }
       }
-      for ( int i = 0; i < 48; ++i ) { stddev[i] = std::sqrt( stddev[i] / pointCount ); }
+      for ( size_t i = 0; i < shCoefCount * 3; ++i ) { stddev[i] = std::sqrt( stddev[i] / pointCount ); }
 
+      const int           acCount = static_cast<int>( shCoefCount ) * 3 - 3;
       std::array<int, 45> acIndices;
-      for ( int i = 0; i < 45; ++i ) { acIndices[i] = i + 3; }
-      std::sort( acIndices.begin(), acIndices.end(), [&stddev]( int a, int b ) { return stddev[a] > stddev[b]; } );
+      for ( int i = 0; i < acCount; ++i ) { acIndices[i] = i + 3; }
+      std::sort( acIndices.begin(), acIndices.begin() + acCount,
+                 [&stddev]( int a, int b ) { return stddev[a] > stddev[b]; } );
 
       params.shMappingTable_.fill( 0 );
       params.shMappingTable_[0] = 0;  // DC: SH level 0, channel 0
@@ -737,7 +743,7 @@ bool PCCAdaptation::adapt( const PCCPointSetGS     &inputPointCloud,
     // Post-quantization reorder based on mode
     if ( params.shMappingMode_ == 1 ) {
       // M1: reorder interleaved->planar
-      reorderSphericalHarmonicsAC( const_cast<PCCPointSet3 &>( outputPointCloud ), false );
+      reorderSphericalHarmonicsAC( const_cast<PCCPointSet3 &>( outputPointCloud ), false, params.shCoefficientCount_ );
     } else if ( params.shMappingMode_ == 2 ) {
       // M2 (48-entry) or M4 (K-entry): adaptive reorder to video packing
       reorderSphericalHarmonicsAdaptive( const_cast<PCCPointSet3 &>( outputPointCloud ), params, true );
@@ -808,7 +814,7 @@ bool PCCAdaptation::inverseAdapt( const PCCPointSet3            &inputPointCloud
     }
     // Reorder from video packing order back to transform-domain layout
     if ( params.shMappingMode_ == 1 ) {
-      reorderSphericalHarmonicsAC( const_cast<PCCPointSet3 &>( inputPointCloud ), true );
+      reorderSphericalHarmonicsAC( const_cast<PCCPointSet3 &>( inputPointCloud ), true, params.shCoefficientCount_ );
     } else if ( params.shMappingMode_ == 2 ) {
       reorderSphericalHarmonicsAdaptive( const_cast<PCCPointSet3 &>( inputPointCloud ), params, false );
     }
@@ -1902,26 +1908,49 @@ void PCCAdaptation::initializeShTransformParams( PCCAdaptationParameters &params
     params.shTrGrpRow_.clear();
     params.shTrTypeRow_.clear();
     params.shKltFlag_.clear();
-  } else if ( params.dataAdaptiveShTransformEnabled_ ) {
+    return;
+  }
+
+  const int shCoefCount = ( params.shCoefficientCount_ > 0 ) ? static_cast<int>( params.shCoefficientCount_ ) : 16;
+
+  std::vector<std::vector<int>> groups;
+  std::vector<int>              trTypeRow;
+  std::vector<int>              kltFlag;
+
+  if ( params.dataAdaptiveShTransformEnabled_ ) {
     // parameter for group PCA m75790
     params.shTrTypeCol_.assign( 16, 3 );  // changed to BT.709
-    params.shTrGrpRow_ = { { 1, 5, 11 }, { 3, 7, 13 }, { 4, 10 }, { 8, 14 }, { 2, 6, 12 }, { 9, 15 } };
-    params.shTrTypeRow_.assign( 6, 0 );
-    params.shKltFlag_.assign( 6, 1 );
+    groups    = { { 1, 5, 11 }, { 3, 7, 13 }, { 4, 10 }, { 8, 14 }, { 2, 6, 12 }, { 9, 15 } };
+    trTypeRow = { 0, 0, 0, 0, 0, 0 };
+    kltFlag   = { 1, 1, 1, 1, 1, 1 };
     // m76858: add DC PCA group
     if ( params.gsdPcaDcFlag_ ) {
-      params.shTrGrpRow_.push_back( { 0 } );
-      // params.shTrGrpRow_ = { {0},{ 1, 5, 11 }, { 3, 7, 13 }, { 4, 10 }, { 8, 14 }, { 2, 6, 12 }, { 9, 15 } };
-      params.shTrTypeRow_.push_back( 0 );
-      params.shKltFlag_.push_back( 1 );
+      groups.push_back( { 0 } );
+      trTypeRow.push_back( 0 );
+      kltFlag.push_back( 1 );
     }
   } else {
     // parameter for 2D transform m75038
     params.shTrTypeCol_.assign( 16, 2 );
     params.shTrTypeCol_[0] = 1;
-    params.shTrGrpRow_     = { { 1, 5, 11 }, { 4, 10 }, { 8, 14 } };
-    params.shTrTypeRow_.assign( 3, 2 );
-    params.shKltFlag_.assign( 3, 0 );
+    groups                 = { { 1, 5, 11 }, { 4, 10 }, { 8, 14 } };
+    trTypeRow              = { 2, 2, 2 };
+    kltFlag                = { 0, 0, 0 };
+  }
+
+  // Restrict groups to the bands actually present (partial SH), dropping empties
+  params.shTrGrpRow_.clear();
+  params.shTrTypeRow_.clear();
+  params.shKltFlag_.clear();
+  for ( size_t g = 0; g < groups.size(); ++g ) {
+    std::vector<int> filtered;
+    for ( int band : groups[g] ) {
+      if ( band < shCoefCount ) filtered.push_back( band );
+    }
+    if ( filtered.empty() ) continue;
+    params.shTrGrpRow_.push_back( filtered );
+    params.shTrTypeRow_.push_back( trTypeRow[g] );
+    params.shKltFlag_.push_back( kltFlag[g] );
   }
 }
 
@@ -3290,9 +3319,11 @@ bool PCCAdaptation::reorderSphericalHarmonicsAC( PCCPointSetGS &pointCloud, bool
     } else {
       for ( size_t j = 0; j < acCount; ++j ) {  // For each AC coefficient index
         for ( size_t c = 0; c < 3; ++c ) {      // For each color channel
-
-          size_t a = j / 3 + 1 + c * 5;
-          size_t b = j % 3;
+          // General inverse of the forward mapping (n = j*3 + c; a = n%acCount+1; b = n/acCount).
+          // For 16 bands (acCount=15) this reduces to a = j/3 + 1 + c*5, b = j%3.
+          size_t n = j + c * acCount;
+          size_t a = n / 3 + 1;
+          size_t b = n % 3;
 
           temp[a][b] = sh[j + 1][c];
         }
@@ -3310,14 +3341,14 @@ bool PCCAdaptation::reorderSphericalHarmonicsAC( PCCPointSetGS &pointCloud, bool
   return true;
 }
 
-bool PCCAdaptation::reorderSphericalHarmonicsAC( PCCPointSet3 &pointCloud, bool toInterleaved ) {
+bool PCCAdaptation::reorderSphericalHarmonicsAC( PCCPointSet3 &pointCloud, bool toInterleaved, size_t shCoeffCount ) {
   if ( !pointCloud.hasSphericalHarmonics() ) {
     std::cerr << "Error: Point cloud has no spherical harmonics to reorder." << std::endl;
     return false;
   }
 
   const size_t pointCount  = pointCloud.getPointCount();
-  const size_t shCoefCount = 16;  // Assuming 16 coefficients as default, can be made dynamic if needed
+  const size_t shCoefCount = ( shCoeffCount > 0 ) ? shCoeffCount : 16;
 
   if ( shCoefCount <= 1 ) {
     // Only DC component, no AC coefficients to reorder
@@ -3358,9 +3389,11 @@ bool PCCAdaptation::reorderSphericalHarmonicsAC( PCCPointSet3 &pointCloud, bool 
     } else {
       for ( size_t j = 0; j < acCount; ++j ) {  // For each AC coefficient index
         for ( size_t c = 0; c < 3; ++c ) {      // For each color channel
-
-          size_t a = j / 3 + 1 + c * 5;
-          size_t b = j % 3;
+          // General inverse of the forward mapping (n = j*3 + c; a = n%acCount+1; b = n/acCount).
+          // For 16 bands (acCount=15) this reduces to a = j/3 + 1 + c*5, b = j%3.
+          size_t n = j + c * acCount;
+          size_t a = n / 3 + 1;
+          size_t b = n % 3;
 
           temp[a][b] = sh[j + 1][c];
         }
@@ -3388,15 +3421,12 @@ bool PCCAdaptation::reorderSphericalHarmonicsAdaptive( PCCPointSet3             
   if ( !pointCloud.hasSphericalHarmonics() ) return false;
 
   const size_t pointCount  = pointCloud.getPointCount();
-  const size_t shCoefCount = 16;
-  const size_t numACCoeff  = 16;  // bands 0..15
+  const size_t shCoefCount = ( params.shCoefficientCount_ > 0 ) ? params.shCoefficientCount_ : 16;
 
   auto                &sphericalHarmonics = pointCloud.getSphericalHarmonics();
   GSSphericalHarmonics temp;
 
-  int tableSize = ( params.gsdTransform2dPresentFlag_ && params.enableShDimensionReduction_ )
-                      ? params.shTotalRetainedComponents_
-                      : 48;
+  int tableSize = params.shTotalRetainedComponents_;
 
   // Inverse mapping table: mapping_table[bitstreamPos] = interleavedPos (l*3+ch).
   std::array<int, 48> invMappingTable;
@@ -3427,7 +3457,7 @@ bool PCCAdaptation::reorderSphericalHarmonicsAdaptive( PCCPointSet3             
       temp[0][0] = sh[0][0];
       temp[0][1] = sh[0][1];
       temp[0][2] = sh[0][2];
-      for ( int l = 1; l < 16; ++l ) {
+      for ( int l = 1; l < static_cast<int>( shCoefCount ); ++l ) {
         for ( int ch = 0; ch < 3; ++ch ) {
           int interleavedPos = l * 3 + ch;
           int bitstreamPos   = invMappingTable[interleavedPos];

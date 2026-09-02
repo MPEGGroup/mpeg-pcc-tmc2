@@ -2271,8 +2271,8 @@ int PCCDecoder::ReconstructIdc3( PCCContext &context, PCCGroupOfFrames &reconstr
           for ( uint32_t m = 0; m < tableSize; ++m ) {
             adaptationParams.shMappingTable_[m] = shProp.getShMappingTable( m );
           }
-          uint32_t totalCoded = shProp.getTotalCodedComponentsMinus1() + 1;
-          if ( totalCoded < 48 ) { adaptationParams.shTotalRetainedComponents_ = totalCoded; }
+          uint32_t totalCoded                         = shProp.getTotalCodedComponentsMinus1() + 1;
+          adaptationParams.shTotalRetainedComponents_ = static_cast<int>( totalCoded );
         }
 
         if ( ext.getPredEnableFlag() ) {
