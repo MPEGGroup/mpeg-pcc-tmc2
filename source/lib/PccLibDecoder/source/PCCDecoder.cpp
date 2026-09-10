@@ -174,6 +174,38 @@ int PCCDecoder::decode( PCCContext &context, PCCGroupOfFrames &reconstructs, int
   }
 
   // Step 2: Decompress or unpack occupancy video
+  bool haveOccupancy = false;
+
+  if ( pve.isPresent() && pve.getPackedVideoPresentFlag( atlasIndex ) ) {
+    auto &packingInfo = pve.getPackingInformation( atlasIndex );
+    if ( packingInfo.getOccupancyPresentFlag() ) {
+      // Find the occupancy region
+      for ( size_t regionIndex = 0; regionIndex <= packingInfo.getRegionsCountMinus1(); ++regionIndex ) {
+        auto &region = packingInfo.getRegion( regionIndex );
+        if ( region.getRegionTypeId() == V3C_OVD && !region.getAuxiliaryDataFlag() ) {
+          // Unpack occupancy from packed video
+          std::cout << "*******Video Unpacking: Occupancy from Packed Video ["
+                    << static_cast<int>( region.getPackedMapIndex() ) << "] ********" << std::endl;
+          auto start = steady_clock::now();
+          unpackRegion( packedVideos[region.getPackedMapIndex()], context.getVideoOccupancyMap(), region, frameCount,
+                        packingInfo.getConstituentFrameCountMinus1( region.getPackedMapIndex() ) + 1 );
+          auto stop         = steady_clock::now();
+          auto avg_duration = duration_cast<microseconds>( stop - start ).count();
+          std::cout << "Execution time Occupancy Unpack: " << avg_duration << " microseconds" << std::endl;
+
+          // Write unpacked occupancy video to disk if keeping intermediate files
+          if ( params_.keepIntermediateFiles_ ) {
+            std::string unpackFileName = path.str() + "occupancy_unpacked";
+            context.getVideoOccupancyMap().write( context.getVideoOccupancyMap().addFormat( unpackFileName, "8" ), 1 );
+            std::cout << "Written unpacked occupancy video to: " << unpackFileName << std::endl;
+          }
+
+          haveOccupancy = true;
+          break;
+        }
+      }
+    }
+  }
   if ( sps.getOccupancyVideoPresentFlag( atlasIndex ) ) {
     printf( "=> Video decoder : occupancy = %d geometry = %d \n", (int)occupancyCodecId, (int)geometryCodecId );
     printf( " Decode 0 size = %zu \n", context.getVideoBitstream( VIDEO_OCCUPANCY ).size() );
@@ -181,61 +213,29 @@ int PCCDecoder::decode( PCCContext &context, PCCGroupOfFrames &reconstructs, int
     TRACE_PICTURE( "Occupancy\n" );
     TRACE_PICTURE( "MapIdx = 0, AuxiliaryVideoFlag = 0\n" );
 
-    // Check if occupancy is in packed video
-    bool occupancyPacked = false;
+    // Traditional decompression from separate occupancy stream
+    printf( " Decode 0 size = %zu \n", context.getVideoBitstream( VIDEO_OCCUPANCY ).size() );
+    fflush( stdout );
 
-    if ( pve.isPresent() && pve.getPackedVideoPresentFlag( atlasIndex ) ) {
-      auto &packingInfo = pve.getPackingInformation( atlasIndex );
-      if ( packingInfo.getOccupancyPresentFlag() ) {
-        // Find the occupancy region
-        for ( size_t regionIndex = 0; regionIndex <= packingInfo.getRegionsCountMinus1(); ++regionIndex ) {
-          auto &region = packingInfo.getRegion( regionIndex );
-          if ( region.getRegionTypeId() == V3C_OVD && !region.getAuxiliaryDataFlag() ) {
-            // Unpack occupancy from packed video
-            std::cout << "*******Video Unpacking: Occupancy from Packed Video ["
-                      << static_cast<int>( region.getPackedMapIndex() ) << "] ********" << std::endl;
-            auto start = steady_clock::now();
-            unpackRegion( packedVideos[region.getPackedMapIndex()], context.getVideoOccupancyMap(), region, frameCount,
-                          packingInfo.getConstituentFrameCountMinus1( region.getPackedMapIndex() ) + 1 );
-            auto stop         = steady_clock::now();
-            auto avg_duration = duration_cast<microseconds>( stop - start ).count();
-            std::cout << "Execution time Occupancy Unpack: " << avg_duration << " microseconds" << std::endl;
+    videoDecoder.decompress( context.getVideoOccupancyMap(),                // video
+                             context,                                       // contexts
+                             path.str(),                                    // path
+                             context.getVideoBitstream( VIDEO_OCCUPANCY ),  // bitstream
+                             params_.byteStreamVideoCoderOccupancy_,        // byte stream video coder
+                             occupancyCodecId,                              // codecId
+                             params_.videoDecoderOccupancyPath_,            // decoder path
+                             8,                                             // output bit depth
+                             params_.scalerConfig_,                         // scaler config
+                             params_.keepIntermediateFiles_ );              // keep intermediate files
 
-            // Write unpacked occupancy video to disk if keeping intermediate files
-            if ( params_.keepIntermediateFiles_ ) {
-              std::string unpackFileName = path.str() + "occupancy_unpacked";
-              context.getVideoOccupancyMap().write( context.getVideoOccupancyMap().addFormat( unpackFileName, "8" ),
-                                                    1 );
-              std::cout << "Written unpacked occupancy video to: " << unpackFileName << std::endl;
-            }
+    // converting the decoded bitdepth to the nominal bitdepth
+    context.getVideoOccupancyMap().convertBitdepth( 8, oi.getOccupancy2DBitdepthMinus1() + 1,
+                                                    oi.getOccupancyMSBAlignFlag() );
 
-            occupancyPacked = true;
-            break;
-          }
-        }
-      }
-    }
+    haveOccupancy = true;
+  }
 
-    if ( !occupancyPacked ) {
-      // Traditional decompression from separate occupancy stream
-      printf( " Decode 0 size = %zu \n", context.getVideoBitstream( VIDEO_OCCUPANCY ).size() );
-      fflush( stdout );
-
-      videoDecoder.decompress( context.getVideoOccupancyMap(),                // video
-                               context,                                       // contexts
-                               path.str(),                                    // path
-                               context.getVideoBitstream( VIDEO_OCCUPANCY ),  // bitstream
-                               params_.byteStreamVideoCoderOccupancy_,        // byte stream video coder
-                               occupancyCodecId,                              // codecId
-                               params_.videoDecoderOccupancyPath_,            // decoder path
-                               8,                                             // output bit depth
-                               params_.scalerConfig_,                         // scaler config
-                               params_.keepIntermediateFiles_ );              // keep intermediate files
-
-      // converting the decoded bitdepth to the nominal bitdepth
-      context.getVideoOccupancyMap().convertBitdepth( 8, oi.getOccupancy2DBitdepthMinus1() + 1,
-                                                      oi.getOccupancyMSBAlignFlag() );
-    }
+  if ( haveOccupancy ) {
     // setting the occupancy precision for reconstruction
     context.setOccupancyPrecision( sps.getFrameWidth( atlasIndex ) / context.getVideoOccupancyMap().getWidth() );
     // generating blockToPatch structure
