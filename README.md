@@ -24,6 +24,11 @@ Bash scripts can be use to build mpeg-pcc-tmc2 project:
 - cmake .. 
 - cmake --build . --config Release --parallel 8
 
+### V-PCC main profile
+
+For V-PCC main profile experiments build TMC2 with a different release of the HEVC test model:
+
+- cmake .. -DHM_VERSION=HM-16.20+SCM-8.8
 
 ### External dependencies
 
