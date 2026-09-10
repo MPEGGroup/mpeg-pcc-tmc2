@@ -101,6 +101,19 @@ void PCCDecoder::setReconstructionParameters( const PCCDecoderParameters &params
   params_.applyOccupanySynthesisType_   = params.applyOccupanySynthesisType_;
 }
 
+struct PCCDecoder::DecoderContext {
+  PCCContext                 &context;
+  int32_t                     atlasIndex;
+  std::stringstream           path;
+  PCCVideoDecoder             videoDecoder;
+  std::vector<PCCVideoPacked> packedVideos;
+};
+
+namespace {
+auto debugBitDepthTag( int bitDepth ) { return bitDepth <= 8 ? "8" : "10"; };
+auto debugByteCount( int bitDepth ) { return bitDepth <= 8 ? 1 : 2; };
+}  // namespace
+
 int PCCDecoder::decode( PCCContext &context, PCCGroupOfFrames &reconstructs, int32_t atlasIndex = 0 ) {
 #if defined( ENABLE_TBB )
   if ( params_.nbThread_ > 0 ) { tbb::task_scheduler_init init( static_cast<int>( params_.nbThread_ ) ); }
@@ -108,61 +121,49 @@ int PCCDecoder::decode( PCCContext &context, PCCGroupOfFrames &reconstructs, int
   createPatchFrameDataStructure( context );
   adaptationParams_.clear();
 
-  PCCVideoDecoder videoDecoder;
-  videoDecoder.setLogger( *logger_ );
-  std::stringstream path;
-  auto             &sps              = context.getVps();
-  auto             &ai               = sps.getAttributeInformation( atlasIndex );
-  auto             &oi               = sps.getOccupancyInformation( atlasIndex );
-  auto             &gi               = sps.getGeometryInformation( atlasIndex );
-  auto             &asps             = context.getAtlasSequenceParameterSetList()[0];
-  size_t            frameCount       = context.size();
-  auto             &plt              = sps.getProfileTierLevel();
-  const size_t      mapCount         = sps.getMapCountMinus1( atlasIndex ) + 1;
-  int               geometryBitDepth = gi.getGeometry2dBitdepthMinus1() + 1;
-  const auto        debugBitDepthTag = []( int bitDepth ) { return bitDepth <= 8 ? "8" : "10"; };
-  const auto        debugByteCount   = []( int bitDepth ) { return bitDepth <= 8 ? 1 : 2; };
-  setConsitantFourCCCode( context, 0 );  //
-  auto occupancyCodecId = getCodedCodecId( context, oi.getOccupancyCodecId(), params_.videoDecoderOccupancyPath_ );
-  auto geometryCodecId  = getCodedCodecId( context, gi.getGeometryCodecId(), params_.videoDecoderGeometryPath_ );
-  path << params_.debugPath_ << "/" << removeFileExtension( params_.compressedStreamPath_ ) << "_dec_GOF"
-       << sps.getV3CParameterSetId() << "_";
+  auto dc = DecoderContext{ context, atlasIndex };
+  dc.videoDecoder.setLogger( *logger_ );
+  setConsitantFourCCCode( dc.context, 0 );
+  dc.path << params_.debugPath_ << "/" << removeFileExtension( params_.compressedStreamPath_ ) << "_dec_GOF"
+          << dc.context.getVps().getV3CParameterSetId() << "_";
 
-  // Step 1: Decompress packed video if present
-  auto                       &pve = sps.getVpsPackedVideoExtension();
-  std::vector<PCCVideoPacked> packedVideos;
-  if ( pve.isPresent() && pve.getPackedVideoPresentFlag( atlasIndex ) ) {
-    auto &packingInfo = pve.getPackingInformation( atlasIndex );
-    pve.initializeBoundingBoxes( sps );
+  decodePackedVideo( dc );
+  decodeOccupancy( dc );
+  decodeGeometry( dc );
+  decodeAttributes( dc );
+
+  return reconstruct( dc, reconstructs );
+}
+
+void PCCDecoder::decodePackedVideo( DecoderContext &dc ) {
+  auto &pve = dc.context.getVps().getVpsPackedVideoExtension();
+
+  if ( pve.isPresent() && pve.getPackedVideoPresentFlag( dc.atlasIndex ) ) {
+    auto &packingInfo = pve.getPackingInformation( dc.atlasIndex );
+    pve.initializeBoundingBoxes( dc.context.getVps() );
     pve.dumpTo( std::cout, {} );
     uint8_t packedMapCountMinus1 = packingInfo.getPackedMapCountMinus1();
 
-    packedVideos.resize( packedMapCountMinus1 + 1 );
+    dc.packedVideos.resize( packedMapCountMinus1 + 1 );
 
     for ( uint8_t packedMapIndex = 0; packedMapIndex <= packedMapCountMinus1; ++packedMapIndex ) {
       std::cout << "*******Video Decoding: Packed Video [" << static_cast<int>( packedMapIndex ) << "] ********"
                 << std::endl;
       auto  videoType      = PCCVideoType( VIDEO_PACKED + packedMapIndex );
-      auto &videoBitstream = context.getVideoBitstream( videoType );
-      auto  packedCodecId  = getCodedCodecId( context, packingInfo.getCodecId(), params_.videoDecoderAttributePath_ );
+      auto &videoBitstream = dc.context.getVideoBitstream( videoType );
+      auto  packedCodecId = getCodedCodecId( dc.context, packingInfo.getCodecId(), params_.videoDecoderAttributePath_ );
 
       printf( " Decode Packed Video size = %zu \n", videoBitstream.size() );
       fflush( stdout );
       auto start = steady_clock::now();
 
       // Compute the actual bit depth needed for the packed video from the VPS metadata
-      uint8_t outputBitDepth = packingInfo.getBitDepth( sps, atlasIndex );
+      uint8_t outputBitDepth = packingInfo.getBitDepth( dc.context.getVps(), dc.atlasIndex );
 
-      videoDecoder.decompress( packedVideos[packedMapIndex],            // video
-                               context,                                 // contexts
-                               path.str(),                              // path
-                               videoBitstream,                          // bitstream
-                               params_.byteStreamVideoCoderAttribute_,  // byte stream video coder
-                               packedCodecId,                           // codecId
-                               params_.videoDecoderAttributePath_,      // decoder path
-                               outputBitDepth,                          // output bit depth
-                               params_.scalerConfig_,                   // scaler config
-                               params_.keepIntermediateFiles_ );        // keep intermediate files
+      dc.videoDecoder.decompress( dc.packedVideos[packedMapIndex], dc.context, dc.path.str(), videoBitstream,
+                                  params_.byteStreamVideoCoderAttribute_, packedCodecId,
+                                  params_.videoDecoderAttributePath_, outputBitDepth, params_.scalerConfig_,
+                                  params_.keepIntermediateFiles_ );
 
       auto stop         = steady_clock::now();
       auto avg_duration = duration_cast<microseconds>( stop - start ).count();
@@ -172,12 +173,17 @@ int PCCDecoder::decode( PCCContext &context, PCCGroupOfFrames &reconstructs, int
                 << std::endl;
     }
   }
+}
 
-  // Step 2: Decompress or unpack occupancy video
-  bool haveOccupancy = false;
+void PCCDecoder::decodeOccupancy( DecoderContext &dc ) {
+  if ( unpackOccupancy( dc ) || decodeOccupancyVideo( dc ) ) { decodeBlockToPatchMap( dc ); }
+}
 
-  if ( pve.isPresent() && pve.getPackedVideoPresentFlag( atlasIndex ) ) {
-    auto &packingInfo = pve.getPackingInformation( atlasIndex );
+bool PCCDecoder::unpackOccupancy( DecoderContext &dc ) {
+  auto &pve = dc.context.getVps().getVpsPackedVideoExtension();
+
+  if ( pve.isPresent() && pve.getPackedVideoPresentFlag( dc.atlasIndex ) ) {
+    auto &packingInfo = pve.getPackingInformation( dc.atlasIndex );
     if ( packingInfo.getOccupancyPresentFlag() ) {
       // Find the occupancy region
       for ( size_t regionIndex = 0; regionIndex <= packingInfo.getRegionsCountMinus1(); ++regionIndex ) {
@@ -187,7 +193,8 @@ int PCCDecoder::decode( PCCContext &context, PCCGroupOfFrames &reconstructs, int
           std::cout << "*******Video Unpacking: Occupancy from Packed Video ["
                     << static_cast<int>( region.getPackedMapIndex() ) << "] ********" << std::endl;
           auto start = steady_clock::now();
-          unpackRegion( packedVideos[region.getPackedMapIndex()], context.getVideoOccupancyMap(), region, frameCount,
+          unpackRegion( dc.packedVideos[region.getPackedMapIndex()], dc.context.getVideoOccupancyMap(), region,
+                        dc.context.size(),
                         packingInfo.getConstituentFrameCountMinus1( region.getPackedMapIndex() ) + 1 );
           auto stop         = steady_clock::now();
           auto avg_duration = duration_cast<microseconds>( stop - start ).count();
@@ -195,445 +202,506 @@ int PCCDecoder::decode( PCCContext &context, PCCGroupOfFrames &reconstructs, int
 
           // Write unpacked occupancy video to disk if keeping intermediate files
           if ( params_.keepIntermediateFiles_ ) {
-            std::string unpackFileName = path.str() + "occupancy_unpacked";
-            context.getVideoOccupancyMap().write( context.getVideoOccupancyMap().addFormat( unpackFileName, "8" ), 1 );
+            std::string unpackFileName = dc.path.str() + "occupancy_unpacked";
+            dc.context.getVideoOccupancyMap().write( dc.context.getVideoOccupancyMap().addFormat( unpackFileName, "8" ),
+                                                     1 );
             std::cout << "Written unpacked occupancy video to: " << unpackFileName << std::endl;
           }
 
-          haveOccupancy = true;
-          break;
+          return true;
         }
       }
     }
   }
-  if ( sps.getOccupancyVideoPresentFlag( atlasIndex ) ) {
-    printf( "=> Video decoder : occupancy = %d geometry = %d \n", (int)occupancyCodecId, (int)geometryCodecId );
-    printf( " Decode 0 size = %zu \n", context.getVideoBitstream( VIDEO_OCCUPANCY ).size() );
+  return false;
+}
 
-    TRACE_PICTURE( "Occupancy\n" );
-    TRACE_PICTURE( "MapIdx = 0, AuxiliaryVideoFlag = 0\n" );
+bool PCCDecoder::decodeOccupancyVideo( DecoderContext &dc ) {
+  auto &oi               = dc.context.getVps().getOccupancyInformation( dc.atlasIndex );
+  auto  occupancyCodecId = getCodedCodecId( dc.context, oi.getOccupancyCodecId(), params_.videoDecoderOccupancyPath_ );
 
-    // Traditional decompression from separate occupancy stream
-    printf( " Decode 0 size = %zu \n", context.getVideoBitstream( VIDEO_OCCUPANCY ).size() );
-    fflush( stdout );
+  if ( !dc.context.getVps().getOccupancyVideoPresentFlag( dc.atlasIndex ) ) { return false; }
 
-    videoDecoder.decompress( context.getVideoOccupancyMap(),                // video
-                             context,                                       // contexts
-                             path.str(),                                    // path
-                             context.getVideoBitstream( VIDEO_OCCUPANCY ),  // bitstream
-                             params_.byteStreamVideoCoderOccupancy_,        // byte stream video coder
-                             occupancyCodecId,                              // codecId
-                             params_.videoDecoderOccupancyPath_,            // decoder path
-                             8,                                             // output bit depth
-                             params_.scalerConfig_,                         // scaler config
-                             params_.keepIntermediateFiles_ );              // keep intermediate files
+  printf( "=> Video decoder : occupancy = %d \n", (int)occupancyCodecId );
+  printf( " Decode 0 size = %zu \n", dc.context.getVideoBitstream( VIDEO_OCCUPANCY ).size() );
 
-    // converting the decoded bitdepth to the nominal bitdepth
-    context.getVideoOccupancyMap().convertBitdepth( 8, oi.getOccupancy2DBitdepthMinus1() + 1,
-                                                    oi.getOccupancyMSBAlignFlag() );
+  TRACE_PICTURE( "Occupancy\n" );
+  TRACE_PICTURE( "MapIdx = 0, AuxiliaryVideoFlag = 0\n" );
 
-    haveOccupancy = true;
-  }
+  // Traditional decompression from separate occupancy stream
+  printf( " Decode 0 size = %zu \n", dc.context.getVideoBitstream( VIDEO_OCCUPANCY ).size() );
+  fflush( stdout );
 
-  if ( haveOccupancy ) {
-    // setting the occupancy precision for reconstruction
-    context.setOccupancyPrecision( sps.getFrameWidth( atlasIndex ) / context.getVideoOccupancyMap().getWidth() );
-    // generating blockToPatch structure
-    for ( size_t frameIdx = 0; frameIdx < frameCount; frameIdx++ ) {
-      std::vector<uint32_t> partition;
-      for ( size_t tileIdx = 0; tileIdx < context[frameIdx].getNumTilesInAtlasFrame(); tileIdx++ ) {
-        auto  atglIndex = context.getAtlasHighLevelSyntax().getAtlasTileLayerIndex( frameIdx, tileIdx );
-        auto &tile      = context[frameIdx].getTile( tileIdx );
-        if ( context[frameIdx].getNumTilesInAtlasFrame() > 1 ) {
-          generateTileBlockToPatchFromOccupancyMapVideo(
-              context, tile, frameIdx, context.getVideoOccupancyMap().getFrame( frameIdx ),
-              size_t( 1 ) << asps.getLog2PatchPackingBlockSize(), context.getOccupancyPrecision() );
-        } else {
-          generateBlockToPatchFromOccupancyMapVideo(
-              context, tile, frameIdx, context.getVideoOccupancyMap().getFrame( frameIdx ),
-              size_t( 1 ) << asps.getLog2PatchPackingBlockSize(), context.getOccupancyPrecision() );
-        }
+  dc.videoDecoder.decompress( dc.context.getVideoOccupancyMap(), dc.context, dc.path.str(),
+                              dc.context.getVideoBitstream( VIDEO_OCCUPANCY ), params_.byteStreamVideoCoderOccupancy_,
+                              occupancyCodecId, params_.videoDecoderOccupancyPath_, 8, params_.scalerConfig_,
+                              params_.keepIntermediateFiles_ );
+
+  // converting the decoded bitdepth to the nominal bitdepth
+  dc.context.getVideoOccupancyMap().convertBitdepth( 8, oi.getOccupancy2DBitdepthMinus1() + 1,
+                                                     oi.getOccupancyMSBAlignFlag() );
+
+  return true;
+}
+
+void PCCDecoder::decodeBlockToPatchMap( DecoderContext &dc ) {
+  auto &asps = dc.context.getAtlasSequenceParameterSetList()[0];
+
+  // setting the occupancy precision for reconstruction
+  dc.context.setOccupancyPrecision( dc.context.getVps().getFrameWidth( dc.atlasIndex ) /
+                                    dc.context.getVideoOccupancyMap().getWidth() );
+  // generating blockToPatch structure
+  for ( size_t frameIdx = 0; frameIdx < dc.context.size(); frameIdx++ ) {
+    std::vector<uint32_t> partition;
+    for ( size_t tileIdx = 0; tileIdx < dc.context[frameIdx].getNumTilesInAtlasFrame(); tileIdx++ ) {
+      auto  atglIndex = dc.context.getAtlasHighLevelSyntax().getAtlasTileLayerIndex( frameIdx, tileIdx );
+      auto &tile      = dc.context[frameIdx].getTile( tileIdx );
+      if ( dc.context[frameIdx].getNumTilesInAtlasFrame() > 1 ) {
+        generateTileBlockToPatchFromOccupancyMapVideo(
+            dc.context, tile, frameIdx, dc.context.getVideoOccupancyMap().getFrame( frameIdx ),
+            size_t( 1 ) << asps.getLog2PatchPackingBlockSize(), dc.context.getOccupancyPrecision() );
+      } else {
+        generateBlockToPatchFromOccupancyMapVideo(
+            dc.context, tile, frameIdx, dc.context.getVideoOccupancyMap().getFrame( frameIdx ),
+            size_t( 1 ) << asps.getLog2PatchPackingBlockSize(), dc.context.getOccupancyPrecision() );
       }
     }
   }
-  if ( sps.getMultipleMapStreamsPresentFlag( atlasIndex ) ) {
-    context.getVideoGeometryMultiple().resize( sps.getMapCountMinus1( atlasIndex ) + 1 );
-    size_t totalGeoSize = 0;
-    for ( uint32_t mapIndex = 0; mapIndex < sps.getMapCountMinus1( atlasIndex ) + 1; mapIndex++ ) {
-      TRACE_PICTURE( "Geometry\n" );
-      TRACE_PICTURE( "MapIdx = %d, AuxiliaryVideoFlag = 0\n", mapIndex );
-      std::cout << "*******Video Decoding: Geometry[" << mapIndex << "] ********" << std::endl;
+}
 
-      // Check if this geometry map is in packed video
-      bool geometryPacked = false;
-      if ( pve.isPresent() && pve.getPackedVideoPresentFlag( atlasIndex ) ) {
-        auto &packingInfo = pve.getPackingInformation( atlasIndex );
-        if ( packingInfo.getGeometryPresentFlag() ) {
-          // Find the geometry region for this map index
-          for ( size_t regionIndex = 0; regionIndex <= packingInfo.getRegionsCountMinus1(); ++regionIndex ) {
-            auto &region = packingInfo.getRegion( regionIndex );
-            if ( region.getRegionTypeId() == V3C_GVD && !region.getAuxiliaryDataFlag() &&
-                 region.getMapIndex() == mapIndex ) {
-              if ( !isPackedRegionSelected( packingInfo, region ) ) { continue; }
-              // Unpack geometry from packed video
-              std::cout << "*******Video Unpacking: Geometry[" << mapIndex << "] from Packed Video ["
-                        << static_cast<int>( region.getPackedMapIndex() ) << "] ********" << std::endl;
-              auto start = steady_clock::now();
-              unpackRegion( packedVideos[region.getPackedMapIndex()], context.getVideoGeometryMultiple( mapIndex ),
-                            region, frameCount,
-                            packingInfo.getConstituentFrameCountMinus1( region.getPackedMapIndex() ) + 1 );
-              auto stop         = steady_clock::now();
-              auto avg_duration = duration_cast<microseconds>( stop - start ).count();
-              std::cout << "Execution time Geometry[" << mapIndex << "] Unpack: " << avg_duration << " microseconds"
-                        << std::endl;
-
-              // Write unpacked geometry video to disk if keeping intermediate files
-              if ( params_.keepIntermediateFiles_ ) {
-                std::string unpackFileName = path.str() + "geometry_d" + std::to_string( mapIndex ) + "_unpacked";
-                context.getVideoGeometryMultiple( mapIndex )
-                    .write( context.getVideoGeometryMultiple( mapIndex )
-                                .addFormat( unpackFileName, debugBitDepthTag( geometryBitDepth ) ),
-                            debugByteCount( geometryBitDepth ) );
-                std::cout << "Written unpacked geometry[" << mapIndex << "] video to: " << unpackFileName << std::endl;
-              }
-
-              geometryPacked = true;
-              if ( !packingInfo.getLodEnabledFlag() ) { break; }
-            }
-          }
-        }
-      }
-
-      if ( !geometryPacked ) {
-        // Traditional decompression from separate geometry stream
-        auto  geometryIndex  = static_cast<PCCVideoType>( VIDEO_GEOMETRY_D0 + mapIndex );
-        auto &videoBitstream = context.getVideoBitstream( geometryIndex );
-        videoDecoder.decompress( context.getVideoGeometryMultiple( mapIndex ),  // video
-                                 context,                                       // contexts
-                                 path.str(),                                    // path
-                                 videoBitstream,                                // bitstream
-                                 params_.byteStreamVideoCoderGeometry_,         // byte stream video coder
-                                 geometryCodecId,                               // codecId
-                                 params_.videoDecoderGeometryPath_,             // decoder path
-                                 geometryBitDepth,                              // output bit depth
-                                 params_.scalerConfig_,                         // scaler config
-                                 params_.keepIntermediateFiles_,                // keep intermediate files
-                                 0,                                             // SHVC layer index
-                                 "",                                            // patch color subsampling
-                                 "",                                            // inverse color space conversion
-                                 params_.colorSpaceConversionPath_ );           // color space conversion path
-
-        context.getVideoGeometryMultiple()[mapIndex].convertBitdepth(
-            geometryBitDepth, gi.getGeometry2dBitdepthMinus1() + 1, gi.getGeometryMSBAlignFlag() );
-        std::cout << "geometry D" << mapIndex << " video ->" << videoBitstream.size() << " B" << std::endl;
-        totalGeoSize += videoBitstream.size();
-      }
-    }
-    std::cout << "total geometry video ->" << totalGeoSize << " B" << std::endl;
+void PCCDecoder::decodeGeometry( DecoderContext &dc ) {
+  if ( dc.context.getVps().getMultipleMapStreamsPresentFlag( dc.atlasIndex ) ) {
+    decodeMultipleMapGeometry( dc );
   } else {
-    TRACE_PICTURE( "Geometry\n" );
-    TRACE_PICTURE( "MapIdx = 0, AuxiliaryVideoFlag = 0\n" );
-    std::cout << "*******Video Decoding: Geometry ********" << std::endl;
+    decodeSingleMapGeometry( dc );
+  }
+  decodeAuxGeometry( dc );
+}
 
-    // Check if single geometry is in packed video
-    bool geometryPacked = false;
-    if ( pve.isPresent() && pve.getPackedVideoPresentFlag( atlasIndex ) ) {
-      auto &packingInfo = pve.getPackingInformation( atlasIndex );
-      if ( packingInfo.getGeometryPresentFlag() ) {
-        // Find the geometry region for map index 0
-        for ( size_t regionIndex = 0; regionIndex <= packingInfo.getRegionsCountMinus1(); ++regionIndex ) {
-          auto &region = packingInfo.getRegion( regionIndex );
-          if ( region.getRegionTypeId() == V3C_GVD && !region.getAuxiliaryDataFlag() && region.getMapIndex() == 0 ) {
-            if ( !isPackedRegionSelected( packingInfo, region ) ) { continue; }
-            // Unpack geometry from packed video
-            std::cout << "*******Video Unpacking: Geometry from Packed Video ["
-                      << static_cast<int>( region.getPackedMapIndex() ) << "] ********" << std::endl;
-            auto start = steady_clock::now();
-            unpackRegion( packedVideos[region.getPackedMapIndex()], context.getVideoGeometryMultiple( 0 ), region,
-                          frameCount, packingInfo.getConstituentFrameCountMinus1( region.getPackedMapIndex() ) + 1 );
-            auto stop         = steady_clock::now();
-            auto avg_duration = duration_cast<microseconds>( stop - start ).count();
-            std::cout << "Execution time Geometry Unpack: " << avg_duration << " microseconds" << std::endl;
+void PCCDecoder::decodeMultipleMapGeometry( DecoderContext &dc ) {
+  size_t totalGeoSize = 0;
 
-            // Write unpacked geometry video to disk if keeping intermediate files
-            if ( params_.keepIntermediateFiles_ ) {
-              std::string unpackFileName = path.str() + "geometry_unpacked";
-              context.getVideoGeometryMultiple( 0 ).write( context.getVideoGeometryMultiple( 0 ).addFormat(
-                                                               unpackFileName, debugBitDepthTag( geometryBitDepth ) ),
-                                                           debugByteCount( geometryBitDepth ) );
-              std::cout << "Written unpacked geometry video to: " << unpackFileName << std::endl;
-            }
+  dc.context.getVideoGeometryMultiple().resize( dc.context.getVps().getMapCountMinus1( dc.atlasIndex ) + 1 );
 
-            geometryPacked = true;
-            if ( !packingInfo.getLodEnabledFlag() ) { break; }
+  for ( uint32_t mapIndex = 0; mapIndex < dc.context.getVps().getMapCountMinus1( dc.atlasIndex ) + 1; mapIndex++ ) {
+    if ( !unpackMultipleMapGeometry( dc, mapIndex ) ) {
+      totalGeoSize += decodeMultipleMapGeometryVideo( dc, mapIndex );
+    }
+  }
+  std::cout << "total geometry video ->" << totalGeoSize << " B" << std::endl;
+}
+
+bool PCCDecoder::unpackMultipleMapGeometry( DecoderContext &dc, uint32_t mapIndex ) {
+  auto &pve = dc.context.getVps().getVpsPackedVideoExtension();
+  auto &gi  = dc.context.getVps().getGeometryInformation( dc.atlasIndex );
+
+  bool geometryPacked   = false;
+  int  geometryBitDepth = gi.getGeometry2dBitdepthMinus1() + 1;
+
+  // Check if this geometry map is in packed video
+  if ( pve.isPresent() && pve.getPackedVideoPresentFlag( dc.atlasIndex ) ) {
+    auto &packingInfo = pve.getPackingInformation( dc.atlasIndex );
+    if ( packingInfo.getGeometryPresentFlag() ) {
+      // Find the geometry region for this map index
+      for ( size_t regionIndex = 0; regionIndex <= packingInfo.getRegionsCountMinus1(); ++regionIndex ) {
+        auto &region = packingInfo.getRegion( regionIndex );
+        if ( region.getRegionTypeId() == V3C_GVD && !region.getAuxiliaryDataFlag() &&
+             region.getMapIndex() == mapIndex ) {
+          if ( !isPackedRegionSelected( packingInfo, region ) ) { continue; }
+          // Unpack geometry from packed video
+          std::cout << "*******Video Unpacking: Geometry[" << mapIndex << "] from Packed Video ["
+                    << static_cast<int>( region.getPackedMapIndex() ) << "] ********" << std::endl;
+          auto start = steady_clock::now();
+          unpackRegion( dc.packedVideos[region.getPackedMapIndex()], dc.context.getVideoGeometryMultiple( mapIndex ),
+                        region, dc.context.size(),
+                        packingInfo.getConstituentFrameCountMinus1( region.getPackedMapIndex() ) + 1 );
+          auto stop         = steady_clock::now();
+          auto avg_duration = duration_cast<microseconds>( stop - start ).count();
+          std::cout << "Execution time Geometry[" << mapIndex << "] Unpack: " << avg_duration << " microseconds"
+                    << std::endl;
+
+          // Write unpacked geometry video to disk if keeping intermediate files
+          if ( params_.keepIntermediateFiles_ ) {
+            std::string unpackFileName = dc.path.str() + "geometry_d" + std::to_string( mapIndex ) + "_unpacked";
+            dc.context.getVideoGeometryMultiple( mapIndex )
+                .write( dc.context.getVideoGeometryMultiple( mapIndex )
+                            .addFormat( unpackFileName, debugBitDepthTag( geometryBitDepth ) ),
+                        debugByteCount( geometryBitDepth ) );
+            std::cout << "Written unpacked geometry[" << mapIndex << "] video to: " << unpackFileName << std::endl;
           }
+
+          geometryPacked = true;
+          if ( !packingInfo.getLodEnabledFlag() ) { break; }
         }
       }
     }
+  }
+  return geometryPacked;
+}
 
-    if ( !geometryPacked ) {
-      // Traditional decompression from separate geometry stream
-      auto &videoBitstream = context.getVideoBitstream( VIDEO_GEOMETRY );
+size_t PCCDecoder::decodeMultipleMapGeometryVideo( DecoderContext &dc, uint32_t mapIndex ) {
+  auto &gi = dc.context.getVps().getGeometryInformation( dc.atlasIndex );
 
-      printf( " Decode G size = %zu \n", videoBitstream.size() );
-      fflush( stdout );
-      videoDecoder.decompress( context.getVideoGeometryMultiple( 0 ),  // video
-                               context,                                // contexts
-                               path.str(),                             // path
-                               videoBitstream,                         // bitstream
-                               params_.byteStreamVideoCoderGeometry_,  // byte stream video coder
-                               geometryCodecId,                        // codecId
-                               params_.videoDecoderGeometryPath_,      // decoder path
-                               geometryBitDepth,                       // output bit depth
-                               params_.scalerConfig_,                  // scaler config
-                               params_.keepIntermediateFiles_,         // keep intermediate files
-                               params_.shvcLayerIndex_,                // SHVC layer index
-                               "",                                     // patch color subsampling
-                               "",                                     // inverse color space conversion
-                               params_.colorSpaceConversionPath_ );    // color space conversion path
+  int  geometryBitDepth = gi.getGeometry2dBitdepthMinus1() + 1;
+  auto geometryCodecId  = getCodedCodecId( dc.context, gi.getGeometryCodecId(), params_.videoDecoderGeometryPath_ );
 
-      context.getVideoGeometryMultiple()[0].convertBitdepth( geometryBitDepth, gi.getGeometry2dBitdepthMinus1() + 1,
-                                                             gi.getGeometryMSBAlignFlag() );
-      std::cout << "geometry video ->" << videoBitstream.size() << " B" << std::endl;
+  TRACE_PICTURE( "Geometry\n" );
+  TRACE_PICTURE( "MapIdx = %d, AuxiliaryVideoFlag = 0\n", mapIndex );
+  std::cout << "*******Video Decoding: Geometry[" << mapIndex << "] ********" << std::endl;
+
+  // Traditional decompression from separate geometry stream
+  auto  geometryIndex  = static_cast<PCCVideoType>( VIDEO_GEOMETRY_D0 + mapIndex );
+  auto &videoBitstream = dc.context.getVideoBitstream( geometryIndex );
+  dc.videoDecoder.decompress( dc.context.getVideoGeometryMultiple( mapIndex ), dc.context, dc.path.str(),
+                              videoBitstream, params_.byteStreamVideoCoderGeometry_, geometryCodecId,
+                              params_.videoDecoderGeometryPath_, geometryBitDepth, params_.scalerConfig_,
+                              params_.keepIntermediateFiles_, 0, "", "", params_.colorSpaceConversionPath_ );
+
+  dc.context.getVideoGeometryMultiple()[mapIndex].convertBitdepth(
+      geometryBitDepth, gi.getGeometry2dBitdepthMinus1() + 1, gi.getGeometryMSBAlignFlag() );
+  std::cout << "geometry D" << mapIndex << " video ->" << videoBitstream.size() << " B" << std::endl;
+  return videoBitstream.size();
+}
+
+void PCCDecoder::decodeSingleMapGeometry( DecoderContext &dc ) {
+  if ( !unpackSingleMapGeometry( dc ) ) { decodeSingleMapGeometryVideo( dc ); }
+}
+
+bool PCCDecoder::unpackSingleMapGeometry( DecoderContext &dc ) {
+  auto &pve = dc.context.getVps().getVpsPackedVideoExtension();
+  auto &gi  = dc.context.getVps().getGeometryInformation( dc.atlasIndex );
+
+  bool geometryPacked   = false;
+  int  geometryBitDepth = gi.getGeometry2dBitdepthMinus1() + 1;
+
+  // Check if single geometry is in packed video
+  if ( pve.isPresent() && pve.getPackedVideoPresentFlag( dc.atlasIndex ) ) {
+    auto &packingInfo = pve.getPackingInformation( dc.atlasIndex );
+    if ( packingInfo.getGeometryPresentFlag() ) {
+      // Find the geometry region for map index 0
+      for ( size_t regionIndex = 0; regionIndex <= packingInfo.getRegionsCountMinus1(); ++regionIndex ) {
+        auto &region = packingInfo.getRegion( regionIndex );
+        if ( region.getRegionTypeId() == V3C_GVD && !region.getAuxiliaryDataFlag() && region.getMapIndex() == 0 ) {
+          if ( !isPackedRegionSelected( packingInfo, region ) ) { continue; }
+          // Unpack geometry from packed video
+          std::cout << "*******Video Unpacking: Geometry from Packed Video ["
+                    << static_cast<int>( region.getPackedMapIndex() ) << "] ********" << std::endl;
+          auto start = steady_clock::now();
+          unpackRegion( dc.packedVideos[region.getPackedMapIndex()], dc.context.getVideoGeometryMultiple( 0 ), region,
+                        dc.context.size(),
+                        packingInfo.getConstituentFrameCountMinus1( region.getPackedMapIndex() ) + 1 );
+          auto stop         = steady_clock::now();
+          auto avg_duration = duration_cast<microseconds>( stop - start ).count();
+          std::cout << "Execution time Geometry Unpack: " << avg_duration << " microseconds" << std::endl;
+
+          // Write unpacked geometry video to disk if keeping intermediate files
+          if ( params_.keepIntermediateFiles_ ) {
+            std::string unpackFileName = dc.path.str() + "geometry_unpacked";
+            dc.context.getVideoGeometryMultiple( 0 ).write( dc.context.getVideoGeometryMultiple( 0 ).addFormat(
+                                                                unpackFileName, debugBitDepthTag( geometryBitDepth ) ),
+                                                            debugByteCount( geometryBitDepth ) );
+            std::cout << "Written unpacked geometry video to: " << unpackFileName << std::endl;
+          }
+
+          geometryPacked = true;
+          if ( !packingInfo.getLodEnabledFlag() ) { break; }
+        }
+      }
     }
   }
+  return geometryPacked;
+}
+
+void PCCDecoder::decodeSingleMapGeometryVideo( DecoderContext &dc ) {
+  auto &gi = dc.context.getVps().getGeometryInformation( dc.atlasIndex );
+
+  int  geometryBitDepth = gi.getGeometry2dBitdepthMinus1() + 1;
+  auto geometryCodecId  = getCodedCodecId( dc.context, gi.getGeometryCodecId(), params_.videoDecoderGeometryPath_ );
+
+  printf( "=> Video decoder : geometry = %d \n", (int)geometryCodecId );
+  TRACE_PICTURE( "Geometry\n" );
+  TRACE_PICTURE( "MapIdx = 0, AuxiliaryVideoFlag = 0\n" );
+  std::cout << "*******Video Decoding: Geometry ********" << std::endl;
+
+  // Traditional decompression from separate geometry stream
+  auto &videoBitstream = dc.context.getVideoBitstream( VIDEO_GEOMETRY );
+
+  printf( " Decode G size = %zu \n", videoBitstream.size() );
+  fflush( stdout );
+  dc.videoDecoder.decompress( dc.context.getVideoGeometryMultiple( 0 ), dc.context, dc.path.str(), videoBitstream,
+                              params_.byteStreamVideoCoderGeometry_, geometryCodecId, params_.videoDecoderGeometryPath_,
+                              geometryBitDepth, params_.scalerConfig_, params_.keepIntermediateFiles_,
+                              params_.shvcLayerIndex_, "", "", params_.colorSpaceConversionPath_ );
+
+  dc.context.getVideoGeometryMultiple()[0].convertBitdepth( geometryBitDepth, gi.getGeometry2dBitdepthMinus1() + 1,
+                                                            gi.getGeometryMSBAlignFlag() );
+  std::cout << "geometry video ->" << videoBitstream.size() << " B" << std::endl;
+}
+
+void PCCDecoder::decodeAuxGeometry( DecoderContext &dc ) {
+  auto &gi   = dc.context.getVps().getGeometryInformation( dc.atlasIndex );
+  auto &asps = dc.context.getAtlasSequenceParameterSetList()[0];
+
+  int geometryBitDepth = gi.getGeometry2dBitdepthMinus1() + 1;
 
   if ( asps.getRawPatchEnabledFlag() && asps.getAuxiliaryVideoEnabledFlag() &&
-       sps.getAuxiliaryVideoPresentFlag( atlasIndex ) ) {
+       dc.context.getVps().getAuxiliaryVideoPresentFlag( dc.atlasIndex ) ) {
     TRACE_PICTURE( "MapIdx = 0, AuxiliaryVideoFlag = 1\n" );
     std::cout << "*******Video Decoding: Aux Geometry ********" << std::endl;
-    auto &videoBitstreamMP = context.getVideoBitstream( VIDEO_GEOMETRY_RAW );
+    auto &videoBitstreamMP = dc.context.getVideoBitstream( VIDEO_GEOMETRY_RAW );
     auto  auxGeometryCodecId =
-        getCodedCodecId( context, gi.getAuxiliaryGeometryCodecId(), params_.videoDecoderGeometryPath_ );
-    videoDecoder.decompress( context.getVideoRawPointsGeometry(),    // video
-                             context,                                // contexts
-                             path.str(),                             // path
-                             videoBitstreamMP,                       // bitstream
-                             params_.byteStreamVideoCoderGeometry_,  // byte stream video coder
-                             auxGeometryCodecId,                     // codecId
-                             params_.videoDecoderGeometryPath_,      // decoder path
-                             geometryBitDepth,                       // output bit depth
-                             params_.scalerConfig_,                  // scaler config
-                             params_.keepIntermediateFiles_,         // keep intermediate files
-                             params_.shvcLayerIndex_,                // SHVC layer index
-                             "",                                     // patch color subsampling
-                             "",                                     // inverse color space conversion
-                             params_.colorSpaceConversionPath_ );    // color space conversion path
+        getCodedCodecId( dc.context, gi.getAuxiliaryGeometryCodecId(), params_.videoDecoderGeometryPath_ );
+    dc.videoDecoder.decompress( dc.context.getVideoRawPointsGeometry(), dc.context, dc.path.str(), videoBitstreamMP,
+                                params_.byteStreamVideoCoderGeometry_, auxGeometryCodecId,
+                                params_.videoDecoderGeometryPath_, geometryBitDepth, params_.scalerConfig_,
+                                params_.keepIntermediateFiles_, params_.shvcLayerIndex_, "", "",
+                                params_.colorSpaceConversionPath_ );
 
-    context.getVideoRawPointsGeometry().convertBitdepth( geometryBitDepth, gi.getGeometry2dBitdepthMinus1() + 1,
-                                                         gi.getGeometryMSBAlignFlag() );
+    dc.context.getVideoRawPointsGeometry().convertBitdepth( geometryBitDepth, gi.getGeometry2dBitdepthMinus1() + 1,
+                                                            gi.getGeometryMSBAlignFlag() );
     std::cout << " raw points geometry -> " << videoBitstreamMP.size() << " B " << endl;
   }
+}
+
+void PCCDecoder::decodeAttributes( DecoderContext &dc ) {
+  auto &ai = dc.context.getVps().getAttributeInformation( dc.atlasIndex );
 
   if ( ai.getAttributeCount() > 0 ) {
     for ( int attrIndex = 0; attrIndex < ai.getAttributeCount(); attrIndex++ ) {
-      int  attributeBitDepth  = ai.getAttribute2dBitdepthMinus1( attrIndex ) + 1;
-      auto attributeTypeId    = ai.getAttributeTypeId( attrIndex );
       int  attributeDimension = ai.getAttributeDimensionPartitionsMinus1( attrIndex ) + 1;
       auto attributeCodecId =
-          getCodedCodecId( context, ai.getAttributeCodecId( attrIndex ), params_.videoDecoderAttributePath_ );
+          getCodedCodecId( dc.context, ai.getAttributeCodecId( attrIndex ), params_.videoDecoderAttributePath_ );
       printf( "CodecId attributeCodecId = %d \n", (int)attributeCodecId );
+
       for ( int attrPartitionIndex = 0; attrPartitionIndex < attributeDimension; attrPartitionIndex++ ) {
-        if ( sps.getMultipleMapStreamsPresentFlag( atlasIndex ) ) {
-          int sizeAttributeVideo = 0;
-          context.getVideoAttributesMultiple().resize( sps.getMapCountMinus1( atlasIndex ) + 1 );
-          // this allocation is considering only one attribute, with a single partition, but multiple streams
-          for ( uint32_t mapIndex = 0; mapIndex < sps.getMapCountMinus1( atlasIndex ) + 1; mapIndex++ ) {
-            // decompress T[mapIndex]
-            TRACE_PICTURE( "Attribute\n" );
-            TRACE_PICTURE( "AttrIdx = %d, AttrPartIdx = %d, AttrTypeID = %d, MapIdx = %d, AuxiliaryVideoFlag = 0\n",
-                           attrIndex, attrPartitionIndex, attributeTypeId, mapIndex );
-            std::cout << "*******Video Decoding: Attribute [" << mapIndex << "] ********" << std::endl;
+        decodeAttributePartition( dc, attrIndex, attrPartitionIndex );
+      }
+    }
+  }
+}
 
-            // Check if this attribute is in packed video
-            bool attributePacked = false;
-            if ( pve.isPresent() && pve.getPackedVideoPresentFlag( atlasIndex ) ) {
-              auto &packingInfo = pve.getPackingInformation( atlasIndex );
-              if ( packingInfo.getAttributePresentFlag() ) {
-                // Find the attribute region for this map, attribute index, and partition
-                for ( size_t regionIndex = 0; regionIndex <= packingInfo.getRegionsCountMinus1(); ++regionIndex ) {
-                  auto &region = packingInfo.getRegion( regionIndex );
-                  if ( region.getRegionTypeId() == V3C_AVD && !region.getAuxiliaryDataFlag() &&
-                       region.getMapIndex() == mapIndex && region.getAttrIndex() == attrIndex &&
-                       region.getAttrPartitionIndex() == attrPartitionIndex ) {
-                    if ( !isPackedRegionSelected( packingInfo, region ) ) { continue; }
-                    // Unpack attribute from packed video
-                    std::cout << "*******Video Unpacking: Attribute [" << mapIndex << "] from Packed Video ["
-                              << static_cast<int>( region.getPackedMapIndex() ) << "] ********" << std::endl;
-                    auto start = steady_clock::now();
-                    unpackRegion( packedVideos[region.getPackedMapIndex()],
-                                  context.getVideoAttributesMultiple( mapIndex ), region, frameCount,
-                                  packingInfo.getConstituentFrameCountMinus1( region.getPackedMapIndex() ) + 1 );
-                    auto stop         = steady_clock::now();
-                    auto avg_duration = duration_cast<microseconds>( stop - start ).count();
-                    std::cout << "Execution time Attribute [" << mapIndex << "] Unpack: " << avg_duration
-                              << " microseconds" << std::endl;
+void PCCDecoder::decodeAttributePartition( DecoderContext &dc, int attrIndex, int attrPartitionIndex ) {
+  if ( dc.context.getVps().getMultipleMapStreamsPresentFlag( dc.atlasIndex ) ) {
+    decodeMultipleMapAttributePartition( dc, attrIndex, attrPartitionIndex );
+  } else {
+    decodeSingleMapAttributePartition( dc, attrIndex, attrPartitionIndex );
+  }
+  decodeAuxAttributePartition( dc, attrIndex, attrPartitionIndex );
+}
 
-                    // Write unpacked attribute video to disk if keeping intermediate files
-                    if ( params_.keepIntermediateFiles_ ) {
-                      std::string unpackFileName = path.str() + "attribute_t" + std::to_string( mapIndex ) + "_attr" +
-                                                   std::to_string( attrIndex ) + "_part" +
-                                                   std::to_string( attrPartitionIndex ) + "_unpacked";
-                      context.getVideoAttributesMultiple( mapIndex )
-                          .write( context.getVideoAttributesMultiple( mapIndex )
-                                      .addFormat( unpackFileName, debugBitDepthTag( attributeBitDepth ) ),
-                                  debugByteCount( attributeBitDepth ) );
-                      std::cout << "Written unpacked attribute[" << mapIndex << "] video to: " << unpackFileName
-                                << std::endl;
-                    }
+void PCCDecoder::decodeMultipleMapAttributePartition( DecoderContext &dc, int attrIndex, int attrPartitionIndex ) {
+  size_t sizeAttributeVideo = 0;
 
-                    attributePacked = true;
-                    if ( !packingInfo.getLodEnabledFlag() ) { break; }
-                  }
-                }
-              }
-            }
+  dc.context.getVideoAttributesMultiple().resize( dc.context.getVps().getMapCountMinus1( dc.atlasIndex ) + 1 );
 
-            if ( !attributePacked ) {
-              // Traditional decompression from separate attribute stream
-              auto  attributeIndex = static_cast<PCCVideoType>( VIDEO_ATTRIBUTE_T0 + attrPartitionIndex +
-                                                                MAX_NUM_ATTR_PARTITIONS * mapIndex );
-              auto &videoBitstream = context.getVideoBitstream( attributeIndex );
-              // auto  start          = steady_clock::now();
-              videoDecoder.decompress( context.getVideoAttributesMultiple( mapIndex ),  // video
-                                       context,                                         // contexts
-                                       path.str(),                                      // path
-                                       videoBitstream,                                  // bitstream
-                                       params_.byteStreamVideoCoderAttribute_,          // byte stream video coder
-                                       attributeCodecId,                                // codecId
-                                       params_.videoDecoderAttributePath_,              // decoder path
-                                       attributeBitDepth,                               // output bit depth
-                                       params_.scalerConfig_,                           // scaler config
-                                       params_.keepIntermediateFiles_,                  // keep intermediate files
-                                       params_.shvcLayerIndex_,                         // SHVC layer index
-                                       params_.patchColorSubsampling_,                  // patch color subsampling
-                                       params_.inverseColorSpaceConversionConfig_,  // inverse color space conversion
-                                       params_.colorSpaceConversionPath_ );         // color space conversion path
-              // auto stop         = steady_clock::now();
-              // auto avg_duration = duration_cast<microseconds>( stop - start ).count();
-              // std::cout << "Execution time Attribute T" << mapIndex << " video : " << avg_duration << " microseconds"
-              //           << std::endl;
+  for ( uint32_t mapIndex = 0; mapIndex < dc.context.getVps().getMapCountMinus1( dc.atlasIndex ) + 1; mapIndex++ ) {
+    if ( !unpackMultipleMapAttributePartition( dc, attrIndex, attrPartitionIndex, mapIndex ) ) {
+      sizeAttributeVideo += decodeMultipleMapAttributePartitionVideo( dc, attrIndex, attrPartitionIndex, mapIndex );
+    }
+  }
+  std::cout << "attribute    video ->" << sizeAttributeVideo << " B" << std::endl;
+}
 
-              std::cout << "attribute T" << mapIndex << " video ->" << videoBitstream.size() << " B" << std::endl;
-              sizeAttributeVideo += videoBitstream.size();
-            }
-          }
-          std::cout << "attribute    video ->" << sizeAttributeVideo << " B" << std::endl;
-        } else {
-          TRACE_PICTURE( "Attribute\n" );
-          TRACE_PICTURE( "AttrIdx = 0, AttrPartIdx = %d, AttrTypeID = %d, MapIdx = 0, AuxiliaryVideoFlag = 0\n",
-                         attrPartitionIndex, attributeTypeId );
-          std::cout << "*******Video Decoding: Attribute ********" << std::endl;
+bool PCCDecoder::unpackMultipleMapAttributePartition( DecoderContext &dc,
+                                                      int             attrIndex,
+                                                      int             attrPartitionIndex,
+                                                      uint32_t        mapIndex ) {
+  auto &ai  = dc.context.getVps().getAttributeInformation( dc.atlasIndex );
+  auto &pve = dc.context.getVps().getVpsPackedVideoExtension();
 
-          // Check if this single attribute is in packed video
-          bool attributePacked = false;
-          if ( pve.isPresent() && pve.getPackedVideoPresentFlag( atlasIndex ) ) {
-            auto &packingInfo = pve.getPackingInformation( atlasIndex );
-            if ( packingInfo.getAttributePresentFlag() ) {
-              // Find the attribute region for map 0, this attribute index, and partition
-              for ( size_t regionIndex = 0; regionIndex <= packingInfo.getRegionsCountMinus1(); ++regionIndex ) {
-                auto &region = packingInfo.getRegion( regionIndex );
-                if ( region.getRegionTypeId() == V3C_AVD && !region.getAuxiliaryDataFlag() &&
-                     region.getMapIndex() == 0 && region.getAttrIndex() == attrIndex &&
-                     region.getAttrPartitionIndex() == attrPartitionIndex ) {
-                  if ( !isPackedRegionSelected( packingInfo, region ) ) { continue; }
-                  // Unpack attribute from packed video
-                  std::cout << "*******Video Unpacking: Attribute from Packed Video ["
-                            << static_cast<int>( region.getPackedMapIndex() ) << "] ********" << std::endl;
-                  auto start = steady_clock::now();
-                  unpackRegion( packedVideos[region.getPackedMapIndex()],
-                                context.getVideoAttributesMultiple( attrIndex, attrPartitionIndex )[0], region,
-                                frameCount,
-                                packingInfo.getConstituentFrameCountMinus1( region.getPackedMapIndex() ) + 1 );
-                  auto stop         = steady_clock::now();
-                  auto avg_duration = duration_cast<microseconds>( stop - start ).count();
-                  std::cout << "Execution time Attribute Unpack: " << avg_duration << " microseconds" << std::endl;
+  bool attributePacked   = false;
+  int  attributeBitDepth = ai.getAttribute2dBitdepthMinus1( attrIndex ) + 1;
 
-                  // Write unpacked attribute video to disk if keeping intermediate files
-                  if ( params_.keepIntermediateFiles_ ) {
-                    std::string unpackFileName = path.str() + "attribute_attr" + std::to_string( attrIndex ) + "_part" +
-                                                 std::to_string( attrPartitionIndex ) + "_unpacked";
-                    context.getVideoAttributesMultiple( attrIndex, attrPartitionIndex )[0].write(
-                        context.getVideoAttributesMultiple( attrIndex, attrPartitionIndex )[0].addFormat(
-                            unpackFileName, debugBitDepthTag( attributeBitDepth ) ),
+  // Check if this attribute is in packed video
+  if ( pve.isPresent() && pve.getPackedVideoPresentFlag( dc.atlasIndex ) ) {
+    auto &packingInfo = pve.getPackingInformation( dc.atlasIndex );
+    if ( packingInfo.getAttributePresentFlag() ) {
+      // Find the attribute region for this map, attribute index, and partition
+      for ( size_t regionIndex = 0; regionIndex <= packingInfo.getRegionsCountMinus1(); ++regionIndex ) {
+        auto &region = packingInfo.getRegion( regionIndex );
+        if ( region.getRegionTypeId() == V3C_AVD && !region.getAuxiliaryDataFlag() &&
+             region.getMapIndex() == mapIndex && region.getAttrIndex() == attrIndex &&
+             region.getAttrPartitionIndex() == attrPartitionIndex ) {
+          if ( !isPackedRegionSelected( packingInfo, region ) ) { continue; }
+          // Unpack attribute from packed video
+          std::cout << "*******Video Unpacking: Attribute [" << mapIndex << "] from Packed Video ["
+                    << static_cast<int>( region.getPackedMapIndex() ) << "] ********" << std::endl;
+          auto start = steady_clock::now();
+          unpackRegion( dc.packedVideos[region.getPackedMapIndex()], dc.context.getVideoAttributesMultiple( mapIndex ),
+                        region, dc.context.size(),
+                        packingInfo.getConstituentFrameCountMinus1( region.getPackedMapIndex() ) + 1 );
+          auto stop         = steady_clock::now();
+          auto avg_duration = duration_cast<microseconds>( stop - start ).count();
+          std::cout << "Execution time Attribute [" << mapIndex << "] Unpack: " << avg_duration << " microseconds"
+                    << std::endl;
+
+          // Write unpacked attribute video to disk if keeping intermediate files
+          if ( params_.keepIntermediateFiles_ ) {
+            std::string unpackFileName = dc.path.str() + "attribute_t" + std::to_string( mapIndex ) + "_attr" +
+                                         std::to_string( attrIndex ) + "_part" + std::to_string( attrPartitionIndex ) +
+                                         "_unpacked";
+            dc.context.getVideoAttributesMultiple( mapIndex )
+                .write( dc.context.getVideoAttributesMultiple( mapIndex )
+                            .addFormat( unpackFileName, debugBitDepthTag( attributeBitDepth ) ),
                         debugByteCount( attributeBitDepth ) );
-                    std::cout << "Written unpacked attribute video to: " << unpackFileName << std::endl;
-                  }
-
-                  attributePacked = true;
-                  if ( !packingInfo.getLodEnabledFlag() ) { break; }
-                }
-              }
-            }
+            std::cout << "Written unpacked attribute[" << mapIndex << "] video to: " << unpackFileName << std::endl;
           }
 
-          if ( !attributePacked ) {
-            // Traditional decompression from separate attribute stream
-            auto attributeIndex = static_cast<PCCVideoType>( VIDEO_ATTRIBUTE + attrPartitionIndex );
-            // TODO: LK Hack for now
-            if ( sps.getProfileTierLevel().getProfileToolsetIdc() == 2 ) {
-              attributeIndex = getAttributeType( attributeTypeId, attrPartitionIndex );
-            }
-
-            auto &videoBitstream = context.getVideoBitstream( attributeIndex );
-            printf( " Decode T size = %zu \n", videoBitstream.size() );
-            fflush( stdout );
-            videoDecoder.decompress(
-                context.getVideoAttributesMultiple( 0, attrIndex, attrPartitionIndex )[0],  // video
-                context,                                                                    // contexts
-                path.str(),                                                                 // path
-                videoBitstream,                                                             // bitstream
-                params_.byteStreamVideoCoderAttribute_,                                     // byte stream video coder
-                attributeCodecId,                                                           // codecId
-                params_.videoDecoderAttributePath_,                                         // decoder path
-                attributeBitDepth,                                                          // output bit depth
-                params_.scalerConfig_,                                                      // scaler config
-                params_.keepIntermediateFiles_,                                             // keep intermediate files
-                params_.shvcLayerIndex_,                                                    // SHVC layer index
-                params_.patchColorSubsampling_,                                             // patch color subsampling
-                params_.inverseColorSpaceConversionConfig_,  // inverse color space conversionConfig
-                params_.colorSpaceConversionPath_ );         // color space conversion path
-            std::cout << "attribute video  ->" << videoBitstream.size() << " B" << std::endl;
-          }
-        }
-
-        if ( asps.getRawPatchEnabledFlag() && asps.getAuxiliaryVideoEnabledFlag() &&
-             sps.getAuxiliaryVideoPresentFlag( atlasIndex ) ) {
-          std::cout << "*******Video Decoding: Aux Attribute ********" << std::endl;
-          auto attributeIndex = static_cast<PCCVideoType>( VIDEO_ATTRIBUTE_RAW + attrPartitionIndex );
-          TRACE_PICTURE( "Attribute\n" );
-          TRACE_PICTURE( "AttrIdx = 0, AttrPartIdx = %d, AttrTypeID = %d, MapIdx = 0, AuxiliaryVideoFlag = 1\n",
-                         attrPartitionIndex, attributeTypeId );
-          auto &videoBitstreamMP    = context.getVideoBitstream( attributeIndex );
-          auto  auxAttributeCodecId = getCodedCodecId( context, ai.getAuxiliaryAttributeCodecId( attrIndex ),
-                                                       params_.videoDecoderAttributePath_ );
-          printf( "CodecId auxAttributeCodecId = %d \n", (int)auxAttributeCodecId );
-          videoDecoder.decompress( context.getVideoRawPointsAttribute(),        // video
-                                   context,                                     // contexts
-                                   path.str(),                                  // path
-                                   videoBitstreamMP,                            // bitstream
-                                   params_.byteStreamVideoCoderAttribute_,      // byte stream video coder
-                                   auxAttributeCodecId,                         // codecId
-                                   params_.videoDecoderAttributePath_,          // decoder path
-                                   attributeBitDepth,                           // output bit depth
-                                   params_.scalerConfig_,                       // scaler config
-                                   params_.keepIntermediateFiles_,              // keep intermediate files
-                                   params_.shvcLayerIndex_,                     // SHVC layer index
-                                   false,                                       // patch color subsampling
-                                   params_.inverseColorSpaceConversionConfig_,  // inverse color space conversionConfig
-                                   params_.colorSpaceConversionPath_ );         // color space conversion path
-          // generateRawPointsAttributefromVideo( context, reconstructs );
-          std::cout << " raw points attribute -> " << videoBitstreamMP.size() << " B" << endl;
+          attributePacked = true;
+          if ( !packingInfo.getLodEnabledFlag() ) { break; }
         }
       }
     }
   }
-  ////////////////////////// RECONSTRUCTION  //////////////////////////
-  if ( sps.getProfileTierLevel().getProfileReconstructionIdc() == 3 ) {
-    return ReconstructIdc3( context, reconstructs, atlasIndex );
-  } else {
-    return ReconstructIdc0Idc1Idc2Idc255( context, reconstructs, atlasIndex );
+  return attributePacked;
+}
+
+size_t PCCDecoder::decodeMultipleMapAttributePartitionVideo( DecoderContext &dc,
+                                                             int             attrIndex,
+                                                             int             attrPartitionIndex,
+                                                             uint32_t        mapIndex ) {
+  auto &ai = dc.context.getVps().getAttributeInformation( dc.atlasIndex );
+
+  int  attributeBitDepth = ai.getAttribute2dBitdepthMinus1( attrIndex ) + 1;
+  auto attributeCodecId =
+      getCodedCodecId( dc.context, ai.getAttributeCodecId( attrIndex ), params_.videoDecoderAttributePath_ );
+
+  TRACE_PICTURE( "Attribute\n" );
+  TRACE_PICTURE( "AttrIdx = %d, AttrPartIdx = %d, AttrTypeID = %d, MapIdx = %d, AuxiliaryVideoFlag = 0\n", attrIndex,
+                 attrPartitionIndex, attributeTypeId, mapIndex );
+  std::cout << "*******Video Decoding: Attribute [" << mapIndex << "] ********" << std::endl;
+
+  // Traditional decompression from separate attribute stream
+  auto attributeIndex =
+      static_cast<PCCVideoType>( VIDEO_ATTRIBUTE_T0 + attrPartitionIndex + MAX_NUM_ATTR_PARTITIONS * mapIndex );
+  auto &videoBitstream = dc.context.getVideoBitstream( attributeIndex );
+  dc.videoDecoder.decompress( dc.context.getVideoAttributesMultiple( mapIndex ), dc.context, dc.path.str(),
+                              videoBitstream, params_.byteStreamVideoCoderAttribute_, attributeCodecId,
+                              params_.videoDecoderAttributePath_, attributeBitDepth, params_.scalerConfig_,
+                              params_.keepIntermediateFiles_, params_.shvcLayerIndex_, params_.patchColorSubsampling_,
+                              params_.inverseColorSpaceConversionConfig_, params_.colorSpaceConversionPath_ );
+
+  std::cout << "attribute T" << mapIndex << " video ->" << videoBitstream.size() << " B" << std::endl;
+  return videoBitstream.size();
+}
+
+void PCCDecoder::decodeSingleMapAttributePartition( DecoderContext &dc, int attrIndex, int attrPartitionIndex ) {
+  if ( !unpackSingleMapAttributePartition( dc, attrIndex, attrPartitionIndex ) ) {
+    decodeSingleMapAttributePartitionVideo( dc, attrIndex, attrPartitionIndex );
   }
+}
+
+bool PCCDecoder::unpackSingleMapAttributePartition( DecoderContext &dc, int attrIndex, int attrPartitionIndex ) {
+  auto &ai  = dc.context.getVps().getAttributeInformation( dc.atlasIndex );
+  auto &pve = dc.context.getVps().getVpsPackedVideoExtension();
+
+  bool attributePacked   = false;
+  int  attributeBitDepth = ai.getAttribute2dBitdepthMinus1( attrIndex ) + 1;
+
+  // Check if this single attribute is in packed video
+  if ( pve.isPresent() && pve.getPackedVideoPresentFlag( dc.atlasIndex ) ) {
+    auto &packingInfo = pve.getPackingInformation( dc.atlasIndex );
+    if ( packingInfo.getAttributePresentFlag() ) {
+      // Find the attribute region for map 0, this attribute index, and partition
+      for ( size_t regionIndex = 0; regionIndex <= packingInfo.getRegionsCountMinus1(); ++regionIndex ) {
+        auto &region = packingInfo.getRegion( regionIndex );
+        if ( region.getRegionTypeId() == V3C_AVD && !region.getAuxiliaryDataFlag() && region.getMapIndex() == 0 &&
+             region.getAttrIndex() == attrIndex && region.getAttrPartitionIndex() == attrPartitionIndex ) {
+          if ( !isPackedRegionSelected( packingInfo, region ) ) { continue; }
+          // Unpack attribute from packed video
+          std::cout << "*******Video Unpacking: Attribute from Packed Video ["
+                    << static_cast<int>( region.getPackedMapIndex() ) << "] ********" << std::endl;
+          auto start = steady_clock::now();
+          unpackRegion( dc.packedVideos[region.getPackedMapIndex()],
+                        dc.context.getVideoAttributesMultiple( attrIndex, attrPartitionIndex )[0], region,
+                        dc.context.size(),
+                        packingInfo.getConstituentFrameCountMinus1( region.getPackedMapIndex() ) + 1 );
+          auto stop         = steady_clock::now();
+          auto avg_duration = duration_cast<microseconds>( stop - start ).count();
+          std::cout << "Execution time Attribute Unpack: " << avg_duration << " microseconds" << std::endl;
+
+          // Write unpacked attribute video to disk if keeping intermediate files
+          if ( params_.keepIntermediateFiles_ ) {
+            std::string unpackFileName = dc.path.str() + "attribute_attr" + std::to_string( attrIndex ) + "_part" +
+                                         std::to_string( attrPartitionIndex ) + "_unpacked";
+            dc.context.getVideoAttributesMultiple( attrIndex, attrPartitionIndex )[0].write(
+                dc.context.getVideoAttributesMultiple( attrIndex, attrPartitionIndex )[0].addFormat(
+                    unpackFileName, debugBitDepthTag( attributeBitDepth ) ),
+                debugByteCount( attributeBitDepth ) );
+            std::cout << "Written unpacked attribute video to: " << unpackFileName << std::endl;
+          }
+
+          attributePacked = true;
+          if ( !packingInfo.getLodEnabledFlag() ) { break; }
+        }
+      }
+    }
+  }
+  return attributePacked;
+}
+
+void PCCDecoder::decodeSingleMapAttributePartitionVideo( DecoderContext &dc, int attrIndex, int attrPartitionIndex ) {
+  auto &ai = dc.context.getVps().getAttributeInformation( dc.atlasIndex );
+
+  int  attributeBitDepth = ai.getAttribute2dBitdepthMinus1( attrIndex ) + 1;
+  auto attributeCodecId =
+      getCodedCodecId( dc.context, ai.getAttributeCodecId( attrIndex ), params_.videoDecoderAttributePath_ );
+  auto attributeTypeId = ai.getAttributeTypeId( attrIndex );
+
+  TRACE_PICTURE( "Attribute\n" );
+  TRACE_PICTURE( "AttrIdx = 0, AttrPartIdx = %d, AttrTypeID = %d, MapIdx = 0, AuxiliaryVideoFlag = 0\n",
+                 attrPartitionIndex, attributeTypeId );
+  std::cout << "*******Video Decoding: Attribute ********" << std::endl;
+
+  // Traditional decompression from separate attribute stream
+  auto attributeIndex = static_cast<PCCVideoType>( VIDEO_ATTRIBUTE + attrPartitionIndex );
+  // TODO: LK Hack for now
+  if ( dc.context.getVps().getProfileTierLevel().getProfileToolsetIdc() == 2 ) {
+    attributeIndex = getAttributeType( attributeTypeId, attrPartitionIndex );
+  }
+
+  auto &videoBitstream = dc.context.getVideoBitstream( attributeIndex );
+  printf( " Decode T size = %zu \n", videoBitstream.size() );
+  fflush( stdout );
+  dc.videoDecoder.decompress( dc.context.getVideoAttributesMultiple( 0, attrIndex, attrPartitionIndex )[0], dc.context,
+                              dc.path.str(), videoBitstream, params_.byteStreamVideoCoderAttribute_, attributeCodecId,
+                              params_.videoDecoderAttributePath_, attributeBitDepth, params_.scalerConfig_,
+                              params_.keepIntermediateFiles_, params_.shvcLayerIndex_, params_.patchColorSubsampling_,
+                              params_.inverseColorSpaceConversionConfig_, params_.colorSpaceConversionPath_ );
+  std::cout << "attribute video  ->" << videoBitstream.size() << " B" << std::endl;
+}
+
+void PCCDecoder::decodeAuxAttributePartition( DecoderContext &dc, int attrIndex, int attrPartitionIndex ) {
+  auto &ai   = dc.context.getVps().getAttributeInformation( dc.atlasIndex );
+  auto &asps = dc.context.getAtlasSequenceParameterSetList()[0];
+
+  int attributeBitDepth = ai.getAttribute2dBitdepthMinus1( attrIndex ) + 1;
+
+  if ( asps.getRawPatchEnabledFlag() && asps.getAuxiliaryVideoEnabledFlag() &&
+       dc.context.getVps().getAuxiliaryVideoPresentFlag( dc.atlasIndex ) ) {
+    std::cout << "*******Video Decoding: Aux Attribute ********" << std::endl;
+    auto attributeIndex = static_cast<PCCVideoType>( VIDEO_ATTRIBUTE_RAW + attrPartitionIndex );
+    TRACE_PICTURE( "Attribute\n" );
+    TRACE_PICTURE( "AttrIdx = 0, AttrPartIdx = %d, AttrTypeID = %d, MapIdx = 0, AuxiliaryVideoFlag = 1\n",
+                   attrPartitionIndex, attributeTypeId );
+    auto &videoBitstreamMP = dc.context.getVideoBitstream( attributeIndex );
+    auto  auxAttributeCodecId =
+        getCodedCodecId( dc.context, ai.getAuxiliaryAttributeCodecId( attrIndex ), params_.videoDecoderAttributePath_ );
+    printf( "CodecId auxAttributeCodecId = %d \n", (int)auxAttributeCodecId );
+    dc.videoDecoder.decompress( dc.context.getVideoRawPointsAttribute(), dc.context, dc.path.str(), videoBitstreamMP,
+                                params_.byteStreamVideoCoderAttribute_, auxAttributeCodecId,
+                                params_.videoDecoderAttributePath_, attributeBitDepth, params_.scalerConfig_,
+                                params_.keepIntermediateFiles_, params_.shvcLayerIndex_, false,
+                                params_.inverseColorSpaceConversionConfig_, params_.colorSpaceConversionPath_ );
+    std::cout << " raw points attribute -> " << videoBitstreamMP.size() << " B" << endl;
+  }
+}
+
+int PCCDecoder::reconstruct( DecoderContext &dc, PCCGroupOfFrames &reconstructs ) {
+  if ( dc.context.getVps().getProfileTierLevel().getProfileReconstructionIdc() == 3 ) {
+    return ReconstructIdc3( dc.context, reconstructs, dc.atlasIndex );
+  }
+  return ReconstructIdc0Idc1Idc2Idc255( dc.context, reconstructs, dc.atlasIndex );
 }
 
 void PCCDecoder::setPLRData( PCCFrameContext &tile, PCCPatch &patch, PLRData &plrd, size_t occupancyPackingBlockSize ) {

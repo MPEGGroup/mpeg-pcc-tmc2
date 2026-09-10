@@ -81,6 +81,38 @@ class PCCDecoder : public PCCCodec {
   }
 
  private:
+  struct DecoderContext;
+
+  void   decodePackedVideo( DecoderContext &dc );
+  void   decodeOccupancy( DecoderContext &dc );
+  bool   unpackOccupancy( DecoderContext &dc );
+  bool   decodeOccupancyVideo( DecoderContext &dc );
+  void   decodeBlockToPatchMap( DecoderContext &dc );
+  void   decodeGeometry( DecoderContext &dc );
+  void   decodeMultipleMapGeometry( DecoderContext &dc );
+  bool   unpackMultipleMapGeometry( DecoderContext &dc, uint32_t mapIndex );
+  size_t decodeMultipleMapGeometryVideo( DecoderContext &dc, uint32_t mapIndex );
+  void   decodeSingleMapGeometry( DecoderContext &dc );
+  bool   unpackSingleMapGeometry( DecoderContext &dc );
+  void   decodeSingleMapGeometryVideo( DecoderContext &dc );
+  void   decodeAuxGeometry( DecoderContext &dc );
+  void   decodeAttributes( DecoderContext &dc );
+  void   decodeAttributePartition( DecoderContext &dc, int attrIndex, int attrPartitionIndex );
+  void   decodeMultipleMapAttributePartition( DecoderContext &dc, int attrIndex, int attrPartitionIndex );
+  bool   unpackMultipleMapAttributePartition( DecoderContext &dc,
+                                              int             attrIndex,
+                                              int             attrPartitionIndex,
+                                              uint32_t        mapIndex );
+  size_t decodeMultipleMapAttributePartitionVideo( DecoderContext &dc,
+                                                   int             attrIndex,
+                                                   int             attrPartitionIndex,
+                                                   uint32_t        mapIndex );
+  void   decodeSingleMapAttributePartition( DecoderContext &dc, int attrIndex, int attrPartitionIndex );
+  bool   unpackSingleMapAttributePartition( DecoderContext &dc, int attrIndex, int attrPartitionIndex );
+  void   decodeSingleMapAttributePartitionVideo( DecoderContext &dc, int attrIndex, int attrPartitionIndex );
+  void   decodeAuxAttributePartition( DecoderContext &dc, int attrIndex, int attrPartitionIndex );
+  int    reconstruct( DecoderContext &dc, PCCGroupOfFrames &reconstructs );
+
   void       setPointLocalReconstruction( PCCContext &context );
   void       setPLRData( PCCFrameContext &tile, PCCPatch &patch, PLRData &plrd, size_t occupancyPackingBlockSize );
   void       setTilePartitionSizeAfti( PCCContext &context );
