@@ -2,7 +2,7 @@ diff --git a/source/Lib/TLibEncoder/TEncCfg.h b/source/Lib/TLibEncoder/TEncCfg.h
 index 07886af..50a7884 100644
 --- a/source/Lib/TLibEncoder/TEncCfg.h
 +++ b/source/Lib/TLibEncoder/TEncCfg.h
-@@ -577,6 +577,91 @@ public:
+@@ -577,6 +577,97 @@ public:
    {
      m_PCMBitDepth[CHANNEL_TYPE_LUMA]=8;
      m_PCMBitDepth[CHANNEL_TYPE_CHROMA]=8;
@@ -73,6 +73,12 @@ index 07886af..50a7884 100644
 +
 +    // Shutter Interval Info SEI
 +    m_siiSEIEnabled = false;
++
++    // Shutter Interval SEI pre-filter (SHUTTER_INTERVAL_SEI_PROCESSING): if left uninitialized,
++    // garbage-true makes HM average every even-POC source frame with its predecessor, breaking lossless.
++#if SHUTTER_INTERVAL_SEI_PROCESSING
++    m_ShutterFilterEnable = false;
++#endif
 +
 +    // SEI Manifest / SEI Prefix Indication (JCTVC_AD0021 — new in HM-18.0,
 +    // never set by the PCC xInitLibCfg which was written for HM-16.20)
