@@ -24,15 +24,15 @@ Bash scripts can be use to build mpeg-pcc-tmc2 project:
 - cmake .. 
 - cmake --build . --config Release --parallel 8
 
-### V-PCC main profile
+### V-PCC Basic and Extended profiles
 
-For V-PCC main profile experiments build TMC2 with a different release of the HEVC test model:
+For V-PCC Basic and V-PCC Extended profile experiments build TMC2 with a different release of the HEVC test model:
 
 - cmake .. -DHM_VERSION=HM-16.20+SCM-8.8
 
 ### External dependencies
 
-According to the CMake options defined in the CMakeLists.txt, the TMC2 required some external dependencies to work: 
+According to the CMake options defined in the CMakeLists.txt, the TMC2 required some external dependencies to work:
 
   - USE_JMAPP_VIDEO_CODEC: use JM software to encoder and decoder videos (codecId parameters must be set equal to 0 and the videoEncoderOccupancyPath, videoEncoderGeometryPath and videoEncoderAttributePath but be set the JM applications)
   - USE_HMAPP_VIDEO_CODEC: use HM software to encoder and decoder videos (codecId parametesr must be set equal to 1 and the videoEncoderOccupancyPath, videoEncoderGeometryPath and videoEncoderAttributePath but be set the JM applications)

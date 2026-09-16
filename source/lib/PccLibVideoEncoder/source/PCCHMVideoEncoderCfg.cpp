@@ -208,7 +208,7 @@ std::istringstream &operator>>( std::istringstream &in,
   in >> entry.m_sliceType;
   in >> entry.m_POC;
   in >> entry.m_QPOffset;
-#if X0038_LAMBDA_FROM_QP_CAPABILITY
+#if X0038_LAMBDA_FROM_QP_CAPABILITY || defined( PCC_HM_UNPATCHED )
   in >> entry.m_QPOffsetModelOffset;
   in >> entry.m_QPOffsetModelScale;
 #endif
