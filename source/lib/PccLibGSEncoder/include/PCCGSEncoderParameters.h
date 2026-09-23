@@ -158,6 +158,98 @@ struct PCCGSEncoderParameters {
     }
   }
 
+  // Column width matches PCCApplicationParameters::print() / PCCAdaptationParameters::print()
+  // so that the three reported sections line up.
+  static std::string field( const std::string &label ) {
+    std::string s = label + ":";
+    if ( s.size() < 38 ) { s.resize( 38, ' ' ); }
+    return s;
+  }
+
+  void print() const {
+    auto printVec = []( const auto &vec ) {
+      std::string s;
+      for ( size_t i = 0; i < vec.size(); ++i ) {
+        if ( i ) { s += ","; }
+        s += std::to_string( vec[i] );
+      }
+      return s;
+    };
+    std::cout << "Encoder parameters: \n";
+    std::cout << "  " << field( "geometryQP" ) << geometryQP_ << "\n";
+    std::cout << "  " << field( "attributeScaleQP" ) << attributeScaleQP_ << "\n";
+    std::cout << "  " << field( "attributeOpacityQP" ) << attributeOpacityQP_ << "\n";
+    std::cout << "  " << field( "attributeRotationQP" ) << attributeRotationQP_ << "\n";
+    std::cout << "  " << field( "attributeColorQP" ) << attributeColorQP_ << "\n";
+    std::cout << "  " << field( "packQP" ) << printVec( packQP_ ) << "\n";
+    std::cout << "  " << field( "occupancyResolution" ) << occupancyResolution_ << "\n";
+    std::cout << "  " << field( "geometryBitDepth3D" ) << geometryBitDepth3D_ << "\n";
+    std::cout << "  " << field( "geometryBitDepth2D" ) << geometryBitDepth2D_ << "\n";
+    std::cout << "  " << field( "attributeBitDepth2D" ) << attributeBitDepth2D_ << "\n";
+    std::cout << "  " << field( "minimumImageWidth" ) << minimumImageWidth_ << "\n";
+    std::cout << "  " << field( "minimumImageHeight" ) << minimumImageHeight_ << "\n";
+    std::cout << "  " << field( "raw3dOffsetBitCountExplicitModeFlag" ) << raw3dOffsetBitCountExplicitModeFlag_ << "\n";
+    std::cout << "  " << field( "raw3dOffsetAxisBitCountMinus1" ) << raw3dOffsetAxisBitCountMinus1_ << "\n";
+    std::cout << "  " << field( "debugPath" ) << debugPath_ << "\n";
+    std::cout << "  " << field( "packGeometry" ) << packGeometry_ << "\n";
+    std::cout << "  " << field( "packAttributes" ) << packAttributes_ << "\n";
+    std::cout << "  " << field( "implicitPacking" ) << implicitPacking_ << "\n";
+    std::cout << "  " << field( "temporalPacking" ) << temporalPacking_ << "\n";
+    std::cout << "  " << field( "geometryPackedMapIndex" ) << geometryPackedMapIndex_ << "\n";
+    std::cout << "  " << field( "attributeScalePackedMapIndex" ) << attributeScalePackedMapIndex_ << "\n";
+    std::cout << "  " << field( "attributeOpacityPackedMapIndex" ) << attributeOpacityPackedMapIndex_ << "\n";
+    std::cout << "  " << field( "attributeRotationPackedMapIndex" ) << attributeRotationPackedMapIndex_ << "\n";
+    std::cout << "  " << field( "attributeColorPackedMapIndex" ) << attributeColorPackedMapIndex_ << "\n";
+    std::cout << "  " << field( "packedMapColumnsCount" ) << printVec( packedMapColumnsCount_ ) << "\n";
+    std::cout << "  " << field( "gsdTransform2dPresentFlag" ) << gsdTransform2dPresentFlag_ << "\n";
+    std::cout << "  " << field( "dataAdaptiveShTransformEnabled" ) << dataAdaptiveShTransformEnabled_ << "\n";
+    std::cout << "  " << field( "adaptivePcaEnabled" ) << adaptivePcaEnabled_ << "\n";
+    std::cout << "  " << field( "gsdPcaDcFlag" ) << gsdPcaDcFlag_ << "\n";
+    std::cout << "  " << field( "enableShNonUniformQuantization" ) << enableShNonUniformQuantization_ << "\n";
+    std::cout << "  " << field( "enableScaleNonUniformQuantization" ) << enableScaleNonUniformQuantization_ << "\n";
+    std::cout << "  " << field( "shPredictionEnabled" ) << shPredictionEnabled_ << "\n";
+    std::cout << "  " << field( "enableScalePowerTransform" ) << enableScalePowerTransform_ << "\n";
+    std::cout << "  " << field( "enableOpacityNonUniformQuantization" ) << enableOpacityNonUniformQuantization_ << "\n";
+    std::cout << "  " << field( "rawPatchDataArrangementMethod" ) << rawPatchDataArrangementMethod_ << "\n";
+    std::cout << "  " << field( "blockBasedSortBlockSize" ) << blockBasedSortBlockSize_ << "\n";
+    std::cout << "  " << field( "lodSplitRatios" ) << printVec( lodSplitRatios_ ) << "\n";
+    std::cout << "  " << field( "gsColmapFolderPath" ) << gsColmapFolderPath_ << "\n";
+    std::cout << "  " << field( "keepIntermediateFiles" ) << keepIntermediateFiles_ << "\n";
+    std::cout << "  " << field( "encodeLinearOpacity" ) << encodeLinearOpacity_ << "\n";
+    std::cout << "  " << field( "ptlPriorityOrderEnableFlag" ) << ptlPriorityOrderEnableFlag_ << "\n";
+    std::cout << "  " << field( "attributeOrder" ) << printVec( attributeOrder_ ) << "\n";
+
+    std::cout << "  " << field( "aspsVuiParametersPresentFlag" ) << aspsVuiParametersPresentFlag_ << "\n";
+    if ( aspsVuiParametersPresentFlag_ ) {
+      std::cout << "  " << field( "vuiTimingInfoPresentFlag" ) << vuiTimingInfoPresentFlag_ << "\n";
+      if ( vuiTimingInfoPresentFlag_ ) {
+        std::cout << "  " << field( "vuiNumUnitsInTick" ) << vuiNumUnitsInTick_ << "\n";
+        std::cout << "  " << field( "vuiTimeScale" ) << vuiTimeScale_ << "\n";
+        std::cout << "  " << field( "vuiPocProportionalToTimingFlag" ) << vuiPocProportionalToTimingFlag_ << "\n";
+        if ( vuiPocProportionalToTimingFlag_ ) {
+          std::cout << "  " << field( "vuiNumTicksPocDiffOneMinus1" ) << vuiNumTicksPocDiffOneMinus1_ << "\n";
+        }
+        std::cout << "  " << field( "vuiHrdParametersPresentFlag" ) << vuiHrdParametersPresentFlag_ << "\n";
+      }
+      std::cout << "  " << field( "vuiUnitInMetresFlag" ) << vuiUnitInMetresFlag_ << "\n";
+      std::cout << "  " << field( "vuiDisplayBoxInfoPresentFlag" ) << vuiDisplayBoxInfoPresentFlag_ << "\n";
+      if ( vuiDisplayBoxInfoPresentFlag_ ) {
+        std::cout << "  " << field( "vuiDisplayBoxOriginX" ) << vuiDisplayBoxOriginX_ << "\n";
+        std::cout << "  " << field( "vuiDisplayBoxOriginY" ) << vuiDisplayBoxOriginY_ << "\n";
+        std::cout << "  " << field( "vuiDisplayBoxOriginZ" ) << vuiDisplayBoxOriginZ_ << "\n";
+        std::cout << "  " << field( "vuiDisplayBoxSizeX" ) << vuiDisplayBoxSizeX_ << "\n";
+        std::cout << "  " << field( "vuiDisplayBoxSizeY" ) << vuiDisplayBoxSizeY_ << "\n";
+        std::cout << "  " << field( "vuiDisplayBoxSizeZ" ) << vuiDisplayBoxSizeZ_ << "\n";
+        std::cout << "  " << field( "vuiAnchorPointPresentFlag" ) << vuiAnchorPointPresentFlag_ << "\n";
+        if ( vuiAnchorPointPresentFlag_ ) {
+          std::cout << "  " << field( "vuiAnchorPointX" ) << vuiAnchorPointX_ << "\n";
+          std::cout << "  " << field( "vuiAnchorPointY" ) << vuiAnchorPointY_ << "\n";
+          std::cout << "  " << field( "vuiAnchorPointZ" ) << vuiAnchorPointZ_ << "\n";
+        }
+      }
+    }
+  }
+
   PCCGSEncoderParameters() {
     geometryQP_                          = 6;
     attributeScaleQP_                    = 6;

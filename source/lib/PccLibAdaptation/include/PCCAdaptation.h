@@ -299,6 +299,35 @@ struct PCCAdaptationParameters {
   bool enableScaleQuantization_    = true;
   bool enableRotationQuantization_ = true;
 
+  // Column width matches PCCApplicationParameters::print() / PCCGSEncoderParameters::print()
+  // so that the three reported sections line up.
+  static std::string field( const std::string &label ) {
+    std::string s = label + ":";
+    if ( s.size() < 38 ) { s.resize( 38, ' ' ); }
+    return s;
+  }
+
+  void print() const {
+    auto printVec = []( const auto &vec ) {
+      std::string s;
+      for ( size_t i = 0; i < vec.size(); ++i ) {
+        if ( i ) { s += ","; }
+        s += std::to_string( vec[i] );
+      }
+      return s;
+    };
+    std::cout << "Adaptation parameters: \n";
+    std::cout << "  " << field( "enableDuplicateMerging" ) << enableDuplicateMerging_ << "\n";
+    std::cout << "  " << field( "rotQuaternionRepresentationType" ) << rotQuaternionRepresentationType_ << "\n";
+    std::cout << "  " << field( "shMappingMode" ) << shMappingMode_ << "\n";
+    std::cout << "  " << field( "adaptiveQuantizationMode" ) << adaptiveQuantizationMode_ << "\n";
+    std::cout << "  " << field( "enableAdaptiveShQuantization" ) << enableAdaptiveShQuantization_ << "\n";
+    std::cout << "  " << field( "keepZeroShBitGaussians" ) << keepZeroShBitGaussians_ << "\n";
+    std::cout << "  " << field( "adaptiveShBitshifts" ) << printVec( adaptiveShBitshifts_ ) << "\n";
+    std::cout << "  " << field( "importanceScoresPath" ) << importanceScoresPath_ << "\n";
+    std::cout << "  " << field( "enableShDimensionReduction" ) << enableShDimensionReduction_ << "\n";
+  }
+
   // ==================== Constructor ====================
   PCCAdaptationParameters() {
     // Initialize SH limits to default [-4, 4]

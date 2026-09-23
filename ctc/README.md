@@ -64,14 +64,13 @@ The examples below use these locations:
 
 ### Encode
 
-An encoder invocation consists of a base configuration, a packing configuration, and a rate-point configuration. Configuration files are applied from left to right: a later `--config` value overrides an earlier one. Start with the common configuration, select exactly one packing configuration, then select a rate point.
+An encoder invocation consists of the V-PCC GS anchor configuration [gs-ctc-anchor.cfg](../cfg/gs4/gs-ctc-anchor.cfg),  and a rate-point configuration such as [rate/r04/encoder.cfg](../cfg/gs4/rate/r04/encoder.cfg). Configuration files are applied from left to right: a later `--config` value overrides an earlier one. Start with the common configuration, then select a rate point.
 
 ```bash
 bin/PccGs4AppEncoder \
   --uncompressedDataPath=/data/sequence/plys/frame_%04i.ply \
   --configurationFolder=cfg/gs4/ \
-  --config=cfg/gs4/gs-main10-common.cfg \
-  --config=cfg/gs4/gs-pack-attributes.cfg \
+  --config=cfg/gs4/gs-ctc-anchor.cfg \
   --config=cfg/gs4/rate/r04/encoder.cfg \
   --startFrameNumber=81 \
   --frameCount=1 \
@@ -80,7 +79,7 @@ bin/PccGs4AppEncoder \
 
 `--uncompressedDataPath` accepts a single PLY path or a template containing a frame-number conversion (for example, `%04i`). `--startFrameNumber` is the first number substituted in that template and `--frameCount` is the number of consecutive frames to encode. If no template is used, use the appropriate single-frame values.
 
-Choose one of the following packing configurations:
+The CTC configuration already includess a packing configuration. You can try alternative packing configurations:
 
 * `cfg/gs4/gs-pack-none.cfg` — do not pack maps.
 * `cfg/gs4/gs-pack-attributes.cfg` — pack attributes.
@@ -124,14 +123,12 @@ gstools camera \
   --camera=/data/sequence/colmap_data/frame_0081/sparse/cameras.bin
 ```
 
-When using adaptive quantization or LoD without precomputed scores, generate scores for every input frame with `mpeg-gsc-importance`:
-
+When using adaptive quantization or LoD without precomputed scores, generate scores for every input frame with `mpeg-gsc-importance`. The V-PCC GS anchor requires setting `--downscaleFactor=2`:
 ```bash
 mpeg-gsc-importance --threads=2 \
   -a /output/frame_0081.camerapos.ply \
   --impScore=/output/scores/frame_0081.impScores.txt \
-  --downscaleFactor=2.0 \
-  --downscaleMinWidth=1920
+  --downscaleFactor=2
 ```
 
 Pass the resulting template to the encoder with `--importanceScoresPath`. Then evaluate each reconstructed frame with MPEG GSC Metrics; give it the camera-annotated source and decoded PLY, along with the reference view resolution:

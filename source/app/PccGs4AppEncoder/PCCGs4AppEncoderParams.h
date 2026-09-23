@@ -72,17 +72,25 @@ struct PCCApplicationParameters {
   size_t      frameCount_       = 0;
   size_t      nbThread_         = 0;
 
+  // Column width shared with PCCGSEncoderParameters::print() and PCCAdaptationParameters::print()
+  // so that the three reported sections line up.
+  static std::string field( const std::string &label ) {
+    std::string s = label + ":";
+    if ( s.size() < 38 ) { s.resize( 38, ' ' ); }
+    return s;
+  }
+
   void print() const {
     std::cout << "Application parameters: \n";
-    std::cout << "  configurationFolder: " << configurationFolder_ << "\n";
-    std::cout << "  uncompressedDataPath: " << uncompressedDataPath_ << "\n";
-    std::cout << "  compressedStreamPath: " << compressedStreamPath_ << "\n";
-    std::cout << "  geometryConfig:       " << geometryConfig_ << "\n";
-    std::cout << "  attributeConfig:      " << attributeConfig_ << "\n";
-    std::cout << "  packConfig:           " << packConfig_ << "\n";
-    std::cout << "  startFrameNumber:     " << startFrameNumber_ << "\n";
-    std::cout << "  frameCount:           " << frameCount_ << "\n";
-    std::cout << "  nbThread:             " << nbThread_ << "\n";
+    std::cout << "  " << field( "configurationFolder" ) << configurationFolder_ << "\n";
+    std::cout << "  " << field( "uncompressedDataPath" ) << uncompressedDataPath_ << "\n";
+    std::cout << "  " << field( "compressedStreamPath" ) << compressedStreamPath_ << "\n";
+    std::cout << "  " << field( "geometryConfig" ) << geometryConfig_ << "\n";
+    std::cout << "  " << field( "attributeConfig" ) << attributeConfig_ << "\n";
+    std::cout << "  " << field( "packConfig" ) << packConfig_ << "\n";
+    std::cout << "  " << field( "startFrameNumber" ) << startFrameNumber_ << "\n";
+    std::cout << "  " << field( "frameCount" ) << frameCount_ << "\n";
+    std::cout << "  " << field( "nbThread" ) << nbThread_ << "\n";
   }
 };
 
@@ -477,6 +485,9 @@ bool parseParameters( int                           argc,
   // report the current configuration (only in the absence of errors so
   // that errors/warnings are more obvious and in the same place).
   if ( err.is_errored ) { return false; }
+
+  encoderParams.print();
+  adaptationParams.print();
 
   return true;
 }
