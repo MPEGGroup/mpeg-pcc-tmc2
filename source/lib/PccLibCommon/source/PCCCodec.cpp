@@ -1812,7 +1812,7 @@ void PCCCodec::generateRawPointsAttributefromVideoRecGS( PCCContext             
                                                          size_t                           partitionIndex,
                                                          PCCPointSet3                    &pointCloud,
                                                          const std::vector<PCCAtlasBbox> *atlasBboxes ) {
-  size_t atlId = tile.getAtlIndex();
+  size_t atlId = context.getAtlasIndex();
   auto  &vps   = context.getVps();
   auto   ai    = vps.getAttributeInformation( atlId );
   auto  &image = context.getVideoAttributesMultiple( atlId, attributeIdx, partitionIndex )[0].getFrame( frameIndex );
