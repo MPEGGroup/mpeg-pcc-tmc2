@@ -302,11 +302,11 @@ bool parseParameters( int                           argc,
     // Gaussian Splatting encoder parameters
     ( "gsdTransform2dPresentFlag",
       encoderParams.gsdTransform2dPresentFlag_,
-      false,
+      true,
       "Enable 2D transform for SH (m75038 or m75790)" )
     ( "dataAdaptiveShTransformEnabled",
       encoderParams.dataAdaptiveShTransformEnabled_,
-      false,
+      true,
       "Enable data adaptive SH transform (m75790)" )
     ( "adaptivePcaEnabled",
       encoderParams.adaptivePcaEnabled_,
@@ -314,15 +314,15 @@ bool parseParameters( int                           argc,
       "Enable adaptive global/group PCA selection (m76164)" )
     ( "gsdPcaDcFlag",
       encoderParams.gsdPcaDcFlag_,
-      false,
+      true,
       "Enable PCA for DC component of SH (m76858)" )
     ( "enableShNonUniformQuantization",
       encoderParams.enableShNonUniformQuantization_,
-      false,
+      true,
       "Enable non-uniform quantization for SH (m75025)" )
     ( "enableOpacityNonUniformQuantization",
       encoderParams.enableOpacityNonUniformQuantization_,
-      false,
+      true,
       "Enable non-uniform quantization for opacity (m76122)" )
     ("linearOpacity",
       encoderParams.encodeLinearOpacity_,
@@ -330,7 +330,7 @@ bool parseParameters( int                           argc,
       "Enable linear opacity encoding")
     ( "enableScaleNonUniformQuantization",
       encoderParams.enableScaleNonUniformQuantization_,
-      false,
+      true,
       "Enable non-uniform quantization for Scale (m76123)" )
     ( "shPredictionEnabled",
       encoderParams.shPredictionEnabled_,
@@ -338,7 +338,7 @@ bool parseParameters( int                           argc,
       "Enable SH linear prediction (m76155)" )
     ( "enableScalePowerTransform",
       encoderParams.enableScalePowerTransform_,
-      false,
+      true,
       "Enable power transform + 2-segment PLS for scale (m76151)" )
     ( "enableShDimensionReduction",
       adaptationParams.enableShDimensionReduction_,

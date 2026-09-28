@@ -173,10 +173,10 @@ struct PCCAdaptationParameters {
 
   // ==================== SH Adaptive Quantization =======================
   /// Enable adaptive quantization for SH (m75039)
-  bool enableAdaptiveShQuantization_ = false;
+  bool enableAdaptiveShQuantization_ = true;
 
   /// Adaptive quantization mode: 0=log, 1=percentile
-  uint32_t adaptiveQuantizationMode_ = 0;
+  uint32_t adaptiveQuantizationMode_ = 1;
 
   /// Whether to avoid pruning Gaussians for which the adaptive SH bits are set to 0
   bool keepZeroShBitGaussians_ = false;
