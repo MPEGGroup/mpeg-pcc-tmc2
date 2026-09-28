@@ -137,11 +137,21 @@ bool PCCPointSetGS::read( const std::string &fileName ) {
     return false;
   }
 
-  bool                     isAscii          = false;
-  double                   version          = 1.0;
-  size_t                   pointCount       = 0;
-  bool                     isVertexProperty = true;
+  bool                     isAscii           = false;
+  double                   version           = 1.0;
+  size_t                   pointCount        = 0;
+  bool                     vertexFound       = false;
+  bool                     captureProperties = false;
   std::vector<std::string> cameraInfoHeader;
+
+  // Elements preceding "vertex" (e.g. custom metadata) contribute bytes that
+  // must be skipped before the binary vertex data can be read.
+  struct ElementInfo {
+    std::string                name;
+    size_t                     count;
+    std::vector<AttributeInfo> properties;
+  };
+  std::vector<ElementInfo> elements;
 
   while ( true ) {
     if ( ifs.eof() ) {
@@ -164,12 +174,15 @@ bool PCCPointSetGS::read( const std::string &fileName ) {
         std::cerr << "Error: Corrupted element info!" << std::endl;
         return false;
       }
-      if ( tokens[1] == "vertex" ) {
-        pointCount = atoi( tokens[2].c_str() );
+      if ( vertexFound ) {
+        // Already parsed the vertex element; ignore everything that follows.
+        captureProperties = false;
       } else {
-        isVertexProperty = false;
+        elements.push_back( { tokens[1], static_cast<size_t>( atoi( tokens[2].c_str() ) ), {} } );
+        captureProperties = true;
+        if ( tokens[1] == "vertex" ) vertexFound = true;
       }
-    } else if ( tokens[0] == "property" && isVertexProperty ) {
+    } else if ( tokens[0] == "property" && captureProperties ) {
       if ( tokens.size() != 3 ) {
         std::cerr << "Error: Corrupted property info!" << std::endl;
         return false;
@@ -214,7 +227,7 @@ bool PCCPointSetGS::read( const std::string &fileName ) {
         info.type      = ATTR_UINT8;
         info.byteCount = 1;
       }
-      attributesInfo.push_back( info );
+      elements.back().properties.push_back( info );
     } else if ( tokens[0] == "end_header" ) {
       break;
     }
@@ -223,6 +236,25 @@ bool PCCPointSetGS::read( const std::string &fileName ) {
   if ( version != 1.0 ) {
     std::cerr << "Error: Non-supported PLY version!" << std::endl;
     return false;
+  }
+
+  if ( !vertexFound ) {
+    std::cerr << "Error: Missing position coordinates in PLY!" << std::endl;
+    return false;
+  }
+
+  // Locate the vertex element; sum the byte size of any elements before it so
+  // that offset can be skipped when reading binary vertex data below.
+  size_t preVertexBytes = 0;
+  for ( const auto &element : elements ) {
+    if ( element.name == "vertex" ) {
+      pointCount     = element.count;
+      attributesInfo = element.properties;
+      break;
+    }
+    size_t elementByteSize = 0;
+    for ( const auto &property : element.properties ) elementByteSize += property.byteCount;
+    preVertexBytes += elementByteSize * element.count;
   }
 
   // Map attribute indices
@@ -373,6 +405,7 @@ bool PCCPointSetGS::read( const std::string &fileName ) {
     ifs.close();
     ifs.open( fileName, std::ifstream::binary | std::ifstream::in );
     ifs.read( tmp, headerCount );
+    if ( preVertexBytes > 0 ) { ifs.ignore( static_cast<std::streamsize>( preVertexBytes ) ); }
 
     for ( size_t pointCounter = 0; pointCounter < pointCount && !ifs.eof(); ++pointCounter ) {
       auto &position = positions_[pointCounter];
