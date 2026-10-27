@@ -139,6 +139,11 @@ struct PCCAdaptationParameters {
   /// Enable SH linear prediction (m76155)
   bool shPredictionEnabled_ = false;
 
+  // ==================== Geometric Prediction Residual Parameters ====================
+  /// Enable Geometric residual prediction (m78255)
+  bool     enableGeometryPrediction_     = false;
+  uint16_t geometryPredictionSegmentVal_ = 256;
+
   /// Prediction entry for one component in the flattened 48-dim space
   struct PCCShPredictionEntry {
     bool                 usePrediction    = false;

@@ -2866,6 +2866,8 @@ void PCCBitstreamReader::aapsVpccGsExtension( PCCBitstream &bitstream, AapsVpccG
   ext.setTransform2DPresentFlag( value );  // u(1)
   READ_CODE_DESC( value, 1, "aaps_vpcc_gs_scale_transform_present_flag" );
   ext.setScaleTransformPresentFlag( value );  // u(1)
+  READ_CODE_DESC( value, 1, "aaps_vpcc_gs_geometry_prediction_present_flag" );
+  ext.setGeometryPredictionPresentFlag( value );  // u(1)
   READ_UVLC_DESC( value, "aaps_vpcc_gs_data_arrangement_method" );
   ext.setRawPatchDataArrangementMethod( value );  // uvlc
   READ_CODE_DESC( value, 1, "aaps_vpcc_gs_linear_opacity_flag" );
@@ -2880,6 +2882,7 @@ void PCCBitstreamReader::aapsVpccGsExtension( PCCBitstream &bitstream, AapsVpccG
     gs2DTransform( bitstream, ext.getGs2DTransform(), ext.getGsShProperty(), numShCoeffs );
   }
   if ( ext.getScaleTransformPresentFlag() ) { gsScaleTransform( bitstream, ext.getGsScaleTransform() ); }
+  if ( ext.getGeometryPredictionPresentFlag() ) { gsGeometryPrediction( bitstream, ext.getGsGeometryPrediction() ); }
 
   if ( ext.getReservedZero8bits() != 0 ) {
     while ( moreRbspData( bitstream ) ) {
@@ -3182,6 +3185,16 @@ void PCCBitstreamReader::gs2DTransform( PCCBitstream                       &bits
     }
   }
   TRACE_BITSTREAM_OUT( "%s", __func__ );
+}
+
+// H.8.3.6.3.10 Gaussian splat geometry prediction syntax
+void PCCBitstreamReader::gsGeometryPrediction( PCCBitstream &bitstream, GsGeometryPrediction &gsGeometryPrediction ) {
+  TRACE_BITSTREAM_IN( "%s", __func__ );
+  int value;
+  READ_CODE_DESC( value, 1, "GeometryPredictionEnableFlag" );
+  gsGeometryPrediction.setGeometryPredictionEnableFlag( value );
+  READ_UVLC_DESC( value, "GeometryPredictionSegmentVal" );
+  gsGeometryPrediction.setGeometryPredictionSegmentVal( value );
 }
 
 // H.8.3.6.3.7  Gaussian splat spherical harmonics prediction syntax

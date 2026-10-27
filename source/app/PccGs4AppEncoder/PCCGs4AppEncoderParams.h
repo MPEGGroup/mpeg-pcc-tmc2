@@ -344,6 +344,14 @@ bool parseParameters( int                           argc,
       adaptationParams.enableShDimensionReduction_,
       adaptationParams.enableShDimensionReduction_,
       "Enable SH dimension reduction after 2D transform (m76859)" )
+    ( "enableGeometryPrediction",
+      encoderParams.enableGeometryPrediction_,
+      true,
+      "Enable Geometry residual prediction aka PEPGA-Chain (m78255))." )
+    ( "geometryPredictionSegmentVal",
+      encoderParams.geometryPredictionSegmentVal_,
+      encoderParams.geometryPredictionSegmentVal_,
+      "Segment size for Geometry residual prediction aka PEPGA-Chain (m78255))." )
     ( "rawPatchDataArrangementMethod",
       encoderParams.rawPatchDataArrangementMethod_,
       encoderParams.rawPatchDataArrangementMethod_,

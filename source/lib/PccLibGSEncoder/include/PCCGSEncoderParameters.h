@@ -103,6 +103,10 @@ struct PCCGSEncoderParameters {
   bool enableScalePowerTransform_ = false;
   bool enableOpacityNonUniformQuantization_;
 
+  // Geometry residual prediction (0: disable, 1: enable)
+  bool     enableGeometryPrediction_     = true;
+  uint16_t geometryPredictionSegmentVal_ = 256;
+
   // Raw patch data arrangement method (0: sequential, 1: vertical planar)
   uint32_t rawPatchDataArrangementMethod_ = 0;
 
@@ -210,6 +214,10 @@ struct PCCGSEncoderParameters {
     std::cout << "  " << field( "shPredictionEnabled" ) << shPredictionEnabled_ << "\n";
     std::cout << "  " << field( "enableScalePowerTransform" ) << enableScalePowerTransform_ << "\n";
     std::cout << "  " << field( "enableOpacityNonUniformQuantization" ) << enableOpacityNonUniformQuantization_ << "\n";
+    std::cout << "  " << field( "enableGeometryPrediction" ) << enableGeometryPrediction_ << "\n";
+    if ( enableGeometryPrediction_ ) {
+      std::cout << "  " << field( "geometryPredictionSegmentVal" ) << geometryPredictionSegmentVal_ << "\n";
+    }
     std::cout << "  " << field( "rawPatchDataArrangementMethod" ) << rawPatchDataArrangementMethod_ << "\n";
     std::cout << "  " << field( "blockBasedSortBlockSize" ) << blockBasedSortBlockSize_ << "\n";
     std::cout << "  " << field( "lodSplitRatios" ) << printVec( lodSplitRatios_ ) << "\n";
@@ -289,6 +297,8 @@ struct PCCGSEncoderParameters {
     shPredictionEnabled_                 = false;
     enableScalePowerTransform_           = true;
     enableOpacityNonUniformQuantization_ = true;
+    enableGeometryPrediction_            = false;
+    geometryPredictionSegmentVal_        = 256;
     aspsVuiParametersPresentFlag_        = false;
     vuiTimingInfoPresentFlag_            = false;
     vuiNumUnitsInTick_                   = 1001;

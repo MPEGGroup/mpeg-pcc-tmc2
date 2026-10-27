@@ -57,7 +57,7 @@ PCCGSVideoFrames PCCGSMapGenerator::generate( const PCCPointSet3                
     frames.geometry.resize( 1 );
     frames.geometry.getFrame( 0 ).resize( mapWidth, mapHeight, PCCCOLORFORMAT::YUV420 );
     frames.geometry.getFrame( 0 ).set( 0 );
-    generateGeometryMap( source, patches, frames.geometry.getFrame( 0 ) );
+    generateGeometryMap( source, patches, frames.geometry.getFrame( 0 ), params );
     if ( params.rawPatchDataArrangementMethod_ == 1 && BBSORT_GEO_PADDING ) {
       geometryMapPadding( source, params, patches, frames.geometry.getFrame( 0 ) );
     }
@@ -110,7 +110,7 @@ PCCGSVideoFrames PCCGSMapGenerator::generate( const PCCPointSet3                
     if ( hasLodRegions ) {
       atlasGeoFrame.resize( mapWidth, mapHeight, PCCCOLORFORMAT::YUV420 );
       atlasGeoFrame.set( 0 );
-      generateGeometryMap( source, patches, atlasGeoFrame );
+      generateGeometryMap( source, patches, atlasGeoFrame, params );
 
       auto &ai = vps.getAttributeInformation( ATLAS_INDEX );
       for ( size_t attributeIdx = 0; attributeIdx < ai.getAttributeCount(); attributeIdx++ ) {
@@ -148,7 +148,7 @@ PCCGSVideoFrames PCCGSMapGenerator::generate( const PCCPointSet3                
           size_t topLeftY = region.getTopLeftY();
 
           if ( region.getTypeIdMinus2() == V3C_GVD - 2 ) {
-            generateGeometryMap( source, patches, frame, topLeftX, topLeftY );
+            generateGeometryMap( source, patches, frame, params, topLeftX, topLeftY );
             if ( params.rawPatchDataArrangementMethod_ == 1 && BBSORT_GEO_PADDING ) {
               geometryMapPadding( source, params, patches, frame, topLeftX, topLeftY );
             }
@@ -188,14 +188,17 @@ void PCCGSMapGenerator::copyMapWithBBoxForLoD( PackedRegion          &region,
 void PCCGSMapGenerator::generateGeometryMap( const PCCPointSet3                     &source,
                                              std::vector<GSEncoderPatchInformation> &patches,
                                              PCCVideoFrame                          &image,
+                                             const PCCGSEncoderParameters           &params,
                                              size_t                                  topLeftX,
                                              size_t                                  topLeftY ) {
   auto &positions = source.getPositions();
 
   for ( const auto &patchInfo : patches ) {
-    auto u1 = patchInfo.patch.u1_;
-    auto v1 = patchInfo.patch.v1_;
-    auto d1 = patchInfo.patch.d1_;
+    auto      u1                          = patchInfo.patch.u1_;
+    auto      v1                          = patchInfo.patch.v1_;
+    auto      d1                          = patchInfo.patch.d1_;
+    const int geometryBitDepth2D_MaxValue = pow( 2, params.geometryBitDepth2D_ );
+    const int geometryBitDepth2D_MidValue = geometryBitDepth2D_MaxValue / 2;
     for ( size_t p = 0; p < patchInfo.patch.getNumberOfRawPoints(); ++p ) {
       size_t      pointIndex = patchInfo.pointsIndicesInPatch[p];
       const auto &pos        = positions[pointIndex];
@@ -205,21 +208,51 @@ void PCCGSMapGenerator::generateGeometryMap( const PCCPointSet3                 
         size_t u = patchInfo.pointsPositionsIn2D[0][p].x + topLeftX;
         size_t v = patchInfo.pointsPositionsIn2D[0][p].y + topLeftY;
         assert( u < image.getWidth() && v < image.getHeight() );
-        image.setValue( 0, u, v, uint16_t( pos.x() - u1 ) );
+        uint16_t val = uint16_t( pos.x() - u1 );
+        if ( params.enableGeometryPrediction_ ) {
+          if ( p != 0 && p % params.geometryPredictionSegmentVal_ != 0 ) {
+            size_t      pointIndex_prev = patchInfo.pointsIndicesInPatch[p - 1];
+            const auto &pos_prev        = positions[pointIndex_prev];
+            uint16_t    prev_val        = uint16_t( pos_prev.x() - u1 );
+            int32_t     diff            = (int32_t)val - (int32_t)prev_val;
+            val = ( diff + geometryBitDepth2D_MidValue + geometryBitDepth2D_MaxValue ) % geometryBitDepth2D_MaxValue;
+          }
+        }
+        image.setValue( 0, u, v, uint16_t( val ) );
       }
       // component 1
       {
         size_t u = patchInfo.pointsPositionsIn2D[1][p].x + topLeftX;
         size_t v = patchInfo.pointsPositionsIn2D[1][p].y + topLeftY;
         assert( u < image.getWidth() && v < image.getHeight() );
-        image.setValue( 0, u, v, uint16_t( pos.y() - v1 ) );
+        uint16_t val = uint16_t( pos.y() - v1 );
+        if ( params.enableGeometryPrediction_ ) {
+          if ( p != 0 && p % params.geometryPredictionSegmentVal_ != 0 ) {
+            size_t      pointIndex_prev = patchInfo.pointsIndicesInPatch[p - 1];
+            const auto &pos_prev        = positions[pointIndex_prev];
+            uint16_t    prev_val        = uint16_t( pos_prev.y() - v1 );
+            int32_t     diff            = (int32_t)val - (int32_t)prev_val;
+            val = ( diff + geometryBitDepth2D_MidValue + geometryBitDepth2D_MaxValue ) % geometryBitDepth2D_MaxValue;
+          }
+        }
+        image.setValue( 0, u, v, uint16_t( val ) );
       }
       // component 2
       {
         size_t u = patchInfo.pointsPositionsIn2D[2][p].x + topLeftX;
         size_t v = patchInfo.pointsPositionsIn2D[2][p].y + topLeftY;
         assert( u < image.getWidth() && v < image.getHeight() );
-        image.setValue( 0, u, v, uint16_t( pos.z() - d1 ) );
+        uint16_t val = uint16_t( pos.z() - d1 );
+        if ( params.enableGeometryPrediction_ ) {
+          if ( p != 0 && p % params.geometryPredictionSegmentVal_ != 0 ) {
+            size_t      pointIndex_prev = patchInfo.pointsIndicesInPatch[p - 1];
+            const auto &pos_prev        = positions[pointIndex_prev];
+            uint16_t    prev_val        = uint16_t( pos_prev.z() - d1 );
+            int32_t     diff            = (int32_t)val - (int32_t)prev_val;
+            val = ( diff + geometryBitDepth2D_MidValue + geometryBitDepth2D_MaxValue ) % geometryBitDepth2D_MaxValue;
+          }
+        }
+        image.setValue( 0, u, v, uint16_t( val ) );
       }
     }
   }

@@ -2438,6 +2438,11 @@ int PCCDecoder::ReconstructIdc3( PCCContext &context, PCCGroupOfFrames &reconstr
           adaptationParams.computedScaleScalingFactor_[k] = static_cast<double>( gsst.getScaleScaling( k ) );
         }
       }
+      if ( ext.getGeometryPredictionPresentFlag() ) {
+        auto &gsgp                                     = ext.getGsGeometryPrediction();
+        adaptationParams.enableGeometryPrediction_     = gsgp.getGeometryPredictionEnableFlag();
+        adaptationParams.geometryPredictionSegmentVal_ = gsgp.getGeometryPredictionSegmentVal();
+      }
 
       // TOFIX: Here there is no explicit flag. So addAdaptationParameters will always be true.
       // So this whole constuct does not make a lot of sense anymore.

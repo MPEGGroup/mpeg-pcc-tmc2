@@ -91,6 +91,7 @@ class PCCGSMapGenerator {
   void generateGeometryMap( const PCCPointSet3                     &source,
                             std::vector<GSEncoderPatchInformation> &patches,
                             PCCVideoFrame                          &image,
+                            const PCCGSEncoderParameters           &params,
                             size_t                                  topLeftX = 0,
                             size_t                                  topLeftY = 0 );
 

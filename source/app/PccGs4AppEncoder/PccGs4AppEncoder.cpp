@@ -228,6 +228,8 @@ int main( int argc, char *argv[] ) {
   adaptationParams.shPredictionEnabled_               = encoderParams.shPredictionEnabled_;
   adaptationParams.enableScalePowerTransform_         = encoderParams.enableScalePowerTransform_;
   adaptationParams.rawPatchDataArrangementMethod_     = encoderParams.rawPatchDataArrangementMethod_;
+  adaptationParams.enableGeometryPrediction_          = encoderParams.enableGeometryPrediction_;
+  adaptationParams.geometryPredictionSegmentVal_      = encoderParams.geometryPredictionSegmentVal_;
 
 #if defined( ENABLE_TBB )
   if ( applicationParams.nbThread_ > 0 ) {

@@ -1706,6 +1706,17 @@ void PCCCodec::generateRawPointsGeometryfromVideoRecGS( PCCContext              
   auto    &gsExt             = aaps.getAapsVpccGsExtension();
   uint32_t arrangementMethod = gsExt.getRawPatchDataArrangementMethod();
 
+  // Get geometry prediction data from AAPS
+  auto    &gsgp                   = gsExt.getGsGeometryPrediction();
+  bool     enableGeometryPred     = gsgp.getGeometryPredictionEnableFlag();
+  uint16_t geometryPredSegmentVal = gsgp.getGeometryPredictionSegmentVal();
+
+  // Get geometry bit depth value
+  auto  afpsId             = athl.getHeader().getAtlasFrameParameterSetId();
+  auto  aspsId             = context.getAtlasFrameParameterSet( afpsId ).getAtlasSequenceParameterSetId();
+  auto &asps               = context.getAtlasSequenceParameterSet( aspsId );
+  auto  geometryBitDepth2D = asps.getGeometry2dBitdepthMinus1() + 1;
+
   size_t numberOfRawPointsPatches = tile.getNumberOfRawPointsPatches();
   for ( int i = 0; i < numberOfRawPointsPatches; i++ ) {
     auto        &rawPointsPatch = tile.getRawPointsPatch( i );
@@ -1719,7 +1730,12 @@ void PCCCodec::generateRawPointsGeometryfromVideoRecGS( PCCContext              
     size_t x = 0;
     size_t y = 0;
 
-    size_t numberOfRawPoints = rawPointsPatch.getNumberOfRawPoints();
+    size_t    numberOfRawPoints = rawPointsPatch.getNumberOfRawPoints();
+    size_t    runningVal_X;
+    size_t    runningVal_Y;
+    size_t    runningVal_Z;
+    const int geometryBitDepth2D_MaxValue = pow( 2, geometryBitDepth2D );
+    const int geometryBitDepth2D_MidValue = geometryBitDepth2D_MaxValue / 2;
 
     if ( rawPointsPatch.occupancyResolution_ != 1 ) {
       std::cout << "Error: occupancyResolution_ != 1 not supported in raw points geometry generation from video."
@@ -1737,12 +1753,43 @@ void PCCCodec::generateRawPointsGeometryfromVideoRecGS( PCCContext              
           v = ( p / sizeU + k * compHeight ) * rawPointsPatch.occupancyResolution_;
           x = ( u0 + u ) + tile.getLeftTopXInFrame();
           y = ( v0 + v ) + tile.getLeftTopYInFrame();
-          if ( k == 0 )
+          if ( k == 0 ) {
             valueX = image.getValue( 0, x, y );
-          else if ( k == 1 )
+            if ( enableGeometryPred ) {
+              if ( p != 0 && p % geometryPredSegmentVal != 0 ) {
+                int32_t delta = (int32_t)valueX - geometryBitDepth2D_MidValue;
+                runningVal_X =
+                    (size_t)( ( runningVal_X + delta + geometryBitDepth2D_MaxValue ) % geometryBitDepth2D_MaxValue );
+                valueX = runningVal_X;
+              } else {
+                runningVal_X = valueX;
+              }
+            }
+          } else if ( k == 1 ) {
             valueY = image.getValue( 0, x, y );
-          else
+            if ( enableGeometryPred ) {
+              if ( p != 0 && p % geometryPredSegmentVal != 0 ) {
+                int32_t delta = (int32_t)valueY - geometryBitDepth2D_MidValue;
+                runningVal_Y =
+                    (size_t)( ( runningVal_Y + delta + geometryBitDepth2D_MaxValue ) % geometryBitDepth2D_MaxValue );
+                valueY = runningVal_Y;
+              } else {
+                runningVal_Y = valueY;
+              }
+            }
+          } else {
             valueZ = image.getValue( 0, x, y );
+            if ( enableGeometryPred ) {
+              if ( p != 0 && p % geometryPredSegmentVal != 0 ) {
+                int32_t delta = (int32_t)valueZ - geometryBitDepth2D_MidValue;
+                runningVal_Z =
+                    (size_t)( ( runningVal_Z + delta + geometryBitDepth2D_MaxValue ) % geometryBitDepth2D_MaxValue );
+                valueZ = runningVal_Z;
+              } else {
+                runningVal_Z = valueZ;
+              }
+            }
+          }
         }
       } else {
         // Method 0: sequential arrangement
@@ -1765,6 +1812,29 @@ void PCCCodec::generateRawPointsGeometryfromVideoRecGS( PCCContext              
         x           = ( u0 + u ) + tile.getLeftTopXInFrame();
         y           = ( v0 + v ) + tile.getLeftTopYInFrame();
         valueZ      = image.getValue( 0, x, y );
+
+        if ( enableGeometryPred ) {
+          if ( p != 0 && p % geometryPredSegmentVal != 0 ) {
+            int32_t delta = (int32_t)valueX - geometryBitDepth2D_MidValue;
+            runningVal_X =
+                (size_t)( ( runningVal_X + delta + geometryBitDepth2D_MaxValue ) % geometryBitDepth2D_MaxValue );
+            valueX = runningVal_X;
+
+            delta = (int32_t)valueY - geometryBitDepth2D_MidValue;
+            runningVal_Y =
+                (size_t)( ( runningVal_Y + delta + geometryBitDepth2D_MaxValue ) % geometryBitDepth2D_MaxValue );
+            valueY = runningVal_Y;
+
+            delta = (int32_t)valueZ - geometryBitDepth2D_MidValue;
+            runningVal_Z =
+                (size_t)( ( runningVal_Z + delta + geometryBitDepth2D_MaxValue ) % geometryBitDepth2D_MaxValue );
+            valueZ = runningVal_Z;
+          } else {
+            runningVal_X = valueX;
+            runningVal_Y = valueY;
+            runningVal_Z = valueZ;
+          }
+        }
       }
       // clause 9.2.5.6 shift values
       valueX += rawPointsPatch.u1_;

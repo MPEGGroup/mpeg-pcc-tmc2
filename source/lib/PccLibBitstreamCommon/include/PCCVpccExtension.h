@@ -594,6 +594,30 @@ class Gs2DTransform {
   bool                                         dimensionReductionEnableFlag_;
 };
 
+// H.8.3.6.3.12	GS Geometry Prediction syntax
+class GsGeometryPrediction {
+ public:
+  GsGeometryPrediction() : geometryPredictionFlag_( 0 ), geometryPredictionSegmentVal_( 0 ) {}
+  ~GsGeometryPrediction() {}
+  GsGeometryPrediction &operator=( const GsGeometryPrediction & ) = default;
+
+  bool operator==( const GsGeometryPrediction &other ) const {
+    return geometryPredictionFlag_ == other.geometryPredictionFlag_;
+  }
+
+  bool operator!=( const GsGeometryPrediction &other ) const { return !( *this == other ); }
+
+  bool getGeometryPredictionEnableFlag() const { return geometryPredictionFlag_; }
+  void setGeometryPredictionEnableFlag( bool value ) { geometryPredictionFlag_ = value; }
+
+  uint16_t getGeometryPredictionSegmentVal() const { return geometryPredictionSegmentVal_; }
+  void     setGeometryPredictionSegmentVal( uint16_t value ) { geometryPredictionSegmentVal_ = value; }
+
+ private:
+  bool     geometryPredictionFlag_;
+  uint16_t geometryPredictionSegmentVal_;
+};
+
 // H.8.3.6.3.7  Gaussian splat spherical harmonics prediction syntax
 class GsPrediction {
  public:
@@ -691,6 +715,7 @@ class AapsVpccGsExtension {
       adaptiveQuantizationEnableFlag_( false ),
       shPropertyPresentFlag_( false ),
       transform2DPresentFlag_( false ),
+      GeometryPredictionEnableFlag_( false ),
       scaleTransformPresentFlag_( false ),
       rawPatchDataArrangementMethod_( 0 ),
       linearOpacityFlag_( false ) {}
@@ -703,6 +728,10 @@ class AapsVpccGsExtension {
 
   bool getAdaptiveQuantizationEnableFlag() { return adaptiveQuantizationEnableFlag_; }
   void setAdaptiveQuantizationEnableFlag( bool value ) { adaptiveQuantizationEnableFlag_ = value; }
+
+  bool                  getGeometryPredictionPresentFlag() { return GeometryPredictionEnableFlag_; }
+  GsGeometryPrediction &getGsGeometryPrediction() { return gsGeometryPrediction_; }
+  void                  setGeometryPredictionPresentFlag( bool value ) { GeometryPredictionEnableFlag_ = value; }
 
   bool                          getShPropertyPresentFlag() { return shPropertyPresentFlag_; }
   GsSphericalHarmonicsProperty &getGsShProperty() { return shSphericalHarmonicsProperty_; }
@@ -732,6 +761,7 @@ class AapsVpccGsExtension {
  private:
   bool                         dequantizationPresentFlag_{};
   bool                         adaptiveQuantizationEnableFlag_{};
+  bool                         GeometryPredictionEnableFlag_{};
   bool                         shPropertyPresentFlag_{};
   bool                         transform2DPresentFlag_{};
   bool                         scaleTransformPresentFlag_{};
@@ -744,6 +774,7 @@ class AapsVpccGsExtension {
   GsSphericalHarmonicsProperty shSphericalHarmonicsProperty_{};
   Gs2DTransform                gs2DTransform_{};
   GsScaleTransform             gsScaleTransform_{};
+  GsGeometryPrediction         gsGeometryPrediction_;
   uint8_t                      reservedZero8bits_{};
 };
 };  // namespace pcc

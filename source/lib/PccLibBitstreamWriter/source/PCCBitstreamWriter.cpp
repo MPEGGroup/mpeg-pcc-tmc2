@@ -2891,6 +2891,7 @@ void PCCBitstreamWriter::aapsVpccGsExtension( PCCBitstream &bitstream, AapsVpccG
   WRITE_CODE( ext.getPredEnableFlag() ? 1 : 0, 1 );          // u(1)
   WRITE_CODE( ext.getTransform2DPresentFlag(), 1 );          // u(1)
   WRITE_CODE( ext.getScaleTransformPresentFlag(), 1 );       // u(1)
+  WRITE_CODE( ext.getGeometryPredictionPresentFlag(), 1 );   // u(1)
   WRITE_UVLC( ext.getRawPatchDataArrangementMethod() );      // uvlc
   WRITE_CODE( ext.getLinearOpacityFlag(), 1 );               // u(1)
   WRITE_CODE( ext.getReservedZero8bits(), 8 );               // u(8)
@@ -2902,6 +2903,7 @@ void PCCBitstreamWriter::aapsVpccGsExtension( PCCBitstream &bitstream, AapsVpccG
     gs2DTransform( bitstream, ext.getGs2DTransform(), ext.getGsShProperty(), numShCoeffs );
   }
   if ( ext.getScaleTransformPresentFlag() ) { gsScaleTransform( bitstream, ext.getGsScaleTransform() ); }
+  if ( ext.getGeometryPredictionPresentFlag() ) { gsGeometryPrediction( bitstream, ext.getGsGeometryPrediction() ); }
 
   byteAlignment( bitstream );
   TRACE_BITSTREAM_OUT( "%s", __func__ );
@@ -3091,6 +3093,13 @@ void PCCBitstreamWriter::gs2DTransform( PCCBitstream                       &bits
   for ( int i = 0; i < numShCoeffs; i++ ) {
     if ( colTr[i] == 1 ) { WRITE_CODE( gs2DTransform.getTrColType( i ), 3 ); }
   }
+  TRACE_BITSTREAM_OUT( "%s", __func__ );
+}
+// H.8.3.6.3.10 Gaussian splat geometry prediction syntax
+void PCCBitstreamWriter::gsGeometryPrediction( PCCBitstream &bitstream, GsGeometryPrediction &gsgp ) {
+  TRACE_BITSTREAM_IN( "%s", __func__ );
+  WRITE_CODE( gsgp.getGeometryPredictionEnableFlag(), 1 );
+  WRITE_UVLC( gsgp.getGeometryPredictionSegmentVal() );
   TRACE_BITSTREAM_OUT( "%s", __func__ );
 }
 

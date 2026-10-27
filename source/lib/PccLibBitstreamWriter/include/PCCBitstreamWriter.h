@@ -413,6 +413,8 @@ class PCCBitstreamWriter {
                              Gs2DTransform                      &gs2DTransform,
                              const GsSphericalHarmonicsProperty &gshp,
                              uint32_t                            numShCoeffs );
+  // H.8.3.6.3.10 Gaussian splat geometry prediction syntax
+  static void gsGeometryPrediction( PCCBitstream &bitstream, GsGeometryPrediction &gsgp );
   // H.8.3.6.3.7  Gaussian splat spherical harmonics prediction syntax
   static void gsPrediction( PCCBitstream &bitstream, GsPrediction &gsPrediction, uint32_t numShComps );
   // H.8.3.6.3.9  Gaussian splat scale transform syntax

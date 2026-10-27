@@ -603,6 +603,13 @@ void PCCGSHlsBuilder::initializeAtlasAapsHls( PCCHighLevelSyntax            &hls
     }
   }
 
+  ext.setGeometryPredictionPresentFlag( true );
+  if ( ext.getGeometryPredictionPresentFlag() ) {
+    auto &geometryPrediction = ext.getGsGeometryPrediction();
+    geometryPrediction.setGeometryPredictionEnableFlag( adaptationParams.enableGeometryPrediction_ );
+    geometryPrediction.setGeometryPredictionSegmentVal( adaptationParams.geometryPredictionSegmentVal_ );
+  }
+
   ext.setRawPatchDataArrangementMethod( adaptationParams.rawPatchDataArrangementMethod_ );
   ext.setLinearOpacityFlag( true );
 
