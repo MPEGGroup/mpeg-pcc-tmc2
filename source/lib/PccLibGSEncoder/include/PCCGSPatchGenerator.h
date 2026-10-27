@@ -141,7 +141,7 @@ class PCCGSPatchGenerator {
    */
   void computePointPositionsIn2DBlockBased( GSEncoderPatchInformation    &patchInfo,
                                             const PCCGSEncoderParameters &params );
-
+  void nnsort( const PCCPointSet3 &source );
   /**
    * @brief Create patch information from bounding box and point indices
    */

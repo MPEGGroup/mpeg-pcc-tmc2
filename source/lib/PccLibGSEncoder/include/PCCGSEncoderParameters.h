@@ -72,6 +72,9 @@ struct PCCGSEncoderParameters {
   bool   raw3dOffsetBitCountExplicitModeFlag_;
   size_t raw3dOffsetAxisBitCountMinus1_;
 
+  // Patch transposition
+  bool patchTranspositionFlag_;
+
   // Encoder configuration files
   std::string debugPath_;
   std::string frameNameBase_;
@@ -269,6 +272,7 @@ struct PCCGSEncoderParameters {
     geometryBitDepth2D_                  = 10;
     attributeBitDepth2D_                 = 10;
     raw3dOffsetBitCountExplicitModeFlag_ = false;
+    patchTranspositionFlag_              = false;
     raw3dOffsetAxisBitCountMinus1_       = 0;
     minimumImageWidth_                   = 1024;
     minimumImageHeight_                  = 0;

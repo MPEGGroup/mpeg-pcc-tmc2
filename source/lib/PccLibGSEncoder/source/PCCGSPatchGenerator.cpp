@@ -277,9 +277,103 @@ void PCCGSPatchGenerator::generate3DPatches( const PCCPointSet3            &sour
   }
 }
 
+void PCCGSPatchGenerator::nnsort( const PCCPointSet3 &source ) {
+  auto &positions = source.getPositions();
+  for ( auto &patchInfo : patches_ ) {
+    auto  &rawPointsPatch  = patchInfo.patch;
+    auto  &rawPointsSrcIdx = patchInfo.pointsIndicesInPatch;
+    size_t numRawPoints    = rawPointsPatch.getNumberOfRawPoints();
+    if ( numRawPoints == 0u ) continue;
+
+    // 좌표 추출 (구환경의 pts_X/Y/Z에 해당)
+    PCCPointSet3 rawPointsSet;
+    rawPointsSet.resize( numRawPoints );
+    for ( size_t i = 0; i < numRawPoints; i++ ) {
+      size_t      pointIndex = rawPointsSrcIdx[i];
+      const auto &pos        = positions[pointIndex];
+      rawPointsSet[i]        = PCCPoint3D( pos.x(), pos.y(), pos.z() );
+    }
+
+    // Start point: minimum Morton code
+    size_t   startIdx  = 0;
+    uint64_t minMorton = UINT64_MAX;
+    for ( size_t i = 0; i < numRawPoints; ++i ) {
+      uint64_t m = mortonAddr( rawPointsSet[i], 0 );
+      if ( m < minMorton ) {
+        minMorton = m;
+        startIdx  = i;
+      }
+    }
+
+    // KD-tree 기반 nearest-neighbor 순서 생성
+    PCCKdTree           kdtree( rawPointsSet );
+    std::vector<bool>   visited( numRawPoints, false );
+    std::vector<size_t> globalOrder;
+    globalOrder.reserve( numRawPoints );
+
+    visited[startIdx] = true;
+    globalOrder.push_back( startIdx );
+
+    const size_t kMaxKdQuery = 128;
+    for ( size_t step = 1; step < numRawPoints; ++step ) {
+      size_t     cur   = globalOrder.back();
+      PCCPoint3D curPt = rawPointsSet[cur];
+      bool       found = false;
+
+      for ( size_t k = 2; k <= kMaxKdQuery && !found; k *= 2 ) {
+        size_t      kQuery = std::min( k, numRawPoints );
+        PCCNNResult result;
+        result.resize( kQuery );
+        kdtree.search( curPt, kQuery, result );
+        for ( size_t j = 0; j < result.size(); ++j ) {
+          size_t idx = result.indices( j );
+          if ( !visited[idx] ) {
+            visited[idx] = true;
+            globalOrder.push_back( idx );
+            found = true;
+            break;
+          }
+        }
+      }
+
+      // fallback: 전체 선형 탐색
+      if ( !found ) {
+        double cx       = static_cast<double>( curPt[0] );
+        double cy       = static_cast<double>( curPt[1] );
+        double cz       = static_cast<double>( curPt[2] );
+        double bestDist = std::numeric_limits<double>::max();
+        size_t bestIdx  = 0;
+        for ( size_t j = 0; j < numRawPoints; ++j ) {
+          if ( visited[j] ) continue;
+          double dx = cx - static_cast<double>( rawPointsSet[j][0] );
+          double dy = cy - static_cast<double>( rawPointsSet[j][1] );
+          double dz = cz - static_cast<double>( rawPointsSet[j][2] );
+          double d2 = dx * dx + dy * dy + dz * dz;
+          if ( d2 < bestDist ) {
+            bestDist = d2;
+            bestIdx  = j;
+          }
+        }
+        visited[bestIdx] = true;
+        globalOrder.push_back( bestIdx );
+      }
+    }
+
+    // globalOrder
+    auto tmpRawPointsSrcIdx = rawPointsSrcIdx;
+    for ( size_t p = 0; p < numRawPoints; ++p ) { tmpRawPointsSrcIdx[p] = rawPointsSrcIdx[globalOrder[p]]; }
+    rawPointsSrcIdx = tmpRawPointsSrcIdx;
+  }
+}
+
 void PCCGSPatchGenerator::generate2DPatchesMorton( const PCCPointSet3 &source, const PCCGSEncoderParameters &params ) {
   packRawPatches2DMorton( params );
-  sortPointsInPatchMorton( source );
+
+  if ( params.patchTranspositionFlag_ ) {
+    nnsort( source );
+  } else {
+    sortPointsInPatchMorton( source );
+  }
   for ( auto &patchInfo : patches_ ) { computePointPositionsIn2DMorton( patchInfo, params ); }
 }
 
@@ -343,6 +437,59 @@ void PCCGSPatchGenerator::packRawPatches2DMorton( const PCCGSEncoderParameters &
     height          = 64;
     occupancyMap.resize( occupancySizeU * occupancySizeV, false );
     uStart.resize( occupancySizeV, 0 );
+  }
+
+  if ( params.patchTranspositionFlag_ ) {
+    lowDelayEncoding = true;
+    {
+      const size_t oR = params.occupancyResolution_;
+
+      struct PatchMetrics {
+        size_t U0;
+        size_t V0;
+        size_t numPoints;
+      };
+
+      auto computeMetrics = [&]( const PCCRawPointsPatch &patch ) {
+        size_t np = patch.getNumberOfRawPoints();
+        size_t u0, v0;
+        if ( state != nullptr ) {
+          size_t bandBlocks   = static_cast<size_t>( ceil( double( np ) / ( oR * oR ) ) );
+          size_t bandBlocksV0 = static_cast<size_t>( ceil( double( bandBlocks ) / occupancySizeU ) );
+          if ( bandBlocksV0 == 0 ) bandBlocksV0 = 1;
+          u0 = static_cast<size_t>( ceil( double( bandBlocks ) / bandBlocksV0 ) );
+          v0 = bandBlocksV0 * 3;
+        } else {
+          size_t rawBlocks   = static_cast<size_t>( ceil( double( np * 3 ) / ( oR * oR ) ) );
+          size_t rawBlocksV0 = static_cast<size_t>( ceil( double( rawBlocks ) / occupancySizeU ) );
+          if ( rawBlocksV0 == 0 ) rawBlocksV0 = 1;
+          u0 = static_cast<size_t>( ceil( double( rawBlocks ) / rawBlocksV0 ) );
+          v0 = rawBlocksV0;
+        }
+        return PatchMetrics{ u0, v0, np };
+      };
+
+      auto comparator = [&]( const GSEncoderPatchInformation &a, const GSEncoderPatchInformation &b ) {
+        auto ma = computeMetrics( a.patch );
+        auto mb = computeMetrics( b.patch );
+        if ( ma.U0 != mb.U0 ) return ma.U0 > mb.U0;
+        if ( ma.V0 != mb.V0 ) return ma.V0 > mb.V0;
+        return ma.numPoints > mb.numPoints;
+      };
+
+      std::stable_sort( patches_.begin(), patches_.end(),
+                        [&]( const GSEncoderPatchInformation &a, const GSEncoderPatchInformation &b ) {
+                          return a.patch.shBitdepthDelta_ < b.patch.shBitdepthDelta_;
+                        } );
+      auto it = patches_.begin();
+      while ( it != patches_.end() ) {
+        int  curDelta = it->patch.shBitdepthDelta_;
+        auto groupEnd = it;
+        while ( groupEnd != patches_.end() && groupEnd->patch.shBitdepthDelta_ == curDelta ) { ++groupEnd; }
+        std::stable_sort( it, groupEnd, comparator );
+        it = groupEnd;
+      }
+    }
   }
 
   // LoD: LoD row-break tracking: ensures each distinct LoD mask group starts on a
@@ -495,9 +642,74 @@ void PCCGSPatchGenerator::packRawPatches2DMorton( const PCCGSEncoderParameters &
             rawPointsPatch.v0_, rawPointsPatch.sizeU0_, rawPointsPatch.sizeV0_,
             rawPointsPatch.getNumberOfRawPoints() * 3 );
   }
+  if ( params.patchTranspositionFlag_ ) {
+    bool          touchedLodMask[256] = { false };
+    const int16_t infiniteValue       = ( std::numeric_limits<int16_t>::max )();
 
-  mapWidth_  = params.minimumImageWidth_;
-  mapHeight_ = ( ( height + 64 - 1 ) / 64 ) * 64;
+    for ( auto &patchInfo : patches_ ) {
+      auto &p = patchInfo.patch;
+
+      const size_t oldSizeU0 = p.sizeU0_;
+      const size_t oldSizeV0 = p.sizeV0_;
+      const size_t oldSizeU  = p.sizeU_;
+      const size_t oldSizeV  = p.sizeV_;
+
+      // occupancy map
+      std::vector<bool> transposedOccupancy( oldSizeU0 * oldSizeV0, false );
+      for ( size_t v0 = 0; v0 < oldSizeV0; ++v0 ) {
+        for ( size_t u0 = 0; u0 < oldSizeU0; ++u0 ) {
+          transposedOccupancy[u0 * oldSizeV0 + v0] = p.occupancy_[v0 * oldSizeU0 + u0];
+        }
+      }
+      p.occupancy_ = std::move( transposedOccupancy );
+
+      // x,y,z
+      std::vector<uint16_t> transposedX( oldSizeU * oldSizeV );
+      std::vector<uint16_t> transposedY( oldSizeU * oldSizeV );
+      std::vector<uint16_t> transposedZ( oldSizeU * oldSizeV );
+
+      for ( size_t v = 0; v < oldSizeV; ++v ) {
+        const size_t rowBase = v * oldSizeU;
+        for ( size_t u = 0; u < oldSizeU; ++u ) {
+          const size_t oldIdx = rowBase + u;
+          const size_t newIdx = u * oldSizeV + v;
+          transposedX[newIdx] = p.x_[oldIdx];
+          transposedY[newIdx] = p.y_[oldIdx];
+          transposedZ[newIdx] = p.z_[oldIdx];
+        }
+      }
+
+      p.x_ = std::move( transposedX );
+      p.y_ = std::move( transposedY );
+      p.z_ = std::move( transposedZ );
+
+      // patch, occupancy resolution
+      std::swap( p.sizeU_, p.sizeV_ );
+      std::swap( p.sizeU0_, p.sizeV0_ );
+      std::swap( p.u0_, p.v0_ );
+
+      // 2D
+      for ( size_t comp = 0; comp < 3; ++comp ) {
+        for ( size_t k = 0; k < patchInfo.pointsPositionsIn2D[comp].size(); ++k ) {
+          std::swap( patchInfo.pointsPositionsIn2D[comp][k].x, patchInfo.pointsPositionsIn2D[comp][k].y );
+        }
+      }
+      if ( p.getLodMask() != 0 ) { touchedLodMask[p.getLodMask()] = true; }
+    }
+
+    // LoD bounding box
+    for ( auto &kv : lodRegionBBoxes_ ) {
+      if ( !touchedLodMask[kv.first] ) continue;
+      auto &bb = kv.second;
+      bb       = { bb[1], bb[0], bb[3], bb[2] };
+    }
+
+    mapWidth_  = ( ( height + 64 - 1 ) / 64 ) * 64;
+    mapHeight_ = params.minimumImageWidth_;
+  } else {
+    mapWidth_  = params.minimumImageWidth_;
+    mapHeight_ = ( ( height + 64 - 1 ) / 64 ) * 64;
+  }
 }
 
 void PCCGSPatchGenerator::packRawPatches2DBlockBased( const PCCGSEncoderParameters &params,

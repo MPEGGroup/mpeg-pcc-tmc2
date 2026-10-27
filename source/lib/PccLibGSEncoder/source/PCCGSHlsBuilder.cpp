@@ -868,10 +868,17 @@ void PCCGSHlsBuilder::updateVps( PCCHighLevelSyntax           &hls,
               const auto &region = pin.getRegion( i );
               if ( region.getPackedMapIndex() == k && region.getConstituentFrameIndex() == j ) { ++count; }
             }
-            const auto columnsCount = packedMapsColumnsCount[k];
-            const auto rowsCount    = ( count + columnsCount - 1 ) / columnsCount;
-            pin.setPackedMapGridColumnsMinus1( k, columnsCount - 1 );
-            pin.setPackedMapGridRowsMinus1( k, rowsCount - 1 );
+            if ( params.patchTranspositionFlag_ ) {
+              const auto rowsCount    = params.packedMapColumnsCount_[k];
+              const auto columnsCount = ( count + rowsCount - 1 ) / rowsCount;
+              pin.setPackedMapGridColumnsMinus1( k, columnsCount - 1 );
+              pin.setPackedMapGridRowsMinus1( k, rowsCount - 1 );
+            } else {
+              const auto columnsCount = params.packedMapColumnsCount_[k];
+              const auto rowsCount    = ( count + columnsCount - 1 ) / columnsCount;
+              pin.setPackedMapGridColumnsMinus1( k, columnsCount - 1 );
+              pin.setPackedMapGridRowsMinus1( k, rowsCount - 1 );
+            }
           }
         }
       }

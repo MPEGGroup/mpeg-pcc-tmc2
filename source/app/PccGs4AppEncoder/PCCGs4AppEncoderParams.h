@@ -242,6 +242,10 @@ bool parseParameters( int                           argc,
       encoderParams.raw3dOffsetBitCountExplicitModeFlag_,
       encoderParams.raw3dOffsetBitCountExplicitModeFlag_,
       "Enable explicit mode for 3D offset bit count" )
+    ( "patchTranspositionFlag",
+      encoderParams.patchTranspositionFlag_,
+      encoderParams.patchTranspositionFlag_,
+      "Patch Transposition" )
     ( "raw3dOffsetAxisBitCountMinus1",
       encoderParams.raw3dOffsetAxisBitCountMinus1_,
       encoderParams.raw3dOffsetAxisBitCountMinus1_,
