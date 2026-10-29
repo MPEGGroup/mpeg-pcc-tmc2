@@ -39,8 +39,7 @@
 using namespace pcc;
 
 namespace {
-constexpr size_t ATLAS_INDEX        = 0;
-constexpr bool   BBSORT_GEO_PADDING = true;  // m76580
+constexpr size_t ATLAS_INDEX = 0;
 }  // namespace
 
 PCCGSVideoFrames PCCGSMapGenerator::generate( const PCCPointSet3                     &source,
@@ -51,6 +50,7 @@ PCCGSVideoFrames PCCGSMapGenerator::generate( const PCCPointSet3                
                                               size_t                                  mapHeight ) {
   PCCGSVideoFrames frames;
   auto             vps = hls.getVpsList().front();
+  attributeBitDepth2D_ = params.attributeBitDepth2D_;
 
   // Generate geometry video if present
   if ( vps.getGeometryVideoPresentFlag( ATLAS_INDEX ) ) {
@@ -58,9 +58,6 @@ PCCGSVideoFrames PCCGSMapGenerator::generate( const PCCPointSet3                
     frames.geometry.getFrame( 0 ).resize( mapWidth, mapHeight, PCCCOLORFORMAT::YUV420 );
     frames.geometry.getFrame( 0 ).set( 0 );
     generateGeometryMap( source, patches, frames.geometry.getFrame( 0 ), params );
-    if ( params.rawPatchDataArrangementMethod_ == 1 && BBSORT_GEO_PADDING ) {
-      geometryMapPadding( source, params, patches, frames.geometry.getFrame( 0 ) );
-    }
   }
 
   // Generate attribute video if present
@@ -149,9 +146,6 @@ PCCGSVideoFrames PCCGSMapGenerator::generate( const PCCPointSet3                
 
           if ( region.getTypeIdMinus2() == V3C_GVD - 2 ) {
             generateGeometryMap( source, patches, frame, params, topLeftX, topLeftY );
-            if ( params.rawPatchDataArrangementMethod_ == 1 && BBSORT_GEO_PADDING ) {
-              geometryMapPadding( source, params, patches, frame, topLeftX, topLeftY );
-            }
           } else if ( region.getTypeIdMinus2() == V3C_AVD - 2 ) {
             size_t attributeIdx  = region.getAttrIndex();
             size_t partitionIdx  = region.getAttrPartitionIndex();
@@ -263,8 +257,11 @@ void PCCGSMapGenerator::generateAttributeMap( std::vector<GSEncoderPatchInformat
                                               size_t                                  componentIdx,
                                               std::vector<PCCAttribute16bit>         &attribute,
                                               size_t                                  topLeftX,
-                                              size_t                                  topLeftY ) {
+                                              size_t                                  topLeftY,
+                                              bool                                    isShAttribute ) {
   for ( const auto &patchInfo : patches ) {
+    const uint16_t dcOffset =
+        isShAttribute ? getShDcOffset( attributeBitDepth2D_, patchInfo.patch.shBitdepthDelta_ ) : 0;
     for ( size_t p = 0; p < patchInfo.patch.getNumberOfRawPoints(); ++p ) {
       size_t     pointIndex     = patchInfo.pointsIndicesInPatch[p];
       const auto attributeValue = attribute[pointIndex][componentIdx];
@@ -272,7 +269,7 @@ void PCCGSMapGenerator::generateAttributeMap( std::vector<GSEncoderPatchInformat
       size_t     v              = patchInfo.pointsPositionsIn2D[componentIdx][p].y + topLeftY;
 
       assert( u < image.getWidth() && v < image.getHeight() );
-      image.setValue( 0, u, v, uint16_t( attributeValue ) );
+      image.setValue( 0, u, v, uint16_t( uint16_t( attributeValue ) + dcOffset ) );
     }
   }
 }
@@ -293,7 +290,8 @@ void PCCGSMapGenerator::generateAttributeMapsForRegion( const PCCPointSet3      
   for ( size_t channelIdx = 0; channelIdx < channelCount; channelIdx++ ) {
     std::cout << "Generating attribute map for partition index " << partitionIdx << ", channel index " << channelIdx
               << std::endl;
-    generateAttributeMap( patches, frame, channelIdx, attributeValues, topLeftX, topLeftY );
+    generateAttributeMap( patches, frame, channelIdx, attributeValues, topLeftX, topLeftY,
+                          attributeType == ATTR_SPHERICAL_HARMONICS );
   }
 }
 
@@ -388,76 +386,4 @@ void PCCGSMapGenerator::generatePackedMaps( PCCHighLevelSyntax              &hls
                 << ", height=" << height << std::endl;
     }
   }
-}
-
-void PCCGSMapGenerator::geometryMapPadding( const PCCPointSet3                     &source,
-                                            const PCCGSEncoderParameters           &params,
-                                            std::vector<GSEncoderPatchInformation> &patches,
-                                            PCCVideoFrame                          &image,
-                                            size_t                                  topLeftX,
-                                            size_t                                  topLeftY ) {
-  auto &positions = source.getPositions();
-
-  std::vector<bool> validPixel( image.getWidth() * image.getHeight(), false );
-
-  // m76580: fill trailing pixels in each band with last coordinate value
-  for ( const auto &patchInfo : patches ) {
-    const size_t N = patchInfo.patch.getNumberOfRawPoints();
-    if ( N == 0 ) continue;
-    const size_t sU    = patchInfo.patch.sizeU_;
-    const size_t bandH = patchInfo.patch.sizeV_ / 3;
-    if ( N >= bandH * sU ) continue;  // no trailing pixels
-
-    const size_t u0 = patchInfo.patch.u0_;
-    const size_t v0 = patchInfo.patch.v0_;
-
-    const size_t lastIdx = patchInfo.pointsIndicesInPatch[N - 1];
-    const auto  &lastPos = positions[lastIdx];
-
-    for ( size_t p = N; p < bandH * sU; ++p ) {
-      const size_t pu = p % sU;
-      const size_t pv = p / sU;
-      const size_t ax = u0 + pu + topLeftX;
-      const size_t ay = v0 + pv + topLeftY;
-
-      validPixel[ay * image.getWidth() + ax]                 = true;
-      validPixel[( ay + bandH ) * image.getWidth() + ax]     = true;
-      validPixel[( ay + 2 * bandH ) * image.getWidth() + ax] = true;
-    }
-  }
-
-  // m76580: CTU-based geometry padding
-  const size_t CTU = params.blockBasedSortBlockSize_;
-  for ( size_t by = 0; by < image.getHeight(); by += CTU ) {
-    for ( size_t bx = 0; bx < image.getWidth(); bx += CTU ) {
-      bool hasData      = false;
-      bool needsPadding = false;
-
-      for ( size_t dy = 0; dy < CTU && by + dy < image.getHeight(); ++dy ) {
-        for ( size_t dx = 0; dx < CTU && bx + dx < image.getWidth(); ++dx ) {
-          if ( validPixel[( by + dy ) * image.getWidth() + ( bx + dx )] ) {
-            hasData = true;
-          } else {
-            needsPadding = true;
-          }
-        }
-      }
-
-      if ( hasData && needsPadding ) {
-        for ( size_t dx = 0; dx < CTU && bx + dx < image.getWidth(); ++dx ) {
-          int lastValidY = -1;
-          for ( size_t dy = 0; dy < CTU && by + dy < image.getHeight(); ++dy ) {
-            size_t px = bx + dx, py = by + dy;
-            if ( !validPixel[py * image.getWidth() + px] )
-              lastValidY = static_cast<int>( py );
-            else if ( lastValidY != -1 ) {
-              image.setValue( 0, px, py, image.getValue( 0, px, static_cast<size_t>( lastValidY ) ) );
-              validPixel[py * image.getWidth() + px] = false;
-            }
-          }
-        }
-      }  // needsPadding
-
-    }  // bx
-  }  // by
 }

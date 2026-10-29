@@ -210,6 +210,11 @@ int main( int argc, char *argv[] ) {
     std::cerr << "Error: attributeBitDepth2D must be 8 or 10, got " << encoderParams.attributeBitDepth2D_ << std::endl;
     return -1;
   }
+  if ( encoderParams.rawPatchDataArrangementMethod_ != 0 ) {
+    std::cerr << "Error: rawPatchDataArrangementMethod support only 0, got "
+              << encoderParams.rawPatchDataArrangementMethod_ << std::endl;
+    return -1;
+  }
 
   // Map encoder flags to adaptation parameters
   adaptationParams.gsdTransform2dPresentFlag_           = encoderParams.gsdTransform2dPresentFlag_;

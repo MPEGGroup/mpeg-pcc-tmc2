@@ -97,13 +97,15 @@ class PCCGSMapGenerator {
 
   /**
    * @brief Generate attribute map for a specific channel
+   * @note SH values are shifted by getShDcOffset()
    */
   void generateAttributeMap( std::vector<GSEncoderPatchInformation> &patches,
                              PCCVideoFrame                          &image,
                              size_t                                  componentIdx,
                              std::vector<PCCAttribute16bit>         &attribute,
-                             size_t                                  topLeftX = 0,
-                             size_t                                  topLeftY = 0 );
+                             size_t                                  topLeftX      = 0,
+                             size_t                                  topLeftY      = 0,
+                             bool                                    isShAttribute = false );
 
   /**
    * @brief Generate attribute maps for a region
@@ -133,15 +135,7 @@ class PCCGSMapGenerator {
 
   void copyMapWithBBoxForLoD( PackedRegion &region, PCCImage<uint16_t, 3> &srcFrame, PCCImage<uint16_t, 3> &dstFrame );
 
-  /**
-   * @brief Fill geometry map with padding (m76580)
-   */
-  void geometryMapPadding( const PCCPointSet3                     &source,
-                           const PCCGSEncoderParameters           &params,
-                           std::vector<GSEncoderPatchInformation> &patches,
-                           PCCVideoFrame                          &image,
-                           size_t                                  topLeftX = 0,
-                           size_t                                  topLeftY = 0 );
+  size_t attributeBitDepth2D_ = 0;  // set in generate()
 };
 
 }  // namespace pcc

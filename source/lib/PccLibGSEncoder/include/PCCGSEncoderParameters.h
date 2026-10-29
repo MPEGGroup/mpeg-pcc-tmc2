@@ -110,11 +110,8 @@ struct PCCGSEncoderParameters {
   bool     enableGeometryPrediction_     = true;
   uint16_t geometryPredictionSegmentVal_ = 256;
 
-  // Raw patch data arrangement method (0: sequential, 1: vertical planar)
+  // Raw patch data arrangement method (only 0: sequential is supported)
   uint32_t rawPatchDataArrangementMethod_ = 0;
-
-  // Block size for rawPatchDataArrangementMethod_=1 (block-based, m76580)
-  size_t blockBasedSortBlockSize_ = 64;
 
   // LoD signaling, m76746
   std::vector<int> lodSplitRatios_{};  // empty = use default {1} (single LoD, no splitting)
@@ -222,7 +219,6 @@ struct PCCGSEncoderParameters {
       std::cout << "  " << field( "geometryPredictionSegmentVal" ) << geometryPredictionSegmentVal_ << "\n";
     }
     std::cout << "  " << field( "rawPatchDataArrangementMethod" ) << rawPatchDataArrangementMethod_ << "\n";
-    std::cout << "  " << field( "blockBasedSortBlockSize" ) << blockBasedSortBlockSize_ << "\n";
     std::cout << "  " << field( "lodSplitRatios" ) << printVec( lodSplitRatios_ ) << "\n";
     std::cout << "  " << field( "gsColmapFolderPath" ) << gsColmapFolderPath_ << "\n";
     std::cout << "  " << field( "keepIntermediateFiles" ) << keepIntermediateFiles_ << "\n";
@@ -289,8 +285,7 @@ struct PCCGSEncoderParameters {
     binaryFileBase_                      = "data";
     keepIntermediateFiles_               = false;
     gsColmapFolderPath_                  = "";
-    rawPatchDataArrangementMethod_       = 0;   // m76580
-    blockBasedSortBlockSize_             = 64;  // m76580
+    rawPatchDataArrangementMethod_       = 0;  // m76580
     implicitPacking_                     = true;
     gsdTransform2dPresentFlag_           = true;
     dataAdaptiveShTransformEnabled_      = true;

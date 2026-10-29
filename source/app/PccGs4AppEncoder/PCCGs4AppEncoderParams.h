@@ -359,12 +359,7 @@ bool parseParameters( int                           argc,
     ( "rawPatchDataArrangementMethod",
       encoderParams.rawPatchDataArrangementMethod_,
       encoderParams.rawPatchDataArrangementMethod_,
-      "Raw patch data arrangement method: 0=sequential, 1=vertical planar (m76580)" )
-    ( "blockBasedSortBlockSize",                 
-      encoderParams.blockBasedSortBlockSize_,
-      encoderParams.blockBasedSortBlockSize_,
-      "Block size for raw_patch_data_arrangement_method=1 (must be power of 2, >=8, default = 64)" )
-
+      "Raw patch data arrangement method: 0=sequential (only 0 is supported) (m76580)" )
 
     // VUI parameters (Annex G – ISO/IEC 23090-5)
     ( "aspsVuiParametersPresentFlag",

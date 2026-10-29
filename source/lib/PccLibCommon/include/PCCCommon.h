@@ -83,6 +83,7 @@ namespace pcc {
 // ******************************************************************* //
 static const uint8_t PCC_SAVE_POINT_TYPE = 0;  // Save point information in reconstructed ply.
 #define POSTSMOOTHING_RGB2YUV 0                // BT709 RGB to YUV convertion used for post-smoothing
+#define ENABLE_SH_DC_OFFSET 1                  // SH dcOffset of RAW patches (H.11.7), m78960, m79128
 
 // ******************************************************************* //
 // Common constants
@@ -177,6 +178,16 @@ static inline void PCCDivideRange( const size_t         start,
     }
     subRanges[chunckCount] = end;
   }
+}
+
+// dcOffset of H.11.7: added to the SH values by the encoder, subtracted by the decoder
+static inline uint16_t getShDcOffset( const size_t bitDepth, const size_t bitShift ) {
+#if ENABLE_SH_DC_OFFSET
+  const uint16_t midPoint = static_cast<uint16_t>( 1 << ( bitDepth - 1 ) );
+  return static_cast<uint16_t>( midPoint - ( bitShift < bitDepth ? midPoint >> bitShift : 0 ) );
+#else
+  return 0;
+#endif
 }
 
 template <typename... Args>

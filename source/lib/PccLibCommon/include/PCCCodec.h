@@ -96,7 +96,6 @@ struct GeneratePointCloudParameters {
   int16_t     pbfPassesCount_;
   int16_t     pbfFilterSize_;
   int16_t     pbfLog2Threshold_;
-  int16_t     rawPatchDataArrangementMethod_;
 };
 
 struct PCCAtlasBbox {

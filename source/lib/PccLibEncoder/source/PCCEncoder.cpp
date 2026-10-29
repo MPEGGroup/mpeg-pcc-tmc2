@@ -8020,14 +8020,13 @@ void PCCEncoder::setGeneratePointCloudParameters( GeneratePointCloudParameters &
   params.geometry3dCoordinatesBitdepth_ = params_.geometry3dCoordinatesBitdepth_ + 1;
   params.useAdditionalPointsPatch_ =
       params_.reconstructRawType_ != 0 && ( params_.rawPointsPatch_ || params_.lossyRawPointsPatch_ );
-  params.plrlNumberOfModes_             = params_.plrlNumberOfModes_;
-  params.geometryBitDepth3D_            = params_.geometry3dCoordinatesBitdepth_ + 1;
-  params.EOMFixBitCount_                = params_.EOMFixBitCount_;
-  params.pbfEnableFlag_                 = false;
-  params.pbfPassesCount_                = 0;
-  params.pbfFilterSize_                 = 0;
-  params.pbfLog2Threshold_              = 0;
-  params.rawPatchDataArrangementMethod_ = 0;
+  params.plrlNumberOfModes_  = params_.plrlNumberOfModes_;
+  params.geometryBitDepth3D_ = params_.geometry3dCoordinatesBitdepth_ + 1;
+  params.EOMFixBitCount_     = params_.EOMFixBitCount_;
+  params.pbfEnableFlag_      = false;
+  params.pbfPassesCount_     = 0;
+  params.pbfFilterSize_      = 0;
+  params.pbfLog2Threshold_   = 0;
 }
 
 void PCCEncoder::createPatchFrameDataStructure( PCCContext &context ) {

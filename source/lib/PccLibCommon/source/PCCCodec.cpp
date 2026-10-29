@@ -1889,6 +1889,7 @@ void PCCCodec::generateRawPointsAttributefromVideoRecGS( PCCContext             
   size_t totalPoints              = 0;
   size_t numberOfRawPointsPatches = tile.getNumberOfRawPointsPatches();
   auto   attributeTypeId          = ai.getAttributeTypeId( attributeIdx );
+  size_t bitDepth                 = ai.getAttribute2dBitdepthMinus1( attributeIdx ) + 1;
 
   // Get data arrangement method from AAPS
   auto     athl              = context.getAtlasTileLayer( frameIndex, 0 );
@@ -1927,18 +1928,25 @@ void PCCCodec::generateRawPointsAttributefromVideoRecGS( PCCContext             
 
     std::vector<size_t> pointIndexes( numRawPoints, size_t( -1 ) );
 
+    // dcOffset of H.11.7, 0 for the other attributes
+    const uint16_t dcOffset =
+        attributeTypeId == ATTR_SPHERICAL_HARMONICS ? getShDcOffset( bitDepth, rawPointsPatch.shBitdepthDelta_ ) : 0;
+
+    auto removeDcOffset = [dcOffset]( const uint16_t val ) { return double( std::max( 0, val - dcOffset ) ); };
+
     if ( arrangementMethod == 1 ) {
       // Method 1: vertical planar arrangement - 3 horizontal bands
       const size_t bandHeight = rawPointsPatch.sizeV_ / 3;
       size_t       pu = 0, pv = 0;
       for ( size_t p = 0; p < numRawPoints; ++p ) {
-        const size_t u1                                              = tile.getLeftTopXInFrame() + u0 + pu;
-        const size_t base_v                                          = tile.getLeftTopYInFrame() + v0 + pv;
-        pointCloud.getAttribute( attributeType, totalPoints + p )[0] = double( image.getValue( 0, u1, base_v ) );
+        const size_t u1     = tile.getLeftTopXInFrame() + u0 + pu;
+        const size_t base_v = tile.getLeftTopYInFrame() + v0 + pv;
+        pointCloud.getAttribute( attributeType, totalPoints + p )[0] =
+            removeDcOffset( image.getValue( 0, u1, base_v ) );
         pointCloud.getAttribute( attributeType, totalPoints + p )[1] =
-            double( image.getValue( 0, u1, base_v + bandHeight ) );
+            removeDcOffset( image.getValue( 0, u1, base_v + bandHeight ) );
         pointCloud.getAttribute( attributeType, totalPoints + p )[2] =
-            double( image.getValue( 0, u1, base_v + 2 * bandHeight ) );
+            removeDcOffset( image.getValue( 0, u1, base_v + 2 * bandHeight ) );
         if ( ++pu == rawPointsPatch.sizeU_ ) {
           pu = 0;
           ++pv;
@@ -1957,22 +1965,23 @@ void PCCCodec::generateRawPointsAttributefromVideoRecGS( PCCContext             
 
       for ( size_t v = 0; v < rawPointsPatch.sizeV_; ++v ) {
         for ( size_t u = 0; u < rawPointsPatch.sizeU_; ++u ) {
-          const size_t u1 = tile.getLeftTopXInFrame() + u0 + u;
-          const size_t v1 = tile.getLeftTopYInFrame() + v0 + v;
+          const size_t u1             = tile.getLeftTopXInFrame() + u0 + u;
+          const size_t v1             = tile.getLeftTopYInFrame() + v0 + v;
+          const double attributeValue = removeDcOffset( image.getValue( 0, u1, v1 ) );
           if ( numRawPointsAdded < numRawPoints ) {
             auto i = numRawPointsAdded;
             if ( pointIndexes[i] != size_t( -1 ) ) {
-              pointCloud.getAttribute( attributeType, totalPoints + i )[0] = double( image.getValue( 0, u1, v1 ) );
+              pointCloud.getAttribute( attributeType, totalPoints + i )[0] = attributeValue;
             }
           } else if ( numRawPoints <= numRawPointsAdded && numRawPointsAdded < 2 * numRawPoints ) {
             auto i = numRawPointsAdded - numRawPoints;
             if ( pointIndexes[i] != size_t( -1 ) ) {
-              pointCloud.getAttribute( attributeType, totalPoints + i )[1] = double( image.getValue( 0, u1, v1 ) );
+              pointCloud.getAttribute( attributeType, totalPoints + i )[1] = attributeValue;
             }
           } else if ( 2 * numRawPoints <= numRawPointsAdded && numRawPointsAdded < 3 * numRawPoints ) {
             auto i = numRawPointsAdded - 2 * numRawPoints;
             if ( pointIndexes[i] != size_t( -1 ) ) {
-              pointCloud.getAttribute( attributeType, totalPoints + i )[2] = double( image.getValue( 0, u1, v1 ) );
+              pointCloud.getAttribute( attributeType, totalPoints + i )[2] = attributeValue;
             }
           }
           numRawPointsAdded++;

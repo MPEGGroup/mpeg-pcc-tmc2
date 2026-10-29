@@ -52,18 +52,6 @@ struct PCCGSPatchResult {
 };
 
 /**
- * @brief Atlas occupancy state — shared between packing functions
- */
-struct AtlasOccupancyState {
-  std::vector<bool> occupancyMap;
-  std::vector<int>  uStart;
-  size_t            occupancySizeU  = 0;
-  size_t            occupancySizeV  = 0;
-  int               maxOccupancyRow = 0;
-  size_t            height          = 64;
-};
-
-/**
  * @brief Generator class for creating patches from point clouds
  *
  * This class handles the creation of 3D patches from point clouds,
@@ -102,19 +90,9 @@ class PCCGSPatchGenerator {
   void generate2DPatchesMorton( const PCCPointSet3 &source, const PCCGSEncoderParameters &params );
 
   /**
-   * @brief Generate 2D patch positions for sortRawPointsMode==1 (m76580)
-   */
-  void generate2DPatchesBlockBased( const PCCPointSet3 &source, const PCCGSEncoderParameters &params );
-
-  /**
    * @brief Pack raw patches into 2D space using Morton algorithm
    */
-  void packRawPatches2DMorton( const PCCGSEncoderParameters &params, AtlasOccupancyState *state = nullptr );
-
-  /**
-   * @brief Pack raw patches into 2D space using CTC algorithm for sortRawPointsMode==1 (m76580)
-   */
-  void packRawPatches2DBlockBased( const PCCGSEncoderParameters &params, AtlasOccupancyState *state = nullptr );
+  void packRawPatches2DMorton( const PCCGSEncoderParameters &params );
 
   /**
    * @brief Pack raw patches into 2D space using simple algorithm
@@ -127,20 +105,10 @@ class PCCGSPatchGenerator {
   void sortPointsInPatchMorton( const PCCPointSet3 &source );
 
   /**
-   * @brief Sort points in each patch using block-based greedy order (m76580, sortRawPointsMode=1)
-   */
-  void sortPointsInPatchBlockBased( const PCCPointSet3 &source, const PCCGSEncoderParameters &params );
-
-  /**
    * @brief Compute 2D positions for all points in a patch
    */
   void computePointPositionsIn2DMorton( GSEncoderPatchInformation &patchInfo, const PCCGSEncoderParameters &params );
 
-  /**
-   * @brief Compute 2D positions for all points in a patch for sortRawPointsMode==1 (m76580)
-   */
-  void computePointPositionsIn2DBlockBased( GSEncoderPatchInformation    &patchInfo,
-                                            const PCCGSEncoderParameters &params );
   void nnsort( const PCCPointSet3 &source );
   /**
    * @brief Create patch information from bounding box and point indices
