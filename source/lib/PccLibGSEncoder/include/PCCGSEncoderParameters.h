@@ -46,110 +46,109 @@ namespace pcc {
  * @brief Parameters for the GS Encoder
  */
 struct PCCGSEncoderParameters {
-  int32_t              geometryQP_;
-  int32_t              attributeScaleQP_;
-  int32_t              attributeOpacityQP_;
-  int32_t              attributeRotationQP_;
-  int32_t              attributeColorQP_;
-  std::vector<int32_t> packQP_{};
+  int32_t              geometryQP_{ 6 };
+  int32_t              attributeScaleQP_{ 6 };
+  int32_t              attributeOpacityQP_{ 6 };
+  int32_t              attributeRotationQP_{ 6 };
+  int32_t              attributeColorQP_{ 6 };
+  std::vector<int32_t> packQP_;
 
   // Occupancy resolution for raw points patches
-  size_t occupancyResolution_;
+  size_t occupancyResolution_{ 1 };
 
   // Geometry parameters
-  size_t geometryBitDepth3D_;
-  size_t geometryBitDepth2D_;
+  size_t geometryBitDepth3D_{ 18 };
+  size_t geometryBitDepth2D_{ 10 };
 
   // Attribute parameters
-  size_t attributeBitDepth2D_;
+  size_t attributeBitDepth2D_{ 10 };
 
-  // Minimum image width
-  size_t minimumImageWidth_;
-  // Minimum image height
-  size_t minimumImageHeight_;
+  // Minimum image size
+  size_t minimumImageWidth_{ 1024 };
+  size_t minimumImageHeight_{};
 
   // Raw 3D offset settings
-  bool   raw3dOffsetBitCountExplicitModeFlag_;
-  size_t raw3dOffsetAxisBitCountMinus1_;
+  bool   raw3dOffsetBitCountExplicitModeFlag_{};
+  size_t raw3dOffsetAxisBitCountMinus1_{};
 
   // Patch transposition
-  bool patchTranspositionFlag_;
+  bool patchTranspositionFlag_{};
 
   // Encoder configuration files
-  std::string debugPath_;
-  std::string frameNameBase_;
-  std::string binaryFileBase_;
+  std::string debugPath_{ "./temp" };
+  std::string frameNameBase_{ "frame" };
+  std::string binaryFileBase_{ "data" };
   std::string geometryVideoEncoderConfig_;
   std::string attributeVideoEncoderConfig_;
   std::string packedVideoEncoderConfig_;
 
   // Packing settings
   bool             packGeometry_{};
-  bool             packAttributes_{};
-  bool             implicitPacking_{};  // m76092
-  bool             temporalPacking_{};  // m76086
+  bool             packAttributes_{ true };
+  bool             implicitPacking_{ true };  // m76092
+  bool             temporalPacking_{};        // m76086
   int              geometryPackedMapIndex_{};
   int              attributeScalePackedMapIndex_{};
   int              attributeOpacityPackedMapIndex_{};
   int              attributeRotationPackedMapIndex_{};
-  int              attributeColorPackedMapIndex_{};
-  std::vector<int> packedMapColumnsCount_{};
+  int              attributeColorPackedMapIndex_{ 1 };
+  std::vector<int> packedMapColumnsCount_{ 4, 4 };
 
   // Gaussian Splatting
-  bool gsdTransform2dPresentFlag_;
-  bool dataAdaptiveShTransformEnabled_;
-  bool adaptivePcaEnabled_;
-  bool gsdPcaDcFlag_;
-  bool enableShNonUniformQuantization_;
-  bool enableScaleNonUniformQuantization_;
-  bool shPredictionEnabled_;
-  bool enableScalePowerTransform_ = false;
-  bool enableOpacityNonUniformQuantization_;
+  bool gsdTransform2dPresentFlag_{ true };
+  bool dataAdaptiveShTransformEnabled_{ true };
+  bool adaptivePcaEnabled_{};
+  bool gsdPcaDcFlag_{ true };
+  bool enableShNonUniformQuantization_{ true };
+  bool enableScaleNonUniformQuantization_{ true };
+  bool shPredictionEnabled_{};
+  bool enableScalePowerTransform_{ true };
+  bool enableOpacityNonUniformQuantization_{ true };
 
   // Geometry residual prediction (0: disable, 1: enable)
-  bool     enableGeometryPrediction_     = true;
-  uint16_t geometryPredictionSegmentVal_ = 256;
+  bool     enableGeometryPrediction_{ true };
+  uint16_t geometryPredictionSegmentVal_{ 256 };
 
   // Raw patch data arrangement method (only 0: sequential is supported)
-  uint32_t rawPatchDataArrangementMethod_ = 0;
+  uint32_t rawPatchDataArrangementMethod_{};
 
   // LoD signaling, m76746
-  std::vector<int> lodSplitRatios_{};  // empty = use default {1} (single LoD, no splitting)
-  bool             lodEnabled_ = false;
+  std::vector<int> lodSplitRatios_;  // empty = use default {1} (single LoD, no splitting)
+  bool             lodEnabled_{};
 
   // GS SEI
   std::string gsColmapFolderPath_;
 
-  bool keepIntermediateFiles_;
+  bool keepIntermediateFiles_{};
 
-  bool encodeLinearOpacity_ = false;
+  bool encodeLinearOpacity_{};
 
-  bool ptlPriorityOrderEnableFlag_ = false;
+  bool ptlPriorityOrderEnableFlag_{};
 
   // Comma-separated AttributeTypeId integers controlling VPS/V3C attribute order.
   // Empty = default order {TRANSPARENCY=2, SPHERICAL_HARMONICS=5, SCALE=6, ROTATION=7}.
-  std::vector<int> attributeOrder_{};
+  std::vector<int> attributeOrder_;
 
   // VUI parameters (ASPS, Annex G – ISO/IEC 23090-5)
-  bool     aspsVuiParametersPresentFlag_;
-  bool     vuiTimingInfoPresentFlag_;
-  uint32_t vuiNumUnitsInTick_;
-  uint32_t vuiTimeScale_;
-  bool     vuiPocProportionalToTimingFlag_;
-  uint32_t vuiNumTicksPocDiffOneMinus1_;
-  bool     vuiHrdParametersPresentFlag_;
-  bool     vuiUnitInMetresFlag_;
-  bool     vuiDisplayBoxInfoPresentFlag_;
-  uint32_t vuiDisplayBoxOriginX_;
-  uint32_t vuiDisplayBoxOriginY_;
-  uint32_t vuiDisplayBoxOriginZ_;
-  uint32_t vuiDisplayBoxSizeX_;
-  uint32_t vuiDisplayBoxSizeY_;
-  uint32_t vuiDisplayBoxSizeZ_;
-  bool     vuiAnchorPointPresentFlag_;
-  uint32_t vuiAnchorPointX_;
-  uint32_t vuiAnchorPointY_;
-  uint32_t vuiAnchorPointZ_;
+  bool     aspsVuiParametersPresentFlag_{};
+  bool     vuiTimingInfoPresentFlag_{};
+  uint32_t vuiNumUnitsInTick_{ 1001 };
+  uint32_t vuiTimeScale_{ 60000 };
+  bool     vuiPocProportionalToTimingFlag_{};
+  uint32_t vuiNumTicksPocDiffOneMinus1_{};
+  bool     vuiHrdParametersPresentFlag_{};
+  bool     vuiUnitInMetresFlag_{};
+  bool     vuiDisplayBoxInfoPresentFlag_{};
+  uint32_t vuiDisplayBoxOriginX_{};
+  uint32_t vuiDisplayBoxOriginY_{};
+  uint32_t vuiDisplayBoxOriginZ_{};
+  uint32_t vuiDisplayBoxSizeX_{};
+  uint32_t vuiDisplayBoxSizeY_{};
+  uint32_t vuiDisplayBoxSizeZ_{};
+  bool     vuiAnchorPointPresentFlag_{};
+  uint32_t vuiAnchorPointX_{};
+  uint32_t vuiAnchorPointY_{};
+  uint32_t vuiAnchorPointZ_{};
 
   uint8_t getPackedMapIndexByAttributeTypeId( AttributeTypeId attrTypeId ) const {
     switch ( attrTypeId ) {
@@ -256,70 +255,7 @@ struct PCCGSEncoderParameters {
       }
     }
   }
-
-  PCCGSEncoderParameters() {
-    geometryQP_                          = 6;
-    attributeScaleQP_                    = 6;
-    attributeOpacityQP_                  = 6;
-    attributeRotationQP_                 = 6;
-    attributeColorQP_                    = 6;
-    occupancyResolution_                 = 1;
-    geometryBitDepth3D_                  = 18;
-    geometryBitDepth2D_                  = 10;
-    attributeBitDepth2D_                 = 10;
-    raw3dOffsetBitCountExplicitModeFlag_ = false;
-    patchTranspositionFlag_              = false;
-    raw3dOffsetAxisBitCountMinus1_       = 0;
-    minimumImageWidth_                   = 1024;
-    minimumImageHeight_                  = 0;
-    packGeometry_                        = false;
-    packAttributes_                      = true;
-    geometryPackedMapIndex_              = 0;
-    attributeScalePackedMapIndex_        = 0;
-    attributeOpacityPackedMapIndex_      = 0;
-    attributeRotationPackedMapIndex_     = 0;
-    attributeColorPackedMapIndex_        = 1;
-    packedMapColumnsCount_               = { 4, 4 };
-    debugPath_                           = "./temp";
-    frameNameBase_                       = "frame";
-    binaryFileBase_                      = "data";
-    keepIntermediateFiles_               = false;
-    gsColmapFolderPath_                  = "";
-    rawPatchDataArrangementMethod_       = 0;  // m76580
-    implicitPacking_                     = true;
-    gsdTransform2dPresentFlag_           = true;
-    dataAdaptiveShTransformEnabled_      = true;
-    adaptivePcaEnabled_                  = false;
-    gsdPcaDcFlag_                        = true;
-    enableShNonUniformQuantization_      = true;
-    enableScaleNonUniformQuantization_   = true;
-    shPredictionEnabled_                 = false;
-    enableScalePowerTransform_           = true;
-    enableOpacityNonUniformQuantization_ = true;
-    enableGeometryPrediction_            = false;
-    geometryPredictionSegmentVal_        = 256;
-    aspsVuiParametersPresentFlag_        = false;
-    vuiTimingInfoPresentFlag_            = false;
-    vuiNumUnitsInTick_                   = 1001;
-    vuiTimeScale_                        = 60000;
-    vuiPocProportionalToTimingFlag_      = false;
-    vuiNumTicksPocDiffOneMinus1_         = 0;
-    vuiHrdParametersPresentFlag_         = false;
-    vuiUnitInMetresFlag_                 = false;
-    vuiDisplayBoxInfoPresentFlag_        = false;
-    vuiDisplayBoxOriginX_                = 0;
-    vuiDisplayBoxOriginY_                = 0;
-    vuiDisplayBoxOriginZ_                = 0;
-    vuiDisplayBoxSizeX_                  = 0;
-    vuiDisplayBoxSizeY_                  = 0;
-    vuiDisplayBoxSizeZ_                  = 0;
-    vuiAnchorPointPresentFlag_           = false;
-    vuiAnchorPointX_                     = 0;
-    vuiAnchorPointY_                     = 0;
-    vuiAnchorPointZ_                     = 0;
-  }
 };
-
 }  // namespace pcc
 
 #endif  // PCC_GS_ENCODER_PARAMETERS_H

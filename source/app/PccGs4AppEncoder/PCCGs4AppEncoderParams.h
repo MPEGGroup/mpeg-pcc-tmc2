@@ -306,43 +306,43 @@ bool parseParameters( int                           argc,
     // Gaussian Splatting encoder parameters
     ( "gsdTransform2dPresentFlag",
       encoderParams.gsdTransform2dPresentFlag_,
-      true,
+      encoderParams.gsdTransform2dPresentFlag_,
       "Enable 2D transform for SH (m75038 or m75790)" )
     ( "dataAdaptiveShTransformEnabled",
       encoderParams.dataAdaptiveShTransformEnabled_,
-      true,
+      encoderParams.dataAdaptiveShTransformEnabled_,
       "Enable data adaptive SH transform (m75790)" )
     ( "adaptivePcaEnabled",
       encoderParams.adaptivePcaEnabled_,
-      false,
+      encoderParams.adaptivePcaEnabled_,
       "Enable adaptive global/group PCA selection (m76164)" )
     ( "gsdPcaDcFlag",
       encoderParams.gsdPcaDcFlag_,
-      true,
+      encoderParams.gsdPcaDcFlag_,
       "Enable PCA for DC component of SH (m76858)" )
     ( "enableShNonUniformQuantization",
       encoderParams.enableShNonUniformQuantization_,
-      true,
+      encoderParams.enableShNonUniformQuantization_,
       "Enable non-uniform quantization for SH (m75025)" )
     ( "enableOpacityNonUniformQuantization",
       encoderParams.enableOpacityNonUniformQuantization_,
-      true,
+      encoderParams.enableOpacityNonUniformQuantization_,
       "Enable non-uniform quantization for opacity (m76122)" )
     ("linearOpacity",
       encoderParams.encodeLinearOpacity_,
-      false,
+      encoderParams.encodeLinearOpacity_,
       "Enable linear opacity encoding")
     ( "enableScaleNonUniformQuantization",
       encoderParams.enableScaleNonUniformQuantization_,
-      true,
+      encoderParams.enableScaleNonUniformQuantization_,
       "Enable non-uniform quantization for Scale (m76123)" )
     ( "shPredictionEnabled",
       encoderParams.shPredictionEnabled_,
-      false,
+      encoderParams.shPredictionEnabled_,
       "Enable SH linear prediction (m76155)" )
     ( "enableScalePowerTransform",
       encoderParams.enableScalePowerTransform_,
-      true,
+      encoderParams.enableScalePowerTransform_,
       "Enable power transform + 2-segment PLS for scale (m76151)" )
     ( "enableShDimensionReduction",
       adaptationParams.enableShDimensionReduction_,
@@ -350,7 +350,7 @@ bool parseParameters( int                           argc,
       "Enable SH dimension reduction after 2D transform (m76859)" )
     ( "enableGeometryPrediction",
       encoderParams.enableGeometryPrediction_,
-      true,
+      encoderParams.enableGeometryPrediction_,
       "Enable Geometry residual prediction aka PEPGA-Chain (m78255))." )
     ( "geometryPredictionSegmentVal",
       encoderParams.geometryPredictionSegmentVal_,
@@ -450,7 +450,7 @@ bool parseParameters( int                           argc,
       "(e.g. '2,5,6,7' = opacity,SH,scale,rotation). Empty = default order." )
     ( "ptlPriorityOrderEnableFlag",
       encoderParams.ptlPriorityOrderEnableFlag_,
-      false,
+      encoderParams.ptlPriorityOrderEnableFlag_,
       "Enable ptl_priority_order_enable_flag in profile_tier_level()" );
 
   // clang-format on
