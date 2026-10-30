@@ -289,7 +289,7 @@ void PCCGSHlsBuilder::initializeAtlasAapsHls( PCCHighLevelSyntax            &hls
           dequant.setOpacityQuantRegionTransitionPointDelta( m, curr - prev );
         }
       }
-      for ( uint32_t m = 0; m < M + 1; m++ ) {
+      for ( uint32_t m = 0; m < M; m++ ) {
         dequant.setOpacityRegionStepSize( m, adaptationParams.opacityStepSizes_[m] );
       }
     } else {
@@ -611,7 +611,7 @@ void PCCGSHlsBuilder::initializeAtlasAapsHls( PCCHighLevelSyntax            &hls
   }
 
   ext.setRawPatchDataArrangementMethod( adaptationParams.rawPatchDataArrangementMethod_ );
-  ext.setLinearOpacityFlag( true );
+  ext.setLinearOpacityFlag( adaptationParams.encodeLinearOpacity_ );
 
   ext.setPredEnableFlag( adaptationParams.shPredictionEnabled_ );
   if ( adaptationParams.shPredictionEnabled_ && !adaptationParams.shPredictionEntries_.empty() ) {

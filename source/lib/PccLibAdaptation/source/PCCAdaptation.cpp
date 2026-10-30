@@ -1643,9 +1643,13 @@ bool PCCAdaptation::dequantizeOpacities( const PCCPointSet3            &input,
     std::vector<int>    tp_int;
   };
   OpacityQuantRegion opRegion;
+  std::vector<float> stepSizes;
   if ( params.enableOpacityNonUniformQuantization_ ) {
     int    M      = params.opacityNumRegionsMinus1_;
     double minLim = params.computedOpacityMin_;
+    double maxLim = params.computedOpacityMax_;
+    stepSizes.reserve( M + 1 );
+    uint32_t max_val = ( 1u << bitDepth ) - 1;
     if ( M > 0 ) {
       opRegion.tp_int.resize( M );
       opRegion.region_start_real.resize( M + 1 );
@@ -1656,7 +1660,9 @@ bool PCCAdaptation::dequantizeOpacities( const PCCPointSet3            &input,
         double prev_tp     = ( m == 0 ) ? 0.0 : opRegion.tp_int[m - 1];
         opRegion.region_start_real[m + 1] =
             opRegion.region_start_real[m] + ( tp_val - prev_tp ) * params.opacityStepSizes_[m];
+        stepSizes[m] = params.opacityStepSizes_[m];
       }
+      stepSizes[M] = ( maxLim - opRegion.region_start_real[M] ) / ( max_val - opRegion.tp_int[M - 1] );
     }
   }
 
@@ -1675,7 +1681,7 @@ bool PCCAdaptation::dequantizeOpacities( const PCCPointSet3            &input,
 
         double prev_idx  = ( region_idx > 0 ) ? opRegion.tp_int[region_idx - 1] : 0.0;
         double base_real = opRegion.region_start_real[region_idx];
-        double step_vec  = params.opacityStepSizes_[region_idx];
+        double step_vec  = stepSizes[region_idx];
         double r_opacity = base_real + ( q_val - prev_idx ) * step_vec;
         output.getOpacities()[i] =
             std::max( params.computedOpacityMin_, std::min( params.computedOpacityMax_, r_opacity ) );
@@ -3058,16 +3064,18 @@ bool PCCAdaptation::extractOpacityQuantRegions( const PCCPointSetGS &input, PCCA
   params.opacityTransitionPoints_.clear();
   params.opacityStepSizes_.assign( 3, 0.0 );
 
-  double t1       = 0.45;
-  double t2       = 0.55;
-  double region_1 = std::log( t1 / ( 1.0 - t1 ) );
-  double region_2 = std::log( t2 / ( 1.0 - t2 ) );
+  double t1 = 0.45;
+  double t2 = 0.55;
+  // in linear-opacity mode the values are already in [0,1]; thresholds stay as-is
+  double region_1 = params.encodeLinearOpacity_ ? t1 : std::log( t1 / ( 1.0 - t1 ) );
+  double region_2 = params.encodeLinearOpacity_ ? t2 : std::log( t2 / ( 1.0 - t2 ) );
 
-  const uint32_t bitDepth     = params.opacityBitDepth_;
-  const uint32_t total_levels = 1u << bitDepth;
-  uint32_t       n1           = total_levels / 8;
-  uint32_t       n3           = n1;
-  uint32_t       n2           = total_levels - n1 - n3;
+  const uint32_t bitDepth = params.opacityBitDepth_;
+  const uint32_t max_quant_value =
+      ( 1u << bitDepth ) - 1;  // fix so that the min and maximum values are correctly represented
+  uint32_t n1 = max_quant_value / 8;
+  uint32_t n3 = n1;
+  uint32_t n2 = max_quant_value - n1 - n3;
 
   params.opacityStepSizes_[0] = static_cast<float>( std::max( 1e-9, ( region_1 - params.computedOpacityMin_ ) / n1 ) );
   params.opacityStepSizes_[1] = static_cast<float>( std::max( 1e-9, ( region_2 - region_1 ) / n2 ) );

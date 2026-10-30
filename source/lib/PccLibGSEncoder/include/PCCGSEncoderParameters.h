@@ -103,7 +103,7 @@ struct PCCGSEncoderParameters {
   bool enableScaleNonUniformQuantization_{ true };
   bool shPredictionEnabled_{};
   bool enableScalePowerTransform_{ true };
-  bool enableOpacityNonUniformQuantization_{ true };
+  bool enableOpacityNonUniformQuantization_{};
 
   // Geometry residual prediction (0: disable, 1: enable)
   bool     enableGeometryPrediction_{ true };

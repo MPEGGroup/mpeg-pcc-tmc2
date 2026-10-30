@@ -2974,7 +2974,7 @@ void PCCBitstreamWriter::gsDequantization( PCCBitstream &bitstream, GsDequantiza
           for ( int m = 0; m < gsd.getOpacityNumQuantRegionsMinus1(); m++ ) {
             WRITE_UVLC( gsd.getOpacityQuantRegionTransitionPointDelta( m ) );
           }
-          for ( int m = 0; m < gsd.getOpacityNumQuantRegionsMinus1() + 1; m++ ) {
+          for ( int m = 0; m < gsd.getOpacityNumQuantRegionsMinus1(); m++ ) {
             WRITE_FLOAT( gsd.getOpacityRegionStepSize( m ) );
           }
         }

@@ -2230,6 +2230,7 @@ int PCCDecoder::ReconstructIdc3( PCCContext &context, PCCGroupOfFrames &reconstr
           adaptationParams.enableShQuantization_       = dequant.getShPresentFlag();
           adaptationParams.enableScaleQuantization_    = dequant.getScalePresentFlag();
           adaptationParams.enableRotationQuantization_ = dequant.getRotationPresentFlag();
+          adaptationParams.encodeLinearOpacity_        = ext.getLinearOpacityFlag();
 
           if ( adaptationParams.enablePositionQuantization_ ) {
             adaptationParams.positionBitDepth_ = asps.getGeometry3dBitdepthMinus1() + 1;
@@ -2252,7 +2253,7 @@ int PCCDecoder::ReconstructIdc3( PCCContext &context, PCCGroupOfFrames &reconstr
                 adaptationParams.opacityTransitionPoints_.push_back(
                     dequant.getOpacityQuantRegionTransitionPoint( m ) );
               }
-              for ( uint32_t m = 0; m < M + 1; m++ ) {
+              for ( uint32_t m = 0; m < M; m++ ) {
                 adaptationParams.opacityStepSizes_.push_back( dequant.getOpacityRegionStepSize( m ) );
               }
             } else {

@@ -3011,7 +3011,7 @@ void PCCBitstreamReader::gsDequantization( PCCBitstream &bitstream, GsDequantiza
             else
               gsd.setOpacityQuantRegionTransitionPoint( m, gsd.getOpacityQuantRegionTransitionPoint( m - 1 ) + value );
           }
-          for ( int m = 0; m < gsd.getOpacityNumQuantRegionsMinus1() + 1; m++ ) {
+          for ( int m = 0; m < gsd.getOpacityNumQuantRegionsMinus1(); m++ ) {
             READ_FLOAT_DESC( valueFlt, "OpacityRegionStepSize" );
             gsd.setOpacityRegionStepSize( m, valueFlt );
           }
