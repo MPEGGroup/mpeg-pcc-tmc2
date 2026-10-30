@@ -2296,9 +2296,10 @@ int PCCDecoder::ReconstructIdc3( PCCContext &context, PCCGroupOfFrames &reconstr
                   adaptationParams.scaleTransitionPoints_.push_back(
                       dequant.getScaleQuantRegionTransitionPoint( i, m ) );
                 }
-                for ( size_t m = 0; m < M + 1; m++ ) {
+                for ( size_t m = 0; m < M; m++ ) {
                   adaptationParams.scaleStepSizes_.push_back( dequant.getScaleRegionStepSize( i, m ) );
                 }
+                adaptationParams.scaleStepSizes_.push_back( -1.0 );  // this value will be derived in dequantization
               }
             }
           }

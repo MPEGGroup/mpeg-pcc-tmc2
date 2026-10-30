@@ -314,7 +314,7 @@ class GsDequantization {
     scaleNumQuantRegionMinus1_[i] = value;
     scaleQuantRegionTransitionPoint_[i].resize( value, 0 );
     scaleQuantRegionTransitionPointDelta_[i].resize( value, 0 );
-    scaleRegionStepSize_[i].resize( value + 1, 0 );
+    scaleRegionStepSize_[i].resize( value, 0 );
   }
   void setScaleQuantRegionTransitionPoint( int i, int j, uint16_t value ) {
     scaleQuantRegionTransitionPoint_[i][j] = value;

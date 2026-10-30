@@ -2956,7 +2956,7 @@ void PCCBitstreamWriter::gsDequantization( PCCBitstream &bitstream, GsDequantiza
                 WRITE_UVLC( gsd.getScaleQuantRegionTransitionPointDelta( i, j ) );
               }
             if ( ( i == 0 ) || !gsd.getScaleSameRegionStepSize_() )
-              for ( int j = 0; j < gsd.getScaleNumQuantRegionsMinus1( i ) + 1; j++ ) {
+              for ( int j = 0; j < gsd.getScaleNumQuantRegionsMinus1( i ); j++ ) {
                 WRITE_FLOAT( gsd.getScaleRegionStepSize( i, j ) );
               }
           }

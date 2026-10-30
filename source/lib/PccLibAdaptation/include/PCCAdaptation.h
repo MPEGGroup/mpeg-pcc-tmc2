@@ -446,6 +446,12 @@ class PCCAdaptation {
   /// Apply canonical orientation (m75790) - optimizes axes for compression
   bool applyCanonicalOrientation( PCCPointSetGS &pointCloud );
 
+  /// Transform SH coefficients from RGB to YUV
+  bool scalePowerTransform( PCCPointSetGS &pointCloud, PCCAdaptationParameters &params );
+
+  /// Transform SH coefficients from YUV to RGB
+  bool scalePowerInvTransform( PCCPointSetGS &pointCloud, const PCCAdaptationParameters &params );
+
   /// Initialize SH 2D transform parameters
   void initializeShTransformParams( PCCAdaptationParameters &params );
   /// Transform SH coefficients from RGB to YUV
@@ -497,6 +503,10 @@ class PCCAdaptation {
   bool extractOpacityQuantRegions( const PCCPointSetGS &input, PCCAdaptationParameters &params );
   /// Extract Scale quantization regions for non-uniform quantization
   bool extractScaleQuantRegions( const PCCPointSetGS &input, PCCAdaptationParameters &params );
+  /// Extract Scale power transform parameters for m76151
+  bool extractScalePowerTransformParameters( const PCCPointSetGS &input, PCCAdaptationParameters &params );
+  /// Adjust the min max values according to the input point cloud and the parameters
+  bool adjustScaleLimits( const PCCPointSetGS &input, PCCAdaptationParameters &params );
   /// Compute and apply SH linear prediction (encoder side, after 2D transform)
   bool sphericalHarmonicsLinearPrediction( PCCPointSetGS &pointCloud, PCCAdaptationParameters &params );
 

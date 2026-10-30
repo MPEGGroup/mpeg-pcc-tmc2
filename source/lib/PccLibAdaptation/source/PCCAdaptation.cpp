@@ -632,7 +632,10 @@ bool PCCAdaptation::adapt( const PCCPointSetGS     &inputPointCloud,
 
   // Apply scale quantization
   if ( params.enableScaleQuantization_ && mergedPointCloud.hasScales() ) {
+    adjustScaleLimits( mergedPointCloud, params );
+    extractScalePowerTransformParameters( mergedPointCloud, params );
     extractScaleQuantRegions( mergedPointCloud, params );
+    if ( params.enableScalePowerTransform_ ) scalePowerTransform( mergedPointCloud, params );
     if ( !quantizeScales( mergedPointCloud, outputPointCloud, params ) ) {
       std::cerr << "PCCAdaptation::adapt - Scale quantization failed" << std::endl;
       return false;
@@ -796,6 +799,9 @@ bool PCCAdaptation::inverseAdapt( const PCCPointSet3            &inputPointCloud
   // Apply scale dequantization
   if ( params.enableScaleQuantization_ && inputPointCloud.hasScales() ) {
     if ( !dequantizeScales( inputPointCloud, outputPointCloud, params ) ) { return false; }
+    if ( params.enableScalePowerTransform_ ) {
+      scalePowerInvTransform( const_cast<PCCPointSetGS &>( outputPointCloud ), params );
+    }
   }
 
   // Apply opacity dequantization
@@ -1274,7 +1280,7 @@ static void computePlsNodesFromPower( double   power,
                                       double  &step2 ) {
   constexpr double S_THRESH       = 0.60;
   constexpr double MAX_STEP_RATIO = 8.0;
-  const uint32_t   N              = 1u << bitDepth;
+  const uint32_t   N              = ( 1u << bitDepth ) - 1;
   X1                              = std::max( 0.005, std::min( 0.49, std::pow( S_THRESH, power ) ) );
   double dx1                      = X1;
   double dx2                      = 1.0 - X1;
@@ -1290,78 +1296,54 @@ static void computePlsNodesFromPower( double   power,
 // PCCAdaptation - Scale Quantization
 //============================================================================
 
+bool PCCAdaptation::scalePowerTransform( PCCPointSetGS &pointCloud, PCCAdaptationParameters &params ) {
+  if ( !pointCloud.hasScales() ) return false;
+  const size_t pointCount = pointCloud.getPointCount();
+  for ( size_t i = 0; i < pointCount; ++i ) {
+    GSScale &scale = pointCloud.getScales()[i];
+    for ( int k = 0; k < 3; ++k ) {
+      double power   = params.computedScalePower_[k];
+      double scaling = params.computedScaleScalingFactor_[k];
+      double norm    = std::max(
+          0.0, std::min( 1.0, normalizeToUnit( scale[k], params.computedScaleMin_[k], params.computedScaleMax_[k] ) ) );
+      double pwr = std::pow( norm, power ) * scaling;
+      pwr        = std::max( 0.0, std::min( 1.0, pwr ) );
+      scale[k]   = pwr;
+    }
+  }
+  return true;
+}
+
+bool PCCAdaptation::scalePowerInvTransform( PCCPointSetGS &pointCloud, const PCCAdaptationParameters &params ) {
+  if ( !pointCloud.hasScales() ) return false;
+  const size_t pointCount = pointCloud.getPointCount();
+  for ( size_t i = 0; i < pointCount; ++i ) {
+    GSScale &scale = pointCloud.getScales()[i];
+    for ( int k = 0; k < 3; ++k ) {
+      double power   = params.computedScalePower_[k];
+      double scaling = params.computedScaleScalingFactor_[k];
+      double pwr     = std::pow( scale[k] / scaling, 1.0 / power );
+      pwr            = std::max( 0.0, std::min( 1.0, pwr ) );
+      scale[k] =
+          static_cast<float>( denormalizeFromUnit( pwr, params.computedScaleMin_[k], params.computedScaleMax_[k] ) );
+    }
+  }
+  return true;
+}
+
 bool PCCAdaptation::quantizeScales( const PCCPointSetGS     &input,
                                     PCCPointSet3            &output,
                                     PCCAdaptationParameters &params ) {
   const size_t pointCount = input.getPointCount();
   if ( pointCount == 0 || !input.hasScales() ) return false;
 
-  // Auto-compute limits if enabled
-  if ( params.autoComputeScaleLimits_ ) {
-    for ( int k = 0; k < 3; ++k ) {
-      params.computedScaleMin_[k] = std::numeric_limits<double>::max();
-      params.computedScaleMax_[k] = std::numeric_limits<double>::lowest();
-    }
-    for ( size_t i = 0; i < pointCount; ++i ) {
-      const GSScale &scale = input.getScales()[i];
-      for ( int k = 0; k < 3; ++k ) {
-        params.computedScaleMin_[k] = std::min( params.computedScaleMin_[k], static_cast<double>( scale[k] ) );
-        params.computedScaleMax_[k] = std::max( params.computedScaleMax_[k], static_cast<double>( scale[k] ) );
-      }
-    }
-  } else {
-    params.computedScaleMin_ = params.scaleLimitMin_;
-    params.computedScaleMax_ = params.scaleLimitMax_;
-  }
-
   const uint32_t bitDepth      = params.scaleBitDepth_;
   const uint32_t max_quant_val = ( 1u << bitDepth ) - 1;
 
-  if ( params.enableScalePowerTransform_ ) {
-    {
-      std::vector<double> normAll;
-      normAll.reserve( pointCount * 3 );
-      for ( size_t i = 0; i < pointCount; ++i ) {
-        const GSScale &scale = input.getScales()[i];
-        for ( int k = 0; k < 3; ++k ) {
-          double n = normalizeToUnit( scale[k], params.computedScaleMin_[k], params.computedScaleMax_[k] );
-          normAll.push_back( std::max( 0.0, std::min( 1.0, n ) ) );
-        }
-      }
-      double optimalPower =
-          findOptimalScalePower( normAll, bitDepth, params.computedScaleMin_[0], params.computedScaleMax_[0] );
-      for ( int k = 0; k < 3; ++k ) params.computedScalePower_[k] = optimalPower;
-    }
-    for ( size_t i = 0; i < pointCount; ++i ) {
-      const GSScale    &scale = input.getScales()[i];
-      PCCAttribute16bit qScale;
-      for ( int k = 0; k < 3; ++k ) {
-        double power   = params.computedScalePower_[k];
-        double scaling = params.computedScaleScalingFactor_[k];
-        double norm    = std::max( 0.0, std::min( 1.0, normalizeToUnit( scale[k], params.computedScaleMin_[k],
-                                                                        params.computedScaleMax_[k] ) ) );
-        double pwr     = std::pow( norm, power ) * scaling;
-        pwr            = std::max( 0.0, std::min( 1.0, pwr ) );
-        int q;
-        if ( params.enableScaleNonUniformQuantization_ ) {
-          int    n1;
-          double X1, step1, step2;
-          computePlsNodesFromPower( power, bitDepth, n1, X1, step1, step2 );
-          if ( pwr < X1 ) {
-            q = static_cast<int>( std::round( pwr / step1 ) );
-            q = std::max( 0, std::min( n1 - 1, q ) );
-          } else {
-            q = n1 + static_cast<int>( std::round( ( pwr - X1 ) / step2 ) );
-            q = std::max( n1, std::min( static_cast<int>( max_quant_val ), q ) );
-          }
-        } else {
-          q = static_cast<int>( quantizeValue( pwr, bitDepth ) );
-        }
-        qScale[k] = static_cast<uint16_t>( q );
-      }
-      output.setScale( i, qScale );
-    }
-    return true;
+  std::array<double, 3> scaleMin{ 0, 0, 0 }, scaleMax{ 1.0, 1.0, 1.0 };
+  if ( !params.enableScalePowerTransform_ ) {
+    scaleMin = params.computedScaleMin_;
+    scaleMax = params.computedScaleMax_;
   }
 
   struct ScaleQuantRegion {
@@ -1381,7 +1363,7 @@ bool PCCAdaptation::quantizeScales( const PCCPointSetGS     &input,
 
         if ( r == 0 ) {
           scaleRegions[ch].start_int.push_back( 0 );
-          scaleRegions[ch].region_start_real.push_back( params.computedScaleMin_[ch] );
+          scaleRegions[ch].region_start_real.push_back( scaleMin[ch] );
           scaleRegions[ch].step_size.push_back( step_size );
         }
 
@@ -1401,7 +1383,7 @@ bool PCCAdaptation::quantizeScales( const PCCPointSetGS     &input,
         scaleRegions[ch].step_size.push_back( step_size_next );
 
         if ( r == ( num_regions_minus1 - 1 ) ) {
-          scaleRegions[ch].region_end_real.push_back( params.computedScaleMax_[ch] );
+          scaleRegions[ch].region_end_real.push_back( scaleMax[ch] );
           scaleRegions[ch].end_int.push_back( max_quant_val );
         }
       }
@@ -1416,7 +1398,7 @@ bool PCCAdaptation::quantizeScales( const PCCPointSetGS     &input,
       if ( params.enableScaleNonUniformQuantization_ ) {
         int num_regions_minus1 = params.scaleNumRegionsMinus1_[k];
         if ( num_regions_minus1 == 0 ) {
-          double normalized = normalizeToUnit( scale[k], params.computedScaleMin_[k], params.computedScaleMax_[k] );
+          double normalized = normalizeToUnit( scale[k], scaleMin[k], scaleMax[k] );
           qScale[k]         = static_cast<uint16_t>( quantizeValue( normalized, bitDepth ) );
         } else {
           const auto &region     = scaleRegions[k];
@@ -1430,7 +1412,7 @@ bool PCCAdaptation::quantizeScales( const PCCPointSetGS     &input,
           qScale[k] = static_cast<uint16_t>( std::max( 0.0, std::min( static_cast<double>( max_quant_val ), q_val ) ) );
         }
       } else {
-        double normalized = normalizeToUnit( scale[k], params.computedScaleMin_[k], params.computedScaleMax_[k] );
+        double normalized = normalizeToUnit( scale[k], scaleMin[k], scaleMax[k] );
         qScale[k]         = static_cast<uint16_t>( quantizeValue( normalized, bitDepth ) );
       }
     }
@@ -1447,30 +1429,10 @@ bool PCCAdaptation::dequantizeScales( const PCCPointSet3            &input,
   const size_t   pointCount = input.getPointCount();
   const uint32_t bitDepth   = params.scaleBitDepth_;
 
-  if ( params.enableScalePowerTransform_ ) {
-    for ( size_t i = 0; i < pointCount; ++i ) {
-      const auto &qScale = input.getScale( i );
-      GSScale    &scale  = output.getScales()[i];
-      for ( int k = 0; k < 3; ++k ) {
-        double power   = params.computedScalePower_[k];
-        double scaling = params.computedScaleScalingFactor_[k];
-        int    q       = static_cast<int>( qScale[k] );
-        double pwr;
-        if ( params.enableScaleNonUniformQuantization_ ) {
-          int    n1;
-          double X1, step1, step2;
-          computePlsNodesFromPower( power, bitDepth, n1, X1, step1, step2 );
-          pwr = ( q < n1 ) ? ( q * step1 ) : ( ( q - n1 ) * step2 + X1 );
-        } else {
-          pwr = dequantizeValue( static_cast<uint32_t>( q ), bitDepth );
-        }
-        pwr         = pwr / std::max( scaling, 1e-10 );
-        pwr         = std::max( 1e-10, std::min( 1.0, pwr ) );
-        double norm = std::pow( pwr, 1.0 / power );
-        scale[k]    = denormalizeFromUnit( norm, params.computedScaleMin_[k], params.computedScaleMax_[k] );
-      }
-    }
-    return true;
+  std::array<double, 3> scaleMin{ 0, 0, 0 }, scaleMax{ 1.0, 1.0, 1.0 };
+  if ( !params.enableScalePowerTransform_ ) {
+    scaleMin = params.computedScaleMin_;
+    scaleMax = params.computedScaleMax_;
   }
 
   struct ScaleQuantRegion {
@@ -1491,7 +1453,7 @@ bool PCCAdaptation::dequantizeScales( const PCCPointSet3            &input,
 
         if ( r == 0 ) {
           scaleRegions[ch].start_int.push_back( 0 );
-          scaleRegions[ch].region_start_real.push_back( params.computedScaleMin_[ch] );
+          scaleRegions[ch].region_start_real.push_back( scaleMin[ch] );
           scaleRegions[ch].step_size.push_back( step_size );
         }
 
@@ -1507,12 +1469,16 @@ bool PCCAdaptation::dequantizeScales( const PCCPointSet3            &input,
         scaleRegions[ch].region_start_real.push_back( next_region_start_real );
         scaleRegions[ch].region_end_real.push_back( next_region_start_real );
 
-        double step_size_next = params.scaleStepSizes_[ch * ( num_regions_minus1 + 1 ) + r + 1];
-        scaleRegions[ch].step_size.push_back( step_size_next );
-
         if ( r == ( num_regions_minus1 - 1 ) ) {
-          scaleRegions[ch].region_end_real.push_back( params.computedScaleMax_[ch] );
+          scaleRegions[ch].region_end_real.push_back( scaleMax[ch] );
           scaleRegions[ch].end_int.push_back( max_quant_val );
+          // deriving the step size for the last region based on the remaining range and quantization levels
+          double step_size_next = ( scaleMax[ch] - next_region_start_real ) /
+                                  ( max_quant_val - params.scaleTransitionPoints_[ch * num_regions_minus1 + r] );
+          scaleRegions[ch].step_size.push_back( step_size_next );
+        } else {
+          double step_size_next = params.scaleStepSizes_[ch * ( num_regions_minus1 + 1 ) + r + 1];
+          scaleRegions[ch].step_size.push_back( step_size_next );
         }
       }
     }
@@ -1527,7 +1493,7 @@ bool PCCAdaptation::dequantizeScales( const PCCPointSet3            &input,
         int num_regions_minus1 = params.scaleNumRegionsMinus1_[k];
         if ( num_regions_minus1 == 0 ) {
           double normalized = dequantizeValue( qScale[k], bitDepth );
-          scale[k] = denormalizeFromUnit( normalized, params.computedScaleMin_[k], params.computedScaleMax_[k] );
+          scale[k]          = denormalizeFromUnit( normalized, scaleMin[k], scaleMax[k] );
         } else {
           const auto &region     = scaleRegions[k];
           int         region_idx = 0;
@@ -1540,7 +1506,7 @@ bool PCCAdaptation::dequantizeScales( const PCCPointSet3            &input,
         }
       } else {
         double normalized = dequantizeValue( qScale[k], bitDepth );
-        scale[k]          = denormalizeFromUnit( normalized, params.computedScaleMin_[k], params.computedScaleMax_[k] );
+        scale[k]          = denormalizeFromUnit( normalized, scaleMin[k], scaleMax[k] );
       }
     }
   }
@@ -3103,27 +3069,89 @@ bool PCCAdaptation::extractScaleQuantRegions( const PCCPointSetGS &input, PCCAda
   const uint32_t bitDepth      = params.scaleBitDepth_;
   const uint32_t max_quant_val = ( 1u << bitDepth ) - 1;
 
-  params.scaleNumRegionsMinus1_.assign( 3, 2 );
-  params.scaleTransitionPoints_.clear();
-  params.scaleStepSizes_.assign( size_t{ 3 } * 3, 0.0 );
-  for ( size_t ch = 0; ch < 3; ++ch ) {
-    double step_size_base              = ( params.scaleLimitMax_[ch] - params.scaleLimitMin_[ch] ) / max_quant_val;
-    params.scaleStepSizes_[ch * 3 + 0] = step_size_base * 8;
-    params.scaleStepSizes_[ch * 3 + 1] = step_size_base * 2;
-    params.scaleStepSizes_[ch * 3 + 2] = step_size_base;
-  }
+  if ( params.enableScalePowerTransform_ ) {
+    params.scaleNumRegionsMinus1_.assign( 3, 1 );
+    params.scaleTransitionPoints_.clear();
+    params.scaleStepSizes_.assign( size_t{ 3 } * 2, 0.0 );
+    for ( int i = 0; i < 3; i++ ) {
+      int    n1;
+      double X1, step1, step2;
+      computePlsNodesFromPower( params.computedScalePower_[i], bitDepth, n1, X1, step1, step2 );
+      params.scaleStepSizes_[i * 2 + 0] = step1;
+      params.scaleStepSizes_[i * 2 + 1] = step2;
+      params.scaleTransitionPoints_.push_back( n1 );
+    }
+  } else {
+    params.scaleNumRegionsMinus1_.assign( 3, 2 );
+    params.scaleTransitionPoints_.clear();
+    params.scaleStepSizes_.assign( size_t{ 3 } * 3, 0.0 );
+    for ( size_t ch = 0; ch < 3; ++ch ) {
+      double step_size_base              = ( params.scaleLimitMax_[ch] - params.scaleLimitMin_[ch] ) / max_quant_val;
+      params.scaleStepSizes_[ch * 3 + 0] = step_size_base * 8;
+      params.scaleStepSizes_[ch * 3 + 1] = step_size_base * 2;
+      params.scaleStepSizes_[ch * 3 + 2] = step_size_base;
+    }
 
-  for ( size_t ch = 0; ch < 3; ++ch ) {
-    std::vector<double> ranges            = { params.scaleLimitMin_[ch], -10, -7, params.scaleLimitMax_[ch] };
-    int                 cumulative_offset = 0;
-    for ( size_t r = 0; r < 2; ++r ) {
-      cumulative_offset +=
-          static_cast<int>( std::round( ( ranges[r + 1] - ranges[r] ) / params.scaleStepSizes_[ch * 3 + r] ) );
-      cumulative_offset = std::max( 0, std::min( static_cast<int>( max_quant_val ), cumulative_offset ) );
-      params.scaleTransitionPoints_.push_back( cumulative_offset );
+    for ( size_t ch = 0; ch < 3; ++ch ) {
+      std::vector<double> ranges            = { params.scaleLimitMin_[ch], -10, -7, params.scaleLimitMax_[ch] };
+      int                 cumulative_offset = 0;
+      for ( size_t r = 0; r < 2; ++r ) {
+        cumulative_offset +=
+            static_cast<int>( std::round( ( ranges[r + 1] - ranges[r] ) / params.scaleStepSizes_[ch * 3 + r] ) );
+        cumulative_offset = std::max( 0, std::min( static_cast<int>( max_quant_val ), cumulative_offset ) );
+        params.scaleTransitionPoints_.push_back( cumulative_offset );
+      }
+      double maxDequantValue =
+          ( max_quant_val - params.scaleTransitionPoints_[ch * 2 + 1] ) * params.scaleStepSizes_[ch * 3 + 2] +
+          ( params.scaleTransitionPoints_[ch * 2 + 1] - params.scaleTransitionPoints_[ch * 2 + 0] ) *
+              params.scaleStepSizes_[ch * 3 + 1] +
+          params.scaleTransitionPoints_[ch * 2 + 0] * params.scaleStepSizes_[ch * 3 + 0] + params.scaleLimitMin_[ch];
+      params.scaleLimitMax_[ch]    = maxDequantValue;
+      params.computedScaleMax_[ch] = maxDequantValue;
     }
   }
 
+  return true;
+}
+
+// Extract the scale power transform parameters (scalePowerTransform) based on the input point cloud scales
+bool PCCAdaptation::extractScalePowerTransformParameters( const PCCPointSetGS     &input,
+                                                          PCCAdaptationParameters &params ) {
+  if ( !params.enableScalePowerTransform_ ) { return true; }
+  std::vector<double> normAll;
+  normAll.reserve( input.getPointCount() * 3 );
+  for ( size_t i = 0; i < input.getPointCount(); ++i ) {
+    const GSScale &scale = input.getScales()[i];
+    for ( int k = 0; k < 3; ++k ) {
+      double n = normalizeToUnit( scale[k], params.computedScaleMin_[k], params.computedScaleMax_[k] );
+      normAll.push_back( std::max( 0.0, std::min( 1.0, n ) ) );
+    }
+  }
+  double optimalPower =
+      findOptimalScalePower( normAll, params.scaleBitDepth_, params.computedScaleMin_[0], params.computedScaleMax_[0] );
+  for ( int k = 0; k < 3; ++k ) params.computedScalePower_[k] = optimalPower;
+  return true;
+}
+
+// Adjust the min/max values of the scale attribute according to the point cloud and input parameters
+bool PCCAdaptation::adjustScaleLimits( const PCCPointSetGS &input, PCCAdaptationParameters &params ) {
+  // Auto-compute limits if enabled
+  if ( params.autoComputeScaleLimits_ ) {
+    for ( int k = 0; k < 3; ++k ) {
+      params.computedScaleMin_[k] = std::numeric_limits<double>::max();
+      params.computedScaleMax_[k] = std::numeric_limits<double>::lowest();
+    }
+    for ( size_t i = 0; i < input.getPointCount(); ++i ) {
+      const GSScale &scale = input.getScales()[i];
+      for ( int k = 0; k < 3; ++k ) {
+        params.computedScaleMin_[k] = std::min( params.computedScaleMin_[k], static_cast<double>( scale[k] ) );
+        params.computedScaleMax_[k] = std::max( params.computedScaleMax_[k], static_cast<double>( scale[k] ) );
+      }
+    }
+  } else {
+    params.computedScaleMin_ = params.scaleLimitMin_;
+    params.computedScaleMax_ = params.scaleLimitMax_;
+  }
   return true;
 }
 

@@ -2973,17 +2973,27 @@ void PCCBitstreamReader::gsDequantization( PCCBitstream &bitstream, GsDequantiza
                   gsd.setScaleQuantRegionTransitionPoint( i, j,
                                                           gsd.getScaleQuantRegionTransitionPoint( i, j - 1 ) + value );
               }
-              if ( ( i == 0 ) || !gsd.getScaleSameRegionStepSize_() ) {
-                for ( int j = 0; j < gsd.getScaleNumQuantRegionsMinus1( i ) + 1; j++ ) {
-                  float stepSize;
-                  READ_FLOAT( stepSize );
-                  gsd.setScaleRegionStepSize( i, j, stepSize );
-                }
-              } else {
-                for ( int j = 0; j < gsd.getScaleNumQuantRegionsMinus1( i ) + 1; j++ ) {
-                  float stepSize = gsd.getScaleRegionStepSize( 0, j );
-                  gsd.setScaleRegionStepSize( i, j, stepSize );
-                }
+            } else {
+              for ( int j = 0; j < gsd.getScaleNumQuantRegionsMinus1( i ); j++ ) {
+                value = gsd.getScaleQuantRegionTransitionPointDelta( 0, j );
+                gsd.setScaleQuantRegionTransitionPointDelta( i, j, value );
+                if ( j == 0 )
+                  gsd.setScaleQuantRegionTransitionPoint( i, j, value );
+                else
+                  gsd.setScaleQuantRegionTransitionPoint( i, j,
+                                                          gsd.getScaleQuantRegionTransitionPoint( i, j - 1 ) + value );
+              }
+            }
+            if ( ( i == 0 ) || !gsd.getScaleSameRegionStepSize_() ) {
+              for ( int j = 0; j < gsd.getScaleNumQuantRegionsMinus1( i ); j++ ) {
+                float stepSize;
+                READ_FLOAT( stepSize );
+                gsd.setScaleRegionStepSize( i, j, stepSize );
+              }
+            } else {
+              for ( int j = 0; j < gsd.getScaleNumQuantRegionsMinus1( i ); j++ ) {
+                float stepSize = gsd.getScaleRegionStepSize( 0, j );
+                gsd.setScaleRegionStepSize( i, j, stepSize );
               }
             }
           }
