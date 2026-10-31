@@ -308,12 +308,12 @@ int PCCPatch::patchBlock2CanvasBlock( const size_t uBlk,
   return int( x + canvasStrideBlk * y );
 }
 
-bool PCCPatch::checkFitPatchCanvas( std::vector<bool> canvas,
-                                    size_t            canvasStrideBlk,
-                                    size_t            canvasHeightBlk,
-                                    bool              bPrecedence,
-                                    int               safeguard,
-                                    const Tile        tile ) {
+bool PCCPatch::checkFitPatchCanvas( const std::vector<bool> &canvas,
+                                    size_t                   canvasStrideBlk,
+                                    size_t                   canvasHeightBlk,
+                                    bool                     bPrecedence,
+                                    int                      safeguard,
+                                    const Tile               tile ) {
   for ( size_t v0 = 0; v0 < sizeV0_; ++v0 ) {
     for ( size_t u0 = 0; u0 < sizeU0_; ++u0 ) {
       for ( int deltaY = -safeguard; deltaY < safeguard + 1; deltaY++ ) {
@@ -666,11 +666,11 @@ int PCCPatch::patchBlock2CanvasBlockForGPA( const size_t uBlk,
   return int( x + canvasStrideBlk * y );
 }
 
-bool PCCPatch::checkFitPatchCanvasForGPA( std::vector<bool> canvas,
-                                          size_t            canvasStrideBlk,
-                                          size_t            canvasHeightBlk,
-                                          bool              bPrecedence,
-                                          int               safeguard ) {
+bool PCCPatch::checkFitPatchCanvasForGPA( const std::vector<bool> &canvas,
+                                          size_t                   canvasStrideBlk,
+                                          size_t                   canvasHeightBlk,
+                                          bool                     bPrecedence,
+                                          int                      safeguard ) {
   for ( size_t v0 = 0; v0 < curGPAPatchData_.sizeV0_; ++v0 ) {
     for ( size_t u0 = 0; u0 < curGPAPatchData_.sizeU0_; ++u0 ) {
       for ( int deltaY = -safeguard; deltaY < safeguard + 1; deltaY++ ) {

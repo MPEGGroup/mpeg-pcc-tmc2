@@ -216,12 +216,12 @@ class PCCPatch {
                                  size_t       canvasHeightBlk,
                                  const Tile   tile = Tile() ) const;
 
-  bool checkFitPatchCanvas( std::vector<bool> canvas,
-                            size_t            canvasStrideBlk,
-                            size_t            canvasHeightBlk,
-                            bool              bPrecedence,
-                            int               safeguard = 0,
-                            const Tile        tile      = Tile() );
+  bool checkFitPatchCanvas( const std::vector<bool> &canvas,
+                            size_t                   canvasStrideBlk,
+                            size_t                   canvasHeightBlk,
+                            bool                     bPrecedence,
+                            int                      safeguard = 0,
+                            const Tile               tile      = Tile() );
 
   bool        smallerRefFirst( const PCCPatch &rhs );
   bool        gt( const PCCPatch &rhs );
@@ -271,11 +271,11 @@ class PCCPatch {
                                     size_t       canvasStrideBlk,
                                     size_t       canvasHeightBlk ) const;
 
-  bool checkFitPatchCanvasForGPA( std::vector<bool> canvas,
-                                  size_t            canvasStrideBlk,
-                                  size_t            canvasHeightBlk,
-                                  bool              bPrecedence,
-                                  int               safeguard = 0 );
+  bool checkFitPatchCanvasForGPA( const std::vector<bool> &canvas,
+                                  size_t                   canvasStrideBlk,
+                                  size_t                   canvasHeightBlk,
+                                  bool                     bPrecedence,
+                                  int                      safeguard = 0 );
 
   void     allocOneLayerData();
   uint8_t &getPointLocalReconstructionLevel() { return pointLocalReconstructionLevel_; }
