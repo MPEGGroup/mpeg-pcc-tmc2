@@ -35,7 +35,10 @@
 #include "PCCGSEncoderConstant.h"
 #include "CameraModelInfo.h"
 #include <cmath>
+#include <cstdlib>
+#include <fstream>
 #include <iostream>
+#include <sstream>
 
 using namespace pcc;
 
@@ -44,10 +47,49 @@ constexpr size_t ATLAS_COUNT                = 1;
 constexpr size_t ATLAS_INDEX                = 0;
 constexpr size_t MAP_COUNT_MINUS1           = 0;
 constexpr size_t TIER_FLAG                  = 0;
-constexpr size_t PROFILE_CODEC_GROUP_IDC    = 2;
 constexpr size_t PROFILE_TOOLSET_IDC        = 2;
 constexpr size_t PROFILE_RECONSTRUCTION_IDC = 3;
 constexpr size_t LEVEL_IDC                  = 180;
+
+auto getProfileString( const std::string &configFile ) -> std::string {
+  auto stream = std::ifstream{ configFile };
+  if ( !stream ) {
+    std::cerr << "ERROR: Cannot open encoder config file " << configFile << ".\n";
+    std::exit( -1 );
+  }
+  auto line = std::string{};
+  while ( std::getline( stream, line ) ) {
+    auto substream = std::istringstream{ line.substr( 0, line.find( '#' ) ) };
+    auto name      = std::string{};
+    auto separator = std::string{};
+    auto value     = std::string{};
+    if ( substream >> name >> separator >> value && name == "Profile" && separator == ":" ) { return value; }
+  }
+  std::cerr << "ERROR: Cannot find the Profile key in encoder config file " << configFile << ".\n";
+  std::exit( -1 );
+}
+
+// Detect the codec group IDC, assuming it is one of:
+//
+// 1: HEVC Main 10
+// 2: HEVC Main 4:4:4 10
+// 4: HEVC Main
+int detectCodecGroupIdc( const PCCGSEncoderParameters &params ) {
+  auto configFiles = std::vector<std::string>{};
+  if ( !params.packGeometry_ ) { configFiles.push_back( params.geometryVideoEncoderConfig_ ); }
+  if ( !params.packAttributes_ ) { configFiles.push_back( params.attributeVideoEncoderConfig_ ); }
+  if ( params.packGeometry_ || params.packAttributes_ ) { configFiles.push_back( params.packedVideoEncoderConfig_ ); }
+  auto main = true;
+  for ( const auto &configFile : configFiles ) {
+    const auto profile = getProfileString( configFile );
+    if ( profile != "main" ) {
+      main = false;
+    } else if ( profile != "main10" ) {
+      return 2;
+    }
+  }
+  return main ? 4 : 1;
+}
 }  // namespace
 
 void PCCGSHlsBuilder::initialize( PCCHighLevelSyntax            &hls,
@@ -90,7 +132,7 @@ void PCCGSHlsBuilder::initializeV3CHls( PCCHighLevelSyntax            &hls,
   // V3C profile/tier/level related parameters
   auto &ptl = vps.getProfileTierLevel();
   ptl.setTierFlag( TIER_FLAG );
-  ptl.setProfileCodecGroupIdc( PROFILE_CODEC_GROUP_IDC );
+  ptl.setProfileCodecGroupIdc( detectCodecGroupIdc( params ) );
   ptl.setProfileToolsetIdc( PROFILE_TOOLSET_IDC );
   ptl.setProfileReconstructionIdc( PROFILE_RECONSTRUCTION_IDC );
   ptl.setPriorityOrderEnableFlag( params.ptlPriorityOrderEnableFlag_ );
