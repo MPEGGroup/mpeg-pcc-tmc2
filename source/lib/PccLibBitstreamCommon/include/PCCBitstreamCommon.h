@@ -475,7 +475,7 @@ static inline std::string toString( V3CUnitType type ) {
     case V3C_OVD: return std::string( "V3C_OVD" ); break;
     case V3C_GVD: return std::string( "V3C_GVD" ); break;
     case V3C_AVD: return std::string( "V3C_AVD" ); break;
-    case V3C_PVD: return std ::string( "V3C_PVD" ); break;
+    case V3C_PVD: return std::string( "V3C_PVD" ); break;
     default: return std::string( "reserved?" ); break;
   }
 }
@@ -564,16 +564,14 @@ static inline void removeFile( const std::string string ) {
   }
 }
 
-#ifndef _WIN32
-static char getSeparator() { return '/'; }
-#else
-static char getSeparator() { return '\\'; }
-#endif
-
 static char getSeparator( const std::string &eFilename ) {
-  auto pos1 = eFilename.find_last_of( '/' ), pos2 = eFilename.find_last_of( '\\' );
-  auto pos = (std::max)( pos1 != std::string::npos ? pos1 : 0, pos2 != std::string::npos ? pos2 : 0 );
-  return ( pos != 0 ? eFilename[pos] : getSeparator() );
+  const auto firstSeparatorPos = std::min( eFilename.find_last_of( '/' ), eFilename.find_last_of( '\\' ) );
+  if ( firstSeparatorPos < std::string::npos ) return eFilename[firstSeparatorPos];
+#ifdef _WIN32
+  return '\\';  // Assume backslash on Win32
+#else
+  return '/';  // Assume slash on all other platforms
+#endif
 }
 
 static inline std::string removeFileExtension( const std::string string ) {
@@ -588,7 +586,7 @@ static inline std::string getDirectoryName( const std::string &string ) {
 }
 
 static inline std::string getBasename( const std::string &string ) {
-  auto position = string.find_last_of( getSeparator() );
+  auto position = string.find_last_of( getSeparator( string ) );
   if ( position != std::string::npos ) { return string.substr( position + 1, string.length() ); }
   return string;
 }
