@@ -72,7 +72,7 @@ struct PCCGSEncoderParameters {
   size_t raw3dOffsetAxisBitCountMinus1_{};
 
   // Patch transposition
-  bool patchTranspositionFlag_{};
+  bool patchTranspositionFlag_{ true };
 
   // Encoder configuration files
   std::string debugPath_{ "./temp" };
