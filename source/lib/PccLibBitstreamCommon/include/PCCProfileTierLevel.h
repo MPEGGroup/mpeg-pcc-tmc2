@@ -46,7 +46,10 @@ class ProfileTierLevel {
       profileCodecGroupIdc_( 0 ),
       profileToolsetIdc_( 0 ),
       profileReconstructionIdc_( 0 ),
-      priorityOrderEnableFlag_( false ),
+      attributeTierFlag_( false ),        // For 23090-29
+      attributeLevelIdc_( 0 ),            // For 23090-29
+      priorityOrderEnableFlag_( false ),  // For 23090-5:2027
+      maxDecodesIdc_( 12 ),
       levelIdc_( 0 ),
       numSubProfiles_( 0 ),
       extendedSubProfileFlag_( false ),
@@ -60,7 +63,10 @@ class ProfileTierLevel {
   uint8_t                               getProfileCodecGroupIdc() { return profileCodecGroupIdc_; }
   uint8_t                               getProfileToolsetIdc() { return profileToolsetIdc_; }
   uint8_t                               getProfileReconstructionIdc() { return profileReconstructionIdc_; }
+  bool                                  getAttributeTierFlag() { return attributeTierFlag_; }
+  uint8_t                               getAttributeLevelIdc() { return attributeLevelIdc_; }
   bool                                  getPriorityOrderEnableFlag() { return priorityOrderEnableFlag_; }
+  uint8_t                               getMaxDecodesIdc() { return maxDecodesIdc_; }
   uint8_t                               getLevelIdc() { return levelIdc_; }
   uint8_t                               getNumSubProfiles() { return numSubProfiles_; }
   bool                                  getExtendedSubProfileFlag() { return extendedSubProfileFlag_; }
@@ -74,7 +80,10 @@ class ProfileTierLevel {
   void setProfileCodecGroupIdc( uint8_t value ) { profileCodecGroupIdc_ = value; }
   void setProfileToolsetIdc( uint8_t value ) { profileToolsetIdc_ = value; }
   void setProfileReconstructionIdc( uint8_t value ) { profileReconstructionIdc_ = value; }
+  void setAttributeTierFlag( bool value ) { attributeTierFlag_ = value; }
+  void setAttributeLevelIdc( uint8_t value ) { attributeLevelIdc_ = value; }
   void setPriorityOrderEnableFlag( bool value ) { priorityOrderEnableFlag_ = value; }
+  void setMaxDecodesIdc( uint8_t value ) { maxDecodesIdc_ = value; }
   void setLevelIdc( uint8_t value ) { levelIdc_ = value; }
   void setNumSubProfiles( uint8_t value ) { numSubProfiles_ = value; }
   void setExtendedSubProfileFlag( bool value ) { extendedSubProfileFlag_ = value; }
@@ -86,7 +95,10 @@ class ProfileTierLevel {
   uint8_t                              profileCodecGroupIdc_;
   uint8_t                              profileToolsetIdc_;
   uint8_t                              profileReconstructionIdc_;
+  bool                                 attributeTierFlag_;
+  uint8_t                              attributeLevelIdc_;
   bool                                 priorityOrderEnableFlag_;
+  uint8_t                              maxDecodesIdc_;
   uint8_t                              levelIdc_;
   uint8_t                              numSubProfiles_;
   bool                                 extendedSubProfileFlag_;

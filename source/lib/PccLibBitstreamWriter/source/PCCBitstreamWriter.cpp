@@ -762,16 +762,17 @@ void PCCBitstreamWriter::v3cParameterSet( V3CParameterSet &vps, PCCHighLevelSynt
 // 8.3.4.2 Profile, tier, and level syntax
 void PCCBitstreamWriter::profileTierLevel( ProfileTierLevel &ptl, PCCBitstream &bitstream ) {
   TRACE_BITSTREAM_IN( "%s", __func__ );
-  uint16_t ptl_reserved_zero_15bits  = 0;
-  uint16_t ptl_max_decodes_idc       = 12;
-  uint16_t ptl_reserved_0xfff_12bits = 0xFFF;
+  constexpr uint8_t  reservedZero6Bits         = 0;
+  constexpr uint16_t ptl_reserved_0xfff_12bits = 0xFFF;
   WRITE_CODE( ptl.getTierFlag(), 1 );                  // u(1)
   WRITE_CODE( ptl.getProfileCodecGroupIdc(), 7 );      // u(7)
   WRITE_CODE( ptl.getProfileToolsetIdc(), 8 );         // u(8)
   WRITE_CODE( ptl.getProfileReconstructionIdc(), 8 );  // u(8)
+  WRITE_CODE( ptl.getAttributeTierFlag(), 1 );         // u(1)
+  WRITE_CODE( ptl.getAttributeLevelIdc(), 8 );         // u(8)
+  WRITE_CODE( reservedZero6Bits, 6 );                  // u(6)
   WRITE_CODE( ptl.getPriorityOrderEnableFlag(), 1 );   // u(1)
-  WRITE_CODE( ptl_reserved_zero_15bits, 15 );          // u(15)
-  WRITE_CODE( ptl_max_decodes_idc, 4 );                // u(4)
+  WRITE_CODE( ptl.getMaxDecodesIdc(), 4 );             // u(4)
   WRITE_CODE( ptl_reserved_0xfff_12bits, 12 );         // u(12)
   WRITE_CODE( ptl.getLevelIdc(), 8 );                  // u(8)
   WRITE_CODE( ptl.getNumSubProfiles(), 6 );            // u(6)
