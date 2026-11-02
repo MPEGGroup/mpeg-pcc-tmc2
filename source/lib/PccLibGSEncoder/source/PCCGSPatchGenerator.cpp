@@ -130,6 +130,12 @@ void PCCGSPatchGenerator::generate3DPatches( const PCCPointSet3            &sour
     patches_.push_back( createPatchInfo( bboxRawPoints, patchLodMask, rawPointsBBox ) );
   }
 
+  // adaptive quantization
+  if ( adaptationParams.enableAdaptiveShQuantization_ ) {
+    patches_ = splitPatchesAdaptiveQuantization( source, patches_ );
+    std::cout << "Raw patch count after split for adaptive quantization: " << patches_.size() << std::endl;
+  }
+
   // merge patch
   if ( params.raw3dOffsetAxisBitCountMinus1_ > 0 ) {
     std::cout << "Raw patch count before merging: " << patches_.size() << std::endl;
@@ -140,12 +146,6 @@ void PCCGSPatchGenerator::generate3DPatches( const PCCPointSet3            &sour
       mergeSuccess = mergePatchesByAABB( source, patches_, mpsBoxSize, coordResolution );
     }
     std::cout << "Raw patch count after merging: " << patches_.size() << std::endl;
-  }
-
-  // adaptive quantization
-  if ( adaptationParams.enableAdaptiveShQuantization_ ) {
-    patches_ = splitPatchesAdaptiveQuantization( source, patches_ );
-    std::cout << "Raw patch count after split for adaptive quantization: " << patches_.size() << std::endl;
   }
 
   // set local coordinate of points of patch after merge
@@ -633,7 +633,8 @@ GSEncoderPatchInformation PCCGSPatchGenerator::createPatchInfo( const PCCBox3D  
   patchInfo.patch.occupancy_.resize( 0 );
   patchInfo.patch.setNumberOfRawPoints( pointIndices.size() );
   patchInfo.patch.setLodMask( lodMask );
-  patchInfo.pointsIndicesInPatch = pointIndices;
+  patchInfo.pointsIndicesInPatch   = pointIndices;
+  patchInfo.patch.shBitdepthDelta_ = 0;
   return patchInfo;
 }
 
@@ -747,6 +748,7 @@ static void mergeTwoPatches( const GSEncoderPatchInformation &p1,
   mergedPatch.patch.d1_ = size_t( newBoxCoord.z() );
   mergedPatch.patch.occupancy_.resize( 0 );
   mergedPatch.patch.setNumberOfRawPoints( mergedPatch.pointsIndicesInPatch.size() );
+  mergedPatch.patch.shBitdepthDelta_ = p1.patch.shBitdepthDelta_;
 
   mergedPatch.patch.setLodMask( p1.patch.getLodMask() );
 
@@ -794,6 +796,7 @@ uint32_t PCCGSPatchGenerator::mergePatchesByAABB( const PCCPointSet3            
         if ( mergedFlags[j] ) continue;
 
         const GSEncoderPatchInformation &P_B = currPatches[j];
+        if ( P_A.patch.shBitdepthDelta_ != P_B.patch.shBitdepthDelta_ ) continue;
 
         // Integration Probability Check
         if ( isMergeFeasible( P_A, P_B, patchSize, coordResolution, newBoxCoord /*[out]*/ ) ) {

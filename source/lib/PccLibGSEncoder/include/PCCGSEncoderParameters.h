@@ -68,8 +68,8 @@ struct PCCGSEncoderParameters {
   size_t minimumImageHeight_{};
 
   // Raw 3D offset settings
-  bool   raw3dOffsetBitCountExplicitModeFlag_{};
-  size_t raw3dOffsetAxisBitCountMinus1_{};
+  bool   raw3dOffsetBitCountExplicitModeFlag_{ true };
+  size_t raw3dOffsetAxisBitCountMinus1_{ 13 };
 
   // Patch transposition
   bool patchTranspositionFlag_{ true };
