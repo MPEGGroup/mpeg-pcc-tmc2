@@ -6,11 +6,12 @@
 #   ./build.sh debug            # Debug build
 #   ./build.sh hm=18.0          # Specify HM version (16.20, 18.0, etc.)
 #   ./build.sh debug hm=18.0    # Combine options
+#   ./build.sh ffmpeg           # Enable FFMPEG (Kvazaar HEVC) video codec
 #   ./build.sh format           # Format code
 #   ./build.sh tidy             # Run clang-tidy
 #
 # Available options:
-#   debug, release, profiling, format, tidy, hm=VERSION
+#   debug, release, profiling, format, tidy, ffmpeg, hm=VERSION
 
 CURDIR=$( cd "$( dirname "$0" )" && pwd ); 
 echo -e "\033[0;32mBuild: ${CURDIR} \033[0m";
@@ -37,6 +38,8 @@ MODE=Release;
 FORMAT=0;
 TIDY=0;
 HM_VERSION=18.0;
+FFMPEG=0;
+FFMPEG_PREFIX="${CURDIR}/dependencies/ffmpeg-kvazaar/install";
 CMAKE_FLAGS=();
 if [ "$MACHINE" == "Linux" ] ; then NUMBER_OF_PROCESSORS=$( grep -c ^processor /proc/cpuinfo ); fi
 
@@ -49,8 +52,9 @@ do
     profiling ) CMAKE_FLAGS+=("-DENABLE_PAPI_PROFILING=ON");;
     format    ) FORMAT=1;;
     tidy      ) TIDY=1;;
+    ffmpeg    ) FFMPEG=1;;
     hm=*      ) HM_VERSION="${i#hm=}";;
-    *         ) echo "ERROR: arguments \"$i\" not supported: option = [debug|release|profiling|format|tidy|hm=VERSION]"; exit 1;;
+    *         ) echo "ERROR: arguments \"$i\" not supported: option = [debug|release|profiling|format|tidy|ffmpeg|hm=VERSION]"; exit 1;;
   esac
 done
 
@@ -65,6 +69,17 @@ esac
 
 CMAKE_FLAGS+=( "-DHM_VERSION=${HM_CMAKE_VERSION}" );
 echo -e "\033[0;32mConfiguring with HM_VERSION=${HM_CMAKE_VERSION}...\033[0m";
+
+if [ $FFMPEG == 1 ] ; then
+  if [ ! -d "${FFMPEG_PREFIX}/include/libavcodec" ] ; then
+    echo -e "\033[0;31mFFMPEG requested but ${FFMPEG_PREFIX} not found.\033[0m";
+    echo -e "\033[0;31mRun dependencies/ffmpeg-kvazaar/build_ffmpeg_kvazaar.sh first.\033[0m";
+    exit 1;
+  fi
+  CMAKE_FLAGS+=( "-DUSE_FFMPEG_VIDEO_CODEC=ON" "-DFFMPEG_DIR=${FFMPEG_PREFIX}" );
+  export PKG_CONFIG_PATH="${FFMPEG_PREFIX}/lib/pkgconfig:${FFMPEG_PREFIX}/lib64/pkgconfig:${PKG_CONFIG_PATH}";
+  echo -e "\033[0;32mFFMPEG (Kvazaar) codec enabled: ${FFMPEG_PREFIX}\033[0m";
+fi
 
 echo -e "\033[0;32mCmake: ${CURDIR}\033[0m";
 ${CMAKE} -H${CURDIR} -B"${CURDIR}/build/${MODE}" "${CMAKE_FLAGS[@]}"

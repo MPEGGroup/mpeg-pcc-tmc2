@@ -36,6 +36,7 @@
 
 #include "PCCCommon.h"
 #include "PCCGSEncoderConstant.h"
+#include "PCCVirtualVideoEncoder.h"
 #include <vector>
 #include <string>
 #include <iostream>
@@ -81,6 +82,9 @@ struct PCCGSEncoderParameters {
   std::string geometryVideoEncoderConfig_;
   std::string attributeVideoEncoderConfig_;
   std::string packedVideoEncoderConfig_;
+
+  // Video codec used to encode geometry, attribute and packed video components
+  PCCCodecId videoCodecId_{ PCCVirtualVideoEncoder<uint16_t>::getDefaultCodecId() };
 
   // Packing settings
   bool             packGeometry_{};

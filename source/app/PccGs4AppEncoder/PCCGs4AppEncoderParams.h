@@ -46,6 +46,38 @@ using namespace std;
 
 namespace pcc {
 
+static std::istream &operator>>( std::istream &in, PCCCodecId &val ) {
+  val = UNKNOWN_CODEC;
+  std::string tmp;
+  in >> tmp;
+#ifdef USE_JMAPP_VIDEO_CODEC
+  if ( tmp == "JMAPP" || tmp == "jmapp" ) { val = JMAPP; }
+#endif
+#ifdef USE_HMAPP_VIDEO_CODEC
+  if ( tmp == "HMAPP" || tmp == "hmapp" ) { val = HMAPP; }
+#endif
+#ifdef USE_SHMAPP_VIDEO_CODEC
+  if ( tmp == "SHMAPP" || tmp == "shmapp" || tmp == "shm" || tmp == "shm2" || tmp == "shm3" ) { val = SHMAPP; }
+#endif
+#ifdef USE_JMLIB_VIDEO_CODEC
+  if ( tmp == "JMLIB" || tmp == "jmlib" || tmp == "jm" || tmp == "avc" ) { val = JMLIB; }
+#endif
+#ifdef USE_HMLIB_VIDEO_CODEC
+  if ( tmp == "HMLIB" || tmp == "hmlib" || tmp == "hm" || tmp == "hevc" ) { val = HMLIB; }
+#endif
+#ifdef USE_VTMLIB_VIDEO_CODEC
+  if ( tmp == "VTMLIB" || tmp == "vtmlib" || tmp == "vtm" || tmp == "vvc" ) { val = VTMLIB; }
+#endif
+#ifdef USE_VVLIB_VIDEO_CODEC
+  if ( tmp == "VVLIB" || tmp == "vvlib" || tmp == "vv" || tmp == "vvenc" ) { val = VVLIB; }
+#endif
+#ifdef USE_FFMPEG_VIDEO_CODEC
+  if ( tmp == "FFMPEG" || tmp == "ffmpeg" ) { val = FFMPEG; }
+#endif
+  if ( val == UNKNOWN_CODEC ) { fprintf( stderr, "PCCCodecId could not be indentified from: \"%s\" \n", tmp.c_str() ); }
+  return in;
+}
+
 static std::istream &operator>>( std::istream &in, std::vector<int> &vector ) {
   std::string str;
   in >> str;
@@ -292,12 +324,16 @@ bool parseParameters( int                           argc,
       "Packed map index for texture or SH attribute" )
     ( "packedMapColumnsCount",
       encoderParams.packedMapColumnsCount_,
-      encoderParams.packedMapColumnsCount_,
+      std::vector<int>{},
       "Number of columns for each packed map (e.g., '4,8' for 4 columns in map 0, 8 in map 1)" )
     ( "debugPath",
       encoderParams.debugPath_,
       encoderParams.debugPath_,
       "Path for debug output files" )
+    ( "videoCodecId",
+      encoderParams.videoCodecId_,
+      encoderParams.videoCodecId_,
+      "Video codec used for geometry/attribute/packed video (e.g. HMLIB, FFMPEG)" )
     ( "GSColmapFolderPath",
       encoderParams.gsColmapFolderPath_,
       encoderParams.gsColmapFolderPath_,
@@ -465,6 +501,9 @@ bool parseParameters( int                           argc,
   }
 
   applicationParams.print();
+
+  // The vector parser appends, so the default is applied here instead of via setDefaults().
+  if ( encoderParams.packedMapColumnsCount_.empty() ) { encoderParams.packedMapColumnsCount_ = { 4, 4 }; }
 
   // Validate attributeOrder if specified
   if ( !encoderParams.attributeOrder_.empty() ) {

@@ -19,6 +19,7 @@ include_directories(
   ${CMAKE_SOURCE_DIR}/source/lib/PccLibBitstreamWriter/include
   ${CMAKE_SOURCE_DIR}/source/lib/PccLibAdaptation/include
   ${CMAKE_SOURCE_DIR}/source/lib/PccLibGSEncoder/include
+  ${CMAKE_SOURCE_DIR}/source/lib/PccLibVideoEncoder/include
   ${CMAKE_SOURCE_DIR}/dependencies/program-options-lite
   # ${CMAKE_SOURCE_DIR}/dependencies/nanoflann  )
 )
@@ -31,6 +32,15 @@ if(ENABLE_TBB)
 endif()
 
 add_executable(${MYNAME} ${SRC})
+
+if(USE_FFMPEG_VIDEO_CODEC)
+  if(WIN32
+     OR MSVC
+     OR MSYS
+     OR MINGW)
+    link_directories(${FFMPEG_DIR}/lib)
+  endif()
+endif()
 
 target_link_libraries(${MYNAME} ${LIBS})
 if(MSVC)

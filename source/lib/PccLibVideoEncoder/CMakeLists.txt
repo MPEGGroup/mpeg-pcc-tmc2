@@ -21,7 +21,7 @@ if(USE_JMLIB_VIDEO_CODEC)
   set(LIBS ${LIBS} lencod)
 endif()
 if(USE_FFMPEG_VIDEO_CODEC)
-  include_directories(${FFMPEG_INCLUDE})
+  include_directories(${FFMPEG_INCLUDE} ${KVAZAAR_INCLUDE})
   if(WIN32
      OR MSVC
      OR MSYS
@@ -30,8 +30,8 @@ if(USE_FFMPEG_VIDEO_CODEC)
   endif()
   include_directories(
     ${CMAKE_SOURCE_DIR}/source/lib/PccLibVideoDecoder/include/)
-  set(LIBS ${LIBS} ${AVCODEC_LIBRARY} ${AVUTIL_LIBRARY} ${AVFORMAT_LIBRARY}
-           PccLibVideoDecoder)
+  set(LIBS ${LIBS} ${KVAZAAR_LIBRARY} ${AVCODEC_LIBRARY} ${AVUTIL_LIBRARY}
+           ${AVFORMAT_LIBRARY} PccLibVideoDecoder)
 endif()
 if(USE_VTMLIB_VIDEO_CODEC)
   set(LIBS ${LIBS} CommonLib EncoderLib_vtm DecoderLib_vtm Utilities_vtm)

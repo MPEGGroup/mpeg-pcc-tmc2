@@ -79,8 +79,13 @@ log.txt
 /dependencies/VTM/
 /dependencies/vvdec/
 /dependencies/vvenc/
+/dependencies/ffmpeg-kvazaar/FFmpeg
+/dependencies/ffmpeg-kvazaar/install
+/dependencies/ffmpeg-kvazaar/kvazaar
+
 
 /temp/
+/plan/
 
 /cmake-build-debug/
 /cmake-build-release/

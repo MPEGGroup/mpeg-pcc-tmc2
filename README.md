@@ -39,7 +39,7 @@ According to the CMake options defined in the CMakeLists.txt, the TMC2 required 
   - USE_JMLIB_VIDEO_CODEC: use JM library to encoder and decoder videos (codecId parameter must be set equal to 2)
   - USE_HMLIB_VIDEO_CODEC: use HM library to encoder and decoder videos (codecId parameter must be set equal to 3)
   - USE_VTMLIB_VIDEO_CODEC: use VTM library to encoder and decoder videos (codecId parameter must be set equal to 4)
-  - USE_FFMPEG_VIDEO_CODEC: use FFMPEG library to encoder and decoder videos (codecId parameter must be set equal to 5). This mode is only available in the FFMPEG branch. 
+  - USE_FFMPEG_VIDEO_CODEC: use Kvazaar (HEVC encoder) and FFmpeg (HEVC decoder) to encode and decode videos (codecId parameter must be set equal to 5, or `--videoCodecId=FFMPEG` for the GS4 encoder). See [Kvazaar (FFmpeg) video codec](#kvazaar-ffmpeg-video-codec).
   - USE_SHMAPP_VIDEO_CODEC: use SHM software to encoder and decoder videos (codecId parametesr must be set equal to 6, the videoEncoderGeometryPath and videoEncoderAttributePath using the SHM application, and the videoEncoderOccupancyPath using the HM application)
   - USE_HDRTOOLS: use HDRTools to convert the raw video files.
 
@@ -76,6 +76,71 @@ Alternatively, CMake can be invoked directly (build directory must match the mod
 To skip patch application entirely (e.g. to test against a raw, unmodified HM checkout):
 
 	cmake -S . -B build/Release -DHM_VERSION=HM-18.0 -DHM_SKIP_PATCH=ON
+
+### Kvazaar (FFmpeg) video codec
+
+Kvazaar is a 10-bit HEVC encoder that can be used instead of HM for the Gaussian splat (GS4) coding. 
+
+#### 1. Build Kvazaar and FFmpeg
+
+Requirements: `git`, `cmake`, `pkg-config` and a C compiler.
+
+	./dependencies/ffmpeg-kvazaar/build_ffmpeg_kvazaar.sh
+
+The script clones and builds Kvazaar (with `KVZ_BIT_DEPTH=10`) and FFmpeg n6.1, and installs them in `dependencies/ffmpeg-kvazaar/install`. Delete this folder to undo the installation.
+
+#### 2. Build TMC2 with the FFMPEG codec enabled
+
+	./build.sh ffmpeg                 # Release build with Kvazaar/FFmpeg support
+	./build.sh ffmpeg hm=18.0         # combined with other options
+
+`build.sh ffmpeg` sets `-DUSE_FFMPEG_VIDEO_CODEC=ON -DFFMPEG_DIR=dependencies/ffmpeg-kvazaar/install` and fails if step 1 has not been done. The same can be done directly with CMake:
+
+	export PKG_CONFIG_PATH=$PWD/dependencies/ffmpeg-kvazaar/install/lib/pkgconfig:$PWD/dependencies/ffmpeg-kvazaar/install/lib64/pkgconfig:$PKG_CONFIG_PATH
+	cmake -S . -B build/Release -DUSE_FFMPEG_VIDEO_CODEC=ON -DFFMPEG_DIR=$PWD/dependencies/ffmpeg-kvazaar/install
+	cmake --build build/Release --parallel 8
+
+#### 3. Select Kvazaar at run time
+
+Set `--videoCodecId=FFMPEG` (`ffmpeg` is also accepted; the default is HM) and use the Kvazaar configuration files. Paths of `--geometryConfig`, `--attributeConfig` and `--packConfig` are relative to `--configurationFolder`.
+
+| Configuration file | Option | Use |
+|---|---|---|
+| `cfg/gs4/ffmpeg/gs-main10-kvazaar-geometry.cfg` | `--geometryConfig` | Lossless geometry video (`lossless`, all-intra, no deblocking) |
+| `cfg/gs4/ffmpeg/gs-main10-kvazaar-attribute.cfg` | `--attributeConfig` | Lossy attribute videos (all-intra, no deblocking, SAO) |
+| `cfg/gs4/ffmpeg/gs-main10-kvazaar-pack.cfg` | `--packConfig` | Lossy packed videos (all-intra, no deblocking, SAO) |
+| `cfg/gs4/ffmpeg/gs-main10-kvazaar-lossless.cfg` | all three options above | Lossless rate point: replaces the three files above |
+| `cfg/gs4/rate/rNN/encoder-kvazaar.cfg` (`r01`-`r04`) | `--config` | Rate point QPs (`geometryQP`, `attributeXxxQP`, `packQP`) tuned for Kvazaar; replaces `encoder.cfg` |
+
+Notes:
+
+- The video configs contain a single `KvazaarParams` line (comma-separated Kvazaar options, e.g. `preset=veryslow,period=1,gop=0,no-deblock,sao=full`). The QP is appended by the encoder from the rate config.
+- The GS4 encoder assumes HEVC Main 10 (codec group IDC 1) for `FFMPEG`; no HM-specific `Profile` key is required in these video configs.
+- `cfg/gs4/rate/lossless/` has no Kvazaar-specific rate file: use `encoder.cfg` with `gs-main10-kvazaar-lossless.cfg`.
+- The decoder (`PccAppDecoder`) needs no codec option (the codec is derived from the bitstream high-level syntax), but it must be built with `./build.sh ffmpeg`.
+- Without `--videoCodecId`, the encoder uses the compile-time default codec (HM when built with HM).
+
+Encoder example:
+
+```
+./bin/PccGs4AppEncoder \
+	--uncompressedDataPath=<sequence>/frame_%04i.ply \
+	--configurationFolder=cfg/gs4/ \
+	--config=cfg/gs4/gs-ctc-kvazaar.cfg \
+	--frameCount=1 \
+	--videoCodecId=FFMPEG \
+	--compressedStreamPath=foo.v3c
+```
+
+Lossless: replace the rate config by `cfg/gs4/rate/lossless/encoder.cfg` and the three video configs by `ffmpeg/gs-main10-kvazaar-lossless.cfg`.
+
+Decoder example:
+
+```
+./bin/PccAppDecoder \
+	--compressedStreamPath=S_r03.bin \
+	--reconstructedDataPath=S_r03_%04i.decoded.ply
+```
 
 The external dependencies could be downloaded, built and linked independenly: 
 

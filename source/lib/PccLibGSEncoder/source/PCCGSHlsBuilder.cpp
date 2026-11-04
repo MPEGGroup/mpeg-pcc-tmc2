@@ -75,6 +75,10 @@ auto getProfileString( const std::string &configFile ) -> std::string {
 // 2: HEVC Main 4:4:4 10
 // 4: HEVC Main
 int detectCodecGroupIdc( const PCCGSEncoderParameters &params ) {
+#ifdef USE_FFMPEG_VIDEO_CODEC
+  // FFmpeg/Kvazaar configs have no HM Profile key; assume HEVC Main 10.
+  if ( params.videoCodecId_ == FFMPEG ) { return 1; }
+#endif
   auto configFiles = std::vector<std::string>{};
   if ( !params.packGeometry_ ) { configFiles.push_back( params.geometryVideoEncoderConfig_ ); }
   if ( !params.packAttributes_ ) { configFiles.push_back( params.attributeVideoEncoderConfig_ ); }
