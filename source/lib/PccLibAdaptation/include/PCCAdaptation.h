@@ -90,10 +90,12 @@ struct PCCAdaptationParameters {
   std::array<std::array<double, 3>, 16> computedShMax_;
 
   //===============SH property syntax ======================
-  size_t              shMappingMode_ = 1;
+  bool                shExplicitMappingFlag_ = 1;
   std::array<int, 48> shMappingTable_;
   /// Total retained components across all groups (K for M4)
   int shTotalRetainedComponents_ = 48;
+  /// Indicate whether mapping mode is planar
+  bool isPlanar_ = false;
   //========================================
 
   // ==================== SH 2D Transform Parameters ====================
@@ -324,7 +326,8 @@ struct PCCAdaptationParameters {
     std::cout << "Adaptation parameters: \n";
     std::cout << "  " << field( "enableDuplicateMerging" ) << enableDuplicateMerging_ << "\n";
     std::cout << "  " << field( "rotQuaternionRepresentationType" ) << rotQuaternionRepresentationType_ << "\n";
-    std::cout << "  " << field( "shMappingMode" ) << shMappingMode_ << "\n";
+    std::cout << "  " << field( "shExplicitMappingFlag" ) << shExplicitMappingFlag_ << "\n";
+    std::cout << "  " << field( "isPlanar" ) << isPlanar_ << "\n";
     std::cout << "  " << field( "adaptiveQuantizationMode" ) << adaptiveQuantizationMode_ << "\n";
     std::cout << "  " << field( "enableAdaptiveShQuantization" ) << enableAdaptiveShQuantization_ << "\n";
     std::cout << "  " << field( "keepZeroShBitGaussians" ) << keepZeroShBitGaussians_ << "\n";

@@ -3110,9 +3110,9 @@ void PCCBitstreamReader::gsShProperty( PCCBitstream                 &bitstream,
                                        uint32_t                      numShComps ) {
   TRACE_BITSTREAM_IN( "%s", __func__ );
   uint32_t value;
-  READ_UVLC_DESC( value, "ShMappingMethod" );
-  gshp.setShMappingMethod( value );
-  if ( gshp.getShMappingMethod() == 2 ) {
+  READ_CODE_DESC( value, 1, "ShExplicitMappingFlag" );
+  gshp.setShExplicitMappingFlag( value );
+  if ( gshp.getShExplicitMappingFlag() == 1 ) {
     uint32_t numShComps = GsSphericalHarmonicsProperty::NUM_SH_COMPONENTS;
     {
       uint32_t bitWidth = (uint32_t)std::ceil( std::log2( (double)numShComps ) );
@@ -3172,7 +3172,7 @@ void PCCBitstreamReader::gs2DTransform( PCCBitstream                       &bits
         READ_FLOAT_DESC( valueFlt, "KltMean" );
         gs2DTransform.setKltMean( i, m, valueFlt );
       }
-      if ( gs2DTransform.getDimensionReductionEnableFlag() && gshp.getShMappingMethod() != 2 ) {
+      if ( gs2DTransform.getDimensionReductionEnableFlag() && gshp.getShExplicitMappingFlag() != 1 ) {
         uint32_t groupSize = gs2DTransform.getRowTrSizeMinus1( i ) + 1;
         uint32_t bitWidth  = (uint32_t)std::ceil( std::log2( (double)( groupSize * 3 ) ) );
         if ( bitWidth < 1 ) bitWidth = 1;

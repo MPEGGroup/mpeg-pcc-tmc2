@@ -89,7 +89,8 @@ Rate-point files are in `cfg/gs4/rate/`; use the corresponding `encoder.cfg` for
 
 * `--keepIntermediateFiles=1 --debugPath=/output/debug` retains intermediate files for diagnosis.
 * `--implicitPacking=0|1` and `--temporalPacking=0|1` control packing behavior when a packing mode is selected.
-* `--shMappingMode=0|1|2` selects interleaved, planar, or adaptive spherical-harmonics mapping.
+* `--shExplicitMappingFlag=0|1` selects implicit (0:interleaved) or explicit (1) spherical-harmonics mapping.
+* `--isPlanar=0|1` selects whether explicit mapping simulates planar. This is relevant only when the mapping is explicit
 * `--GSColmapFolderPath=/data/sequence/colmap_data/frame_0081/sparse/` supplies COLMAP camera data as SEI metadata.
 * `--importanceScoresPath=/data/scores/frame_%04i.impScores.txt` provides one importance-score file per frame for adaptive quantization or LoD.
 * `--lodSplitRatios=30,70` enables encoder LoD partitioning. The values define the split ratios; use `--lodTargetLodMask` on the decoder to choose which levels to reconstruct.

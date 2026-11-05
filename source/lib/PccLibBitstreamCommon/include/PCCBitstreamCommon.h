@@ -565,7 +565,7 @@ static inline void removeFile( const std::string string ) {
 }
 
 static char getSeparator( const std::string &eFilename ) {
-  const auto firstSeparatorPos = std::min( eFilename.find_last_of( '/' ), eFilename.find_last_of( '\\' ) );
+  const auto firstSeparatorPos = (std::min)( eFilename.find_last_of( '/' ), eFilename.find_last_of( '\\' ) );
   if ( firstSeparatorPos < std::string::npos ) return eFilename[firstSeparatorPos];
 #ifdef _WIN32
   return '\\';  // Assume backslash on Win32

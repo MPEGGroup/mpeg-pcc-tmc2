@@ -554,8 +554,8 @@ void PCCGSHlsBuilder::initializeAtlasAapsHls( PCCHighLevelSyntax            &hls
   ext.setAdaptiveQuantizationEnableFlag( adaptationParams.enableAdaptiveShQuantization_ );
 
   auto &shProp = ext.getGsShProperty();
-  shProp.setShMappingMethod( adaptationParams.shMappingMode_ );
-  if ( adaptationParams.shMappingMode_ == 2 ) {
+  shProp.setShExplicitMappingFlag( adaptationParams.shExplicitMappingFlag_ );
+  if ( adaptationParams.shExplicitMappingFlag_ == 1 ) {
     int tableSize;
     if ( adaptationParams.enableShDimensionReduction_ ) {
       int totalRetained = adaptationParams.shTotalRetainedComponents_;
@@ -594,7 +594,7 @@ void PCCGSHlsBuilder::initializeAtlasAapsHls( PCCHighLevelSyntax            &hls
           tr2d.setKltStdDev( i, m, klt.sigma[m] );
           tr2d.setKltMean( i, m, klt.mean[m] );
         }
-        if ( adaptationParams.enableShDimensionReduction_ && adaptationParams.shMappingMode_ != 2 &&
+        if ( adaptationParams.enableShDimensionReduction_ && adaptationParams.shExplicitMappingFlag_ == 0 &&
              i < adaptationParams.shNumRetainComponents_.size() ) {
           int fullSize = adaptationParams.shTrGrpRow_[i].size() * 3;
           int retain   = adaptationParams.shNumRetainComponents_[i];

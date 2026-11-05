@@ -3030,8 +3030,8 @@ void PCCBitstreamWriter::gsShProperty( PCCBitstream                 &bitstream,
                                        GsSphericalHarmonicsProperty &gshp,
                                        uint32_t                      numShComps ) {
   TRACE_BITSTREAM_IN( "%s", __func__ );
-  WRITE_UVLC( gshp.getShMappingMethod() );
-  if ( gshp.getShMappingMethod() == 2 ) {
+  WRITE_CODE( gshp.getShExplicitMappingFlag(), 1 );
+  if ( gshp.getShExplicitMappingFlag() == 1 ) {
     uint32_t numShComps = GsSphericalHarmonicsProperty::NUM_SH_COMPONENTS;
     {
       uint32_t bitWidth = (uint32_t)std::ceil( std::log2( (double)numShComps ) );
@@ -3072,7 +3072,7 @@ void PCCBitstreamWriter::gs2DTransform( PCCBitstream                       &bits
         if ( !isDcGroup ) { WRITE_FLOAT( gs2DTransform.getKltStdDev( i, m ) ); }
         WRITE_FLOAT( gs2DTransform.getKltMean( i, m ) );
       }
-      if ( gs2DTransform.getDimensionReductionEnableFlag() && gshp.getShMappingMethod() != 2 ) {
+      if ( gs2DTransform.getDimensionReductionEnableFlag() && gshp.getShExplicitMappingFlag() != 1 ) {
         uint32_t groupSize = gs2DTransform.getRowTrSizeMinus1( i ) + 1;
         uint32_t bitWidth  = (uint32_t)std::ceil( std::log2( (double)( groupSize * 3 ) ) );
         if ( bitWidth < 1 ) bitWidth = 1;

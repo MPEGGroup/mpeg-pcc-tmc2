@@ -2334,9 +2334,9 @@ int PCCDecoder::ReconstructIdc3( PCCContext &context, PCCGroupOfFrames &reconstr
         }
       }
       if ( ext.getShPropertyPresentFlag() ) {
-        auto &shProp                    = ext.getGsShProperty();
-        adaptationParams.shMappingMode_ = shProp.getShMappingMethod();
-        if ( shProp.getShMappingMethod() == 2 ) {
+        auto &shProp                            = ext.getGsShProperty();
+        adaptationParams.shExplicitMappingFlag_ = shProp.getShExplicitMappingFlag();
+        if ( shProp.getShExplicitMappingFlag() == 1 ) {
           uint32_t tableSize = (uint32_t)shProp.getShMappingTable().size();
           if ( tableSize > 48 ) tableSize = 48;
           adaptationParams.shMappingTable_.fill( 0 );
@@ -2397,7 +2397,7 @@ int PCCDecoder::ReconstructIdc3( PCCContext &context, PCCGroupOfFrames &reconstr
           for ( int i = 0; i < 16; ++i ) { adaptationParams.shTrTypeCol_.push_back( tr2d.getTrColType( i ) ); }
 
           // Load dimension reduction parameters (Mode 3 only; Mode 4 uses remapping table)
-          if ( adaptationParams.enableShDimensionReduction_ && adaptationParams.shMappingMode_ != 2 ) {
+          if ( adaptationParams.enableShDimensionReduction_ && adaptationParams.shExplicitMappingFlag_ == 0 ) {
             int totalRetained = 0;
             for ( int i = 0; i < numGroups; ++i ) {
               int signaled = tr2d.getNumOfRetainComponentsMinus1( i );

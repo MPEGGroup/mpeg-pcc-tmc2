@@ -197,10 +197,14 @@ bool parseParameters( int                           argc,
       adaptationParams.rotQuaternionRepresentationType_,
       adaptationParams.rotQuaternionRepresentationType_,
       "Rotation representation: 0=3-component tangent-space x/w,y/w,z/w (default), 1=4-component w,x,y,z" )
-    ("shMappingMode",
-      adaptationParams.shMappingMode_,
-      adaptationParams.shMappingMode_,
-      "Mapping spherical harmonics AC coefficients to video using planar mode")
+    ("shExplicitMappingFlag",
+      adaptationParams.shExplicitMappingFlag_,
+      adaptationParams.shExplicitMappingFlag_,
+      "Mapping spherical harmonics AC coefficients to video using interleaved mode")
+    ( "isPlanar",
+      adaptationParams.isPlanar_,
+      adaptationParams.isPlanar_,
+      "Indicate whether SH mapping is planar (default: false). Only considered when shExplicitMappingFlag is 1" )
     ( "adaptiveQuantizationMode",
       adaptationParams.adaptiveQuantizationMode_,
       adaptationParams.adaptiveQuantizationMode_,

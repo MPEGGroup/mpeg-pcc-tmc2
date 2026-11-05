@@ -438,14 +438,16 @@ class GsDequantization {
 class GsSphericalHarmonicsProperty {
  public:
   static constexpr uint32_t NUM_SH_COMPONENTS = 48;
-  GsSphericalHarmonicsProperty() : shMappingMethod_( 0 ), totalCodedComponentsMinus1_( 0 ) { shMappingTable_.clear(); }
+  GsSphericalHarmonicsProperty() : shExplicitMappingFlag_( 0 ), totalCodedComponentsMinus1_( 0 ) {
+    shMappingTable_.clear();
+  }
   ~GsSphericalHarmonicsProperty() { shMappingTable_.clear(); }
   GsSphericalHarmonicsProperty &operator=( const GsSphericalHarmonicsProperty & ) = default;
 
   bool operator==( const GsSphericalHarmonicsProperty &other ) const {
     bool retVal = true;
-    if ( other.shMappingMethod_ != shMappingMethod_ ) retVal = false;
-    if ( shMappingMethod_ == 2 ) {
+    if ( other.shExplicitMappingFlag_ != shExplicitMappingFlag_ ) retVal = false;
+    if ( shExplicitMappingFlag_ == 1 ) {
       if ( other.totalCodedComponentsMinus1_ != totalCodedComponentsMinus1_ ) { retVal = false; }
       if ( other.shMappingTable_ != shMappingTable_ ) retVal = false;
     }
@@ -454,8 +456,8 @@ class GsSphericalHarmonicsProperty {
 
   bool operator!=( const GsSphericalHarmonicsProperty &other ) const { return !( *this == other ); }
 
-  uint32_t getShMappingMethod() const { return shMappingMethod_; }
-  void     setShMappingMethod( uint32_t value ) { shMappingMethod_ = value; }
+  bool getShExplicitMappingFlag() const { return shExplicitMappingFlag_; }
+  void setShExplicitMappingFlag( bool value ) { shExplicitMappingFlag_ = value; }
 
   uint32_t getTotalCodedComponentsMinus1() const { return totalCodedComponentsMinus1_; }
   void     setTotalCodedComponentsMinus1( uint32_t value ) { totalCodedComponentsMinus1_ = value; }
@@ -466,7 +468,7 @@ class GsSphericalHarmonicsProperty {
   void                   resizeShMappingTable( size_t size ) { shMappingTable_.resize( size ); }
 
  private:
-  uint32_t              shMappingMethod_;
+  uint32_t              shExplicitMappingFlag_;
   uint32_t              totalCodedComponentsMinus1_;
   std::vector<uint32_t> shMappingTable_;
 };
