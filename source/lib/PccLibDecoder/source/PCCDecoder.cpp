@@ -2275,9 +2275,11 @@ int PCCDecoder::ReconstructIdc3( PCCContext &context, PCCGroupOfFrames &reconstr
                   for ( uint32_t m = 0; m < M; m++ ) {
                     adaptationParams.shTransitionPoints_.push_back( dequant.getQuantRegionTransitionPoint( i, j, m ) );
                   }
-                  for ( uint32_t m = 0; m < M + 1; m++ ) {
+                  for ( uint32_t m = 0; m < M; m++ ) {
                     adaptationParams.shStepSizes_.push_back( dequant.getRegionStepSize( i, j, m ) );
                   }
+                  adaptationParams.shStepSizes_.push_back(
+                      -1 );  // last step size is not used, but we need to keep the vector size consistent
                 }
               }
             }

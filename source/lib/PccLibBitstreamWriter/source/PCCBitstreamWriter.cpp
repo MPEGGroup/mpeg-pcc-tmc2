@@ -3009,7 +3009,7 @@ void PCCBitstreamWriter::gsDequantization( PCCBitstream &bitstream, GsDequantiza
                 }
               }
               if ( !gsd.getShSameRegionStepSizeFlag() || ( ( i == 0 ) && ( c == 0 ) ) ) {
-                for ( int m = 0; m < gsd.getNumQuantRegionsMinus1( i, c ) + 1; m++ ) {
+                for ( int m = 0; m < gsd.getNumQuantRegionsMinus1( i, c ); m++ ) {
                   WRITE_FLOAT( gsd.getRegionStepSize( i, c, m ) );
                 }
               }

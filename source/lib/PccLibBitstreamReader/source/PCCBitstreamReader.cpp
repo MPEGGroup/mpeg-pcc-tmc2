@@ -3084,7 +3084,7 @@ void PCCBitstreamReader::gsDequantization( PCCBitstream &bitstream, GsDequantiza
                   gsd.setQuantRegionTransitionPoint( i, c, m, gsd.getQuantRegionTransitionPoint( 0, 0, m ) );
                 }
               }
-              for ( int m = 0; m < gsd.getNumQuantRegionsMinus1( i, c ) + 1; m++ ) {
+              for ( int m = 0; m < gsd.getNumQuantRegionsMinus1( i, c ); m++ ) {
                 if ( !gsd.getShSameRegionStepSizeFlag() || ( ( i == 0 ) && ( c == 0 ) ) ) {
                   READ_FLOAT_DESC( valueFlt, "RegionStepSize" );
                   gsd.setRegionStepSize( i, c, m, valueFlt );

@@ -273,15 +273,17 @@ int main( int argc, char *argv[] ) {
   clockWall.start();
   clockUser.start();
 
+  const PCCAdaptationParameters initialAdaptationParams = adaptationParams;
   for ( uint32_t frameNumber = startFrameNumber; frameNumber < endFrameNumber; ++frameNumber ) {
+    PCCAdaptationParameters frameAdaptationParams = initialAdaptationParams;
     // Load original point cloud as float (PCCPointSetGS)
     pcc::PCCPointSetGS originalPointCloudGS;
     if ( !loadPointCloudGS( applicationParams.uncompressedDataPath_, frameNumber, originalPointCloudGS ) ) { continue; }
 
     pcc::PCCPointSetGS pointCloudGS;
-    if ( adaptationParams.enableAdaptiveShQuantization_ ) {
-      if ( !adaptationModule.pruneAndGroupAdaptiveQuantization( originalPointCloudGS, pointCloudGS, adaptationParams,
-                                                                frameNumber ) ) {
+    if ( frameAdaptationParams.enableAdaptiveShQuantization_ ) {
+      if ( !adaptationModule.pruneAndGroupAdaptiveQuantization( originalPointCloudGS, pointCloudGS,
+                                                                frameAdaptationParams, frameNumber ) ) {
         std::cerr << "Error: adaptive SH pruning and grouping failed for frame " << frameNumber << std::endl;
         continue;
       }
@@ -291,15 +293,15 @@ int main( int argc, char *argv[] ) {
 
     // Adapt point cloud: convert float (PCCPointSetGS) to quantized int (PCCPointSet3)
     pcc::PCCPointSet3 adaptedPointCloud;
-    if ( !adaptationModule.adapt( pointCloudGS, adaptedPointCloud, adaptationParams ) ) {
+    if ( !adaptationModule.adapt( pointCloudGS, adaptedPointCloud, frameAdaptationParams ) ) {
       std::cerr << "Error: adaptation failed for frame " << frameNumber << std::endl;
       continue;
     }
 
     // print once when encoding fewer than the full 16 SH coefficient sets
     static bool shInfoPrinted = false;
-    if ( !shInfoPrinted && adaptationParams.shCoefficientCount_ < 16 ) {
-      std::cout << "Info: encoding with partial SH (" << adaptationParams.shCoefficientCount_
+    if ( !shInfoPrinted && frameAdaptationParams.shCoefficientCount_ < 16 ) {
+      std::cout << "Info: encoding with partial SH (" << frameAdaptationParams.shCoefficientCount_
                 << " coefficient sets out of 16)" << std::endl;
       shInfoPrinted = true;
     }
@@ -318,14 +320,14 @@ int main( int argc, char *argv[] ) {
 
       std::string configPath =
           encoderParams.debugPath_ + "/" + encoderParams.frameNameBase_ + "_adaptation_config.json";
-      adaptationParams.writeConfig( configPath );
+      frameAdaptationParams.writeConfig( configPath );
     }
 
     // LoD loading (assign lod for each splats)
     std::vector<uint8_t> lodAssignment{};
     if ( encoderParams.lodSplitRatios_.size() >= 2 ) {
-      lodAssignment = splitSplatsByImportanceScore( adaptedPointCloud, encoderParams.lodSplitRatios_, adaptationParams,
-                                                    frameNumber );
+      lodAssignment = splitSplatsByImportanceScore( adaptedPointCloud, encoderParams.lodSplitRatios_,
+                                                    frameAdaptationParams, frameNumber );
       if ( lodAssignment.empty() ) {
         std::cerr << "Error: importance score loaded failed for frame " << frameNumber << std::endl;
         continue;
@@ -333,7 +335,7 @@ int main( int argc, char *argv[] ) {
     }
 
     // Encode adapted (quantized int) point cloud
-    encoderModule.encode( adaptedPointCloud, encoderParams, adaptationParams, ssvu, lodAssignment, logger );
+    encoderModule.encode( adaptedPointCloud, encoderParams, frameAdaptationParams, ssvu, lodAssignment, logger );
 
     // write encoded bitstream to file
     saveSampleStreamV3CUnit( applicationParams.compressedStreamPath_, ssvu, logger );

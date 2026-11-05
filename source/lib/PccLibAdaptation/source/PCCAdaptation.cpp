@@ -1701,8 +1701,7 @@ bool PCCAdaptation::quantizeSphericalHarmonics( const PCCPointSetGS     &input,
   }
 
   const uint32_t bitDepth  = params.shBitDepth_;
-  const uint32_t max_index = 1u << bitDepth;
-  const uint32_t max_val   = max_index - 1;
+  const uint32_t max_index = ( 1u << bitDepth ) - 1;
 
   struct ShQuantRegion {
     std::vector<double> th_real;
@@ -1712,7 +1711,8 @@ bool PCCAdaptation::quantizeSphericalHarmonics( const PCCPointSetGS     &input,
   };
   std::array<ShQuantRegion, 48> shRegions;
   std::array<int, 48>           ssBaseOffsets;
-
+  std::vector<double>           stepSizes;
+  stepSizes = params.shStepSizes_;
   if ( params.enableShNonUniformQuantization_ ) {
     int tpOffset = 0;
     int ssOffset = 0;
@@ -1729,18 +1729,23 @@ bool PCCAdaptation::quantizeSphericalHarmonics( const PCCPointSetGS     &input,
           shRegions[idx].tp_int.resize( M );
           shRegions[idx].region_start_real.resize( M + 1 );
           shRegions[idx].region_start_real[0] = minLim;
-
           for ( int m = 0; m < M; ++m ) {
-            int tp_val                = params.shTransitionPoints_[tpOffset + m];
-            shRegions[idx].tp_int[m]  = tp_val;
-            shRegions[idx].th_real[m] = tp_val * ( maxLim - minLim ) / static_cast<double>( max_index ) + minLim;
+            int tp_val               = params.shTransitionPoints_[tpOffset + m];
+            shRegions[idx].tp_int[m] = tp_val;
+            if ( m == 0 ) {
+              shRegions[idx].th_real[m] = tp_val * params.shStepSizes_[ssOffset + m] + minLim;
+            } else {
+              shRegions[idx].th_real[m] =
+                  ( tp_val - shRegions[idx].tp_int[m - 1] ) * params.shStepSizes_[ssOffset + m] +
+                  shRegions[idx].th_real[m - 1];
+            }
             shRegions[idx].region_start_real[m + 1] = shRegions[idx].th_real[m];
           }
-
-          shRegions[idx].min_offset = shRegions[idx].tp_int[0] -
-                                      ( shRegions[idx].region_start_real[1] - minLim ) / params.shStepSizes_[ssOffset];
+          // derivation for the last step size according to the maximum limit
+          double last_step_size =
+              ( maxLim - shRegions[idx].th_real[M - 1] ) / ( max_index - shRegions[idx].tp_int[M - 1] );
+          stepSizes[ssOffset + M] = last_step_size;
         }
-
         tpOffset += M;
         ssOffset += M + 1;
       }
@@ -1766,13 +1771,13 @@ bool PCCAdaptation::quantizeSphericalHarmonics( const PCCPointSetGS     &input,
             int         region_idx = 0;
             while ( region_idx < M && sh[l][ch] > reg.th_real[region_idx] ) { region_idx++; }
 
-            double prev_idx  = ( region_idx > 0 ) ? reg.tp_int[region_idx - 1] : reg.min_offset;
-            double step_vec  = params.shStepSizes_[ssBaseOffsets[idx] + region_idx];
+            double prev_idx  = ( region_idx > 0 ) ? reg.tp_int[region_idx - 1] : 0;
+            double step_vec  = stepSizes[ssBaseOffsets[idx] + region_idx];
             double base_real = reg.region_start_real[region_idx];
             double q_vals    = ( sh[l][ch] - base_real ) / step_vec + prev_idx;
             if ( params.enableAdaptiveShQuantization_ ) { q_vals = q_vals / exp2( bitDepth - pointBitDepth ); }
             q_vals     = std::round( q_vals );
-            qSh[l][ch] = static_cast<uint16_t>( std::max( 0.0, std::min( static_cast<double>( max_val ), q_vals ) ) );
+            qSh[l][ch] = static_cast<uint16_t>( std::max( 0.0, std::min( static_cast<double>( max_index ), q_vals ) ) );
           }
         } else {
           double norm = normalizeToUnit( sh[l][ch], params.computedShMin_[l][ch], params.computedShMax_[l][ch] );
@@ -1792,7 +1797,7 @@ bool PCCAdaptation::dequantizeSphericalHarmonics( const PCCPointSet3            
                                                   const PCCAdaptationParameters &params ) {
   const size_t   pointCount = input.getPointCount();
   const uint32_t bitDepth   = params.shBitDepth_;
-  const uint32_t max_index  = 1u << bitDepth;
+  const uint32_t max_index  = ( 1u << bitDepth ) - 1;
 
   output.setSphericalHarmonicsCount( params.shCoefficientCount_ );
 
@@ -1803,6 +1808,8 @@ bool PCCAdaptation::dequantizeSphericalHarmonics( const PCCPointSet3            
   };
   std::array<ShQuantRegion, 48> shRegions;
   std::array<int, 48>           ssBaseOffsets;
+  std::vector<double>           stepSizes;
+  stepSizes = params.shStepSizes_;
 
   if ( params.enableShNonUniformQuantization_ ) {
     int tpOffset = 0;
@@ -1823,16 +1830,22 @@ bool PCCAdaptation::dequantizeSphericalHarmonics( const PCCPointSet3            
           for ( int m = 0; m < M; ++m ) {
             int tp_val               = params.shTransitionPoints_[tpOffset + m];
             shRegions[idx].tp_int[m] = tp_val;
-            shRegions[idx].region_start_real[m + 1] =
-                tp_val * ( maxLim - minLim ) / static_cast<double>( max_index ) + minLim;
+            if ( m == 0 ) {
+              shRegions[idx].region_start_real[m + 1] =
+                  ( tp_val - 0 ) * params.shStepSizes_[ssOffset + m] + shRegions[idx].region_start_real[m];
+            } else {
+              shRegions[idx].region_start_real[m + 1] =
+                  ( tp_val - shRegions[idx].tp_int[m - 1] ) * params.shStepSizes_[ssOffset + m] +
+                  shRegions[idx].region_start_real[m];
+            }
           }
-
-          shRegions[idx].min_offset = shRegions[idx].tp_int[0] -
-                                      ( shRegions[idx].region_start_real[1] - minLim ) / params.shStepSizes_[ssOffset];
-
-          tpOffset += M;
-          ssOffset += M + 1;
+          // derivation for the last step size according to the maximum limit
+          double last_step_size =
+              ( maxLim - shRegions[idx].region_start_real[M] ) / ( max_index - shRegions[idx].tp_int[M - 1] );
+          stepSizes[ssOffset + M] = last_step_size;
         }
+        tpOffset += M;
+        ssOffset += M + 1;
       }
     }
   }
@@ -1857,9 +1870,8 @@ bool PCCAdaptation::dequantizeSphericalHarmonics( const PCCPointSet3            
             if ( params.enableAdaptiveShQuantization_ ) { q_val = q_val * exp2( bitDepth - pointBitDepth ); }
             int region_idx = 0;
             while ( region_idx < M && q_val > reg.tp_int[region_idx] ) { region_idx++; }
-
-            double prev_idx  = ( region_idx > 0 ) ? reg.tp_int[region_idx - 1] : reg.min_offset;
-            double step_vec  = params.shStepSizes_[ssBaseOffsets[idx] + region_idx];
+            double prev_idx  = ( region_idx > 0 ) ? reg.tp_int[region_idx - 1] : 0;
+            double step_vec  = stepSizes[ssBaseOffsets[idx] + region_idx];
             double base_real = reg.region_start_real[region_idx];
             sh[l][ch]        = base_real + ( q_val - prev_idx ) * step_vec;
           }
@@ -2993,6 +3005,16 @@ bool PCCAdaptation::extractSHQuantRegions( const PCCPointSetGS &input, PCCAdapta
           std::max( 0, std::min( static_cast<int>( max_quant_val ), tp_low_quant ) ) );
       params.shTransitionPoints_.push_back(
           std::max( 0, std::min( static_cast<int>( max_quant_val ), tp_high_quant ) ) );
+
+      // updating the min/max
+      tp_low  = minLim + ( tp_low_quant * ( maxLim - minLim ) ) / double( max_quant_val + 1 );
+      tp_high = minLim + ( tp_high_quant * ( maxLim - minLim ) ) / double( max_quant_val + 1 );
+      params.shStepSizes_[l * 9 + static_cast<size_t>( ch ) * 3 + 1] =
+          ( tp_high_quant != tp_low_quant ) ? ( tp_high - tp_low ) / ( tp_high_quant - tp_low_quant ) : 0;
+      params.shLimitMin_[l][ch] =
+          tp_low - ( tp_low_quant * ( params.shStepSizes_[l * 9 + static_cast<size_t>( ch ) * 3 + 0] ) );
+      params.shLimitMax_[l][ch] = tp_high + ( ( max_quant_val - tp_high_quant ) *
+                                              ( params.shStepSizes_[l * 9 + static_cast<size_t>( ch ) * 3 + 2] ) );
     }
   }
 

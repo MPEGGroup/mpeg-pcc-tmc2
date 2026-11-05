@@ -377,7 +377,7 @@ class GsDequantization {
     if ( value > 0 ) {
       quantRegionTransitionPoint_[i][j].resize( value, 0 );
       quantRegionTransitionPointDelta_[i][j].resize( value, 0 );
-      regionStepSize_[i][j].resize( value + 1, 0 );
+      regionStepSize_[i][j].resize( value, 0 );
     }
   }
   void setQuantRegionTransitionPoint( int i, int j, int m, uint16_t value ) {

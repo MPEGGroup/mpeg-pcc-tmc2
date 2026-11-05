@@ -392,7 +392,7 @@ void PCCGSHlsBuilder::initializeAtlasAapsHls( PCCHighLevelSyntax            &hls
         int M        = adaptationParams.shNumRegionsMinus1_[idx];
         int ssOffset = 0;
         for ( size_t k = 0; k < idx; k++ ) { ssOffset += adaptationParams.shNumRegionsMinus1_[k] + 1; }
-        for ( int m = 0; m < M + 1; m++ ) {
+        for ( int m = 0; m < M; m++ ) {
           if ( adaptationParams.shStepSizes_[ssOffset + m] != adaptationParams.shStepSizes_[ssRefOffset + m] ) {
             sameStepSizes = false;
             break;
@@ -440,7 +440,7 @@ void PCCGSHlsBuilder::initializeAtlasAapsHls( PCCHighLevelSyntax            &hls
               dequant.setQuantRegionTransitionPointDelta( i, j, m, curr - prev );
             }
           }
-          for ( int m = 0; m < M + 1; m++ ) {
+          for ( int m = 0; m < M; m++ ) {
             dequant.setRegionStepSize( i, j, m, adaptationParams.shStepSizes_[ssOffset + m] );
           }
           tpOffset += M;
