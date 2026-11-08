@@ -83,7 +83,7 @@ Kvazaar is a 10-bit HEVC encoder that can be used instead of HM for the Gaussian
 
 #### 1. Build Kvazaar and FFmpeg
 
-Requirements: `git`, `cmake`, `pkg-config` and a C compiler.
+Requirements: `git`, `cmake`, `pkg-config`, `make` and a C compiler.
 
 	./dependencies/ffmpeg-kvazaar/build_ffmpeg_kvazaar.sh
 
@@ -111,12 +111,13 @@ Set `--videoCodecId=FFMPEG` (`ffmpeg` is also accepted; the default is HM) and u
 | `cfg/gs4/ffmpeg/gs-main10-kvazaar-pack.cfg` | `--packConfig` | Lossy packed videos (all-intra, no deblocking, SAO) |
 | `cfg/gs4/ffmpeg/gs-main10-kvazaar-lossless.cfg` | all three options above | Lossless rate point: replaces the three files above |
 | `cfg/gs4/rate/rNN/encoder-kvazaar.cfg` (`r01`-`r04`) | `--config` | Rate point QPs (`geometryQP`, `attributeXxxQP`, `packQP`) tuned for Kvazaar; replaces `encoder.cfg` |
+| `cfg/gs4/rate/lossless/encoder-kvazaar.cfg` | `--config` | Best-effort CW near-lossless setup; selects the Kvazaar lossless video config for all three streams |
 
 Notes:
 
 - The video configs contain a single `KvazaarParams` line (comma-separated Kvazaar options, e.g. `preset=veryslow,period=1,gop=0,no-deblock,sao=full`). The QP is appended by the encoder from the rate config.
 - The GS4 encoder assumes HEVC Main 10 (codec group IDC 1) for `FFMPEG`; no HM-specific `Profile` key is required in these video configs.
-- `cfg/gs4/rate/lossless/` has no Kvazaar-specific rate file: use `encoder.cfg` with `gs-main10-kvazaar-lossless.cfg`.
+- `cfg/gs4/rate/lossless/encoder-kvazaar.cfg` provides the best-effort CW near-lossless settings and selects the Kvazaar lossless video config for geometry, attributes, and packed video.
 - The decoder (`PccAppDecoder`) needs no codec option (the codec is derived from the bitstream high-level syntax), but it must be built with `./build.sh ffmpeg`.
 - Without `--videoCodecId`, the encoder uses the compile-time default codec (HM when built with HM).
 
@@ -126,13 +127,14 @@ Encoder example:
 ./bin/PccGs4AppEncoder \
 	--uncompressedDataPath=<sequence>/frame_%04i.ply \
 	--configurationFolder=cfg/gs4/ \
-	--config=cfg/gs4/gs-ctc-kvazaar.cfg \
+	--config=cfg/gs4/gs-main10-kvazaar.cfg \
+	--config=cfg/gs4/rate/r03/encoder-kvazaar.cfg \
 	--frameCount=1 \
 	--videoCodecId=FFMPEG \
 	--compressedStreamPath=foo.v3c
 ```
 
-Lossless: replace the rate config by `cfg/gs4/rate/lossless/encoder.cfg` and the three video configs by `ffmpeg/gs-main10-kvazaar-lossless.cfg`.
+For the best-effort CW near-lossless setup, use `cfg/gs4/rate/lossless/encoder-kvazaar.cfg` as the rate config; it selects `ffmpeg/gs-main10-kvazaar-lossless.cfg` for all three video streams.
 
 Decoder example:
 

@@ -79,7 +79,7 @@ bin/PccGs4AppEncoder \
 
 `--uncompressedDataPath` accepts a single PLY path or a template containing a frame-number conversion (for example, `%04i`). `--startFrameNumber` is the first number substituted in that template and `--frameCount` is the number of consecutive frames to encode. If no template is used, use the appropriate single-frame values.
 
-The CTC configuration already includess a packing configuration. You can try alternative packing configurations:
+The CTC configuration already includes a packing configuration. You can try alternative packing configurations:
 
 * `cfg/gs4/gs-pack-none.cfg` — do not pack maps.
 * `cfg/gs4/gs-pack-attributes.cfg` — pack attributes.
@@ -90,7 +90,9 @@ Rate-point files are in `cfg/gs4/rate/`; use the corresponding `encoder.cfg` for
 * `--keepIntermediateFiles=1 --debugPath=/output/debug` retains intermediate files for diagnosis.
 * `--implicitPacking=0|1` and `--temporalPacking=0|1` control packing behavior when a packing mode is selected.
 * `--shExplicitMappingFlag=0|1` selects implicit (0:interleaved) or explicit (1) spherical-harmonics mapping.
-* `--isPlanar=0|1` selects whether explicit mapping simulates planar. This is relevant only when the mapping is explicit
+* `--isPlanar=0|1` selects planar mapping for spherical harmonics; it is relevant only when explicit mapping is enabled.
+* `--enableGeometryPrediction=0|1` enables segmented PEPGA-Chain geometry residual prediction (default: 1).
+* `--geometryPredictionSegmentVal=256` sets the geometry-prediction segment size (default: 256; must be greater than 0 when prediction is enabled).
 * `--GSColmapFolderPath=/data/sequence/colmap_data/frame_0081/sparse/` supplies COLMAP camera data as SEI metadata.
 * `--importanceScoresPath=/data/scores/frame_%04i.impScores.txt` provides one importance-score file per frame for adaptive quantization or LoD.
 * `--lodSplitRatios=30,70` enables encoder LoD partitioning. The values define the split ratios; use `--lodTargetLodMask` on the decoder to choose which levels to reconstruct.
