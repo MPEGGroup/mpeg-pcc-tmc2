@@ -64,14 +64,15 @@ The examples below use these locations:
 
 ### Encode
 
-An encoder invocation consists of the V-PCC GS anchor configuration [gs-ctc-anchor.cfg](../cfg/gs4/gs-ctc-anchor.cfg),  and a rate-point configuration such as [rate/r04/encoder.cfg](../cfg/gs4/rate/r04/encoder.cfg). Configuration files are applied from left to right: a later `--config` value overrides an earlier one. Start with the common configuration, then select a rate point.
+An encoder invocation consists of the V-PCC GS anchor configuration [gs-ctc-anchor.cfg](../cfg/gs4/gs-ctc-anchor.cfg), and a rate-point configuration such as [hm-main10/rate/r04.cfg](../cfg/gs4/hm-main10/rate/r04.cfg). Configuration files are applied from left to right: a later `--config` value overrides an earlier one. Start with the common configuration, then select a rate point.
 
 ```bash
 bin/PccGs4AppEncoder \
   --uncompressedDataPath=/data/sequence/plys/frame_%04i.ply \
   --configurationFolder=cfg/gs4/ \
   --config=cfg/gs4/gs-ctc-anchor.cfg \
-  --config=cfg/gs4/rate/r04/encoder.cfg \
+  --config=cfg/gs4/hm-main10/gs-main10-common.cfg \
+  --config=cfg/gs4/hm-main10/rate/r04.cfg \
   --startFrameNumber=81 \
   --frameCount=1 \
   --compressedStreamPath=/output/results/1F/manwithfruit_tracked/r04/1F_manwithfruit_tracked_r04.bin
@@ -85,7 +86,7 @@ The CTC configuration already includes a packing configuration. You can try alte
 * `cfg/gs4/gs-pack-attributes.cfg` — pack attributes.
 * `cfg/gs4/gs-pack-all-in-one.cfg` — pack all maps.
 
-Rate-point files are in `cfg/gs4/rate/`; use the corresponding `encoder.cfg` for the desired condition. You can override a configuration value on the command line after the `--config` arguments. Commonly used overrides are:
+Rate-point files are in `cfg/gs4/<profile>/rate/`; use a corresponding rate point config for the desired condition. You can override a configuration value on the command line after the `--config` arguments. Commonly used overrides are:
 
 * `--keepIntermediateFiles=1 --debugPath=/output/debug` retains intermediate files for diagnosis.
 * `--implicitPacking=0|1` and `--temporalPacking=0|1` control packing behavior when a packing mode is selected.

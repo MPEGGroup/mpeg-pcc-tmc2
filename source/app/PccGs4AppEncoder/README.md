@@ -304,9 +304,9 @@ classDiagram
 ./bin/PccGs4AppEncoder \
 	--uncompressedDataPath=/path/to/ply_file.ply \
    	--configurationFolder=./mpeg-pcc-tmc2/cfg/gs4/ \
-   	--config=./mpeg-pcc-tmc2/cfg/gs4/gs-main10-common.cfg \
+	--config=./mpeg-pcc-tmc2/cfg/gs4/hm-main10/gs-main10-common.cfg \
 	--config=./mpeg-pcc-tmc2/cfg/gs4/gs-pack-none.cfg \
-  	--config=./mpeg-pcc-tmc2/cfg/gs4/rate/r04/encoder.cfg \
+	--config=./mpeg-pcc-tmc2/cfg/gs4/hm-main10/rate/r04.cfg \
 	--compressedStreamPath=/path/to/compressed_file.v3c \
 ```
 
