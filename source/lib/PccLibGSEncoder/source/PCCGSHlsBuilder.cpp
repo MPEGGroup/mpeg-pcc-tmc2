@@ -168,11 +168,24 @@ void PCCGSHlsBuilder::initializeV3CHls( PCCHighLevelSyntax            &hls,
     } else if ( attributeTypeIds[i] == ATTR_TRANSPARENCY ) {
       ai.setAttributeDimensionMinus1( i, 0 );
     } else if ( attributeTypeIds[i] == ATTR_SPHERICAL_HARMONICS ) {
-      int shCoeffCount = static_cast<int>( adaptationParams.shCoefficientCount_ );
-      if ( shCoeffCount < 1 ) shCoeffCount = 16;
-      ai.setAttributeDimensionMinus1( i, shCoeffCount * 3 - 1 );
-      ai.setAttributeDimensionPartitionsMinus1( i, shCoeffCount - 1 );
-      for ( int j = 0; j < shCoeffCount; j++ ) { ai.setAttributePartitionChannelsMinus1( i, j, 2 ); }
+      if ( adaptationParams.gsdTransform2dPresentFlag_ && adaptationParams.enableShDimensionReduction_ &&
+           params.enableShDimensionReductionSkipNonretained_ ) {
+        // Skip-nonretained packing: pack ceil(K/3) partitions of the retained components.
+        int K = adaptationParams.shTotalRetainedComponents_;
+        if ( K < 1 ) K = 1;
+        const int shComponents = static_cast<int>( adaptationParams.shCoefficientCount_ ) * 3;
+        if ( K > shComponents ) K = shComponents;
+        const int numPartitions = ( K + 2 ) / 3;  // ceil( K / 3 )
+        ai.setAttributeDimensionMinus1( i, K - 1 );
+        ai.setAttributeDimensionPartitionsMinus1( i, numPartitions - 1 );
+        for ( int j = 0; j < numPartitions; j++ ) { ai.setAttributePartitionChannelsMinus1( i, j, 2 ); }
+      } else {
+        int shCoeffCount = static_cast<int>( adaptationParams.shCoefficientCount_ );
+        if ( shCoeffCount < 1 ) shCoeffCount = kMaxShCoefficientCount;
+        ai.setAttributeDimensionMinus1( i, shCoeffCount * 3 - 1 );
+        ai.setAttributeDimensionPartitionsMinus1( i, shCoeffCount - 1 );
+        for ( int j = 0; j < shCoeffCount; j++ ) { ai.setAttributePartitionChannelsMinus1( i, j, 2 ); }
+      }
     } else if ( attributeTypeIds[i] == ATTR_SCALE ) {
       ai.setAttributeDimensionMinus1( i, 2 );
       ai.setAttributeDimensionPartitionsMinus1( i, 0 );
@@ -208,7 +221,7 @@ void PCCGSHlsBuilder::initializeAtlasHls( PCCHighLevelSyntax            &hls,
 
   initializeAtlasAspsHls( hls, params );
   initializeAtlasAfpsHls( hls, params );
-  initializeAtlasAapsHls( hls, adaptationParams );
+  initializeAtlasAapsHls( hls, params, adaptationParams );
 }
 
 void PCCGSHlsBuilder::initializeAtlasAspsHls( PCCHighLevelSyntax &hls, const PCCGSEncoderParameters &params ) {
@@ -296,6 +309,7 @@ void PCCGSHlsBuilder::initializeAtlasAfpsHls( PCCHighLevelSyntax &hls, const PCC
 }
 
 void PCCGSHlsBuilder::initializeAtlasAapsHls( PCCHighLevelSyntax            &hls,
+                                              const PCCGSEncoderParameters  &params,
                                               const PCCAdaptationParameters &adaptationParams ) {
   auto &aaps = hls.addAtlasAdaptationParameterSet( aapsParameterSetId_ );
   hls.getAtlasHighLevelSyntax( ATLAS_INDEX ).setActiveAAPS( aapsParameterSetId_ );
@@ -560,13 +574,13 @@ void PCCGSHlsBuilder::initializeAtlasAapsHls( PCCHighLevelSyntax            &hls
     if ( adaptationParams.enableShDimensionReduction_ ) {
       int totalRetained = adaptationParams.shTotalRetainedComponents_;
       if ( totalRetained < 1 ) totalRetained = 1;
-      if ( totalRetained > 48 ) totalRetained = 48;
+      const int shComponents = static_cast<int>( adaptationParams.shCoefficientCount_ ) * 3;
+      if ( totalRetained > shComponents ) totalRetained = shComponents;
       shProp.setTotalCodedComponentsMinus1( totalRetained - 1 );
       tableSize = totalRetained;
     } else {
       int totalCoded = static_cast<int>( adaptationParams.shCoefficientCount_ ) * 3;
       if ( totalCoded < 1 ) totalCoded = 1;
-      if ( totalCoded > 48 ) totalCoded = 48;
       shProp.setTotalCodedComponentsMinus1( totalCoded - 1 );
       tableSize = totalCoded;
     }
@@ -587,10 +601,23 @@ void PCCGSHlsBuilder::initializeAtlasAapsHls( PCCHighLevelSyntax            &hls
       }
       tr2d.setKltFlag( i, adaptationParams.shKltFlag_[i] );
       if ( adaptationParams.shKltFlag_[i] == 1 ) {
-        const auto &klt  = adaptationParams.shKltParams_[ki++];
-        int         size = adaptationParams.shTrGrpRow_[i].size();
-        for ( int m = 0; m < 3 * size; m++ ) {
-          for ( int n = 0; n < 3 * size; n++ ) { tr2d.setKltCoeff( i, m, n, klt.eigvec[m][n] ); }
+        const auto &klt     = adaptationParams.shKltParams_[ki++];
+        int         size    = adaptationParams.shTrGrpRow_[i].size();
+        int         full    = 3 * size;
+        int         kltSize = full;
+        if ( adaptationParams.enableShDimensionReduction_ && i < adaptationParams.shNumRetainComponents_.size() ) {
+          // Per-group retain count for all mapping modes (F6), clamped to [1, full].
+          int retain = adaptationParams.shNumRetainComponents_[i];
+          if ( retain < 1 ) retain = 1;
+          if ( retain > full ) retain = full;
+          tr2d.setNumOfRetainComponentsMinus1( i, retain - 1 );
+          kltSize = retain;
+        }
+        // Write compact kltSize x FullSize KLT matrix and full-size mean/stdDev.
+        for ( int m = 0; m < kltSize; m++ ) {
+          for ( int n = 0; n < full; n++ ) { tr2d.setKltCoeff( i, m, n, klt.eigvec[m][n] ); }
+        }
+        for ( int m = 0; m < full; m++ ) {
           tr2d.setKltStdDev( i, m, klt.sigma[m] );
           tr2d.setKltMean( i, m, klt.mean[m] );
         }
@@ -605,7 +632,7 @@ void PCCGSHlsBuilder::initializeAtlasAapsHls( PCCHighLevelSyntax            &hls
         tr2d.setTrRowType( i, adaptationParams.shTrTypeRow_[i] );
       }
     }
-    for ( size_t i = 0; i < 16; ++i ) { tr2d.setTrColType( i, adaptationParams.shTrTypeCol_[i] ); }
+    for ( size_t i = 0; i < kMaxShCoefficientCount; ++i ) { tr2d.setTrColType( i, adaptationParams.shTrTypeCol_[i] ); }
   }
 
   if ( adaptationParams.enableScalePowerTransform_ ) {
@@ -674,10 +701,12 @@ void PCCGSHlsBuilder::replaceAtlasAfpsHls( PCCHighLevelSyntax &hls, const PCCGSE
   initializeAtlasAfpsHls( hls, params );
 }
 
-void PCCGSHlsBuilder::replaceAtlasAapsHls( PCCHighLevelSyntax &hls, const PCCAdaptationParameters &adaptationParams ) {
+void PCCGSHlsBuilder::replaceAtlasAapsHls( PCCHighLevelSyntax            &hls,
+                                           const PCCGSEncoderParameters  &params,
+                                           const PCCAdaptationParameters &adaptationParams ) {
   hls.getAtlasAdaptationParameterSetList().clear();
   aapsParameterSetId_ = ( aapsParameterSetId_ + 1 ) % 64;
-  initializeAtlasAapsHls( hls, adaptationParams );
+  initializeAtlasAapsHls( hls, params, adaptationParams );
 }
 
 void PCCGSHlsBuilder::removeAtlasFrames( PCCHighLevelSyntax &hls ) { hls.getAtlasTileLayerList().clear(); }
@@ -890,12 +919,12 @@ void PCCGSHlsBuilder::updateVps( PCCHighLevelSyntax           &hls,
               if ( region.getPackedMapIndex() == k && region.getConstituentFrameIndex() == j ) { ++count; }
             }
             if ( params.patchTranspositionFlag_ ) {
-              const auto rowsCount    = params.packedMapColumnsCount_[k];
+              const auto rowsCount    = packedMapsColumnsCount[k];
               const auto columnsCount = ( count + rowsCount - 1 ) / rowsCount;
               pin.setPackedMapGridColumnsMinus1( k, columnsCount - 1 );
               pin.setPackedMapGridRowsMinus1( k, rowsCount - 1 );
             } else {
-              const auto columnsCount = params.packedMapColumnsCount_[k];
+              const auto columnsCount = packedMapsColumnsCount[k];
               const auto rowsCount    = ( count + columnsCount - 1 ) / columnsCount;
               pin.setPackedMapGridColumnsMinus1( k, columnsCount - 1 );
               pin.setPackedMapGridRowsMinus1( k, rowsCount - 1 );

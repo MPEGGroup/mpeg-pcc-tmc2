@@ -41,6 +41,7 @@
 #include "PCCVideoDecoder.h"
 #include "PCCGroupOfFrames.h"
 #include "PCCDecoder.h"
+#include <iostream>
 #if defined( ENABLE_TBB )
 #include <tbb/tbb.h>
 #endif
@@ -2338,7 +2339,7 @@ int PCCDecoder::ReconstructIdc3( PCCContext &context, PCCGroupOfFrames &reconstr
         adaptationParams.shExplicitMappingFlag_ = shProp.getShExplicitMappingFlag();
         if ( shProp.getShExplicitMappingFlag() == 1 ) {
           uint32_t tableSize = (uint32_t)shProp.getShMappingTable().size();
-          if ( tableSize > 48 ) tableSize = 48;
+          if ( tableSize > kMaxShComponentCount ) tableSize = kMaxShComponentCount;
           adaptationParams.shMappingTable_.fill( 0 );
           for ( uint32_t m = 0; m < tableSize; ++m ) {
             adaptationParams.shMappingTable_[m] = shProp.getShMappingTable( m );
@@ -2381,31 +2382,65 @@ int PCCDecoder::ReconstructIdc3( PCCContext &context, PCCGroupOfFrames &reconstr
             adaptationParams.shKltFlag_.push_back( tr2d.getKltFlag( i ) );
             adaptationParams.shTrTypeRow_.push_back( tr2d.getTrRowType( i ) );
 
+            int full = 3 * size;
             if ( tr2d.getKltFlag( i ) ) {
+              int kltSize = full;
+              if ( adaptationParams.enableShDimensionReduction_ ) {
+                // Signaled per-group retain count (all mapping modes, F6).
+                int retain = tr2d.getNumOfRetainComponentsMinus1( i ) + 1;
+                if ( retain > 0 && retain <= full ) { kltSize = retain; }
+              }
               PCCAdaptationParameters::PCCKltParameters klt;
-              klt.eigvec.resize( size_t{ 3 } * size, std::vector<double>( size_t{ 3 } * size ) );
-              klt.mean.resize( size_t{ 3 } * size );
-              klt.sigma.resize( size_t{ 3 } * size );
-              for ( int m = 0; m < 3 * size; m++ ) {
-                for ( int n = 0; n < 3 * size; n++ ) { klt.eigvec[m][n] = tr2d.getKltCoeff( i, m, n ); }
+              // Read compact kltSize x FullSize KLT matrix + full-size mean/stdDev.
+              klt.eigvec.resize( full, std::vector<double>( full, 0.0 ) );
+              klt.mean.resize( full );
+              klt.sigma.resize( full );
+              for ( int m = 0; m < kltSize; m++ ) {
+                for ( int n = 0; n < full; n++ ) { klt.eigvec[m][n] = tr2d.getKltCoeff( i, m, n ); }
+              }
+              for ( int m = 0; m < full; m++ ) {
                 klt.sigma[m] = tr2d.getKltStdDev( i, m );
                 klt.mean[m]  = tr2d.getKltMean( i, m );
               }
               adaptationParams.shKltParams_.push_back( klt );
+              // Populate per-group retain count for dimension reduction (all modes)
+              if ( adaptationParams.enableShDimensionReduction_ ) {
+                adaptationParams.shNumRetainComponents_.push_back( kltSize );
+              }
+            } else if ( adaptationParams.enableShDimensionReduction_ ) {
+              // Non-KLT groups have all components retained by default
+              adaptationParams.shNumRetainComponents_.push_back( full );
             }
           }
-          for ( int i = 0; i < 16; ++i ) { adaptationParams.shTrTypeCol_.push_back( tr2d.getTrColType( i ) ); }
+          for ( int i = 0; i < kMaxShCoefficientCount; ++i ) {
+            adaptationParams.shTrTypeCol_.push_back( tr2d.getTrColType( i ) );
+          }
 
           // Load dimension reduction parameters (Mode 3 only; Mode 4 uses remapping table)
           if ( adaptationParams.enableShDimensionReduction_ && adaptationParams.shExplicitMappingFlag_ == 0 ) {
             int totalRetained = 0;
-            for ( int i = 0; i < numGroups; ++i ) {
-              int signaled = tr2d.getNumOfRetainComponentsMinus1( i );
-              int retain   = signaled + 1;
-              adaptationParams.shNumRetainComponents_.push_back( retain );
-              totalRetained += retain;
-            }
+            for ( int retain : adaptationParams.shNumRetainComponents_ ) { totalRetained += retain; }
             adaptationParams.shTotalRetainedComponents_ = std::max( 1, totalRetained );
+          }
+
+          if ( adaptationParams.enableShDimensionReduction_ && adaptationParams.shExplicitMappingFlag_ == 1 ) {
+            for ( size_t gi = 0; gi < adaptationParams.shTrGrpRow_.size(); ++gi ) {
+              if ( adaptationParams.shKltFlag_[gi] != 1 ) continue;
+              std::vector<bool> inGroup( kMaxShCoefficientCount, false );
+              for ( int b : adaptationParams.shTrGrpRow_[gi] ) {
+                if ( b >= 0 && b < kMaxShCoefficientCount ) inGroup[b] = true;
+              }
+              int tableCount = 0;
+              for ( int m = 0; m < adaptationParams.shTotalRetainedComponents_; ++m ) {
+                int band = adaptationParams.shMappingTable_[m] / 3;
+                if ( band >= 0 && band < kMaxShCoefficientCount && inGroup[band] ) tableCount++;
+              }
+              if ( tableCount != adaptationParams.shNumRetainComponents_[gi] ) {
+                std::cerr << "WARNING (dimRed mode 2 conformance): group " << gi
+                          << " signaled retain=" << adaptationParams.shNumRetainComponents_[gi]
+                          << " but mapping table has " << tableCount << " entries in its bands\n";
+              }
+            }
           }
         }
       }

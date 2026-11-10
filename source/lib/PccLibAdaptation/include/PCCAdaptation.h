@@ -43,6 +43,16 @@
 #include <vector>
 
 namespace pcc {
+
+// ==================== Spherical Harmonics Constants ====================
+/// Max number of SH coefficient sets (bands); SH degree 3.
+/// Alias of GSSphericalHarmonics::MAX_SH_COEFFS (the common-layer source of truth).
+static constexpr int kMaxShCoefficientCount = static_cast<int>( GSSphericalHarmonics::MAX_SH_COEFFS );
+/// Max number of flattened SH components (coefficient sets x RGB).
+/// Equal to GsSphericalHarmonicsProperty::NUM_SH_COMPONENTS (bitstream-common), kept local
+/// to avoid coupling the adaptation layer to the bitstream-common library.
+static constexpr int kMaxShComponentCount = kMaxShCoefficientCount * 3;
+
 /**
  * @struct PCCAdaptationParameters
  * @brief Parameters for GS point cloud adaptation (quantization/dequantization).
@@ -74,26 +84,26 @@ struct PCCAdaptationParameters {
   /// Bit depth for SH quantization (default: 10)
   uint32_t shBitDepth_ = 10;
 
-  /// Number of SH coefficient sets (1-16, typically 16 for degree 3)
-  size_t shCoefficientCount_ = 16;
+  /// Number of SH coefficient sets (1-kMaxShCoefficientCount, typically max for degree 3)
+  size_t shCoefficientCount_ = kMaxShCoefficientCount;
 
-  /// SH limits per coefficient [16][3] - input configuration
+  /// SH limits per coefficient [kMaxShCoefficientCount][3] - input configuration
   /// Default: [-4, 4] for all coefficients
-  std::array<std::array<double, 3>, 16> shLimitMin_;
-  std::array<std::array<double, 3>, 16> shLimitMax_;
+  std::array<std::array<double, 3>, kMaxShCoefficientCount> shLimitMin_;
+  std::array<std::array<double, 3>, kMaxShCoefficientCount> shLimitMax_;
 
   /// Enable RGB to YUV conversion for SH (better compression)
   bool shConvertToYUV_ = true;
 
   /// Computed SH limits (stored during adaptation)
-  std::array<std::array<double, 3>, 16> computedShMin_;
-  std::array<std::array<double, 3>, 16> computedShMax_;
+  std::array<std::array<double, 3>, kMaxShCoefficientCount> computedShMin_;
+  std::array<std::array<double, 3>, kMaxShCoefficientCount> computedShMax_;
 
   //===============SH property syntax ======================
-  bool                shExplicitMappingFlag_ = 1;
-  std::array<int, 48> shMappingTable_;
+  bool                                  shExplicitMappingFlag_ = 1;
+  std::array<int, kMaxShComponentCount> shMappingTable_;
   /// Total retained components across all groups (K for M4)
-  int shTotalRetainedComponents_ = 48;
+  int shTotalRetainedComponents_ = kMaxShComponentCount;
   /// Indicate whether mapping mode is planar
   bool isPlanar_ = false;
   //========================================
@@ -339,7 +349,7 @@ struct PCCAdaptationParameters {
   // ==================== Constructor ====================
   PCCAdaptationParameters() {
     // Initialize SH limits to default [-4, 4]
-    for ( size_t i = 0; i < 16; ++i ) {
+    for ( size_t i = 0; i < kMaxShCoefficientCount; ++i ) {
       for ( size_t c = 0; c < 3; ++c ) {
         shLimitMin_[i][c]    = -4.0;
         shLimitMax_[i][c]    = 4.0;

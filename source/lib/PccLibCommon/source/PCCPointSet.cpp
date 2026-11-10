@@ -33,6 +33,7 @@
 #include "PCCCommon.h"
 
 #include "PCCPointSet.h"
+#include "PCCPointSetGS.h"
 #include "PCCMath.h"
 #include "KDTreeVectorOfVectorsAdaptor.h"
 #include "PCCKdTree.h"
@@ -458,7 +459,9 @@ bool PCCPointSet3::write( const std::string &fileName, const bool asAscii ) {
     fout << "property uint16 f_dc_0" << std::endl;
     fout << "property uint16 f_dc_1" << std::endl;
     fout << "property uint16 f_dc_2" << std::endl;
-    for ( int i = 3; i < 48; i++ ) { fout << "property uint16 f_rest_" << i - 3 << std::endl; }
+    for ( int i = 3; i < static_cast<int>( GSSphericalHarmonics::MAX_SH_COEFFS * 3 ); i++ ) {
+      fout << "property uint16 f_rest_" << i - 3 << std::endl;
+    }
   }
   if ( hasOpacities() ) { fout << "property uint16 opacity" << std::endl; }
   if ( hasScales() ) {
@@ -495,7 +498,7 @@ bool PCCPointSet3::write( const std::string &fileName, const bool asAscii ) {
 
       if ( hasSphericalHarmonics() ) {
         auto sh = getSphericalHarmonic( i );
-        for ( int j = 0; j < 16; j++ ) {
+        for ( int j = 0; j < static_cast<int>( GSSphericalHarmonics::MAX_SH_COEFFS ); j++ ) {
           fout << " " << static_cast<int>( sh[j][0] ) << " " << static_cast<int>( sh[j][1] ) << " "
                << static_cast<int>( sh[j][2] );
         }
@@ -547,7 +550,7 @@ bool PCCPointSet3::write( const std::string &fileName, const bool asAscii ) {
       uint16_t value1;
       if ( hasSphericalHarmonics() ) {
         auto sh = getSphericalHarmonic( i );
-        for ( int j = 0; j < 16; j++ ) {
+        for ( int j = 0; j < static_cast<int>( GSSphericalHarmonics::MAX_SH_COEFFS ); j++ ) {
           value1 = sh[j][0];
           fout.write( reinterpret_cast<const char *>( &value1 ), sizeof( uint16_t ) );
           value1 = sh[j][1];
@@ -794,7 +797,7 @@ bool PCCPointSet3::read( const std::string &fileName, const bool readNormals ) {
   std::vector<size_t> indexRot( 4, g_undefined_index );
   std::vector<size_t> indexScale( 3, g_undefined_index );
   size_t              indexOpacity = g_undefined_index;
-  indexSphericalHarmonics.reserve( 48 );
+  indexSphericalHarmonics.reserve( GSSphericalHarmonics::MAX_SH_COEFFS * 3 );
 
   size_t       indexX           = g_undefined_index;
   size_t       indexY           = g_undefined_index;
@@ -890,7 +893,7 @@ bool PCCPointSet3::read( const std::string &fileName, const bool readNormals ) {
 
       if ( hasSphericalHarmonics() ) {
         auto &sphericalHarmonic = sphericalHarmonics_[pointCounter];
-        for ( int i = 0; i < 48; i++ ) {
+        for ( int i = 0; i < static_cast<int>( GSSphericalHarmonics::MAX_SH_COEFFS * 3 ); i++ ) {
           auto index                      = indexSphericalHarmonics[i];
           sphericalHarmonic[i / 3][i % 3] = atoi( tokens[index].c_str() );
         }

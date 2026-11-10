@@ -80,21 +80,21 @@ bool PCCAdaptationParameters::writeConfig( const std::string &filename ) const {
       << computedPositionMax_[2] << "]\n";
   ofs << "    },\n";
 
-  // SH limits (48 values: 16 coefficients x 3 channels, flattened)
+  // SH limits (kMaxShComponentCount values: kMaxShCoefficientCount coefficients x 3 channels, flattened)
   ofs << "    \"sh\": {\n";
   ofs << "      \"min\": [";
-  for ( size_t i = 0; i < 16; ++i ) {
+  for ( size_t i = 0; i < kMaxShCoefficientCount; ++i ) {
     for ( size_t c = 0; c < 3; ++c ) {
       ofs << computedShMin_[i][c];
-      if ( i < 15 || c < 2 ) ofs << ", ";
+      if ( i < kMaxShCoefficientCount - 1 || c < 2 ) ofs << ", ";
     }
   }
   ofs << "],\n";
   ofs << "      \"max\": [";
-  for ( size_t i = 0; i < 16; ++i ) {
+  for ( size_t i = 0; i < kMaxShCoefficientCount; ++i ) {
     for ( size_t c = 0; c < 3; ++c ) {
       ofs << computedShMax_[i][c];
-      if ( i < 15 || c < 2 ) ofs << ", ";
+      if ( i < kMaxShCoefficientCount - 1 || c < 2 ) ofs << ", ";
     }
   }
   ofs << "]\n";
@@ -365,22 +365,22 @@ bool PCCAdaptationParameters::readConfig( const std::string &filename ) {
       parseFloatArray( posMaxPos, computedPositionMax_.data(), 3 );
     }
 
-    // SH limits (48 values flattened)
+    // SH limits (kMaxShComponentCount values flattened)
     size_t shMinPos = content.find( "\"sh\"", limitsPos );
     if ( shMinPos != std::string::npos ) {
       shMinPos = content.find( "\"min\"", shMinPos );
-      double shMinFlat[48];
-      parseFloatArray( shMinPos, shMinFlat, 48 );
+      double shMinFlat[kMaxShComponentCount];
+      parseFloatArray( shMinPos, shMinFlat, kMaxShComponentCount );
       // Reshape from flat array to [16][3]
-      for ( size_t i = 0; i < 16; ++i ) {
+      for ( size_t i = 0; i < kMaxShCoefficientCount; ++i ) {
         for ( size_t c = 0; c < 3; ++c ) { computedShMin_[i][c] = shMinFlat[i * 3 + c]; }
       }
 
       size_t shMaxPos = content.find( "\"max\"", shMinPos );
-      double shMaxFlat[48];
-      parseFloatArray( shMaxPos, shMaxFlat, 48 );
+      double shMaxFlat[kMaxShComponentCount];
+      parseFloatArray( shMaxPos, shMaxFlat, kMaxShComponentCount );
       // Reshape from flat array to [16][3]
-      for ( size_t i = 0; i < 16; ++i ) {
+      for ( size_t i = 0; i < kMaxShCoefficientCount; ++i ) {
         for ( size_t c = 0; c < 3; ++c ) { computedShMax_[i][c] = shMaxFlat[i * 3 + c]; }
       }
     }
@@ -489,7 +489,7 @@ bool PCCAdaptationParameters::readConfig( const std::string &filename ) {
         if ( ncPos != std::string::npos && ncPos < entriesPos ) {
           numComp = std::stoi( content.substr( content.find( ":", ncPos ) + 1 ) );
         }
-        shPredictionEntries_.resize( numComp > 0 ? numComp : 48 );
+        shPredictionEntries_.resize( numComp > 0 ? numComp : kMaxShComponentCount );
         entriesPos = content.find( "[", entriesPos );
         if ( entriesPos != std::string::npos ) {
           size_t p = entriesPos + 1;
@@ -654,11 +654,9 @@ bool PCCAdaptation::adapt( const PCCPointSetGS     &inputPointCloud,
 
   // Apply spherical harmonics quantization
   if ( params.enableShQuantization_ && mergedPointCloud.hasSphericalHarmonics() ) {
-    bool isDimRed = params.gsdTransform2dPresentFlag_ && params.enableShDimensionReduction_;
-
     // Needed by initializeShTransformParams to restrict transform groups to present bands
     params.shCoefficientCount_ = mergedPointCloud.getSphericalHarmonicsCount();
-    if ( params.shCoefficientCount_ == 0 ) params.shCoefficientCount_ = 16;
+    if ( params.shCoefficientCount_ == 0 ) params.shCoefficientCount_ = kMaxShCoefficientCount;
 
     // Reorder planar->interleaved before transform (all modes, matches reference order)
     reorderSphericalHarmonicsAC( const_cast<PCCPointSetGS &>( mergedPointCloud ), true );
@@ -666,6 +664,8 @@ bool PCCAdaptation::adapt( const PCCPointSetGS     &inputPointCloud,
     if ( params.shConvertToYUV_ || params.gsdTransform2dPresentFlag_ ) {
       sphericalHarmonicsTransform( const_cast<PCCPointSetGS &>( mergedPointCloud ), params );
     }
+
+    bool isDimRed = params.gsdTransform2dPresentFlag_ && params.enableShDimensionReduction_;
 
     // Build remapping table
     if ( params.shExplicitMappingFlag_ == 1 ) {
@@ -676,18 +676,33 @@ bool PCCAdaptation::adapt( const PCCPointSetGS     &inputPointCloud,
           int retain = params.shNumRetainComponents_[gi];
           totalRetained += retain;
         }
-        // TODO: Add range check, warning
-        params.shTotalRetainedComponents_ = totalRetained;
-
+        params.shTotalRetainedComponents_ = std::max( 1, std::min( kMaxShComponentCount, totalRetained ) );
       } else {
         params.shTotalRetainedComponents_ = static_cast<int>( mergedPointCloud.getSphericalHarmonicsCount() ) * 3;
       }
 
       int tableSize = params.shTotalRetainedComponents_;
+      if ( tableSize < 1 ) tableSize = 1;
+      if ( tableSize > kMaxShComponentCount ) tableSize = kMaxShComponentCount;
 
       const size_t pointCount  = mergedPointCloud.getPointCount();
       const size_t shCoefCount = mergedPointCloud.getSphericalHarmonicsCount();
-      const auto  &shData      = mergedPointCloud.getSphericalHarmonics();
+      auto        &shData      = mergedPointCloud.getSphericalHarmonics();
+
+      if ( isDimRed ) {
+        // D2 zero-then-sort: zero non-retained positions so the stddev sort yields
+        // a per-group retained prefix; the signaled count then equals k_i in all modes.
+        const auto        retainedMap = buildRetainedMap( params );
+        std::vector<char> retained( shCoefCount * 3, 0 );
+        for ( const auto &bp : retainedMap ) { retained[bp.first * 3 + bp.second] = 1; }
+        for ( size_t p = 0; p < pointCount; ++p ) {
+          for ( size_t l = 0; l < shCoefCount; ++l ) {
+            for ( int ch = 0; ch < 3; ++ch ) {
+              if ( !retained[l * 3 + ch] ) { shData[p][l][ch] = 0.0; }
+            }
+          }
+        }
+      }
 
       if ( params.isPlanar_ && !isDimRed ) {
         params.shMappingTable_.fill( 0 );
@@ -720,7 +735,7 @@ bool PCCAdaptation::adapt( const PCCPointSetGS     &inputPointCloud,
               }
             }
           }
-          for ( int i = 0; i < ( shCoefCount * 3 ); ++i ) { stddev[i] = std::sqrt( stddev[i] / pointCount ); }
+          for ( size_t i = 0; i < shCoefCount * 3; ++i ) { stddev[i] = std::sqrt( stddev[i] / pointCount ); }
 
           const int        acCount = static_cast<int>( shCoefCount ) * 3 - 3;
           std::vector<int> acIndices( acCount );
@@ -745,7 +760,7 @@ bool PCCAdaptation::adapt( const PCCPointSetGS     &inputPointCloud,
         int retain = params.shNumRetainComponents_[gi];
         totalRetained += retain;
       }
-      params.shTotalRetainedComponents_ = std::max( 1, std::min( 48, totalRetained ) );
+      params.shTotalRetainedComponents_ = std::max( 1, std::min( kMaxShComponentCount, totalRetained ) );
     }
 
     extractSHQuantRegions( mergedPointCloud, params );
@@ -760,7 +775,10 @@ bool PCCAdaptation::adapt( const PCCPointSetGS     &inputPointCloud,
       // M2 (48-entry) or M4 (K-entry): adaptive reorder to video packing
       reorderSphericalHarmonicsAdaptive( const_cast<PCCPointSet3 &>( outputPointCloud ), params, true );
     }
-    if ( isDimRed ) { applyDimensionReductionQuantized( outputPointCloud, params ); }
+
+    if ( isDimRed && params.shExplicitMappingFlag_ != 1 ) {
+      applyDimensionReductionQuantized( outputPointCloud, params );
+    }
 
     if ( params.enableAdaptiveShQuantization_ ) {
       outputPointCloud.getQuantizationGroupIds()            = mergedPointCloud.getQuantizationGroupIds();
@@ -849,7 +867,7 @@ bool PCCAdaptation::inverseAdapt( const PCCPointSet3            &inputPointCloud
         const size_t pc     = outputPointCloud.getPointCount();
         for ( size_t p = 0; p < pc; ++p ) {
           auto &sh = shData[p];
-          for ( int l = 0; l < 16; ++l ) {
+          for ( int l = 0; l < kMaxShCoefficientCount; ++l ) {
             for ( int ch = 0; ch < 3; ++ch ) {
               if ( !retainedSet.count( { l, ch } ) ) { sh[l][ch] = 0.0f; }
             }
@@ -862,7 +880,7 @@ bool PCCAdaptation::inverseAdapt( const PCCPointSet3            &inputPointCloud
         const size_t                  pc     = outputPointCloud.getPointCount();
         for ( size_t p = 0; p < pc; ++p ) {
           auto &sh = shData[p];
-          for ( int l = 0; l < 16; ++l ) {
+          for ( int l = 0; l < kMaxShCoefficientCount; ++l ) {
             for ( int ch = 0; ch < 3; ++ch ) {
               if ( !retainedSet.count( { l, ch } ) ) { sh[l][ch] = 0.0f; }
             }
@@ -1699,7 +1717,7 @@ bool PCCAdaptation::quantizeSphericalHarmonics( const PCCPointSetGS     &input,
 
   // Store SH coefficient count
   params.shCoefficientCount_ = input.getSphericalHarmonicsCount();
-  if ( params.shCoefficientCount_ == 0 ) params.shCoefficientCount_ = 16;
+  if ( params.shCoefficientCount_ == 0 ) params.shCoefficientCount_ = kMaxShCoefficientCount;
 
   // Store limits used
   for ( size_t c = 0; c < params.shCoefficientCount_; ++c ) {
@@ -1716,14 +1734,14 @@ bool PCCAdaptation::quantizeSphericalHarmonics( const PCCPointSetGS     &input,
     std::vector<int>    tp_int;
     double              min_offset;
   };
-  std::array<ShQuantRegion, 48> shRegions;
-  std::array<int, 48>           ssBaseOffsets;
-  std::vector<double>           stepSizes;
+  std::array<ShQuantRegion, kMaxShComponentCount> shRegions;
+  std::array<int, kMaxShComponentCount>           ssBaseOffsets;
+  std::vector<double>                             stepSizes;
   stepSizes = params.shStepSizes_;
   if ( params.enableShNonUniformQuantization_ ) {
     int tpOffset = 0;
     int ssOffset = 0;
-    for ( int l = 0; l < 16; ++l ) {
+    for ( int l = 0; l < kMaxShCoefficientCount; ++l ) {
       for ( int ch = 0; ch < 3; ++ch ) {
         int    idx         = l * 3 + ch;
         int    M           = params.shNumRegionsMinus1_[idx];
@@ -1761,7 +1779,7 @@ bool PCCAdaptation::quantizeSphericalHarmonics( const PCCPointSetGS     &input,
 
   for ( size_t i = 0; i < pointCount; ++i ) {
     const GSSphericalHarmonics    &sh = input.getSphericalHarmonics()[i];
-    std::vector<PCCAttribute16bit> qSh( 16 );
+    std::vector<PCCAttribute16bit> qSh( kMaxShCoefficientCount );
     uint32_t                       pointBitDepth = bitDepth;
     if ( params.enableAdaptiveShQuantization_ ) { pointBitDepth = getAdaptiveBitDepth( bitDepth, input, i ); }
 
@@ -1813,9 +1831,9 @@ bool PCCAdaptation::dequantizeSphericalHarmonics( const PCCPointSet3            
     std::vector<int>    tp_int;
     double              min_offset;
   };
-  std::array<ShQuantRegion, 48> shRegions;
-  std::array<int, 48>           ssBaseOffsets;
-  std::vector<double>           stepSizes;
+  std::array<ShQuantRegion, kMaxShComponentCount> shRegions;
+  std::array<int, kMaxShComponentCount>           ssBaseOffsets;
+  std::vector<double>                             stepSizes;
   stepSizes = params.shStepSizes_;
 
   if ( params.enableShNonUniformQuantization_ ) {
@@ -1902,7 +1920,8 @@ void PCCAdaptation::initializeShTransformParams( PCCAdaptationParameters &params
     return;
   }
 
-  const int shCoefCount = ( params.shCoefficientCount_ > 0 ) ? static_cast<int>( params.shCoefficientCount_ ) : 16;
+  const int shCoefCount =
+      ( params.shCoefficientCount_ > 0 ) ? static_cast<int>( params.shCoefficientCount_ ) : kMaxShCoefficientCount;
 
   std::vector<std::vector<int>> groups;
   std::vector<int>              trTypeRow;
@@ -1910,7 +1929,7 @@ void PCCAdaptation::initializeShTransformParams( PCCAdaptationParameters &params
 
   if ( params.dataAdaptiveShTransformEnabled_ ) {
     // parameter for group PCA m75790
-    params.shTrTypeCol_.assign( 16, 3 );  // changed to BT.709
+    params.shTrTypeCol_.assign( kMaxShCoefficientCount, 3 );  // changed to BT.709
     groups    = { { 1, 5, 11 }, { 3, 7, 13 }, { 4, 10 }, { 8, 14 }, { 2, 6, 12 }, { 9, 15 } };
     trTypeRow = { 0, 0, 0, 0, 0, 0 };
     kltFlag   = { 1, 1, 1, 1, 1, 1 };
@@ -1922,7 +1941,7 @@ void PCCAdaptation::initializeShTransformParams( PCCAdaptationParameters &params
     }
   } else {
     // parameter for 2D transform m75038
-    params.shTrTypeCol_.assign( 16, 2 );
+    params.shTrTypeCol_.assign( kMaxShCoefficientCount, 2 );
     params.shTrTypeCol_[0] = 1;
     groups                 = { { 1, 5, 11 }, { 4, 10 }, { 8, 14 } };
     trTypeRow              = { 2, 2, 2 };
@@ -1994,6 +2013,8 @@ bool PCCAdaptation::sphericalHarmonicsTransform( PCCPointSetGS &pointCloud, PCCA
           params.shTrTypeRow_ = newTrTypeRow;
           params.shKltFlag_.assign( newTrTypeRow.size(), 0 );
           params.shKltFlag_ = newKltFlag;
+
+          params.enableShDimensionReduction_ = false;
         } else if ( params.adaptivePcaEnabled_ ) {
           // Select global PCA vs group PCA based on inter-group correlation
           double groupCorr = computeGroupCorr( pointCloud );
@@ -2318,7 +2339,7 @@ bool PCCAdaptation::sphericalHarmonicsTransform2D( PCCPointSetGS &pointCloud, PC
   const double tr2x2[3][2][2] = {
       { { 1.0, 0.0 }, { 0.0, 1.0 } }, { { 1.0, 0.0 }, { 0.0, 1.0 } }, { { 0.5, 0.5 }, { 0.5, -0.5 } } };
 
-  std::vector<int> colTr( 16, 1 );
+  std::vector<int> colTr( kMaxShCoefficientCount, 1 );
   for ( size_t gi = 0; gi < params.shTrGrpRow_.size(); ++gi ) {
     if ( params.shKltFlag_[gi] == 1 ) {
       for ( int idx : params.shTrGrpRow_[gi] ) { colTr[idx] = 0; }
@@ -2330,7 +2351,7 @@ bool PCCAdaptation::sphericalHarmonicsTransform2D( PCCPointSetGS &pointCloud, PC
   // Column transform
   for ( size_t p = 0; p < pointCount; ++p ) {
     auto &sh = shData[p];
-    for ( size_t i = 0; i < 16; ++i ) {
+    for ( size_t i = 0; i < kMaxShCoefficientCount; ++i ) {
       if ( colTr[i] == 1 ) {
         int    type = params.shTrTypeCol_[i];
         double r = sh[i][0], g = sh[i][1], b = sh[i][2];
@@ -2430,7 +2451,7 @@ bool PCCAdaptation::sphericalHarmonicsLinearPrediction( PCCPointSetGS &pointClou
   if ( !pointCloud.hasSphericalHarmonics() ) return false;
   const size_t pointCount  = pointCloud.getPointCount();
   const size_t shCoefCount = pointCloud.getSphericalHarmonicsCount();
-  if ( pointCount == 0 || shCoefCount < 16 ) return false;
+  if ( pointCount == 0 || shCoefCount < kMaxShCoefficientCount ) return false;
 
   auto &shData = pointCloud.getSphericalHarmonics();
 
@@ -2469,13 +2490,13 @@ bool PCCAdaptation::sphericalHarmonicsLinearPrediction( PCCPointSetGS &pointClou
   double meanStd3 = sumStd3 / ( 3 * 3 );
   if ( meanStd3 < 1e-9 || meanStd1 / meanStd3 <= 8.0 ) { return true; }
 
-  const int   fullDim     = 48;
+  const int   fullDim     = kMaxShComponentCount;
   const int   maxSrc      = 3;
   const float reductionth = 0.05;
   const int   srcStart    = 0;
   const int   srcEnd      = 27;
   const int   tgtStart    = 27;
-  const int   tgtEnd      = 48;
+  const int   tgtEnd      = kMaxShComponentCount;
 
   params.shPredictionEntries_.resize( fullDim );
 
@@ -2635,7 +2656,7 @@ bool PCCAdaptation::sphericalHarmonicsInvTransform2D( PCCPointSetGS             
   const double itr2x2[3][2][2] = {
       { { 1.0, 0.0 }, { 0.0, 1.0 } }, { { 1.0, 0.0 }, { 0.0, 1.0 } }, { { 1.0, 1.0 }, { 1.0, -1.0 } } };
 
-  std::vector<int> colTr( 16, 1 );
+  std::vector<int> colTr( kMaxShCoefficientCount, 1 );
   for ( size_t i = 0; i < params.shTrGrpRow_.size(); ++i ) {
     if ( params.shKltFlag_[i] == 1 ) {
       for ( int idx : params.shTrGrpRow_[i] ) { colTr[idx] = 0; }
@@ -2668,6 +2689,12 @@ bool PCCAdaptation::sphericalHarmonicsInvTransform2D( PCCPointSetGS             
           }
         }
       } else {
+        // Zero non-retained rows/columns make contributions above numRetain vanish;
+        // sum only to numRetain to skip those zero products.
+        int numRetain = fullSize;
+        if ( params.enableShDimensionReduction_ && i < params.shNumRetainComponents_.size() ) {
+          numRetain = params.shNumRetainComponents_[i];
+        }
         for ( size_t p = 0; p < pointCount; ++p ) {
           auto               &sh = shData[p];
           std::vector<double> Y( fullSize );
@@ -2675,7 +2702,7 @@ bool PCCAdaptation::sphericalHarmonicsInvTransform2D( PCCPointSetGS             
 
           for ( int i_ = 0; i_ < fullSize; i_++ ) {
             double x_norm = 0.0;
-            for ( int j = 0; j < fullSize; j++ ) { x_norm += klt.eigvec[j][i_] * Y[j] * 17.5; }
+            for ( int j = 0; j < numRetain; j++ ) { x_norm += klt.eigvec[j][i_] * Y[j] * 17.5; }
             sh[groupidx[i_ / 3]][i_ % 3] = static_cast<float>( x_norm * klt.sigma[i_] + klt.mean[i_] );
           }
         }
@@ -2708,7 +2735,7 @@ bool PCCAdaptation::sphericalHarmonicsInvTransform2D( PCCPointSetGS             
   // Inverse Column transform
   for ( size_t p = 0; p < pointCount; ++p ) {
     auto &sh = shData[p];
-    for ( size_t i = 0; i < 16; ++i ) {
+    for ( size_t i = 0; i < kMaxShCoefficientCount; ++i ) {
       if ( colTr[i] == 1 ) {
         int    type = params.shTrTypeCol_[i];
         double y = sh[i][0], u = sh[i][1], v = sh[i][2];
@@ -2726,15 +2753,20 @@ void PCCAdaptation::computeDimensionReductionParams( const PCCPointSetGS     &po
   params.shNumRetainComponents_.clear();
   const double varianceThreshold = 0.995;
 
-  std::cout << "computeDimensionReductionParams: " << params.shTrGrpRow_.size() << " groups" << std::endl;
   int ki = 0;
   for ( size_t gi = 0; gi < params.shTrGrpRow_.size(); ++gi ) {
     if ( params.shKltFlag_[gi] == 1 && ki < (int)params.shKltParams_.size() ) {
       const auto &klt = params.shKltParams_[ki++];
       int         n   = (int)klt.eigvals.size();
       if ( n == 0 ) {
+        // Degenerate group (no eigenvalues): nothing retained (clamped to 1 at signal time).
         params.shNumRetainComponents_.push_back( 0 );
-        std::cout << "  group " << gi << " (size=0): retain=0" << std::endl;
+        continue;
+      }
+
+      // DC group: retain all components (dropping the 3rd DC degrades quality, R4 regression).
+      if ( params.shTrGrpRow_[gi].size() == 1 && params.shTrGrpRow_[gi][0] == 0 ) {
+        params.shNumRetainComponents_.push_back( n );
         continue;
       }
 
@@ -2744,12 +2776,6 @@ void PCCAdaptation::computeDimensionReductionParams( const PCCPointSetGS     &po
       int k = n;
       if ( totalVar > 0 ) {
         double cumVar = 0.0;
-        std::cout << "  group " << gi << " (n=" << n << "): eigvals=[";
-        for ( int i = 0; i < n; ++i ) {
-          if ( i > 0 ) std::cout << ",";
-          std::cout << klt.eigvals[i];
-        }
-        std::cout << "]";
         for ( int i = 0; i < n; ++i ) {
           cumVar += klt.eigvals[i];
           if ( cumVar / totalVar >= varianceThreshold ) {
@@ -2757,12 +2783,12 @@ void PCCAdaptation::computeDimensionReductionParams( const PCCPointSetGS     &po
             break;
           }
         }
-        std::cout << " retain=" << k << std::endl;
       }
       params.shNumRetainComponents_.push_back( k );
     } else {
-      params.shNumRetainComponents_.push_back( 0 );
-      std::cout << "  group " << gi << ": kltFlag=" << params.shKltFlag_[gi] << " retain=0" << std::endl;
+      // F4: non-KLT groups retain all components (undercounting shrank the HLS dimension).
+      int fullSize = (int)params.shTrGrpRow_[gi].size() * 3;
+      params.shNumRetainComponents_.push_back( fullSize );
     }
   }
 }
@@ -2810,7 +2836,7 @@ void PCCAdaptation::applyDimensionReductionQuantized( PCCPointSet3              
     // Write compactly to qSh[i/3][i%3] (first K positions in the current layout)
     for ( size_t i = 0; i < totalRetained; ++i ) { qSh[(int)( i / 3 )][(int)( i % 3 )] = values[i]; }
     // Zero the remaining positions
-    for ( int flat = (int)totalRetained; flat < 48; ++flat ) { qSh[flat / 3][flat % 3] = 0; }
+    for ( int flat = (int)totalRetained; flat < kMaxShComponentCount; ++flat ) { qSh[flat / 3][flat % 3] = 0; }
   }
 }
 
@@ -2836,7 +2862,7 @@ void PCCAdaptation::removeDimensionReductionQuantized( PCCPointSet3             
     std::vector<uint16_t> values( totalRetained );
     for ( size_t i = 0; i < totalRetained; ++i ) { values[i] = qSh[(int)( i / 3 )][(int)( i % 3 )]; }
 
-    for ( int l = 0; l < 16; ++l ) {
+    for ( int l = 0; l < kMaxShCoefficientCount; ++l ) {
       for ( int ch = 0; ch < 3; ++ch ) { qSh[l][ch] = 0; }
     }
 
@@ -2847,10 +2873,11 @@ void PCCAdaptation::removeDimensionReductionQuantized( PCCPointSet3             
 
 bool PCCAdaptation::extractSHQuantRegions( const PCCPointSetGS &input, PCCAdaptationParameters &params ) {
   if ( !params.enableShNonUniformQuantization_ ) {
-    params.shNumRegionsMinus1_.assign( size_t{ 16 } * 3, 0 );
+    params.shNumRegionsMinus1_.assign( size_t{ kMaxShComponentCount }, 0 );
     params.shTransitionPoints_.clear();
     params.shStepSizes_.clear();
-    params.shNumBitsForTransitionPoint_.assign( size_t{ 16 } * 3, static_cast<int>( params.shBitDepth_ ) );
+    params.shNumBitsForTransitionPoint_.assign( size_t{ kMaxShComponentCount },
+                                                static_cast<int>( params.shBitDepth_ ) );
     return true;
   }
 
@@ -2861,10 +2888,10 @@ bool PCCAdaptation::extractSHQuantRegions( const PCCPointSetGS &input, PCCAdapta
   const uint32_t bitDepth      = params.shBitDepth_;
   const uint32_t max_quant_val = ( 1u << bitDepth ) - 1;
 
-  params.shNumRegionsMinus1_.assign( size_t{ 16 } * 3, 2 );
+  params.shNumRegionsMinus1_.assign( size_t{ kMaxShComponentCount }, 2 );
   params.shTransitionPoints_.clear();
-  params.shStepSizes_.assign( size_t{ 16 } * 9, 0.0 );
-  for ( size_t i = 0; i < 16; ++i ) {
+  params.shStepSizes_.assign( size_t{ kMaxShCoefficientCount } * 9, 0.0 );
+  for ( size_t i = 0; i < kMaxShCoefficientCount; ++i ) {
     for ( int ch = 0; ch < 3; ++ch ) {
       const double channelRange = params.shLimitMax_[i][ch] - params.shLimitMin_[i][ch];
       const double baseStep     = std::max( 1e-9, channelRange / static_cast<double>( max_quant_val + 1 ) );
@@ -2873,7 +2900,7 @@ bool PCCAdaptation::extractSHQuantRegions( const PCCPointSetGS &input, PCCAdapta
       params.shStepSizes_[i * 9 + static_cast<size_t>( ch ) * 3 + 2] = 2.0 * baseStep;
     }
   }
-  params.shNumBitsForTransitionPoint_.assign( size_t{ 16 } * 3, static_cast<int>( bitDepth ) );
+  params.shNumBitsForTransitionPoint_.assign( size_t{ kMaxShComponentCount }, static_cast<int>( bitDepth ) );
 
   double       sum1 = 0.0, sumSq1 = 0.0;
   double       sum3 = 0.0, sumSq3 = 0.0;
@@ -3377,7 +3404,7 @@ bool PCCAdaptation::reorderSphericalHarmonicsAC( PCCPointSet3 &pointCloud, bool 
   }
 
   const size_t pointCount  = pointCloud.getPointCount();
-  const size_t shCoefCount = ( shCoeffCount > 0 ) ? shCoeffCount : 16;
+  const size_t shCoefCount = ( shCoeffCount > 0 ) ? shCoeffCount : kMaxShCoefficientCount;
 
   if ( shCoefCount <= 1 ) {
     // Only DC component, no AC coefficients to reorder
@@ -3450,7 +3477,7 @@ bool PCCAdaptation::reorderSphericalHarmonicsAdaptive( PCCPointSet3             
   if ( !pointCloud.hasSphericalHarmonics() ) return false;
 
   const size_t pointCount  = pointCloud.getPointCount();
-  const size_t shCoefCount = ( params.shCoefficientCount_ > 0 ) ? params.shCoefficientCount_ : 16;
+  const size_t shCoefCount = ( params.shCoefficientCount_ > 0 ) ? params.shCoefficientCount_ : kMaxShCoefficientCount;
 
   auto                &sphericalHarmonics = pointCloud.getSphericalHarmonics();
   GSSphericalHarmonics temp;
@@ -3458,7 +3485,7 @@ bool PCCAdaptation::reorderSphericalHarmonicsAdaptive( PCCPointSet3             
   int tableSize = params.shTotalRetainedComponents_;
 
   // Inverse mapping table: mapping_table[bitstreamPos] = interleavedPos (l*3+ch).
-  std::array<int, 48> invMappingTable;
+  std::array<int, kMaxShComponentCount> invMappingTable;
   invMappingTable.fill( -1 );
   for ( int i = 0; i < tableSize; ++i ) { invMappingTable[params.shMappingTable_[i]] = i; }
 
@@ -3524,9 +3551,9 @@ bool PCCAdaptation::reorderSphericalHarmonicsAdaptive( PCCPointSetGS            
 
   int tableSize = ( params.gsdTransform2dPresentFlag_ && params.enableShDimensionReduction_ )
                       ? params.shTotalRetainedComponents_
-                      : 48;
+                      : kMaxShComponentCount;
 
-  std::array<int, 48> invMappingTable;
+  std::array<int, kMaxShComponentCount> invMappingTable;
   invMappingTable.fill( -1 );
   for ( int i = 0; i < tableSize; ++i ) { invMappingTable[params.shMappingTable_[i]] = i; }
 
@@ -3797,18 +3824,18 @@ double PCCAdaptation::gaussianSimilarityMetric( const PCCPointSetGS       &input
                                                 const std::vector<double> &weights,
                                                 const size_t               i,
                                                 const size_t               j ) {
-  const size_t idx1   = indices[i];
-  const size_t idx2   = indices[j];
-  double       normSH = std::sqrt(
-      std::inner_product( &input.getSphericalHarmonic( idx1 ).coeffs[0][0],
-                          &input.getSphericalHarmonic( idx1 ).coeffs[0][0] + static_cast<ptrdiff_t>( 16 * 3 ),
-                          &input.getSphericalHarmonic( idx2 ).coeffs[0][0], 0.0, std::plus<double>(),
-                          []( float a, float b ) { return ( a - b ) * ( a - b ); } ) );
-  double normOp    = abs( sigmoid( input.getOpacity( idx1 ) ) - sigmoid( input.getOpacity( idx2 ) ) );
-  double normGeom  = ( computeCovariance3D( input.getRotation( idx1 ), input.getScale( idx1 ) ) -
-                       computeCovariance3D( input.getRotation( idx2 ), input.getScale( idx2 ) ) )
-                         .norm();
-  double minWeight = std::min( weights[i], weights[j] );
+  const size_t idx1      = indices[i];
+  const size_t idx2      = indices[j];
+  double       normSH    = std::sqrt( std::inner_product(
+      &input.getSphericalHarmonic( idx1 ).coeffs[0][0],
+      &input.getSphericalHarmonic( idx1 ).coeffs[0][0] + static_cast<ptrdiff_t>( kMaxShComponentCount ),
+      &input.getSphericalHarmonic( idx2 ).coeffs[0][0], 0.0, std::plus<double>(),
+      []( float a, float b ) { return ( a - b ) * ( a - b ); } ) );
+  double       normOp    = abs( sigmoid( input.getOpacity( idx1 ) ) - sigmoid( input.getOpacity( idx2 ) ) );
+  double       normGeom  = ( computeCovariance3D( input.getRotation( idx1 ), input.getScale( idx1 ) ) -
+                             computeCovariance3D( input.getRotation( idx2 ), input.getScale( idx2 ) ) )
+                               .norm();
+  double       minWeight = std::min( weights[i], weights[j] );
 
   double shFactor      = 0.5;
   double geomFactor    = 0.003;
@@ -3881,7 +3908,7 @@ void PCCAdaptation::greedyMergeDuplicateSplats( PCCPointSetGS       &mergedCloud
 
     float *sh1 = (float *)mergedCloud.getSphericalHarmonic( indices[i] ).coeffs;
     float *sh2 = (float *)mergedCloud.getSphericalHarmonic( indices[j] ).coeffs;
-    for ( int coeff = 0; coeff < 16 * 3; ++coeff ) {
+    for ( int coeff = 0; coeff < kMaxShComponentCount; ++coeff ) {
       sh1[coeff] =
           static_cast<float>( ( weights[i] * sh1[coeff] + weights[j] * sh2[coeff] ) / ( weights[i] + weights[j] ) );
     }

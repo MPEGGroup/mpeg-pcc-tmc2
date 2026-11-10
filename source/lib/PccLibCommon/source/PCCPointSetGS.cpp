@@ -269,7 +269,7 @@ bool PCCPointSetGS::read( const std::string &fileName ) {
   std::vector<size_t> indexRot( 4, UNDEFINED );
   std::vector<size_t> indexScale( 3, UNDEFINED );
   std::vector<size_t> indexSH;
-  indexSH.reserve( 48 );
+  indexSH.reserve( GSSphericalHarmonics::MAX_SH_COEFFS * 3 );
 
   const size_t attributeCount = attributesInfo.size();
   for ( size_t a = 0; a < attributeCount; ++a ) {

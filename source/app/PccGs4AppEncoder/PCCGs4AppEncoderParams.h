@@ -388,6 +388,10 @@ bool parseParameters( int                           argc,
       adaptationParams.enableShDimensionReduction_,
       adaptationParams.enableShDimensionReduction_,
       "Enable SH dimension reduction after 2D transform (m76859)" )
+    ( "enableShDimensionReductionSkipNonretained",
+      encoderParams.enableShDimensionReductionSkipNonretained_,
+      encoderParams.enableShDimensionReductionSkipNonretained_,
+      "When SH dimension reduction is enabled and this flag is 1, skip packing non-retained SH components (reduces bitstream)" )
     ( "enableGeometryPrediction",
       encoderParams.enableGeometryPrediction_,
       encoderParams.enableGeometryPrediction_,

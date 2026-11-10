@@ -3155,14 +3155,31 @@ void PCCBitstreamReader::gs2DTransform( PCCBitstream                       &bits
     READ_CODE_DESC( value, 1, "KltFlag" );
     gs2DTransform.setKltFlag( i, value );
     if ( gs2DTransform.getKltFlag( i ) ) {
-      for ( int m = 0; m < 3 * ( gs2DTransform.getRowTrSizeMinus1( i ) + 1 ); m++ ) {
-        for ( int n = 0; n < 3 * ( gs2DTransform.getRowTrSizeMinus1( i ) + 1 ); n++ ) {
+      uint32_t groupSize = gs2DTransform.getRowTrSizeMinus1( i ) + 1;
+      uint32_t fullSize  = 3 * groupSize;
+
+      uint32_t kltSize = fullSize;
+      if ( gs2DTransform.getDimensionReductionEnableFlag() ) {
+        // The per-group retain count is signaled for ALL mapping modes.
+        uint32_t bitWidth = (uint32_t)std::ceil( std::log2( (double)fullSize ) );
+        if ( bitWidth < 1 ) bitWidth = 1;
+        READ_CODE_DESC( value, bitWidth, "NumOfRetainComponentsMinus1" );
+        gs2DTransform.setNumOfRetainComponentsMinus1( i, value );
+        int retain = value + 1;
+        if ( retain < 1 ) retain = 1;
+        if ( retain > (int)fullSize ) retain = (int)fullSize;
+        kltSize = (uint32_t)retain;
+      }
+
+      // Read compact kltSize x FullSize matrix and full-size mean/stdDev.
+      for ( int m = 0; m < (int)kltSize; m++ ) {
+        for ( int n = 0; n < (int)fullSize; n++ ) {
           READ_FLOAT_DESC( valueFlt, "KltCoeff" );
           gs2DTransform.setKltCoeff( i, m, n, valueFlt );
         }
       }
       bool isDcGroup = ( gs2DTransform.getRowTrSizeMinus1( i ) == 0 && gs2DTransform.getTrRowGroupIdx( i, 0 ) == 0 );
-      for ( int m = 0; m < 3 * ( gs2DTransform.getRowTrSizeMinus1( i ) + 1 ); m++ ) {
+      for ( int m = 0; m < (int)fullSize; m++ ) {
         if ( !isDcGroup ) {
           READ_FLOAT_DESC( valueFlt, "KltStdDev" );
           gs2DTransform.setKltStdDev( i, m, valueFlt );
