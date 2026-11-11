@@ -1,7 +1,7 @@
-black==26.5.1
+black==26.10.1
 clang-format==22.1.8
 clang-tidy==22.1.8
-cmake==3.31.10
+cmake==4.4.4
 cmake-format==0.6.13
 mypy==2.3.1
 ninja==1.13.0
