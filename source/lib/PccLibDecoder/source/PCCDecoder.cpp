@@ -2463,9 +2463,9 @@ int PCCDecoder::ReconstructIdc3( PCCContext &context, PCCGroupOfFrames &reconstr
           }
         }
       }
-      if ( ext.getAdaptiveQuantizationEnableFlag() ) {
+      adaptationParams.enableAdaptiveShQuantization_ = ext.getAdaptiveQuantizationEnableFlag();
+      if ( adaptationParams.enableAdaptiveShQuantization_ ) {
         pointCloud.addQuantizationGroupIds();
-        adaptationParams.enableAdaptiveShQuantization_ = true;
         generateAdaptiveQuantizationInfofromRawPatchRecGS( context, frameIdx, pointCloud );
       }
       if ( ext.getScaleTransformPresentFlag() ) {

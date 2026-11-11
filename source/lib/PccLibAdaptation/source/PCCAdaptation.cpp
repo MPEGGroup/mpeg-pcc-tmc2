@@ -572,7 +572,10 @@ PCCAdaptation::~PCCAdaptation() {}
 namespace {
 
 template <typename PointSetT>
-size_t getAdaptiveBitDepth( const uint32_t maxBitDepth, const PointSetT &input, size_t pointIndex );
+bool getAdaptiveBitDepth( const uint32_t   maxBitDepth,
+                          const PointSetT &input,
+                          size_t           pointIndex,
+                          uint32_t        &pointBitDepth );
 
 }  // namespace
 
@@ -1781,7 +1784,9 @@ bool PCCAdaptation::quantizeSphericalHarmonics( const PCCPointSetGS     &input,
     const GSSphericalHarmonics    &sh = input.getSphericalHarmonics()[i];
     std::vector<PCCAttribute16bit> qSh( kMaxShCoefficientCount );
     uint32_t                       pointBitDepth = bitDepth;
-    if ( params.enableAdaptiveShQuantization_ ) { pointBitDepth = getAdaptiveBitDepth( bitDepth, input, i ); }
+    if ( params.enableAdaptiveShQuantization_ && !getAdaptiveBitDepth( bitDepth, input, i, pointBitDepth ) ) {
+      return false;
+    }
 
     for ( size_t l = 0; l < params.shCoefficientCount_; ++l ) {
       for ( int ch = 0; ch < 3; ++ch ) {
@@ -1879,7 +1884,9 @@ bool PCCAdaptation::dequantizeSphericalHarmonics( const PCCPointSet3            
     const auto           &qSh           = input.getSphericalHarmonics()[i];
     GSSphericalHarmonics &sh            = output.getSphericalHarmonics()[i];
     uint32_t              pointBitDepth = bitDepth;
-    if ( params.enableAdaptiveShQuantization_ ) { pointBitDepth = getAdaptiveBitDepth( bitDepth, input, i ); }
+    if ( params.enableAdaptiveShQuantization_ && !getAdaptiveBitDepth( bitDepth, input, i, pointBitDepth ) ) {
+      return false;
+    }
 
     for ( size_t l = 0; l < params.shCoefficientCount_; ++l ) {
       for ( int ch = 0; ch < 3; ++ch ) {
@@ -4141,25 +4148,29 @@ bool PCCAdaptation::pruneAndGroupAdaptiveQuantization( const PCCPointSetGS     &
 namespace {
 
 template <typename PointSetT>
-size_t getAdaptiveBitDepth( const uint32_t maxBitDepth, const PointSetT &input, size_t pointIndex ) {
+bool getAdaptiveBitDepth( const uint32_t   maxBitDepth,
+                          const PointSetT &input,
+                          size_t           pointIndex,
+                          uint32_t        &pointBitDepth ) {
   if ( !input.hasQuantizationGroupIds() ) {
     std::cerr << "PCCAdaptation::getAdaptiveBitDepth - missing quantization group IDs" << std::endl;
-    return 0;
+    return false;
   }
   if ( input.getQuantizationGroupBitDepthDeltas().empty() ) {
     std::cerr << "PCCAdaptation::getAdaptiveBitDepth - empty adaptive bitshift mapping" << std::endl;
-    return 0;
+    return false;
   }
 
   size_t groupId = input.getQuantizationGroupId( pointIndex );
   if ( groupId >= input.getQuantizationGroupBitDepthDeltas().size() ) {
     std::cerr << "PCCAdaptation::getAdaptiveBitDepth - invalid group id " << groupId << " at gaussian index "
               << pointIndex << std::endl;
-    return 0;
+    return false;
   }
-  int bits = static_cast<int>( maxBitDepth ) - input.getQuantizationGroupBitDepthDelta( groupId );
-  bits     = std::max( 0, std::min( static_cast<int>( maxBitDepth ), bits ) );
-  return static_cast<uint32_t>( bits );
+  int bits      = static_cast<int>( maxBitDepth ) - input.getQuantizationGroupBitDepthDelta( groupId );
+  bits          = std::max( 0, std::min( static_cast<int>( maxBitDepth ), bits ) );
+  pointBitDepth = static_cast<uint32_t>( bits );
+  return true;
 }
 
 }  // namespace
