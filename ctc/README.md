@@ -51,54 +51,60 @@ Build mpeg-gsc-importance based on the [README.md](https://git.mpeg.expert/MPEG/
 
 Follow the build instructions on the main [README.md](../README.md) of this project.
 
-## Running experiments
+## Computing the V-PCC GS anchor
 
-Run the encoder and decoder directly.  This makes each test condition explicit, is suitable for both a single frame and a frame sequence, and lets you use ordinary command-line argument overrides without editing a helper script.
-
-The examples below use these locations:
+The commands below run the encoder, decoder, and objective metrics directly. It is advised to create your own run script to run tasks in parallel. Run the commands from the TMC2 repository root, where `bin/` and `cfg/` are located.
 
 * `bin/PccGs4AppEncoder` and `bin/PccAppDecoder` are the TMC2 binaries produced by the build.
 * `cfg/gs4/` contains the GS configuration files.
-* Input frames are Gaussian-splatting PLY files.  For sequences, use a `printf`-style path template such as `/data/sequence/plys/frame_%04i.ply`.
-* Output directories must already exist.
+* Each CTC sequence has Gaussian-splatting PLY files under `plys/` and COLMAP camera files under `colmap_data/`. The commands below show the `manwithfruit_tracked` sequence; use the sequence and frame range specified by the CTC content.
+* Create the output directories before running the commands.
+
+The anchor test set has two lengths: `1F` encodes one frame, and `NF` encodes 32 consecutive frames. For each applicable sequence and length, encode the four `C1` rate points (`r01`–`r04`) and the `CW` near-lossless condition (`lossless`). Rate configurations for the HM Main 10 profile are under `cfg/gs4/hm-main10/rate/`. The `lossless.cfg` is a best-effort near-lossless configuration, not a guarantee of mathematically lossless reconstruction.
+
+The example below is the `1F`, `r04` condition for `manwithfruit_tracked`, whose first frame is 81. For an `NF` run, use `--frameCount=32`; use the relevant first-frame number for each sequence.
 
 ### Encode
 
-An encoder invocation consists of the V-PCC GS anchor configuration [gs-ctc-anchor.cfg](../cfg/gs4/gs-ctc-anchor.cfg), and a rate-point configuration such as [hm-main10/rate/r04.cfg](../cfg/gs4/hm-main10/rate/r04.cfg). Configuration files are applied from left to right: a later `--config` value overrides an earlier one. Start with the common configuration, then select a rate point.
+Create the result and frame-processing directories first. For the HM Main 10 CTC conditions, apply [gs-ctc-anchor.cfg](../cfg/gs4/gs-ctc-anchor.cfg), then the corresponding rate-point file such as [r04.cfg](../cfg/gs4/hm-main10/rate/r04.cfg).
 
 ```bash
+mkdir -p /output/results/1F/manwithfruit_tracked/r04/plys \
+  /output/results/1F/manwithfruit_tracked/r04/metrics \
+  /output/results/frames/manwithfruit_tracked/frames \
+  /output/results/1F/manwithfruit_tracked/importance_scores
+
 bin/PccGs4AppEncoder \
   --uncompressedDataPath=/data/sequence/plys/frame_%04i.ply \
   --configurationFolder=cfg/gs4/ \
   --config=cfg/gs4/gs-ctc-anchor.cfg \
-  --config=cfg/gs4/hm-main10/gs-main10-common.cfg \
   --config=cfg/gs4/hm-main10/rate/r04.cfg \
+  --importanceScoresPath=/output/results/frames/manwithfruit_tracked/frames/frame_%04i.impScores.txt \
   --startFrameNumber=81 \
   --frameCount=1 \
   --compressedStreamPath=/output/results/1F/manwithfruit_tracked/r04/1F_manwithfruit_tracked_r04.bin
 ```
 
-`--uncompressedDataPath` accepts a single PLY path or a template containing a frame-number conversion (for example, `%04i`). `--startFrameNumber` is the first number substituted in that template and `--frameCount` is the number of consecutive frames to encode. If no template is used, use the appropriate single-frame values.
+`--uncompressedDataPath` accepts a single PLY path or a template containing a frame-number conversion (for example, `%04i`). `--startFrameNumber` is the first number substituted in that template and `--frameCount` is the number of consecutive frames to encode. The importance-score template must resolve to one score file for each encoded frame; see [Supporting tools and objective evaluation](#supporting-tools-and-objective-evaluation).
 
-The CTC configuration already includes a packing configuration. You can try alternative packing configurations:
+### Non-CTC/custom coding options
+
+Do not add coding overrides when generating the anchor. In particular, keep the packing, SH transform, quantization, and geometry-prediction settings in the CTC configuration files. The options below are examples for separate experiments, not part of the anchor:
 
 * `cfg/gs4/gs-pack-none.cfg` — do not pack maps.
 * `cfg/gs4/gs-pack-attributes.cfg` — pack attributes.
 * `cfg/gs4/gs-pack-all-in-one.cfg` — pack all maps.
 
-Rate-point files are in `cfg/gs4/<profile>/rate/`; use a corresponding rate point config for the desired condition. You can override a configuration value on the command line after the `--config` arguments. Commonly used overrides are:
+For a custom run, a configuration value can be overridden on the command line after the `--config` arguments. Examples include:
 
 * `--keepIntermediateFiles=1 --debugPath=/output/debug` retains intermediate files for diagnosis.
 * `--implicitPacking=0|1` and `--temporalPacking=0|1` control packing behavior when a packing mode is selected.
-* `--shExplicitMappingFlag=0|1` selects implicit (0:interleaved) or explicit (1) spherical-harmonics mapping.
-* `--isPlanar=0|1` selects planar mapping for spherical harmonics; it is relevant only when explicit mapping is enabled.
-* `--enableGeometryPrediction=0|1` enables segmented PEPGA-Chain geometry residual prediction (default: 1).
-* `--geometryPredictionSegmentVal=256` sets the geometry-prediction segment size (default: 256; must be greater than 0 when prediction is enabled).
+* `--shMappingMode=VALUE` selects a spherical-harmonics mapping mode; use the encoder help and relevant configuration files for supported values.
+* `--enableGeometryPrediction=0|1` and `--geometryPredictionSegmentVal=VALUE` control segmented PEPGA-Chain geometry residual prediction.
 * `--GSColmapFolderPath=/data/sequence/colmap_data/frame_0081/sparse/` supplies COLMAP camera data as SEI metadata.
-* `--importanceScoresPath=/data/scores/frame_%04i.impScores.txt` provides one importance-score file per frame for adaptive quantization or LoD.
 * `--lodSplitRatios=30,70` enables encoder LoD partitioning. The values define the split ratios; use `--lodTargetLodMask` on the decoder to choose which levels to reconstruct.
 
-Other coding switches from the CTC setup, including SH transform, PCA, non-uniform quantization, prediction, scale/opacity transforms, duplicate merging, raw-patch layout, and quaternion representation, can likewise be passed as `--option=value`. Use `bin/PccGs4AppEncoder --help` for the complete, build-specific option list.
+Use `bin/PccGs4AppEncoder --help` and `bin/PccAppDecoder --help` for the complete, build-specific option lists.
 
 ### Decode
 
@@ -117,37 +123,41 @@ bin/PccAppDecoder \
 
 ### Supporting tools and objective evaluation
 
-For camera-aware importance scores and metrics, first add the COLMAP camera header to each source PLY using `gstools` from MPEG GSC Tools:
+The V-PCC GS anchor uses importance scores. For every source frame to be encoded, first add the COLMAP camera header to its PLY using `gstools` from MPEG GSC Tools:
 
 ```bash
 gstools camera \
   --input=/data/sequence/plys/frame_0081.ply \
-  --output=/output/frame_0081.camerapos.ply \
+  --output=/output/results/frames/manwithfruit_tracked/frames/frame_0081.camerpos.ply \
   --image=/data/sequence/colmap_data/frame_0081/sparse/images.bin \
   --camera=/data/sequence/colmap_data/frame_0081/sparse/cameras.bin
 ```
 
-When using adaptive quantization or LoD without precomputed scores, generate scores for every input frame with `mpeg-gsc-importance`. The V-PCC GS anchor requires setting `--downscaleFactor=2`:
+Then calculate an importance-score file for each frame with `mpeg-gsc-importance`. Use `--downscaleFactor=2` for the V-PCC GS anchor. It is advised to generate scores once per source frame and reuse them across rate points:
+
 ```bash
 mpeg-gsc-importance --threads=2 \
-  -a /output/frame_0081.camerapos.ply \
-  --impScore=/output/scores/frame_0081.impScores.txt \
+  -a /output/results/frames/manwithfruit_tracked/frames/frame_0081.camerpos.ply \
+  --impScore=/output/results/frames/manwithfruit_tracked/frames/frame_0081.impScores.txt \
   --downscaleFactor=2
 ```
 
 Pass the resulting template to the encoder with `--importanceScoresPath`. Then evaluate each reconstructed frame with MPEG GSC Metrics; give it the camera-annotated source and decoded PLY, along with the reference view resolution:
 
 ```bash
-mpeg-gsc-metrics -v 1 --startFrame=0 --frameCount=1 --cpu=1 --threads=2 \
+mpeg-gsc-metrics --verbose=1 --save=0 \
+  --startFrame=0 --frameCount=1 --cpu=1 --threads=2 \
   --useCameraPosition=1 --width=3840 --height=2160 \
-  --source=/output/frame_0081.camerapos.ply \
+  --source=/output/results/frames/manwithfruit_tracked/frames/frame_0081.camerpos.ply \
   --decode=/output/results/1F/manwithfruit_tracked/r04/plys/1F_manwithfruit_tracked_r04_0081.decoded.ply \
   --output=/output/results/1F/manwithfruit_tracked/r04/metrics/1F_manwithfruit_tracked_r04_0081.decoded.ply.metric
 ```
 
+Run the metrics command once per decoded frame. Use the reference view width and height for the selected sequence; the example values above are for `manwithfruit_tracked`.
+
 #### Result names required for CSV generation
 
-[gsc_parse_vpcc_results.py](gsc_parse_vpcc_results.py) does not discover files by pattern: it constructs their paths from its arguments. Name the files and directories exactly as shown below, or the script cannot be used. For `-l 1F -s manwithfruit_tracked -r r04 -f 81 -n 32`, its results directory must be `/output/results/1F/manwithfruit_tracked/r04`, and the base name is `1F_manwithfruit_tracked_r04`.
+[gsc_parse_vpcc_results.py](gsc_parse_vpcc_results.py) constructs paths from its arguments; it does not search for result files. For the `1F`, `manwithfruit_tracked`, `r04` example, use `-f 81 -n 1` (one frame). For an `NF` result, use `-n 32`. The results directory is `/output/results/1F/manwithfruit_tracked/r04`, and the base name is `1F_manwithfruit_tracked_r04`.
 
 ```text
 /output/results/1F/manwithfruit_tracked/r04/
@@ -166,40 +176,34 @@ mpeg-gsc-metrics -v 1 --startFrame=0 --frameCount=1 --cpu=1 --threads=2 \
 └── 1F_manwithfruit_tracked_0081.importance.err
 ```
 
-Create the `_enc_bitstream.txt` file by running `parse_v3c_sample_stream` on the `.bin` file. The `.encoder.err`, `.decoder.err`, `.metric.err`, and optional `.importance.err` files must each contain exactly one timing line in this format:
+The `.encoder.err`, `.decoder.err`, each `.metric.err`, and each `.importance.err` file must contain exactly one timing line in this format:
 
 ```text
 user_time=<seconds> wall_time=<elapsed> max_rss_KB=<kilobytes> exit_status=<status>
 ```
 
-For example, GNU `time` can generate the required line with `-f 'user_time=%U wall_time=%E max_rss_KB=%M exit_status=%x'`. The parser expects the same decoded PLY and metric filenames for every frame in the requested range.
+GNU `time` can generate the line with `-f 'user_time=%U wall_time=%E max_rss_KB=%M exit_status=%x'`. Write timing output to the matching `.err` file and keep any full command log separately. The parser expects a decoded PLY and metric file for every frame in the requested range.
 
-Generate a CSV row for this rate point with:
+Initialize the proposal CSV with its header, then append one row for each completed sequence, length, and rate point. For the example condition:
 
 ```bash
-python3 gsc_parse_vpcc_results.py \
+python3 ctc/gsc_parse_vpcc_results.py --print-header-row > /output/VPCC-GS.csv
+python3 ctc/gsc_parse_vpcc_results.py \
   -d /output/results/1F/manwithfruit_tracked/r04 \
-  -l 1F -s manwithfruit_tracked -r r04 -f 81 -n 32
+  -l 1F -s manwithfruit_tracked -r r04 -f 81 -n 1 \
+  >> /output/VPCC-GS.csv
 ```
 
 The CSV can be compared with [the anchor results](anchor_results/VPCC-GS.csv) and used to populate the reporting template.
 
 To create a comparison workbook, use [gsc_csv2excel.py](gsc_csv2excel.py):
 
-```shell
-usage: gsc_csv2excel.py [-h] -t TEMPLATE -a ANC_CSV -p PRO_CSV -x XLSM
-
-Generate XLSM file from CSV data.
-
-options:
-  -h, --help            show this help message and exit
-  -t TEMPLATE, --template TEMPLATE
-                        Path to XLSM template file
-  -a ANC_CSV, --anc_csv ANC_CSV
-                        Path to anchor CSV file
-  -p PRO_CSV, --pro_csv PRO_CSV
-                        Path to proposed CSV file
-  -x XLSM, --xlsm XLSM  Path to output XLSM file
+```bash
+python3 ctc/gsc_csv2excel.py \
+  -t ctc/templates/WG5N420_template.xlsm \
+  -a ctc/anchor_results/VPCC-GS.csv \
+  -p /output/VPCC-GS.csv \
+  -x /output/WG5N420_results.xlsm
 ```
 
 ### Posetrace videos for informal expert viewing and subjective evaluation
