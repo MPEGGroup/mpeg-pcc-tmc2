@@ -142,7 +142,7 @@ def load_results(file: Path) -> list[dict[str, str]]:
 
 
 def variant_id(result: dict[str, str]) -> str:
-    return result["length"] + " -- " + ("CW" if result["rate"] == "lossless" else "C1")
+    return result["length"] + " -- C2"
 
 
 if __name__ == "__main__":

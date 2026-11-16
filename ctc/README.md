@@ -60,7 +60,7 @@ The commands below run the encoder, decoder, and objective metrics directly. It 
 * Each CTC sequence has Gaussian-splatting PLY files under `plys/` and COLMAP camera files under `colmap_data/`. The commands below show the `manwithfruit_tracked` sequence; use the sequence and frame range specified by the CTC content.
 * Create the output directories before running the commands.
 
-The anchor test set has two lengths: `1F` encodes one frame, and `NF` encodes 32 consecutive frames. For each applicable sequence and length, encode the four `C1` rate points (`r01`–`r04`) and the `CW` near-lossless condition (`lossless`). Rate configurations for the HM Main 10 profile are under `cfg/gs4/hm-main10/rate/`. The `lossless.cfg` is a best-effort near-lossless configuration, not a guarantee of mathematically lossless reconstruction.
+The anchor test set has two lengths: `1F` encodes one frame, and `NF` encodes 32 consecutive frames. For each applicable sequence and length, encode the five `C2` rate points (`r01`–`r05`) whereby `r05` uses lossless video coding. Rate configurations for the HM Main 10 profile are under `cfg/gs4/hm-main10/rate/`. The `r05.cfg` is a best-effort near-lossless configuration, not a guarantee of mathematically lossless reconstruction.
 
 The example below is the `1F`, `r04` condition for `manwithfruit_tracked`, whose first frame is 81. For an `NF` run, use `--frameCount=32`; use the relevant first-frame number for each sequence.
 
@@ -200,10 +200,10 @@ To create a comparison workbook, use [gsc_csv2excel.py](gsc_csv2excel.py):
 
 ```bash
 python3 ctc/gsc_csv2excel.py \
-  -t ctc/templates/WG5N420_template.xlsm \
+  -t ctc/templates/WG7N1646_template.xlsm \
   -a ctc/anchor_results/VPCC-GS.csv \
   -p /output/VPCC-GS.csv \
-  -x /output/WG5N420_results.xlsm
+  -x /output/WG7N1646_results.xlsm
 ```
 
 ### Posetrace videos for informal expert viewing and subjective evaluation

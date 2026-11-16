@@ -128,7 +128,7 @@ def build_title_index(ws):
     return title_columns
 
 
-def csv2xlsm(wb, file_path, sheet_name, lossless_sheet: bool):
+def csv2xlsm(wb, file_path, sheet_name):
     """
     Read a CSV file and write its data into the given workbook.
     sheet_name determines the sheet that will be filled out.
@@ -152,17 +152,14 @@ def csv2xlsm(wb, file_path, sheet_name, lossless_sheet: bool):
 
             rate = values[2]
 
+            # Transitional code from MPEG 155 to MPEG 156. To be removed after MPEG 157.
             if rate == "lossless":
-                if not lossless_sheet:
-                    continue
-                rate_idx = 0
-            else:
-                if lossless_sheet:
-                    continue
-                m_rate = re.match(r"r(\d+)", rate)
-                assert m_rate
-                rate_idx = int(m_rate[1]) - 1
-                assert rate_idx >= 0
+                rate = "r05"
+
+            m_rate = re.match(r"r(\d+)", rate)
+            assert m_rate, f"Could not parse rate {rate}"
+            rate_idx = int(m_rate[1]) - 1
+            assert rate_idx >= 0, "Error in rate regex"
 
             measurement = {keys[i]: values[i] for i in range(3, len(keys))}
 
@@ -192,15 +189,13 @@ def main():
 
     # Process anchor CSV
     if os.path.isfile(args.anc_csv):
-        csv2xlsm(wb, args.anc_csv, "Anchor.C1", lossless_sheet=False)
-        csv2xlsm(wb, args.anc_csv, "Anchor.CW", lossless_sheet=True)
+        csv2xlsm(wb, args.anc_csv, "Anchor.C2")
     else:
         raise RuntimeError(f"ERROR: No anchor CSV file found: {args.anc_csv}")
 
     # Process proposed CSV
     if os.path.isfile(args.pro_csv):
-        csv2xlsm(wb, args.pro_csv, "Proposal.C1", lossless_sheet=False)
-        csv2xlsm(wb, args.pro_csv, "Proposal.CW", lossless_sheet=True)
+        csv2xlsm(wb, args.pro_csv, "Proposal.C2")
     else:
         raise RuntimeError(f"ERROR: No proposed CSV file found: {args.pro_csv}")
 
